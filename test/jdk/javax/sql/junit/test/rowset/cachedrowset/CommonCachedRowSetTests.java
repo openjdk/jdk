@@ -46,10 +46,11 @@ import javax.sql.rowset.spi.SyncFactory;
 import javax.sql.rowset.spi.SyncProvider;
 import javax.sql.rowset.spi.SyncProviderException;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -356,7 +357,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0000(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SyncProviderException.class, () -> {
+        assertThrows(SyncProviderException.class, () -> {
             rs.acceptChanges();
             rs.close();
         });
@@ -369,7 +370,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0001(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SyncProviderException.class, () -> {
+        assertThrows(SyncProviderException.class, () -> {
             rs.acceptChanges(null);
             rs.close();
         });
@@ -528,7 +529,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         int[] pkeys = {1, 3};
         assertNull(rs.getKeyColumns());
         rs.setKeyColumns(pkeys);
-        Assertions.assertArrayEquals(pkeys, rs.getKeyColumns());
+        assertArrayEquals(pkeys, rs.getKeyColumns());
         rs.close();
     }
 
@@ -539,7 +540,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0012(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setMatchColumn(-1);
             rs.close();
         });
@@ -552,7 +553,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0013(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             int[] cols = {1, -1};
             rs.setMatchColumn(cols);
             rs.close();
@@ -566,7 +567,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0014(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setMatchColumn((String) null);
             rs.close();
         });
@@ -579,7 +580,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0015(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             String[] cols = {"ID", null};
             rs.setMatchColumn(cols);
         });
@@ -601,8 +602,8 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         for (int i = 0; i < actualCols.length; i++) {
             System.out.println(actualCols[i]);
         }
-        Assertions.assertArrayEquals(expectedCols, actualCols);
-        Assertions.assertArrayEquals(expectedColNames, actualColNames);
+        assertArrayEquals(expectedCols, actualCols);
+        assertArrayEquals(expectedColNames, actualColNames);
         rs.close();
     }
 
@@ -619,8 +620,8 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         rs.setMatchColumn(expectedColNames[0]);
         int[] actualCols = rs.getMatchColumnIndexes();
         String[] actualColNames = rs.getMatchColumnNames();
-        Assertions.assertArrayEquals(expectedCols, actualCols);
-        Assertions.assertArrayEquals(expectedColNames, actualColNames);
+        assertArrayEquals(expectedCols, actualCols);
+        assertArrayEquals(expectedColNames, actualColNames);
         rs.close();
     }
 
@@ -637,9 +638,9 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         rs.setMatchColumn(expectedCols);
         int[] actualCols = rs.getMatchColumnIndexes();
         String[] actualColNames = rs.getMatchColumnNames();
-        Assertions.assertArrayEquals(expectedCols, actualCols);
-        Assertions.assertArrayEquals(expectedColNames, actualColNames);
-        Assertions.assertArrayEquals(expectedCols, actualCols);
+        assertArrayEquals(expectedCols, actualCols);
+        assertArrayEquals(expectedColNames, actualColNames);
+        assertArrayEquals(expectedCols, actualCols);
         rs.close();
     }
 
@@ -656,8 +657,8 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         rs.setMatchColumn(expectedColNames);
         int[] actualCols = rs.getMatchColumnIndexes();
         String[] actualColNames = rs.getMatchColumnNames();
-        Assertions.assertArrayEquals(expectedCols, actualCols);
-        Assertions.assertArrayEquals(expectedColNames, actualColNames);
+        assertArrayEquals(expectedCols, actualCols);
+        assertArrayEquals(expectedColNames, actualColNames);
         rs.close();
     }
 
@@ -668,7 +669,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0020(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setMatchColumn(1);
             int[] actualCols = rs.getMatchColumnIndexes();
             assertTrue(actualCols != null);
@@ -685,7 +686,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0021(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             String matchColumn = "ID";
             rs.setMatchColumn(matchColumn);
             String[] actualColNames = rs.getMatchColumnNames();
@@ -703,7 +704,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0022(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             int[] expectedCols = {1, 3};
             rs.setMatchColumn(expectedCols);
             int[] actualCols = rs.getMatchColumnIndexes();
@@ -721,7 +722,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0023(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             String[] expectedColNames = {"COF_ID", "SUP_ID"};
             rs.setMatchColumn(expectedColNames);
             String[] actualColNames = rs.getMatchColumnNames();
@@ -749,7 +750,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0025(RowSet rs) throws SQLException {
-        Assertions.assertArrayEquals(COFFEE_HOUSES_PRIMARY_KEYS, getPrimaryKeys(rs));
+        assertArrayEquals(COFFEE_HOUSES_PRIMARY_KEYS, getPrimaryKeys(rs));
         rs.close();
     }
 
@@ -767,13 +768,13 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         };
         int rowToDelete = 10035;
         // All rows should be found
-        Assertions.assertArrayEquals(COFFEE_HOUSES_PRIMARY_KEYS, getPrimaryKeys(rs));
+        assertArrayEquals(COFFEE_HOUSES_PRIMARY_KEYS, getPrimaryKeys(rs));
         // Delete the row
         assertTrue(deleteRowByPrimaryKey(rs, rowToDelete, 1));
         // With setShowDeleted(false) which is the default,
         // the deleted row should not be visible
         assertFalse(findRowByPrimaryKey(rs, rowToDelete, 1));
-        Assertions.assertArrayEquals(afterDelete, getPrimaryKeys(rs));
+        assertArrayEquals(afterDelete, getPrimaryKeys(rs));
         assertTrue(rs.size() == COFFEE_HOUSES_ROWS);
         // With setShowDeleted(true), the deleted row should be visible
         rs.setShowDeleted(true);
@@ -813,7 +814,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0029(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setPageSize(-1);
             rs.close();
         });
@@ -826,7 +827,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0030(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.nextPage();
             rs.close();
         });
@@ -839,7 +840,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0031(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.previousPage();
             rs.close();
         });
@@ -853,7 +854,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0032(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.execute(null);
             rs.close();
         });
@@ -866,7 +867,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0033(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.execute();
             rs.close();
         });
@@ -882,8 +883,8 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
             "Sacramento", "Carmel", "LA", "Olympia", "Seattle", "SF",
             "LA", "San Jose", "Eugene"};
         rs.beforeFirst();
-        Assertions.assertArrayEquals(cities, rs.toCollection(2).toArray());
-        Assertions.assertArrayEquals(cities, rs.toCollection("CITY").toArray());
+        assertArrayEquals(cities, rs.toCollection(2).toArray());
+        assertArrayEquals(cities, rs.toCollection("CITY").toArray());
         rs.close();
     }
 
@@ -1243,7 +1244,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0044(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.insertRow();
             rs.undoDelete();
             rs.close();
@@ -1257,7 +1258,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0045(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setShowDeleted(true);
             rs.beforeFirst();
             rs.undoDelete();
@@ -1272,7 +1273,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0046(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setShowDeleted(true);
             rs.afterLast();
             rs.undoDelete();
@@ -1287,7 +1288,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0047(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.insertRow();
             rs.undoUpdate();
             rs.close();
@@ -1301,7 +1302,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0048(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setShowDeleted(true);
             rs.beforeFirst();
             rs.undoUpdate();
@@ -1316,7 +1317,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0049(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setShowDeleted(true);
             rs.afterLast();
             rs.undoUpdate();
@@ -1331,7 +1332,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0050(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.insertRow();
             rs.undoInsert();
             rs.close();
@@ -1345,7 +1346,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0051(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setShowDeleted(true);
             rs.beforeFirst();
             rs.undoInsert();
@@ -1360,7 +1361,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0052(CachedRowSet rs) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rs.setShowDeleted(true);
             rs.afterLast();
             rs.undoInsert();
@@ -1503,12 +1504,12 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
             assertTrue(rs1.getInt(1) == origId);
             assertTrue(rs1.getString(2).equals(origCoffee));
             assertTrue(rs1.getInt(5) == origSales);
-            Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(rs1));
+            assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(rs1));
             // Check current rowset
             assertTrue(rs.getInt(1) == id);
             assertTrue(rs.getString(2).equals(coffee));
             assertTrue(rs.getInt(5) == sales);
-            Assertions.assertArrayEquals(updatedPkeys, getPrimaryKeys(rs));
+            assertArrayEquals(updatedPkeys, getPrimaryKeys(rs));
         }
         rs.close();
     }
@@ -1553,7 +1554,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
             assertTrue(rs.getInt(1) == id);
             assertTrue(rs.getString(2).equals(coffee));
             assertTrue(rs.getInt(5) == sales);
-            Assertions.assertArrayEquals(updatedPkeys, getPrimaryKeys(rs));
+            assertArrayEquals(updatedPkeys, getPrimaryKeys(rs));
         }
         rs.close();
     }
@@ -1699,7 +1700,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
             rs.beforeFirst();
             crs1.populate(rs, startingRow);
             assertEquals(COFFEE_HOUSES_ROWS - startingRow + 1, crs1.size());
-            Assertions.assertArrayEquals(expectedRows, getPrimaryKeys(crs1));
+            assertArrayEquals(expectedRows, getPrimaryKeys(crs1));
         }
         rs.close();
     }

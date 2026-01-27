@@ -33,13 +33,14 @@ import javax.sql.rowset.JoinRowSet;
 import javax.sql.rowset.RowSetMetaDataImpl;
 import javax.sql.rowset.WebRowSet;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import test.rowset.webrowset.CommonWebRowSetTests;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class JoinRowSetTests extends CommonWebRowSetTests {
 
@@ -180,7 +181,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
                 results.add(jrs.getInt("COF_ID"));
             }
         }
-        Assertions.assertArrayEquals(EXPECTED, results.toArray());
+        assertArrayEquals(EXPECTED, results.toArray());
     }
 
     /*

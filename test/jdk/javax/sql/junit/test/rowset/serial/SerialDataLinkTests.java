@@ -26,7 +26,6 @@ import java.net.URL;
 import javax.sql.rowset.serial.SerialDatalink;
 import javax.sql.rowset.serial.SerialException;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +50,7 @@ public class SerialDataLinkTests extends BaseTest {
      */
     @Test
     public void test() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialDatalink dl1 = new SerialDatalink(null);
         });
     }

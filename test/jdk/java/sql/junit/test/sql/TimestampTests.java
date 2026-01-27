@@ -33,7 +33,6 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -73,7 +72,7 @@ public class TimestampTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidTimestampValues")
     public void test(String ts) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Timestamp.valueOf(ts));
+        assertThrows(IllegalArgumentException.class, () -> Timestamp.valueOf(ts));
     }
 
     /*
@@ -273,7 +272,7 @@ public class TimestampTests extends BaseTest {
     @Test
     public void test17() throws Exception {
         Timestamp ts1 = Timestamp.valueOf("1996-12-13 14:15:25.745634");
-        Assertions.assertThrows(NullPointerException.class, () -> ts1.before(null));
+        assertThrows(NullPointerException.class, () -> ts1.before(null));
     }
 
     /*
@@ -326,7 +325,7 @@ public class TimestampTests extends BaseTest {
     @Test
     public void test22() throws Exception {
         Timestamp ts1 = Timestamp.valueOf("1966-08-30 08:08:08");
-        Assertions.assertThrows(NullPointerException.class, () -> ts1.after(null));
+        assertThrows(NullPointerException.class, () -> ts1.after(null));
     }
 
     /*
@@ -486,7 +485,7 @@ public class TimestampTests extends BaseTest {
     @Test
     public void test38() throws Exception {
         Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ts1.setNanos(-1));
+        assertThrows(IllegalArgumentException.class, () -> ts1.setNanos(-1));
 
     }
 
@@ -497,7 +496,7 @@ public class TimestampTests extends BaseTest {
     public void test39() throws Exception {
         int nanos = 999999999;
         Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ts1.setNanos(nanos + 1));
+        assertThrows(IllegalArgumentException.class, () -> ts1.setNanos(nanos + 1));
     }
 
     /*
@@ -551,7 +550,7 @@ public class TimestampTests extends BaseTest {
     @Test
     public void test44() throws Exception {
         LocalDateTime ldt = null;
-        Assertions.assertThrows(NullPointerException.class, () -> Timestamp.valueOf(ldt));
+        assertThrows(NullPointerException.class, () -> Timestamp.valueOf(ldt));
     }
 
     /*
@@ -582,7 +581,7 @@ public class TimestampTests extends BaseTest {
     @Test
     public void test47() throws Exception {
         Instant instant = null;
-        Assertions.assertThrows(NullPointerException.class, () -> Timestamp.from(instant));
+        assertThrows(NullPointerException.class, () -> Timestamp.from(instant));
     }
 
     // Added SQE tests

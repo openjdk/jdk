@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.sql.rowset.serial.SQLInputImpl;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,7 +72,7 @@ public class SQLInputImplTests extends BaseTest {
      */
     @Test
     public void test() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             SQLInputImpl x = new SQLInputImpl(null, map);
         });
     }
@@ -84,7 +83,7 @@ public class SQLInputImplTests extends BaseTest {
      */
     @Test
     public void test02() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             SQLInputImpl x = new SQLInputImpl(typeValues, null);
         });
     }

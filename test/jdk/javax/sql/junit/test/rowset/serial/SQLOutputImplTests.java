@@ -42,7 +42,6 @@ import javax.sql.rowset.serial.SerialDatalink;
 import javax.sql.rowset.serial.SerialRef;
 import javax.sql.rowset.serial.SerialStruct;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,7 +82,7 @@ public class SQLOutputImplTests extends BaseTest {
      */
     @Test
     public void test() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             SQLOutputImpl x = new SQLOutputImpl(null, map);
         });
     }
@@ -94,7 +93,7 @@ public class SQLOutputImplTests extends BaseTest {
      */
     @Test
     public void test02() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             SQLOutputImpl x = new SQLOutputImpl(results, null);
         });
     }

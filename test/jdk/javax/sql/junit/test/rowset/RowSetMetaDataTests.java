@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 import javax.sql.RowSetMetaData;
 import javax.sql.rowset.RowSetMetaDataImpl;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,7 +59,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getCatalogName(col);
         });
     }
@@ -71,7 +70,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test01(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getColumnClassName(col);
         });
     }
@@ -82,7 +81,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test02(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getColumnDisplaySize(col);
         });
     }
@@ -93,7 +92,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test03(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getColumnLabel(col);
         });
     }
@@ -104,7 +103,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test04(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getColumnName(col);
         });
     }
@@ -115,7 +114,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test05(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getColumnType(col);
         });
     }
@@ -126,7 +125,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test06(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getColumnTypeName(col);
         });
     }
@@ -137,7 +136,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test07(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getPrecision(col);
         });
     }
@@ -148,7 +147,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test08(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getScale(col);
         });
     }
@@ -159,7 +158,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test09(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getSchemaName(col);
         });
     }
@@ -170,7 +169,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test10(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.getTableName(col);
         });
     }
@@ -181,7 +180,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test11(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isAutoIncrement(col);
         });
     }
@@ -192,7 +191,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test12(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isCaseSensitive(col);
         });
     }
@@ -203,7 +202,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test13(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isCurrency(col);
         });
     }
@@ -214,7 +213,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test14(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isDefinitelyWritable(col);
         });
     }
@@ -225,7 +224,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test15(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isNullable(col);
         });
     }
@@ -236,7 +235,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test16(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isReadOnly(col);
         });
     }
@@ -247,7 +246,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test17(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isSearchable(col);
         });
     }
@@ -258,7 +257,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test18(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isSigned(col);
         });
     }
@@ -269,7 +268,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test19(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.isWritable(col);
         });
     }
@@ -280,7 +279,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test20(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setAutoIncrement(col, true);
         });
     }
@@ -291,7 +290,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test21(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setCaseSensitive(col, true);
         });
     }
@@ -302,7 +301,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test22(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setCatalogName(col, null);
         });
     }
@@ -313,7 +312,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test23(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setColumnDisplaySize(col, 5);
         });
     }
@@ -324,7 +323,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test24(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setColumnLabel(col, "label");
         });
     }
@@ -335,7 +334,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test25(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setColumnName(col, "F1");
         });
     }
@@ -346,7 +345,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test26(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setColumnType(col, Types.CHAR);
         });
     }
@@ -357,7 +356,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test27(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setColumnTypeName(col, "F1");
         });
     }
@@ -368,7 +367,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test28(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setCurrency(col, true);
         });
     }
@@ -379,7 +378,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test29(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setNullable(col, ResultSetMetaData.columnNoNulls);
         });
     }
@@ -390,7 +389,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test30(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setPrecision(col, 2);
         });
     }
@@ -401,7 +400,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test31(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setScale(col, 2);
         });
     }
@@ -412,7 +411,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test32(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setSchemaName(col, "Gotham");
         });
     }
@@ -423,7 +422,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test33(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setSearchable(col, false);
         });
     }
@@ -434,7 +433,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test34(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setSigned(col, false);
         });
     }
@@ -445,7 +444,7 @@ public class RowSetMetaDataTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test35(Integer col) throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             rsmd.setTableName(col, "SUPERHEROS");
         });
     }

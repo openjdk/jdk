@@ -28,7 +28,6 @@ import java.util.Arrays;
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialException;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -55,7 +54,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test01() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.getBinaryStream();
@@ -68,7 +67,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test02() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.getBinaryStream(1, 5);
@@ -81,7 +80,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test03() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.getBytes(1, 1);
@@ -94,7 +93,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test04() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.length();
@@ -107,7 +106,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test05() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.position(new byte[5], 1);
@@ -120,7 +119,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test06() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.position(new StubBlob(), 1);
@@ -133,7 +132,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test07() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.setBinaryStream(5);
@@ -146,7 +145,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test08() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.setBytes(1, new byte[5]);
@@ -159,7 +158,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test09() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.setBytes(1, new byte[10], 0, 5);
@@ -172,7 +171,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test10() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(new StubBlob());
             sb.free();
             sb.truncate(1);
@@ -198,7 +197,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test12() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             InputStream is = sb.getBinaryStream(-1, 3);
         });
@@ -209,7 +208,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test13() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             InputStream is = sb.getBinaryStream(0, 3);
         });
@@ -221,7 +220,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test14() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             InputStream is = sb.getBinaryStream(0, 3);
         });
@@ -232,7 +231,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test15() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             InputStream is = sb.getBinaryStream(1, 0);
         });
@@ -243,7 +242,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test16() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             InputStream is = sb.getBinaryStream(1, 6);
         });
@@ -254,7 +253,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test17() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             InputStream is = sb.getBinaryStream(bytes.length + 2, 6);
         });
@@ -278,7 +277,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test19() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             sb.free();
             SerialBlob sb2 = (SerialBlob) sb.clone();
@@ -303,7 +302,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test21() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialBlob sb = new SerialBlob(bytes);
             sb.setBinaryStream(3);
         });
@@ -493,7 +492,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test34() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             int length = -1;
             SerialBlob sb = new SerialBlob(bytes);
             int written = sb.setBytes(1, new byte[]{1}, 1, length);
@@ -506,7 +505,7 @@ public class SerialBlobTests extends BaseTest {
      */
     @Test
     public void test35() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             int offset = 1;
             int length = Integer.MAX_VALUE;
             SerialBlob sb = new SerialBlob(bytes);

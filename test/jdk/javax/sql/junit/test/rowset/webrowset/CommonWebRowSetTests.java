@@ -36,7 +36,7 @@ import java.sql.ResultSet;
 import java.util.Arrays;
 import javax.sql.rowset.WebRowSet;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -138,7 +138,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0000(WebRowSet wrs) throws Exception {
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
         assertEquals(COFFEES_ROWS, wrs.size());
         wrs.close();
     }
@@ -154,7 +154,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         try (FileReader fr = new FileReader(COFFEE_ROWS_XML)) {
             wrs1.readXml(fr);
         }
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
         assertEquals(COFFEES_ROWS, wrs1.size());
         wrs1.close();
 
@@ -170,7 +170,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         try (FileInputStream fis = new FileInputStream(COFFEE_ROWS_XML)) {
             wrs1.readXml(fis);
         }
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
         assertEquals(COFFEES_ROWS, wrs1.size());
         wrs1.close();
     }
@@ -185,7 +185,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
     public void WebRowSetTest0003(WebRowSet wrs) throws Exception {
         ByteArrayOutputStream baos = writeWebRowSetWithOutputStream(wrs);
         try (WebRowSet wrs1 = readWebRowSetWithOInputStream(baos)) {
-            Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+            assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
             assertEquals(COFFEES_ROWS, wrs1.size());
         }
     }
@@ -202,7 +202,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         rs.beforeFirst();
         ByteArrayOutputStream baos = writeWebRowSetWithOutputStream(rs);
         try (WebRowSet wrs1 = readWebRowSetWithOInputStream(baos)) {
-            Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+            assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
             assertEquals(COFFEES_ROWS, wrs1.size());
         }
     }
@@ -217,7 +217,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
     public void WebRowSetTest0005(WebRowSet wrs) throws Exception {
         ByteArrayOutputStream baos = writeWebRowSetWithOutputStreamWithWriter(wrs);
         try (WebRowSet wrs1 = readWebRowSetWithOInputStreamWithReader(baos)) {
-            Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+            assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
             assertEquals(COFFEES_ROWS, wrs1.size());
         }
     }
@@ -234,7 +234,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         rs.beforeFirst();
         ByteArrayOutputStream baos = writeWebRowSetWithOutputStreamWithWriter(rs);
         try (WebRowSet wrs1 = readWebRowSetWithOInputStreamWithReader(baos)) {
-            Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+            assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
             assertEquals(COFFEES_ROWS, wrs1.size());
         }
     }
@@ -247,9 +247,9 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0007(WebRowSet wrs) throws Exception {
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
         int[] rowsToDelete = {2, 4};
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
         for (int row : rowsToDelete) {
             assertTrue(deleteRowByPrimaryKey(wrs, row, 1));
         }
@@ -281,7 +281,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         FileInputStream fis = new FileInputStream(COFFEE_ROWS_XML);
         wrs1.readXml(fis);
         assertTrue(wrs1.size() == COFFEES_ROWS);
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
         // Validate that the rows are not marked as deleted, inserted or updated
         wrs1.beforeFirst();
         while (wrs1.next()) {
@@ -306,7 +306,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         FileInputStream fis = new FileInputStream(DELETED_COFFEE_ROWS_XML);
         wrs1.readXml(fis);
         assertTrue(wrs1.size() == COFFEES_ROWS);
-        Assertions.assertArrayEquals(expectedRows, getPrimaryKeys(wrs1));
+        assertArrayEquals(expectedRows, getPrimaryKeys(wrs1));
         // With setShowDeleted(false) which is the default,
         // the deleted row should not be visible
         for (int row : rowsToDelete) {
@@ -317,7 +317,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         for (int row : rowsToDelete) {
             assertTrue(findRowByPrimaryKey(wrs1, row, 1));
         }
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
         wrs1.close();
 
     }
@@ -332,7 +332,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         FileInputStream fis = new FileInputStream(UPDATED_COFFEE_ROWS_XML);
         wrs1.readXml(fis);
         assertTrue(wrs1.size() == COFFEES_ROWS);
-        Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
+        assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs1));
         wrs1.beforeFirst();
         while (wrs1.next()) {
             if (wrs1.getInt(1) == 3) {
@@ -368,7 +368,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         var actual = getPrimaryKeys(wrs1);
         Arrays.sort(actual);
         Arrays.sort(expected);
-        Assertions.assertArrayEquals(expected, actual);
+        assertArrayEquals(expected, actual);
         wrs1.beforeFirst();
         while (wrs1.next()) {
             if (wrs1.getInt(1) == 15 || wrs1.getInt(1) == 20) {
@@ -397,7 +397,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         FileInputStream fis = new FileInputStream(UPDATED_INSERTED_COFFEE_ROWS_XML);
         wrs1.readXml(fis);
         assertTrue(wrs1.size() == expectedSize);
-        Assertions.assertArrayEquals(expected, getPrimaryKeys(wrs1));
+        assertArrayEquals(expected, getPrimaryKeys(wrs1));
         wrs1.beforeFirst();
         while (wrs1.next()) {
             if (wrs1.getInt(1) == addedRowPK) {

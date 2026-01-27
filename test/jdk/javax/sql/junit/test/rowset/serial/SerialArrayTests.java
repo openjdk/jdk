@@ -30,7 +30,6 @@ import java.util.Map;
 import javax.sql.rowset.serial.SerialArray;
 import javax.sql.rowset.serial.SerialException;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +65,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test02() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             SerialArray sa = new SerialArray(a, null);
         });
     }
@@ -76,7 +75,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test03() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.getResultSet();
         });
@@ -87,7 +86,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test04() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.getResultSet(null);
         });
@@ -98,7 +97,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test05() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.getResultSet(1, 1);
         });
@@ -109,7 +108,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test06() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.getResultSet(1, 1, null);
         });
@@ -121,7 +120,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test07() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.free();
             sa.getArray();
@@ -134,7 +133,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test08() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.free();
             sa.getArray(map);
@@ -147,7 +146,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test09() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.free();
             sa.getArray(1, 1, map);
@@ -160,7 +159,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test10() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.free();
             sa.getArray(1, 1);
@@ -173,7 +172,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test11() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.free();
             sa.getBaseType();
@@ -186,7 +185,7 @@ public class SerialArrayTests extends BaseTest {
      */
     @Test
     public void test12() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialArray sa = new SerialArray(a);
             sa.free();
             sa.getBaseTypeName();

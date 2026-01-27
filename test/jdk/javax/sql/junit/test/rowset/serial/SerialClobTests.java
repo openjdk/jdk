@@ -29,7 +29,6 @@ import java.io.Writer;
 import javax.sql.rowset.serial.SerialClob;
 import javax.sql.rowset.serial.SerialException;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -62,7 +61,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test01() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.getCharacterStream();
@@ -75,7 +74,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test02() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(chars);
             sc.free();
             sc.getCharacterStream();
@@ -88,7 +87,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test03() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.getCharacterStream(1, 5);
@@ -101,7 +100,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test04() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.getSubString(1, 1);
@@ -114,7 +113,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test05() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.truncate(1);
@@ -127,7 +126,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test06() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.getAsciiStream();
@@ -139,7 +138,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test07() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.length();
@@ -152,7 +151,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test08() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.position("hello", 1);
@@ -165,7 +164,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test09() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.position(new StubClob(), 1);
@@ -178,7 +177,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test10() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.setAsciiStream(5);
@@ -191,7 +190,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test11() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.setCharacterStream(5);
@@ -204,7 +203,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test12() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.setString(1, "hello");
@@ -217,7 +216,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test13() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(new StubClob());
             sc.free();
             sc.setString(1, "hello", 0, 5);
@@ -230,7 +229,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test14() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(chars);
             sc.getCharacterStream(-1, 5);
         });
@@ -242,7 +241,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test15() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(chars);
             sc.getCharacterStream(0, 5);
         });
@@ -254,7 +253,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test16() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(chars);
             sc.getCharacterStream(1, 100);
         });
@@ -266,7 +265,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test17() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(chars);
             sc.getCharacterStream(1, 0);
         });
@@ -278,7 +277,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test18() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialClob sc = new SerialClob(chars);
             sc.getCharacterStream(100, 5);
         });
@@ -547,7 +546,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test39() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             String val1 = "hello";
             int offset = val1.length() + 1;
             SerialClob sc = new SerialClob(chars);
@@ -596,7 +595,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test42() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             int length = -1;
             SerialClob sc = new SerialClob(chars);
             int written = sc.setString(1, "hello", 1, length);
@@ -609,7 +608,7 @@ public class SerialClobTests extends BaseTest {
      */
     @Test
     public void test43() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             int offset = 1;
             int length = Integer.MAX_VALUE;
             SerialClob sc = new SerialClob(chars);

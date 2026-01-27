@@ -28,7 +28,6 @@ import util.StubConnection;
 
 import java.sql.SQLException;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,7 +59,7 @@ public class ConnectionTests extends BaseTest {
      */
     @Test
     public void test01() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> conn.enquoteLiteral(null));
+        assertThrows(NullPointerException.class, () -> conn.enquoteLiteral(null));
     }
 
     /*
@@ -79,7 +78,7 @@ public class ConnectionTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidEnquotedIdentifierValues")
     public void test03(String s, boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(SQLException.class, () -> conn.enquoteIdentifier(s, alwaysQuote));
+        assertThrows(SQLException.class, () -> conn.enquoteIdentifier(s, alwaysQuote));
     }
 
     /*
@@ -89,7 +88,7 @@ public class ConnectionTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> conn.enquoteIdentifier(null, alwaysQuote));
+        assertThrows(NullPointerException.class, () -> conn.enquoteIdentifier(null, alwaysQuote));
     }
 
     /*
@@ -107,7 +106,7 @@ public class ConnectionTests extends BaseTest {
      */
     @Test
     public void test06() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> conn.isSimpleIdentifier(null));
+        assertThrows(NullPointerException.class, () -> conn.isSimpleIdentifier(null));
     }
 
     /*
@@ -126,6 +125,6 @@ public class ConnectionTests extends BaseTest {
      */
     @Test
     public void test08() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> conn.enquoteNCharLiteral(null));
+        assertThrows(NullPointerException.class, () -> conn.enquoteNCharLiteral(null));
     }
 }

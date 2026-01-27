@@ -28,7 +28,6 @@ import javax.sql.rowset.RowSetMetaDataImpl;
 import javax.sql.rowset.serial.SerialException;
 import javax.sql.rowset.serial.SerialJavaObject;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -43,7 +42,7 @@ public class SerialJavaObjectTests extends BaseTest {
      */
     @Test
     public void test() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             SerialJavaObject sjo = new SerialJavaObject(null);
         });
     }
@@ -55,7 +54,7 @@ public class SerialJavaObjectTests extends BaseTest {
     @Test
     @Disabled
     public void test01() throws Exception {
-        Assertions.assertThrows(SerialException.class, () -> {
+        assertThrows(SerialException.class, () -> {
             SerialJavaObject sjo = new SerialJavaObject(new RowSetMetaDataImpl());
         });
     }

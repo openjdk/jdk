@@ -34,7 +34,6 @@ import javax.sql.rowset.spi.SyncFactory;
 import javax.sql.rowset.spi.SyncFactoryException;
 import javax.sql.rowset.spi.SyncProvider;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -125,7 +124,7 @@ public class SyncFactoryTests {
      */
     @Test
     public void test03() throws SyncFactoryException {
-        Assertions.assertThrows(SyncFactoryException.class, () -> {
+        assertThrows(SyncFactoryException.class, () -> {
             SyncProvider p = SyncFactory.getInstance(null);
         });
     }
@@ -135,7 +134,7 @@ public class SyncFactoryTests {
      */
     @Test
     public void test04() throws SyncFactoryException {
-        Assertions.assertThrows(SyncFactoryException.class, () -> {
+        assertThrows(SyncFactoryException.class, () -> {
             Logger l = SyncFactory.getLogger();
         });
     }
@@ -188,7 +187,7 @@ public class SyncFactoryTests {
      */
     @Test
     public void test08() throws Exception {
-        Assertions.assertThrows(SyncFactoryException.class, () -> {
+        assertThrows(SyncFactoryException.class, () -> {
             SyncFactory.setJNDIContext(null);
         });
     }

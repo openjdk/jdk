@@ -30,8 +30,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,7 +68,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test
     public void test01() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> pstmt.enquoteLiteral(null));
+        assertThrows(NullPointerException.class, () -> pstmt.enquoteLiteral(null));
     }
 
     /*
@@ -86,7 +87,7 @@ public class PreparedStatementTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidEnquotedIdentifierValues")
     public void test03(String s, boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(SQLException.class, () -> pstmt.enquoteIdentifier(s, alwaysQuote));
+        assertThrows(SQLException.class, () -> pstmt.enquoteIdentifier(s, alwaysQuote));
     }
 
     /*
@@ -96,7 +97,7 @@ public class PreparedStatementTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> pstmt.enquoteIdentifier(null, alwaysQuote));
+        assertThrows(NullPointerException.class, () -> pstmt.enquoteIdentifier(null, alwaysQuote));
     }
 
     /*
@@ -114,7 +115,7 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test
     public void test06() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> pstmt.isSimpleIdentifier(null));
+        assertThrows(NullPointerException.class, () -> pstmt.isSimpleIdentifier(null));
     }
 
     /*
@@ -133,6 +134,6 @@ public class PreparedStatementTests extends BaseTest {
      */
     @Test
     public void test08() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> pstmt.enquoteNCharLiteral(null));
+        assertThrows(NullPointerException.class, () -> pstmt.enquoteNCharLiteral(null));
     }
 }

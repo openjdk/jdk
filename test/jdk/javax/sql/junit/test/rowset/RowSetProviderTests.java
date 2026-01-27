@@ -33,7 +33,6 @@ import javax.sql.rowset.RowSetProvider;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -129,7 +128,7 @@ public class RowSetProviderTests extends BaseTest {
      */
     @Test
     public void test03() throws SQLException {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             System.setProperty("javax.sql.rowset.RowSetFactory",
                     "invalid.RowSetFactoryImpl");
             RowSetFactory rsf = RowSetProvider.newFactory();
@@ -155,7 +154,7 @@ public class RowSetProviderTests extends BaseTest {
      */
     @Test
     public void test05() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             File f = new File(jarPath + "badFactory");
             URLClassLoader loader = new URLClassLoader(new URL[]{
                 new URL(f.toURI().toString())}, getClass().getClassLoader());

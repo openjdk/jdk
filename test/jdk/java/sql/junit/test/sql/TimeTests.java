@@ -26,7 +26,6 @@ import java.sql.Time;
 import java.time.LocalTime;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -43,7 +42,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test01() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, t::getYear);
+        assertThrows(IllegalArgumentException.class, t::getYear);
     }
 
     /*
@@ -52,7 +51,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test02() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, t::getMonth);
+        assertThrows(IllegalArgumentException.class, t::getMonth);
     }
 
     /*
@@ -61,7 +60,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test03() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, t::getDay);
+        assertThrows(IllegalArgumentException.class, t::getDay);
     }
 
     /**
@@ -70,7 +69,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test04() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, t::getDate);
+        assertThrows(IllegalArgumentException.class, t::getDate);
     }
 
     /*
@@ -79,7 +78,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test05() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> t.setYear(8));
+        assertThrows(IllegalArgumentException.class, () -> t.setYear(8));
     }
 
     /*
@@ -88,7 +87,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test06() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> t.setMonth(8));
+        assertThrows(IllegalArgumentException.class, () -> t.setMonth(8));
     }
 
     /*
@@ -97,7 +96,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test07() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> t.setDate(30));
+        assertThrows(IllegalArgumentException.class, () -> t.setDate(30));
     }
 
     /*
@@ -106,7 +105,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test08() {
         Time t = Time.valueOf("08:30:59");
-        Assertions.assertThrows(IllegalArgumentException.class, t::getDate);
+        assertThrows(IllegalArgumentException.class, t::getDate);
     }
 
     /*
@@ -137,7 +136,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test11() throws Exception {
         LocalTime ld = null;
-        Assertions.assertThrows(NullPointerException.class, () -> Time.valueOf(ld));
+        assertThrows(NullPointerException.class, () -> Time.valueOf(ld));
     }
 
     /*
@@ -147,7 +146,7 @@ public class TimeTests extends BaseTest {
     @Test
     public void test12() throws Exception {
         Time t = new Time(System.currentTimeMillis());
-        Assertions.assertThrows(UnsupportedOperationException.class, t::toInstant);
+        assertThrows(UnsupportedOperationException.class, t::toInstant);
     }
 
     /*
@@ -192,7 +191,7 @@ public class TimeTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidTimeValues")
     public void test16(String time) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Time.valueOf(time));
+        assertThrows(IllegalArgumentException.class, () -> Time.valueOf(time));
     }
 
     /*

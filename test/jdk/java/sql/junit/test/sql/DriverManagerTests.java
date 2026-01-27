@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,7 +110,7 @@ public class DriverManagerTests {
     @Test
     public void test1() throws Exception {
         Driver d = null;
-        Assertions.assertThrows(NullPointerException.class,
+        assertThrows(NullPointerException.class,
                 () -> DriverManager.registerDriver(d));
     }
 
@@ -122,7 +121,7 @@ public class DriverManagerTests {
     @Test
     public void test2() throws Exception {
         Driver d = null;
-        Assertions.assertThrows(NullPointerException.class, () ->
+        assertThrows(NullPointerException.class, () ->
                 DriverManager.registerDriver(d, null));
     }
 
@@ -141,7 +140,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test4() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getConnection(InvalidURL));
+        assertThrows(SQLException.class, () -> DriverManager.getConnection(InvalidURL));
     }
 
     /**
@@ -150,7 +149,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test5() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getConnection(InvalidURL, new Properties()));
+        assertThrows(SQLException.class, () -> DriverManager.getConnection(InvalidURL, new Properties()));
     }
 
     /**
@@ -159,7 +158,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test6() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getConnection(InvalidURL, "LuckyDog", "tennisanyone"));
+        assertThrows(SQLException.class, () -> DriverManager.getConnection(InvalidURL, "LuckyDog", "tennisanyone"));
     }
 
     /**
@@ -167,7 +166,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test7() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getConnection(null));
+        assertThrows(SQLException.class, () -> DriverManager.getConnection(null));
     }
 
     /**
@@ -175,7 +174,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test8() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getConnection(null, new Properties()));
+        assertThrows(SQLException.class, () -> DriverManager.getConnection(null, new Properties()));
     }
 
     /**
@@ -183,7 +182,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test9() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getConnection(null, "LuckyDog", "tennisanyone"));
+        assertThrows(SQLException.class, () -> DriverManager.getConnection(null, "LuckyDog", "tennisanyone"));
     }
 
     /**
@@ -192,7 +191,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test10() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getDriver(InvalidURL));
+        assertThrows(SQLException.class, () -> DriverManager.getDriver(InvalidURL));
     }
 
     /**
@@ -200,7 +199,7 @@ public class DriverManagerTests {
      */
     @Test
     public void test11() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getDriver(null));
+        assertThrows(SQLException.class, () -> DriverManager.getDriver(null));
     }
 
     /**
@@ -221,7 +220,7 @@ public class DriverManagerTests {
     @Test
     public void test13() throws Exception {
         DriverManager.registerDriver(new StubDriver());
-        Assertions.assertThrows(SQLException.class, () -> DriverManager.getDriver(InvalidURL));
+        assertThrows(SQLException.class, () -> DriverManager.getDriver(InvalidURL));
     }
 
     /**

@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.sql.rowset.serial.SerialRef;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -57,7 +56,7 @@ public class SerialRefTests extends BaseTest {
      */
     @Test
     public void test01() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             SerialRef sr = new SerialRef(null);
         });
     }
@@ -68,7 +67,7 @@ public class SerialRefTests extends BaseTest {
      */
     @Test
     public void test02() throws Exception {
-        Assertions.assertThrows(SQLException.class, () -> {
+        assertThrows(SQLException.class, () -> {
             SerialRef sr = new SerialRef(new StubRef(null, hero));
         });
     }

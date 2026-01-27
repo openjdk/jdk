@@ -28,7 +28,8 @@ import javax.sql.rowset.FilteredRowSet;
 import javax.sql.rowset.Predicate;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,7 +89,7 @@ public class FilteredRowSetTests extends CommonWebRowSetTests {
             10023, 10040, 10042, 10024, 10039, 10041, 10035, 10037, 10034
         };
         frs.setFilter(new PrimaryKeyFilter(10000, 10999, 1));
-        Assertions.assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
+        assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
     }
 
     /*
@@ -101,7 +102,7 @@ public class FilteredRowSetTests extends CommonWebRowSetTests {
             10023, 10040, 10042, 10024, 10039, 10041, 10035, 10037, 10034
         };
         frs.setFilter(new PrimaryKeyFilter(10000, 10999, "STORE_ID"));
-        Assertions.assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
+        assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
 
     }
 
@@ -116,7 +117,7 @@ public class FilteredRowSetTests extends CommonWebRowSetTests {
         };
         String[] cityArray = {"SF", "LA"};
         frs.setFilter(new CityFilter(cityArray, 2));
-        Assertions.assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
+        assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
     }
 
     /*
@@ -130,7 +131,7 @@ public class FilteredRowSetTests extends CommonWebRowSetTests {
         };
         String[] cityArray = {"SF", "LA"};
         frs.setFilter(new CityFilter(cityArray, "CITY"));
-        Assertions.assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
+        assertArrayEquals(expectedKeys, getPrimaryKeys(frs));
     }
 
 
