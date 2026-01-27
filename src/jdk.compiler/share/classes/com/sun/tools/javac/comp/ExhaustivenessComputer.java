@@ -95,7 +95,7 @@ public class ExhaustivenessComputer {
             try {
                 computedMaxBaseChecks = Long.parseLong(baseChecks);
             } catch (NumberFormatException _) {
-                //ignore invalid values and use the default timeout
+                //ignore invalid values and use the default maximum number of checks
             }
         }
 
@@ -675,7 +675,7 @@ public class ExhaustivenessComputer {
     }
 
     private boolean isBpCovered(Type componentType, PatternDescription newNested) {
-        checkTimeout();
+        reportCheck();
 
         if (newNested instanceof BindingPattern bp) {
             Type seltype = types.erasure(componentType);
@@ -688,7 +688,7 @@ public class ExhaustivenessComputer {
         return false;
     }
 
-    protected void checkTimeout() {
+    protected void reportCheck() {
         if (baseChecks != (-1) &&
             ++baseChecks > maxBaseChecks) {
             throw new TooManyChecksException(null);
@@ -1045,9 +1045,9 @@ public class ExhaustivenessComputer {
 
             reducedAdded.remove(current);
 
-    Set<PatternDescription> combinedPatterns =
-              Stream.concat(basePatterns.stream(),
-                                        replace(inMissingPatterns, toExpand, reducedAdded).stream())
+            Set<PatternDescription> combinedPatterns =
+                    Stream.concat(basePatterns.stream(),
+                                  replace(inMissingPatterns, toExpand, reducedAdded).stream())
                           .collect(Collectors.toSet());
 
             if (computeCoverage(selectorType, combinedPatterns, PatternEquivalence.LOOSE).covered()) {
