@@ -79,13 +79,13 @@ vmIntrinsics::polymorphic_prefix(vmIntrinsics::ID id) {
     case _putReferenceMO:
     case _compareAndSetReferenceMO:
     case _compareAndExchangeReferenceMO:
+    case _getAndSetReferenceMO:
       return PP_MO;
 
     case _getPrimitiveBitsMO:
     case _putPrimitiveBitsMO:
     case _compareAndSetPrimitiveBitsMO:
     case _compareAndExchangePrimitiveBitsMO:
-    case _getAndSetReferenceMO:
       return PP_MO_BT;
 
     case _getAndOperatePrimitiveBitsMO:

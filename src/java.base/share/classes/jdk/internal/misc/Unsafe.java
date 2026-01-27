@@ -3421,6 +3421,1058 @@ public final class Unsafe {
     }
 
     /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * @return {@code true} if successful
+     */
+    @ForceInline
+    public final Object compareAndExchangeReferenceAcquire(Object o, long offset,
+                                                           Object expected,
+                                                           Object x) {
+        return compareAndExchangeReference(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final Object compareAndExchangeReferenceRelease(Object o, long offset,
+                                                           Object expected,
+                                                           Object x) {
+        return compareAndExchangeReference(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetReferencePlain(Object o, long offset,
+                                                         Object expected,
+                                                         Object x) {
+        return compareAndSetReference(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetReferenceAcquire(Object o, long offset,
+                                                           Object expected,
+                                                           Object x) {
+        return compareAndSetReference(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetReferenceRelease(Object o, long offset,
+                                                           Object expected,
+                                                           Object x) {
+        return compareAndSetReference(o, offset, expected, x);
+    }
+
+
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * @return {@code true} if successful
+     */
+    @ForceInline
+    public final int compareAndExchangeIntAcquire(Object o, long offset,
+                                                  int expected,
+                                                  int x) {
+        return compareAndExchangeInt(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final int compareAndExchangeIntRelease(Object o, long offset,
+                                                  int expected,
+                                                  int x) {
+        return compareAndExchangeInt(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetIntPlain(Object o, long offset,
+                                                   int expected,
+                                                   int x) {
+        return compareAndSetInt(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetIntAcquire(Object o, long offset,
+                                                     int expected,
+                                                     int x) {
+        return compareAndSetInt(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetIntRelease(Object o, long offset,
+                                                     int expected,
+                                                     int x) {
+        return compareAndSetInt(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetByte(Object o, long offset,
+                                               byte expected,
+                                               byte x) {
+        return compareAndSetByte(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetByteAcquire(Object o, long offset,
+                                                      byte expected,
+                                                      byte x) {
+        return weakCompareAndSetByte(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetByteRelease(Object o, long offset,
+                                                      byte expected,
+                                                      byte x) {
+        return weakCompareAndSetByte(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetBytePlain(Object o, long offset,
+                                                    byte expected,
+                                                    byte x) {
+        return weakCompareAndSetByte(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final byte compareAndExchangeByteAcquire(Object o, long offset,
+                                                    byte expected,
+                                                    byte x) {
+        return compareAndExchangeByte(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final byte compareAndExchangeByteRelease(Object o, long offset,
+                                                    byte expected,
+                                                    byte x) {
+        return compareAndExchangeByte(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetShort(Object o, long offset,
+                                                short expected,
+                                                short x) {
+        return compareAndSetShort(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetShortAcquire(Object o, long offset,
+                                                       short expected,
+                                                       short x) {
+        return weakCompareAndSetShort(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetShortRelease(Object o, long offset,
+                                                       short expected,
+                                                       short x) {
+        return weakCompareAndSetShort(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetShortPlain(Object o, long offset,
+                                                     short expected,
+                                                     short x) {
+        return weakCompareAndSetShort(o, offset, expected, x);
+    }
+
+
+    @ForceInline
+    public final short compareAndExchangeShortAcquire(Object o, long offset,
+                                                      short expected,
+                                                      short x) {
+        return compareAndExchangeShort(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final short compareAndExchangeShortRelease(Object o, long offset,
+                                                      short expected,
+                                                      short x) {
+        return compareAndExchangeShort(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final char compareAndExchangeCharAcquire(Object o, long offset,
+                                                    char expected,
+                                                    char x) {
+        return s2c(compareAndExchangeShortAcquire(o, offset, c2s(expected), c2s(x)));
+    }
+
+    @ForceInline
+    public final char compareAndExchangeCharRelease(Object o, long offset,
+                                                    char expected,
+                                                    char x) {
+        return s2c(compareAndExchangeShortRelease(o, offset, c2s(expected), c2s(x)));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetChar(Object o, long offset,
+                                               char expected,
+                                               char x) {
+        return weakCompareAndSetShort(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetCharAcquire(Object o, long offset,
+                                                      char expected,
+                                                      char x) {
+        return weakCompareAndSetShortAcquire(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetCharRelease(Object o, long offset,
+                                                      char expected,
+                                                      char x) {
+        return weakCompareAndSetShortRelease(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetCharPlain(Object o, long offset,
+                                                    char expected,
+                                                    char x) {
+        return weakCompareAndSetShortPlain(o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public final boolean compareAndExchangeBooleanAcquire(Object o, long offset,
+                                                          boolean expected,
+                                                          boolean x) {
+        return byte2bool(compareAndExchangeByteAcquire(o, offset, bool2byte(expected), bool2byte(x)));
+    }
+
+    @ForceInline
+    public final boolean compareAndExchangeBooleanRelease(Object o, long offset,
+                                                          boolean expected,
+                                                          boolean x) {
+        return byte2bool(compareAndExchangeByteRelease(o, offset, bool2byte(expected), bool2byte(x)));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetBoolean(Object o, long offset,
+                                                  boolean expected,
+                                                  boolean x) {
+        return weakCompareAndSetByte(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetBooleanAcquire(Object o, long offset,
+                                                         boolean expected,
+                                                         boolean x) {
+        return weakCompareAndSetByteAcquire(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetBooleanRelease(Object o, long offset,
+                                                         boolean expected,
+                                                         boolean x) {
+        return weakCompareAndSetByteRelease(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetBooleanPlain(Object o, long offset,
+                                                       boolean expected,
+                                                       boolean x) {
+        return weakCompareAndSetBytePlain(o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * @return {@code true} if successful
+     */
+    @ForceInline
+    public final float compareAndExchangeFloatAcquire(Object o, long offset,
+                                                      float expected,
+                                                      float x) {
+        int w = compareAndExchangeIntAcquire(o, offset,
+                Float.floatToRawIntBits(expected),
+                Float.floatToRawIntBits(x));
+        return Float.intBitsToFloat(w);
+    }
+
+    @ForceInline
+    public final float compareAndExchangeFloatRelease(Object o, long offset,
+                                                      float expected,
+                                                      float x) {
+        int w = compareAndExchangeIntRelease(o, offset,
+                Float.floatToRawIntBits(expected),
+                Float.floatToRawIntBits(x));
+        return Float.intBitsToFloat(w);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetFloatPlain(Object o, long offset,
+                                                     float expected,
+                                                     float x) {
+        return weakCompareAndSetIntPlain(o, offset,
+                Float.floatToRawIntBits(expected),
+                Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetFloatAcquire(Object o, long offset,
+                                                       float expected,
+                                                       float x) {
+        return weakCompareAndSetIntAcquire(o, offset,
+                Float.floatToRawIntBits(expected),
+                Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetFloatRelease(Object o, long offset,
+                                                       float expected,
+                                                       float x) {
+        return weakCompareAndSetIntRelease(o, offset,
+                Float.floatToRawIntBits(expected),
+                Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetFloat(Object o, long offset,
+                                                float expected,
+                                                float x) {
+        return weakCompareAndSetInt(o, offset,
+                Float.floatToRawIntBits(expected),
+                Float.floatToRawIntBits(x));
+    }
+
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * @return {@code true} if successful
+     */
+    @ForceInline
+    public final double compareAndExchangeDoubleAcquire(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        long w = compareAndExchangeLongAcquire(o, offset,
+                Double.doubleToRawLongBits(expected),
+                Double.doubleToRawLongBits(x));
+        return Double.longBitsToDouble(w);
+    }
+
+    @ForceInline
+    public final double compareAndExchangeDoubleRelease(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        long w = compareAndExchangeLongRelease(o, offset,
+                Double.doubleToRawLongBits(expected),
+                Double.doubleToRawLongBits(x));
+        return Double.longBitsToDouble(w);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetDoublePlain(Object o, long offset,
+                                                      double expected,
+                                                      double x) {
+        return weakCompareAndSetLongPlain(o, offset,
+                Double.doubleToRawLongBits(expected),
+                Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetDoubleAcquire(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        return weakCompareAndSetLongAcquire(o, offset,
+                Double.doubleToRawLongBits(expected),
+                Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetDoubleRelease(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        return weakCompareAndSetLongRelease(o, offset,
+                Double.doubleToRawLongBits(expected),
+                Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetDouble(Object o, long offset,
+                                                 double expected,
+                                                 double x) {
+        return weakCompareAndSetLong(o, offset,
+                Double.doubleToRawLongBits(expected),
+                Double.doubleToRawLongBits(x));
+    }
+
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>This operation has memory semantics of a {@code volatile} read
+     * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * @return {@code true} if successful
+     */
+    @ForceInline
+    public final long compareAndExchangeLongAcquire(Object o, long offset,
+                                                    long expected,
+                                                    long x) {
+        return compareAndExchangeLong(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final long compareAndExchangeLongRelease(Object o, long offset,
+                                                    long expected,
+                                                    long x) {
+        return compareAndExchangeLong(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetLongPlain(Object o, long offset,
+                                                    long expected,
+                                                    long x) {
+        return compareAndSetLong(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetLongAcquire(Object o, long offset,
+                                                      long expected,
+                                                      long x) {
+        return compareAndSetLong(o, offset, expected, x);
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetLongRelease(Object o, long offset,
+                                                      long expected,
+                                                      long x) {
+        return compareAndSetLong(o, offset, expected, x);
+    }
+
+    /** Acquire version of {@link #getReferenceVolatile(Object, long)} */
+    @ForceInline
+    public final Object getReferenceAcquire(Object o, long offset) {
+        return getReferenceVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getBooleanVolatile(Object, long)} */
+    @ForceInline
+    public final boolean getBooleanAcquire(Object o, long offset) {
+        return getBooleanVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getByteVolatile(Object, long)} */
+    @ForceInline
+    public final byte getByteAcquire(Object o, long offset) {
+        return getByteVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getShortVolatile(Object, long)} */
+    @ForceInline
+    public final short getShortAcquire(Object o, long offset) {
+        return getShortVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getCharVolatile(Object, long)} */
+    @ForceInline
+    public final char getCharAcquire(Object o, long offset) {
+        return getCharVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getIntVolatile(Object, long)} */
+    @ForceInline
+    public final int getIntAcquire(Object o, long offset) {
+        return getIntVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getFloatVolatile(Object, long)} */
+    @ForceInline
+    public final float getFloatAcquire(Object o, long offset) {
+        return getFloatVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getLongVolatile(Object, long)} */
+    @ForceInline
+    public final long getLongAcquire(Object o, long offset) {
+        return getLongVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getDoubleVolatile(Object, long)} */
+    @ForceInline
+    public final double getDoubleAcquire(Object o, long offset) {
+        return getDoubleVolatile(o, offset);
+    }
+
+    /*
+     * Versions of {@link #putReferenceVolatile(Object, long, Object)}
+     * that do not guarantee immediate visibility of the store to
+     * other threads. This method is generally only useful if the
+     * underlying field is a Java volatile (or if an array cell, one
+     * that is otherwise only accessed using volatile accesses).
+     *
+     * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
+     */
+
+    /** Release version of {@link #putReferenceVolatile(Object, long, Object)} */
+    @ForceInline
+    public final void putReferenceRelease(Object o, long offset, Object x) {
+        putReferenceMO(MO_RELEASE, o, offset, x);
+    }
+
+    /** Release version of {@link #putBooleanVolatile(Object, long, boolean)} */
+    @ForceInline
+    public final void putBooleanRelease(Object o, long offset, boolean x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_BOOLEAN, o, offset, bool2byte(x));
+    }
+
+    /** Release version of {@link #putByteVolatile(Object, long, byte)} */
+    @ForceInline
+    public final void putByteRelease(Object o, long offset, byte x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_BYTE, o, offset, x);
+    }
+
+    /** Release version of {@link #putShortVolatile(Object, long, short)} */
+    @ForceInline
+    public final void putShortRelease(Object o, long offset, short x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_SHORT, o, offset, x);
+    }
+
+    /** Release version of {@link #putCharVolatile(Object, long, char)} */
+    @ForceInline
+    public final void putCharRelease(Object o, long offset, char x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_CHAR, o, offset, x);
+    }
+
+    /** Release version of {@link #putIntVolatile(Object, long, int)} */
+    @ForceInline
+    public final void putIntRelease(Object o, long offset, int x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_INT, o, offset, x);
+    }
+
+    /** Release version of {@link #putFloatVolatile(Object, long, float)} */
+    @ForceInline
+    public final void putFloatRelease(Object o, long offset, float x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_FLOAT, o, offset, floatToBits(x));
+    }
+
+    /** Release version of {@link #putLongVolatile(Object, long, long)} */
+    @ForceInline
+    public final void putLongRelease(Object o, long offset, long x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_LONG, o, offset, x);
+    }
+
+    /** Release version of {@link #putDoubleVolatile(Object, long, double)} */
+    @ForceInline
+    public final void putDoubleRelease(Object o, long offset, double x) {
+        putPrimitiveBitsMO(MO_RELEASE, BT_DOUBLE, o, offset, doubleToBits(x));
+    }
+
+    // ------------------------------ Opaque --------------------------------------
+
+    /** Opaque version of {@link #getReferenceVolatile(Object, long)} */
+    @ForceInline
+    public final Object getReferenceOpaque(Object o, long offset) {
+        return getReferenceMO(MO_OPAQUE, o, offset);
+    }
+
+    /** Opaque version of {@link #getBooleanVolatile(Object, long)} */
+    @ForceInline
+    public final boolean getBooleanOpaque(Object o, long offset) {
+        return byte2bool((byte) getPrimitiveBitsMO(MO_OPAQUE, BT_BOOLEAN, o, offset));
+    }
+
+    /** Opaque version of {@link #getByteVolatile(Object, long)} */
+    @ForceInline
+    public final byte getByteOpaque(Object o, long offset) {
+        return (byte) getPrimitiveBitsMO(MO_OPAQUE, BT_BYTE, o, offset);
+    }
+
+    /** Opaque version of {@link #getShortVolatile(Object, long)} */
+    @ForceInline
+    public final short getShortOpaque(Object o, long offset) {
+        return (short) getPrimitiveBitsMO(MO_OPAQUE, BT_SHORT, o, offset);
+    }
+
+    /** Opaque version of {@link #getCharVolatile(Object, long)} */
+    @ForceInline
+    public final char getCharOpaque(Object o, long offset) {
+        return (char) getPrimitiveBitsMO(MO_OPAQUE, BT_CHAR, o, offset);
+    }
+
+    /** Opaque version of {@link #getIntVolatile(Object, long)} */
+    @ForceInline
+    public final int getIntOpaque(Object o, long offset) {
+        return (int) getPrimitiveBitsMO(MO_OPAQUE, BT_INT, o, offset);
+    }
+
+    /** Opaque version of {@link #getFloatVolatile(Object, long)} */
+    @ForceInline
+    public final float getFloatOpaque(Object o, long offset) {
+        return bitsToFloat(getPrimitiveBitsMO(MO_OPAQUE, BT_FLOAT, o, offset));
+    }
+
+    /** Opaque version of {@link #getLongVolatile(Object, long)} */
+    @ForceInline
+    public final long getLongOpaque(Object o, long offset) {
+        return getPrimitiveBitsMO(MO_OPAQUE, BT_LONG, o, offset);
+    }
+
+    /** Opaque version of {@link #getDoubleVolatile(Object, long)} */
+    @ForceInline
+    public final double getDoubleOpaque(Object o, long offset) {
+        return bitsToDouble(getPrimitiveBitsMO(MO_OPAQUE, BT_DOUBLE, o, offset));
+    }
+
+    /** Opaque version of {@link #putReferenceVolatile(Object, long, Object)} */
+    @ForceInline
+    public final void putReferenceOpaque(Object o, long offset, Object x) {
+        putReferenceMO(MO_OPAQUE, o, offset, x);
+    }
+
+    /** Opaque version of {@link #putBooleanVolatile(Object, long, boolean)} */
+    @ForceInline
+    public final void putBooleanOpaque(Object o, long offset, boolean x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_BOOLEAN, o, offset, bool2byte(x));
+    }
+
+    /** Opaque version of {@link #putByteVolatile(Object, long, byte)} */
+    @ForceInline
+    public final void putByteOpaque(Object o, long offset, byte x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_BYTE, o, offset, x);
+    }
+
+    /** Opaque version of {@link #putShortVolatile(Object, long, short)} */
+    @ForceInline
+    public final void putShortOpaque(Object o, long offset, short x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_SHORT, o, offset, x);
+    }
+
+    /** Opaque version of {@link #putCharVolatile(Object, long, char)} */
+    @ForceInline
+    public final void putCharOpaque(Object o, long offset, char x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_CHAR, o, offset, x);
+    }
+
+    /** Opaque version of {@link #putIntVolatile(Object, long, int)} */
+    @ForceInline
+    public final void putIntOpaque(Object o, long offset, int x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_INT, o, offset, x);
+    }
+
+    /** Opaque version of {@link #putFloatVolatile(Object, long, float)} */
+    @ForceInline
+    public final void putFloatOpaque(Object o, long offset, float x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_FLOAT, o, offset, floatToBits(x));
+    }
+
+    /** Opaque version of {@link #putLongVolatile(Object, long, long)} */
+    @ForceInline
+    public final void putLongOpaque(Object o, long offset, long x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_LONG, o, offset, x);
+    }
+
+    /** Opaque version of {@link #putDoubleVolatile(Object, long, double)} */
+    @ForceInline
+    public final void putDoubleOpaque(Object o, long offset, double x) {
+        putPrimitiveBitsMO(MO_OPAQUE, BT_DOUBLE, o, offset, doubleToBits(x));
+    }
+
+    // The following contain CAS-based Java implementations used on
+    // platforms not supporting native instructions
+
+    /**
+     * Atomically adds the given value to the current value of a field
+     * or array element within the given object {@code o}
+     * at the given {@code offset}.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param delta the value to add
+     * @return the previous value
+     * @since 1.8
+     */
+    @ForceInline
+    public final int getAndAddIntRelease(Object o, long offset, int delta) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_INT, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final int getAndAddIntAcquire(Object o, long offset, int delta) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_INT, OP_ADD, o, offset, delta);
+    }
+
+    /**
+     * Atomically adds the given value to the current value of a field
+     * or array element within the given object {@code o}
+     * at the given {@code offset}.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param delta the value to add
+     * @return the previous value
+     * @since 1.8
+     */
+    @ForceInline
+    public final long getAndAddLongRelease(Object o, long offset, long delta) {
+        return getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_LONG, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final long getAndAddLongAcquire(Object o, long offset, long delta) {
+        return getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_LONG, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final byte getAndAddByteRelease(Object o, long offset, byte delta) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final byte getAndAddByteAcquire(Object o, long offset, byte delta) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final short getAndAddShortRelease(Object o, long offset, short delta) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final short getAndAddShortAcquire(Object o, long offset, short delta) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final char getAndAddCharRelease(Object o, long offset, char delta) {
+        return (char) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final char getAndAddCharAcquire(Object o, long offset, char delta) {
+        return (char) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_ADD, o, offset, delta);
+    }
+
+    @ForceInline
+    public final float getAndAddFloatRelease(Object o, long offset, float delta) {
+        return getAndAddFloatMO(MO_RELEASE, o, offset, delta);
+    }
+
+    @ForceInline
+    public final float getAndAddFloatAcquire(Object o, long offset, float delta) {
+        return getAndAddFloatMO(MO_ACQUIRE, o, offset, delta);
+    }
+
+    @ForceInline
+    public final double getAndAddDoubleRelease(Object o, long offset, double delta) {
+        return getAndAddDoubleMO(MO_RELEASE, o, offset, delta);
+    }
+
+    @ForceInline
+    public final double getAndAddDoubleAcquire(Object o, long offset, double delta) {
+        return getAndAddDoubleMO(MO_ACQUIRE, o, offset, delta);
+    }
+
+    /**
+     * Atomically exchanges the given value with the current value of
+     * a field or array element within the given object {@code o}
+     * at the given {@code offset}.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    @ForceInline
+    public final int getAndSetIntRelease(Object o, long offset, int newValue) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_INT, OP_SWAP, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final int getAndSetIntAcquire(Object o, long offset, int newValue) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_INT, OP_SWAP, o, offset, newValue);
+    }
+
+    /**
+     * Atomically exchanges the given value with the current value of
+     * a field or array element within the given object {@code o}
+     * at the given {@code offset}.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    @ForceInline
+    public final long getAndSetLongRelease(Object o, long offset, long newValue) {
+        return getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_LONG, OP_SWAP, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final long getAndSetLongAcquire(Object o, long offset, long newValue) {
+        return getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_LONG, OP_SWAP, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final Object getAndSetReferenceRelease(Object o, long offset, Object newValue) {
+        return getAndSetReferenceMO(MO_RELEASE, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final Object getAndSetReferenceAcquire(Object o, long offset, Object newValue) {
+        return getAndSetReferenceMO(MO_ACQUIRE, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final byte getAndSetByteRelease(Object o, long offset, byte newValue) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_SWAP, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final byte getAndSetByteAcquire(Object o, long offset, byte newValue) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_SWAP, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final boolean getAndSetBooleanRelease(Object o, long offset, boolean newValue) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_SWAP, o, offset, bool2byte(newValue)));
+    }
+
+    @ForceInline
+    public final boolean getAndSetBooleanAcquire(Object o, long offset, boolean newValue) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_SWAP, o, offset, bool2byte(newValue)));
+    }
+
+    @ForceInline
+    public final short getAndSetShortRelease(Object o, long offset, short newValue) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_SWAP, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final short getAndSetShortAcquire(Object o, long offset, short newValue) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_SWAP, o, offset, newValue);
+    }
+
+    @ForceInline
+    public final char getAndSetCharRelease(Object o, long offset, char newValue) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_SWAP,
+                                                        o, offset, c2s(newValue)));
+    }
+
+    @ForceInline
+    public final char getAndSetCharAcquire(Object o, long offset, char newValue) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_SWAP,
+                                                        o, offset, c2s(newValue)));
+    }
+
+    @ForceInline
+    public final float getAndSetFloatRelease(Object o, long offset, float newValue) {
+        int v = getAndSetIntMO(MO_RELEASE, o, offset, Float.floatToRawIntBits(newValue));
+        return Float.intBitsToFloat(v);
+    }
+
+    @ForceInline
+    public final float getAndSetFloatAcquire(Object o, long offset, float newValue) {
+        int v = getAndSetIntMO(MO_ACQUIRE, o, offset, Float.floatToRawIntBits(newValue));
+        return Float.intBitsToFloat(v);
+    }
+
+    @ForceInline
+    public final double getAndSetDoubleRelease(Object o, long offset, double newValue) {
+        return bitsToDouble(getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_LONG, OP_SWAP, o, offset, doubleToBits(newValue)));
+    }
+
+    @ForceInline
+    public final double getAndSetDoubleAcquire(Object o, long offset, double newValue) {
+        return bitsToDouble(getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_LONG, OP_SWAP, o, offset, doubleToBits(newValue)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseOrBooleanRelease(Object o, long offset, boolean mask) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_BITOR, o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseOrBooleanAcquire(Object o, long offset, boolean mask) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_BITOR, o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseAndBooleanRelease(Object o, long offset, boolean mask) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_BITAND, o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseAndBooleanAcquire(Object o, long offset, boolean mask) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_BITAND, o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseXorBooleanRelease(Object o, long offset, boolean mask) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_BITXOR, o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final boolean getAndBitwiseXorBooleanAcquire(Object o, long offset, boolean mask) {
+        return byte2bool((byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_BITXOR, o, offset, bool2byte(mask)));
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseOrByteRelease(Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseOrByteAcquire(Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseAndByteRelease(Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseAndByteAcquire(Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseXorByteRelease(Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_BYTE, OP_BITXOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final byte getAndBitwiseXorByteAcquire(Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_BYTE, OP_BITXOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final char getAndBitwiseOrCharRelease(Object o, long offset, char mask) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_BITOR, o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseOrCharAcquire(Object o, long offset, char mask) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_BITOR, o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseAndCharRelease(Object o, long offset, char mask) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_BITAND, o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseAndCharAcquire(Object o, long offset, char mask) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_BITAND, o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseXorCharRelease(Object o, long offset, char mask) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_BITXOR, o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final char getAndBitwiseXorCharAcquire(Object o, long offset, char mask) {
+        return s2c((short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_BITXOR, o, offset, c2s(mask)));
+    }
+
+    @ForceInline
+    public final short getAndBitwiseOrShortRelease(Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final short getAndBitwiseOrShortAcquire(Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final short getAndBitwiseAndShortRelease(Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final short getAndBitwiseAndShortAcquire(Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final short getAndBitwiseXorShortRelease(Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_SHORT, OP_BITXOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final short getAndBitwiseXorShortAcquire(Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_SHORT, OP_BITXOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final int getAndBitwiseOrIntRelease(Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_INT, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final int getAndBitwiseOrIntAcquire(Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_INT, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final int getAndBitwiseAndIntRelease(Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_INT, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final int getAndBitwiseAndIntAcquire(Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_INT, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final int getAndBitwiseXorIntRelease(Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_INT, OP_BITXOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final int getAndBitwiseXorIntAcquire(Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_INT, OP_BITXOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final long getAndBitwiseOrLongRelease(Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_LONG, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final long getAndBitwiseOrLongAcquire(Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_LONG, OP_BITOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final long getAndBitwiseAndLongRelease(Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_LONG, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final long getAndBitwiseAndLongAcquire(Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_LONG, OP_BITAND, o, offset, mask);
+    }
+
+    @ForceInline
+    public final long getAndBitwiseXorLongRelease(Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(MO_RELEASE, BT_LONG, OP_BITXOR, o, offset, mask);
+    }
+
+    @ForceInline
+    public final long getAndBitwiseXorLongAcquire(Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(MO_ACQUIRE, BT_LONG, OP_BITXOR, o, offset, mask);
+    }
+
+
+    /**
      * Ensures that loads before the fence will not be reordered with loads and
      * stores after the fence; a "LoadLoad plus LoadStore barrier".
      *
