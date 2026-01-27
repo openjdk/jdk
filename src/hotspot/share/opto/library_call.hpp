@@ -158,7 +158,7 @@ class LibraryCallKit : public GraphKit {
   Node* generate_fair_guard(Node* test, RegionNode* region);
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
-                                Node* *pos_index = nullptr,
+                                Node** pos_index = nullptr,
                                 bool is_opaque = false);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
