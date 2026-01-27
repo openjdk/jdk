@@ -181,7 +181,7 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
                                                  bool tosca_live,
                                                  bool expand_call) {
   assert(ShenandoahSATBBarrier, "Should be checked by caller");
-                                                           
+
   // If expand_call is true then we expand the call_VM_leaf macro
   // directly to skip generating the check by
   // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
@@ -565,7 +565,7 @@ void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register 
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
               Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
 
-  // 1: non-reference type, no barrier is needed              
+  // 1: non-reference types require no barriers
   if (!is_reference_type(type)) {
     BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
     return;
@@ -573,7 +573,6 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
 
   // Flatten object address right away for simplicity: likely needed by barriers
   assert_different_registers(val, tmp1, tmp2, tmp3, r15_thread);
-
   if (dst.index() == noreg && dst.disp() == 0) {
     if (dst.base() != tmp1) {
       __ movptr(tmp1, dst.base());

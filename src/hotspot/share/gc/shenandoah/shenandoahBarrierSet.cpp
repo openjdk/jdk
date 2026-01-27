@@ -78,7 +78,6 @@ bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahSATBBarrier) return false;
   if (!is_reference_type(type)) return false;
-
   bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
@@ -88,8 +87,9 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, Basi
 bool ShenandoahBarrierSet::need_satb_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahSATBBarrier) return false;
   if (!is_reference_type(type)) return false;
-  bool dest_initialized = (decorators & IS_DEST_UNINITIALIZED) == 0;
-  return dest_initialized;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+  return as_normal && !dest_uninitialized;
 }
 
 bool ShenandoahBarrierSet::need_card_barrier(DecoratorSet decorators, BasicType type) {
