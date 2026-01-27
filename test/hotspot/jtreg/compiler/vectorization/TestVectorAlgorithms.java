@@ -272,7 +272,8 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.ADD_VI,       "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeature = {"sse4.1", "true"})
+    // Note: also works with NEON/asimd, but only with TieredCompilation.
     public Object iotaI_VectorAPI(int[] r) {
         return VectorAlgorithmsImpl.iotaI_VectorAPI(r);
     }
