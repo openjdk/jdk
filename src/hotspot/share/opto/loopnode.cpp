@@ -44,6 +44,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/vectorization.hpp"
@@ -4659,6 +4660,14 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
   return 0;
 }
 
+void IdealLoopTree::register_reachability_fence(ReachabilityFenceNode* rf) {
+  if (_reachability_fences == nullptr) {
+    _reachability_fences = new Node_List();
+  }
+  assert(!_reachability_fences->contains(rf), "already registered");
+  _reachability_fences->push(rf);
+}
+
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
@@ -6113,10 +6122,7 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
         innermost->_safepts->push(n);
       } else if (n->is_ReachabilityFence()) {
-        if (innermost->_reachability_fences == nullptr) {
-          innermost->_reachability_fences = new Node_List();
-        }
-        innermost->_reachability_fences->push(n);
+        innermost->register_reachability_fence(n->as_ReachabilityFence());
       }
     }
   }

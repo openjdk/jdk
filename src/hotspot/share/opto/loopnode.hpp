@@ -850,6 +850,9 @@ public:
     return _head->as_Loop()->is_strip_mined() ? _parent : this;
   }
 
+  // Registers a reachability fence node in the loop.
+  void register_reachability_fence(ReachabilityFenceNode* rf);
+
 #ifndef PRODUCT
   void dump_head();       // Dump loop head only
   void dump();            // Dump this loop recursively

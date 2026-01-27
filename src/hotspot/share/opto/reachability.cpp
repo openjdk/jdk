@@ -69,8 +69,14 @@
  * all interfering safepoints contain the referent in their oop map. (If an interfering safepoint doesn't
  * keep the referent alive, then it becomes possible for the referent to be prematurely GCed.)
  *
- * After loop opts are over, it becomes possible to reliably enumerate all interfering safe points and
- * to ensure that the referent is present in their oop maps.
+ * compiler/c2/TestReachabilityFence.java demonstrates a situation where a load is hoisted out of a loop thus
+ * extending the live range of the value it produces beyond the safepoint on loop-back edge.
+ *
+ * After loop opts are over, it becomes possible to reliably enumerate all interfering safepoints and
+ * to ensure that the referent is present in their oop maps. Current assumption is that after loop opts the IR graph
+ * is stable enough, so relative order of memory operations and safepoints is preserved and only safepoints between
+ * a referent and it's uses are taken into account. A more conservative analysis can be employed -- any safepoint dominated
+ * by a referent is treated as interfering with it -- if it turns out that the assumption doesn't hold.
  *
  * (b) RF nodes may interfere with Register Allocator (RA). If a safepoint is pruned during macro expansion,
  * it can make some RF nodes redundant, but we don't have information about their relations anymore to detect that.
@@ -156,14 +162,11 @@ void PhaseIdealLoop::insert_rf(Node* ctrl, Node* referent) {
   IdealLoopTree* lpt = get_loop(ctrl);
   Node* ctrl_end = ctrl->unique_ctrl_out();
 
-  Node* new_rf = new ReachabilityFenceNode(C, ctrl, referent);
+  auto new_rf = new ReachabilityFenceNode(C, ctrl, referent);
 
   register_control(new_rf, lpt, ctrl);
   set_idom(new_rf, ctrl, dom_depth(ctrl) + 1);
-  if (lpt->_reachability_fences == nullptr) {
-    lpt->_reachability_fences = new Node_List();
-  }
-  lpt->_reachability_fences->push(new_rf);
+  lpt->register_reachability_fence(new_rf);
 
   igvn().rehash_node_delayed(ctrl_end);
   ctrl_end->replace_edge(ctrl, new_rf);
@@ -220,7 +223,7 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
     // Move RFs out of counted loops when possible.
     IdealLoopTree* lpt = get_loop(rf);
     Node* referent = rf->referent();
-    Node* loop_exit = lpt->unique_loop_exit_or_null();
+    IfFalseNode* loop_exit = lpt->unique_loop_exit_or_null();
     if (lpt->is_invariant(referent) && loop_exit != nullptr) {
       // Switch to the outermost loop.
       for (IdealLoopTree* outer_loop = lpt->_parent;
@@ -436,6 +439,12 @@ static Node* sfpt_ctrl_out(SafePointNode* sfpt) {
 
 // Phase 3: expand reachability fences from safepoint info.
 // Turn extra safepoint edges into reachability fences immediately following the safepoint.
+//
+// NB! As of now, a special care is needed to properly enumerage reachability edges because
+// there are other use cases for non-debug safepoint edges. expand_reachability_fences() runs
+// after macro expansion where runtime calls during array allocation are annotated with
+// valid_length_test_input as an extra edges. Until there's a mechanism to distinguish between
+// different types of non-debug edges, unrelated cases are filtered out explicitly and in ad-hoc manner.
 void Compile::expand_reachability_fences(Unique_Node_List& safepoints) {
   for (uint i = 0; i < safepoints.size(); i++) {
     SafePointNode* sfpt = safepoints.at(i)->as_SafePoint();
