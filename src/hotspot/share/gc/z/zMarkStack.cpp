@@ -220,7 +220,7 @@ bool ZMarkStripeSet::try_set_nstripes(size_t old_nstripes, size_t new_nstripes) 
 
   // Mutators may read these values concurrently. It doesn't matter
   // if they see the old or new values.
-  if (_nstripes_mask.compare_exchange(old_nstripes_mask, new_nstripes_mask) == old_nstripes_mask) {
+  if (_nstripes_mask.compare_set(old_nstripes_mask, new_nstripes_mask)) {
     log_debug(gc, marking)("Using %zu mark stripes", new_nstripes);
     return true;
   }
