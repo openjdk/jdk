@@ -234,18 +234,6 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return messages.getLocalizedString(l, "compiler.misc.tree.tag." +
                                                   StringUtils.toLowerCase(tag.name()));
         }
-        else if (arg instanceof BindingPattern bp) {
-            return formatArgument(d, bp.type(), l) + " _";
-        }
-        else if (arg instanceof RecordPattern rp) {
-            return formatArgument(d, rp.type(), l) +
-                   Arrays.stream(rp.nested())
-                         .map(pd -> formatArgument(d, pd, l))
-                         .collect(Collectors.joining(", ", "(", ")"));
-        }
-        else if (arg instanceof EnumConstantPattern ep) {
-            return formatArgument(d, ep.type(), l) + "." + ep.enumConstant();
-        }
         else {
             return String.valueOf(arg);
         }

@@ -50,10 +50,15 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.BindingPattern;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.EnumConstantPattern;
 import com.sun.tools.javac.comp.ExhaustivenessComputer.ExhaustivenessResult;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.PatternDescription;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.RecordPattern;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import java.util.Arrays;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -768,12 +773,29 @@ public class Flow {
             List<JCDiagnostic> details =
                     exhaustivenessResult.notExhaustiveDetails()
                                        .stream()
-                                       .sorted((pd1, pd2) -> pd1.toString().compareTo(pd2.toString()))
-                                       .map(detail -> diags.fragment(Fragments.NotExhaustiveDetail(detail)))
+                                       .map(this::patternToDiagnostic)
+                                       .sorted((d1, d2) -> d1.toString()
+                                                             .compareTo(d2.toString()))
                                        .collect(List.collector());
             JCDiagnostic main = diags.error(null, log.currentSource(), pos, errorKey);
             JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, details);
             log.report(d);
+        }
+
+        private JCDiagnostic patternToDiagnostic(PatternDescription desc) {
+            Type patternType = types.erasure(desc.type());
+            return diags.fragment(switch (desc) {
+                case BindingPattern _ ->
+                    Fragments.BindingPattern(patternType);
+                case RecordPattern rp ->
+                    Fragments.RecordPattern(patternType,
+                                            Arrays.stream(rp.nested())
+                                                  .map(this::patternToDiagnostic)
+                                                  .toList());
+                case EnumConstantPattern ep ->
+                    Fragments.EnumConstantPattern(patternType,
+                                                  ep.enumConstant());
+            });
         }
 
         public void visitTry(JCTry tree) {

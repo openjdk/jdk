@@ -206,8 +206,8 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "lib.R(lib.A _, lib.A _)",
-               "lib.R(lib.B _, lib.B _)");
+               "lib.R(lib.A _,lib.A _)",
+               "lib.R(lib.B _,lib.B _)");
     }
 
     @Test
@@ -230,8 +230,8 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Root(Base b1, Base b2, Base b3) {}
                }
                """,
-               "test.Test.Root(test.Test.R2 _, test.Test.Base _, test.Test.Base _)",
-               "test.Test.Root(test.Test.R3 _, test.Test.Base _, test.Test.Base _)");
+               "test.Test.Root(test.Test.R2 _,test.Test.Base _,test.Test.Base _)",
+               "test.Test.Root(test.Test.R3 _,test.Test.Base _,test.Test.Base _)");
     }
 
     @Test
@@ -271,7 +271,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Root(Base b1, Base b2, Base b3) {}
                }
                """,
-               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.R2 _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.R2 _))");
+               "test.Test.Root(test.Test.R2 _,test.Test.R2(test.Test.R2 _,test.Test.R2 _),test.Test.R2(test.Test.R2 _,test.Test.R2 _))");
     }
 
     @Test
@@ -308,7 +308,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record NestedBaseC() implements NestedBase {}
                }
                """,
-               "test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _), test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _))");
+               "test.Test.Triple(test.Test.A _,test.Test.C(test.Test.Nested _,test.Test.NestedBaseC _),test.Test.C(test.Test.Nested _,test.Test.NestedBaseC _))");
     }
 
     @Test
@@ -348,10 +348,10 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record Root(Base b1, Base b2, Base b3) {}
                }
                """,
-               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.Base _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.Base _))");
-               //ideally, the result would be as follow, but it is difficult to split Base on two distinct places:
-//               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.R1 _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.R1 _))",
-//               "test.Test.Root(test.Test.R2 _, test.Test.R2(test.Test.R2 _, test.Test.R2 _), test.Test.R2(test.Test.R2 _, test.Test.R2 _))");
+               "test.Test.Root(test.Test.R2 _,test.Test.R2(test.Test.Base _,test.Test.R2 _),test.Test.R2(test.Test.R2 _,test.Test.Base _))");
+               //ideally,the result would be as follow,but it is difficult to split Base on two distinct places:
+//               "test.Test.Root(test.Test.R2 _,test.Test.R2(test.Test.R1 _,test.Test.R2 _),test.Test.R2(test.Test.R2 _,test.Test.R1 _))",
+//               "test.Test.Root(test.Test.R2 _,test.Test.R2(test.Test.R2 _,test.Test.R2 _),test.Test.R2(test.Test.R2 _,test.Test.R2 _))");
     }
 
     @Test
@@ -388,10 +388,10 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    record NestedBaseC() implements NestedBase {}
                }
                """,
-               "test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseA _), test.Test.C _)",
+               "test.Test.Triple(test.Test.A _,test.Test.C(test.Test.Nested _,test.Test.NestedBaseA _),test.Test.C _)",
                //the following could be:
-               //test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _), test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _))
-               "test.Test.Triple(test.Test.A _, test.Test.C(test.Test.Nested _, test.Test.NestedBaseC _), test.Test.C _)");
+               //test.Test.Triple(test.Test.A _,test.Test.C(test.Test.Nested _,test.Test.NestedBaseC _),test.Test.C(test.Test.Nested _,test.Test.NestedBaseC _))
+               "test.Test.Triple(test.Test.A _,test.Test.C(test.Test.Nested _,test.Test.NestedBaseC _),test.Test.C _)");
     }
 
     @Test
@@ -410,7 +410,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                }
                public record R(R r1, R r2, R r3, Object o) {}
                """,
-               "test.R(test.R _, test.R _, test.R(test.R _, test.R _, test.R _, java.lang.Object _), java.lang.Object _)");
+               "test.R(test.R _,test.R _,test.R(test.R _,test.R _,test.R _,java.lang.Object _),java.lang.Object _)");
     }
 
     @Test
@@ -527,7 +527,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "Test.Pair(Test.Pair(Test.Pair _, Test.Base _), Test.Pair(Test.Pair(Test.Pair _, Test.Base _), Test.Base _))");
+               "Test.Pair(Test.Pair(Test.Pair _,Test.Base _),Test.Pair(Test.Pair(Test.Pair _,Test.Base _),Test.Base _))");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
@@ -576,7 +576,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                     if (d instanceof JCDiagnostic.MultilineDiagnostic diag) {
                         diag.getSubdiagnostics()
                                 .stream()
-                                .map(fragment -> fragment.getArgs()[0].toString())
+                                .map(fragment -> fragment.toString())
                                 .forEach(missingPatterns::add);
                     }
                 }

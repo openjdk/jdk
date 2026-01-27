@@ -212,7 +212,6 @@ public class RichDiagnosticFormatter extends
      * @param arg the argument to be translated
      */
     protected void preprocessArgument(Object arg) {
-        //TODO: preprocess for patterns
         if (arg instanceof Type type) {
             preprocessType(type);
         }
@@ -229,17 +228,6 @@ public class RichDiagnosticFormatter extends
             for (Object o : iterable) {
                 preprocessArgument(o);
             }
-        }
-        else if (arg instanceof BindingPattern bp) {
-            preprocessArgument(bp.type());
-        }
-        else if (arg instanceof RecordPattern rp) {
-            preprocessArgument(rp.type());
-            Arrays.stream(rp.nested())
-                  .forEach(this::preprocessArgument);
-        }
-        else if (arg instanceof EnumConstantPattern ep) {
-            preprocessArgument(ep.type());
         }
     }
 
