@@ -21,14 +21,17 @@
  * questions.
  */
 
-// key: compiler.err.not.exhaustive.statement.details
-// key: compiler.misc.not.exhaustive.detail
-// options: -XDexhaustivityTimeout=-1
+// key: compiler.err.not.exhaustive.details
+// key: compiler.misc.enum.constant.pattern
 
 class NotExhaustiveDetails {
-    void t(Object o) {
-        switch (o) {
-            case String s -> System.err.println("String of length: " + s.length());
+    int t(I i) {
+        return switch (i) {
+            case R r -> -1;
+            case E.A -> -1;
         };
     }
+    sealed interface I {}
+    enum E implements I {A, B}
+    record R(E e) implements I {}
 }

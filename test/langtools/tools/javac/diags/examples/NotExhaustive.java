@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.not.exhaustive
-// options: -XDexhaustivityTimeout=0
+// options: -XDexhaustivityMaxBaseChecks=0
 
 class NotExhaustive {
     int t(int i) {

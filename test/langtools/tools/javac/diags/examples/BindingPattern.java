@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  */
 
 // key: compiler.err.not.exhaustive.details
-// key: compiler.misc.not.exhaustive.detail
-// options: -XDexhaustivityTimeout=-1
+// key: compiler.misc.binding.pattern
 
-class NotExhaustiveDetails {
-    int t(int i) {
-        return switch (i) {
-            case 0 -> -1;
+class BindingPattern {
+    int t(Object o) {
+        return switch (o) {
+            case String s -> 0;
         };
     }
 }
