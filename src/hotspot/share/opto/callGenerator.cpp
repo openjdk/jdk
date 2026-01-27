@@ -507,8 +507,8 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
 
   // Implicit receiver null checks introduce problems when exception states are combined.
   Node* receiver = jvms->map()->argument(jvms, 0);
-  const Type* recv_type = C->initial_gvn()->type(receiver);
-  if (recv_type->maybe_null()) {
+  const TypeOopPtr* recv_type = C->initial_gvn()->type(receiver)->isa_oopptr();
+  if (recv_type == nullptr || recv_type->maybe_null()) {
     C->inline_printer()->record(method(), call_node()->jvms(), InliningResult::FAILURE,
                                 "late call devirtualization failed (receiver may be null)");
     return false;
@@ -527,7 +527,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
                                         jvms,
                                         allow_inline,
                                         _prof_factor,
-                                        nullptr /*receiver_type*/,
+                                        recv_type /*receiver_type*/,
                                         nullptr /*speculative_receiver_type*/,
                                         true /*allow_intrinsics*/);
 
