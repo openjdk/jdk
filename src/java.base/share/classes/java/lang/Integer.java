@@ -492,11 +492,7 @@ public final class Integer extends Number
         if (s == null) {
             throw NumberFormatException.nullInput();
         }
-        int len;
-        if ((len = s.length()) == 0) {
-            throw NumberFormatException.forInputString(s);
-        }
-        return parseInt(s, 0, len, radix);
+        return parseInt(s, 0, s.length(), radix);
     }
 
     static boolean isDigitLatin1(int ch) {

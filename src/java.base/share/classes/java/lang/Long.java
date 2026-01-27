@@ -525,11 +525,7 @@ public final class Long extends Number
         if (s == null) {
             throw NumberFormatException.nullInput();
         }
-        int len;
-        if ((len = s.length()) == 0) {
-            throw NumberFormatException.forInputString(s);
-        }
-        return parseLong(s, 0, len, radix);
+        return parseLong(s, 0, s.length(), radix);
     }
 
     /**

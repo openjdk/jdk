@@ -56,7 +56,9 @@ public class NumberFormatException extends IllegalArgumentException {
 
     /**
      * Factory method for making a {@code NumberFormatException}
-     * given the specified input which caused the error.
+     * given the specified input which caused the error. This method
+     * is specifically for radix 10 (decimal) parsing and calls
+     * {@link #forInputString(String, int) forInputString(s, 10)}.
      *
      * @param   s   the input causing the error
      */
