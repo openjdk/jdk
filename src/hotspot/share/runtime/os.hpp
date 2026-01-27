@@ -515,7 +515,7 @@ class os: AllStatic {
   static bool   unguard_memory(char* addr, size_t bytes);
   static bool   create_stack_guard_pages(char* addr, size_t bytes);
   static bool   pd_create_stack_guard_pages(char* addr, size_t bytes);
-  static bool   remove_stack_guard_pages(char* addr, size_t bytes);
+  static void   remove_stack_guard_pages(char* addr, size_t bytes);
   // Helper function to create a new file with template jvmheap.XXXXXX.
   // Returns a valid fd on success or else returns -1
   static int create_file_for_heap(const char* dir);
