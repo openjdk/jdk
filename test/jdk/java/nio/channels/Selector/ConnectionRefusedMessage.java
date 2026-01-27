@@ -83,11 +83,11 @@ class ConnectionRefusedMessage {
                 readyKey.cancel();
                 try {
                     boolean success = sc.finishConnect();
-                    if (success) {
-                        // this test checks the exception message of a ConnectException, so it's
-                        // OK to skip the test if something unexpectedly accepted the connection
-                        assumeTrue(success, "unexpectedly connected to " + destAddr);
-                    }
+                    // this test checks the exception message of a ConnectException, so it's
+                    // OK to skip the test if something unexpectedly accepted the connection
+                    assumeFalse(success, "unexpectedly connected to " + destAddr);
+                    // this test doesn't expect finishConnect() to return normally
+                    // with a return value of false
                     fail("ConnectException was not thrown");
                 } catch (ConnectException ce) {
                     System.err.println("got (expected) ConnectException - " + ce);
