@@ -52,6 +52,7 @@ import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.Expression;
+import compiler.lib.template_framework.library.Expression.Nesting;
 import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
@@ -335,7 +336,7 @@ public class ExpressionFuzzer {
             for (int i = 0; i < 10; i++) {
                 // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
-                Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, depth);
+                Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, depth, Nesting.EXACT);
                 tests.add(testTemplate.asToken(expression));
             }
         }
@@ -350,7 +351,7 @@ public class ExpressionFuzzer {
             for (int i = 0; i < 2; i++) {
                 // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
-                Expression expression = Expression.nestRandomly(type, Operations.SCALAR_NUMERIC_OPERATIONS, depth);
+                Expression expression = Expression.nestRandomly(type, Operations.SCALAR_NUMERIC_OPERATIONS, depth, Nesting.EXACT);
                 tests.add(testTemplate.asToken(expression));
             }
         }

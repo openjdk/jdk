@@ -41,6 +41,7 @@ import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.scope;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.Expression;
+import compiler.lib.template_framework.library.Expression.Nesting;
 
 /**
  * This tests the use of the {@link Expression} from the template library. This is
@@ -174,15 +175,15 @@ public class TestExpression {
         Expression e4 = Expression.make(myTypeA1, "<", myTypeA, ">");
         Expression e5 = Expression.make(myTypeA, "[", myTypeB, "]");
 
-        Expression e1e2 = e1.nestRandomly(List.of(e2));
-        Expression e1ex = e1.nestRandomly(List.of(e3, e2, e3));
-        Expression e1e4 = e1.nestRandomly(List.of(e3, e4, e3));
-        Expression e1ey = e1.nestRandomly(List.of(e3, e3));
+        Expression e1e2 = e1.nestRandomly(List.of(e2), Nesting.SUBTYPE);
+        Expression e1ex = e1.nestRandomly(List.of(e3, e2, e3), Nesting.SUBTYPE);
+        Expression e1e4 = e1.nestRandomly(List.of(e3, e4, e3), Nesting.SUBTYPE);
+        Expression e1ey = e1.nestRandomly(List.of(e3, e3), Nesting.SUBTYPE);
 
         // 5-deep nesting of e1
-        Expression deep1 = Expression.nestRandomly(myTypeA, List.of(e1, e3), 5);
+        Expression deep1 = Expression.nestRandomly(myTypeA, List.of(e1, e3), 5, Nesting.SUBTYPE);
         // Alternating pattern
-        Expression deep2 = Expression.nestRandomly(myTypeA, List.of(e5, e3), 5);
+        Expression deep2 = Expression.nestRandomly(myTypeA, List.of(e5, e3), 5, Nesting.SUBTYPE);
 
         var template = Template.make(() -> scope(
             "xx", e1e2.toString(), "yy\n",
