@@ -44,7 +44,6 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
@@ -1122,8 +1121,6 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
 
 
 // jdk.internal.vm.ThreadSnapshot support
-#if INCLUDE_JVMTI
-
 class GetThreadSnapshotHandshakeClosure: public HandshakeClosure {
 private:
   static OopStorage* oop_storage() {
@@ -1476,6 +1473,11 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     Handshake::execute(&cl, &tlh, java_thread);
   }
 
+  // thread not alive
+  if (cl._thread_status == JavaThreadStatus::NEW || cl._thread_status == JavaThreadStatus::TERMINATED) {
+    return nullptr;
+  }
+
   // StackTrace
   InstanceKlass* ste_klass = vmClasses::StackTraceElement_klass();
   assert(ste_klass != nullptr, "must be loaded");
@@ -1505,17 +1507,6 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     }
   }
 
-  // call static StackTraceElement[] StackTraceElement.of(StackTraceElement[] stackTrace)
-  // to properly initialize STEs.
-  JavaValue result(T_OBJECT);
-  JavaCalls::call_static(&result,
-    ste_klass,
-    vmSymbols::java_lang_StackTraceElement_of_name(),
-    vmSymbols::java_lang_StackTraceElement_of_signature(),
-    trace,
-    CHECK_NULL);
-  // the method return the same trace array
-
   Symbol* snapshot_klass_name = vmSymbols::jdk_internal_vm_ThreadSnapshot();
   Klass* snapshot_klass = SystemDictionary::resolve_or_fail(snapshot_klass_name, true, CHECK_NULL);
   if (snapshot_klass->should_be_initialized()) {
@@ -1534,5 +1525,3 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   }
   return snapshot();
 }
-
-#endif // INCLUDE_JVMTI

@@ -561,7 +561,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         // VM to fill in StackTraceElement
         initStackTraceElements(stackTrace, x, depth);
-        return of(stackTrace);
+        return finishInit(stackTrace);
     }
 
     /*
@@ -575,7 +575,7 @@ public final class StackTraceElement implements java.io.Serializable {
         return ste;
     }
 
-    static StackTraceElement[] of(StackTraceElement[] stackTrace) {
+    static StackTraceElement[] finishInit(StackTraceElement[] stackTrace) {
         // ensure the proper StackTraceElement initialization
         for (StackTraceElement ste : stackTrace) {
             ste.computeFormat();

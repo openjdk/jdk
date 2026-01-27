@@ -2208,36 +2208,19 @@ public class Thread implements Runnable {
      * @since 1.5
      */
     public StackTraceElement[] getStackTrace() {
-        if (this != Thread.currentThread()) {
+        if (Thread.currentThread() != this) {
             // optimization so we do not call into the vm for threads that
             // have not yet started or have terminated
             if (!isAlive()) {
                 return EMPTY_STACK_TRACE;
             }
-            StackTraceElement[] stackTrace = asyncGetStackTrace();
-            return (stackTrace != null) ? stackTrace : EMPTY_STACK_TRACE;
+            Object trace = getStackTrace0();
+            if (trace instanceof StackTraceElement[] stackTrace) {
+                return StackTraceElement.finishInit(stackTrace);
+            }
+            return EMPTY_STACK_TRACE;
         } else {
             return (new Exception()).getStackTrace();
-        }
-    }
-
-    /**
-     * Returns an array of stack trace elements representing the stack dump of
-     * this thread. Returns null if the stack trace cannot be obtained. In
-     * the default implementation, null is returned if the thread is a virtual
-     * thread that is not mounted or the thread is a platform thread that has
-     * terminated.
-     */
-    StackTraceElement[] asyncGetStackTrace() {
-        Object stackTrace = getStackTrace0();
-        if (stackTrace == null) {
-            return null;
-        }
-        StackTraceElement[] stes = (StackTraceElement[]) stackTrace;
-        if (stes.length == 0) {
-            return null;
-        } else {
-            return StackTraceElement.of(stes);
         }
     }
 

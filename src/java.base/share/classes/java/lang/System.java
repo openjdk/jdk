@@ -55,7 +55,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2338,6 +2337,11 @@ public final class System {
             @Override
             public boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
                 return string.bytesCompatible(charset, srcIndex, numChars);
+            }
+
+            @Override
+            public void finishInit(StackTraceElement[] stackTrace) {
+                StackTraceElement.finishInit(stackTrace);
             }
         });
     }

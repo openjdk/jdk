@@ -180,7 +180,7 @@ public class ThreadDumper {
     private static boolean dumpThread(Thread thread, TextWriter writer) {
         ThreadSnapshot snapshot = ThreadSnapshot.of(thread);
         if (snapshot == null) {
-            return false; // thread terminated
+            return false; // thread not alive
         }
         Instant now = Instant.now();
         Thread.State state = snapshot.threadState();
@@ -318,7 +318,7 @@ public class ThreadDumper {
         Instant now = Instant.now();
         ThreadSnapshot snapshot = ThreadSnapshot.of(thread);
         if (snapshot == null) {
-            return false; // thread terminated
+            return false; // thread not alive
         }
         Thread.State state = snapshot.threadState();
         StackTraceElement[] stackTrace = snapshot.stackTrace();
