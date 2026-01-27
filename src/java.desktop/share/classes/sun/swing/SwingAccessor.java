@@ -133,8 +133,8 @@ public final class SwingAccessor {
         KeyStroke create();
     }
 
-    /*
-     * An accessor for the LAFState class state
+    /**
+     * An accessor for the LAFState class state.
      */
     public interface LAFStateAccessor {
         boolean lafStateIsInitialized();
@@ -149,7 +149,7 @@ public final class SwingAccessor {
     }
 
     /**
-     * Retrieve the accessor object for the LAFState class
+     * Retrieve the accessor object for the LAFState class.
      */
     public static LAFStateAccessor getLAFStateAccessor() {
         var access = lafStateAccessor;
