@@ -24,6 +24,7 @@
 /* @test
  * @bug 4313887 6838333 8273922
  * @summary Unit test for java.nio.file.attribute.UserDefinedFileAttributeView
+ *     (use -Dseed=X to set PRNG seed)
  * @library ../.. /test/lib
  * @key randomness
  * @build jdk.test.lib.Platform
