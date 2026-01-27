@@ -3758,28 +3758,29 @@ bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignor
   switch(id) {
   case vmIntrinsics::_getReferenceMO:
     assert(t == T_OBJECT, "");    // and fall through
+    assert(op == vmIntrinsics::OP_NONE, "");
   case vmIntrinsics::_getPrimitiveBitsMO:
     append_unsafe_get(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size);
     return true;
 
   case vmIntrinsics::_putReferenceMO:
     assert(t == T_OBJECT, "");    // and fall through
+    assert(op == vmIntrinsics::OP_NONE, "");
   case vmIntrinsics::_putPrimitiveBitsMO:
     append_unsafe_put(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size);
     return true;
 
   case vmIntrinsics::_compareAndSetReferenceMO:
     assert(t == T_OBJECT, "");    // and fall through
+    assert(op == vmIntrinsics::OP_NONE, "");
   case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
     append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
                       vmIntrinsics::OP_NONE, prefix_size);
     return true;
 
   case vmIntrinsics::_getAndSetReferenceMO:
-    assert(t == T_OBJECT, "");
+    assert(t == T_OBJECT, "");    // and fall through
     assert(op == vmIntrinsics::OP_NONE, "");
-    op = vmIntrinsics::OP_SWAP;
-    // and fall through
   case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
     append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
                       (vmIntrinsics::BitsOperation)op, prefix_size);

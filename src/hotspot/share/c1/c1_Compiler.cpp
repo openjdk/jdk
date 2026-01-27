@@ -208,8 +208,10 @@ bool Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
   if (!is_intrinsic_supported_nv(id))  return false;
   switch (id) {
   case vmIntrinsics::_compareAndSetReferenceMO:
+    assert(op == vmIntrinsics::OP_NONE, "");
     assert(bt == T_OBJECT, "");    // and fall through
   case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    assert(op == vmIntrinsics::OP_NONE, "");
     if (bt == T_INT || bt == T_LONG || bt == T_OBJECT) {
       return true;
     }
@@ -219,7 +221,6 @@ bool Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
   case vmIntrinsics::_getAndSetReferenceMO:
     assert(bt == T_OBJECT, "");
     assert(op == vmIntrinsics::OP_NONE, "");
-    op = vmIntrinsics::OP_SWAP;
     // and fall through
   case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
     switch (op) {

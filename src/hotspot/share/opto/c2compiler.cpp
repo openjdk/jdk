@@ -730,8 +730,23 @@ bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
 
   switch (id) {
   case vmIntrinsics::_compareAndSetReferenceMO:
-    assert(bt == T_OBJECT, "");    // and fall through
+    assert(bt == T_OBJECT, "");
     assert(op == vmIntrinsics::OP_NONE, "");
+    if ((mo & vmIntrinsics::UNSAFE_MO_WEAK_CAS) != 0) {
+      switch (btn) {
+      case T_OBJECT:      matchop = Op_WeakCompareAndSwapP; break;
+      case T_NARROWOOP:   matchop = Op_WeakCompareAndSwapN; break;
+      default:  ShouldNotReachHere();
+      }
+    } else {
+      switch (btn) {
+      case T_OBJECT:      matchop = Op_CompareAndSwapP; break;
+      case T_NARROWOOP:   matchop = Op_CompareAndSwapN; break;
+      default:  ShouldNotReachHere();
+      }
+    }
+    break;
+
   case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
     if ((mo & vmIntrinsics::UNSAFE_MO_WEAK_CAS) != 0) {
       switch (btn) {
@@ -757,12 +772,17 @@ bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
     break;
 
   case vmIntrinsics::_compareAndExchangeReferenceMO:
-    assert(bt == T_OBJECT, "");    // and fall through
+    assert(bt == T_OBJECT, "");
     assert(op == vmIntrinsics::OP_NONE, "");
-  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
     switch (btn) {
     case T_OBJECT:      matchop = Op_CompareAndExchangeP; break;
     case T_NARROWOOP:   matchop = Op_CompareAndExchangeN; break;
+    default:  ShouldNotReachHere();
+    }
+    break;
+
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+    switch (btn) {
     case T_BYTE:        matchop = Op_CompareAndExchangeB; break;
     case T_SHORT:       matchop = Op_CompareAndExchangeS; break;
     case T_INT:         matchop = Op_CompareAndExchangeI; break;
@@ -773,15 +793,18 @@ bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
 
   case vmIntrinsics::_getAndSetReferenceMO:
     assert(bt == T_OBJECT, "");
-    assert(op == vmIntrinsics::OP_NONE, "");
-    op = vmIntrinsics::OP_SWAP;
-    // and fall through
+    assert(op == vmIntrinsics::OP_SWAP, "");
+    switch (btn) {
+    case T_OBJECT:      matchop = Op_GetAndSetP; break;
+    case T_NARROWOOP:   matchop = Op_GetAndSetN; break;
+    default:  ShouldNotReachHere();
+    }
+    break;
+
   case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
     switch (op) {
     case vmIntrinsics::OP_SWAP:
       switch (btn) {
-      case T_OBJECT:      matchop = Op_GetAndSetP; break;
-      case T_NARROWOOP:   matchop = Op_GetAndSetN; break;
       case T_BYTE:        matchop = Op_GetAndSetB; break;
       case T_SHORT:       matchop = Op_GetAndSetS; break;
       case T_INT:         matchop = Op_GetAndSetI; break;
