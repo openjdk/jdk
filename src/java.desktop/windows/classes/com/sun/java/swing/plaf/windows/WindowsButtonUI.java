@@ -47,8 +47,6 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 
-import sun.awt.AppContext;
-
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
@@ -69,20 +67,13 @@ public final class WindowsButtonUI extends BasicButtonUI
 
     private boolean defaults_initialized = false;
 
-    private static final Object WINDOWS_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new WindowsButtonUI();
 
     // ********************************
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        WindowsButtonUI windowsButtonUI =
-                (WindowsButtonUI) appContext.get(WINDOWS_BUTTON_UI_KEY);
-        if (windowsButtonUI == null) {
-            windowsButtonUI = new WindowsButtonUI();
-            appContext.put(WINDOWS_BUTTON_UI_KEY, windowsButtonUI);
-        }
-        return windowsButtonUI;
+        return UI;
     }
 
 
