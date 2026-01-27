@@ -952,20 +952,21 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     @BeanProperty(bound = false, expert = true, description
             = "The invoking component for the popup menu")
     public void setInvoker(Component invoker) {
-        if (invoker != null) {
-            Component oldInvoker = this.invoker;
-            this.invoker = invoker;
+        Component oldInvoker = this.invoker;
+        this.invoker = invoker;
 
-            if ((oldInvoker != this.invoker) && (ui != null)) {
-                ui.uninstallUI(this);
-                if (oldInvoker != null) {
-                    oldInvoker.removePropertyChangeListener("ancestor", propListener);
-                }
-                invoker.addPropertyChangeListener("ancestor", propListener);
-                ui.installUI(this);
+        if ((oldInvoker != this.invoker) && (ui != null)) {
+            ui.uninstallUI(this);
+            if (oldInvoker != null) {
+                oldInvoker.removePropertyChangeListener("ancestor", propListener);
             }
-            invalidate();
+            if (invoker != null) {
+                invoker.addPropertyChangeListener("ancestor", propListener);
+            }
+            ui.installUI(this);
         }
+        invalidate();
+
     }
 
     /**

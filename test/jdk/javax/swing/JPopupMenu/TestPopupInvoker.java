@@ -73,6 +73,7 @@ public class TestPopupInvoker {
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 popupHidden.countDown();
+                popupMenu.setInvoker(null);
             }
 
             @Override
@@ -108,7 +109,6 @@ public class TestPopupInvoker {
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
-                popupMenu.setInvoker(null);
                 if (frame != null) {
                     frame.dispose();
                 }
