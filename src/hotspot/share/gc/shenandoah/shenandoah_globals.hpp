@@ -44,7 +44,7 @@
           "monitoring effort.")                                             \
           range(0.001, 1.00)                                                \
                                                                             \
-  product(uint, ShenandoahRateAccelerationSampleSize, 16, EXPERIMENTAL,     \
+  product(uint, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,      \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod seconds have passed "     \
           "since previous allocation rate sample), "                        \
