@@ -34,8 +34,8 @@
 template <typename Iterator>
 class ZParallelApply {
 private:
-  Iterator      _iter;
-  Atomic<bool>  _completed;
+  Iterator     _iter;
+  Atomic<bool> _completed;
 
 public:
   ZParallelApply(ZGenerationIdOptional generation)
