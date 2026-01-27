@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ public class TestStressG1Uncommit {
     public static void main(String[] args) throws Exception {
         ArrayList<String> options = new ArrayList<>();
         Collections.addAll(options,
+            "-XX:MinHeapFreeRatio=40",
+            "-XX:MaxHeapFreeRatio=70",
             "-Xlog:gc,gc+heap+region=debug",
             "-XX:+UseG1GC",
             "-Xmx1g",
