@@ -2277,6 +2277,7 @@ bool KlassDepChange::involves_context(Klass* k) {
   return is_contained;
 }
 
+#ifndef PRODUCT
 void Dependencies::print_statistics() {
   AbstractClassHierarchyWalker::print_statistics();
 }
@@ -2302,6 +2303,7 @@ void AbstractClassHierarchyWalker::print_statistics() {
     }
   }
 }
+#endif
 
 CallSiteDepChange::CallSiteDepChange(Handle call_site, Handle method_handle) :
   _call_site(call_site),
