@@ -64,10 +64,6 @@ public class JdkInternalMiscUnsafeAccessTestByte {
 
     static int ARRAY_SHIFT;
 
-    // copies of Unsafe.MO_RELEASE and other MO constants
-    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
-    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
-
     static {
         try {
             Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -95,18 +91,6 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
         int ascale = UNSAFE.arrayIndexScale(byte[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
-
-        try {
-            for (Field umoField : JdkInternalMiscUnsafeAccessTestByte.class.getDeclaredFields()) {
-                String name = umoField.getName();
-                if (!name.startsWith("UNSAFE_MO_"))  continue;
-                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
-                byte value = (Byte) moField.get(null);
-                umoField.set(null, value);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static void weakDelay() {
@@ -196,15 +180,15 @@ public class JdkInternalMiscUnsafeAccessTestByte {
 
         // Lazy
         {
-            UNSAFE.putByteMO(UNSAFE_MO_RELEASE, base, offset, (byte)0x01);
-            byte x = UNSAFE.getByteMO(UNSAFE_MO_ACQUIRE, base, offset);
+            UNSAFE.putByteRelease(base, offset, (byte)0x01);
+            byte x = UNSAFE.getByteAcquire(base, offset);
             assertEquals(x, (byte)0x01, "putRelease byte value");
         }
 
         // Opaque
         {
-            UNSAFE.putByteMO(UNSAFE_MO_OPAQUE, base, offset, (byte)0x23);
-            byte x = UNSAFE.getByteMO(UNSAFE_MO_OPAQUE, base, offset);
+            UNSAFE.putByteOpaque(base, offset, (byte)0x23);
+            byte x = UNSAFE.getByteOpaque(base, offset);
             assertEquals(x, (byte)0x23, "putOpaque byte value");
         }
 
@@ -242,28 +226,28 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         }
 
         {
-            byte r = UNSAFE.compareAndExchangeByteMO(UNSAFE_MO_ACQUIRE, base, offset, (byte)0x01, (byte)0x23);
+            byte r = UNSAFE.compareAndExchangeByteAcquire(base, offset, (byte)0x01, (byte)0x23);
             assertEquals(r, (byte)0x01, "success compareAndExchangeAcquire byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x23, "success compareAndExchangeAcquire byte value");
         }
 
         {
-            byte r = UNSAFE.compareAndExchangeByteMO(UNSAFE_MO_ACQUIRE, base, offset, (byte)0x01, (byte)0x45);
+            byte r = UNSAFE.compareAndExchangeByteAcquire(base, offset, (byte)0x01, (byte)0x45);
             assertEquals(r, (byte)0x23, "failing compareAndExchangeAcquire byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x23, "failing compareAndExchangeAcquire byte value");
         }
 
         {
-            byte r = UNSAFE.compareAndExchangeByteMO(UNSAFE_MO_RELEASE, base, offset, (byte)0x23, (byte)0x01);
+            byte r = UNSAFE.compareAndExchangeByteRelease(base, offset, (byte)0x23, (byte)0x01);
             assertEquals(r, (byte)0x23, "success compareAndExchangeRelease byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x01, "success compareAndExchangeRelease byte value");
         }
 
         {
-            byte r = UNSAFE.compareAndExchangeByteMO(UNSAFE_MO_RELEASE, base, offset, (byte)0x23, (byte)0x45);
+            byte r = UNSAFE.compareAndExchangeByteRelease(base, offset, (byte)0x23, (byte)0x45);
             assertEquals(r, (byte)0x01, "failing compareAndExchangeRelease byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x01, "failing compareAndExchangeRelease byte value");
@@ -272,7 +256,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, (byte)0x01, (byte)0x23);
+                success = UNSAFE.weakCompareAndSetBytePlain(base, offset, (byte)0x01, (byte)0x23);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain byte");
@@ -281,7 +265,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, (byte)0x01, (byte)0x45);
+            boolean success = UNSAFE.weakCompareAndSetBytePlain(base, offset, (byte)0x01, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSetPlain byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x23, "failing weakCompareAndSetPlain byte value");
@@ -290,7 +274,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, (byte)0x23, (byte)0x01);
+                success = UNSAFE.weakCompareAndSetByteAcquire(base, offset, (byte)0x23, (byte)0x01);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire byte");
@@ -299,7 +283,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, (byte)0x23, (byte)0x45);
+            boolean success = UNSAFE.weakCompareAndSetByteAcquire(base, offset, (byte)0x23, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSetAcquire byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x01, "failing weakCompareAndSetAcquire byte value");
@@ -308,7 +292,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, (byte)0x01, (byte)0x23);
+                success = UNSAFE.weakCompareAndSetByteRelease(base, offset, (byte)0x01, (byte)0x23);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease byte");
@@ -317,7 +301,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, (byte)0x01, (byte)0x45);
+            boolean success = UNSAFE.weakCompareAndSetByteRelease(base, offset, (byte)0x01, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSetRelease byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x23, "failing weakCompareAndSetRelease byte value");
@@ -326,7 +310,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, (byte)0x23, (byte)0x01);
+                success = UNSAFE.weakCompareAndSetByte(base, offset, (byte)0x23, (byte)0x01);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet byte");
@@ -335,7 +319,7 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetByteMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, (byte)0x23, (byte)0x45);
+            boolean success = UNSAFE.weakCompareAndSetByte(base, offset, (byte)0x23, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSet byte");
             byte x = UNSAFE.getByte(base, offset);
             assertEquals(x, (byte)0x01, "failing weakCompareAndSet byte value");

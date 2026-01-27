@@ -64,10 +64,6 @@ public class JdkInternalMiscUnsafeAccessTestShort {
 
     static int ARRAY_SHIFT;
 
-    // copies of Unsafe.MO_RELEASE and other MO constants
-    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
-    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
-
     static {
         try {
             Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -95,18 +91,6 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(short[].class);
         int ascale = UNSAFE.arrayIndexScale(short[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
-
-        try {
-            for (Field umoField : JdkInternalMiscUnsafeAccessTestShort.class.getDeclaredFields()) {
-                String name = umoField.getName();
-                if (!name.startsWith("UNSAFE_MO_"))  continue;
-                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
-                byte value = (Byte) moField.get(null);
-                umoField.set(null, value);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static void weakDelay() {
@@ -196,15 +180,15 @@ public class JdkInternalMiscUnsafeAccessTestShort {
 
         // Lazy
         {
-            UNSAFE.putShortMO(UNSAFE_MO_RELEASE, base, offset, (short)0x0123);
-            short x = UNSAFE.getShortMO(UNSAFE_MO_ACQUIRE, base, offset);
+            UNSAFE.putShortRelease(base, offset, (short)0x0123);
+            short x = UNSAFE.getShortAcquire(base, offset);
             assertEquals(x, (short)0x0123, "putRelease short value");
         }
 
         // Opaque
         {
-            UNSAFE.putShortMO(UNSAFE_MO_OPAQUE, base, offset, (short)0x4567);
-            short x = UNSAFE.getShortMO(UNSAFE_MO_OPAQUE, base, offset);
+            UNSAFE.putShortOpaque(base, offset, (short)0x4567);
+            short x = UNSAFE.getShortOpaque(base, offset);
             assertEquals(x, (short)0x4567, "putOpaque short value");
         }
 
@@ -260,28 +244,28 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
 
         {
-            short r = UNSAFE.compareAndExchangeShortMO(UNSAFE_MO_ACQUIRE, base, offset, (short)0x0123, (short)0x4567);
+            short r = UNSAFE.compareAndExchangeShortAcquire(base, offset, (short)0x0123, (short)0x4567);
             assertEquals(r, (short)0x0123, "success compareAndExchangeAcquire short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x4567, "success compareAndExchangeAcquire short value");
         }
 
         {
-            short r = UNSAFE.compareAndExchangeShortMO(UNSAFE_MO_ACQUIRE, base, offset, (short)0x0123, (short)0x89AB);
+            short r = UNSAFE.compareAndExchangeShortAcquire(base, offset, (short)0x0123, (short)0x89AB);
             assertEquals(r, (short)0x4567, "failing compareAndExchangeAcquire short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x4567, "failing compareAndExchangeAcquire short value");
         }
 
         {
-            short r = UNSAFE.compareAndExchangeShortMO(UNSAFE_MO_RELEASE, base, offset, (short)0x4567, (short)0x0123);
+            short r = UNSAFE.compareAndExchangeShortRelease(base, offset, (short)0x4567, (short)0x0123);
             assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x0123, "success compareAndExchangeRelease short value");
         }
 
         {
-            short r = UNSAFE.compareAndExchangeShortMO(UNSAFE_MO_RELEASE, base, offset, (short)0x4567, (short)0x89AB);
+            short r = UNSAFE.compareAndExchangeShortRelease(base, offset, (short)0x4567, (short)0x89AB);
             assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x0123, "failing compareAndExchangeRelease short value");
@@ -290,7 +274,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, (short)0x0123, (short)0x4567);
+                success = UNSAFE.weakCompareAndSetShortPlain(base, offset, (short)0x0123, (short)0x4567);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain short");
@@ -299,7 +283,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, (short)0x0123, (short)0x89AB);
+            boolean success = UNSAFE.weakCompareAndSetShortPlain(base, offset, (short)0x0123, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSetPlain short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x4567, "failing weakCompareAndSetPlain short value");
@@ -308,7 +292,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, (short)0x4567, (short)0x0123);
+                success = UNSAFE.weakCompareAndSetShortAcquire(base, offset, (short)0x4567, (short)0x0123);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire short");
@@ -317,7 +301,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, (short)0x4567, (short)0x89AB);
+            boolean success = UNSAFE.weakCompareAndSetShortAcquire(base, offset, (short)0x4567, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSetAcquire short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x0123, "failing weakCompareAndSetAcquire short value");
@@ -326,7 +310,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, (short)0x0123, (short)0x4567);
+                success = UNSAFE.weakCompareAndSetShortRelease(base, offset, (short)0x0123, (short)0x4567);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease short");
@@ -335,7 +319,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, (short)0x0123, (short)0x89AB);
+            boolean success = UNSAFE.weakCompareAndSetShortRelease(base, offset, (short)0x0123, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSetRelease short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x4567, "failing weakCompareAndSetRelease short value");
@@ -344,7 +328,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, (short)0x4567, (short)0x0123);
+                success = UNSAFE.weakCompareAndSetShort(base, offset, (short)0x4567, (short)0x0123);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet short");
@@ -353,7 +337,7 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetShortMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, (short)0x4567, (short)0x89AB);
+            boolean success = UNSAFE.weakCompareAndSetShort(base, offset, (short)0x4567, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSet short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)0x0123, "failing weakCompareAndSet short value");

@@ -114,26 +114,26 @@ class TestUnsafeVolatileWeakCAS
 
     public boolean testInt(int x, int i)
     {
-        return unsafe.compareAndSetIntMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_int_off, x, i);
+        return unsafe.weakCompareAndSetInt(this, f_int_off, x, i);
     }
 
     public boolean testObj(Object x, Object o)
     {
-        return unsafe.compareAndSetReferenceMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_obj_off, x, o);
+        return unsafe.weakCompareAndSetReference(this, f_obj_off, x, o);
     }
 
     public boolean testLong(long x, long i)
     {
-        return unsafe.compareAndSetLongMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_long_off, x, i);
+        return unsafe.weakCompareAndSetLong(this, f_long_off, x, i);
     }
 
     public boolean testByte(byte x, byte i)
     {
-        return unsafe.compareAndSetByteMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_byte_off, x, i);
+        return unsafe.weakCompareAndSetByte(this, f_byte_off, x, i);
     }
 
     public boolean testShort(short x, short i)
     {
-        return unsafe.compareAndSetShortMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_short_off, x, i);
+        return unsafe.weakCompareAndSetShort(this, f_short_off, x, i);
     }
 }

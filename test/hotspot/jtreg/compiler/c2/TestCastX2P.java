@@ -56,9 +56,6 @@ public class TestCastX2P {
 
         static {
             for (int k = 0; k < 10_000; k++) {
-                // The following loop was probably intended with i+=8.
-                // As written, it accidentally tests unaligned access.
-                // It fails on platforms that require aligned access.
                 for (int i = 0; i < LEN/2; i++) {
                     UNSAFE.putLong(address+i, lseed);
                 }
@@ -76,9 +73,6 @@ public class TestCastX2P {
 
         static {
             for (int k = 0; k < 1000; k++) {
-                // The following loop was probably intended with i+=8.
-                // As written, it accidentally tests unaligned access.
-                // It fails on platforms that require aligned access.
                 for (int i = 0; i < LEN/2; i++) {
                     UNSAFE.putLong(address+i, lseed);
                 }
@@ -96,9 +90,6 @@ public class TestCastX2P {
 
         static {
             for (int k = 0; k < 10_000; k++) {
-                // The following loop was probably intended with i+=4.
-                // As written, it accidentally tests unaligned access.
-                // It fails on platforms that require aligned access.
                 for (int i = 0; i < LEN/2; i++) {
                     UNSAFE.putInt(address+i, iseed);
                 }
@@ -116,9 +107,6 @@ public class TestCastX2P {
 
         static {
             for (int k = 0; k < 1000; k++) {
-                // The following loop was probably intended with i+=4.
-                // As written, it accidentally tests unaligned access.
-                // It fails on platforms that require aligned access.
                 for (int i = 0; i < LEN/2; i++) {
                     UNSAFE.putInt(address+i, iseed);
                 }
@@ -136,9 +124,6 @@ public class TestCastX2P {
 
         static {
             for (int k = 0; k < 10_000; k++) {
-                // The following loop was probably intended with i+=2.
-                // As written, it accidentally tests unaligned access.
-                // It fails on platforms that require aligned access.
                 for (int i = 0; i < LEN/2; i++) {
                     UNSAFE.putShort(address+i, sseed);
                 }
@@ -156,9 +141,6 @@ public class TestCastX2P {
 
         static {
             for (int k = 0; k < 1000; k++) {
-                // The following loop was probably intended with i+=2.
-                // As written, it accidentally tests unaligned access.
-                // It fails on platforms that require aligned access.
                 for (int i = 0; i < LEN/2; i++) {
                     UNSAFE.putShort(address+i, sseed);
                 }

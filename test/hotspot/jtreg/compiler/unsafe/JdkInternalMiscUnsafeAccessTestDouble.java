@@ -64,10 +64,6 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
 
     static int ARRAY_SHIFT;
 
-    // copies of Unsafe.MO_RELEASE and other MO constants
-    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
-    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
-
     static {
         try {
             Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -95,18 +91,6 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(double[].class);
         int ascale = UNSAFE.arrayIndexScale(double[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
-
-        try {
-            for (Field umoField : JdkInternalMiscUnsafeAccessTestDouble.class.getDeclaredFields()) {
-                String name = umoField.getName();
-                if (!name.startsWith("UNSAFE_MO_"))  continue;
-                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
-                byte value = (Byte) moField.get(null);
-                umoField.set(null, value);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static void weakDelay() {
@@ -196,15 +180,15 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
 
         // Lazy
         {
-            UNSAFE.putDoubleMO(UNSAFE_MO_RELEASE, base, offset, 1.0d);
-            double x = UNSAFE.getDoubleMO(UNSAFE_MO_ACQUIRE, base, offset);
+            UNSAFE.putDoubleRelease(base, offset, 1.0d);
+            double x = UNSAFE.getDoubleAcquire(base, offset);
             assertEquals(x, 1.0d, "putRelease double value");
         }
 
         // Opaque
         {
-            UNSAFE.putDoubleMO(UNSAFE_MO_OPAQUE, base, offset, 2.0d);
-            double x = UNSAFE.getDoubleMO(UNSAFE_MO_OPAQUE, base, offset);
+            UNSAFE.putDoubleOpaque(base, offset, 2.0d);
+            double x = UNSAFE.getDoubleOpaque(base, offset);
             assertEquals(x, 2.0d, "putOpaque double value");
         }
 
@@ -242,28 +226,28 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
 
         {
-            double r = UNSAFE.compareAndExchangeDoubleMO(UNSAFE_MO_ACQUIRE, base, offset, 1.0d, 2.0d);
+            double r = UNSAFE.compareAndExchangeDoubleAcquire(base, offset, 1.0d, 2.0d);
             assertEquals(r, 1.0d, "success compareAndExchangeAcquire double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 2.0d, "success compareAndExchangeAcquire double value");
         }
 
         {
-            double r = UNSAFE.compareAndExchangeDoubleMO(UNSAFE_MO_ACQUIRE, base, offset, 1.0d, 3.0d);
+            double r = UNSAFE.compareAndExchangeDoubleAcquire(base, offset, 1.0d, 3.0d);
             assertEquals(r, 2.0d, "failing compareAndExchangeAcquire double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 2.0d, "failing compareAndExchangeAcquire double value");
         }
 
         {
-            double r = UNSAFE.compareAndExchangeDoubleMO(UNSAFE_MO_RELEASE, base, offset, 2.0d, 1.0d);
+            double r = UNSAFE.compareAndExchangeDoubleRelease(base, offset, 2.0d, 1.0d);
             assertEquals(r, 2.0d, "success compareAndExchangeRelease double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 1.0d, "success compareAndExchangeRelease double value");
         }
 
         {
-            double r = UNSAFE.compareAndExchangeDoubleMO(UNSAFE_MO_RELEASE, base, offset, 2.0d, 3.0d);
+            double r = UNSAFE.compareAndExchangeDoubleRelease(base, offset, 2.0d, 3.0d);
             assertEquals(r, 1.0d, "failing compareAndExchangeRelease double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 1.0d, "failing compareAndExchangeRelease double value");
@@ -272,7 +256,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 1.0d, 2.0d);
+                success = UNSAFE.weakCompareAndSetDoublePlain(base, offset, 1.0d, 2.0d);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain double");
@@ -281,7 +265,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 1.0d, 3.0d);
+            boolean success = UNSAFE.weakCompareAndSetDoublePlain(base, offset, 1.0d, 3.0d);
             assertEquals(success, false, "failing weakCompareAndSetPlain double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 2.0d, "failing weakCompareAndSetPlain double value");
@@ -290,7 +274,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 2.0d, 1.0d);
+                success = UNSAFE.weakCompareAndSetDoubleAcquire(base, offset, 2.0d, 1.0d);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire double");
@@ -299,7 +283,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 2.0d, 3.0d);
+            boolean success = UNSAFE.weakCompareAndSetDoubleAcquire(base, offset, 2.0d, 3.0d);
             assertEquals(success, false, "failing weakCompareAndSetAcquire double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 1.0d, "failing weakCompareAndSetAcquire double value");
@@ -308,7 +292,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 1.0d, 2.0d);
+                success = UNSAFE.weakCompareAndSetDoubleRelease(base, offset, 1.0d, 2.0d);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease double");
@@ -317,7 +301,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 1.0d, 3.0d);
+            boolean success = UNSAFE.weakCompareAndSetDoubleRelease(base, offset, 1.0d, 3.0d);
             assertEquals(success, false, "failing weakCompareAndSetRelease double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 2.0d, "failing weakCompareAndSetRelease double value");
@@ -326,7 +310,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 2.0d, 1.0d);
+                success = UNSAFE.weakCompareAndSetDouble(base, offset, 2.0d, 1.0d);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet double");
@@ -335,7 +319,7 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetDoubleMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 2.0d, 3.0d);
+            boolean success = UNSAFE.weakCompareAndSetDouble(base, offset, 2.0d, 3.0d);
             assertEquals(success, false, "failing weakCompareAndSet double");
             double x = UNSAFE.getDouble(base, offset);
             assertEquals(x, 1.0d, "failing weakCompareAndSet double value");

@@ -64,7 +64,6 @@ public class SunMiscUnsafeAccessTestDouble {
 
     static int ARRAY_SHIFT;
 
-
     static {
         try {
             Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -92,7 +91,6 @@ public class SunMiscUnsafeAccessTestDouble {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(double[].class);
         int ascale = UNSAFE.arrayIndexScale(double[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
-
     }
 
     static void weakDelay() {

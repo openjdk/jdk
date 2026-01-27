@@ -338,7 +338,7 @@ class Runner implements Runnable {
         // Spurious failures are allowed. So, we retry a couple of times on failure.
         boolean ok = false;
         for (int i = 0; i < 3; ++i) {
-            ok = UNSAFE.compareAndSetReferenceMO(Unsafe.MO_WEAK_CAS_VOLATILE, startNode, offset, expectedNext, head);
+            ok = UNSAFE.weakCompareAndSetReference(startNode, offset, expectedNext, head);
             if (ok) break;
         }
         if (!ok) {
@@ -349,7 +349,7 @@ class Runner implements Runnable {
 
     private Node mergeImplWeakCASFail(Node startNode, Node expectedNext, Node head) {
         // Force a fail
-        if (UNSAFE.compareAndSetReferenceMO(Unsafe.MO_WEAK_CAS_VOLATILE, startNode, offset, "fail", head)) {
+        if (UNSAFE.weakCompareAndSetReference(startNode, offset, "fail", head)) {
             throw new Error("This weak CAS should always fail, check your barrier implementation");
         }
         if (startNode.next() != expectedNext) {

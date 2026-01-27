@@ -64,10 +64,6 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
 
     static int ARRAY_SHIFT;
 
-    // copies of Unsafe.MO_RELEASE and other MO constants
-    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
-    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
-
     static {
         try {
             Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -95,18 +91,6 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(float[].class);
         int ascale = UNSAFE.arrayIndexScale(float[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
-
-        try {
-            for (Field umoField : JdkInternalMiscUnsafeAccessTestFloat.class.getDeclaredFields()) {
-                String name = umoField.getName();
-                if (!name.startsWith("UNSAFE_MO_"))  continue;
-                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
-                byte value = (Byte) moField.get(null);
-                umoField.set(null, value);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static void weakDelay() {
@@ -196,15 +180,15 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
 
         // Lazy
         {
-            UNSAFE.putFloatMO(UNSAFE_MO_RELEASE, base, offset, 1.0f);
-            float x = UNSAFE.getFloatMO(UNSAFE_MO_ACQUIRE, base, offset);
+            UNSAFE.putFloatRelease(base, offset, 1.0f);
+            float x = UNSAFE.getFloatAcquire(base, offset);
             assertEquals(x, 1.0f, "putRelease float value");
         }
 
         // Opaque
         {
-            UNSAFE.putFloatMO(UNSAFE_MO_OPAQUE, base, offset, 2.0f);
-            float x = UNSAFE.getFloatMO(UNSAFE_MO_OPAQUE, base, offset);
+            UNSAFE.putFloatOpaque(base, offset, 2.0f);
+            float x = UNSAFE.getFloatOpaque(base, offset);
             assertEquals(x, 2.0f, "putOpaque float value");
         }
 
@@ -242,28 +226,28 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
 
         {
-            float r = UNSAFE.compareAndExchangeFloatMO(UNSAFE_MO_ACQUIRE, base, offset, 1.0f, 2.0f);
+            float r = UNSAFE.compareAndExchangeFloatAcquire(base, offset, 1.0f, 2.0f);
             assertEquals(r, 1.0f, "success compareAndExchangeAcquire float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 2.0f, "success compareAndExchangeAcquire float value");
         }
 
         {
-            float r = UNSAFE.compareAndExchangeFloatMO(UNSAFE_MO_ACQUIRE, base, offset, 1.0f, 3.0f);
+            float r = UNSAFE.compareAndExchangeFloatAcquire(base, offset, 1.0f, 3.0f);
             assertEquals(r, 2.0f, "failing compareAndExchangeAcquire float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 2.0f, "failing compareAndExchangeAcquire float value");
         }
 
         {
-            float r = UNSAFE.compareAndExchangeFloatMO(UNSAFE_MO_RELEASE, base, offset, 2.0f, 1.0f);
+            float r = UNSAFE.compareAndExchangeFloatRelease(base, offset, 2.0f, 1.0f);
             assertEquals(r, 2.0f, "success compareAndExchangeRelease float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 1.0f, "success compareAndExchangeRelease float value");
         }
 
         {
-            float r = UNSAFE.compareAndExchangeFloatMO(UNSAFE_MO_RELEASE, base, offset, 2.0f, 3.0f);
+            float r = UNSAFE.compareAndExchangeFloatRelease(base, offset, 2.0f, 3.0f);
             assertEquals(r, 1.0f, "failing compareAndExchangeRelease float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 1.0f, "failing compareAndExchangeRelease float value");
@@ -272,7 +256,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 1.0f, 2.0f);
+                success = UNSAFE.weakCompareAndSetFloatPlain(base, offset, 1.0f, 2.0f);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain float");
@@ -281,7 +265,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 1.0f, 3.0f);
+            boolean success = UNSAFE.weakCompareAndSetFloatPlain(base, offset, 1.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetPlain float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
@@ -290,7 +274,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 2.0f, 1.0f);
+                success = UNSAFE.weakCompareAndSetFloatAcquire(base, offset, 2.0f, 1.0f);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire float");
@@ -299,7 +283,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 2.0f, 3.0f);
+            boolean success = UNSAFE.weakCompareAndSetFloatAcquire(base, offset, 2.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetAcquire float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
@@ -308,7 +292,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 1.0f, 2.0f);
+                success = UNSAFE.weakCompareAndSetFloatRelease(base, offset, 1.0f, 2.0f);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease float");
@@ -317,7 +301,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 1.0f, 3.0f);
+            boolean success = UNSAFE.weakCompareAndSetFloatRelease(base, offset, 1.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSetRelease float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
@@ -326,7 +310,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 2.0f, 1.0f);
+                success = UNSAFE.weakCompareAndSetFloat(base, offset, 2.0f, 1.0f);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet float");
@@ -335,7 +319,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
 
         {
-            boolean success = UNSAFE.compareAndSetFloatMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 2.0f, 3.0f);
+            boolean success = UNSAFE.weakCompareAndSetFloat(base, offset, 2.0f, 3.0f);
             assertEquals(success, false, "failing weakCompareAndSet float");
             float x = UNSAFE.getFloat(base, offset);
             assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
