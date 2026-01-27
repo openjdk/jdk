@@ -104,17 +104,18 @@ class ConnectionRefusedMessage {
     // Try to find a suitable port to provoke a "Connection Refused" error.
     private static InetSocketAddress findSuitableRefusedAddress() throws IOException {
         final InetAddress loopbackAddr = InetAddress.getLoopbackAddress();
-        // port 47 is reserved - there should be nothing listening on it
+        // Ports 47, 51, 61 are in the IANA reserved port list, and
+        // are currently unassigned to any specific service.
+        // We use them here on the assumption that there won't be
+        // any service listening on them.
         InetSocketAddress destAddr = new InetSocketAddress(loopbackAddr, 47);
         try (SocketChannel sc1 = SocketChannel.open(destAddr)) {
-            // If we manage to connect, let's try to use some other
-            // port.
-            // port 51 is reserved too - there should be nothing there.
+            // we managed to connect (unexpectedly), let's try the next reserved port
             destAddr = new InetSocketAddress(loopbackAddr, 51);
             try (SocketChannel sc2 = SocketChannel.open(destAddr)) {
             }
-            // OK, last attempt...
-            // port 61 is reserved too - there should be nothing there.
+            // we managed to connect (unexpectedly again), let's try the next reserved port
+            // as a last attempt
             destAddr = new InetSocketAddress(loopbackAddr, 61);
             try (SocketChannel sc3 = SocketChannel.open(destAddr)) {
             }
