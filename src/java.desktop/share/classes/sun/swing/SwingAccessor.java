@@ -133,6 +133,33 @@ public final class SwingAccessor {
         KeyStroke create();
     }
 
+    /*
+     * An accessor for the LAFState class state
+     */
+    public interface LAFStateAccessor {
+        boolean lafStateIsInitialized();
+    }
+
+    private static LAFStateAccessor lafStateAccessor;
+    /**
+     * Set an accessor object for the LAFState class.
+     */
+    public static void setLAFStateAccessor(LAFStateAccessor accessor) {
+        lafStateAccessor = accessor;
+    }
+    
+    /**
+     * Retrieve the accessor object for the LAFState class
+     */
+    public static LAFStateAccessor getLAFStateAccessor() {
+        var access = lafStateAccessor;
+        if (access == null) {
+            ensureClassInitialized(UIManager.class);
+            access = lafStateAccessor;
+        }
+        return access;
+    }   
+        
     /**
      * The javax.swing.JComponent class accessor object.
      */

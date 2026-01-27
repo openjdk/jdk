@@ -29,7 +29,7 @@ import javax.swing.plaf.*;
 import javax.swing.*;
 import java.awt.*;
 
-import sun.awt.AppContext;
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -153,8 +153,7 @@ public class DefaultMetalTheme extends MetalTheme {
     static int getDefaultFontStyle(int key) {
         if (key != WINDOW_TITLE_FONT) {
             Object boldMetal = null;
-            if (AppContext.getAppContext().get(
-                    SwingUtilities2.LAF_STATE_KEY) != null) {
+            if (SwingAccessor.getLAFStateAccessor().lafStateIsInitialized()) {
                 // Only access the boldMetal key if a look and feel has
                 // been loaded, otherwise we'll trigger loading the look
                 // and feel.

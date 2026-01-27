@@ -120,12 +120,6 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  *
  */
 public class SwingUtilities2 {
-    /**
-     * The {@code AppContext} key for our one {@code LAFState}
-     * instance.
-     */
-    public static final Object LAF_STATE_KEY =
-            new StringBuffer("LookAndFeel State");
 
     public static final Object MENU_SELECTION_MANAGER_LISTENER_KEY =
             new StringBuffer("MenuSelectionManager listener key");
