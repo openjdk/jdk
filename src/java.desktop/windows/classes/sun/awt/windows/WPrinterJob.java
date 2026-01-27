@@ -1735,6 +1735,8 @@ public final class WPrinterJob extends RasterPrinterJob
                 setPageRange(from, to);
             } else {
                 attributes.remove(PageRanges.class);
+                setPageRange(Pageable.UNKNOWN_NUMBER_OF_PAGES,
+                             Pageable.UNKNOWN_NUMBER_OF_PAGES);
             }
             defaultCopies = false;
             attributes.add(new Copies(copies));
