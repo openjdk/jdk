@@ -1472,6 +1472,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     }
 
     res = merge_cp_and_rewrite(the_class, scratch_class, THREAD);
+    if (res != JVMTI_ERROR_NONE) {
+      return res;
+    }
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
       log_info(redefine, class, load, exceptions)("merge_cp_and_rewrite exception: '%s'", ex_name->as_C_string());
@@ -2045,7 +2048,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_record_attribute(InstanceKlass* scra
       AnnotationArray* type_annotations = component->type_annotations();
       if (type_annotations != nullptr && type_annotations->length() != 0) {
         int byte_i = 0;  // byte index into annotations
-        if (!rewrite_cp_refs_in_annotations_typeArray(type_annotations, byte_i)) {
+        if (!rewrite_cp_refs_in_type_annotations_typeArray(type_annotations, byte_i, "record_info")) {
           log_debug(redefine, class, annotation)("bad record_component_type_annotations at %d", i);
           // propagate failure back to caller
           return false;

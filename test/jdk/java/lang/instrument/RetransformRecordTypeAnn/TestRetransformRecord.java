@@ -33,7 +33,7 @@ public class TestRetransformRecord {
         try (FileInputStream str = new FileInputStream(clsfile)) {
             buf = NamedBuffer.loadBufferFromStream(str);
         }
-	Instrumentation inst = RedefineClassHelper.instrumentation;
+        Instrumentation inst = RedefineClassHelper.instrumentation;
         inst.addTransformer(new IdentityTransformer("MyRecord", buf), true);
         inst.retransformClasses(MyRecord.class);
         System.out.println(MyRecord.parse("foo"));
@@ -51,10 +51,10 @@ class IdentityTransformer implements ClassFileTransformer {
 
     @Override
     public byte[] transform(ClassLoader loader,
-			    String classPath,
-			    Class<?> classBeingRedefined,
-			    ProtectionDomain protectionDomain,
-			    byte[] classfileBuffer) {
+                            String classPath,
+                            Class<?> classBeingRedefined,
+                            ProtectionDomain protectionDomain,
+                            byte[] classfileBuffer) {
         if (classPath != null && classPath.equals(className.replace('.', '/'))) {
             System.out.println("Transforming " + className);
             return buffer;
