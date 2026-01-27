@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3541,15 +3541,15 @@ final class FdLibm {
             int hx, ix;
             hx = __HI(x);
             ix = hx & 0x7fffffff;
-            if(ix >= 0x7ff00000) {
+            if (ix >= 0x7ff00000) {
                 return x + x;                       // x is inf or NaN
             }
-            if(ix < 0x3e300000) {                   // |x| < 2**-28
-                if(huge + x > 1.0) {
+            if (ix < 0x3e300000) {                   // |x| < 2**-28
+                if (huge + x > 1.0) {
                     return x;                       // return x inexact except 0
                 }
             }
-            if(ix > 0x41b00000) {                   // |x| > 2**28
+            if (ix > 0x41b00000) {                   // |x| > 2**28
                 w = Log.compute(Math.abs(x)) + ln2;
             } else if (ix > 0x40000000) {           // 2**28 > |x| > 2.0
                 t = Math.abs(x);

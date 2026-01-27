@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1532,7 +1532,7 @@ public class HyperbolicTests {
         };
 
 
-        for(int i = 0; i < testCases.length; i++) {
+        for (int i = 0; i < testCases.length; i++) {
             double [] testCase = testCases[i];
             failures += testAsinhCaseWithUlpDiff(testCase[0],
                     testCase[1],
@@ -1541,7 +1541,7 @@ public class HyperbolicTests {
 
 
 
-        for(double nan : Tests.NaNs) {
+        for (double nan : Tests.NaNs) {
             failures += testAsinhCaseWithUlpDiff(nan, NaNd, 0);
         }
 
@@ -1556,7 +1556,7 @@ public class HyperbolicTests {
 
 
 
-        for(int i = 0; i < specialTestCases.length; i++) {
+        for (int i = 0; i < specialTestCases.length; i++) {
             failures += testAsinhCaseWithUlpDiff(specialTestCases[i][0],
                     specialTestCases[i][1],
                     0.0);
@@ -1569,7 +1569,7 @@ public class HyperbolicTests {
         // rounded away since |n-n^3| > 53, the binary precision of a
         // double significand.
 
-        for(int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
+        for (int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
             double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
