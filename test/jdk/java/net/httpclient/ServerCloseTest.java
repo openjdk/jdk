@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ServerCloseTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     DummyServer    httpDummyServer;    // HTTP/1.1    [ 2 servers ]
     DummyServer    httpsDummyServer;   // HTTPS/1.1
     String httpDummy;
@@ -226,10 +226,6 @@ public class ServerCloseTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
         // DummyServer

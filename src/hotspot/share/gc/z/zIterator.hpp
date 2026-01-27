@@ -41,7 +41,7 @@ public:
   static void oop_iterate(oop obj, OopClosureT* cl);
 
   template <typename OopClosureT>
-  static void oop_iterate_range(objArrayOop obj, OopClosureT* cl, int start, int end);
+  static void oop_iterate_elements_range(objArrayOop obj, OopClosureT* cl, int start, int end);
 
   // This function skips invisible roots
   template <typename Function>

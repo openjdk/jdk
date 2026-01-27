@@ -135,7 +135,7 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
     static Http3TestServer http3OnlyServer;
     static Http2TestServer https2AltSvcServer;
     static volatile HttpClient client = null;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static volatile String http3OnlyURIString, https2URIString, http3AltSvcURIString, http3DirectURIString;
 
     static void initialize(boolean samePort) throws Exception {
@@ -149,8 +149,6 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
         System.out.println("\nConfiguring for advertised AltSvc on "
                 + (samePort ? "same port" : "ephemeral port"));
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = null;
             client = getClient();
 
