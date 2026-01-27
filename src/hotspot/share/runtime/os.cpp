@@ -2211,8 +2211,8 @@ bool os::used_memory(physical_memory_size_type& value) {
 bool os::Machine::used_memory(physical_memory_size_type& value) {
   physical_memory_size_type avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
-  (void)os::available_memory(avail_mem);
-  physical_memory_size_type phys_mem = os::physical_memory();
+  (void)os::Machine::available_memory(avail_mem);
+  physical_memory_size_type phys_mem = os::Machine::physical_memory();
   value = phys_mem - avail_mem;
   return true;
 }
