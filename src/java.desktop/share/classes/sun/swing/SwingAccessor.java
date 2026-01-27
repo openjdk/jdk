@@ -147,7 +147,7 @@ public final class SwingAccessor {
     public static void setLAFStateAccessor(LAFStateAccessor accessor) {
         lafStateAccessor = accessor;
     }
-    
+
     /**
      * Retrieve the accessor object for the LAFState class
      */
@@ -158,8 +158,8 @@ public final class SwingAccessor {
             access = lafStateAccessor;
         }
         return access;
-    }   
-        
+    }
+
     /**
      * The javax.swing.JComponent class accessor object.
      */
