@@ -914,7 +914,7 @@ enum NamedGroup {
                 namedGroups = customizedNames;
             } else {
                 if (defaultNames.length == 0) {
-                    SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE,
+                    SSLLogger.logWarning(SSLLogger.Opt.SSL,
                             "No default named groups");
                 }
                 namedGroups = defaultNames;
