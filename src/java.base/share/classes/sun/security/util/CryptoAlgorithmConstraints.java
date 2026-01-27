@@ -26,12 +26,16 @@
 package sun.security.util;
 
 import java.lang.ref.SoftReference;
+import java.net.URL;
 import java.security.AlgorithmParameters;
+import java.security.CodeSource;
 import java.security.CryptoPrimitive;
 import java.security.Key;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,9 +55,16 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_CRYPTO_DISABLED_ALGS =
             "jdk.crypto.disabledAlgorithms";
 
+    private static final String PROPERTY_CRYPTO_LEGACY_ALGS =
+            "jdk.crypto.legacyAlgorithms";
+
     private static class CryptoHolder {
-        static final CryptoAlgorithmConstraints CONSTRAINTS =
+        static final CryptoAlgorithmConstraints DISABLED_CONSTRAINTS =
                 new CryptoAlgorithmConstraints(PROPERTY_CRYPTO_DISABLED_ALGS);
+    }
+    private static class LegacyHolder {
+        static final CryptoAlgorithmConstraints LEGACY_CONSTRAINTS =
+                new CryptoAlgorithmConstraints(PROPERTY_CRYPTO_LEGACY_ALGS);
     }
 
     private static void debug(String msg) {
@@ -63,11 +74,38 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public static boolean permits(String service, String algo) {
-        return CryptoHolder.CONSTRAINTS.cachedCheckAlgorithm(
+        return CryptoHolder.DISABLED_CONSTRAINTS.cachedCheckAlgorithm(
                 service + "." + algo);
     }
 
-    private final Set<String> disabledServices; // syntax is <service>.<algo>
+    private record CallerInfo(Class<?> caller, String serviceAndAlg) { }
+
+    private static class CallersHolder {
+        static final Map<CallerInfo, Boolean> callers
+            = Collections.synchronizedMap(new WeakHashMap<>());
+    }
+
+    public static void warn(String service, String alg, Class<?> callerClass) {
+        String serviceAndAlg = service + "." + alg;
+        if (!LegacyHolder.LEGACY_CONSTRAINTS.cachedCheckAlgorithm(
+                serviceAndAlg) && CallersHolder.callers.putIfAbsent(
+                    new CallerInfo(callerClass, serviceAndAlg), true) == null) {
+                URL url = codeSource(callerClass);
+                String source = (url == null) ? callerClass.getName() : 
+                                    callerClass.getName() + " (" + url + ")";
+                System.err.printf("""
+                    WARNING: An outdated %s algorithm has been called by %s
+                    WARNING: %s will be disabled by default in a future release
+                    """, service, callerClass.getName(), alg);
+        }
+    }
+
+    private static URL codeSource(Class<?> clazz) {
+        CodeSource cs = clazz.getProtectionDomain().getCodeSource();
+        return (cs != null) ? cs.getLocation() : null;
+    }
+
+    private final Set<String> affectedServices; // syntax is <service>.<algo>
     private volatile SoftReference<Map<String, Boolean>> cacheRef =
             new SoftReference<>(null);
 
@@ -81,35 +119,35 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     CryptoAlgorithmConstraints(String propertyName) {
         super(null);
-        disabledServices = getAlgorithms(propertyName, true);
-        debug("Before " + Arrays.deepToString(disabledServices.toArray()));
-        for (String dk : disabledServices) {
-            int idx = dk.indexOf(".");
-            if (idx < 1 || idx == dk.length() - 1) {
+        affectedServices = getAlgorithms(propertyName, true);
+        debug("Before " + Arrays.deepToString(affectedServices.toArray()));
+        for (String k : affectedServices) {
+            int idx = k.indexOf(".");
+            if (idx < 1 || idx == k.length() - 1) {
                 // wrong syntax: missing "." or empty service or algorithm
-                throw new IllegalArgumentException("Invalid entry: " + dk);
+                throw new IllegalArgumentException("Invalid entry: " + k);
             }
-            String service = dk.substring(0, idx);
-            String algo = dk.substring(idx + 1);
+            String service = k.substring(0, idx);
+            String algo = k.substring(idx + 1);
             if (SUPPORTED_SERVICES.stream().anyMatch(e -> e.equalsIgnoreCase
                     (service))) {
                 KnownOIDs oid = KnownOIDs.findMatch(algo);
                 if (oid != null) {
                     debug("Add oid: " + oid.value());
-                    disabledServices.add(service + "." + oid.value());
+                    affectedServices.add(service + "." + oid.value());
                     debug("Add oid stdName: " + oid.stdName());
-                    disabledServices.add(service + "." + oid.stdName());
+                    affectedServices.add(service + "." + oid.stdName());
                     for (String a : oid.aliases()) {
                         debug("Add oid alias: " + a);
-                        disabledServices.add(service + "." + a);
+                        affectedServices.add(service + "." + a);
                     }
                 }
             } else {
                 // unsupported service
-                throw new IllegalArgumentException("Invalid entry: " + dk);
+                throw new IllegalArgumentException("Invalid entry: " + k);
             }
         }
-        debug("After " + Arrays.deepToString(disabledServices.toArray()));
+        debug("After " + Arrays.deepToString(affectedServices.toArray()));
     }
 
     @Override
@@ -145,7 +183,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
         if (result != null) {
             return result;
         }
-        result = checkAlgorithm(disabledServices, serviceDesc, null);
+        result = checkAlgorithm(affectedServices, serviceDesc, null);
         cache.put(serviceDesc, result);
         return result;
     }
