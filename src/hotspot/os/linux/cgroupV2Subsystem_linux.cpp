@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2025, Red Hat Inc.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,8 @@ CgroupV2Subsystem::CgroupV2Subsystem(CgroupV2MemoryController * memory,
                                      CgroupV2CpuacctController* cpuacct,
                                      CgroupV2Controller unified) :
                                      _unified(unified) {
-  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
-  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController, physical_memory_size_type>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController, double>(cpu);
   _cpuacct = cpuacct;
 }
 

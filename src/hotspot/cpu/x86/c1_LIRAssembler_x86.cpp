@@ -1261,29 +1261,9 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
-                                        Register recv, Label* update_done) {
-  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
-    Label next_test;
-    // See if the receiver is receiver[n].
-    __ cmpptr(recv, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
-    __ jccb(Assembler::notEqual, next_test);
-    Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
-    __ addptr(data_addr, DataLayout::counter_increment);
-    __ jmp(*update_done);
-    __ bind(next_test);
-  }
-
-  // Didn't find receiver; find next empty slot and fill it in
-  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
-    Label next_test;
-    Address recv_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)));
-    __ cmpptr(recv_addr, NULL_WORD);
-    __ jccb(Assembler::notEqual, next_test);
-    __ movptr(recv_addr, recv);
-    __ movptr(Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))), DataLayout::counter_increment);
-    __ jmp(*update_done);
-    __ bind(next_test);
-  }
+                                        Register recv) {
+  int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
+  __ profile_receiver_type(recv, mdo, mdp_offset);
 }
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
@@ -1341,15 +1321,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ jmp(*obj_is_null);
     __ bind(not_null);
 
-    Label update_done;
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv, &update_done);
-
-    Address nonprofiled_receiver_count_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-    __ addptr(nonprofiled_receiver_count_addr, DataLayout::counter_increment);
-
-    __ bind(update_done);
+    type_profile_helper(mdo, md, data, recv);
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
@@ -1461,14 +1435,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ jmp(done);
       __ bind(not_null);
 
-      Label update_done;
       Register recv = k_RInfo;
       __ load_klass(recv, value, tmp_load_klass);
-      type_profile_helper(mdo, md, data, recv, &update_done);
-
-      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-      __ addptr(counter_addr, DataLayout::counter_increment);
-      __ bind(update_done);
+      type_profile_helper(mdo, md, data, recv);
     } else {
       __ jcc(Assembler::equal, done);
     }
@@ -2791,13 +2760,9 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     if (C1OptimizeVirtualCallProfiling && known_klass != nullptr) {
       // We know the type that will be seen at this call site; we can
       // statically update the MethodData* rather than needing to do
-      // dynamic tests on the receiver type
-
-      // NOTE: we should probably put a lock around this search to
-      // avoid collisions by concurrent compilations
+      // dynamic tests on the receiver type.
       ciVirtualCallData* vc_data = (ciVirtualCallData*) data;
-      uint i;
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
+      for (uint i = 0; i < VirtualCallData::row_limit(); i++) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
@@ -2805,32 +2770,13 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           return;
         }
       }
-
-      // Receiver type not found in profile data; select an empty slot
-
-      // Note that this is less efficient than it should be because it
-      // always does a write to the receiver part of the
-      // VirtualCallData rather than just the first time
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        ciKlass* receiver = vc_data->receiver(i);
-        if (receiver == nullptr) {
-          Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
-          __ mov_metadata(recv_addr, known_klass->constant_encoding(), rscratch1);
-          Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addptr(data_addr, DataLayout::counter_increment);
-          return;
-        }
-      }
+      // Receiver type is not found in profile data.
+      // Fall back to runtime helper to handle the rest at runtime.
+      __ mov_metadata(recv, known_klass->constant_encoding());
     } else {
       __ load_klass(recv, recv, tmp_load_klass);
-      Label update_done;
-      type_profile_helper(mdo, md, data, recv, &update_done);
-      // Receiver did not match any saved receiver and there is no empty row for it.
-      // Increment total counter to indicate polymorphic case.
-      __ addptr(counter_addr, DataLayout::counter_increment);
-
-      __ bind(update_done);
     }
+    type_profile_helper(mdo, md, data, recv);
   } else {
     // Static call
     __ addptr(counter_addr, DataLayout::counter_increment);

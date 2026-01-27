@@ -797,11 +797,6 @@ public:
   virtual int Opcode() const;
   virtual bool      is_CFG() const  { return false; }
   virtual const Type *bottom_type() const {return Type::MEMORY;}
-  virtual const TypePtr *adr_type() const {
-    Node* ctrl = in(0);
-    if (ctrl == nullptr)  return nullptr; // node is dead
-    return ctrl->in(MemNode::Memory)->adr_type();
-  }
   virtual uint ideal_reg() const { return 0;} // memory projections don't have a register
   virtual const Type* Value(PhaseGVN* phase) const;
 #ifndef PRODUCT
@@ -814,9 +809,11 @@ public:
 class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
-  const TypePtr* _adr_type;     // What kind of memory is being addressed?
   uint8_t _barrier_data;        // Bit field with barrier information
   virtual uint size_of() const; // Size is bigger
+#ifdef ASSERT
+  const TypePtr* _adr_type;     // What kind of memory is being addressed?
+#endif // ASSERT
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
   virtual bool depends_only_on_test() const { return false; }
@@ -824,7 +821,7 @@ public:
 
   virtual const Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const;
-  virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
+  virtual const TypePtr* adr_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;
 
   bool result_not_used() const;
@@ -1075,6 +1072,7 @@ public:
 class ClearArrayNode: public Node {
 private:
   bool _is_large;
+  static Node* make_address(Node* dest, Node* offset, bool raw_base, PhaseGVN* phase);
 public:
   ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, bool is_large)
     : Node(ctrl,arymem,word_cnt,base), _is_large(is_large) {
@@ -1102,14 +1100,17 @@ public:
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             intptr_t start_offset,
                             intptr_t end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             intptr_t start_offset,
                             Node* end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             Node* start_offset,
                             Node* end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   // Return allocation input memory edge if it is different instance
   // or itself if it is the one we are looking for.

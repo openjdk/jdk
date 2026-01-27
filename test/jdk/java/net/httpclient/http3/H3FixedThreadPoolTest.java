@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,17 @@
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
+ *
+ * @comment This test failed on Tier 7, but the failure could not be reproduced.
+ *          The QUIC idle timeout has been increased to a value higher than the
+ *          JTreg on Tier 7 so that, if the client becomes wedged again, the
+ *          JTreg timeout handlers can collect more diagnostic information.
+ *
  * @run testng/othervm  -Djdk.internal.httpclient.debug=err
  *                      -Djdk.httpclient.HttpClient.log=ssl,headers,requests,responses,errors
- *                       H3FixedThreadPoolTest
+ *                      -Djdk.httpclient.quic.idleTimeout=666666
+ *                      -Djdk.test.server.quic.idleTimeout=666666
+ *                      ${test.main.class}
  */
 
 import java.net.URI;
@@ -71,14 +79,12 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
     static HttpTestServer http3Server, https2Server;
     static volatile HttpClient client = null;
     static ExecutorService exec;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static String http3URIString, https2URIString;
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
             exec = Executors.newCachedThreadPool();
             http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, exec);
