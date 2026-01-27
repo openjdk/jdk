@@ -1234,8 +1234,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         continue;
       }
       if (!bol->is_Bool()) {
-        assert(bol->is_OpaqueNotNull() ||
-               bol->is_OpaqueGuard() ||
+        assert(bol->is_OpaqueCheck() ||
                bol->is_OpaqueTemplateAssertionPredicate() ||
                bol->is_OpaqueInitializedAssertionPredicate() ||
                bol->is_OpaqueMultiversioning(),

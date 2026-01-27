@@ -307,7 +307,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           assert( bol->is_Bool(), "" );
           if (bol->outcnt() == 1) {
             Node* use = bol->unique_out();
-            if (use->is_OpaqueNotNull() || use->is_OpaqueGuard() || use->is_OpaqueTemplateAssertionPredicate() ||
+            if (use->is_OpaqueCheck() || use->is_OpaqueTemplateAssertionPredicate() ||
                 use->is_OpaqueInitializedAssertionPredicate()) {
               if (use->outcnt() == 1) {
                 Node* iff = use->unique_out();
@@ -331,8 +331,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
             // Recursively sink any BoolNode
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
-              // Uses are either IfNodes, CMoves, OpaqueNotNull, OpaqueGuard or Opaque*AssertionPredicate
-              if (u->is_OpaqueNotNull() || u->is_OpaqueGuard() || u->is_OpaqueTemplateAssertionPredicate() ||
+              // Uses are either IfNodes, CMoves, OpaqueCheck or Opaque*AssertionPredicate
+              if (u->is_OpaqueCheck() || u->is_OpaqueTemplateAssertionPredicate() ||
                   u->is_OpaqueInitializedAssertionPredicate()) {
                 assert(u->in(1) == bol, "bad input");
                 for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {

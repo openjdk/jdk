@@ -33,7 +33,7 @@ package compiler.intrinsics.string;
 
 import compiler.lib.ir_framework.*;
 
-public class TestOpaqueGuardNodes {
+public class TestOpaqueCheckNodes {
 
     static byte[] bytes = new byte[42];
 
@@ -49,8 +49,8 @@ public class TestOpaqueGuardNodes {
     }
 
     @Test
-    @IR(counts = {IRNode.OPAQUE_GUARD, "3"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(failOn = {IRNode.OPAQUE_GUARD}, phase = CompilePhase.AFTER_MACRO_EXPANSION)
+    @IR(counts = {IRNode.OPAQUE_CHECK, "3"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = {IRNode.OPAQUE_CHECK}, phase = CompilePhase.AFTER_MACRO_EXPANSION)
     @Arguments(setup = "setup")
     private static String test(byte[] bytes, int i, int l) {
         return new String(bytes, i , l);

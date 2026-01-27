@@ -65,15 +65,15 @@ public class OpaqueAccesses {
     // Finish the line after the node type, skips full line, and eats until before the node types
     private static final String SKIP = IRNode.MID + IRNode.END + "\\R" + FULL_LINES + "\\s*" + IRNode.START;
 
-    private static final String CALL_STATIC_JAVA_AND_THEN_OPAQUE_NOT_NULL = IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END;
-    private static final String OPAQUE_NOT_NULL_AND_THEN_CALL_STATIC_JAVA = IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END;
-    /* Having both CallStaticJava and OpaqueNotNull, in any order. We use that in a failOn to make sure we have one
+    private static final String CALL_STATIC_JAVA_AND_THEN_OPAQUE_CHECK = IRNode.START + "CallStaticJava" + SKIP + "OpaqueCheck" + IRNode.MID + IRNode.END;
+    private static final String OPAQUE_CHECK_AND_THEN_CALL_STATIC_JAVA = IRNode.START + "OpaqueCheck" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END;
+    /* Having both CallStaticJava and OpaqueCheck, in any order. We use that in a failOn to make sure we have one
      * or the other (or none), but not both.
-     * The CallStaticJava happens when the call is not intrinsified, and the OpaqueNotNull comes from the intrinsic.
+     * The CallStaticJava happens when the call is not intrinsified, and the OpaqueCheck comes from the intrinsic.
      * We don't want a unfinished intrinsic, with the call nevertheless.
      */
     private static final String BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL =
-            "(" + CALL_STATIC_JAVA_AND_THEN_OPAQUE_NOT_NULL + ") | (" + OPAQUE_NOT_NULL_AND_THEN_CALL_STATIC_JAVA + ")";
+            "(" + CALL_STATIC_JAVA_AND_THEN_OPAQUE_CHECK + ") | (" + OPAQUE_CHECK_AND_THEN_CALL_STATIC_JAVA + ")";
 
 
     @Test
