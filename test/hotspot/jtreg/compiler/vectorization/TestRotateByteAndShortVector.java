@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, 2025 Loongson Technology Co. Ltd. All rights reserved.
  * Copyright (c) 2025, Rivos Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +25,7 @@
 
 /**
  * @test
- * @bug 8286847 8353600
+ * @bug 8286847 8353600 8342095
  * @key randomness
  * @summary Test vectorization of rotate byte and short
  * @library /test/lib /

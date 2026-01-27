@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test id=no-vectorization
- * @bug 8340093
+ * @bug 8340093 8342095
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestReductions P0
@@ -31,7 +31,7 @@
 
 /*
  * @test id=vanilla
- * @bug 8340093
+ * @bug 8340093 8342095
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestReductions P1
@@ -39,7 +39,7 @@
 
 /*
  * @test id=force-vectorization
- * @bug 8340093
+ * @bug 8340093 8342095
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestReductions P2

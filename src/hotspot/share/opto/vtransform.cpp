@@ -1310,7 +1310,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       return false; // not compatible
     }
 
-    if (current_red->in_req(2)->isa_Vector() == nullptr && current_red->in_req(2)->isa_CastVector() == nullptr) {
+    VTransformVectorNode* vector_input = current_red->in_req(2)->isa_Vector();
+    if (vector_input == nullptr) {
       assert(false, "reduction has a bad vector input");
       return false;
     }
@@ -1540,24 +1541,11 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
 
-float VTransformCastVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector_node(VectorCastNode::opcode(-1, _from_bt), _vlen, _from_bt);
-}
-
-VTransformApplyResult VTransformCastVectorNode::apply(VTransformApplyState& apply_state) const {
-  Node* value = apply_state.transformed_node(in_req(1));
-  VectorNode* vn = VectorCastNode::make(VectorCastNode::opcode(-1, _from_bt), value, _to_bt, _vlen);
-  register_new_node_from_vectorization(apply_state, vn);
-
-  return VTransformApplyResult::make_vector(vn, vn->vect_type());
-}
-
 void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
   PhaseIdealLoop* phase = apply_state.phase();
   // Using the cl is sometimes not the most accurate, but still correct. We do not have to be
   // perfectly accurate, because we will set major_progress anyway.
   phase->register_new_node(vn, apply_state.vloop().cl());
-
   phase->igvn()._worklist.push(vn);
   VectorNode::trace_new_vector(vn, "AutoVectorization");
 }
@@ -1656,10 +1644,6 @@ void VTransformShiftCountNode::print_spec() const {
 
 void VTransformPopulateIndexNode::print_spec() const {
   tty->print("vlen=%d element_bt=%s", _vlen, type2name(_element_bt));
-}
-
-void VTransformCastVectorNode::print_spec() const {
-  tty->print("vlen=%d from=%s to=%s", _vlen, type2name(_from_bt), type2name(_to_bt));
 }
 
 void VTransformVectorNode::print_spec() const {
