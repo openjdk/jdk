@@ -9979,7 +9979,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
 
     /**
      * {@return the number of Unicode code points in the {@code char} array}
-     * Unpaired surrogates count as one code point each.
+     * Isolated surrogate code units count as one code point each.
      *
      * @param seq the {@code char} array
      * @throws NullPointerException if {@code seq} is null

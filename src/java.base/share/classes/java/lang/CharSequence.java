@@ -255,7 +255,7 @@ public interface CharSequence {
 
     /**
      * {@return the number of Unicode code points in this character sequence}
-     * Unpaired surrogates count as one code point each.
+     * Isolated surrogate code units count as one code point each.
      *
      * @since 27
      */

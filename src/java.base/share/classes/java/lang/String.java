@@ -1716,7 +1716,7 @@ public final class String
 
     /**
      * {@return the number of Unicode code points in this String}
-     * Unpaired surrogates count as one code point each.
+     * Isolated surrogate code units count as one code point each.
      *
      * @since 27
      */
@@ -1730,7 +1730,7 @@ public final class String
     /**
      * Returns the index within this {@code String} that is
      * offset from the given {@code index} by
-     * {@code codePointOffset} code points. Unpaired surrogates
+     * {@code codePointOffset} code points. Isolated surrogate code units
      * within the text range given by {@code index} and
      * {@code codePointOffset} count as one code point each.
      *
