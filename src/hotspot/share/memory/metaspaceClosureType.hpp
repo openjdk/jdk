@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,25 @@
  *
  */
 
-#ifndef SHARE_CDS_CPPVTABLES_HPP
-#define SHARE_CDS_CPPVTABLES_HPP
+#ifndef SHARE_MEMORY_METASPACECLOSURETYPE_HPP
+#define SHARE_MEMORY_METASPACECLOSURETYPE_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/allStatic.hpp"
-#include "memory/metaspaceClosureType.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-class ArchiveBuilder;
-class Method;
-class SerializeClosure;
-class CppVtableInfo;
+// MetaspaceClosure is able to iterate on MetaspaceObjs, plus the following classes
+#define METASPACE_CLOSURE_TYPES_DO(f) \
+  METASPACE_OBJ_TYPES_DO(f) \
+  f(CArray) \
+  f(GrowableArray) \
+  f(ModuleEntry) \
+  f(PackageEntry) \
 
-// Support for C++ vtables in CDS archive.
-class CppVtables : AllStatic {
-  static char* _vtables_serialized_base;
-public:
-  static void dumptime_init(ArchiveBuilder* builder);
-  static void zero_archived_vtables();
-  static intptr_t* get_archived_vtable(MetaspaceClosureType type, address obj);
-  static void serialize(SerializeClosure* sc);
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
-  static char* vtables_serialized_base() { return _vtables_serialized_base; }
+#define METASPACE_CLOSURE_TYPE_DECLARE(name) name ## Type,
+
+enum class MetaspaceClosureType : int {
+  METASPACE_CLOSURE_TYPES_DO(METASPACE_CLOSURE_TYPE_DECLARE)
+  _number_of_types
 };
 
-#endif // SHARE_CDS_CPPVTABLES_HPP
+
+#endif // SHARE_MEMORY_METASPACECLOSURETYPE_HPP
