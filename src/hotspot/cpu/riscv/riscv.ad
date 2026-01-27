@@ -8542,7 +8542,7 @@ instruct convD2F_reg(fRegF dst, fRegD src) %{
 
 // single <-> half precision
 
-instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, iRegINoSp tmp) %{
+instruct convHF2F_reg_reg(fRegF dst, iRegIorL2I src, iRegINoSp tmp) %{
   match(Set dst (ConvHF2F src));
   effect(TEMP tmp);
   format %{ "fmv.h.x $dst, $src\t# move source from $src to $dst\n\t"

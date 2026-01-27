@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,30 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.WinFromOpions.createWinApplication;
+import static jdk.jpackage.internal.WinFromOptions.createWinApplication;
 import static jdk.jpackage.internal.WinPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_EXE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_MSI;
 
 import jdk.jpackage.internal.cli.Options;
-import jdk.jpackage.internal.util.Result;
 
 public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
 
     public WinBundlingEnvironment() {
-        super(build()
-                .defaultOperation(CREATE_WIN_EXE)
-                .bundler(CREATE_WIN_APP_IMAGE, WinBundlingEnvironment::createAppImage)
-                .bundler(CREATE_WIN_EXE, LazyLoad::sysEnv, WinBundlingEnvironment::createExePackage)
-                .bundler(CREATE_WIN_MSI, LazyLoad::sysEnv, WinBundlingEnvironment::createMsiPackage));
+        super(build().mutate(builder -> {
+            var sysEnv = runOnce(WinSystemEnvironment::create);
+
+            builder
+            .bundler(CREATE_WIN_EXE, sysEnv, WinBundlingEnvironment::createExePackage)
+            .bundler(CREATE_WIN_MSI, sysEnv, WinBundlingEnvironment::createMsiPackage);
+        }).defaultOperation(CREATE_WIN_EXE).bundler(CREATE_WIN_APP_IMAGE, WinBundlingEnvironment::createAppImage));
     }
 
     private static void createMsiPackage(Options options, WinSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                WinFromOpions::createWinMsiPackage,
+                WinFromOptions.createWinMsiPackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {
@@ -60,7 +61,7 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createExePackage(Options options, WinSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                WinFromOpions::createWinExePackage,
+                WinFromOptions.createWinExePackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {
@@ -98,12 +99,4 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
         }
     }
 
-    private static final class LazyLoad {
-
-        static Result<WinSystemEnvironment> sysEnv() {
-            return SYS_ENV;
-        }
-
-        private static final Result<WinSystemEnvironment> SYS_ENV = WinSystemEnvironment.create();
-    }
 }
