@@ -139,7 +139,7 @@ public final class Main {
         final var runner = new Runner(t -> {
             new ErrorReporter(_ -> {
                 t.printStackTrace(err);
-            }, Log::fatalError, Log.isVerbose()).reportError(t);
+            }, Log::fatalError, Log.isVerbose(), !Log.isVerbose()).reportError(t);
         });
 
         try {
@@ -229,17 +229,22 @@ public final class Main {
      * Always print the messages for exceptions of any type.
      */
 
-    record ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter, boolean verbose) {
-        ErrorReporter {
+    public record ErrorReporter(
+            Consumer<Throwable> stackTracePrinter,
+            Consumer<String> messagePrinter,
+            boolean alwaysPrintStackTrace,
+            boolean printCommandOutput) {
+
+        public ErrorReporter {
             Objects.requireNonNull(stackTracePrinter);
             Objects.requireNonNull(messagePrinter);
         }
 
-        ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
-            this(stackTracePrinter, messagePrinter, true);
+        public ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
+            this(stackTracePrinter, messagePrinter, true, false);
         }
 
-        void reportError(Throwable t) {
+        public void reportError(Throwable t) {
 
             var unfoldedExceptions = new ArrayList<Exception>();
             ExceptionBox.visitUnboxedExceptionsRecursively(t, unfoldedExceptions::add);
@@ -262,7 +267,7 @@ public final class Main {
             var commandOutput = ((ExecutableAttributesWithCapturedOutput)result.execAttrs()).printableOutput();
             var printableCommandLine = result.execAttrs().printableCommandLine();
 
-            if (verbose) {
+            if (alwaysPrintStackTrace) {
                 stackTracePrinter.accept(ex);
             }
 
@@ -276,16 +281,18 @@ public final class Main {
             }
 
             messagePrinter.accept(I18N.format("message.error-header", msg));
-            messagePrinter.accept(I18N.format("message.failed-command-output-header"));
-            try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
-                lines.forEach(messagePrinter);
+            if (printCommandOutput) {
+                messagePrinter.accept(I18N.format("message.failed-command-output-header"));
+                try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
+                    lines.forEach(messagePrinter);
+                }
             }
         }
 
         private void printError(Throwable t, Optional<String> advice) {
             var isSelfContained = isSelfContained(t);
 
-            if (!isSelfContained || verbose) {
+            if (!isSelfContained || alwaysPrintStackTrace) {
                 stackTracePrinter.accept(t);
             }
 
