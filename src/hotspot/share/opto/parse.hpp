@@ -442,7 +442,7 @@ class Parse : public GraphKit {
   SafePointNode* create_entry_map();
 
   // OSR helpers
-  Node *fetch_interpreter_state(int index, BasicType bt, Node *local_addrs, Node *local_addrs_base);
+  Node *fetch_interpreter_state(int index, BasicType bt, Node* local_addrs);
   Node* check_interpreter_type(Node* l, const Type* type, SafePointNode* &bad_type_exit);
   void  load_interpreter_state(Node* osr_buf);
 

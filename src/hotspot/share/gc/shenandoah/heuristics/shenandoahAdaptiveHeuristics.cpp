@@ -68,9 +68,9 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {}
 
-void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                         RegionData* data, size_t size,
-                                                                         size_t actual_free) {
+size_t ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                           RegionData* data, size_t size,
+                                                                           size_t actual_free) {
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
 
   // The logic for cset selection in adaptive is as follows:
@@ -124,6 +124,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       cur_garbage = new_garbage;
     }
   }
+  return 0;
 }
 
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
@@ -183,8 +184,8 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_degenerated() {
-  ShenandoahHeuristics::record_success_degenerated();
+void ShenandoahAdaptiveHeuristics::record_degenerated() {
+  ShenandoahHeuristics::record_degenerated();
   // Adjust both trigger's parameters in the case of a degenerated GC because
   // either of them should have triggered earlier to avoid this case.
   adjust_margin_of_error(DEGENERATE_PENALTY_SD);
