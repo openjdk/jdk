@@ -403,23 +403,23 @@ ZRemsetTableIterator::ZRemsetTableIterator(ZRemembered* remembered, bool previou
 
   // This iterator uses the "found old" optimization.
 bool ZRemsetTableIterator::next(ZRemsetTableEntry* entry_addr) {
-  BitMap::idx_t prev = _claimed.load_relaxed();
-
   for (;;) {
+    const BitMap::idx_t prev = _claimed.load_relaxed();
+
     if (prev == _bm->size()) {
+      // Terminal state
       return false;
     }
 
-    const BitMap::idx_t page_index = _bm->find_first_set_bit(_claimed.load_relaxed());
+    const BitMap::idx_t page_index = _bm->find_first_set_bit(prev);
     if (page_index == _bm->size()) {
-      _claimed.compare_exchange(prev, page_index, memory_order_relaxed);
+      // No more bits, set terminal state
+      _claimed.store_relaxed(page_index);
       return false;
     }
 
-    const BitMap::idx_t res = _claimed.compare_exchange(prev, page_index + 1, memory_order_relaxed);
-    if (res != prev) {
-      // Someone else claimed
-      prev = res;
+    if (!_claimed.compare_set(prev, page_index + 1, memory_order_relaxed)) {
+      // Interference, retry
       continue;
     }
 
