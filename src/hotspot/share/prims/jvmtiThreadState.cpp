@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,10 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
       thread->set_jvmti_thread_state(this);
     }
     thread->set_interp_only_mode(false);
+  }
+  if (JvmtiEnvBase::is_thread_carrying_vthread(thread, thread_oop)) {
+    _thread_saved = thread;
+    _thread = nullptr;
   }
 }
 
