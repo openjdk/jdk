@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,14 @@ public class TestDwarf {
                         new DwarfConstraint(0, "foo", "libTestDwarf.c", 42),
                         new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 70));
         }
-        runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
-                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 46));
+        // Null pointer dereferences exhibit different behaviour depending on if GCC or Clang is used.
+        // When using GCC, the VM will crash gracefully and generate a hs_err which can be parsed.
+        // On the contrary, with Clang the process exits immediately without hs_err.
+        // Since runAndCheck needs an hs_err file, we have to skip this subtest.
+        if (!isUsingClang()) {
+            runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
+                        new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 46));
+        }
     }
 
     // A full pattern could check for lines like:
@@ -240,6 +246,7 @@ public class TestDwarf {
     private static native void crashNativeDivByZero();
     private static native void crashNativeDereferenceNull();
     private static native void crashNativeMultipleMethods(int x);
+    private static native boolean isUsingClang();
 }
 
 class UnsupportedDwarfVersionException extends RuntimeException { }
