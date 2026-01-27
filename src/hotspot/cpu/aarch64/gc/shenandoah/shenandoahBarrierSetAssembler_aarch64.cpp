@@ -407,7 +407,8 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
                  tmp3 /* obj */,
                  tmp2 /* pre_val */,
                  rthread /* thread */,
-                 tmp1  /* tmp */,
+                 tmp1 /* tmp */,
+                 rscratch1 /* tmp2 */,
                  storing_non_null /* tosca_live */,
                  false /* expand_call */);
   }

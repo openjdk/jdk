@@ -523,7 +523,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     assert_different_registers(dst, tmp1, r15_thread);
     // Generate the SATB pre-barrier code to log the value of
     // the referent field in an SATB buffer.
-    satb_barrier(masm,
+    satb_barrier(masm /* masm */,
                  noreg /* obj */,
                  dst /* pre_val */,
                  tmp1 /* tmp */,
