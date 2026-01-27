@@ -292,7 +292,7 @@ void DFSClosure::handle_objarrayoop() {
 
   // push child references
   _current_depth ++;
-  pointee_oa->oop_iterate_range(this, begidx, endidx);
+  pointee_oa->oop_iterate_elements_range(this, begidx, endidx);
   _current_depth --;
 }
 
