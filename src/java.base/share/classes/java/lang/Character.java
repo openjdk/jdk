@@ -9952,28 +9952,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         return n;
     }
 
-    /**
-     * Returns the number of Unicode code points in the text range of
-     * the specified char sequence. Unpaired surrogates count as one
-     * code point each.
-     *
-     * @param seq the char sequence
-     * @return the number of Unicode code points in the char sequence
-     * @throws NullPointerException if {@code seq} is null.
-     * @since  26
-     */
-    public static int codePointCount(CharSequence seq) {
-        final int length = seq.length();
-        int n = length;
-        for (int i = 0; i < length; ) {
-            if (isHighSurrogate(seq.charAt(i++)) && i < length &&
-                isLowSurrogate(seq.charAt(i))) {
-                n--;
-                i++;
-            }
-        }
-        return n;
-    }
 
     /**
      * Returns the number of Unicode code points in a subarray of the
