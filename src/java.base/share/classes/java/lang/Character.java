@@ -10003,12 +10003,12 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * {@return the number of Unicode code points in the {@code char} array}
      * Unpaired surrogates count as one code point each.
      *
-     * @param a the {@code char} array
-     * @throws NullPointerException if {@code a} is null
+     * @param seq the {@code char} array
+     * @throws NullPointerException if {@code seq} is null
      * @since 27
      */
-    public static int codePointCount(char[] a) {
-        return codePointCountImpl(a, 0, a.length);
+    public static int codePointCount(char[] seq) {
+        return codePointCountImpl(seq, 0, seq.length);
     }
 
     static int codePointCountImpl(char[] a, int offset, int count) {
