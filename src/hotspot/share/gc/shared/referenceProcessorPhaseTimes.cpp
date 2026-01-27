@@ -196,7 +196,7 @@ void ReferenceProcessorPhaseTimes::reset() {
   _soft_weak_final_refs_phase_worker_time_sec->reset();
 
   for (int i = 0; i < number_of_subclasses_of_ref; i++) {
-    ::new (&_ref_dropped[i]) Atomic<size_t>{};
+    _ref_dropped[i].store_relaxed(0);
     _ref_discovered[i] = 0;
   }
 
