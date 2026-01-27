@@ -244,7 +244,9 @@ public class UIManager implements Serializable
      * </pre>
      */
     private static LAFState getLAFState() {
-        return LAF_STATE;
+        synchronized (classLock) {
+            return LAF_STATE;
+        }
     }
 
     static {
