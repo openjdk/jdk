@@ -53,17 +53,17 @@ public class GetSampleSizeTest {
             System.out.println("CSM sample size = " + csm.getSampleSize(numBands));
         }
 
-	{
-	    MultiPixelPackedSampleModel mppsm =
-		new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE,
-		    width, height, 4);
-	    int numBands = mppsm.getNumBands();
-	    System.out.println("MPPSM numBands = " + numBands);
-	    if (numBands != 1) {
-		throw new RuntimeException("Unexpected numBands");
-	    }
-	    System.out.println("MPPSM sample size = " + mppsm.getSampleSize(numBands));
-	}
+        {
+            MultiPixelPackedSampleModel mppsm =
+                new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE,
+                 width, height, 4);
+            int numBands = mppsm.getNumBands();
+            System.out.println("MPPSM numBands = " + numBands);
+            if (numBands != 1) {
+                 throw new RuntimeException("Unexpected numBands");
+            }
+            System.out.println("MPPSM sample size = " + mppsm.getSampleSize(numBands));
+        }
 
         {
             SinglePixelPackedSampleModel sppsm  =
@@ -71,9 +71,9 @@ public class GetSampleSizeTest {
                         width, height, bitMask);
                 int numBands = sppsm.getNumBands();
             System.out.println("SPPSM numBands = " + numBands);
-	    if (numBands != 4) {
-		throw new RuntimeException("Unexpected numBands");
-	    }
+            if (numBands != 4) {
+                throw new RuntimeException("Unexpected numBands");
+    }
             try {
                 System.out.println("SPPSM sample size = " + sppsm.getSampleSize(numBands));
                 throw new RuntimeException("No expected AIOBE");
