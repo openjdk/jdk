@@ -130,7 +130,7 @@ public class TestMinMaxIdentity {
                         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
                     @IR(counts = {IRNode.#op, "= 1"},
                         phase = CompilePhase.BEFORE_MACRO_EXPANSION,
-                        applyIfPlatform = { "riscv64", "true" })
+                        applyIfPlatform = {"riscv64", "true"})
                     """ :
                     """
                     @IR(counts = {IRNode.#op, "= 1"},
