@@ -341,29 +341,46 @@ public class TestDateTimeFormatter {
 
     private static Stream<Arguments> data_iso_short_offset_parse() {
         return Stream.of(
-            Arguments.of("20260123-01", BASIC_ISO_DATE),
-            Arguments.of("2026-01-23-01", ISO_DATE),
-            Arguments.of("2026-01-23T11:30:59-01", ISO_DATE_TIME),
-            Arguments.of("11:30:59-01", ISO_TIME),
-            Arguments.of("2026-01-23-01", ISO_OFFSET_DATE),
-            Arguments.of("2026-01-23T11:30:59-01", ISO_OFFSET_DATE_TIME),
-            Arguments.of("11:30:59-01", ISO_OFFSET_TIME),
-            Arguments.of("2026-023-01", ISO_ORDINAL_DATE),
-            Arguments.of("2026-W04-5-01", ISO_WEEK_DATE),
-            Arguments.of("2026-01-23T11:30:59-01", ISO_ZONED_DATE_TIME),
-            Arguments.of("2026-01-23T11:30:59-01", ISO_INSTANT)
+            Arguments.of("20260123-01", BASIC_ISO_DATE, "20260123-0100"),
+            Arguments.of("20260123+00", BASIC_ISO_DATE, "20260123Z"),
+            Arguments.of("20260123-00", BASIC_ISO_DATE, "20260123Z"),
+            Arguments.of("2026-01-23-01", ISO_DATE, "2026-01-23-01:00"),
+            Arguments.of("2026-01-23+00", ISO_DATE, "2026-01-23Z"),
+            Arguments.of("2026-01-23-00", ISO_DATE, "2026-01-23Z"),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_DATE_TIME, "2026-01-23T11:30:59-01:00"),
+            Arguments.of("2026-01-23T11:30:59+00", ISO_DATE_TIME, "2026-01-23T11:30:59Z"),
+            Arguments.of("2026-01-23T11:30:59-00", ISO_DATE_TIME, "2026-01-23T11:30:59Z"),
+            Arguments.of("11:30:59-01", ISO_TIME, "11:30:59-01:00"),
+            Arguments.of("11:30:59+00", ISO_TIME, "11:30:59Z"),
+            Arguments.of("11:30:59-00", ISO_TIME, "11:30:59Z"),
+            Arguments.of("2026-01-23-01", ISO_OFFSET_DATE, "2026-01-23-01:00"),
+            Arguments.of("2026-01-23+00", ISO_OFFSET_DATE, "2026-01-23Z"),
+            Arguments.of("2026-01-23-00", ISO_OFFSET_DATE, "2026-01-23Z"),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_OFFSET_DATE_TIME, "2026-01-23T11:30:59-01:00"),
+            Arguments.of("2026-01-23T11:30:59+00", ISO_OFFSET_DATE_TIME, "2026-01-23T11:30:59Z"),
+            Arguments.of("2026-01-23T11:30:59-00", ISO_OFFSET_DATE_TIME, "2026-01-23T11:30:59Z"),
+            Arguments.of("11:30:59-01", ISO_OFFSET_TIME, "11:30:59-01:00"),
+            Arguments.of("11:30:59+00", ISO_OFFSET_TIME, "11:30:59Z"),
+            Arguments.of("11:30:59-00", ISO_OFFSET_TIME, "11:30:59Z"),
+            Arguments.of("2026-023-01", ISO_ORDINAL_DATE, "2026-023-01:00"),
+            Arguments.of("2026-023+00", ISO_ORDINAL_DATE, "2026-023Z"),
+            Arguments.of("2026-023-00", ISO_ORDINAL_DATE, "2026-023Z"),
+            Arguments.of("2026-W04-5-01", ISO_WEEK_DATE, "2026-W04-5-01:00"),
+            Arguments.of("2026-W04-5+00", ISO_WEEK_DATE, "2026-W04-5Z"),
+            Arguments.of("2026-W04-5-00", ISO_WEEK_DATE, "2026-W04-5Z"),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_ZONED_DATE_TIME, "2026-01-23T11:30:59-01:00"),
+            Arguments.of("2026-01-23T11:30:59+00", ISO_ZONED_DATE_TIME, "2026-01-23T11:30:59Z"),
+            Arguments.of("2026-01-23T11:30:59-00", ISO_ZONED_DATE_TIME, "2026-01-23T11:30:59Z"),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_INSTANT, "2026-01-23T12:30:59Z"),
+            Arguments.of("2026-01-23T11:30:59+00", ISO_INSTANT, "2026-01-23T11:30:59Z"),
+            Arguments.of("2026-01-23T11:30:59-00", ISO_INSTANT, "2026-01-23T11:30:59Z")
         );
     }
 
     // Checks if predefined ISO formatters can parse hour-only offsets
     @ParameterizedTest
     @MethodSource("data_iso_short_offset_parse")
-    public void test_iso_short_offset_parse(String text, DateTimeFormatter formatter) {
-        var formatted = formatter.format(formatter.parse(text));
-        var expected =
-            formatter == BASIC_ISO_DATE ? text + "00" :
-            formatter == ISO_INSTANT ? text.replace("11:30:59-01", "12:30:59Z") :
-            text + ":00";
-        assertEquals(expected, formatted);
+    public void test_iso_short_offset_parse(String text, DateTimeFormatter formatter, String expected) {
+        assertEquals(expected, formatter.format(formatter.parse(text)));
     }
 }
