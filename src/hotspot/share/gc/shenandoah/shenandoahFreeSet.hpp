@@ -802,9 +802,7 @@ public:
   //   old_trashed_regions is the number of trashed regions
   //                       (immediate garbage at final old mark, cset regions after update refs for mixed evac)
   //    num_old_regions is the number of old-gen regions that have available memory for further allocations (excluding old cset)
-  //
-  // Returns allocatable memory within Mutator partition, in words.
-  size_t finish_rebuild(size_t young_trashed_regions, size_t old_trashed_regions, size_t num_old_regions);
+  void finish_rebuild(size_t young_trashed_regions, size_t old_trashed_regions, size_t num_old_regions);
 
   // When a region is promoted in place, we add the region's available memory if it is greater than plab_min_size()
   // into the old collector partition by invoking this method.

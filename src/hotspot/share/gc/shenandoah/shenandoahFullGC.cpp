@@ -1125,8 +1125,7 @@ void ShenandoahFullGC::phase5_epilog() {
       if (heap->mode()->is_generational()) {
         ShenandoahGenerationalFullGC::compute_balances();
       }
-      size_t mutator_free = heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
-      heap->set_mutator_free_after_updaterefs(mutator_free);
+      heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
     }
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.

@@ -2590,12 +2590,12 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
 }
 
 // Return mutator free
-size_t ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_trashed_regions, size_t old_region_count) {
+void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_trashed_regions, size_t old_region_count) {
   shenandoah_assert_heaplocked();
   size_t young_reserve(0), old_reserve(0);
 
   if (_heap->mode()->is_generational()) {
-    compute_young_and_old_reserves(young_cset_regions, old_cset_regions, young_reserve, old_reserve);
+    compute_young_and_old_reserves(young_trashed_regions, old_trashed_regions, young_reserve, old_reserve);
   } else {
     young_reserve = (_heap->max_capacity() / 100) * ShenandoahEvacReserve;
     old_reserve = 0;
@@ -2604,8 +2604,8 @@ size_t ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t ol
   // Move some of the mutator regions into the Collector and OldCollector partitions in order to satisfy
   // young_reserve and old_reserve.
   size_t young_used_regions, old_used_regions, young_used_bytes, old_used_bytes;
-  size_t mutator_free = reserve_regions(young_reserve, old_reserve, old_region_count, young_used_regions, old_used_regions,
-                                        young_used_bytes, old_used_bytes);
+  reserve_regions(young_reserve, old_reserve, old_region_count, young_used_regions, old_used_regions,
+                  young_used_bytes, old_used_bytes);
   _total_young_regions = _heap->num_regions() - old_region_count;
   _total_global_regions = _heap->num_regions();
   establish_old_collector_alloc_bias();
@@ -2618,7 +2618,6 @@ size_t ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t ol
     // Clear the region balance until it is adjusted in preparation for a subsequent GC cycle.
     _heap->old_generation()->set_region_balance(0);
   }
-  return mutator_free;
 }
 
 
