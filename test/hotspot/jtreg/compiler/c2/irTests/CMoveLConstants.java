@@ -67,14 +67,28 @@ public class CMoveLConstants {
         return a > b ? 1L : 0L;
     }
 
+    @Test
+    @IR(counts = {IRNode.X86_CMOVEL_IMM01UCF, "1"},
+        applyIfPlatform = {"x64", "true"},
+        applyIfCPUFeatureOr = {"apx_f", "false", "avx10_2", "false"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(counts = {IRNode.X86_CMOVEL_IMM01UCFE, "1"},
+        applyIfPlatform = {"x64", "true"},
+        applyIfCPUFeatureAnd = {"apx_f", "true", "avx10_2", "true"},
+        phase = CompilePhase.FINAL_CODE)
+    public static long testDouble(double a, double b) {
+        return a > b ? 1L : 0L;
+    }
+
     @DontCompile
     public void assertResults(int a, int b) {
         Asserts.assertEQ(a > b ? 1L : 0L, testSigned(a, b));
         Asserts.assertEQ(Integer.compareUnsigned(a, b) > 0 ? 1L : 0L, testUnsigned(a, b));
         Asserts.assertEQ((float) a > (float) b ? 1L : 0L, testFloat(a, b));
+        Asserts.assertEQ((double) a > (double) b ? 1L : 0L, testDouble(a, b));
     }
 
-    @Run(test = {"testSigned", "testUnsigned", "testFloat"})
+    @Run(test = {"testSigned", "testUnsigned", "testFloat", "testDouble"})
     public void runMethod() {
         assertResults(10, 20);
         assertResults(20, 10);
