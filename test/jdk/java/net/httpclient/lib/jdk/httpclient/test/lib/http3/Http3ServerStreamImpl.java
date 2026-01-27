@@ -264,7 +264,7 @@ final class Http3ServerStreamImpl {
             // nothing to do - let the response be sent to the client, but throw an
             // exception if `is` is used again.
             exchangeCF.thenApply(en -> {
-                en.is.close(new IOException("stopSendingRequested"));
+                en.is.resetStream(new IOException("stopSendingRequested"));
                 return en;
             });
             return;
@@ -292,7 +292,7 @@ final class Http3ServerStreamImpl {
     }
 
     class RequestBodyInputStream extends InputStream {
-        // non-null if the QUIC stream was reset, or an exception occurred
+        // non-null if the QUIC stream was reset
         volatile IOException error;
         // true if close() was called
         volatile boolean closed;
@@ -301,11 +301,21 @@ final class Http3ServerStreamImpl {
         ByteBuffer current;
 
         ByteBuffer current() throws IOException {
+            if (closed) {
+                throw new IOException("Stream is closed");
+            }
             while (true) {
                 if (current != null && current.hasRemaining()) {
                     return current;
                 }
-                if (current == QuicStreamReader.EOF) return current;
+                if (current == QuicStreamReader.EOF) {
+                    if (closed) {
+                        throw new IOException("Stream is closed");
+                    }
+                    var error = this.error;
+                    if (error != null) throw error;
+                    return current;
+                }
                 try {
                     if (debug.on())
                         debug.log("Taking buffer from queue");
@@ -315,26 +325,16 @@ final class Http3ServerStreamImpl {
                     var io = new InterruptedIOException();
                     Thread.currentThread().interrupt();
                     io.initCause(e);
-                    close(io);
-                    var error = this.error;
-                    if (error != null) throw error;
+                    throw io;
                 }
             }
         }
 
         @Override
         public int read() throws IOException {
-            if (closed) {
-                throw new IOException("Stream is closed");
-            }
             ByteBuffer buffer = current();
             if (buffer == QuicStreamReader.EOF) {
-                if (closed) {
-                    throw new IOException("Stream is closed");
-                }
-                var error = this.error;
-                if (error == null) return -1;
-                throw error;
+                return -1;
             }
             return buffer.get() & 0xFF;
         }
@@ -350,12 +350,7 @@ final class Http3ServerStreamImpl {
                 ByteBuffer buffer = current();
                 if (buffer == QuicStreamReader.EOF) {
                     if (len == remaining) {
-                        if (closed) {
-                            throw new IOException("Stream is closed");
-                        }
-                        var error = this.error;
-                        if (error == null) return -1;
-                        throw error;
+                        return -1;
                     } else return len - remaining;
                 }
                 int count = Math.min(buffer.remaining(), remaining);
@@ -374,7 +369,7 @@ final class Http3ServerStreamImpl {
             requestBodyQueue.add(QuicStreamReader.EOF);
         }
 
-        void close(IOException io) {
+        void resetStream(IOException io) {
             if (error != null) return;
             error = io;
             if (debug.on()) {
