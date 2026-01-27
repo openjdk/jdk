@@ -760,22 +760,21 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             // Close streams, release their inflaters
-            if (istreams != null) {
-                synchronized (istreams) {
-                    if (!istreams.isEmpty()) {
-                        InputStream[] copy = istreams.toArray(new InputStream[0]);
-                        istreams.clear();
-                        for (InputStream is : copy) {
-                            try {
-                                is.close();
-                            } catch (IOException e) {
-                                if (ioe == null) ioe = e;
-                                else ioe.addSuppressed(e);
-                            }
+            synchronized (istreams) {
+                if (!istreams.isEmpty()) {
+                    InputStream[] copy = istreams.toArray(new InputStream[0]);
+                    istreams.clear();
+                    for (InputStream is : copy) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            if (ioe == null) ioe = e;
+                            else ioe.addSuppressed(e);
                         }
                     }
                 }
             }
+
 
             // Release ZIP src
             if (zsrc != null) {
