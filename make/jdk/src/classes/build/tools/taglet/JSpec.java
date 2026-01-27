@@ -66,7 +66,9 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * <pre>{@code
  * <dt>See <i>Java Language Specification</i>:
  * <dd><a href="../../specs/jls/jls-3.html#jls-3.4">3.4 Line terminators</a>
- * <dd><a href="../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-5.7.1">5.7.1 Exact Testing Conversions</a>
+ * <dd><a href="../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-5.7.1">
+ * 5.7.1 Exact Testing Conversions</a><sup class="preview-mark">
+ * <a href="../../specs/jls/jls-1.html#jls-1.5.1">PREVIEW</a></sup>
  * }</pre>
  *
  * In inline tags (note you need manual JLS/JVMS prefix):
@@ -101,9 +103,9 @@ public class JSpec implements Taglet  {
         }
     }
 
-    private String tagName;
-    private String specTitle;
-    private String idPrefix;
+    private final String tagName;
+    private final String specTitle;
+    private final String idPrefix;
 
     JSpec(String tagName, String specTitle, String idPrefix) {
         this.tagName = tagName;
@@ -188,7 +190,7 @@ public class JSpec implements Taglet  {
                 if (literal.startsWith(prefix)) {
                     var hasFullTitle = literal.length() > prefix.length();
                     if (hasFullTitle) {
-                        // Drop the preview part
+                        // Drop the preview identifier
                         literal = chapter + section + literal.substring(prefix.length());
                     } else {
                         // No section sign if the tag refers to a chapter, like {@jvms 4}
@@ -203,6 +205,17 @@ public class JSpec implements Taglet  {
                         .append("\">")
                         .append(literal)
                         .append("</a>");
+
+                if (preview != null) {
+                    // Add PREVIEW superscript that links to JLS/JVMS 1.5.1
+                    // "Restrictions on the Use of Preview Features"
+                    // Similar to how APIs link to the Preview info box warning
+                    var sectionLink = String.format("%1$s/specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
+                            rootParent, idPrefix, "1", ".5.1");
+                    sb.append("<sup class=\"preview-mark\"><a href=\"")
+                            .append(sectionLink)
+                            .append("\">PREVIEW</a></sup>");
+                }
 
                 if (tag.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG) {
                     sb.append("<br>");
