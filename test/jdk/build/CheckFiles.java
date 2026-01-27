@@ -106,6 +106,8 @@ public class CheckFiles {
         allowedEndingsLibDir.add("psfont.properties.ja");
         allowedEndingsLibDir.add("src.zip");
         allowedEndingsLibDir.add("tzdb.dat");
+        allowedEndingsLibDir.add("javafx-swt.jar");
+        allowedEndingsLibDir.add("javafx.properties");
         if (Platform.isWindows()) {
             allowedEndingsLibDir.add(".lib");
             allowedEndingsLibDir.add("tzmappings");
