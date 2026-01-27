@@ -1045,20 +1045,10 @@ import java.util.Arrays;
  *
  * <table id="expansion-examples" style="text-align:right;">
  * <caption>expansion and contraction examples</caption>
- * <colgroup>
- * <col style="width: 17%" />
- * <col style="width: 11%" />
- * <col style="width: 17%" />
- * <col style="width: 5%" />
- * <col style="width: 5%" />
- * <col style="width: 5%" />
- * <col style="width: 5%" />
- * <col style="width: 2%" />
- * <col style="width: 26%" />
- * </colgroup>
  * <thead>
  * <tr>
  * <th>input</th>
+ * <th>bits</th>
  * <th>op</th>
  * <th>result</th>
  * <th><code>ML</code></th>
@@ -1071,326 +1061,128 @@ import java.util.Arrays;
  * </thead>
  * <tbody>
  * <tr>
- * <td><code>byte[8]</code></td>
+ * <td><code>long[2]</code></td>
+ * <td>128</td>
  * <td>identity</td>
- * <td><code>byte[8]</code></td>
+ * <td><code>long[2]</code></td>
  * <td>1</td>
  * <td>1</td>
  * <td>1</td>
  * <td>0</td>
  * <td></td>
- * <td style="text-align: left;"><code>ABCDEFGH</code></td>
+ * <td style="text-align: left;"><code>A=======</code>&#xA0;<code>B=======</code></td>
  * </tr>
  * <tr>
- * <td><code>short[4]</code></td>
- * <td>identity</td>
- * <td><code>short[4]</code></td>
- * <td>1</td>
- * <td>1</td>
- * <td>1</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A=B=C=D=</code></td>
- * </tr>
- * <tr>
- * <td><code>short[4]</code></td>
- * <td><code>S2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>ABCD____</code></td>
- * </tr>
- * <tr>
- * <td><code>short[4]</code></td>
- * <td><code>S2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>-1</td>
- * <td></td>
- * <td style="text-align: left;"><code>____ABCD</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>B2S</code></td>
- * <td><code>short[4]</code></td>
- * <td>2</td>
- * <td>1</td>
- * <td>2</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A=B=C=D=</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>B2S</code></td>
- * <td><code>short[4]</code></td>
- * <td>2</td>
- * <td>1</td>
- * <td>2</td>
- * <td>1</td>
- * <td></td>
- * <td style="text-align: left;"><code>E=F=G=H=</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>Z_E_B2S</code></td>
- * <td><code>short[4]</code></td>
- * <td>2</td>
- * <td>1</td>
- * <td>2</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A_B_C_D_</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>Z_E_B2S</code></td>
- * <td><code>short[4]</code></td>
- * <td>2</td>
- * <td>1</td>
- * <td>2</td>
- * <td>1</td>
- * <td></td>
- * <td style="text-align: left;"><code>E_F_G_H_</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>Z_E_B2I</code></td>
- * <td><code>int[2]</code></td>
- * <td>4</td>
- * <td>1</td>
- * <td>4</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A___B___</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>Z_E_B2I</code></td>
- * <td><code>int[2]</code></td>
- * <td>4</td>
- * <td>1</td>
- * <td>4</td>
- * <td>3</td>
- * <td></td>
- * <td style="text-align: left;"><code>G___H___</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>Z_E_B2L</code></td>
- * <td><code>long[1]</code></td>
- * <td>8</td>
- * <td>1</td>
- * <td>8</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A_______</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td><code>Z_E_B2L</code></td>
- * <td><code>long[1]</code></td>
- * <td>8</td>
- * <td>1</td>
- * <td>8</td>
- * <td>7</td>
- * <td></td>
- * <td style="text-align: left;"><code>H_______</code></td>
- * </tr>
- * <tr>
- * <td><code>long[1]</code></td>
- * <td><code>L2I</code></td>
- * <td><code>int[2]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A===____</code></td>
- * </tr>
- * <tr>
- * <td><code>long[1]</code></td>
+ * <td><code>long[2]</code></td>
+ * <td>128</td>
  * <td><code>L2S</code></td>
- * <td><code>short[4]</code></td>
+ * <td><code>short[2]</code></td>
  * <td>1/4</td>
  * <td>1</td>
  * <td>1/4</td>
  * <td>0</td>
  * <td></td>
- * <td style="text-align: left;"><code>A=______</code></td>
+ * <td style="text-align: left;"><code>A=B=____</code>&#xA0;<code>________</code></td>
  * </tr>
  * <tr>
- * <td><code>long[1]</code></td>
- * <td><code>L2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/8</td>
+ * <td><code>long[2]</code></td>
+ * <td>128</td>
+ * <td><code>L2S</code></td>
+ * <td><code>short[2]</code></td>
+ * <td>1/4</td>
  * <td>1</td>
- * <td>1/8</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A_______</code></td>
- * </tr>
- * <tr>
- * <td><code>long[1]</code></td>
- * <td><code>L2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/8</td>
- * <td>1</td>
- * <td>1/8</td>
+ * <td>1/4</td>
  * <td>-1</td>
  * <td></td>
- * <td style="text-align: left;"><code>_A______</code></td>
+ * <td style="text-align: left;"><code>____A=B=</code>&#xA0;<code>________</code></td>
  * </tr>
  * <tr>
- * <td><code>long[1]</code></td>
- * <td><code>L2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/8</td>
- * <td>1</td>
- * <td>1/8</td>
- * <td>-6</td>
- * <td></td>
- * <td style="text-align: left;"><code>______A_</code></td>
- * </tr>
- * <tr>
- * <td><code>long[1]</code></td>
- * <td><code>L2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/8</td>
- * <td>1</td>
- * <td>1/8</td>
- * <td>-7</td>
- * <td></td>
- * <td style="text-align: left;"><code>_______A</code></td>
- * </tr>
- * <tr>
- * <td><code>long[1]</code></td>
+ * <td><code>long[2]</code></td>
+ * <td>128</td>
  * <td><code>L2S</code></td>
- * <td><code>short[4]</code></td>
+ * <td><code>short[2]</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>-2</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>________</code>&#xA0;<code>A=B=____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[2]</code></td>
+ * <td>128</td>
+ * <td><code>L2S</code></td>
+ * <td><code>short[2]</code></td>
  * <td>1/4</td>
  * <td>1</td>
  * <td>1/4</td>
  * <td>-3</td>
  * <td></td>
- * <td style="text-align: left;"><code>______A=</code></td>
+ * <td style="text-align: left;"><code>________</code>&#xA0;<code>____A=B=</code></td>
  * </tr>
  * <tr>
- * <td><code>long[1]</code></td>
- * <td><code>L2I</code></td>
- * <td><code>int[2]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>-1</td>
- * <td></td>
- * <td style="text-align: left;"><code>____A===</code></td>
- * </tr>
- * <tr>
- * <td><code>int[2]</code></td>
- * <td><code>I2S</code></td>
- * <td><code>short[4]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>A=B=____</code></td>
- * </tr>
- * <tr>
- * <td><code>int[2]</code></td>
- * <td><code>I2S</code></td>
- * <td><code>short[4]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>-1</td>
- * <td></td>
- * <td style="text-align: left;"><code>____A=B=</code></td>
- * </tr>
- * <tr>
- * <td><code>short[4]</code></td>
- * <td><code>S2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>0</td>
- * <td></td>
- * <td style="text-align: left;"><code>ABCD____</code></td>
- * </tr>
- * <tr>
- * <td><code>short[4]</code></td>
- * <td><code>S2B</code></td>
- * <td><code>byte[8]</code></td>
- * <td>1/2</td>
- * <td>1</td>
- * <td>1/2</td>
- * <td>-1</td>
- * <td></td>
- * <td style="text-align: left;"><code>____ABCD</code></td>
- * </tr>
- * <tr>
- * <td><code>byte[8]</code></td>
- * <td>reinterp</td>
- * <td><code>short[4]</code></td>
+ * <td><code>short[8]</code></td>
+ * <td>128</td>
+ * <td>identity</td>
+ * <td><code>short[8]</code></td>
  * <td>1</td>
  * <td>1</td>
  * <td>1</td>
  * <td>0</td>
  * <td></td>
- * <td style="text-align: left;"><code>(AB)(CD)(EF)(GH)</code></td>
+ * <td style="text-align: left;"><code>A=B=C=D=</code>&#xA0;<code>E=F=G=H=</code></td>
  * </tr>
  * <tr>
- * <td><code>byte[8]</code></td>
- * <td>reinterp</td>
- * <td><code>int[2]</code></td>
+ * <td><code>short[8]</code></td>
+ * <td>128</td>
+ * <td><code>Z_E_S2L</code></td>
+ * <td><code>long[8]</code></td>
+ * <td>4</td>
  * <td>1</td>
- * <td>1</td>
- * <td>1</td>
+ * <td>4</td>
  * <td>0</td>
  * <td></td>
- * <td style="text-align: left;"><code>(ABCD)(EFGH)</code></td>
+ * <td style="text-align: left;"><code>A=______</code>&#xA0;<code>B=______</code></td>
  * </tr>
  * <tr>
- * <td><code>byte[8]</code></td>
- * <td>reinterp</td>
- * <td><code>long[1]</code></td>
+ * <td><code>short[8]</code></td>
+ * <td>128</td>
+ * <td><code>Z_E_S2L</code></td>
+ * <td><code>long[8]</code></td>
+ * <td>4</td>
  * <td>1</td>
+ * <td>4</td>
  * <td>1</td>
- * <td>1</td>
- * <td>0</td>
  * <td></td>
- * <td style="text-align: left;"><code>(ABCDEFGH)</code></td>
+ * <td style="text-align: left;"><code>C=______</code>&#xA0;<code>D=______</code></td>
  * </tr>
  * <tr>
- * <td><code>byte[8]</code></td>
- * <td>reinterp</td>
- * <td><code>byte[16]</code></td>
+ * <td><code>short[8]</code></td>
+ * <td>128</td>
+ * <td><code>Z_E_S2L</code></td>
+ * <td><code>long[8]</code></td>
+ * <td>4</td>
  * <td>1</td>
+ * <td>4</td>
  * <td>2</td>
- * <td>1/2</td>
- * <td>0</td>
  * <td></td>
- * <td style="text-align: left;"><code>ABCDEFGH</code>&#xA0;<code>________</code></td>
+ * <td style="text-align: left;"><code>E=______</code>&#xA0;<code>F=______</code></td>
  * </tr>
  * <tr>
- * <td><code>byte[8]</code></td>
- * <td>reinterp</td>
- * <td><code>byte[16]</code></td>
+ * <td><code>short[8]</code></td>
+ * <td>128</td>
+ * <td><code>Z_E_S2L</code></td>
+ * <td><code>long[8]</code></td>
+ * <td>4</td>
  * <td>1</td>
- * <td>2</td>
- * <td>1/2</td>
- * <td>-1</td>
+ * <td>4</td>
+ * <td>3</td>
  * <td></td>
- * <td style="text-align: left;"><code>________</code>&#xA0;<code>ABCDEFGH</code></td>
+ * <td style="text-align: left;"><code>G=______</code>&#xA0;<code>H=______</code></td>
  * </tr>
  * <tr>
  * <td><code>byte[16]</code></td>
+ * <td>128</td>
  * <td>reinterp</td>
  * <td><code>byte[8]</code></td>
  * <td>1</td>
@@ -1402,6 +1194,7 @@ import java.util.Arrays;
  * </tr>
  * <tr>
  * <td><code>byte[16]</code></td>
+ * <td>128</td>
  * <td>reinterp</td>
  * <td><code>byte[8]</code></td>
  * <td>1</td>
@@ -1413,6 +1206,355 @@ import java.util.Arrays;
  * </tr>
  * <tr>
  * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td>identity</td>
+ * <td><code>byte[8]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td>64</td>
+ * <td>identity</td>
+ * <td><code>short[4]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=B=C=D=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td>64</td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCD____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td>64</td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____ABCD</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=B=C=D=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>E=F=G=H=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>Z_E_B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A_B_C_D_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>Z_E_B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>E_F_G_H_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>Z_E_B2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A___B___</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>Z_E_B2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>3</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>G___H___</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>Z_E_B2L</code></td>
+ * <td><code>long[1]</code></td>
+ * <td>8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td><code>Z_E_B2L</code></td>
+ * <td><code>long[1]</code></td>
+ * <td>8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>7</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>H_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A===____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>_A______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>-6</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>______A_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>-7</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>_______A</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>-3</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>______A=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td>64</td>
+ * <td><code>L2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____A===</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>int[2]</code></td>
+ * <td>64</td>
+ * <td><code>I2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=B=____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>int[2]</code></td>
+ * <td>64</td>
+ * <td><code>I2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____A=B=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td>64</td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCD____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td>64</td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____ABCD</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td>reinterp</td>
+ * <td><code>short[4]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>(AB)(CD)(EF)(GH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td>reinterp</td>
+ * <td><code>int[2]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>(ABCD)(EFGH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td>reinterp</td>
+ * <td><code>long[1]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>(ABCDEFGH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td>reinterp</td>
+ * <td><code>byte[16]</code></td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code>&#xA0;<code>________</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
+ * <td>reinterp</td>
+ * <td><code>byte[16]</code></td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>________</code>&#xA0;<code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>64</td>
  * <td><code>unslice(5,__)</code></td>
  * <td><code>byte[8]</code></td>
  * <td>1</td>
@@ -1424,6 +1566,7 @@ import java.util.Arrays;
  * </tr>
  * <tr>
  * <td><code>byte[8]</code></td>
+ * <td>64</td>
  * <td><code>unslice(5,__)</code></td>
  * <td><code>byte[8]</code></td>
  * <td>1</td>
@@ -1435,6 +1578,7 @@ import java.util.Arrays;
  * </tr>
  * <tr>
  * <td><code>byte[8]</code></td>
+ * <td>64</td>
  * <td><code>x.unslice(5,x)</code></td>
  * <td><code>byte[8]</code></td>
  * <td>1</td>
