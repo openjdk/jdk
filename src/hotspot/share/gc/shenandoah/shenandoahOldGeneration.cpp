@@ -582,7 +582,7 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
-  _promotion_failure_count.add_then_fetch(static_cast<size_t>(1));
+  _promotion_failure_count.add_then_fetch(1UL);
   _promotion_failure_words.and_then_fetch(size);
 
   LogTarget(Debug, gc, plab) lt;
