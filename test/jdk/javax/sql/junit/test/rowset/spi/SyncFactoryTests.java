@@ -187,9 +187,7 @@ public class SyncFactoryTests {
      */
     @Test
     public void test08() throws Exception {
-        assertThrows(SyncFactoryException.class, () -> {
-            SyncFactory.setJNDIContext(null);
-        });
+        assertThrows(SyncFactoryException.class, () -> SyncFactory.setJNDIContext(null));
     }
 
     /*

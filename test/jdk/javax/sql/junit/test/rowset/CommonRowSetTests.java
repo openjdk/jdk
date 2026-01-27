@@ -544,9 +544,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0004(RowSet rs) throws Exception {
-        assertThrows(SQLException.class, () -> {
-            rs.setConcurrency(ResultSet.CLOSE_CURSORS_AT_COMMIT);
-        });
+        assertThrows(SQLException.class, () -> rs.setConcurrency(ResultSet.CLOSE_CURSORS_AT_COMMIT));
     }
 
     /*
@@ -630,9 +628,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0013(RowSet rs) throws Exception {
-        assertThrows(SQLException.class, () -> {
-            rs.setFetchSize(-1);
-        });
+        assertThrows(SQLException.class, () -> rs.setFetchSize(-1));
     }
 
     /*
@@ -671,9 +667,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0016(RowSet rs) throws Exception {
-        assertThrows(SQLException.class, () -> {
-            rs.setMaxFieldSize(-1);
-        });
+        assertThrows(SQLException.class, () -> rs.setMaxFieldSize(-1));
     }
 
     /*
@@ -800,9 +794,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0027(RowSet rs) throws Exception {
-        assertThrows(SQLException.class, () -> {
-            rs.setQueryTimeout(-1);
-        });
+        assertThrows(SQLException.class, () -> rs.setQueryTimeout(-1));
     }
 
 
@@ -935,9 +927,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0106(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setBigDecimal("one", BigDecimal.ONE);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setBigDecimal("one", BigDecimal.ONE));
     }
 
     /*
@@ -986,9 +976,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0110(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setBlob("one", new StubBlob());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setBlob("one", new StubBlob()));
     }
 
     /*
@@ -998,9 +986,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0111(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setBoolean("one", true);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setBoolean("one", true));
     }
 
     /*
@@ -1114,9 +1100,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0120(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setClob("one", new StubClob());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setClob("one", new StubClob()));
     }
 
     /*
@@ -1126,9 +1110,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0121(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setDate("one", Date.valueOf(LocalDate.now()));
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setDate("one", Date.valueOf(LocalDate.now())));
     }
 
     /*
@@ -1138,10 +1120,8 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0122(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setDate("one", Date.valueOf(LocalDate.now()),
-                    Calendar.getInstance());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setDate("one", Date.valueOf(LocalDate.now()),
+                Calendar.getInstance()));
     }
 
     /*
@@ -1151,9 +1131,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0123(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setTime("one", Time.valueOf(LocalTime.now()));
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setTime("one", Time.valueOf(LocalTime.now())));
     }
 
     /*
@@ -1163,10 +1141,8 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0124(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setTime("one", Time.valueOf(LocalTime.now()),
-                    Calendar.getInstance());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setTime("one", Time.valueOf(LocalTime.now()),
+                Calendar.getInstance()));
     }
 
     /*
@@ -1176,9 +1152,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0125(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setTimestamp("one", Timestamp.valueOf(LocalDateTime.now()));
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setTimestamp("one", Timestamp.valueOf(LocalDateTime.now())));
     }
 
     /*
@@ -1188,10 +1162,8 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0126(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setTimestamp("one", Timestamp.valueOf(LocalDateTime.now()),
-                    Calendar.getInstance());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setTimestamp("one", Timestamp.valueOf(LocalDateTime.now()),
+                Calendar.getInstance()));
     }
 
     /*
@@ -1201,9 +1173,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0127(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setDouble("one", 2.0d);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setDouble("one", 2.0d));
     }
 
     /*
@@ -1213,9 +1183,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0128(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setFloat("one", 2.0f);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setFloat("one", 2.0f));
     }
 
     /*
@@ -1225,9 +1193,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0129(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setInt("one", 21);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setInt("one", 21));
     }
 
     /*
@@ -1237,9 +1203,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0130(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setLong("one", 21l);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setLong("one", 21l));
     }
 
     /*
@@ -1327,9 +1291,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0137(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setNClob("one", new StubNClob());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setNClob("one", new StubNClob()));
     }
 
     /*
@@ -1365,9 +1327,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0140(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setNClob(1, new StubNClob());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setNClob(1, new StubNClob()));
     }
 
     /*
@@ -1377,9 +1337,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0141(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setNString(1, query);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setNString(1, query));
     }
 
     /*
@@ -1389,9 +1347,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0142(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setNull("one", Types.INTEGER);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setNull("one", Types.INTEGER));
     }
 
     /*
@@ -1401,9 +1357,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0143(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setNull("one", Types.INTEGER, "my.type");
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setNull("one", Types.INTEGER, "my.type"));
     }
 
     /*
@@ -1413,9 +1367,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0144(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setObject("one", query, Types.VARCHAR);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setObject("one", query, Types.VARCHAR));
     }
 
     /*
@@ -1425,9 +1377,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0145(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setObject("one", query, Types.VARCHAR, 0);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setObject("one", query, Types.VARCHAR, 0));
     }
 
     /*
@@ -1437,9 +1387,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0146(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setObject("one", query);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setObject("one", query));
     }
 
     /*
@@ -1462,9 +1410,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0148(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setSQLXML("one", new StubSQLXML());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setSQLXML("one", new StubSQLXML()));
     }
 
     /*
@@ -1474,9 +1420,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0149(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setSQLXML(1, new StubSQLXML());
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setSQLXML(1, new StubSQLXML()));
     }
 
     /*
@@ -1486,9 +1430,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0150(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setNString(1, query);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setNString(1, query));
     }
 
     /*
@@ -1498,9 +1440,7 @@ public abstract class CommonRowSetTests extends BaseTest {
     @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonRowSetTest0151(RowSet rs) throws Exception {
-        assertThrows(SQLFeatureNotSupportedException.class, () -> {
-            rs.setNString("one", query);
-        });
+        assertThrows(SQLFeatureNotSupportedException.class, () -> rs.setNString("one", query));
     }
 
     /*
