@@ -122,7 +122,7 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
 // ~10000, which costs us <~160KB. In practice, these numbers seem to be even
 // smaller. Not a problem at all.
 //
-// But we could run into weird pathological object graphs. Therfore we also
+// But we could run into weird pathological object graphs. Therefore we also
 // cap the max size of the probe stack. When we hit it, we deal with it the same
 // way we deal with reaching max_dfs_depth - by aborting the trace of that
 // particular graph edge.
