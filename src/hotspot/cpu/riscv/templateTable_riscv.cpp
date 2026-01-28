@@ -708,7 +708,6 @@ void TemplateTable::index_check(Register array, Register index) {
     __ mv(x11, index);
   }
   Label ok;
-  __ sext(index, index, 32);
   __ bltu(index, length, ok);
   __ mv(x13, array);
   __ mv(t1, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
@@ -1052,7 +1051,7 @@ void TemplateTable::aastore() {
   transition(vtos, vtos);
   // stack: ..., array, index, value
   __ ld(x10, at_tos());    // value
-  __ ld(x12, at_tos_p1()); // index
+  __ lw(x12, at_tos_p1()); // index
   __ ld(x13, at_tos_p2()); // array
 
   index_check(x13, x12);     // kills x11
