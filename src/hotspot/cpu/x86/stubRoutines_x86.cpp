@@ -441,7 +441,8 @@ void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_ad
   ADD(crc_by128_masks_addr());
   ADD(crc_by128_masks_addr() + 16);
   ADD(crc_by128_masks_addr() + 32);
-  ADD(_crc_table);
+  // this is added in generic code
+  // ADD(_crc_table);
   ADD(crc_by128_masks_avx512_addr());
   ADD(crc_by128_masks_avx512_addr() + 16);
   ADD(crc_by128_masks_avx512_addr() + 32);

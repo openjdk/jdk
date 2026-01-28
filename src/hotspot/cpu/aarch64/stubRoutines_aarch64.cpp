@@ -437,7 +437,8 @@ void StubRoutines::init_AOTAddressTable() {
 void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
   ADD(_kyberConsts);
   ADD(_dilithiumConsts);
-  ADD(_crc_table);
+  // this is added in generic code
+  // ADD(_crc_table);
   ADD(_adler_table);
   ADD(_npio2_hw);
   ADD(_dsin_coef);

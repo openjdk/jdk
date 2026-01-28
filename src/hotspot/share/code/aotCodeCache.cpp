@@ -1719,7 +1719,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
 // _c_str_base + _c_str_max -1],
 
-#define _extrs_max 350
+#define _extrs_max 380
 #define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
@@ -1728,13 +1728,40 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 
 // setter for external addresses and string addresses inserts new
 // addresses in the order they are encountered them which must remain
-// th esame across an assembly run and subsequent production run
+// the same across an assembly run and subsequent production run
 
-#define SET_ADDRESS(type, addr)                           \
-  {                                                       \
-    type##_addr[type##_length++] = (address) (addr);      \
-    assert(type##_length <= type##_max, "increase size"); \
+#define ADD_EXTERNAL_ADDRESS(addr)                              \
+  {                                                             \
+    hash_address((address) addr, _extrs_length);                  \
+    _extrs_addr[_extrs_length++] = (address) (addr);             \
+    assert(_extrs_length <= _extrs_max, "increase size");       \
   }
+
+// insert into to the address hash table the index of an external
+// address or a stub address in the list of external or stub
+// addresses, respectively, keyed by the relevant address
+
+void AOTCodeAddressTable::hash_address(address addr, int idx) {
+  // only do this if we are caching stubs and we have a non-null
+  // address to record
+  if (!AOTStubCaching) {
+    return;
+  }
+  if (addr == nullptr) {
+    return;
+  }
+  // check opened_cache because this can be called before the cache is
+  // properly initialized and only continue when dumping is enabled
+  if (opened_cache != nullptr && opened_cache->for_dump()) {
+    if (_hash_table == nullptr) {
+      _hash_table = new (mtCode) AOTCodeAddressHashTable();
+    }
+    assert(_hash_table->get(addr) == nullptr, "repeated insert of address " INTPTR_FORMAT, p2i(addr));
+    _hash_table->put(addr, idx);
+    log_trace(aot, codecache)("Address " INTPTR_FORMAT " inserted into AOT Code Cache address hash table with index '%d'",
+                              p2i(addr), idx);
+  }
+}
 
 static bool initializing_extrs = false;
 
@@ -1748,191 +1775,213 @@ void AOTCodeAddressTable::init_extrs() {
 
   {
     // Required by initial stubs
-    SET_ADDRESS(_extrs, SharedRuntime::exception_handler_for_return_address); // used by forward_exception
-    SET_ADDRESS(_extrs, CompressedOops::base_addr()); // used by call_stub
-    SET_ADDRESS(_extrs, Thread::current); // used by call_stub
-    SET_ADDRESS(_extrs, SharedRuntime::throw_StackOverflowError);
-    SET_ADDRESS(_extrs, SharedRuntime::throw_delayed_StackOverflowError);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::exception_handler_for_return_address); // used by forward_exception
+    ADD_EXTERNAL_ADDRESS(CompressedOops::base_addr()); // used by call_stub
+    ADD_EXTERNAL_ADDRESS(Thread::current); // used by call_stub
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_StackOverflowError);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
   }
 
   // Record addresses of VM runtime methods
-  SET_ADDRESS(_extrs, SharedRuntime::fixup_callers_callsite);
-  SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method);
-  SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method_abstract);
-  SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method_ic_miss);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::fixup_callers_callsite);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_abstract);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_ic_miss);
 #if defined(AARCH64) && !defined(ZERO)
-  SET_ADDRESS(_extrs, JavaThread::aarch64_get_thread_helper);
+  ADD_EXTERNAL_ADDRESS(JavaThread::aarch64_get_thread_helper);
 #endif
 
 #ifndef PRODUCT
-  SET_ADDRESS(_extrs, &SharedRuntime::_jbyte_array_copy_ctr); // used by arraycopy stub on arm32 and x86_64
-  SET_ADDRESS(_extrs, &SharedRuntime::_jshort_array_copy_ctr); // used by arraycopy stub
-  SET_ADDRESS(_extrs, &SharedRuntime::_jint_array_copy_ctr); // used by arraycopy stub
-  SET_ADDRESS(_extrs, &SharedRuntime::_jlong_array_copy_ctr); // used by arraycopy stub
-  SET_ADDRESS(_extrs, &SharedRuntime::_oop_array_copy_ctr); // used by arraycopy stub
-  SET_ADDRESS(_extrs, &SharedRuntime::_checkcast_array_copy_ctr); // used by arraycopy stub
-  SET_ADDRESS(_extrs, &SharedRuntime::_unsafe_array_copy_ctr); // used by arraycopy stub
-  SET_ADDRESS(_extrs, &SharedRuntime::_generic_array_copy_ctr); // used by arraycopy stub
-  SET_ADDRESS(_extrs, &SharedRuntime::_unsafe_set_memory_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_jbyte_array_copy_ctr); // used by arraycopy stub on arm32 and x86_64
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_jshort_array_copy_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_jint_array_copy_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_jlong_array_copy_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_oop_array_copy_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_checkcast_array_copy_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_unsafe_array_copy_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_generic_array_copy_ctr); // used by arraycopy stub
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_unsafe_set_memory_ctr); // used by arraycopy stub
 #endif /* PRODUCT */
 
-  SET_ADDRESS(_extrs, SharedRuntime::enable_stack_reserved_zone);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::enable_stack_reserved_zone);
 
 #if defined(AMD64) && !defined(ZERO)
-  SET_ADDRESS(_extrs, SharedRuntime::montgomery_multiply);
-  SET_ADDRESS(_extrs, SharedRuntime::montgomery_square);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::montgomery_multiply);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::montgomery_square);
 #endif // defined(AMD64) && !defined(ZERO)
 
-  SET_ADDRESS(_extrs, SharedRuntime::d2f);
-  SET_ADDRESS(_extrs, SharedRuntime::d2i);
-  SET_ADDRESS(_extrs, SharedRuntime::d2l);
-  SET_ADDRESS(_extrs, SharedRuntime::dcos);
-  SET_ADDRESS(_extrs, SharedRuntime::dexp);
-  SET_ADDRESS(_extrs, SharedRuntime::dlog);
-  SET_ADDRESS(_extrs, SharedRuntime::dlog10);
-  SET_ADDRESS(_extrs, SharedRuntime::dpow);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::d2f);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::d2i);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::d2l);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dcos);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dexp);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dlog);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dlog10);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dpow);
 #ifndef ZERO
-  SET_ADDRESS(_extrs, SharedRuntime::drem);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::drem);
 #endif
-  SET_ADDRESS(_extrs, SharedRuntime::dsin);
-  SET_ADDRESS(_extrs, SharedRuntime::dtan);
-  SET_ADDRESS(_extrs, SharedRuntime::f2i);
-  SET_ADDRESS(_extrs, SharedRuntime::f2l);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dsin);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::dtan);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::f2i);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::f2l);
 #ifndef ZERO
-  SET_ADDRESS(_extrs, SharedRuntime::frem);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::frem);
 #endif
-  SET_ADDRESS(_extrs, SharedRuntime::l2d);
-  SET_ADDRESS(_extrs, SharedRuntime::l2f);
-  SET_ADDRESS(_extrs, SharedRuntime::ldiv);
-  SET_ADDRESS(_extrs, SharedRuntime::lmul);
-  SET_ADDRESS(_extrs, SharedRuntime::lrem);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::l2d);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::l2f);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::ldiv);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::lmul);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::lrem);
 
 #if INCLUDE_JVMTI
-  SET_ADDRESS(_extrs, &JvmtiExport::_should_notify_object_alloc);
+  ADD_EXTERNAL_ADDRESS(&JvmtiExport::_should_notify_object_alloc);
 #endif /* INCLUDE_JVMTI */
 
-  SET_ADDRESS(_extrs, ThreadIdentifier::unsafe_offset());
-  SET_ADDRESS(_extrs, Thread::current);
+  ADD_EXTERNAL_ADDRESS(ThreadIdentifier::unsafe_offset());
+  // already added
+  // ADD_EXTERNAL_ADDRESS(Thread::current);
 
-  SET_ADDRESS(_extrs, os::javaTimeMillis);
-  SET_ADDRESS(_extrs, os::javaTimeNanos);
+  ADD_EXTERNAL_ADDRESS(os::javaTimeMillis);
+  ADD_EXTERNAL_ADDRESS(os::javaTimeNanos);
 #ifndef PRODUCT
-  SET_ADDRESS(_extrs, os::breakpoint);
+  ADD_EXTERNAL_ADDRESS(os::breakpoint);
 #endif
 
-  SET_ADDRESS(_extrs, StubRoutines::crc_table_addr());
+  ADD_EXTERNAL_ADDRESS(StubRoutines::crc_table_addr());
 #ifndef PRODUCT
-  SET_ADDRESS(_extrs, &SharedRuntime::_partial_subtype_ctr);
-  SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
+  ADD_EXTERNAL_ADDRESS(&SharedRuntime::_partial_subtype_ctr);
+  ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);
 #endif
 
 #if INCLUDE_JFR
-  SET_ADDRESS(_extrs, JfrIntrinsicSupport::write_checkpoint);
-  SET_ADDRESS(_extrs, JfrIntrinsicSupport::return_lease);
+  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::write_checkpoint);
+  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::return_lease);
 #endif
 
-  SET_ADDRESS(_extrs, UpcallLinker::handle_uncaught_exception); // used by upcall_stub_exception_handler
+  ADD_EXTERNAL_ADDRESS(UpcallLinker::handle_uncaught_exception); // used by upcall_stub_exception_handler
 
   {
     // Required by Shared blobs
-    SET_ADDRESS(_extrs, Deoptimization::fetch_unroll_info);
-    SET_ADDRESS(_extrs, Deoptimization::unpack_frames);
-    SET_ADDRESS(_extrs, SafepointSynchronize::handle_polling_page_exception);
-    SET_ADDRESS(_extrs, SharedRuntime::resolve_opt_virtual_call_C);
-    SET_ADDRESS(_extrs, SharedRuntime::resolve_virtual_call_C);
-    SET_ADDRESS(_extrs, SharedRuntime::resolve_static_call_C);
-    SET_ADDRESS(_extrs, SharedRuntime::throw_delayed_StackOverflowError);
-    SET_ADDRESS(_extrs, SharedRuntime::throw_AbstractMethodError);
-    SET_ADDRESS(_extrs, SharedRuntime::throw_IncompatibleClassChangeError);
-    SET_ADDRESS(_extrs, SharedRuntime::throw_NullPointerException_at_call);
+    ADD_EXTERNAL_ADDRESS(Deoptimization::fetch_unroll_info);
+    ADD_EXTERNAL_ADDRESS(Deoptimization::unpack_frames);
+    ADD_EXTERNAL_ADDRESS(SafepointSynchronize::handle_polling_page_exception);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::resolve_opt_virtual_call_C);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::resolve_virtual_call_C);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::resolve_static_call_C);
+    // already added
+    // ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_AbstractMethodError);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_IncompatibleClassChangeError);
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_NullPointerException_at_call);
   }
 
 #ifdef COMPILER1
   {
     // Required by C1 blobs
-    SET_ADDRESS(_extrs, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc));
-    SET_ADDRESS(_extrs, SharedRuntime::register_finalizer);
-    SET_ADDRESS(_extrs, Runtime1::is_instance_of);
-    SET_ADDRESS(_extrs, Runtime1::exception_handler_for_pc);
-    SET_ADDRESS(_extrs, Runtime1::check_abort_on_vm_exception);
-    SET_ADDRESS(_extrs, Runtime1::new_instance);
-    SET_ADDRESS(_extrs, Runtime1::counter_overflow);
-    SET_ADDRESS(_extrs, Runtime1::new_type_array);
-    SET_ADDRESS(_extrs, Runtime1::new_object_array);
-    SET_ADDRESS(_extrs, Runtime1::new_multi_array);
-    SET_ADDRESS(_extrs, Runtime1::throw_range_check_exception);
-    SET_ADDRESS(_extrs, Runtime1::throw_index_exception);
-    SET_ADDRESS(_extrs, Runtime1::throw_div0_exception);
-    SET_ADDRESS(_extrs, Runtime1::throw_null_pointer_exception);
-    SET_ADDRESS(_extrs, Runtime1::throw_array_store_exception);
-    SET_ADDRESS(_extrs, Runtime1::throw_class_cast_exception);
-    SET_ADDRESS(_extrs, Runtime1::throw_incompatible_class_change_error);
-    SET_ADDRESS(_extrs, Runtime1::monitorenter);
-    SET_ADDRESS(_extrs, Runtime1::monitorexit);
-    SET_ADDRESS(_extrs, Runtime1::deoptimize);
-    SET_ADDRESS(_extrs, Runtime1::access_field_patching);
-    SET_ADDRESS(_extrs, Runtime1::move_klass_patching);
-    SET_ADDRESS(_extrs, Runtime1::move_mirror_patching);
-    SET_ADDRESS(_extrs, Runtime1::move_appendix_patching);
-    SET_ADDRESS(_extrs, Runtime1::predicate_failed_trap);
-    SET_ADDRESS(_extrs, Runtime1::unimplemented_entry);
-    SET_ADDRESS(_extrs, Thread::current);
-    SET_ADDRESS(_extrs, CompressedKlassPointers::base_addr());
+    ADD_EXTERNAL_ADDRESS(static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc));
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::register_finalizer);
+    ADD_EXTERNAL_ADDRESS(Runtime1::is_instance_of);
+    ADD_EXTERNAL_ADDRESS(Runtime1::exception_handler_for_pc);
+    ADD_EXTERNAL_ADDRESS(Runtime1::check_abort_on_vm_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::new_instance);
+    ADD_EXTERNAL_ADDRESS(Runtime1::counter_overflow);
+    ADD_EXTERNAL_ADDRESS(Runtime1::new_type_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::new_object_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::new_multi_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_range_check_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_index_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_div0_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_null_pointer_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_array_store_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_class_cast_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_incompatible_class_change_error);
+    ADD_EXTERNAL_ADDRESS(Runtime1::monitorenter);
+    ADD_EXTERNAL_ADDRESS(Runtime1::monitorexit);
+    ADD_EXTERNAL_ADDRESS(Runtime1::deoptimize);
+    ADD_EXTERNAL_ADDRESS(Runtime1::access_field_patching);
+    ADD_EXTERNAL_ADDRESS(Runtime1::move_klass_patching);
+    ADD_EXTERNAL_ADDRESS(Runtime1::move_mirror_patching);
+    ADD_EXTERNAL_ADDRESS(Runtime1::move_appendix_patching);
+    ADD_EXTERNAL_ADDRESS(Runtime1::predicate_failed_trap);
+    ADD_EXTERNAL_ADDRESS(Runtime1::unimplemented_entry);
+    // already added
+    // ADD_EXTERNAL_ADDRESS(Thread::current);
+    ADD_EXTERNAL_ADDRESS(CompressedKlassPointers::base_addr());
   }
 #endif
 
 #ifdef COMPILER2
   {
     // Required by C2 blobs
-    SET_ADDRESS(_extrs, Deoptimization::uncommon_trap);
-    SET_ADDRESS(_extrs, OptoRuntime::handle_exception_C);
-    SET_ADDRESS(_extrs, OptoRuntime::new_instance_C);
-    SET_ADDRESS(_extrs, OptoRuntime::new_array_C);
-    SET_ADDRESS(_extrs, OptoRuntime::new_array_nozero_C);
-    SET_ADDRESS(_extrs, OptoRuntime::multianewarray2_C);
-    SET_ADDRESS(_extrs, OptoRuntime::multianewarray3_C);
-    SET_ADDRESS(_extrs, OptoRuntime::multianewarray4_C);
-    SET_ADDRESS(_extrs, OptoRuntime::multianewarray5_C);
-    SET_ADDRESS(_extrs, OptoRuntime::multianewarrayN_C);
-    SET_ADDRESS(_extrs, OptoRuntime::complete_monitor_locking_C);
-    SET_ADDRESS(_extrs, OptoRuntime::monitor_notify_C);
-    SET_ADDRESS(_extrs, OptoRuntime::monitor_notifyAll_C);
-    SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
-    SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
-    SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
-    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_first_transition_C);
-    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_final_transition_C);
-    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_transition_C);
-    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_transition_C);
+    ADD_EXTERNAL_ADDRESS(Deoptimization::uncommon_trap);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::handle_exception_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::new_instance_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::new_array_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::new_array_nozero_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray2_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray3_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray4_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarray5_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::multianewarrayN_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::complete_monitor_locking_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::monitor_notify_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::monitor_notifyAll_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::rethrow_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::slow_arraycopy_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::register_finalizer_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_first_transition_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_transition_C);
 #if defined(AARCH64)
-    SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
+    ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);
 #endif // AARCH64
   }
 #endif // COMPILER2
 
 #if INCLUDE_G1GC
-  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_field_pre_entry);
-  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry); // used by arraycopy stubs
-  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_array_pre_oop_entry); // used by arraycopy stubs
-  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_array_post_entry); // used by arraycopy stubs
-  SET_ADDRESS(_extrs, BarrierSetNMethod::nmethod_stub_entry_barrier); // used by method_entry_barrier
+  ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_field_pre_entry);
+  ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry); // used by arraycopy stubs
+  ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_pre_oop_entry); // used by arraycopy stubs
+  ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_post_entry); // used by arraycopy stubs
+  ADD_EXTERNAL_ADDRESS(BarrierSetNMethod::nmethod_stub_entry_barrier); // used by method_entry_barrier
 
 #endif
 #if INCLUDE_SHENANDOAHGC
-  SET_ADDRESS(_extrs, ShenandoahRuntime::write_barrier_pre);
-  SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom);
-  SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_strong_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_weak_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_oop);
+  ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::arraycopy_barrier_narrow_oop);
 #endif
 #if INCLUDE_ZGC
-  SET_ADDRESS(_extrs, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr());
-  SET_ADDRESS(_extrs, ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::no_keepalive_load_barrier_on_weak_oop_field_preloaded_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::no_keepalive_load_barrier_on_phantom_oop_field_preloaded_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_oop_array_addr());
+
+  ADD_EXTERNAL_ADDRESS(ZPointerVectorLoadBadMask);
+  ADD_EXTERNAL_ADDRESS(ZPointerVectorStoreBadMask);
+  ADD_EXTERNAL_ADDRESS(ZPointerVectorStoreGoodMask);
 #if defined(AMD64)
-  SET_ADDRESS(_extrs, &ZPointerLoadShift);
+  ADD_EXTERNAL_ADDRESS(&ZPointerLoadShift);
+  ADD_EXTERNAL_ADDRESS(&ZPointerLoadShiftTable);
 #endif
 #endif
 #ifndef ZERO
 #if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
-  SET_ADDRESS(_extrs, MacroAssembler::debug64);
+  ADD_EXTERNAL_ADDRESS(MacroAssembler::debug64);
 #endif
 #endif // ZERO
 
@@ -1947,9 +1996,9 @@ void AOTCodeAddressTable::init_extrs2() {
          "invalid sequence for init_extrs2");
 
   {
-  SET_ADDRESS(_extrs, Continuation::prepare_thaw); // used by cont_thaw
-  SET_ADDRESS(_extrs, Continuation::thaw_entry()); // used by cont_thaw
-  SET_ADDRESS(_extrs, ContinuationEntry::thaw_call_pc_address()); // used by cont_preempt_stub
+  ADD_EXTERNAL_ADDRESS(Continuation::prepare_thaw); // used by cont_thaw
+  ADD_EXTERNAL_ADDRESS(Continuation::thaw_entry()); // used by cont_thaw
+  ADD_EXTERNAL_ADDRESS(ContinuationEntry::thaw_call_pc_address()); // used by cont_preempt_stub
   }
   _extrs_complete = true;
   initializing_extrs = false;
@@ -1960,7 +2009,7 @@ void AOTCodeAddressTable::add_external_addresses(GrowableArray<address>& address
   assert(initializing_extrs && !_extrs_complete,
          "invalid sequence for add_external_addresses");
   for (int i = 0; i < addresses.length(); i++) {
-    SET_ADDRESS(_extrs, addresses.at(i));
+    ADD_EXTERNAL_ADDRESS(addresses.at(i));
   }
   log_debug(aot, codecache, init)("Recorded %d additional external addresses",
                                   addresses.length());
@@ -1975,6 +2024,7 @@ void AOTCodeAddressTable::add_stub_entry(EntryId entry_id, address a) {
   assert(!(StubInfo::is_c2(StubInfo::stub(entry_id)) && _c2_stubs_complete), "too late to add c2 entry");
   log_debug(aot, stubs)("Recording address 0x%p for %s entry %s", a, StubInfo::name(StubInfo::stubgroup(entry_id)), StubInfo::name(entry_id));
   int idx = static_cast<int>(entry_id);
+  hash_address(a, idx);
   _stubs_addr[idx] = a;
 }
 
@@ -2193,6 +2243,15 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   id = id_for_C_string(addr);
   if (id >= 0) {
     return id + _c_str_base;
+  }
+  if (_hash_table != nullptr) {
+    int *result = _hash_table->get(addr);
+    if (result != nullptr) {
+      id = *result;
+      log_trace(aot, codecache)("Address " INTPTR_FORMAT " retrieved from AOT Code Cache address hash table with index '%d'",
+                                p2i(addr), id);
+      return id;
+    }
   }
   if (StubRoutines::contains(addr) || CodeCache::find_blob(addr) != nullptr) {
     // Search for a matching stub entry

@@ -26,6 +26,7 @@
 #define SHARE_CODE_AOTCODECACHE_HPP
 
 #include "runtime/stubInfo.hpp"
+#include "utilities/hashTable.hpp"
 
 /*
  * AOT Code Cache collects code from Code Cache and corresponding metadata
@@ -121,6 +122,16 @@ public:
   static bool is_adapter(Kind kind) { return kind == Adapter; }
 };
 
+// we use a hash table to speed up translation of external addresses
+// or stub addresses to their corresponding indexes when dumping stubs
+// or nmethods to the AOT code cache.
+class AOTCodeAddressHashTable : public HashTable<
+  address,
+  int,
+  36137, // prime number
+  AnyObj::C_HEAP,
+  mtCode> {};
+
 // Addresses of stubs, blobs and runtime finctions called from compiled code.
 class AOTCodeAddressTable : public CHeapObj<mtCode> {
 private:
@@ -133,8 +144,9 @@ private:
   bool _c1_stubs_complete;
   bool _c2_stubs_complete;
   bool _stubgen_stubs_complete;
-  bool _complete;
+  AOTCodeAddressHashTable* _hash_table;
 
+  void hash_address(address addr, int idx);
 public:
   AOTCodeAddressTable() :
     _extrs_addr(nullptr),
@@ -145,7 +157,7 @@ public:
     _c1_stubs_complete(false),
     _c2_stubs_complete(false),
     _stubgen_stubs_complete(false),
-    _complete(false)
+    _hash_table(nullptr)
   { }
   ~AOTCodeAddressTable();
   void init_extrs();
