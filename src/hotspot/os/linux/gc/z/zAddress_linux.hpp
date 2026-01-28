@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,11 @@
  * questions.
  */
 
-#ifndef CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
-#define CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
+#ifndef OS_LINUX_GC_Z_ZADDRESS_LINUX_HPP
+#define OS_LINUX_GC_Z_ZADDRESS_LINUX_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
-const size_t ZPointerLoadShift = 16;
+size_t ZPlatformHeapBaseMaxShift();
 
-#endif // CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
+#endif // OS_LINUX_GC_Z_ZADDRESS_LINUX_HPP

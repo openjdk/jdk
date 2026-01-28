@@ -467,4 +467,15 @@ void ZRangeRegistry<Range>::transfer_from_low(ZRangeRegistry* other, size_t size
   assert(to_move == 0, "Should have transferred requested size");
 }
 
+template <typename Range>
+template <typename Function>
+void ZRangeRegistry<Range>::visit_all(Function function) const {
+  ZLocker<ZLock> locker(&_lock);
+
+  ZListIterator<Node> iter(&_list);
+  for (Node* node; iter.next(&node);) {
+    function(node->range());
+  }
+}
+
 #endif // SHARE_GC_Z_ZRANGEREGISTRY_INLINE_HPP

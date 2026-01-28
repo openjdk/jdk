@@ -109,6 +109,9 @@ public:
   Range remove_from_high(size_t size);
 
   void transfer_from_low(ZRangeRegistry* other, size_t size);
+
+  template <typename Function>
+  void visit_all(Function function) const;
 };
 
 template <typename Range>

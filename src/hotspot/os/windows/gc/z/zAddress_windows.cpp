@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,13 @@
  * questions.
  */
 
-#ifndef CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
-#define CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
-
+#include "gc/z/zAddress.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-const size_t ZPointerLoadShift = 16;
+size_t ZPlatformHeapBaseMaxShift() {
+  // A 64-bit process on 64-bit Windows has a virtual address space within the
+  // 128-terabyte range 0x000'00000000 through 0x7FFF'FFFFFFFF. So the heap base
+  // can occupy the 47th bit, resulting in a shift of 46.
+  return clamp(size_t(46), ZAddressHeapBaseMinShift, ZAddressHeapBaseMaxShift);
+}
 
-#endif // CPU_PPC_GC_Z_ZADDRESS_PPC_HPP

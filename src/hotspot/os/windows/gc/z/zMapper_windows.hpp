@@ -49,10 +49,10 @@ private:
 
 public:
   // Reserve memory with a placeholder
-  static zaddress_unsafe reserve(zaddress_unsafe addr, size_t size);
+  static uintptr_t reserve(uintptr_t addr, size_t size);
 
   // Unreserve memory
-  static void unreserve(zaddress_unsafe addr, size_t size);
+  static void unreserve(uintptr_t addr, size_t size);
 
   // Create and commit paging file mapping
   static HANDLE create_and_commit_paging_file_mapping(size_t size);
@@ -64,10 +64,10 @@ public:
   static HANDLE create_shared_awe_section();
 
   // Reserve memory attached to the shared AWE section
-  static zaddress_unsafe reserve_for_shared_awe(HANDLE awe_section, zaddress_unsafe addr, size_t size);
+  static uintptr_t reserve_for_shared_awe(HANDLE awe_section, uintptr_t addr, size_t size);
 
   // Unreserve memory attached to a shared AWE section
-  static void unreserve_for_shared_awe(zaddress_unsafe addr, size_t size);
+  static void unreserve_for_shared_awe(uintptr_t addr, size_t size);
 
   // Split a placeholder
   //
@@ -76,6 +76,7 @@ public:
   // [addr, addr + size) needs to be a proper sub-placeholder of an existing
   // placeholder.
   static void split_placeholder(zaddress_unsafe addr, size_t size);
+  static void split_placeholder_untyped(uintptr_t addr, size_t size);
 
   // Coalesce a placeholder
   //

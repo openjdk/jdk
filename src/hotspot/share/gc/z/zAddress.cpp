@@ -24,18 +24,26 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zNUMA.inline.hpp"
+#include "gc/z/zOnError.hpp"
 #include "gc/z/zVerify.hpp"
+#include "logging/log.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/java.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/powerOfTwo.hpp"
 
+uintptr_t  ZAddressHeapBase;
 size_t     ZAddressHeapBaseShift;
-size_t     ZAddressHeapBase;
+
+size_t     ZAddressPlatformMaxAddressSpace;
 
 size_t     ZAddressOffsetBits;
 uintptr_t  ZAddressOffsetMask;
 size_t     ZAddressOffsetMax;
+size_t     ZAddressOffsetUpperLimit;
 
 size_t     ZBackingOffsetMax;
 
@@ -102,20 +110,60 @@ static void initialize_check_oop_function() {
 #endif
 }
 
-void ZGlobalsPointers::initialize() {
-  ZAddressOffsetBits = ZPlatformAddressOffsetBits();
+void ZGlobalsPointers::set_heap_limits(uintptr_t heap_base, uintptr_t heap_upper_limit) {
+  log_trace(gc, init)("Set Heap Base: " PTR_FORMAT, heap_base);
+
+  // Setup the heap base
+  ZAddressHeapBase = heap_base;
+  ZAddressHeapBaseShift = (size_t)log2i_exact(heap_base);
+
+  z_on_error_capture_64_5(ZAddressHeapBaseShift, ZAddressHeapBaseMaxShift, ZAddressPlatformHeapBaseMaxShift,
+                          ZAddressHeapBaseMinShift, ZAddressMaxHeapRequiredHeapBaseShift);
+
+  validate_heap_base_shift(ZAddressHeapBaseShift);
+
+  // Setup the offset
+  ZAddressOffsetBits = ZAddressHeapBaseShift;
   ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
   ZAddressOffsetMax = (uintptr_t)1 << ZAddressOffsetBits;
+  ZAddressOffsetUpperLimit = heap_upper_limit - heap_base;
+
+  {
+    z_on_error_capture_64_3(ZAddressHeapBase, ZAddressOffsetMax, ZAddressOffsetUpperLimit);
+
+    assert(ZAddressOffsetUpperLimit <= ZAddressOffsetMax,
+        "Unexpected ZAddressOffsetUpperLimit: " PTR_FORMAT " ZAddressOffsetMax: " PTR_FORMAT,
+        ZAddressOffsetUpperLimit, ZAddressOffsetMax);
+  }
+}
+
+size_t ZGlobalsPointers::ZAddressPlatformHeapBaseMaxShift;
+size_t ZGlobalsPointers::ZAddressMaxHeapRequiredHeapBaseShift;
+size_t ZGlobalsPointers::ZAddressMaxHeapRecommendedHeapBaseShift;
+size_t ZGlobalsPointers::ZAddressInitialHeapBaseShift;
+
+void ZGlobalsPointers::initialize() {
+  ZAddressPlatformHeapBaseMaxShift = ZPlatformHeapBaseMaxShift();
+  ZAddressPlatformMaxAddressSpace = size_t(1) << ZAddressPlatformHeapBaseMaxShift;
+  const size_t max_supported_heap = MIN2(ZAddressMaxCapacityLimit, ZAddressPlatformMaxAddressSpace);
+
+  guarantee(ZAddressPlatformHeapBaseMaxShift <= ZAddressHeapBaseMaxShift, "Platform max shift must not be more than allowed max shift");
+  guarantee(ZAddressPlatformHeapBaseMaxShift >= ZAddressHeapBaseMinShift, "Platform max shift must not be less than allowed min shift");
 
   // Check max supported heap size
-  if (MaxHeapSize > ZAddressOffsetMax) {
+  if (MaxHeapSize > max_supported_heap) {
     vm_exit_during_initialization(
         err_msg("Java heap too large (max supported heap size is %zuG)",
-                ZAddressOffsetMax / G));
+                max_supported_heap / G));
   }
 
-  ZAddressHeapBaseShift = ZPlatformAddressHeapBaseShift();
-  ZAddressHeapBase = (uintptr_t)1 << ZAddressHeapBaseShift;
+  // Set inital heap base
+  ZAddressMaxHeapRequiredHeapBaseShift = (size_t)log2i_ceil(MaxHeapSize);
+  const size_t desired_heap_base_shift = ZAddressMaxHeapRequiredHeapBaseShift + (size_t)log2i_exact(ZVirtualToPhysicalRatio);
+  ZAddressMaxHeapRecommendedHeapBaseShift = MIN2(desired_heap_base_shift, ZAddressPlatformHeapBaseMaxShift);
+  ZAddressInitialHeapBaseShift = ZForceHighestHeapBase
+      ? ZAddressPlatformHeapBaseMaxShift
+      : MAX2(MIN2(ZAddressHeapBaseRecommendInitalMinShift, ZAddressPlatformHeapBaseMaxShift), ZAddressMaxHeapRecommendedHeapBaseShift);
 
   ZPointerRemappedYoungMask = ZPointerRemapped10 | ZPointerRemapped00;
   ZPointerRemappedOldMask = ZPointerRemapped01 | ZPointerRemapped00;
@@ -127,6 +175,31 @@ void ZGlobalsPointers::initialize() {
   set_good_masks();
 
   initialize_check_oop_function();
+}
+
+void ZGlobalsPointers::validate_heap_base_shift(size_t heap_base_shift) {
+  assert(heap_base_shift <= ZAddressHeapBaseMaxShift, "Heap base shift to large");
+  assert(heap_base_shift <= ZAddressPlatformHeapBaseMaxShift, "Heap base shift to large");
+  assert(heap_base_shift >= ZAddressHeapBaseMinShift, "Heap base shift to small");
+  assert(heap_base_shift >= ZAddressMaxHeapRequiredHeapBaseShift, "Heap base shift to small");
+}
+
+size_t ZGlobalsPointers::initial_heap_base_shift() {
+  return ZAddressInitialHeapBaseShift;
+}
+
+size_t ZGlobalsPointers::next_heap_base_shift(size_t heap_base_shift) {
+  validate_heap_base_shift(heap_base_shift);
+
+  const size_t min_heap_base_shift = MAX2(ZAddressMaxHeapRequiredHeapBaseShift, ZAddressHeapBaseMinShift);
+
+  const size_t next_heap_base_shift = heap_base_shift == min_heap_base_shift
+      ? ZAddressPlatformHeapBaseMaxShift
+      : heap_base_shift - 1;
+
+  validate_heap_base_shift(next_heap_base_shift);
+
+  return next_heap_base_shift;
 }
 
 void ZGlobalsPointers::flip_young_mark_start() {
@@ -149,11 +222,4 @@ void ZGlobalsPointers::flip_old_mark_start() {
 void ZGlobalsPointers::flip_old_relocate_start() {
   ZPointerRemappedOldMask ^= ZPointerRemappedMask;
   set_good_masks();
-}
-
-size_t ZGlobalsPointers::min_address_offset_request() {
-  // See ZVirtualMemoryReserver for logic around setting up the heap for NUMA
-  const size_t desired_for_heap = MaxHeapSize * ZVirtualToPhysicalRatio;
-  const size_t desired_for_numa_multiplier = ZNUMA::count() > 1 ? 2 : 1;
-  return round_up_power_of_2(desired_for_heap * desired_for_numa_multiplier);
 }
