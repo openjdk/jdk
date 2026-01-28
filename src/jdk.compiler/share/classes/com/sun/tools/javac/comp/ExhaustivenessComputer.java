@@ -63,6 +63,12 @@ import static com.sun.tools.javac.code.Flags.RECORD;
 public class ExhaustivenessComputer {
     private static final long DEFAULT_MAX_BASE_CHECKS = 4_000_000;
 
+    //when baseChecks is set to a value different that this, the checks
+    //will be counter, and if too many will happen, the process will be stopped
+    //when baseChecks is set to this value, there's no counting, and the
+    //process will not continue as long as needed
+    private static final long NO_BASE_CHECKS_COUNTING = -1;
+
     protected static final Context.Key<ExhaustivenessComputer> exhaustivenessKey = new Context.Key<>();
 
     private final Symtab syms;
@@ -71,7 +77,7 @@ public class ExhaustivenessComputer {
     private final Infer infer;
     private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new HashMap<>();
     private final long maxBaseChecks;
-    private long baseChecks = -1;
+    private long baseChecks = NO_BASE_CHECKS_COUNTING;
 
     public static ExhaustivenessComputer instance(Context context) {
         ExhaustivenessComputer instance = context.get(exhaustivenessKey);
@@ -689,7 +695,7 @@ public class ExhaustivenessComputer {
     }
 
     protected void reportCheck() {
-        if (baseChecks != (-1) &&
+        if (baseChecks != NO_BASE_CHECKS_COUNTING &&
             ++baseChecks > maxBaseChecks) {
             throw new TooManyChecksException(null);
         }
@@ -843,7 +849,7 @@ public class ExhaustivenessComputer {
         } catch (TooManyChecksException ex) {
             return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
         } finally {
-            baseChecks = -1;
+            baseChecks = NO_BASE_CHECKS_COUNTING;
         }
     }
 
