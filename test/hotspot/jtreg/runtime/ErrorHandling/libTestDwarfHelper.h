@@ -41,7 +41,10 @@ void unused4() {
 void unused5() {
 }
 
-__attribute__((noinline)) EXPORT void dereference_null() {
+#if !defined(_MSC_VER)
+__attribute__((noinline))
+#endif
+EXPORT void dereference_null() {
   int* x = (int*)0;
   *x = 34; // Crash
 }

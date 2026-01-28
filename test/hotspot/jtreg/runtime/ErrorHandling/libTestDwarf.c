@@ -29,7 +29,10 @@ int result = 0;
 int limit = 20;
 
 // Explicitly don't inline: foo is large enough that GCC won't inline it, but Clang might.
-__attribute__((noinline)) void foo(int x) {
+#if !defined(_MSC_VER)
+__attribute__((noinline))
+#endif
+void foo(int x) {
     printf("foo3:");
     printf(" %d\n", x);
     for (int i = 0; i < limit; i++) {
