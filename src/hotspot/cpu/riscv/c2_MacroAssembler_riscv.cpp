@@ -32,6 +32,7 @@
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/thread.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -3077,11 +3078,29 @@ void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, Vecto
   }
 }
 
+thread_local C2_MacroAssembler::VSetVliState C2_MacroAssembler::_current_state = { Assembler::e8, 0, Assembler::m1, Assembler::mu, Assembler::ta, false };
+
 // Set vl and vtype for full and partial vector operations.
 // (vma = mu, vta = tu, vill = false)
 void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul, 
                                        Assembler::VMA vma, Assembler::VTA vta, Register tmp) {
+  if (offset() == 0) {
+    invalidate_vsetvli_state();
+  }
+
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+
+  if (!in_scratch_emit_size()) {
+    if (_current_state._valid &&
+        _current_state._sew == sew &&
+        _current_state._vlen == vector_length &&
+        _current_state._vlmul == vlmul &&
+        _current_state._vma == vma &&
+        _current_state._vta == vta) {
+      return;
+    }
+  }
+
   if (vector_length <= 31) {
     vsetivli(tmp, vector_length, sew, vlmul, vma, vta);
   } else if (vector_length == (MaxVectorSize / type2aelembytes(bt))) {
@@ -3089,6 +3108,15 @@ void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vl
   } else {
     mv(tmp, vector_length);
     vsetvli(tmp, tmp, sew, vlmul, vma, vta);
+  }
+
+  if (!in_scratch_emit_size()) {
+    _current_state._sew    = sew;
+    _current_state._vlen  = vector_length;
+    _current_state._vlmul = vlmul;
+    _current_state._vma = vma;
+    _current_state._vta = vta;
+    _current_state._valid = true;
   }
 }
 
