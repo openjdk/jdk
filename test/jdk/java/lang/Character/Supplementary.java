@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4533872 4985214 4985217 4993841 5017268 5017280 8298033 8364007
+ * @bug 4533872 4985214 4985217 4993841 5017268 5017280 8298033
  * @summary Unit tests for supplementary character support (JSR-204)
  * @compile Supplementary.java
  * @run main/timeout=600 Supplementary
@@ -334,8 +334,6 @@ public class Supplementary {
     /**
      * Test codePointCount(CharSequence, int, int)
      *      codePointCount(char[], int, int, int, int)
-     *      codePointCount(CharSequence)
-     *      codePointCount(char[])
      */
     static void test04(String str) {
         int length = str.length();
@@ -349,15 +347,9 @@ public class Supplementary {
             checkCodePointCount(a, n, m);
         }
 
-        int n = Character.codePointCount(str);
-        int m = codePointCount(str);
-        checkCodePointCount(str, n, m);
-        n = Character.codePointCount(a);
-        checkCodePointCount(a, n, m);
-
         // test special cases
         length = str.length();
-        n = Character.codePointCount(str, 0, 0);
+        int n = Character.codePointCount(str, 0, 0);
         checkCodePointCount(str, n, 0);
         n = Character.codePointCount(str, length, length);
         checkCodePointCount(str, n, 0);
