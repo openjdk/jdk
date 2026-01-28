@@ -590,7 +590,7 @@ Node* PhaseIdealLoop::loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, 
 // Add a Parse Predicate with an uncommon trap on the failing/false path. Normal control will continue on the true path.
 void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop,
                                          SafePointNode* sfpt) {
-  if (!C->too_many_traps(reason)) {
+  if (!C->too_many_traps(sfpt->jvms()->method(), sfpt->jvms()->bci(), reason)) {
     ParsePredicateNode* parse_predicate = new ParsePredicateNode(inner_head->in(LoopNode::EntryControl), reason, &_igvn);
     register_control(parse_predicate, loop, inner_head->in(LoopNode::EntryControl));
     Node* if_false = new IfFalseNode(parse_predicate);
@@ -758,6 +758,24 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 #endif
   }
   return safepoint;
+}
+
+void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* inner_head, SafePointNode* cloned_sfpt) {
+  if (ShortRunningLongLoop) {
+    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
+  }
+  if (UseLoopPredicate) {
+    add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
+    if (UseProfiledLoopPredicate) {
+      add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+    }
+  }
+
+  if (UseAutoVectorizationPredicate) {
+    add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+  }
+
+  add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
 }
 
 // If the loop has the shape of a counted loop but with a long
@@ -1123,26 +1141,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   if (safepoint != nullptr) {
     SafePointNode* cloned_sfpt = old_new[safepoint->_idx]->as_SafePoint();
 
-    if (ShortRunningLongLoop) {
-      add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
-    }
-    if (UseLoopPredicate) {
-      add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
-      if (UseProfiledLoopPredicate) {
-        add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
-      }
-    }
-
-    if (UseAutoVectorizationPredicate) {
-      // We only want to use the auto-vectorization check as a trap once per bci. And
-      // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
-      // we do a custom check here.
-      if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
-        add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
-      }
-    }
-
-    add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+    add_parse_predicates(outer_ilt, inner_head, cloned_sfpt);
   }
 
 #ifndef PRODUCT
@@ -1893,7 +1892,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
 #endif
 
 //------------------------------is_counted_loop--------------------------------
-bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
+bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop, BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
   Node* back_control = loop_exit_control(x, loop);
@@ -3528,7 +3527,6 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   CountedLoopEndNode* cle = inner_cl->loopexit();
   Node* inner_test = cle->in(1);
   IfNode* outer_le = outer_loop_end();
-  CountedLoopEndNode* inner_cle = inner_cl->loopexit();
   Node* safepoint = outer_safepoint();
 
   fix_sunk_stores_when_back_to_counted_loop(igvn, iloop);
