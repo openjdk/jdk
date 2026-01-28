@@ -118,7 +118,20 @@ public:
 };
 
 typedef ShenandoahLock                       ShenandoahHeapLock;
-typedef ShenandoahLocker<ShenandoahHeapLock> ShenandoahHeapLocker;
+// ShenandoahHeapLocker checks potential deadlock and asserts
+class ShenandoahHeapLocker : public StackObj {
+private:
+  ShenandoahHeapLock* _lock;
+public:
+  ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_block_for_safepoint = false);
+
+  ~ShenandoahHeapLocker() {
+    if (_lock != nullptr) {
+      _lock->unlock();
+    }
+  }
+};
+
 typedef Stack<oop, mtGC>                     ShenandoahScanObjectStack;
 
 // Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
