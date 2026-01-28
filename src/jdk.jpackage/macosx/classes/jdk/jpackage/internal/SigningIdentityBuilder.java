@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import javax.naming.ldap.Rdn;
 import javax.security.auth.x500.X500Principal;
 import jdk.jpackage.internal.MacCertificateUtils.CertificateHash;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.SigningIdentity;
 
 final class SigningIdentityBuilder {
@@ -147,10 +148,9 @@ final class SigningIdentityBuilder {
         Objects.requireNonNull(keychain);
         switch (certs.size()) {
             case 0 -> {
-                Log.error(I18N.format("error.cert.not.found", certificateSelector.signingIdentities().getFirst(),
+                throw new JPackageException(I18N.format("error.cert.not.found",
+                        certificateSelector.signingIdentities().getFirst(),
                         keychain.map(Keychain::name).orElse("")));
-                throw I18N.buildConfigException("error.explicit-sign-no-cert")
-                        .advice("error.explicit-sign-no-cert.advice").create();
             }
             case 1 -> {
                 return certs.getFirst();

@@ -104,11 +104,8 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
     return;
   }
 
-  BarrierSet* bs = BarrierSet::barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  LIR_Const* card_table_base = new LIR_Const(ct->byte_map_base());
-  SHENANDOAHGC_ONLY(assert(!UseShenandoahGC, "Shenandoah byte_map_base is not constant.");)
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  LIR_Const* card_table_base = new LIR_Const(ctbs->card_table_base_const());
 
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
