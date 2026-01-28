@@ -2916,7 +2916,6 @@ bool PhaseCCP::needs_revisit(Node* n) const {
 // Note for CCP the non-convergence can lead to unsound analysis and mis-compilation.
 // Therefore, we are verifying Value convergence strictly.
 void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
-  bool failure = false;
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
 
