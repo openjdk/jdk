@@ -125,6 +125,11 @@ public:
     }
 
   public:
+    ZPhysicalMemoryBackingMocker()
+      : _old_max(0),
+        _backing(nullptr),
+        _active(false) {}
+
     void SetUp(size_t max_capacity) {
       GTEST_EXPECT_FALSE(_active) << "SetUp called twice without a TearDown";
       _active = true;
