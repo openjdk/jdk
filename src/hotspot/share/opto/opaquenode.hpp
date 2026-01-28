@@ -147,7 +147,7 @@ class OpaqueConstantBoolNode : public Node {
  private:
   bool _constant;
  public:
-  OpaqueConstantBoolNode(Compile* C, Node* tst, bool positive) : Node(nullptr, tst), _constant(positive) {
+  OpaqueConstantBoolNode(Compile* C, Node* tst, bool constant) : Node(nullptr, tst), _constant(constant) {
     init_class_id(Class_OpaqueConstantBool);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
