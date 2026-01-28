@@ -47,12 +47,8 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import com.sun.tools.javac.comp.ExhaustivenessComputer.BindingPattern;
-import com.sun.tools.javac.comp.ExhaustivenessComputer.EnumConstantPattern;
-import com.sun.tools.javac.comp.ExhaustivenessComputer.RecordPattern;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 import static com.sun.tools.javac.util.RichDiagnosticFormatter.RichConfiguration.*;
-import java.util.Arrays;
 
 /**
  * A rich diagnostic formatter is a formatter that provides better integration

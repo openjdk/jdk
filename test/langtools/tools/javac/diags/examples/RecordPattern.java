@@ -23,7 +23,6 @@
 
 // key: compiler.err.not.exhaustive.statement.details
 // key: compiler.misc.record.pattern
-// key: compiler.misc.binding.pattern
 
 class RecordPattern {
     void t(R r) {

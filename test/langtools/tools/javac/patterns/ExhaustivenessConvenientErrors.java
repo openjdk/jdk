@@ -559,8 +559,6 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
 
         new JavacTask(tb)
             .options("-XDrawDiagnostics",
-                     "-XDdev",
-                     "-Xlint:-preview",
                      "--class-path", libClasses.toString(),
                      "-XDshould-stop.at=FLOW",
                      "-XDshould-stop.ifNoError=FLOW",
@@ -582,8 +580,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                 }
             })
             .run(Task.Expect.FAIL)
-            .writeAll()
-            .getOutputLines(Task.OutputKind.DIRECT);
+            .writeAll();
 
         Set<String> expectedPatterns = new HashSet<>(List.of(expectedMissingPatterns));
 

@@ -878,7 +878,7 @@ public class ExhaustivenessComputer {
                                  .map(type -> type.tsym)
                                  .filter(isApplicableSubtypePredicate(targetType))
                                  .map(csym -> new BindingPattern(types.erasure(csym.type)))
-                                 .collect(Collectors.toCollection(HashSet::new));
+                                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
                 //remove the permitted subtypes that are not needed to achieve exhaustivity
                 boolean reduced =
@@ -942,7 +942,7 @@ public class ExhaustivenessComputer {
                                                                                       componentTypes,
                                                                                       combination.map(BindingPattern::new)
                                                                                                  .toArray(PatternDescription[]::new)))
-                                                .collect(Collectors.toCollection(HashSet::new));
+                                                .collect(Collectors.toCollection(LinkedHashSet::new));
 
                 removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, combinatorialPatterns);
 
@@ -1223,7 +1223,7 @@ public class ExhaustivenessComputer {
         return componentTypes;
     }
 
-    /* The stricness of determining the equivalent of patterns, used in
+    /* The strictness of determining the equivalent of patterns, used in
      * nestedComponentsEquivalent.
      */
     private enum PatternEquivalence {

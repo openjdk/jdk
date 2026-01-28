@@ -602,13 +602,9 @@ class Example implements Comparable<Example> {
          */
         private static void scanForKeys(JCDiagnostic d, Set<String> keys) {
             keys.add(d.getCode());
-            List<Object> todoArgs = new ArrayList<>(Arrays.asList(d.getArgs()));
-            while (!todoArgs.isEmpty()) {
-                Object o = todoArgs.removeLast();
-                if (o instanceof JCDiagnostic sd) {
-                    scanForKeys(sd, keys);
-                } else if (o instanceof List l) {
-                    todoArgs.addAll(l);
+            for (Object o: d.getArgs()) {
+                if (o instanceof JCDiagnostic) {
+                    scanForKeys((JCDiagnostic) o, keys);
                 }
             }
             for (JCDiagnostic sd: d.getSubdiagnostics())
