@@ -145,9 +145,9 @@ public:
 // BoolNode inputs instead).
 class OpaqueConstantBoolNode : public Node {
  private:
-  bool _positive;
+  bool _constant;
  public:
-  OpaqueConstantBoolNode(Compile* C, Node* tst, bool positive) : Node(nullptr, tst), _positive(positive) {
+  OpaqueConstantBoolNode(Compile* C, Node* tst, bool positive) : Node(nullptr, tst), _constant(positive) {
     init_class_id(Class_OpaqueConstantBool);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -156,7 +156,7 @@ class OpaqueConstantBoolNode : public Node {
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
-  bool is_positive() { return _positive; }
+  int constant() const { return _constant ? 1 : 0; }
     virtual uint size_of() const { return sizeof(OpaqueConstantBoolNode); }
 };
 

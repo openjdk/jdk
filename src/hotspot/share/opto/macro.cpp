@@ -2555,8 +2555,7 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
 #ifdef ASSERT
         _igvn.replace_node(n, n->in(1));
 #else
-        bool is_positive = n->as_OpaqueConstantBool()->is_positive();
-        _igvn.replace_node(n, _igvn.intcon(is_positive ? 1 : 0));
+        _igvn.replace_node(n, _igvn.intcon(n->as_OpaqueConstantBool()->constant()));
 #endif
         success = true;
       } else if (n->is_OpaqueInitializedAssertionPredicate()) {
