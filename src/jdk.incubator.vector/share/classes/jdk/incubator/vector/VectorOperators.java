@@ -842,8 +842,8 @@ public abstract class VectorOperators {
 
     private static <E,F> ConversionImpl<E,F>
     convert(String name, char kind, Class<E> dom, Class<F> ran, int opCode, int flags) {
-        int domran = ((LaneType.of(dom).basicType << VO_DOM_SHIFT) +
-                      (LaneType.of(ran).basicType << VO_RAN_SHIFT));
+        int domran = ((LaneType.of(dom).laneType << VO_DOM_SHIFT) +
+                      (LaneType.of(ran).laneType << VO_RAN_SHIFT));
         if (opCode >= 0) {
             if ((opCode & VO_DOM_RAN_MASK) == 0) {
                 opCode += domran;
@@ -1102,8 +1102,8 @@ public abstract class VectorOperators {
             String name;
             Class<?> domType = dom.elementType;
             Class<?> ranType = ran.elementType;
-            int domCode = (dom.basicType << VO_DOM_SHIFT);
-            int ranCode = (ran.basicType << VO_RAN_SHIFT);
+            int domCode = (dom.laneType << VO_DOM_SHIFT);
+            int ranCode = (ran.laneType << VO_RAN_SHIFT);
             int opCode = domCode + ranCode;
             switch (kind) {
             case 'I':
@@ -1189,8 +1189,8 @@ public abstract class VectorOperators {
                     break;
                 }
                 assert((opc & VO_DOM_RAN_MASK) ==
-                       ((dom.basicType << VO_DOM_SHIFT) +
-                        (ran.basicType << VO_RAN_SHIFT)));
+                       ((dom.laneType << VO_DOM_SHIFT) +
+                        (ran.laneType << VO_RAN_SHIFT)));
                 ConversionImpl<?,?>[] cache = cacheOf(conv.kind, dom);
                 int ranKey = ran.switchKey;
                 if (cache[ranKey] != conv) {

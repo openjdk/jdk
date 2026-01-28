@@ -298,15 +298,16 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 }
 
 static bool is_primitive_lane_type(int laneType) {
-  return laneType >= T_FLOAT && laneType <= T_FLOAT16;
+  return laneType >= VectorSupport::LT_FLOAT && laneType <= VectorSupport::LT_FLOAT16;
 }
 
 static bool is_unsupported_lane_type(int laneType) {
-  return laneType == T_FLOAT16;
+  return laneType == VectorSupport::LT_FLOAT16;
 }
 
 static BasicType get_vector_primitive_lane_type(int lane_type) {
-  if (lane_type == T_FLOAT16) {
+  assert(is_primitive_lane_type(lane_type), "");
+  if (lane_type == VectorSupport::LT_FLOAT16) {
     return T_SHORT;
   }
   return static_cast<BasicType>(lane_type);
@@ -396,8 +397,8 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   bool is_unsigned = VectorSupport::is_unsigned_op(opr->get_con());
 
   int num_elem = vlen->get_con();
-  int opc = VectorSupport::vop2ideal(opr->get_con(), (BasicType)laneType->get_con());
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
+  int opc = VectorSupport::vop2ideal(opr->get_con(), laneType->get_con());
 
   int sopc = has_scalar_op ? VectorNode::opcode(opc, elem_bt) : opc;
   if (sopc == 0 || num_elem == 1) {
@@ -657,7 +658,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
 
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
-  int mopc = VectorSupport::vop2ideal(oper->get_con(), elem_bt);
+  int mopc = VectorSupport::vop2ideal(oper->get_con(), laneType->get_con());
   if (!arch_supports_vector(mopc, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
                     mopc, num_elem, type2name(elem_bt));
@@ -1514,7 +1515,7 @@ bool LibraryCallKit::inline_vector_reduction() {
   }
 
   int num_elem = vlen->get_con();
-  int opc  = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
+  int opc  = VectorSupport::vop2ideal(opr->get_con(), laneType->get_con());
   int sopc = ReductionNode::opcode(opc, elem_bt);
 
   // Ensure reduction operation for lanewise operation
@@ -2246,7 +2247,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
 
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
-  int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
+  int opc = VectorSupport::vop2ideal(opr->get_con(), laneType->get_con());
 
   bool is_shift  = VectorNode::is_shift_opcode(opc);
   bool is_rotate = VectorNode::is_rotate_opcode(opc);
@@ -3019,7 +3020,7 @@ bool LibraryCallKit::inline_vector_compress_expand() {
 
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
-  int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
+  int opc = VectorSupport::vop2ideal(opr->get_con(), laneType->get_con());
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: opc=%d vlen=%d etype=%s ismask=useload",
@@ -3110,7 +3111,7 @@ bool LibraryCallKit::inline_index_vector() {
     return false; // not supported
   }
 
-  int mul_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_MUL, elem_bt);
+  int mul_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_MUL, laneType->get_con());
   int vmul_op = VectorNode::opcode(mul_op, elem_bt);
   bool needs_mul = true;
   Node* scale = argument(4);
@@ -3146,7 +3147,7 @@ bool LibraryCallKit::inline_index_vector() {
     return false;
   }
 
-  int add_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_ADD, elem_bt);
+  int add_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_ADD, laneType->get_con());
   int vadd_op = VectorNode::opcode(add_op, elem_bt);
   bool needs_add = true;
   // The addition is not needed if all the element values of "opd" are zero

@@ -151,13 +151,13 @@ public class VectorSupport {
 
     // BasicType codes, for primitives only:
     public static final int
-        T_FLOAT     = 6,
-        T_DOUBLE    = 7,
-        T_BYTE      = 8,
-        T_SHORT     = 9,
-        T_INT       = 10,
-        T_LONG      = 11,
-        T_FLOAT16   = 12;
+        LT_FLOAT     = 6,
+        LT_DOUBLE    = 7,
+        LT_BYTE      = 8,
+        LT_SHORT     = 9,
+        LT_INT       = 10,
+        LT_LONG      = 11,
+        LT_FLOAT16   = 12;
 
     /* ============================================================================ */
 

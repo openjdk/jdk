@@ -138,11 +138,21 @@ class VectorSupport : AllStatic {
   };
 
   enum {
+    LT_FLOAT     = 6,
+    LT_DOUBLE    = 7,
+    LT_BYTE      = 8,
+    LT_SHORT     = 9,
+    LT_INT       = 10,
+    LT_LONG      = 11,
+    LT_FLOAT16   = 12
+  };
+
+  enum {
     MODE_BROADCAST = 0,
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
 
-  static int vop2ideal(jint vop, BasicType bt);
+  static int vop2ideal(jint vop, int lt);
   static const char* lanetype2name(int lane_type);
   static bool has_scalar_op(jint id);
   static bool is_unsigned_op(jint id);

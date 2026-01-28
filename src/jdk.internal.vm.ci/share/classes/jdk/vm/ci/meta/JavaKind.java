@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ public enum JavaKind {
     Double('D', 7, "double", 2, false, java.lang.Double.TYPE, java.lang.Double.class),
 
     /** The Object kind, also used for arrays. */
-    Object('A', 13, "Object", 1, false, null, null),
+    Object('A', 12, "Object", 1, false, null, null),
 
     /** The void kind. */
-    Void('V', 15, "void", 0, false, java.lang.Void.TYPE, java.lang.Void.class),
+    Void('V', 14, "void", 0, false, java.lang.Void.TYPE, java.lang.Void.class),
 
     /** The non-type. */
     Illegal('-', 99, "illegal", 0, false, null, null);

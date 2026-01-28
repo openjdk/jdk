@@ -545,7 +545,7 @@ final class IntVector64 extends IntVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                                VCLASS, T_INT, VLENGTH,
+                                VCLASS, LT_INT, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     int[] vecarr = vec.vec();
@@ -566,7 +566,7 @@ final class IntVector64 extends IntVector {
     @ForceInline
     public IntVector64 withLaneHelper(int i, int e) {
         return VectorSupport.insert(
-                                VCLASS, T_INT, VLENGTH,
+                                VCLASS, LT_INT, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     int[] res = v.vec().clone();
@@ -671,7 +671,7 @@ final class IntVector64 extends IntVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), T_INT, VLENGTH,
+                this.getClass(), LT_INT, VLENGTH,
                 species.maskType(), species.laneBasicType(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
@@ -682,7 +682,7 @@ final class IntVector64 extends IntVector {
         /*package-private*/
         IntMask64 indexPartiallyInUpperRange(long offset, long limit) {
             return (IntMask64) VectorSupport.indexPartiallyInUpperRange(
-                IntMask64.class, T_INT, VLENGTH, offset, limit,
+                IntMask64.class, LT_INT, VLENGTH, offset, limit,
                 (o, l) -> (IntMask64) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -698,7 +698,7 @@ final class IntVector64 extends IntVector {
         @ForceInline
         public IntMask64 compress() {
             return (IntMask64)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                IntVector64.class, IntMask64.class, T_INT, VLENGTH, null, this,
+                IntVector64.class, IntMask64.class, LT_INT, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 m1.trueCount()));
         }
@@ -711,7 +711,7 @@ final class IntVector64 extends IntVector {
         public IntMask64 and(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMask64 m = (IntMask64)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, IntMask64.class, null, T_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, IntMask64.class, null, LT_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -721,7 +721,7 @@ final class IntVector64 extends IntVector {
         public IntMask64 or(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMask64 m = (IntMask64)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, IntMask64.class, null, T_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, IntMask64.class, null, LT_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -731,7 +731,7 @@ final class IntVector64 extends IntVector {
         public IntMask64 xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMask64 m = (IntMask64)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMask64.class, null, T_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMask64.class, null, LT_INT, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -741,21 +741,21 @@ final class IntVector64 extends IntVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, IntMask64.class, T_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, IntMask64.class, LT_INT, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, IntMask64.class, T_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, IntMask64.class, LT_INT, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, IntMask64.class, T_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, IntMask64.class, LT_INT, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -765,7 +765,7 @@ final class IntVector64 extends IntVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMask64.class, T_INT, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMask64.class, LT_INT, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -775,7 +775,7 @@ final class IntVector64 extends IntVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(IntMask64.class, T_INT, VLENGTH,
+            return VectorSupport.extract(IntMask64.class, LT_INT, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -784,7 +784,7 @@ final class IntVector64 extends IntVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, IntMask64.class, T_INT, VLENGTH,
+            return VectorSupport.test(BT_ne, IntMask64.class, LT_INT, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((IntMask64)m).getBits()));
         }
@@ -792,7 +792,7 @@ final class IntVector64 extends IntVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, IntMask64.class, T_INT, VLENGTH,
+            return VectorSupport.test(BT_overflow, IntMask64.class, LT_INT, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((IntMask64)m).getBits()));
         }
@@ -800,7 +800,7 @@ final class IntVector64 extends IntVector {
         @ForceInline
         /*package-private*/
         static IntMask64 maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(IntMask64.class, T_INT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(IntMask64.class, LT_INT, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

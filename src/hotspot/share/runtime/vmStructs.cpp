@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1626,7 +1626,6 @@
   declare_constant(T_SHORT)                                               \
   declare_constant(T_INT)                                                 \
   declare_constant(T_LONG)                                                \
-  declare_constant(T_FLOAT16)                                             \
   declare_constant(T_OBJECT)                                              \
   declare_constant(T_ARRAY)                                               \
   declare_constant(T_VOID)                                                \
@@ -1649,7 +1648,6 @@
   declare_constant(T_SHORT_size)                                          \
   declare_constant(T_INT_size)                                            \
   declare_constant(T_LONG_size)                                           \
-  declare_constant(T_FLOAT16_size)                                        \
   declare_constant(T_OBJECT_size)                                         \
   declare_constant(T_ARRAY_size)                                          \
   declare_constant(T_NARROWOOP_size)                                      \

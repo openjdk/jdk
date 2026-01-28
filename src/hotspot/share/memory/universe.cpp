@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,7 +561,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
       _basic_type_mirrors[T_INT].resolve() != nullptr) {
     // check that all basic type mirrors are mapped also
     for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-      if (!is_reference_type((BasicType)i) && !is_custom_basic_type((BasicType)i)) {
+      if (!is_reference_type((BasicType)i)) {
         oop m = _basic_type_mirrors[i].resolve();
         assert(m != nullptr, "archived mirrors should not be null");
       }
@@ -572,7 +572,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
   {
     for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
       BasicType bt = (BasicType)i;
-      if (!is_reference_type(bt) && !is_custom_basic_type(bt)) {
+      if (!is_reference_type(bt)) {
         oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
         _basic_type_mirrors[i] = OopHandle(vm_global(), m);
       }

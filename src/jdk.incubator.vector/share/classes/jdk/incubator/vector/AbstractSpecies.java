@@ -148,7 +148,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     @SuppressWarnings("unchecked")
     //NOT FINAL: SPECIALIZED
     int laneBasicType() {
-        return laneType.basicType;
+        return laneType.laneType;
     }
 
     @ForceInline
