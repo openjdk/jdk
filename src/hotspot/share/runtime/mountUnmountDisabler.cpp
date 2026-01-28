@@ -270,10 +270,6 @@ MountUnmountDisabler::~MountUnmountDisabler() {
   }
 }
 
-static int MAX_IN_TRANSITION_SPINS = 1000;
-static const jlong MIN_IN_TRANSITION_WAIT_TIME = 1;
-static const jlong MAX_IN_TRANSITION_WAIT_TIME = 10;
-
 // disable transitions for one virtual thread
 void
 MountUnmountDisabler::disable_transition_for_one() {
@@ -288,18 +284,8 @@ MountUnmountDisabler::disable_transition_for_one() {
   // Prevent load of transition flag from floating up.
   OrderAccess::storeload();
 
-  int spins = MAX_IN_TRANSITION_SPINS;
-  while (spins > 0 && java_lang_Thread::is_in_vthread_transition(_vthread())) {
-    SpinPause();
-    spins--;
-  }
-
-  jlong wait_time = MIN_IN_TRANSITION_WAIT_TIME;
   while (java_lang_Thread::is_in_vthread_transition(_vthread())) {
-    ml.wait(wait_time); // wait while the virtual thread is in transition
-    if (wait_time < MAX_IN_TRANSITION_WAIT_TIME) {
-        wait_time++;
-    }
+    ml.wait(10); // wait while the virtual thread is in transition
   }
 
   // Start of the critical section. If the target is unmounted, we need an acquire
