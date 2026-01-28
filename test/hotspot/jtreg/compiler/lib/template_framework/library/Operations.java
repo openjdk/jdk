@@ -129,6 +129,15 @@ public final class Operations {
             ops.add(Expression.make(type, "(", type, " + ", type, ")"));
             ops.add(Expression.make(type, "(", type, " - ", type, ")"));
             ops.add(Expression.make(type, "(", type, " * ", type, ")"));
+            // Because of subtyping, we can sample an expression like `(float)((int)(3) / (int)(0))`. Floating point
+            // division and modulo do not throw an ArithmeticException on division by zero, integer division and modulo
+            // do. In the expression above, the division has an integer on both sides, so it is executed as an integer
+            // division and throws an ArithmeticException even though we would expect the float division not to do so.
+            // To prevent this issue, we provide two versions of floating point division operations: one that casts
+            // its operands and one that expects that an ArithmeticException might be thrown when we get unlucky when
+            // sampling subtypes.
+            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") / (" + type.name() +")(", type, "))"));
+            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") % (" + type.name() +")(", type, "))"));
             ops.add(Expression.make(type, "(", type, " / ", type, ")", WITH_ARITHMETIC_EXCEPTION));
             ops.add(Expression.make(type, "(", type, " % ", type, ")", WITH_ARITHMETIC_EXCEPTION));
 
