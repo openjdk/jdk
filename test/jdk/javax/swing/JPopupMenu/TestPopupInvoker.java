@@ -109,8 +109,8 @@ public class TestPopupInvoker {
             if (!popupHidden.await(1, SECONDS)) {
                 throw new RuntimeException("Popup is visible after component is removed");
             }
-            SwingUtilities.invokeAndWait(() -> invoker = popupMenu.getInvoker());
 
+            SwingUtilities.invokeAndWait(() -> invoker = popupMenu.getInvoker());
             if (invoker != null) {
                 throw new RuntimeException("Invoker is not null");
             }
