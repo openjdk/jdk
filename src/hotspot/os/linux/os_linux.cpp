@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "hugepages.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -96,7 +97,6 @@
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
-# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/ipc.h>
@@ -211,13 +211,56 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
+bool os::is_containerized() {
+  return OSContainer::is_containerized();
+}
+
+bool os::Container::memory_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_soft_limit_in_bytes(result) && result != 0 && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_throttle_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::used_memory(physical_memory_size_type& value) {
+  return OSContainer::memory_usage_in_bytes(value);
+}
+
 bool os::available_memory(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("available container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
+  return Machine::available_memory(value);
+}
+
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return Linux::available_memory(value);
+}
+
+bool os::Container::available_memory(physical_memory_size_type& value) {
+  return OSContainer::available_memory_in_bytes(value);
 }
 
 bool os::Linux::available_memory(physical_memory_size_type& value) {
@@ -251,11 +294,15 @@ bool os::Linux::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::free_memory(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("free container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
+  return Machine::free_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return Linux::free_memory(value);
 }
 
@@ -274,19 +321,28 @@ bool os::Linux::free_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized()) {
-    physical_memory_size_type mem_swap_limit = value_unlimited;
-    physical_memory_size_type memory_limit = value_unlimited;
-    if (OSContainer::memory_and_swap_limit_in_bytes(mem_swap_limit) &&
-        OSContainer::memory_limit_in_bytes(memory_limit)) {
-      if (memory_limit != value_unlimited && mem_swap_limit != value_unlimited &&
-          mem_swap_limit >= memory_limit /* ensure swap is >= 0 */) {
-        value = mem_swap_limit - memory_limit;
-        return true;
-      }
-    }
-  } // fallback to the host swap space if the container returned unlimited
+  if (is_containerized() && Container::total_swap_space(value)) {
+    return true;
+  } // fallback to the host swap space if the container value fails
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   return Linux::host_swap(value);
+}
+
+bool os::Container::total_swap_space(physical_memory_size_type& value) {
+  physical_memory_size_type mem_swap_limit = value_unlimited;
+  physical_memory_size_type memory_limit = value_unlimited;
+  if (OSContainer::memory_and_swap_limit_in_bytes(mem_swap_limit) &&
+      OSContainer::memory_limit_in_bytes(memory_limit)) {
+    if (memory_limit != value_unlimited && mem_swap_limit != value_unlimited &&
+        mem_swap_limit >= memory_limit /* ensure swap is >= 0 */) {
+      value = mem_swap_limit - memory_limit;
+      return true;
+    }
+  }
+  return false;
 }
 
 static bool host_free_swap_f(physical_memory_size_type& value) {
@@ -309,30 +365,43 @@ bool os::free_swap_space(physical_memory_size_type& value) {
     return false;
   }
   physical_memory_size_type host_free_swap_val = MIN2(total_swap_space, host_free_swap);
-  if (OSContainer::is_containerized()) {
-    if (OSContainer::available_swap_in_bytes(host_free_swap_val, value)) {
+  if (is_containerized()) {
+    if (Container::free_swap_space(value)) {
       return true;
     }
     // Fall through to use host value
     log_trace(os,container)("os::free_swap_space: containerized value unavailable"
                             " returning host value: " PHYS_MEM_TYPE_FORMAT, host_free_swap_val);
   }
+
   value = host_free_swap_val;
   return true;
 }
 
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
+  return host_free_swap_f(value);
+}
+
+bool os::Container::free_swap_space(physical_memory_size_type& value) {
+  return OSContainer::available_swap_in_bytes(value);
+}
+
 physical_memory_size_type os::physical_memory() {
-  if (OSContainer::is_containerized()) {
+  if (is_containerized()) {
     physical_memory_size_type mem_limit = value_unlimited;
-    if (OSContainer::memory_limit_in_bytes(mem_limit) && mem_limit != value_unlimited) {
+    if (Container::memory_limit(mem_limit) && mem_limit != value_unlimited) {
       log_trace(os)("total container memory: " PHYS_MEM_TYPE_FORMAT, mem_limit);
       return mem_limit;
     }
   }
 
-  physical_memory_size_type phys_mem = Linux::physical_memory();
+  physical_memory_size_type phys_mem = Machine::physical_memory();
   log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
+  return Linux::physical_memory();
 }
 
 // Returns the resident set size (RSS) of the process.
@@ -1470,9 +1539,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// time support
-
 // thread_id is kernel thread id (similar to Solaris LWP id)
 intx os::current_thread_id() { return os::Linux::gettid(); }
 int os::current_process_id() {
@@ -2432,62 +2498,58 @@ bool os::Linux::print_container_info(outputStream* st) {
   st->print_cr("container (cgroup) information:");
 
   const char *p_ct = OSContainer::container_type();
-  st->print_cr("container_type: %s", p_ct != nullptr ? p_ct : "not supported");
+  OSContainer::print_container_metric(st, "container_type", p_ct != nullptr ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
-  st->print_cr("cpu_cpuset_cpus: %s", p != nullptr ? p : "not supported");
+  OSContainer::print_container_metric(st, "cpu_cpuset_cpus", p != nullptr ? p : "not supported");
   free(p);
 
   p = OSContainer::cpu_cpuset_memory_nodes();
-  st->print_cr("cpu_memory_nodes: %s", p != nullptr ? p : "not supported");
+  OSContainer::print_container_metric(st, "cpu_memory_nodes", p != nullptr ? p : "not supported");
   free(p);
 
-  int i = -1;
-  bool supported = OSContainer::active_processor_count(i);
-  st->print("active_processor_count: ");
+  double cpus = -1;
+  bool supported = OSContainer::active_processor_count(cpus);
   if (supported) {
-    assert(i > 0, "must be");
+    assert(cpus > 0, "must be");
     if (ActiveProcessorCount > 0) {
-      st->print_cr("%d, but overridden by -XX:ActiveProcessorCount %d", i, ActiveProcessorCount);
+      OSContainer::print_container_metric(st, "active_processor_count", ActiveProcessorCount, "(from -XX:ActiveProcessorCount)");
     } else {
-      st->print_cr("%d", i);
+      OSContainer::print_container_metric(st, "active_processor_count", cpus);
     }
   } else {
-    st->print_cr("not supported");
+    OSContainer::print_container_metric(st, "active_processor_count", "not supported");
   }
 
 
+  int i = -1;
   supported = OSContainer::cpu_quota(i);
-  st->print("cpu_quota: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_quota", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no quota");
+    OSContainer::print_container_metric(st, "cpu_quota", !supported ? "not supported" : "no quota");
   }
 
   supported = OSContainer::cpu_period(i);
-  st->print("cpu_period: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_period", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no period");
+    OSContainer::print_container_metric(st, "cpu_period", !supported ? "not supported" : "no period");
   }
 
   supported = OSContainer::cpu_shares(i);
-  st->print("cpu_shares: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_shares", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no shares");
+    OSContainer::print_container_metric(st, "cpu_shares", !supported ? "not supported" : "no shares");
   }
 
   uint64_t j = 0;
   supported = OSContainer::cpu_usage_in_micros(j);
-  st->print("cpu_usage_in_micros: ");
   if (supported && j > 0) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "cpu_usage", j, "us");
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no usage");
+    OSContainer::print_container_metric(st, "cpu_usage", !supported ? "not supported" : "no usage");
   }
 
   MetricResult memory_limit;
@@ -2530,31 +2592,29 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (OSContainer::cache_usage_in_bytes(val)) {
     cache_usage.set_value(val);
   }
-  OSContainer::print_container_helper(st, memory_limit, "memory_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_swap_limit, "memory_and_swap_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_soft_limit, "memory_soft_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_throttle_limit, "memory_throttle_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_usage, "memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, mem_max_usage, "memory_max_usage_in_bytes");
-  OSContainer::print_container_helper(st, rss_usage, "rss_usage_in_bytes");
-  OSContainer::print_container_helper(st, cache_usage, "cache_usage_in_bytes");
+  OSContainer::print_container_helper(st, memory_limit, "memory_limit");
+  OSContainer::print_container_helper(st, mem_swap_limit, "memory_and_swap_limit");
+  OSContainer::print_container_helper(st, mem_soft_limit, "memory_soft_limit");
+  OSContainer::print_container_helper(st, mem_throttle_limit, "memory_throttle_limit");
+  OSContainer::print_container_helper(st, mem_usage, "memory_usage");
+  OSContainer::print_container_helper(st, mem_max_usage, "memory_max_usage");
+  OSContainer::print_container_helper(st, rss_usage, "rss_usage");
+  OSContainer::print_container_helper(st, cache_usage, "cache_usage");
 
   OSContainer::print_version_specific_info(st);
 
   supported = OSContainer::pids_max(j);
-  st->print("maximum number of tasks: ");
   if (supported && j != value_unlimited) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "maximum number of tasks", j);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "unlimited");
+    OSContainer::print_container_metric(st, "maximum number of tasks", !supported ? "not supported" : "unlimited");
   }
 
   supported = OSContainer::pids_current(j);
-  st->print("current number of tasks: ");
   if (supported && j > 0) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "current number of tasks", j);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no current tasks");
+    OSContainer::print_container_metric(st, "current number of tasks", !supported ? "not supported" : "no tasks");
   }
 
   return true;
@@ -4298,13 +4358,6 @@ OSReturn os::get_native_priority(const Thread* const thread,
   return (*priority_ptr != -1 || errno == 0 ? OS_OK : OS_ERR);
 }
 
-// This is the fastest way to get thread cpu time on Linux.
-// Returns cpu time (user+sys) for any thread, not only for current.
-// POSIX compliant clocks are implemented in the kernels 2.6.16+.
-// It might work on 2.6.10+ with a special kernel/glibc patch.
-// For reference, please, see IEEE Std 1003.1-2004:
-//   http://www.unix.org/single_unix_specification
-
 jlong os::Linux::thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
   int status = clock_gettime(clockid, &tp);
@@ -4754,15 +4807,26 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  int active_cpus = -1;
-  if (OSContainer::is_containerized() && OSContainer::active_processor_count(active_cpus)) {
-    log_trace(os)("active_processor_count: determined by OSContainer: %d",
-                   active_cpus);
-  } else {
-    active_cpus = os::Linux::active_processor_count();
+  if (is_containerized()) {
+    double cpu_quota;
+    if (Container::processor_count(cpu_quota)) {
+      int active_cpus = ceilf(cpu_quota); // Round fractional CPU quota up.
+      assert(active_cpus <= Machine::active_processor_count(), "must be");
+      log_trace(os)("active_processor_count: determined by OSContainer: %d",
+                     active_cpus);
+      return active_cpus;
+    }
   }
 
-  return active_cpus;
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
+  return os::Linux::active_processor_count();
+}
+
+bool os::Container::processor_count(double& value) {
+  return OSContainer::active_processor_count(value);
 }
 
 static bool should_warn_invalid_processor_id() {
@@ -4895,36 +4959,18 @@ int os::open(const char *path, int oflag, int mode) {
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors,
-  // and this in turn might:
-  //
-  // - cause end-of-file to fail to be detected on some file
-  //   descriptors, resulting in mysterious hangs, or
-  //
-  // - might cause an fopen in the subprocess to fail on a system
-  //   suffering from bug 1085341.
-  //
-  // (Yes, the default setting of the close-on-exec flag is a Unix
-  // design flaw)
-  //
-  // See:
-  // 1085341: 32-bit stdio routines should support file descriptors >255
-  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-  //
-  // Modern Linux kernels (after 2.6.23 2007) support O_CLOEXEC with open().
-  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
-  // because it saves a system call and removes a small window where the flag
-  // is unset.  On ancient Linux kernels the O_CLOEXEC flag will be ignored
-  // and we fall back to using FD_CLOEXEC (see below).
-#ifdef O_CLOEXEC
+  // might fork and exec without closing all appropriate file descriptors.
   oflag |= O_CLOEXEC;
-#endif
 
   int fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
+  // No further checking is needed if open() returned an error or
+  // access mode is not read only.
+  if (fd == -1 || (oflag & O_ACCMODE) != O_RDONLY) {
+    return fd;
+  }
 
-  //If the open succeeded, the file might still be a directory
+  // If the open succeeded and is read only, the file might be a directory
+  // which the JVM doesn't allow to be read.
   {
     struct stat buf;
     int ret = ::fstat(fd, &buf);
@@ -4941,21 +4987,6 @@ int os::open(const char *path, int oflag, int mode) {
       return -1;
     }
   }
-
-#ifdef FD_CLOEXEC
-  // Validate that the use of the O_CLOEXEC flag on open above worked.
-  // With recent kernels, we will perform this check exactly once.
-  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
-  if (!O_CLOEXEC_is_known_to_work) {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      if ((flags & FD_CLOEXEC) != 0)
-        O_CLOEXEC_is_known_to_work = 1;
-      else
-        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
-    }
-  }
-#endif
 
   return fd;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -311,7 +310,7 @@ public final class PListReader {
         }
     }
 
-    public PListReader(byte[] xmlData) throws ParserConfigurationException, SAXException, IOException {
+    public PListReader(byte[] xmlData) throws SAXException, IOException {
         this(XmlUtils.initDocumentBuilder().parse(new ByteArrayInputStream(xmlData)));
     }
 

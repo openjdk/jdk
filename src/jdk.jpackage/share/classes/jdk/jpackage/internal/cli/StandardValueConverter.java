@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,15 @@
 
 package jdk.jpackage.internal.cli;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.function.Function;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.ParseUtils;
+import jdk.jpackage.internal.util.RootedPath;
 
 
 final class StandardValueConverter {
@@ -37,33 +41,59 @@ final class StandardValueConverter {
     private StandardValueConverter() {
     }
 
-    static ValueConverter<String> identityConv() {
+    static ValueConverter<String, String> identityConv() {
         return IDENTITY_CONV;
     }
 
-    static ValueConverter<Path> pathConv() {
+    static ValueConverter<String, Path> pathConv() {
         return PATH_CONV;
     }
 
-    static ValueConverter<UUID> uuidConv() {
+    static ValueConverter<String, UUID> uuidConv() {
         return UUID_CONV;
     }
 
-    static ValueConverter<Boolean> booleanConv() {
+    static ValueConverter<String, Boolean> booleanConv() {
         return BOOLEAN_CONV;
     }
 
-    static ValueConverter<LauncherShortcut> mainLauncherShortcutConv() {
+    static ValueConverter<String, LauncherShortcut> mainLauncherShortcutConv() {
         return MAIN_LAUNCHER_SHORTCUT_CONV;
     }
 
-    static ValueConverter<LauncherShortcut> addLauncherShortcutConv() {
+    static ValueConverter<String, LauncherShortcut> addLauncherShortcutConv() {
         return ADD_LAUNCHER_SHORTCUT_CONV;
     }
 
-    private static final ValueConverter<String> IDENTITY_CONV = ValueConverter.create(x -> x, String.class);
+    static ExplodedPathConverterBuilder explodedPathConverter() {
+        return new ExplodedPathConverterBuilder();
+    }
 
-    private static final ValueConverter<Path> PATH_CONV = ValueConverter.create(str -> {
+    static final class ExplodedPathConverterBuilder {
+        private ExplodedPathConverterBuilder() {
+        }
+
+        ValueConverter<Path, RootedPath[]> create() {
+            return ValueConverter.create(path -> {
+                return explodePath(path, withPathFileName);
+            }, RootedPath[].class);
+        }
+
+        ExplodedPathConverterBuilder withPathFileName(boolean v) {
+            withPathFileName = v;
+            return this;
+        }
+
+        ExplodedPathConverterBuilder withPathFileName() {
+            return withPathFileName(true);
+        }
+
+        private boolean withPathFileName;
+    }
+
+    private static final ValueConverter<String, String> IDENTITY_CONV = ValueConverter.create(x -> x, String.class);
+
+    private static final ValueConverter<String, Path> PATH_CONV = ValueConverter.create(str -> {
         try {
             return Path.of(str);
         } catch (InvalidPathException ex) {
@@ -71,13 +101,33 @@ final class StandardValueConverter {
         }
     }, Path.class);
 
-    private static final ValueConverter<UUID> UUID_CONV = ValueConverter.create(UUID::fromString, UUID.class);
+    private static final ValueConverter<String, UUID> UUID_CONV = ValueConverter.create(UUID::fromString, UUID.class);
 
-    private static final ValueConverter<Boolean> BOOLEAN_CONV = ValueConverter.create(Boolean::valueOf, Boolean.class);
+    private static final ValueConverter<String, Boolean> BOOLEAN_CONV = ValueConverter.create(Boolean::valueOf, Boolean.class);
 
-    private static final ValueConverter<LauncherShortcut> MAIN_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
+    private static final ValueConverter<String, LauncherShortcut> MAIN_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
             ParseUtils::parseLauncherShortcutForMainLauncher, LauncherShortcut.class);
 
-    private static final ValueConverter<LauncherShortcut> ADD_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
+    private static final ValueConverter<String, LauncherShortcut> ADD_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
             ParseUtils::parseLauncherShortcutForAddLauncher, LauncherShortcut.class);
+
+    private static RootedPath[] explodePath(Path path, boolean withPathFileName) throws Exception {
+
+        Function<Path, RootedPath> mapper;
+        if (withPathFileName) {
+            mapper = RootedPath.toRootedPath(path.getParent());
+        } else {
+            mapper = RootedPath.toRootedPath(path);
+        }
+
+        RootedPath[] items;
+        try (var walk = Files.walk(path)) {
+            items = walk.map(mapper).toArray(RootedPath[]::new);
+        } catch (IOException ex) {
+            // IOException is not a converter error, it is a converting error, so map it into IAE.
+            throw new IllegalArgumentException(ex);
+        }
+
+        return items;
+    }
 }
