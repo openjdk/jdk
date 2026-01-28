@@ -23,16 +23,16 @@ public class CodeCacheFragAgent {
   private static long seed = System.currentTimeMillis();
 
   // Parse agent arguments and update configurable variables
-  private static void parseArguments(String args) {
+  private static boolean parseArguments(String args) {
     if (args == null || args.trim().isEmpty()) {
-      return; // Use default values
+      return true; // Use default values
     }
 
     String[] pairs = args.split(",");
     for (String pair : pairs) {
       String[] keyValue = pair.split("=", 2);
       if (keyValue.length != 2) {
-        System.out.println("Invalid argument format: " + pair + ". Expected key=value");
+        System.err.println("Invalid argument format: " + pair + ". Expected key=value");
         continue;
       }
 
@@ -63,36 +63,48 @@ public class CodeCacheFragAgent {
             seed = Long.parseLong(value);
             break;
           default:
-            System.out.println("Unknown parameter: " + key);
+            System.err.println("Unknown parameter: " + key);
+            break;
         }
       } catch (NumberFormatException e) {
-        System.out.println("Invalid value for " + key + ": " + value + ". Must be a number.");
+        System.err.println("Invalid value for " + key + ": " + value + ". Must be a number.");
       }
     }
+
+    // Validate parameters
+    if (fillPercent < 0.0 || fillPercent > 100.0) {
+      System.err.println("FillPercentage must be between 0 and 100: " + fillPercent);
+      return false;
+    }
+
+    if (minBlobSize <= 0 || maxBlobSize <= 0 || avgBlobSize <= 0 || divBlobSize <= 0) {
+      System.err.println("Blob size parameters must be positive values");
+      return false;
+    }
+
+    if (minBlobSize > maxBlobSize) {
+      System.err.println("MinBlobSize (" + minBlobSize + ") cannot be greater than MaxBlobSize (" + maxBlobSize + ")");
+      return false;
+    }
+
+    if (requiredStableGcRounds <= 0) {
+      System.err.println("RequiredStableGcRounds must be positive: " + requiredStableGcRounds);
+      return false;
+    }
+
+    return true;
   }
 
   public static void premain(String args) {
     // Parse agent arguments to configure variables
-    parseArguments(args);
-
-    // Validate parameters
-    if (fillPercent < 0.0 || fillPercent > 100.0) {
-      System.out.println("FillPercentage must be between 0 and 100: " + fillPercent);
+    if (!parseArguments(args)) {
       return;
     }
 
-    if (minBlobSize <= 0 || maxBlobSize <= 0 || avgBlobSize <= 0 || divBlobSize <= 0) {
-      System.out.println("Blob size parameters must be positive values");
-      return;
-    }
-
-    if (minBlobSize > maxBlobSize) {
-      System.out.println("MinBlobSize (" + minBlobSize + ") cannot be greater than MaxBlobSize (" + maxBlobSize + ")");
-      return;
-    }
-
-    if (requiredStableGcRounds <= 0) {
-      System.out.println("RequiredStableGcRounds must be positive: " + requiredStableGcRounds);
+    // Check total size of non profiled heap
+    long nonProfiledSize = BlobType.MethodNonProfiled.getSize();
+    if (nonProfiledSize == 0) {
+      System.err.println("Size of MethodNonProfiled heap must not be zero");
       return;
     }
 
@@ -104,12 +116,6 @@ public class CodeCacheFragAgent {
 
     // Trigger GC until the number of non profiled blobs is stable
     gcUntilNonProfiledStable();
-
-    // Check total size of non profiled heap
-    long nonProfiledSize = BlobType.MethodNonProfiled.getSize();
-    if (nonProfiledSize == 0) {
-      return;
-    }
 
     // Fill up NonProfiled heap with randomly sized dummy blobs
     List<Long> blobs = new ArrayList<Long>();
@@ -131,8 +137,10 @@ public class CodeCacheFragAgent {
       indices.add(i);
     }
 
-    // Randomize the indicies. Use sort with a random deterministic value
-    // This keeps relative ordering regardless of the number of blobs generated
+    // Deterministically "shuffle" indices by sorting on a pseudo-random value.
+    // Each index is assigned a stable pseudo-random key derived from (index + seed),
+    // ensuring a reproducible ordering that is resilient to small changes in the
+    // total number of code blobs between runs.
     indices.sort(Comparator.comparingLong(i -> new java.util.SplittableRandom(i + seed).nextLong()));
 
     // Free blobs until we hit the desired fragmentation amount
@@ -190,7 +198,7 @@ public class CodeCacheFragAgent {
       WHITEBOX.fullGC();
       int currentBlobs = countNonProfiledCodeBlobs();
 
-      if (currentBlobs < previousBlobs) {
+      if (currentBlobs != previousBlobs) {
         stableCount = 0;
       } else {
         stableCount++;

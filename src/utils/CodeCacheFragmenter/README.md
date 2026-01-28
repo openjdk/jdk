@@ -21,13 +21,13 @@ java \
 
 Key parameters:
 
-- **MinBlobSize**: minimum size of dummy code blobs (default: 500)
-- **MaxBlobSize**: maximum size of dummy code blobs (default: 10000)
-- **AvgBlobSize**: average size of blobs (default: 2000)
+- **MinBlobSize**: minimum size of dummy code blobs in bytes (default: 500)
+- **MaxBlobSize**: maximum size of dummy code blobs in bytes (default: 10000)
+- **AvgBlobSize**: average size of blobs in bytes (default: 2000)
 - **DivBlobSize**: standard deviation for blob sizes (default: 500)
 - **RequiredStableGcRounds**: number of stable GC rounds before filling (default: 3)
 - **FillPercentage**: target code cache fill percentage (0–100, default: 50.0)
-- **RandomSeed**: seed for random generation (default: current time)
+- **RandomSeed**: seed for random generation (default: current time millis)
 
 To build the agent:
 
