@@ -157,6 +157,7 @@ class OpaqueConstantBoolNode : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
   bool is_positive() { return _positive; }
+    virtual uint size_of() const { return sizeof(OpaqueConstantBoolNode); }
 };
 
 // This node is used for Template Assertion Predicate BoolNodes. A Template Assertion Predicate is always removed
