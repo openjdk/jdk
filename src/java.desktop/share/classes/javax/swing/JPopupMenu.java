@@ -966,7 +966,6 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             ui.installUI(this);
         }
         invalidate();
-
     }
 
     /**
