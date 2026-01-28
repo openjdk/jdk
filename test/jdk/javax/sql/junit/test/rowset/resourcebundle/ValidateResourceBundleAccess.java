@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.rowset;
+package test.rowset.resourcebundle;
 
 import java.util.Locale;
 import java.sql.SQLException;
@@ -35,7 +35,6 @@ import org.junit.jupiter.api.Test;
  * @bug 8294989
  * @summary Check that the resource bundle can be accessed
  * @throws SQLException if an unexpected error occurs
- * @run junit/othervm
  */
 public class ValidateResourceBundleAccess{
     // Expected JDBCResourceBundle message, jdbcrowsetimpl.invalstate
