@@ -29,6 +29,7 @@
  * @key randomness
  * @build jdk.test.lib.Platform
  * @build jdk.test.lib.RandomFactory
+ * @build jtreg.SkippedException
  * @run main Basic
  */
 
