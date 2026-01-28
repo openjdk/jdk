@@ -1203,6 +1203,8 @@ void PhaseIterGVN::verify_Value_for(const Node* n, const char* phase, bool stric
     assert(false, "Missed Value optimization opportunity in PhaseIterGVN for %s", n->Name());
   } else if (strcmp(phase, "PhaseCCP") == 0) {
     assert(false, "PhaseCCP not at fixpoint: analysis result may be unsound for %s", n->Name());
+  } else {
+    assert(false, "Unexpected phase: %s", phase);
   }
 }
 
