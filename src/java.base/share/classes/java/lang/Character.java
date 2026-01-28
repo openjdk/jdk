@@ -9952,7 +9952,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         return n;
     }
 
-
     /**
      * Returns the number of Unicode code points in a subarray of the
      * {@code char} array argument. The {@code offset}
