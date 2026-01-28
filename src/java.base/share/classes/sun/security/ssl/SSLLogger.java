@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,19 +49,18 @@ import static sun.security.ssl.Utilities.LINE_SEP;
 
 /**
  * Implementation of SSL logger.
- *
+ * <p>
  * If the system property "javax.net.debug" is not defined, the debug logging
  * is turned off.  If the system property "javax.net.debug" is defined as
  * empty, the debug logger is specified by System.getLogger("javax.net.ssl"),
  * and applications can customize and configure the logger or use external
  * logging mechanisms.  If the system property "javax.net.debug" is defined
- * and non-empty, a private debug logger implemented in this class is used.
+ * and non-empty, a private debug logger which logs to System.err is used.
  */
 public final class SSLLogger implements System.Logger {
     private static final System.Logger logger;
-    // high level boolean to track whether "all" or "ssl" option
-    // is specified. Further checks may be necessary to determine
-    // if data is logged
+    // High level boolean to track whether logging is active (i.e. all/ssl).
+    // Further checks may be necessary to determine if data is logged.
     private static final boolean logging;
 
     private final String loggerName;
@@ -127,6 +126,7 @@ public final class SSLLogger implements System.Logger {
                     }
                 }
             }
+
             // javax.net.debug would be misconfigured property with respect
             // to logging if value didn't contain "all" or "ssl"
             logging = Opt.ALL.on || Opt.SSL.on;
@@ -146,6 +146,7 @@ public final class SSLLogger implements System.Logger {
     public static boolean isOn() {
         return logging;
     }
+
     /**
      * Return true if the specific DebugOption is enabled or ALL is enabled
      */
@@ -232,10 +233,10 @@ public final class SSLLogger implements System.Logger {
                 "print SSLContext tracing");
         System.err.printf("    %-14s %s%n", "trustmanager",
                 "print trust manager tracing");
-        System.err.printf("%nAdding valid filter options to \"ssl\" will log" +
-                " messages to include%njust those filtered categories.%n");
         System.err.printf("%nIf \"ssl\" is specified by itself," +
                 " all non-widening filters are enabled.%n%n");
+        System.err.printf("%nAdding valid filter options to \"ssl\" will log" +
+                " messages to include%njust those filtered categories.%n");
         System.exit(0);
     }
 
@@ -249,7 +250,7 @@ public final class SSLLogger implements System.Logger {
 
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
-    public static boolean logWarning(Opt option, String s) {
+    static boolean logWarning(Opt option, String s) {
         if (SSLLogger.isOn() && option.on) {
             SSLLogger.warning(s);
         }
@@ -293,19 +294,20 @@ public final class SSLLogger implements System.Logger {
     public boolean isLoggable(Level level) {
         return level != Level.OFF;
     }
+
     /**
      * Enum representing possible debug options for JSSE debugging.
-     *
+     * <p>
      * ALL and SSL are considered master components. Entries without an
      * underscore ("_"), and not ALL or SSL, are subcomponents. Entries
      * with an underscore ("_") denote options specific to subcomponents.
-     *
+     * <p>
      * Fields:
      * - 'component': Lowercase name of the option.
      * - 'isSubComponent': True for subcomponents.
      * - 'on': Indicates whether the option is enabled. Some rule based logic
      *         is used to determine value of this field.
-     *
+     * <p>
      * Enabling subcomponents fine-tunes (filters) debug output.
      */
     public enum Opt {
@@ -460,9 +462,9 @@ public final class SSLLogger implements System.Logger {
                     formatCaller(),
                     message,
                     (logger.useCompactFormat ?
-                        formatParameters(parameters) :
-                        Utilities.indent(formatParameters(parameters)))
-                };
+                            formatParameters(parameters) :
+                            Utilities.indent(formatParameters(parameters)))
+            };
 
             if (logger.useCompactFormat) {
                 return messageCompactFormatWithParas.format(messageFields);
@@ -487,21 +489,20 @@ public final class SSLLogger implements System.Logger {
                 if (isFirst) {
                     isFirst = false;
                 } else {
-                    builder.append(",\n");
+                    builder.append("," + LINE_SEP);
                 }
 
-                if (parameter instanceof Throwable) {
-                    builder.append(formatThrowable((Throwable)parameter));
-                } else if (parameter instanceof Certificate) {
-                    builder.append(formatCertificate((Certificate)parameter));
-                } else if (parameter instanceof ByteArrayInputStream) {
+                if (parameter instanceof Throwable t) {
+                    builder.append(formatThrowable(t));
+                } else if (parameter instanceof Certificate c) {
+                    builder.append(formatCertificate(c));
+                } else if (parameter instanceof ByteArrayInputStream bis) {
+                    builder.append(formatByteArrayInputStream(bis));
+                } else if (parameter instanceof ByteBuffer bb) {
+                    builder.append(formatByteBuffer((bb)));
+                } else if (parameter instanceof byte[] bytes) {
                     builder.append(formatByteArrayInputStream(
-                        (ByteArrayInputStream)parameter));
-                } else if (parameter instanceof ByteBuffer) {
-                    builder.append(formatByteBuffer((ByteBuffer)parameter));
-                } else if (parameter instanceof byte[]) {
-                    builder.append(formatByteArrayInputStream(
-                        new ByteArrayInputStream((byte[])parameter)));
+                        new ByteArrayInputStream(bytes)));
                 } else if (parameter instanceof Map.Entry) {
                     @SuppressWarnings("unchecked")
                     Map.Entry<String, ?> mapParameter =
@@ -655,12 +656,12 @@ public final class SSLLogger implements System.Logger {
                 builder.append("      ]");
 
                 formatted = builder.toString();
-            } else if (value instanceof byte[]) {
+            } else if (value instanceof byte[] bytes) {
                 formatted = "\"" + key + "\": \"" +
-                    Utilities.toHexString((byte[])value) + "\"";
-            } else if (value instanceof Byte) {
+                    Utilities.toHexString((bytes)) + "\"";
+            } else if (value instanceof Byte b) {
                 formatted = "\"" + key + "\": \"" +
-                    HexFormat.of().toHexDigits((byte)value) + "\"";
+                    HexFormat.of().toHexDigits(b) + "\"";
             } else {
                 formatted = "\"" + key + "\": " +
                     "\"" + value.toString() + "\"";
