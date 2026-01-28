@@ -1665,7 +1665,7 @@ void ShenandoahHeap::verify(VerifyOption vo) {
   }
 }
 size_t ShenandoahHeap::tlab_capacity() const {
-  return _free_set->capacity_not_holding_lock();
+  return _free_set->capacity();
 }
 
 class ObjectIterateScanRootClosure : public BasicOopIterateClosure {
@@ -2145,7 +2145,7 @@ GCTracer* ShenandoahHeap::tracer() {
 }
 
 size_t ShenandoahHeap::tlab_used() const {
-  return _free_set->used_not_holding_lock();
+  return _free_set->used();
 }
 
 bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {

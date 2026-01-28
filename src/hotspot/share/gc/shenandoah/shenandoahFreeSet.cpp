@@ -908,6 +908,8 @@ idx_t ShenandoahRegionPartitions::rightmost_empty(ShenandoahFreeSetPartitionId w
 
 #ifdef ASSERT
 void ShenandoahRegionPartitions::assert_bounds() {
+  shenandoah_assert_heaplocked();
+  ShenandoahRebuildLocker locker(_free_set->rebuild_lock());
 
   size_t capacities[UIntNumPartitions];
   size_t used[UIntNumPartitions];
@@ -3137,7 +3139,7 @@ void ShenandoahFreeSet::log_status() {
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
       // capacity() is capacity of mutator
       // used() is used of mutator
-      size_t free = capacity_holding_lock() - used_holding_lock();
+      size_t free = capacity() - used();
       // Since certain regions that belonged to the Mutator free partition at the time of most recent rebuild may have been
       // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
       // my internally tracked values of used() and free().
