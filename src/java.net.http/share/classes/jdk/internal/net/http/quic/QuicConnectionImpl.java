@@ -2453,7 +2453,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 }
                 return;
             }
-            final QuicConnectionId currentPeerConnId = this.peerConnIdManager.getPeerConnId();
+            final QuicConnectionId currentPeerConnId = peerConnectionId();
             if (rt.sourceId().equals(currentPeerConnId)) {
                 if (debug.on()) {
                     debug.log("Invalid retry, same connection ID");
