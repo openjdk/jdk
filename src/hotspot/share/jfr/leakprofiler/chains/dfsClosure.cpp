@@ -214,8 +214,6 @@ bool DFSClosure::probe_stack_pop() {
 
   _current_pointee = _current_ref.dereference();
 
-  _num_objects_processed++;
-
   return true;
 }
 
@@ -245,6 +243,8 @@ void DFSClosure::handle_oop() {
   _current_depth ++;
   _current_pointee->oop_iterate(this);
   _current_depth --;
+
+  _num_objects_processed++;
 }
 
 void DFSClosure::handle_objarrayoop() {
@@ -266,6 +266,8 @@ void DFSClosure::handle_objarrayoop() {
       if (pointee_was_sampled(_current_pointee)) {
         add_chain();
       }
+
+      _num_objects_processed++;
     }
   }
 
