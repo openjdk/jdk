@@ -3257,7 +3257,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    if ((file_desc != -1)) {
+    if (file_desc != -1) {
       os::unmap_memory(extra_base, extra_size);
     } else {
       os::release_memory(extra_base, extra_size);
@@ -3657,7 +3657,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 }
 
 void os::remove_stack_guard_pages(char* addr, size_t size) {
-  os::uncommit_memory(addr, size, false);
+  os::uncommit_memory(addr, size);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {

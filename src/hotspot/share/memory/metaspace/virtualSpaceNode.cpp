@@ -190,7 +190,7 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
   }
 
   // Uncommit...
-  os::uncommit_memory((char*)p, word_size * BytesPerWord, false);
+  os::uncommit_memory((char*)p, word_size * BytesPerWord);
 
   ASAN_POISON_MEMORY_REGION((char*)p, word_size * BytesPerWord);
 

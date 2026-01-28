@@ -3454,7 +3454,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
                        RANGEFMTARGS(addr, size),
                        os::strerror(ep.saved_errno()));
     if (ep.saved_errno() == ENOMEM) {
-      fatal("Failed to uncommit " RANGEFMT " It is possible that the process's maximum number of mappings would have been exceeded. Try increasing the limit.", RANGEFMTARGS(addr, size));
+      fatal("Failed to uncommit " RANGEFMT ". It is possible that the process's maximum number of mappings would have been exceeded. Try increasing the limit.", RANGEFMTARGS(addr, size));
     }
     return false;
   }
@@ -3574,7 +3574,8 @@ void os::remove_stack_guard_pages(char* addr, size_t size) {
     }
     return;
   }
-  os::uncommit_memory(addr, size, false);
+
+  os::uncommit_memory(addr, size);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
