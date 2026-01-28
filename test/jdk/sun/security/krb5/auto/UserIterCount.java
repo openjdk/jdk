@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,19 @@
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm -Djdk.net.hosts.file=TestHosts UserIterCount
  */
+
+import java.util.HashMap;
+
+import sun.security.krb5.EncryptionKey;
+import sun.security.krb5.KrbException;
 import sun.security.krb5.PrincipalName;
 
 public class UserIterCount {
 
     static class MyKDC extends OneKDC {
+        static final HashMap<String, EncryptionKey> CACHE
+                = new HashMap<>();
+
         public MyKDC() throws Exception {
             super(null);
         }
@@ -50,6 +58,18 @@ public class UserIterCount {
             } else {
                 return super.getParams(p, etype);
             }
+        }
+
+        @Override
+        EncryptionKey keyForUser(PrincipalName p, int etype, boolean server)
+                throws KrbException {
+            var key = p.toString() + etype + server;
+            var v = CACHE.get(key);
+            if (v == null) {
+                v = super.keyForUser(p, etype, server);
+                CACHE.put(key, v);
+            }
+            return v;
         }
     }
 
