@@ -88,4 +88,37 @@ public class Utils {
         }
         return true;
     }
+
+    /* Throw IAE if illegal character found.  isValue is true if String is
+     * a value. Otherwise it is header name
+     */
+    public static void checkHeader(String str, boolean isValue) {
+        int len = str.length();
+        for (int i=0; i<len; i++) {
+            char c = str.charAt(i);
+            if (c == '\r') {
+                if (!isValue) {
+                    throw new IllegalArgumentException("Illegal CR found in header");
+                }
+                // is allowed if it is followed by \n and a whitespace char
+                if (i >= len - 2) {
+                    throw new IllegalArgumentException("Illegal CR found in header");
+                }
+                char c1 = str.charAt(i+1);
+                char c2 = str.charAt(i+2);
+                if (c1 != '\n') {
+                    throw new IllegalArgumentException("Illegal char found after CR in header");
+                }
+                if (c2 != ' ' && c2 != '\t') {
+                    throw new IllegalArgumentException("No whitespace found after CRLF in header");
+                }
+                i+=2;
+            } else if (c == '\n') {
+                throw new IllegalArgumentException("Illegal LF found in header");
+            } else if (c > 255) {
+                throw new IllegalArgumentException("Illegal character found in header");
+            }
+        }
+    }
+
 }
