@@ -2240,8 +2240,8 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   // once we re-acquire the monitor we know if we need to throw IE or not.
   ObjectWaiter::TStates state = node->TState;
   assert(was_notified || state == ObjectWaiter::TS_RUN,
-        "was not notified and is not in the right state: state = %s",
-        node->getTStateName(state));
+         "was not notified and is not in the right state: state = %s",
+         node->getTStateName(state));
   node->_interrupted = node->_interruptible && !was_notified && current->is_interrupted(false);
 
   // Post JFR and JVMTI events. If non-interruptible we are in
