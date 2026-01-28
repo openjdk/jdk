@@ -1,7 +1,7 @@
 #!/bin/bash -f
 
 #
-# Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 # Script to update the Copyright YEAR range in Git sources.
 #  (Originally from xdono, Thanks!)
 
-# To update Copyright years in for changes in a specific branch,
+# To update Copyright years for changes in a specific branch,
 # you use a command along these lines:
-# $ git diff upstream/master...<branch-name> | lsdiff | cut -d '/' -f 2-  | bash bin/update_copyright_year.sh -m
+# $ git diff upstream/master...<branch-name> | lsdiff | cut -d '/' -f 2-  | bash bin/update_copyright_year.sh -m -
 
 #------------------------------------------------------------
 copyright="Copyright"
@@ -51,7 +51,7 @@ rm -f -r ${tmp}
 mkdir -p ${tmp}
 total=0
 
-usage="Usage: `basename "$0"` [-c company] [-y year] [-h|f|m]"
+usage="Usage: `basename "$0"` [-c company] [-y year] [-m file] [-h|f]"
 Help()
 {
   # Display Help
@@ -69,17 +69,18 @@ Help()
   echo "-b     Specifies the base reference for change set lookup."
   echo "-f     Updates the copyright for all change sets in a given year,"
   echo "       as specified by -y. Overrides -b flag."
-  echo "-m     read the list of modified files from stdin"
+  echo "-m     Read the list of modified files from the given file,"
+  echo "       use - to read from stdin"
   echo "-h     Print this help."
   echo
 }
 
 full_year=false
 base_reference=master
-modified_files_in_stdin=false;
+modified_files_origin="";
 
 # Process options
-while getopts "b:c:fhmy:" option; do
+while getopts "b:c:fhm:y:" option; do
   case $option in
     b) # supplied base reference
       base_reference=${OPTARG}
@@ -97,8 +98,8 @@ while getopts "b:c:fhmy:" option; do
     y) # supplied company year
       year=${OPTARG}
       ;;
-    m) # modified files will be read from stdin
-      modified_files_in_stdin=true
+    m) # modified files will be read from the given origin
+      modified_files_origin="${OPTARG}"
       ;;
     \?) # illegal option
       echo "$usage"
@@ -220,8 +221,8 @@ if [ ${previous} -ne 0 ] ; then
   echo "  ${vcs_status[*]} | wc -l = `"${vcs_status[@]}" | wc -l`"
 fi
 
-if [ "$modified_files_in_stdin" = "true" ]; then
-  updateFiles
+if [ "x$modified_files_origin" != "x" ]; then
+  cat $modified_files_origin | updateFiles
 else
   # Get all changesets this year
   if [ "$full_year" = "true" ]; then
