@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@
 inline uintptr_t ZUtils::alloc_aligned_unfreeable(size_t alignment, size_t size) {
   const size_t padded_size = size + (alignment - 1);
   void* const addr = os::malloc(padded_size, mtGC);
+  if (addr == nullptr) {
+    vm_exit_out_of_memory(padded_size, OOM_MALLOC_ERROR, "ZGC alloc_aligned_unfreeable malloc failed");
+  }
   void* const aligned_addr = align_up(addr, alignment);
 
   memset(aligned_addr, 0, size);
