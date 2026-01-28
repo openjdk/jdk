@@ -109,18 +109,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @deprecated since 1.8
      */
     @Deprecated
-    protected static final Component component = createComponent();
-
-    private static final Component createComponent() {
-        try {
-            Component component = new Component() {};
-            // 6482575 - clear the appContext field so as not to leak it
-            AWTAccessor.getComponentAccessor().setAppContext(component, null);
-            return component;
-        } catch (Throwable t) {
-            return null;
-        }
-    }
+    protected static final Component component = new Component() {};
 
     /**
      * Do not use this shared media tracker, which is used to load images.
