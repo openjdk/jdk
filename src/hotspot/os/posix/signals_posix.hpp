@@ -76,6 +76,11 @@ public:
                                               sa_sigaction_t handler);
   static void* install_generic_signal_handler(int sig, void* handler); // Used by JVM_RegisterSignal
   static void* user_handler(); // Needed for signal handler comparisons
+
+  // Support for -XX:AltSigStackMode
+  static void setup_signal_stacks();
+  static void set_signal_stack_for_current_thread();
+
 };
 
 #endif // OS_POSIX_SIGNALS_POSIX_HPP
