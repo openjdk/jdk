@@ -1730,11 +1730,11 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // addresses in the order they are encountered them which must remain
 // the same across an assembly run and subsequent production run
 
-#define ADD_EXTERNAL_ADDRESS(addr)                              \
-  {                                                             \
-    hash_address((address) addr, _extrs_length);                  \
+#define ADD_EXTERNAL_ADDRESS(addr)                               \
+  {                                                              \
+    hash_address((address) addr, _extrs_base + _extrs_length);   \
     _extrs_addr[_extrs_length++] = (address) (addr);             \
-    assert(_extrs_length <= _extrs_max, "increase size");       \
+    assert(_extrs_length <= _extrs_max, "increase size");        \
   }
 
 // insert into to the address hash table the index of an external
@@ -1851,7 +1851,6 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(StubRoutines::crc_table_addr());
 #ifndef PRODUCT
   ADD_EXTERNAL_ADDRESS(&SharedRuntime::_partial_subtype_ctr);
-  ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);
 #endif
 
 #if INCLUDE_JFR
@@ -1934,9 +1933,10 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_transition_C);
-#if defined(AARCH64)
+    // already added for
+#if defined(AARCH64) && ! defined(PRODUCT)
     ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);
-#endif // AARCH64
+#endif // AARCH64 && !PRODUCT
   }
 #endif // COMPILER2
 
@@ -2024,7 +2024,7 @@ void AOTCodeAddressTable::add_stub_entry(EntryId entry_id, address a) {
   assert(!(StubInfo::is_c2(StubInfo::stub(entry_id)) && _c2_stubs_complete), "too late to add c2 entry");
   log_debug(aot, stubs)("Recording address 0x%p for %s entry %s", a, StubInfo::name(StubInfo::stubgroup(entry_id)), StubInfo::name(entry_id));
   int idx = static_cast<int>(entry_id);
-  hash_address(a, idx);
+  hash_address(a, _stubs_base + idx);
   _stubs_addr[idx] = a;
 }
 
