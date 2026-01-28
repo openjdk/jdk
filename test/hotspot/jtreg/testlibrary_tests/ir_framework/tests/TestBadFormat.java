@@ -276,9 +276,10 @@ class BadArgumentsAnnotation {
     }
 }
 
+// Since all the methods are failing, the class doesn't specify any @Test methods, which is another failure.
+@ClassFail
 class BadOverloadedMethod {
 
-    @FailCount(0) // Combined with both sameName() below
     @Test
     public void sameName() {}
 
