@@ -677,7 +677,7 @@ public class VectorAlgorithmsImpl {
     }
 
     // X4: ints simulate 4-byte oops.
-    // oops: if non-zero (= non-null), every entry simpulates a 4-byte oop, pointing into mem.
+    // oops: if non-zero (= non-null), every entry simulates a 4-byte oop, pointing into mem.
     // mem: an int array that simulates the memory.
     //
     // Task: Find all non-null oops, and dereference them, get the relevant field.
