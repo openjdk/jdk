@@ -802,7 +802,7 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_transform),
                                                  _worklist(*C->igvn_worklist())
 {
-  _iterGVN = true;
+  _phase = PhaseValuesType::iter_gvn;
   assert(&_worklist == &igvn->_worklist, "sanity");
 }
 
@@ -811,7 +811,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
                                _worklist(*C->igvn_worklist())
 {
-  _iterGVN = true;
+  _phase = PhaseValuesType::iter_gvn;
   uint max;
 
   // Dead nodes in the hash table inherited from GVN were not treated as
@@ -2798,6 +2798,7 @@ uint PhaseCCP::_total_constants = 0;
 PhaseCCP::PhaseCCP( PhaseIterGVN *igvn ) : PhaseIterGVN(igvn) {
   NOT_PRODUCT( clear_constants(); )
   assert( _worklist.size() == 0, "" );
+  _phase = PhaseValuesType::ccp;
   analyze();
 }
 
