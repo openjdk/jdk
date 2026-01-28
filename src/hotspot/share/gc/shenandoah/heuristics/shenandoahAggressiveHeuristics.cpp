@@ -39,7 +39,7 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceIn
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahEvacReserveOverflow);
 }
 
-size_t ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                              RegionData* data, size_t size,
                                                                              size_t free) {
   for (size_t idx = 0; idx < size; idx++) {
@@ -48,7 +48,6 @@ size_t ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(She
       cset->add_region(r);
     }
   }
-  return 0;
 }
 
 bool ShenandoahAggressiveHeuristics::should_start_gc() {

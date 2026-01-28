@@ -50,7 +50,7 @@ bool ShenandoahPassiveHeuristics::should_degenerate_cycle() {
   return ShenandoahDegeneratedGC;
 }
 
-size_t ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                           RegionData* data, size_t size,
                                                                           size_t actual_free) {
   assert(ShenandoahDegeneratedGC, "This path is only taken for Degenerated GC");
@@ -76,5 +76,4 @@ size_t ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(Shenan
       cset->add_region(r);
     }
   }
-  return 0;
 }

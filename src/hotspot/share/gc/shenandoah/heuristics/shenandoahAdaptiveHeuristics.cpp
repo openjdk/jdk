@@ -68,7 +68,7 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {}
 
-size_t ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                            RegionData* data, size_t size,
                                                                            size_t actual_free) {
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
@@ -124,7 +124,6 @@ size_t ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shena
       cur_garbage = new_garbage;
     }
   }
-  return 0;
 }
 
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
