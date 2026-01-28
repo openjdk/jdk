@@ -1089,7 +1089,7 @@ void PhaseIterGVN::verify_optimize() {
       // in PhaseIterGVN::add_users_to_worklist to update it again or add an exception
       // in the verification methods below if that is not possible for some reason (like Load nodes).
       if (is_verify_Value()) {
-        verify_Value_for(n, "PhaseIterGVN");
+        verify_Value_for(n);
       }
       if (is_verify_Ideal()) {
         verify_Ideal_for(n, false);
@@ -1141,7 +1141,7 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-void PhaseIterGVN::verify_Value_for(const Node* n, const char* phase, bool strict) {
+void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
@@ -1199,12 +1199,12 @@ void PhaseIterGVN::verify_Value_for(const Node* n, const char* phase, bool stric
   ss.cr();
   tty->print_cr("%s", ss.as_string());
 
-  if (strcmp(phase, "PhaseIterGVN") == 0) {
+  if (_phase == PhaseValuesType::iter_gvn) {
     assert(false, "Missed Value optimization opportunity in PhaseIterGVN for %s", n->Name());
-  } else if (strcmp(phase, "PhaseCCP") == 0) {
+  } else if (_phase == PhaseValuesType::ccp) {
     assert(false, "PhaseCCP not at fixpoint: analysis result may be unsound for %s", n->Name());
   } else {
-    assert(false, "Unexpected phase: %s", phase);
+    assert(false, "Unexpected phase identifier");
   }
 }
 
@@ -2929,7 +2929,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
     // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
     // them at the end of the round.
-    verify_Value_for(n, "PhaseCCP", true);
+    verify_Value_for(n, true);
   }
 }
 #endif
