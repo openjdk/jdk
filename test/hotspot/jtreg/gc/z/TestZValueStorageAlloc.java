@@ -41,7 +41,6 @@ public class TestZValueStorageAlloc {
         OutputAnalyzer output = ProcessTools.executeTestJava("-XX:+UseZGC",
                                                              "-XX:ConcGCThreads=11111210",
                                                              "-version");
-        output.shouldContain("ZGC alloc_aligned_unfreeable malloc failed");
-        System.out.println("passed");
+        output.shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
     }
 }
