@@ -49,7 +49,7 @@ public class TestOpaqueCheckNodes {
     }
 
     @Test
-    @IR(counts = {IRNode.OPAQUE_CHECK, "3"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.OPAQUE_CHECK, "6"}, phase = CompilePhase.AFTER_PARSING)
     @IR(failOn = {IRNode.OPAQUE_CHECK}, phase = CompilePhase.AFTER_MACRO_EXPANSION)
     @Arguments(setup = "setup")
     private static String test(byte[] bytes, int i, int l) {
