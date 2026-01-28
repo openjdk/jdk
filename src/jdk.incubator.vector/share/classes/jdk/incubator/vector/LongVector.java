@@ -3655,6 +3655,18 @@ public abstract class LongVector extends AbstractVector<Long> {
         return this;
     }
 
+    @Override
+    @ForceInline
+    final
+    LongVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<Long> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (LongVector) this.rearrange(shuffle);
+    }
+
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_LONG_INDEX_SCALE);
     static final long ARRAY_BASE =

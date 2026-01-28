@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "cds/aotGrowableArray.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -58,7 +59,7 @@ public:
 
 class MyUniqueMetaspaceClosure : public MetaspaceClosure {
   static constexpr int SIZE = 10;
-  MyMetaData* _visited[SIZE];
+  void* _visited[SIZE];
   int _count;
 public:
   MyUniqueMetaspaceClosure() {
@@ -71,17 +72,31 @@ public:
   virtual bool do_ref(Ref* ref, bool read_only) {
     MyMetaData* ptr = (MyMetaData*)ref->obj();
     assert(_count < SIZE, "out of bounds");
-    _visited[_count++] = ptr;
+    for (int i = 0; i < _count; i++) {
+      if (_visited[i] == (void*)ptr) {
+        // We have walked this before.
+        return false;
+      }
+    }
+
+    // Found a new pointer. Let's walk it
+    _visited[_count++] = (void*)ptr;
     return true; // recurse
   }
 
   bool has_visited(MyMetaData* p) {
+    return has_visited((void*)p);
+  }
+  bool has_visited(void* p) {
     for (int i = 0; i < SIZE; i++) {
       if (_visited[i] == p) {
         return true;
       }
     }
     return false;
+  }
+  int visited_count() {
+    return _count;
   }
 };
 
@@ -104,7 +119,9 @@ TEST_VM(MetaspaceClosure, MSOPointerArrayRef) {
 
   MyUniqueMetaspaceClosure closure;
   closure.push(&array);
+  closure.finish();
 
+  EXPECT_TRUE(closure.has_visited(array)) << "must be";
   EXPECT_TRUE(closure.has_visited(&x)) << "must be";
   EXPECT_TRUE(closure.has_visited(&y)) << "must be";
   EXPECT_TRUE(closure.has_visited(&z)) << "must be";
@@ -130,8 +147,85 @@ TEST_VM(MetaspaceClosure, MSOArrayRef) {
 
   MyUniqueMetaspaceClosure closure;
   closure.push(&array);
+  closure.finish();
 
+  EXPECT_TRUE(closure.has_visited(array)) << "must be";
   EXPECT_TRUE(closure.has_visited(&x)) << "must be";
   EXPECT_TRUE(closure.has_visited(&y)) << "must be";
   EXPECT_TRUE(closure.has_visited(&z)) << "must be";
+}
+
+// iterate an Array<int>
+TEST_VM(MetaspaceClosure, OtherArrayRef) {
+  JavaThread* THREAD = JavaThread::current();
+  ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
+  Array<int>* array = MetadataFactory::new_array<int>(cld, 4, THREAD);
+
+  MyUniqueMetaspaceClosure closure;
+  closure.push(&array);
+  closure.finish();
+
+  EXPECT_TRUE(closure.has_visited(array)) << "must be";
+}
+
+// iterate an AOTGrowableArray<MyMetaData*>
+TEST_VM(MetaspaceClosure, GrowableArray_MSOPointer) {
+  AOTGrowableArray<MyMetaData*>* array = new(mtClass) AOTGrowableArray<MyMetaData*>(2, mtClass);
+
+  MyMetaData x;
+  MyMetaData y;
+  MyMetaData z;
+
+  array->push(&x);
+  array->push(&y);
+  y._a = &z;
+
+  MyUniqueMetaspaceClosure closure;
+  closure.push(&array);
+  closure.finish();
+
+  EXPECT_TRUE(closure.has_visited(array)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&x)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&y)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&z)) << "must be";
+}
+
+// iterate an AOTGrowableArray<MyMetaData>
+TEST_VM(MetaspaceClosure, GrowableArray_MSO) {
+  AOTGrowableArray<MyMetaData>* array = new(mtClass) AOTGrowableArray<MyMetaData>(4, mtClass);
+
+  for (int i = 0; i < array->length(); i++) {
+    EXPECT_TRUE(array->at(i)._a == nullptr) << "should be initialized to null";
+    EXPECT_TRUE(array->at(i)._b == nullptr) << "should be initialized to null";
+  }
+
+  MyMetaData x;
+  MyMetaData y;
+  MyMetaData z;
+
+  z._a = &x;
+  z._b = &y;
+  y._a = &z;
+  array->push(z);
+
+  MyUniqueMetaspaceClosure closure;
+  closure.push(&array);
+  closure.finish();
+
+  EXPECT_TRUE(closure.has_visited(array)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&x)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&y)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&z)) << "must be";
+}
+
+// iterate an AOTGrowableArray<jlong>
+TEST_VM(MetaspaceClosure, GrowableArray_jlong) {
+  AOTGrowableArray<jlong>* array = new(mtClass) AOTGrowableArray<jlong>(4, mtClass);
+
+  MyUniqueMetaspaceClosure closure;
+  closure.push(&array);
+  closure.finish();
+
+  EXPECT_TRUE(closure.has_visited(array)) << "must be";
+  EXPECT_TRUE(closure.visited_count() == 2) << "must visit buffer inside GrowableArray";
 }
