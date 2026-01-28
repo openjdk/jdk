@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import static jdk.jpackage.internal.cli.StandardOption.RESOURCE_DIR;
 import static jdk.jpackage.internal.cli.StandardOption.VENDOR;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,6 +61,7 @@ import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class FromOptions {
 
@@ -168,8 +170,15 @@ final class FromOptions {
         APP_VERSION.ifPresentIn(options, appBuilder::version);
         VENDOR.ifPresentIn(options, appBuilder::vendor);
         COPYRIGHT.ifPresentIn(options, appBuilder::copyright);
-        INPUT.ifPresentIn(options, appBuilder::srcDir);
-        APP_CONTENT.ifPresentIn(options, appBuilder::contentDirs);
+        INPUT.ifPresentIn(options, appBuilder::appDirSources);
+        APP_CONTENT.findIn(options).map((List<Collection<RootedPath>> v) -> {
+            // Reverse the order of content sources.
+            // If there are multiple source files for the same
+            // destination file, only the first will be used.
+            // Reversing the order of content sources makes it use the last file
+            // from the original list of source files for the given destination file.
+            return v.reversed().stream().flatMap(Collection::stream).toList();
+        }).ifPresent(appBuilder::contentDirSources);
 
         if (isRuntimeInstaller) {
             appBuilder.appImageLayout(runtimeLayout);

@@ -47,6 +47,7 @@ import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -170,7 +171,7 @@ final class AppImageSigner {
         // In addition add possible reason for failure. For example
         // "--app-content" can fail "codesign".
 
-        if (!app.contentDirs().isEmpty()) {
+        if (!app.contentDirSources().isEmpty()) {
             Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 
