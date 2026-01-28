@@ -3534,7 +3534,7 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
   }
   // Note: T_NARROWOOP is not classed as a real reference type
   bool res = (is_reference_type(bt) || bt == T_NARROWOOP);
-  assert(!has_oop_node_outs(n) || res, "sanity: has oop accesses, needs to be treated as oop");
+  assert(!has_oop_node_outs(n) || res, "sanity: AddP has oop outs, needs to be treated as oop field");
   return res;
 }
 
