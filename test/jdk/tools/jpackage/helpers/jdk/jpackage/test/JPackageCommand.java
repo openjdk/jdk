@@ -416,21 +416,21 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
 
             case RUNTIME_TYPE_HELLO_APP -> {
-                if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null && !isFakeRuntime(DEFAULT_RUNTIME_IMAGE)) {
-                    runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-                } else {
-                    runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+                runtimeImageDir = DEFAULT_RUNTIME_IMAGE.filter(Predicate.not(JPackageCommand::isFakeRuntime)).orElseGet(() -> {
+                    var dir = TKit.createTempDirectory("runtime-image").resolve("data");
 
                     new Executor().setToolProvider(JavaTool.JLINK)
                             .dumpOutput()
                             .addArguments(
-                                    "--output", runtimeImageDir.toString(),
+                                    "--output", dir.toString(),
                                     "--add-modules", "java.desktop",
                                     "--strip-debug",
                                     "--no-header-files",
                                     "--no-man-pages")
                             .execute();
-                }
+
+                    return dir;
+                });
             }
 
             default -> {
@@ -864,8 +864,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand ignoreFakeRuntime() {
-        return ignoreDefaultRuntime(Optional.ofNullable(DEFAULT_RUNTIME_IMAGE)
-                .map(JPackageCommand::isFakeRuntime).orElse(false));
+        return ignoreDefaultRuntime(DEFAULT_RUNTIME_IMAGE.map(JPackageCommand::isFakeRuntime).orElse(false));
     }
 
     public JPackageCommand ignoreDefaultVerbose(boolean v) {
@@ -1593,9 +1592,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // to allow the jlink process to print exception stacktraces on any failure
             addArgument("-J-Djlink.debug=true");
         }
-        if (!hasArgument("--runtime-image") && !hasArgument("--jlink-options") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
-            addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
-        }
+
+        DEFAULT_RUNTIME_IMAGE.filter(_ -> {
+            return Stream.of("--runtime-image", "--jlink-options", "--app-image").noneMatch(this::hasArgument) && !ignoreDefaultRuntime;
+        }).ifPresent(defaultRuntime -> {
+            addArguments("--runtime-image", defaultRuntime);
+        });
 
         if (!hasArgument("--verbose") && TKit.verboseJPackage() && !ignoreDefaultVerbose) {
             addArgument("--verbose");
@@ -1878,7 +1880,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     // The value of the property will be automatically appended to
     // jpackage command line if the command line doesn't have
     // `--runtime-image` parameter set.
-    public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
+    private static final Optional<Path> DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of);
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(
