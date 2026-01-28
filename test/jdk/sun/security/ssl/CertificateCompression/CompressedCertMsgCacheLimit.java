@@ -96,7 +96,7 @@ public class CompressedCertMsgCacheLimit extends CompressedCertMsgBase {
 
         // Last 2 CompressedCertificate messages must not be cached.
         assertEquals(2, countSubstringOccurrences(log,
-                "Certificate message cache size limit of 4 reached"));
+                "CompressedCertificate message cache size limit reached"));
     }
 
     @Override

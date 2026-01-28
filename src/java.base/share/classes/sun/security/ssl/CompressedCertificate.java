@@ -150,8 +150,7 @@ final class CompressedCertificate {
         // Limit the size of the cache in case certificate_request_context is
         // randomized (should only happen during post-handshake authentication
         // and only on the client side). Allow 4 cache mappings per algorithm.
-        private static final int MAX_CACHE_SIZE =
-                CompressionAlgorithm.values().length * 4;
+        private static final int CACHE_SIZE_PER_ALG = 4;
 
         // Prevent instantiation of this class.
         private CompressedCertProducer() {
@@ -172,13 +171,14 @@ final class CompressedCertificate {
             message.send(hos);
             byte[] certMsg = hos.toByteArray();
 
-            long key = getCacheKey(certMsg, hc.certDeflater.getKey());
+            int algId = hc.certDeflater.getKey();
+            long key = getCacheKey(certMsg, algId);
             byte[] compressedCertMsg = CACHE.get(key);
 
             if (compressedCertMsg == null) {
                 compressedCertMsg = hc.certDeflater.getValue().apply(certMsg);
 
-                if (CACHE.size() < MAX_CACHE_SIZE) {
+                if (isUnderCacheLimit(algId)) {
                     if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Caching CompressedCertificate message");
                     }
@@ -186,8 +186,8 @@ final class CompressedCertificate {
                     CACHE.put(key, compressedCertMsg);
                 } else {
                     if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning("Certificate message cache size limit"
-                                + " of " + MAX_CACHE_SIZE + " reached");
+                        SSLLogger.warning("CompressedCertificate message cache"
+                                + " size limit reached");
                     }
                 }
             }
@@ -214,6 +214,7 @@ final class CompressedCertificate {
             return null;
         }
 
+        // Generate cache key from the CertificateMessage and algorithm id.
         private static long getCacheKey(byte[] input, int algId) {
             CRC32C crc32c = new CRC32C();
             crc32c.update(input);
@@ -222,6 +223,14 @@ final class CompressedCertificate {
             return crc32c.getValue()              // 32 bits
                     | (long) algId << 32          // 8 bits
                     | (long) input.length << 40;  // 24 bits
+        }
+
+        // Returns true if the compression algorithm didn't reach cache limit.
+        private static boolean isUnderCacheLimit(int algId) {
+            return CACHE.keySet()
+                    .stream()
+                    .filter(k -> (k >> 32 & 0xFFL) == algId)
+                    .count() < CACHE_SIZE_PER_ALG;
         }
     }
 
