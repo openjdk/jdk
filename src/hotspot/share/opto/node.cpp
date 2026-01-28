@@ -1154,7 +1154,7 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // these Ideal calls need to hold. Some of the flag bits for '-XX:VerifyIterativeGVN'
 // can help with validating these invariants, although they are too slow to have on by default:
 //    - '-XX:VerifyIterativeGVN=1' checks the def-use info
-//    - '-XX:VerifyIterativeGVN=100000' cheks the return value
+//    - '-XX:VerifyIterativeGVN=100000' checks the return value
 // If you are hacking an Ideal call, be sure to use these.
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
