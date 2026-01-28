@@ -198,6 +198,8 @@ public class TestReachabilityFence {
     @IR(counts = {IRNode.REACHABILITY_FENCE, "2"}, phase = CompilePhase.AFTER_LOOP_OPTS)
     @IR(counts = {IRNode.REACHABILITY_FENCE, "0"}, phase = CompilePhase.EXPAND_REACHABILITY_FENCES)
     @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.FINAL_CODE)
+    // Both RF nodes share the same referent and there's a single safepoint on loop-back edge.
+    // That's the reason why there are 2 RF nodes after parsing, but 1 RF node at the end.
     static long testOffHeap2(int limit) {
         for (long j = 0; j < limit; j++) {
             MyBufferOffHeap myBuffer = bufferOff; // local
@@ -209,7 +211,7 @@ public class TestReachabilityFence {
             } finally {
                 Reference.reachabilityFence(myBuffer);
             }
-        } // safepoint on loop backedge does NOT contain myBuffer local as part of its JVM state
+        } // safepoint on loop-back edge does NOT contain myBuffer local as part of its JVM state
         return limit;
     }
 
