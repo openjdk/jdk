@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package test.sql.drivermanager;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -31,9 +32,7 @@ import org.junit.jupiter.api.Test;
 
 /*
  * @test
- * @library /java/sql/modules
  * @build luckydogdriver/* mystubdriver/*
- * @run junit/othervm DriverManagerModuleTests
  * @summary Tests that a JDBC Driver that is a module can be loaded
  * via the service-provider loading mechanism.
  */
@@ -48,7 +47,7 @@ public class DriverManagerModuleTests {
      * loaded and registered via the service-provider loading mechanism. The
      * other driver will need to be explictly loaded
      *
-     * @throws java.lang.Exception
+     * @throws Exception
      */
     @Test
     public void test() throws Exception {
@@ -82,7 +81,7 @@ public class DriverManagerModuleTests {
      * Validate that a Connection can be obtained from a JDBC driver which is a
      * module and loaded via the service-provider loading mechanism.
      *
-     * @throws java.lang.Exception
+     * @throws Exception
      */
     @Test
     public void test00() throws Exception {

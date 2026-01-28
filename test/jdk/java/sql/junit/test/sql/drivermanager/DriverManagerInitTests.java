@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.sql.othervm;
+package test.sql.drivermanager;
 
 import java.io.BufferedReader;
 import java.io.CharArrayReader;
