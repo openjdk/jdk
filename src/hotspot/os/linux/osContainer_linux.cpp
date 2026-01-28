@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,8 @@ void OSContainer::init() {
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
     physical_memory_size_type mem_limit_val = value_unlimited;
     (void)memory_limit_in_bytes(mem_limit_val);  // discard error and use default
-    int host_cpus = os::Linux::active_processor_count();
-    int cpus = host_cpus;
+    double host_cpus = os::Linux::active_processor_count();
+    double cpus = host_cpus;
     (void)active_processor_count(cpus);  // discard error and use default
     any_mem_cpu_limit_present = mem_limit_val != value_unlimited || host_cpus != cpus;
     if (any_mem_cpu_limit_present) {
@@ -127,8 +127,7 @@ bool OSContainer::available_memory_in_bytes(physical_memory_size_type& value) {
   return false;
 }
 
-bool OSContainer::available_swap_in_bytes(physical_memory_size_type host_free_swap,
-                                          physical_memory_size_type& value) {
+bool OSContainer::available_swap_in_bytes(physical_memory_size_type& value) {
   physical_memory_size_type mem_limit = 0;
   physical_memory_size_type mem_swap_limit = 0;
   if (memory_limit_in_bytes(mem_limit) &&
@@ -179,8 +178,7 @@ bool OSContainer::available_swap_in_bytes(physical_memory_size_type host_free_sw
     assert(num < 25, "buffer too small");
     mem_limit_buf[num] = '\0';
     log_trace(os,container)("OSContainer::available_swap_in_bytes: container_swap_limit=%s"
-                            " container_mem_limit=%s, host_free_swap: " PHYS_MEM_TYPE_FORMAT,
-                            mem_swap_buf, mem_limit_buf, host_free_swap);
+                            " container_mem_limit=%s", mem_swap_buf, mem_limit_buf);
   }
   return false;
 }
@@ -252,7 +250,7 @@ char * OSContainer::cpu_cpuset_memory_nodes() {
   return cgroup_subsystem->cpu_cpuset_memory_nodes();
 }
 
-bool OSContainer::active_processor_count(int& value) {
+bool OSContainer::active_processor_count(double& value) {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->active_processor_count(value);
 }
@@ -291,11 +289,13 @@ template<typename T> struct metric_fmt;
 template<> struct metric_fmt<unsigned long long int> { static constexpr const char* fmt = "%llu"; };
 template<> struct metric_fmt<unsigned long int> { static constexpr const char* fmt = "%lu"; };
 template<> struct metric_fmt<int> { static constexpr const char* fmt = "%d"; };
+template<> struct metric_fmt<double> { static constexpr const char* fmt = "%.2f"; };
 template<> struct metric_fmt<const char*> { static constexpr const char* fmt = "%s"; };
 
 template void OSContainer::print_container_metric<unsigned long long int>(outputStream*, const char*, unsigned long long int, const char*);
 template void OSContainer::print_container_metric<unsigned long int>(outputStream*, const char*, unsigned long int, const char*);
 template void OSContainer::print_container_metric<int>(outputStream*, const char*, int, const char*);
+template void OSContainer::print_container_metric<double>(outputStream*, const char*, double, const char*);
 template void OSContainer::print_container_metric<const char*>(outputStream*, const char*, const char*, const char*);
 
 template <typename T>
@@ -304,12 +304,13 @@ void OSContainer::print_container_metric(outputStream* st, const char* metrics, 
   constexpr int longest_value = max_length - 11; // Max length - shortest "metric: " string ("cpu_quota: ")
   char value_str[longest_value + 1] = {};
   os::snprintf_checked(value_str, longest_value, metric_fmt<T>::fmt, value);
-  st->print("%s: %*s", metrics, max_length - static_cast<int>(strlen(metrics)) - 2, value_str); // -2 for the ": "
-  if (unit[0] != '\0') {
-    st->print_cr(" %s", unit);
-  } else {
-    st->print_cr("");
-  }
+
+  const int pad_width = max_length - static_cast<int>(strlen(metrics)) - 2; // -2 for the ": "
+  const char* unit_prefix = unit[0] != '\0' ? " " : "";
+
+  char line[128] = {};
+  os::snprintf_checked(line, sizeof(line), "%s: %*s%s%s", metrics, pad_width, value_str, unit_prefix, unit);
+  st->print_cr("%s", line);
 }
 
 void OSContainer::print_container_helper(outputStream* st, MetricResult& res, const char* metrics) {
