@@ -61,8 +61,7 @@ public:
   inline void push_always(oop obj, markWord m);
   // Iterate over the stack, restore all preserved marks, and
   // reclaim the memory taken up by the stack segments.
-  // Returns the number of marks restored.
-  size_t restore();
+  void restore();
 
   // Adjust the preserved mark according to its
   // forwarding location stored in the mark.

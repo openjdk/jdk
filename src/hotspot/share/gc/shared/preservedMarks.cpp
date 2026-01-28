@@ -32,14 +32,12 @@
 #include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
-size_t PreservedMarks::restore() {
-  size_t result = size();
+void PreservedMarks::restore() {
   while (!_stack.is_empty()) {
     const PreservedMark elem = _stack.pop();
     elem.set_mark();
   }
   assert_empty();
-  return result;
 }
 
 void PreservedMarks::adjust_preserved_mark(PreservedMark* elem) {
@@ -95,7 +93,9 @@ public:
   void work(uint worker_id) override {
     uint task_id = 0;
     while (_sub_tasks.try_claim_task(task_id)) {
-      size_t num_restored = _preserved_marks_set->get(task_id)->restore();
+      PreservedMarks* next = _preserved_marks_set->get(task_id);
+      size_t num_restored = next->size();
+      next->restore();
       if (num_restored > 0) {
         _total_size.add_then_fetch(num_restored);
       }
