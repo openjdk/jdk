@@ -1201,10 +1201,9 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
 
   if (_phase == PhaseValuesType::iter_gvn) {
     assert(false, "Missed Value optimization opportunity in PhaseIterGVN for %s", n->Name());
-  } else if (_phase == PhaseValuesType::ccp) {
-    assert(false, "PhaseCCP not at fixpoint: analysis result may be unsound for %s", n->Name());
   } else {
-    assert(false, "Unexpected phase identifier");
+    assert(_phase == PhaseValuesType::ccp, "Unexpected phase identifier");
+    assert(false, "PhaseCCP not at fixpoint: analysis result may be unsound for %s", n->Name());
   }
 }
 
