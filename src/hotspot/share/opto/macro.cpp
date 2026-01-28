@@ -2500,7 +2500,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_ModD ||
                n->Opcode() == Op_ModF ||
-               n->is_OpaqueCheck()    ||
+               n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
@@ -2548,15 +2548,15 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
       } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
-      } else if (n->is_OpaqueCheck()) {
-        // Tests with OpaqueCheck nodes are implicitly known. Replace the node with true/false. In debug builds,
+      } else if (n->is_OpaqueConstantBool()) {
+        // Tests with OpaqueConstantBool nodes are implicitly known. Replace the node with true/false. In debug builds,
         // we leave the test in the graph to have an additional sanity check at runtime. If the test fails (i.e. a bug),
         // we will execute a Halt node.
 #ifdef ASSERT
         _igvn.replace_node(n, n->in(1));
 #else
-        bool is_positive = n->as_OpaqueCheck()->is_positive();
-        _igvn.replace_node(n, _igvn.intcon(is_positive?1:0));
+        bool is_positive = n->as_OpaqueConstantBool()->is_positive();
+        _igvn.replace_node(n, _igvn.intcon(is_positive ? 1 : 0));
 #endif
         success = true;
       } else if (n->is_OpaqueInitializedAssertionPredicate()) {

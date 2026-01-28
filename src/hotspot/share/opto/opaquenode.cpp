@@ -108,7 +108,7 @@ void OpaqueMultiversioningNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-const Type* OpaqueCheckNode::Value(PhaseGVN* phase) const {
+const Type* OpaqueConstantBoolNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 

@@ -3137,9 +3137,9 @@ public class IRNode {
         machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
     }
 
-    public static final String OPAQUE_CHECK = PREFIX + "OPAQUE_CHECK" + POSTFIX;
+    public static final String OPAQUE_CONSTANT_BOOL = PREFIX + "OPAQUE_CONSTANT_BOOL" + POSTFIX;
     static {
-        beforeMatchingNameRegex(OPAQUE_CHECK, "OpaqueCheck");
+        beforeMatchingNameRegex(OPAQUE_CONSTANT_BOOL, "OpaqueConstantBool");
     }
 
     /*

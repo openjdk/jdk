@@ -1704,7 +1704,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      !n->is_OpaqueCheck() &&
+      !n->is_OpaqueConstantBool() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
       !is_raw_to_oop_cast && // don't extend live ranges of raw oops
@@ -2045,14 +2045,14 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->is_OpaqueCheck() || b->is_OpaqueInitializedAssertionPredicate(),
-             "bool, non-null check with OpaqueCheck or Initialized Assertion Predicate with its Opaque node");
+      assert(b->is_Bool() || b->is_OpaqueConstantBool() || b->is_OpaqueInitializedAssertionPredicate(),
+             "bool, non-null check with OpaqueConstantBool or Initialized Assertion Predicate with its Opaque node");
     }
   }
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->is_OpaqueCheck() || n->is_OpaqueInitializedAssertionPredicate()) {
+  if (n->is_OpaqueConstantBool() || n->is_OpaqueInitializedAssertionPredicate()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
@@ -2228,7 +2228,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // split if to break.
       assert(!use->is_OpaqueTemplateAssertionPredicate(),
              "should not clone a Template Assertion Predicate which should be removed once it's useless");
-      if (use->is_If() || use->is_CMove() || use->is_OpaqueCheck() || use->is_OpaqueInitializedAssertionPredicate() ||
+      if (use->is_If() || use->is_CMove() || use->is_OpaqueConstantBool() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
