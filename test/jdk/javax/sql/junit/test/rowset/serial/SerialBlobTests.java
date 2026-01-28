@@ -24,6 +24,7 @@ package test.rowset.serial;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.util.Arrays;
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialException;
@@ -38,6 +39,16 @@ public class SerialBlobTests extends BaseTest {
 
     // byte[] used to populate SerialBlob
     private byte[] bytes = new byte[]{1, 2, 3, 4, 5};
+
+    /*
+     * Validate calling setBinaryStream() on a SerialBlob constructed from a
+     * byte array throws SerialException. Bug 7077451.
+     */
+    @Test
+    void setBinaryStreamExceptionTest() throws SQLException {
+        SerialBlob blob = new SerialBlob(new byte[0]);
+        assertThrows(SerialException.class, () -> blob.setBinaryStream(0));
+    }
 
     /*
      * Validate calling free() does not throw an Exception

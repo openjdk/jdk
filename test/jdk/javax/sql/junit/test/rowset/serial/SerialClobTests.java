@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.sql.SQLException;
 import javax.sql.rowset.serial.SerialClob;
 import javax.sql.rowset.serial.SerialException;
 
@@ -44,6 +45,26 @@ public class SerialClobTests extends BaseTest {
     public SerialClobTests() {
         this.chars = new char[]{'h', 'e', 'l', 'l', 'o', ' ', 'w',
             'o', 'r', 'l', 'd'};
+    }
+
+    /*
+     * Validate calling setAsciiStream() on a SerialClob constructed from a
+     * char array throws SerialException. Bug 7077451.
+     */
+    @Test
+    void setAsciiStreamExceptionTest() throws SQLException {
+        SerialClob clob = new SerialClob(new char[0]);
+        assertThrows(SerialException.class, () -> clob.setAsciiStream(0));
+    }
+
+    /*
+     * Validate calling setCharacterStream() on a SerialClob constructed from a
+     * char array throws SerialException. Bug 7077451.
+     */
+    @Test
+    void setCharacterStreamExceptionTest() throws SQLException {
+        SerialClob clob = new SerialClob(new char[0]);
+        assertThrows(SerialException.class, () -> clob.setCharacterStream(0));
     }
 
     /*
