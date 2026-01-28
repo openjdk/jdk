@@ -136,13 +136,13 @@ public:
     assert(!nm_data->is_unregistered(), "Should not see unregistered entry");
 
     if (nm->is_unloading()) {
-      ShenandoahReentrantLocker locker(nm_data->lock());
+      ShenandoahNMethodLocker locker(nm_data->lock());
       nm->unlink();
       return;
     }
 
     {
-      ShenandoahReentrantLocker locker(nm_data->lock());
+      ShenandoahNMethodLocker locker(nm_data->lock());
 
       // Heal oops
       if (_bs->is_armed(nm)) {
@@ -154,7 +154,7 @@ public:
     }
 
     // Clear compiled ICs and exception caches
-    ShenandoahReentrantLocker locker(nm_data->ic_lock());
+    ShenandoahNMethodLocker locker(nm_data->ic_lock());
     nm->unload_nmethod_caches(_unloading_occurred);
   }
 };
