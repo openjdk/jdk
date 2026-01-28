@@ -119,11 +119,6 @@ public:
       return old_max;
     }
 
-    static ZPhysicalMemoryBacking* create_backing() {
-      char* mem = (char*)os::malloc(sizeof(ZPhysicalMemoryBacking), mtTest);
-      return new (mem) ZPhysicalMemoryBacking(ZGranuleSize);
-    }
-
   public:
     ZPhysicalMemoryBackingMocker()
       : _old_max(0),
@@ -132,21 +127,25 @@ public:
 
     void SetUp(size_t max_capacity) {
       GTEST_EXPECT_FALSE(_active) << "SetUp called twice without a TearDown";
-      _active = true;
 
       _old_max = set_max(max_capacity);
 
-      char* mem = (char*)os::malloc(sizeof(ZPhysicalMemoryBacking), mtTest);
-      _backing = new (mem) ZPhysicalMemoryBacking(max_capacity);
+      char* const mem = (char*)os::malloc(sizeof(ZPhysicalMemoryBacking), mtTest);
+      _backing = new (mem) ZPhysicalMemoryBacking(ZGranuleSize);
+
+      _active = true;
     }
 
     void TearDown() {
       GTEST_EXPECT_TRUE(_active) << "TearDown called without a preceding SetUp";
+
       _active = false;
 
-      set_max(_old_max);
       _backing->~ZPhysicalMemoryBacking();
       os::free(_backing);
+      _backing = nullptr;
+
+      set_max(_old_max);
     }
 
     ZPhysicalMemoryBacking* operator()() {
