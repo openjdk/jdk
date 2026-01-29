@@ -231,6 +231,10 @@ class StackOverflow {
  public:
   static void initialize_stack_zone_sizes();
 
+  static bool is_initialized() {
+    return _stack_red_zone_size > 0;
+  }
+
   static size_t stack_red_zone_size() {
     assert(_stack_red_zone_size > 0, "Don't call this before the field is initialized.");
     return _stack_red_zone_size;

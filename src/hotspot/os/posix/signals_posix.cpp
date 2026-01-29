@@ -1907,103 +1907,80 @@ int PosixSignals::init() {
   return JNI_OK;
 }
 
-
-class AltSigStackStorage {
-
-  static constexpr size_t _alt_stack_size_unaligned = K * 64;
-  static constexpr int _num_alt_stacks = 4096;
-
-  const size_t _alt_stack_size;
-  const size_t _border_size;
-
-  // We allocate n alternative stacks in a contiguous memory range.
-  // Each stack area is separated from the neighbors by a single protected
-  // page.
-  char* _alt_stack_base;
-
-  struct FreeStack { FreeStack* _next; };
-  FreeStack* _first_free;
-  FreeStack* _last_free;
-
-public:
-
-  AltSigStackStorage(int num_stacks)
-    : _alt_stack_size(align_up(_alt_stack_size_unaligned, os::vm_page_size())),
-      _border_size(os::vm_page_size()),
-      _alt_stack_base(nullptr),
-      _first_free(nullptr), _last_free(nullptr)
-  {
-    assert(_num_alt_stacks > 0, "invariant");
-    assert(_alt_stack_size > 0, "invariant");
-
-    const size_t full_size_per_stack = _border_size + _alt_stack_size;
-    const size_t total = _num_alt_stacks * full_size_per_stack;
-    char* m = os::reserve_memory(total, mtInternal, false);
-    bool success = false;
-    if (m != nullptr) {
-      success = os::commit_memory(m, total, false);
-      if (success) {
-        for (char* border_page = m + _alt_stack_size;
-             border_page < m + total && success;
-             border_page += full_size_per_stack) {
-          assert((border_page + _border_size) <= (m + total), "invariant");
-          success = os::protect_memory(border_page, _border_size, os::MEM_PROT_NONE);
-        }
-      }
-    }
-    if (success = false) {
-      log_warning(os)("Failed to setup alternative signal pages "
-                      "(num: %d, alt stack size: %zu).", _num_alt_stacks, _alt_stack_size);
-      return;
-    }
-    _alt_stack_base = m;
-    for (int i = 0; i < _num_alt_stacks; i++) {
-      char* p = _alt_stack_base + (full_size_per_stack * i);
-      return_stack(p);
-    }
+static size_t get_alternate_signal_stack_size() {
+  // For stack size, using the same size as the shadow zone is a good choice
+  // since that mechanism defines how much space normally is left on the stack
+  // for native code. The default size is also a min cap. It seems excessive
+  // but that is to have some headroom in case we hit an excessive number of
+  // secondary crashes during signal handling, which would increase stack
+  // usage.
+  constexpr size_t stacksize_default = 128 * K;
+  size_t stacksize = stacksize_default;
+  if (StackOverflow::is_initialized()) {
+    stacksize = MAX2(stacksize, StackOverflow::stack_shadow_zone_size());
   }
+  stacksize = align_up(stacksize, os::vm_page_size());
+  return stacksize;
+}
 
-  bool enabled() const { return _alt_stack_base != nullptr; }
-
-  void return_stack(char* stack) {
-    if (_last_free != nullptr) {
-      _last_free->_next = stack;
-      _last_free = stack;
-    } else {
-      assert(_first_free == nullptr, "invariant");
-      _first_free = _last_free = stack;
-    }
-    _last_free->_next = nullptr;
-  }
-
-  char* allocate_stack() {
-    FreeStack* p = _first_free;
-    if (p != nullptr) {
-      assert(_last_free != nullptr, "invariant");
-      if (_first_free == _last_free) {
-        _first_free = _last_free = nullptr;
-      } else {
-        _first_free = p->_next;
-      }
-    }
-    return (char*)p;
-  }
-};
-
-DeferredStatic<AltSigStackStorage> _alt_sigstack_storage;
-
-
-void PosixSignals::setup_signal_stacks() {
+void PosixSignals::enable_alternate_signal_stack_for_current_thread() {
   assert(UseAltSigStacks, "invariant");
-  _alt_sigstack_storage.initialize();
-}
 
-static void set_signal_stack_for_current_thread() {
-  char* stack = _alt_sigstack_storage.get()->allocate_stack();
-  if (stack != nullptr) {
+  const size_t stacksize = get_alternate_signal_stack_size();
 
+  // We allocate a border page in case the stacksize was too small. Hitting
+  // that during signal handling will immediately end the JVM with a segfault,
+  // but that is still better than potentially writing into neighboring
+  // memory segments. Also, if we are lucky, parts of the hs-err file may
+  // have been already saved to disk.
+  const size_t plus_guard = stacksize + os::vm_page_size();
+
+  bool success = false;
+  char* p = os::reserve_memory(plus_guard, mtInternal);
+  if (p != nullptr) {
+    success = os::commit_memory(p, plus_guard, false);
   }
-  sigaltstack()
+  if (success) {
+    success = os::protect_memory(p, os::vm_page_size(), os::MEM_PROT_NONE, true);
+  }
+  if (success) {
+    stack_t ss;
+    ss.ss_flags = 0;
+    ss.ss_sp = p;
+    ss.ss_size = plus_guard;
+    stack_t oss;
+    const int rc = ::sigaltstack(&ss, &oss);
+    if (rc == 0) {
+      assert(oss.ss_flags == SS_DISABLE, "odd prior setting");
+      log_info(os)("Thread " PTR_FORMAT ": alternate signal stack (" RANGEFMT ") enabled",
+          p2i(Thread::current_or_null_safe()), RANGEFMTARGS(ss.ss_sp, ss.ss_size));
+    } else {
+      log_info(os)("Failed to set alternative signal stack");
+    }
+  }
 }
 
+void PosixSignals::disable_alternate_signal_stack_for_current_thread() {
+  assert(UseAltSigStacks, "invariant");
 
+  stack_t ss;
+  ss.ss_flags = SS_DISABLE;
+  stack_t oss;
+  oss.ss_flags = 0;
+  oss.ss_size = 0;
+  oss.ss_sp = nullptr;
+  const int rc = ::sigaltstack(&ss, &oss);
+  if (rc == 0) {
+    log_info(os)("Thread " PTR_FORMAT ": alternate signal stack (" RANGEFMT ") disabled",
+        p2i(Thread::current_or_null_safe()), RANGEFMTARGS(ss.ss_sp, ss.ss_size));
+  } else {
+    log_info(os)("Failed to unset alternative signal stack");
+  }
+
+  if (oss.ss_flags != SS_DISABLE) {
+    char* p = oss.ss_sp;
+    size_t s = oss.ss_size;
+    assert(p != nullptr && s > 0, "invariant");
+    os::release_memory(p, s);
+  }
+}
