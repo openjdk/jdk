@@ -26,6 +26,11 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writePList;
+import static jdk.jpackage.internal.util.PListWriter.writeString;
+import static jdk.jpackage.internal.util.XmlUtils.createXml;
+import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.test.JPackageCommand.makeAdvice;
 import static jdk.jpackage.test.JPackageCommand.makeError;
@@ -44,6 +49,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
@@ -51,6 +57,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -86,12 +93,30 @@ public final class ErrorTest {
             final var appImageRoot = TKit.createTempDirectory("appimage");
 
             final var appImageCmd = JPackageCommand.helloAppImage()
+                    // Use the default jpackage tool provider to create an application image.
+                    // The ErrorTest is used from the OptionsValidationFailTest unit tests that override
+                    // the default jpackage tool provider with the implementation that doesn't do packaging
+                    // and can not create a valid application image.
+                    .useToolProvider(JavaTool.JPACKAGE.asToolProvider())
                     .setFakeRuntime().setArgumentValue("--dest", appImageRoot);
 
             appImageCmd.execute();
 
             return appImageCmd.outputBundle().toString();
         }),
+        MAC_APP_IMAGE_INVALID_INFO_PLIST(toFunction(cmd -> {
+            var appImageDir = Path.of((String)APP_IMAGE.expand(cmd).orElseThrow());
+            // Replace the default Info.plist file with an empty one.
+            var plistFile = new MacBundle(appImageDir).infoPlistFile();
+            TKit.trace(String.format("Create invalid plist file in [%s]", plistFile));
+            createXml(plistFile, xml -> {
+                writePList(xml, toXmlConsumer(() -> {
+                    writeDict(xml, toXmlConsumer(() -> {
+                    }));
+                }));
+            });
+            return appImageDir.toString();
+        })),
         INVALID_MAC_RUNTIME_BUNDLE(toFunction(cmd -> {
             // Has "Contents/MacOS/libjli.dylib", but missing "Contents/Home/lib/libjli.dylib".
             final Path root = TKit.createTempDirectory("mac-invalid-runtime-bundle");
@@ -647,7 +672,11 @@ public final class ErrorTest {
                 testSpec().noAppDesc().nativeType().addArgs("--app-image", Token.EMPTY_DIR.token())
                         .error("error.parameter-not-mac-bundle", JPackageCommand.cannedArgument(cmd -> {
                             return Path.of(cmd.getArgumentValue("--app-image"));
-                        }, Token.EMPTY_DIR.token()), "--app-image")
+                        }, Token.EMPTY_DIR.token()), "--app-image"),
+                testSpec().nativeType().noAppDesc().addArgs("--app-image", Token.MAC_APP_IMAGE_INVALID_INFO_PLIST.token())
+                        .error("error.invalid-app-image-plist-file", JPackageCommand.cannedArgument(cmd -> {
+                            return new MacBundle(Path.of(cmd.getArgumentValue("--app-image"))).infoPlistFile();
+                        }, Token.MAC_APP_IMAGE_INVALID_INFO_PLIST.token()))
         ).map(TestSpec.Builder::create).toList());
 
         macInvalidRuntime(testCases::add);

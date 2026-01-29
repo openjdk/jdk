@@ -46,6 +46,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.summary.StandardWarning;
 import jdk.jpackage.internal.summary.SummaryAccumulator;
 import jdk.jpackage.internal.util.RootedPath;
@@ -241,10 +242,8 @@ final class MacApplicationBuilder {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } catch (Exception ex) {
-            throw I18N.buildConfigException("message.app-image-requires-identifier")
-                    .advice("message.app-image-requires-identifier.advice")
-                    .cause(ex)
-                    .create();
+            throw new JPackageException(
+                    I18N.format("error.invalid-app-image-plist-file", externalInfoPlistFile), ex);
         }
     }
 
