@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -292,28 +293,35 @@ final class Http3ServerStreamImpl {
     }
 
     class RequestBodyInputStream extends InputStream {
-        // non-null if the QUIC stream was reset
-        volatile IOException error;
-        // true if close() was called
-        volatile boolean closed;
+        // Non-null if the stream is terminated.
+        // Points to an IOException on error, or Boolean.TRUE on EOF.
+        private final AtomicReference<Object> closeReason = new AtomicReference<>();
         // uses an unbounded blocking queue in which the readrLoop
         // publishes the DataFrames payload...
         ByteBuffer current;
 
         ByteBuffer current() throws IOException {
-            if (closed) {
-                throw new IOException("Stream is closed");
+            Object reason = closeReason.get();
+            if (reason != null) {
+                if (reason == Boolean.TRUE) {
+                    throw new IOException("Stream is closed");
+                } else {
+                    throw new IOException((IOException)reason);
+                }
             }
             while (true) {
                 if (current != null && current.hasRemaining()) {
                     return current;
                 }
                 if (current == QuicStreamReader.EOF) {
-                    if (closed) {
-                        throw new IOException("Stream is closed");
+                    reason = closeReason.get();
+                    if (reason != null) {
+                        if (reason == Boolean.TRUE) {
+                            throw new IOException("Stream is closed");
+                        } else {
+                            throw new IOException((IOException)reason);
+                        }
                     }
-                    var error = this.error;
-                    if (error != null) throw error;
                     return current;
                 }
                 try {
@@ -342,16 +350,11 @@ final class Http3ServerStreamImpl {
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
             Objects.checkFromIndexSize(off, len, b.length);
-            if (closed) {
-                throw new IOException("Stream is closed");
-            }
             int remaining = len;
             while (remaining > 0) {
                 ByteBuffer buffer = current();
                 if (buffer == QuicStreamReader.EOF) {
-                    if (len == remaining) {
-                        return -1;
-                    } else return len - remaining;
+                    return len == remaining ? -1 : len - remaining;
                 }
                 int count = Math.min(buffer.remaining(), remaining);
                 buffer.get(b, off + (len - remaining), count);
@@ -362,16 +365,14 @@ final class Http3ServerStreamImpl {
 
         @Override
         public void close() throws IOException {
-            if (closed) return;
-            closed = true;
+            if (closeReason.getAndSet(Boolean.TRUE) == Boolean.TRUE) return;
             if (debug.on())
                 debug.log("Closing request body input stream");
             requestBodyQueue.add(QuicStreamReader.EOF);
         }
 
         void resetStream(IOException io) {
-            if (error != null) return;
-            error = io;
+            if (!closeReason.compareAndSet(null, io)) return;
             if (debug.on()) {
                 debug.log("Closing request body input stream: " + io);
             }
