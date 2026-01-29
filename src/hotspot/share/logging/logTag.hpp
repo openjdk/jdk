@@ -74,7 +74,6 @@ class outputStream;
   LOG_TAG(defaultmethods) \
   LOG_TAG(deoptimization) \
   LOG_TAG(dependencies) \
-  LOG_TAG(dfs) \
   LOG_TAG(director) \
   NOT_PRODUCT(LOG_TAG(downcall)) \
   LOG_TAG(dump) \

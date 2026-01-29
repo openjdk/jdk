@@ -42,7 +42,7 @@
 
 #ifdef ASSERT
 void DFSClosure::log_reference_stack() {
-  LogTarget(Trace, jfr, system, dfs) lt;
+  LogTarget(Trace, jfr, system, oldobject) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("--- ref stack ---");
@@ -75,12 +75,12 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
 
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
-  log_debug(jfr, system, dfs)("DFS: scanning from edge");
+  log_debug(jfr, system, oldobject)("DFS: scanning from edge");
   const UnifiedOopRef ref = start_edge->reference();
   const oop obj = ref.dereference();
   dfs.probe_stack_push(ref, obj, 0);
   dfs.drain_probe_stack();
-  log_debug(jfr, system, dfs)("DFS: done");
+  log_debug(jfr, system, oldobject)("DFS: done");
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
@@ -94,17 +94,17 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   DFSClosure dfs(edge_store, mark_bits, nullptr);
   dfs._max_depth = 1;
   RootSetClosure<DFSClosure> rs(&dfs);
-  log_debug(jfr, system, dfs)("DFS: scanning roots...");
+  log_debug(jfr, system, oldobject)("DFS: scanning roots...");
   rs.process();
   dfs.drain_probe_stack();
 
   // Depth-first search
   dfs._max_depth = max_dfs_depth;
   dfs._ignore_root_set = true;
-  log_debug(jfr, system, dfs)("DFS: scanning in depth ...");
+  log_debug(jfr, system, oldobject)("DFS: scanning in depth ...");
   rs.process();
   dfs.drain_probe_stack();
-  log_debug(jfr, system, dfs)("DFS: done");
+  log_debug(jfr, system, oldobject)("DFS: done");
 }
 
 // Memory usage of DFS search is dominated by probe stack usage, which is
@@ -149,7 +149,7 @@ DFSClosure::~DFSClosure() {
   if (!GranularTimer::is_finished()) {
     assert(_probe_stack.is_empty(), "We should have drained the probe stack?");
   }
-  log_info(jfr, system, dfs)("DFS: objects processed: " UINT64_FORMAT ","
+  log_info(jfr, system, oldobject)("DFS: objects processed: " UINT64_FORMAT ","
        " sampled objects found: " UINT64_FORMAT ","
        " reached max graph depth: " UINT64_FORMAT ","
        " reached max probe stack depth: " UINT64_FORMAT,
@@ -327,7 +327,7 @@ void DFSClosure::add_chain() {
   _num_sampled_objects_found++;
 
 #ifdef ASSERT
-  log_trace(jfr, system, dfs)("Sample object found (" UINT64_FORMAT " so far)", _num_sampled_objects_found);
+  log_trace(jfr, system, oldobject)("Sample object found (" UINT64_FORMAT " so far)", _num_sampled_objects_found);
   log_reference_stack();
 #endif
 
