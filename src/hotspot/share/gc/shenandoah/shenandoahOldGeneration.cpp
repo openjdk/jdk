@@ -63,7 +63,7 @@ private:
   uint                    _nworkers;
   ShenandoahHeapRegion**  _coalesce_and_fill_region_array;
   uint                    _coalesce_and_fill_region_count;
-  volatile bool           _is_preempted;
+  Atomic<bool>            _is_preempted;
 
 public:
   ShenandoahConcurrentCoalesceAndFillTask(uint nworkers,
@@ -88,7 +88,7 @@ public:
 
       if (!r->oop_coalesce_and_fill(true)) {
         // Coalesce and fill has been preempted
-        AtomicAccess::store(&_is_preempted, true);
+        _is_preempted.store_relaxed(true);
         return;
       }
     }
@@ -96,7 +96,7 @@ public:
 
   // Value returned from is_completed() is only valid after all worker thread have terminated.
   bool is_completed() {
-    return !AtomicAccess::load(&_is_preempted);
+    return !_is_preempted.load_relaxed();
   }
 };
 
@@ -147,23 +147,23 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
-  AtomicAccess::store(&_promoted_expended, static_cast<size_t>(0));
-  AtomicAccess::store(&_promotion_failure_count, static_cast<size_t>(0));
-  AtomicAccess::store(&_promotion_failure_words, static_cast<size_t>(0));
+  _promoted_expended.store_relaxed(0);
+  _promotion_failure_count.store_relaxed(0);
+  _promotion_failure_words.store_relaxed(0);
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(get_promoted_expended() + increment <= get_promoted_reserve(), "Do not expend more promotion than budgeted");
-  return AtomicAccess::add(&_promoted_expended, increment);
+  return _promoted_expended.add_then_fetch(increment);
 }
 
 size_t ShenandoahOldGeneration::unexpend_promoted(size_t decrement) {
-  return AtomicAccess::sub(&_promoted_expended, decrement);
+  return _promoted_expended.sub_then_fetch(decrement);
 }
 
 size_t ShenandoahOldGeneration::get_promoted_expended() const {
-  return AtomicAccess::load(&_promoted_expended);
+  return _promoted_expended.load_relaxed();
 }
 
 bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) const {
@@ -427,8 +427,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway =
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions);
-
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions, young_trash_regions);
     heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
@@ -583,8 +582,8 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
-  AtomicAccess::inc(&_promotion_failure_count);
-  AtomicAccess::add(&_promotion_failure_words, size);
+  _promotion_failure_count.add_then_fetch(1UL);
+  _promotion_failure_words.and_then_fetch(size);
 
   LogTarget(Debug, gc, plab) lt;
   LogStream ls(lt);

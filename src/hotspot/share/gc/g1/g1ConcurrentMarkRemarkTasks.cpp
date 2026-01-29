@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public G1HeapRegionClosure {
@@ -154,7 +153,7 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::work(uint worker_id) {
   G1OnRegionClosure on_region_cl(_g1h, _cm, &local_cleanup_list);
   _g1h->heap_region_par_iterate_from_worker_offset(&on_region_cl, &_hrclaimer, worker_id);
 
-  AtomicAccess::add(&_total_selected_for_rebuild, on_region_cl._num_selected_for_rebuild);
+  _total_selected_for_rebuild.add_then_fetch(on_region_cl._num_selected_for_rebuild);
 
   // Update the old/humongous region sets
   _g1h->remove_from_old_gen_sets(on_region_cl._num_old_regions_removed,
