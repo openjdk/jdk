@@ -30,9 +30,11 @@ import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.CoreUtils;
 
+import jtreg.SkippedException;
+
 /**
  * @test
- * @bug 8374482
+ * @bug 8374482 8376284
  * @requires (os.family == "linux") & (vm.hasSA)
  * @requires os.arch == "amd64"
  * @library /test/lib
@@ -64,6 +66,12 @@ public class TestJhsdbJstackMixedCore {
     }
 
     public static void main(String... args) throws Throwable {
+        // Check whether the symbol of signal trampoline is available.
+        var libc = SATestUtils.getLibCPath();
+        if (!SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
+            throw new SkippedException("Signal trampoline (__restore_rt) not found in libc.");
+        }
+
         LingeredApp app = new LingeredApp();
         app.setForceCrash(true);
         LingeredApp.startApp(app, CoreUtils.getAlwaysPretouchArg(true));
