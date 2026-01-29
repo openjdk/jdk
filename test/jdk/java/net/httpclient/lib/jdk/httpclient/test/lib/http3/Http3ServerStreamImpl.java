@@ -369,6 +369,7 @@ final class Http3ServerStreamImpl {
             if (debug.on())
                 debug.log("Closing request body input stream");
             requestBodyQueue.add(QuicStreamReader.EOF);
+            stream.requestStopSending(Http3Error.H3_NO_ERROR.code());
         }
 
         void resetStream(IOException io) {
@@ -377,6 +378,7 @@ final class Http3ServerStreamImpl {
                 debug.log("Closing request body input stream: " + io);
             }
             requestBodyQueue.add(QuicStreamReader.EOF);
+            stream.requestStopSending(Http3Error.H3_NO_ERROR.code());
         }
     }
 
