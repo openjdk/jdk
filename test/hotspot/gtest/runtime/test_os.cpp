@@ -653,7 +653,7 @@ TEST_VM(os, release_multi_mappings) {
 
 #ifdef ASSERT
 #define TEST_RELEASE_RANGE_ERROR(name) TEST_VM_ASSERT_MSG(os, name, ".*bad release")
-#else 
+#else
 #define TEST_RELEASE_RANGE_ERROR(name) TEST_VM_FATAL_ERROR_MSG(os, name, ".*Failed to release.*")
 #endif
 
