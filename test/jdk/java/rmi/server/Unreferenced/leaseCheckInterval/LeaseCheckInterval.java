@@ -44,8 +44,6 @@
  * @run main/othervm LeaseCheckInterval
  */
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -96,26 +94,25 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
             localRegistry.bind(BINDING, obj);
             System.err.println("bound remote object in local registry");
 
-            Path outputFile = Files.createTempFile(Path.of("."), "4285878-", ".txt");
             System.err.println("starting remote client VM...");
-            jvm = new JavaVM("SelfTerminator", "-Drmi.registry.port=" +
-                        registryPort, outputFile.toAbsolutePath().toString());
+            jvm = new JavaVM("SelfTerminator", "-Drmi.registry.port=" + registryPort, "");
             // launch the self terminating java application which will lookup
-            // the bound object and then terminate itself. before terminating
-            // it will write the time at which it is terminating, into the
-            // output file
+            // the bound object (thus creating a lease) and then terminate itself (thus
+            // creating the condition for a lease expiry).
             jvm.start();
-
-            System.err.println("waiting for unreferenced() callback...");
+            final Instant startTime = Instant.now();
+            System.err.println("waiting for SelfTerminator process to complete");
+            final int exitCode = jvm.waitFor();
+            if (exitCode != 0) {
+                throw new AssertionError("SelfTerminator process exited with" +
+                        " a non-zero exit code: " + exitCode);
+            }
+            System.err.println("SelfTerminator process completed in "
+                    + Duration.between(startTime, Instant.now())
+                    + ", now waiting for Unreferenced.unreferenced() callback to be invoked");
             callbackInvocationLatch.await();
-            Instant waitEndedAt = Instant.now();
-            final String content = Files.readString(outputFile);
-            System.err.println("content in " + outputFile + ": " + content);
-            // parse the time, representing the time at which the SelfTerminator
-            // application termination started
-            final Instant terminationStartedAt = Instant.parse(content);
-            final Duration waitDuration = assertWithinExpectedTimeLimit(waitEndedAt,
-                    terminationStartedAt);
+            final Instant waitEndedAt = Instant.now();
+            final Duration waitDuration = assertWithinExpectedTimeLimit(waitEndedAt, startTime);
             System.err.println("TEST PASSED: unreferenced() invoked in timely" +
                     " fashion (duration=" + waitDuration + ")");
         } finally {

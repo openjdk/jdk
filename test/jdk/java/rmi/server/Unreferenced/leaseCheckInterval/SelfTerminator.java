@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.rmi.Remote;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -33,16 +31,12 @@ public class SelfTerminator {
     public static void main(String[] args) throws Exception {
         try {
             log("main() invoked");
-            Path outputFile = Path.of(args[0]);
-            log("output file " + outputFile);
             int registryPort =
                 Integer.parseInt(System.getProperty("rmi.registry.port"));
             Registry registry =
                 LocateRegistry.getRegistry("", registryPort);
             Remote stub = registry.lookup(LeaseCheckInterval.BINDING);
             log("looked up binding, now terminating the process");
-            // write out the time at which we are terminating the process
-            Files.writeString(outputFile, Instant.now().toString());
             Runtime.getRuntime().halt(0);
         } catch (Throwable t) {
             log("failure: " + t);
