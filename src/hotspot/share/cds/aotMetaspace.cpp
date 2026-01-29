@@ -1162,12 +1162,6 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
       // Perhaps there is a way to avoid hard-coding these names here.
       // See discussion in JDK-8342481.
     }
-
-    if (HeapShared::is_writing_mapping_mode()) {
-      // Do this at the very end, when no Java code will be executed. Otherwise
-      // some new strings may be added to the intern table.
-      StringTable::allocate_shared_strings_array(CHECK);
-    }
   } else {
     log_info(aot)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
     CDSConfig::stop_using_optimized_module_handling();
