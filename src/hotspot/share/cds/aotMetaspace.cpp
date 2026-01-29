@@ -1104,7 +1104,12 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    if (!CDSConfig::is_dumping_preimage_static_archive()) {
+      // A single thread is required for Reference handling and deterministic CDS archive.
+      // Its's not required for dumping preimage, where References won't be archived and
+      // determinism is not needed.
+      assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    }
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       report_loading_error("archivedBootLayer not available, disabling full module graph");
       CDSConfig::stop_dumping_full_module_graph();

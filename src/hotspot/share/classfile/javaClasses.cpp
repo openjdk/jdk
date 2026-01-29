@@ -1263,6 +1263,10 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
         "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
   }
 
+  if (CDSConfig::is_dumping_heap()) {
+    create_scratch_mirror(k, CHECK_(false));
+  }
+
   return true;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
