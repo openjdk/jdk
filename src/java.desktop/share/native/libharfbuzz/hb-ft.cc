@@ -143,6 +143,9 @@ _hb_ft_font_destroy (void *data)
 /* hb_font changed, update FT_Face. */
 static void _hb_ft_hb_font_changed (hb_font_t *font, FT_Face ft_face)
 {
+  if (unlikely (font->destroy != (hb_destroy_func_t) _hb_ft_font_destroy))
+    return;
+
   hb_ft_font_t *ft_font = (hb_ft_font_t *) font->user_data;
 
   float x_mult = 1.f, y_mult = 1.f;
@@ -151,11 +154,11 @@ static void _hb_ft_hb_font_changed (hb_font_t *font, FT_Face ft_face)
   if (font->y_scale < 0) y_mult = -y_mult;
 
   if (FT_Set_Char_Size (ft_face,
-                        abs (font->x_scale), abs (font->y_scale),
-                        0, 0
+			abs (font->x_scale), abs (font->y_scale),
+			0, 0
 #if 0
-                    font->x_ppem * 72 * 64 / font->x_scale,
-                    font->y_ppem * 72 * 64 / font->y_scale
+		    font->x_ppem * 72 * 64 / font->x_scale,
+		    font->y_ppem * 72 * 64 / font->y_scale
 #endif
      ) && ft_face->num_fixed_sizes)
   {
@@ -165,8 +168,8 @@ static void _hb_ft_hb_font_changed (hb_font_t *font, FT_Face ft_face)
     int x_scale  = ft_face->available_sizes[ft_face->num_fixed_sizes - 1].x_ppem;
     int y_scale = ft_face->available_sizes[ft_face->num_fixed_sizes - 1].y_ppem;
     FT_Set_Char_Size (ft_face,
-                      x_scale, y_scale,
-                      0, 0);
+		      x_scale, y_scale,
+		      0, 0);
 
     /* This contains the sign that was previously in x_mult/y_mult. */
     x_mult = (float) font->x_scale / x_scale;
@@ -180,24 +183,32 @@ static void _hb_ft_hb_font_changed (hb_font_t *font, FT_Face ft_face)
   if (x_mult != 1.f || y_mult != 1.f)
   {
     FT_Matrix matrix = { (int) roundf (x_mult * (1<<16)), 0,
-                          0, (int) roundf (y_mult * (1<<16))};
+			  0, (int) roundf (y_mult * (1<<16))};
     FT_Set_Transform (ft_face, &matrix, nullptr);
     ft_font->transform = true;
   }
+  else
+    FT_Set_Transform (ft_face, nullptr, nullptr);
 
 #if defined(HAVE_FT_GET_VAR_BLEND_COORDINATES) && !defined(HB_NO_VAR)
-  unsigned int num_coords;
-  const float *coords = hb_font_get_var_coords_design (font, &num_coords);
-  if (num_coords)
+  if (font->has_nonzero_coords)
   {
+    unsigned int num_coords;
+    const float *coords = hb_font_get_var_coords_design (font, &num_coords);
     FT_Fixed *ft_coords = (FT_Fixed *) hb_calloc (num_coords, sizeof (FT_Fixed));
     if (ft_coords)
     {
       for (unsigned int i = 0; i < num_coords; i++)
-          ft_coords[i] = coords[i] * 65536.f;
+	  ft_coords[i] = coords[i] * 65536.f;
       FT_Set_Var_Design_Coordinates (ft_face, num_coords, ft_coords);
       hb_free (ft_coords);
     }
+  }
+  else if (font->num_coords)
+  {
+    // Some old versions of FreeType crash if we
+    // call this function on non-variable fonts.
+    FT_Set_Var_Design_Coordinates (ft_face, 0, nullptr);
   }
 #endif
 }
@@ -205,7 +216,7 @@ static void _hb_ft_hb_font_changed (hb_font_t *font, FT_Face ft_face)
 /* Check if hb_font changed, update FT_Face. */
 static inline bool
 _hb_ft_hb_font_check_changed (hb_font_t *font,
-                              const hb_ft_font_t *ft_font)
+			      const hb_ft_font_t *ft_font)
 {
   if (font->serial != ft_font->cached_serial)
   {
@@ -375,10 +386,10 @@ hb_ft_font_unlock_face (hb_font_t *font)
 
 static hb_bool_t
 hb_ft_get_nominal_glyph (hb_font_t *font,
-                         void *font_data,
-                         hb_codepoint_t unicode,
-                         hb_codepoint_t *glyph,
-                         void *user_data HB_UNUSED)
+			 void *font_data,
+			 hb_codepoint_t unicode,
+			 hb_codepoint_t *glyph,
+			 void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   hb_lock_t lock (ft_font->lock);
@@ -390,27 +401,27 @@ hb_ft_get_nominal_glyph (hb_font_t *font,
     {
       switch ((unsigned) font->face->table.OS2->get_font_page ()) {
       case OT::OS2::font_page_t::FONT_PAGE_NONE:
-        if (unicode <= 0x00FFu)
-          /* For symbol-encoded OpenType fonts, we duplicate the
-           * U+F000..F0FF range at U+0000..U+00FF.  That's what
-           * Windows seems to do, and that's hinted about at:
-           * https://docs.microsoft.com/en-us/typography/opentype/spec/recom
-           * under "Non-Standard (Symbol) Fonts". */
-          g = FT_Get_Char_Index (ft_font->ft_face, 0xF000u + unicode);
-        break;
+	if (unicode <= 0x00FFu)
+	  /* For symbol-encoded OpenType fonts, we duplicate the
+	   * U+F000..F0FF range at U+0000..U+00FF.  That's what
+	   * Windows seems to do, and that's hinted about at:
+	   * https://docs.microsoft.com/en-us/typography/opentype/spec/recom
+	   * under "Non-Standard (Symbol) Fonts". */
+	  g = FT_Get_Char_Index (ft_font->ft_face, 0xF000u + unicode);
+	break;
 #ifndef HB_NO_OT_SHAPER_ARABIC_FALLBACK
       case OT::OS2::font_page_t::FONT_PAGE_SIMP_ARABIC:
-        g = FT_Get_Char_Index (ft_font->ft_face, _hb_arabic_pua_simp_map (unicode));
-        break;
+	g = FT_Get_Char_Index (ft_font->ft_face, _hb_arabic_pua_simp_map (unicode));
+	break;
       case OT::OS2::font_page_t::FONT_PAGE_TRAD_ARABIC:
-        g = FT_Get_Char_Index (ft_font->ft_face, _hb_arabic_pua_trad_map (unicode));
-        break;
+	g = FT_Get_Char_Index (ft_font->ft_face, _hb_arabic_pua_trad_map (unicode));
+	break;
 #endif
       default:
-        break;
+	break;
       }
       if (!g)
-        return false;
+	return false;
     }
     else
       return false;
@@ -422,13 +433,13 @@ hb_ft_get_nominal_glyph (hb_font_t *font,
 
 static unsigned int
 hb_ft_get_nominal_glyphs (hb_font_t *font HB_UNUSED,
-                          void *font_data,
-                          unsigned int count,
-                          const hb_codepoint_t *first_unicode,
-                          unsigned int unicode_stride,
-                          hb_codepoint_t *first_glyph,
-                          unsigned int glyph_stride,
-                          void *user_data HB_UNUSED)
+			  void *font_data,
+			  unsigned int count,
+			  const hb_codepoint_t *first_unicode,
+			  unsigned int unicode_stride,
+			  hb_codepoint_t *first_glyph,
+			  unsigned int glyph_stride,
+			  void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   hb_lock_t lock (ft_font->lock);
@@ -448,11 +459,11 @@ hb_ft_get_nominal_glyphs (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_ft_get_variation_glyph (hb_font_t *font HB_UNUSED,
-                           void *font_data,
-                           hb_codepoint_t unicode,
-                           hb_codepoint_t variation_selector,
-                           hb_codepoint_t *glyph,
-                           void *user_data HB_UNUSED)
+			   void *font_data,
+			   hb_codepoint_t unicode,
+			   hb_codepoint_t variation_selector,
+			   hb_codepoint_t *glyph,
+			   void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   hb_lock_t lock (ft_font->lock);
@@ -467,12 +478,12 @@ hb_ft_get_variation_glyph (hb_font_t *font HB_UNUSED,
 
 static void
 hb_ft_get_glyph_h_advances (hb_font_t* font, void* font_data,
-                            unsigned count,
-                            const hb_codepoint_t *first_glyph,
-                            unsigned glyph_stride,
-                            hb_position_t *first_advance,
-                            unsigned advance_stride,
-                            void *user_data HB_UNUSED)
+			    unsigned count,
+			    const hb_codepoint_t *first_glyph,
+			    unsigned glyph_stride,
+			    hb_position_t *first_advance,
+			    unsigned advance_stride,
+			    void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -522,9 +533,9 @@ hb_ft_get_glyph_h_advances (hb_font_t* font, void* font_data,
 #ifndef HB_NO_VERTICAL
 static hb_position_t
 hb_ft_get_glyph_v_advance (hb_font_t *font,
-                           void *font_data,
-                           hb_codepoint_t glyph,
-                           void *user_data HB_UNUSED)
+			   void *font_data,
+			   hb_codepoint_t glyph,
+			   void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -560,11 +571,11 @@ hb_ft_get_glyph_v_advance (hb_font_t *font,
 #ifndef HB_NO_VERTICAL
 static hb_bool_t
 hb_ft_get_glyph_v_origin (hb_font_t *font,
-                          void *font_data,
-                          hb_codepoint_t glyph,
-                          hb_position_t *x,
-                          hb_position_t *y,
-                          void *user_data HB_UNUSED)
+			  void *font_data,
+			  hb_codepoint_t glyph,
+			  hb_position_t *x,
+			  hb_position_t *y,
+			  void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -607,10 +618,10 @@ hb_ft_get_glyph_v_origin (hb_font_t *font,
 #ifndef HB_NO_OT_SHAPE_FALLBACK
 static hb_position_t
 hb_ft_get_glyph_h_kerning (hb_font_t *font,
-                           void *font_data,
-                           hb_codepoint_t left_glyph,
-                           hb_codepoint_t right_glyph,
-                           void *user_data HB_UNUSED)
+			   void *font_data,
+			   hb_codepoint_t left_glyph,
+			   hb_codepoint_t right_glyph,
+			   void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -628,8 +639,8 @@ hb_ft_get_glyph_h_kerning (hb_font_t *font,
 
 static bool
 hb_ft_is_colr_glyph (hb_font_t *font,
-                     void *font_data,
-                     hb_codepoint_t gid)
+		     void *font_data,
+		     hb_codepoint_t gid)
 {
 #ifndef HB_NO_PAINT
 #if (FREETYPE_MAJOR*10000 + FREETYPE_MINOR*100 + FREETYPE_PATCH) >= 21300
@@ -640,8 +651,8 @@ hb_ft_is_colr_glyph (hb_font_t *font,
   /* COLRv1 */
   FT_OpaquePaint paint = {0};
   if (FT_Get_Color_Glyph_Paint (ft_face, gid,
-                                FT_COLOR_NO_ROOT_TRANSFORM,
-                                &paint))
+			        FT_COLOR_NO_ROOT_TRANSFORM,
+			        &paint))
     return true;
 
   /* COLRv0 */
@@ -650,10 +661,10 @@ hb_ft_is_colr_glyph (hb_font_t *font,
   FT_UInt  layer_color_index;
   iterator.p  = NULL;
   if (FT_Get_Color_Glyph_Layer (ft_face,
-                                gid,
-                                &layer_glyph_index,
-                                &layer_color_index,
-                                &iterator))
+				gid,
+				&layer_glyph_index,
+				&layer_color_index,
+				&iterator))
     return true;
 #endif
 #endif
@@ -663,10 +674,10 @@ hb_ft_is_colr_glyph (hb_font_t *font,
 
 static hb_bool_t
 hb_ft_get_glyph_extents (hb_font_t *font,
-                         void *font_data,
-                         hb_codepoint_t glyph,
-                         hb_glyph_extents_t *extents,
-                         void *user_data HB_UNUSED)
+			 void *font_data,
+			 hb_codepoint_t glyph,
+			 hb_glyph_extents_t *extents,
+			 void *user_data HB_UNUSED)
 {
   // FreeType doesn't return COLR glyph extents.
   if (hb_ft_is_colr_glyph (font, font_data, glyph))
@@ -716,12 +727,12 @@ hb_ft_get_glyph_extents (hb_font_t *font,
 
 static hb_bool_t
 hb_ft_get_glyph_contour_point (hb_font_t *font HB_UNUSED,
-                               void *font_data,
-                               hb_codepoint_t glyph,
-                               unsigned int point_index,
-                               hb_position_t *x,
-                               hb_position_t *y,
-                               void *user_data HB_UNUSED)
+			       void *font_data,
+			       hb_codepoint_t glyph,
+			       unsigned int point_index,
+			       hb_position_t *x,
+			       hb_position_t *y,
+			       void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -746,10 +757,10 @@ hb_ft_get_glyph_contour_point (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_ft_get_glyph_name (hb_font_t *font HB_UNUSED,
-                      void *font_data,
-                      hb_codepoint_t glyph,
-                      char *name, unsigned int size,
-                      void *user_data HB_UNUSED)
+		      void *font_data,
+		      hb_codepoint_t glyph,
+		      char *name, unsigned int size,
+		      void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   hb_lock_t lock (ft_font->lock);
@@ -764,10 +775,10 @@ hb_ft_get_glyph_name (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_ft_get_glyph_from_name (hb_font_t *font HB_UNUSED,
-                           void *font_data,
-                           const char *name, int len, /* -1 means nul-terminated */
-                           hb_codepoint_t *glyph,
-                           void *user_data HB_UNUSED)
+			   void *font_data,
+			   const char *name, int len, /* -1 means nul-terminated */
+			   hb_codepoint_t *glyph,
+			   void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   hb_lock_t lock (ft_font->lock);
@@ -789,7 +800,7 @@ hb_ft_get_glyph_from_name (hb_font_t *font HB_UNUSED,
     /* Check whether the given name was actually the name of glyph 0. */
     char buf[128];
     if (!FT_Get_Glyph_Name(ft_face, 0, buf, sizeof (buf)) &&
-        len < 0 ? !strcmp (buf, name) : !strncmp (buf, name, len))
+	len < 0 ? !strcmp (buf, name) : !strncmp (buf, name, len))
       return true;
   }
 
@@ -798,9 +809,9 @@ hb_ft_get_glyph_from_name (hb_font_t *font HB_UNUSED,
 
 static hb_bool_t
 hb_ft_get_font_h_extents (hb_font_t *font HB_UNUSED,
-                          void *font_data,
-                          hb_font_extents_t *metrics,
-                          void *user_data HB_UNUSED)
+			  void *font_data,
+			  hb_font_extents_t *metrics,
+			  void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -847,7 +858,7 @@ hb_ft_get_font_h_extents (hb_font_t *font HB_UNUSED,
 
 static int
 _hb_ft_move_to (const FT_Vector *to,
-                void *arg)
+		void *arg)
 {
   hb_draw_session_t *drawing = (hb_draw_session_t *) arg;
   drawing->move_to (to->x, to->y);
@@ -856,7 +867,7 @@ _hb_ft_move_to (const FT_Vector *to,
 
 static int
 _hb_ft_line_to (const FT_Vector *to,
-                void *arg)
+		void *arg)
 {
   hb_draw_session_t *drawing = (hb_draw_session_t *) arg;
   drawing->line_to (to->x, to->y);
@@ -865,34 +876,34 @@ _hb_ft_line_to (const FT_Vector *to,
 
 static int
 _hb_ft_conic_to (const FT_Vector *control,
-                 const FT_Vector *to,
-                 void *arg)
+		 const FT_Vector *to,
+		 void *arg)
 {
   hb_draw_session_t *drawing = (hb_draw_session_t *) arg;
   drawing->quadratic_to (control->x, control->y,
-                         to->x, to->y);
+			 to->x, to->y);
   return FT_Err_Ok;
 }
 
 static int
 _hb_ft_cubic_to (const FT_Vector *control1,
-                 const FT_Vector *control2,
-                 const FT_Vector *to,
-                 void *arg)
+		 const FT_Vector *control2,
+		 const FT_Vector *to,
+		 void *arg)
 {
   hb_draw_session_t *drawing = (hb_draw_session_t *) arg;
   drawing->cubic_to (control1->x, control1->y,
-                     control2->x, control2->y,
-                     to->x, to->y);
+		     control2->x, control2->y,
+		     to->x, to->y);
   return FT_Err_Ok;
 }
 
 static hb_bool_t
 hb_ft_draw_glyph_or_fail (hb_font_t *font,
-                          void *font_data,
-                          hb_codepoint_t glyph,
-                          hb_draw_funcs_t *draw_funcs, void *draw_data,
-                          void *user_data HB_UNUSED)
+			  void *font_data,
+			  hb_codepoint_t glyph,
+			  hb_draw_funcs_t *draw_funcs, void *draw_data,
+			  void *user_data HB_UNUSED)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -901,7 +912,7 @@ hb_ft_draw_glyph_or_fail (hb_font_t *font,
   FT_Face ft_face = ft_font->ft_face;
 
   if (unlikely (FT_Load_Glyph (ft_face, glyph,
-                               FT_LOAD_NO_BITMAP | ft_font->load_flags)))
+			       FT_LOAD_NO_BITMAP | ft_font->load_flags)))
     return false;
 
   if (ft_face->glyph->format != FT_GLYPH_FORMAT_OUTLINE)
@@ -919,8 +930,8 @@ hb_ft_draw_glyph_or_fail (hb_font_t *font,
   hb_draw_session_t draw_session {draw_funcs, draw_data};
 
   FT_Outline_Decompose (&ft_face->glyph->outline,
-                        &outline_funcs,
-                        &draw_session);
+			&outline_funcs,
+			&draw_session);
 
   return true;
 }
@@ -933,12 +944,12 @@ hb_ft_draw_glyph_or_fail (hb_font_t *font,
 
 static hb_bool_t
 hb_ft_paint_glyph_or_fail (hb_font_t *font,
-                           void *font_data,
-                           hb_codepoint_t gid,
-                           hb_paint_funcs_t *paint_funcs, void *paint_data,
-                           unsigned int palette_index,
-                           hb_color_t foreground,
-                           void *user_data)
+			   void *font_data,
+			   hb_codepoint_t gid,
+			   hb_paint_funcs_t *paint_funcs, void *paint_data,
+			   unsigned int palette_index,
+			   hb_color_t foreground,
+			   void *user_data)
 {
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font_data;
   _hb_ft_hb_font_check_changed (font, ft_font);
@@ -960,9 +971,9 @@ hb_ft_paint_glyph_or_fail (hb_font_t *font,
   if (ft_face->glyph->format == FT_GLYPH_FORMAT_OUTLINE)
   {
     if (hb_ft_paint_glyph_colr (font, font_data, gid,
-                                paint_funcs, paint_data,
-                                palette_index, foreground,
-                                user_data))
+				paint_funcs, paint_data,
+				palette_index, foreground,
+				user_data))
       return true;
 
     // Outline glyph
@@ -982,21 +993,21 @@ hb_ft_paint_glyph_or_fail (hb_font_t *font,
       ft_font->lock.unlock ();
 
       hb_blob_t *blob = hb_blob_create ((const char *) bitmap.buffer,
-                                        bitmap.pitch * bitmap.rows,
-                                        HB_MEMORY_MODE_DUPLICATE,
-                                        nullptr, nullptr);
+					bitmap.pitch * bitmap.rows,
+					HB_MEMORY_MODE_DUPLICATE,
+					nullptr, nullptr);
 
       hb_glyph_extents_t extents;
       if (!font->get_glyph_extents (gid, &extents, false))
-        goto out;
+	goto out;
 
       if (paint_funcs->image (paint_data,
-                              blob,
-                              bitmap.width,
-                              bitmap.rows,
-                              HB_PAINT_IMAGE_FORMAT_BGRA,
-                              0.f,
-                              &extents))
+			      blob,
+			      bitmap.width,
+			      bitmap.rows,
+			      HB_PAINT_IMAGE_FORMAT_BGRA,
+			      0.f,
+			      &extents))
         ret = true;
 
     out:
@@ -1079,9 +1090,9 @@ _hb_ft_font_set_funcs (hb_font_t *font, FT_Face ft_face, bool unref)
   if (unlikely (!ft_font)) return;
 
   hb_font_set_funcs (font,
-                     _hb_ft_get_font_funcs (),
-                     ft_font,
-                     _hb_ft_font_destroy);
+		     _hb_ft_get_font_funcs (),
+		     ft_font,
+		     _hb_ft_font_destroy);
 }
 
 
@@ -1092,6 +1103,10 @@ _hb_ft_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data
   FT_Byte *buffer;
   FT_ULong  length = 0;
   FT_Error error;
+
+  /* In new FreeType, a tag value of 1 loads the SFNT table directory. Reject it. */
+  if (tag == 1)
+    return nullptr;
 
   /* Note: FreeType like HarfBuzz uses the NONE tag for fetching the entire blob */
 
@@ -1111,23 +1126,23 @@ _hb_ft_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data
   }
 
   return hb_blob_create ((const char *) buffer, length,
-                         HB_MEMORY_MODE_WRITABLE,
-                         buffer, hb_free);
+			 HB_MEMORY_MODE_WRITABLE,
+			 buffer, hb_free);
 }
 
 static unsigned
 _hb_ft_get_table_tags (const hb_face_t *face HB_UNUSED,
-                       unsigned int start_offset,
-                       unsigned int *table_count,
-                       hb_tag_t *table_tags,
-                       void *user_data)
+		       unsigned int start_offset,
+		       unsigned int *table_count,
+		       hb_tag_t *table_tags,
+		       void *user_data)
 {
   FT_Face ft_face = (FT_Face) user_data;
 
   FT_ULong population = 0;
   FT_Sfnt_Table_Info (ft_face,
-                      0, // table_index; ignored
-                      nullptr,
+		      0, // table_index; ignored
+		      nullptr,
                       &population);
 
   if (!table_count)
@@ -1180,7 +1195,7 @@ _hb_ft_get_table_tags (const hb_face_t *face HB_UNUSED,
  **/
 hb_face_t *
 hb_ft_face_create (FT_Face           ft_face,
-                   hb_destroy_func_t destroy)
+		   hb_destroy_func_t destroy)
 {
   hb_face_t *face;
 
@@ -1188,9 +1203,9 @@ hb_ft_face_create (FT_Face           ft_face,
     hb_blob_t *blob;
 
     blob = hb_blob_create ((const char *) ft_face->stream->base,
-                           (unsigned int) ft_face->stream->size,
-                           HB_MEMORY_MODE_READONLY,
-                           ft_face, destroy);
+			   (unsigned int) ft_face->stream->size,
+			   HB_MEMORY_MODE_READONLY,
+			   ft_face, destroy);
     face = hb_face_create (blob, ft_face->face_index);
     hb_blob_destroy (blob);
   } else {
@@ -1310,7 +1325,7 @@ hb_ft_face_create_cached (FT_Face ft_face)
  **/
 hb_font_t *
 hb_ft_font_create (FT_Face           ft_face,
-                   hb_destroy_func_t destroy)
+		   hb_destroy_func_t destroy)
 {
   hb_font_t *font;
   hb_face_t *face;
@@ -1344,12 +1359,12 @@ hb_ft_font_changed (hb_font_t *font)
   FT_Face ft_face = ft_font->ft_face;
 
   hb_font_set_scale (font,
-                     (int) (((uint64_t) ft_face->size->metrics.x_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16),
-                     (int) (((uint64_t) ft_face->size->metrics.y_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16));
+		     (int) (((uint64_t) ft_face->size->metrics.x_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16),
+		     (int) (((uint64_t) ft_face->size->metrics.y_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16));
 #if 0 /* hb-ft works in no-hinting model */
   hb_font_set_ppem (font,
-                    ft_face->size->metrics.x_ppem,
-                    ft_face->size->metrics.y_ppem);
+		    ft_face->size->metrics.x_ppem,
+		    ft_face->size->metrics.y_ppem);
 #endif
 
 #if defined(HAVE_FT_GET_VAR_BLEND_COORDINATES) && !defined(HB_NO_VAR)
@@ -1362,18 +1377,18 @@ hb_ft_font_changed (hb_font_t *font)
     {
       if (!FT_Get_Var_Blend_Coordinates (ft_face, mm_var->num_axis, ft_coords))
       {
-        bool nonzero = false;
+	bool nonzero = false;
 
-        for (unsigned int i = 0; i < mm_var->num_axis; ++i)
-         {
-          coords[i] = ft_coords[i] >>= 2;
-          nonzero = nonzero || coords[i];
-         }
+	for (unsigned int i = 0; i < mm_var->num_axis; ++i)
+	 {
+	  coords[i] = (ft_coords[i] + 2) >> 2;
+	  nonzero = nonzero || coords[i];
+	 }
 
-        if (nonzero)
-          hb_font_set_var_coords_normalized (font, coords, mm_var->num_axis);
-        else
-          hb_font_set_var_coords_normalized (font, nullptr, 0);
+	if (nonzero)
+	  hb_font_set_var_coords_normalized (font, coords, mm_var->num_axis);
+	else
+	  hb_font_set_var_coords_normalized (font, nullptr, 0);
       }
     }
     hb_free (coords);
@@ -1468,7 +1483,7 @@ static FT_MemoryRec_ m =
 static inline void free_static_ft_library ();
 
 static struct hb_ft_library_lazy_loader_t : hb_lazy_loader_t<hb_remove_pointer<FT_Library>,
-                                                             hb_ft_library_lazy_loader_t>
+							     hb_ft_library_lazy_loader_t>
 {
   static FT_Library create ()
   {
@@ -1545,7 +1560,7 @@ destroy_ft_library (void *arg)
  */
 hb_face_t *
 hb_ft_face_create_from_file_or_fail (const char   *file_name,
-                                     unsigned int  index)
+				     unsigned int  index)
 {
   FT_Library ft_library = reference_ft_library ();
   if (unlikely (!ft_library))
@@ -1556,9 +1571,9 @@ hb_ft_face_create_from_file_or_fail (const char   *file_name,
 
   FT_Face ft_face;
   if (unlikely (FT_New_Face (ft_library,
-                             file_name,
-                             index,
-                             &ft_face)))
+			     file_name,
+			     index,
+			     &ft_face)))
     return nullptr;
 
   hb_face_t *face = hb_ft_face_create_referenced (ft_face);
@@ -1600,7 +1615,7 @@ _destroy_blob (void *p)
  */
 hb_face_t *
 hb_ft_face_create_from_blob_or_fail (hb_blob_t    *blob,
-                                     unsigned int  index)
+				     unsigned int  index)
 {
   FT_Library ft_library = reference_ft_library ();
   if (unlikely (!ft_library))
@@ -1615,10 +1630,10 @@ hb_ft_face_create_from_blob_or_fail (hb_blob_t    *blob,
 
   FT_Face ft_face;
   if (unlikely (FT_New_Memory_Face (ft_library,
-                                    (const FT_Byte *) blob_data,
-                                    blob_size,
-                                    index,
-                                    &ft_face)))
+				    (const FT_Byte *) blob_data,
+				    blob_size,
+				    index,
+				    &ft_face)))
     return nullptr;
 
   hb_face_t *face = hb_ft_face_create_referenced (ft_face);
@@ -1680,8 +1695,8 @@ hb_ft_font_set_funcs (hb_font_t *font)
 {
   // In case of failure...
   hb_font_set_funcs (font,
-                     hb_font_funcs_get_empty (),
-                     nullptr, nullptr);
+		     hb_font_funcs_get_empty (),
+		     nullptr, nullptr);
 
   hb_blob_t *blob = hb_face_reference_blob (font->face);
   unsigned int blob_length;
@@ -1699,10 +1714,10 @@ hb_ft_font_set_funcs (hb_font_t *font)
 
   FT_Face ft_face = nullptr;
   if (unlikely (FT_New_Memory_Face (ft_library,
-                                    (const FT_Byte *) blob_data,
-                                    blob_length,
-                                    hb_face_get_index (font->face),
-                                    &ft_face)))
+				    (const FT_Byte *) blob_data,
+				    blob_length,
+				    hb_face_get_index (font->face),
+				    &ft_face)))
   {
     hb_blob_destroy (blob);
     DEBUG_MSG (FT, font, "FT_New_Memory_Face() failed");
@@ -1717,7 +1732,12 @@ hb_ft_font_set_funcs (hb_font_t *font)
   ft_face->generic.finalizer = _release_blob;
 
   // And the FT_Library to the blob
-  hb_blob_set_user_data (blob, &ft_library_key, ft_library, destroy_ft_library, true);
+  if (unlikely (!hb_blob_set_user_data (blob, &ft_library_key, ft_library, destroy_ft_library, true)))
+  {
+    DEBUG_MSG (FT, font, "hb_blob_set_user_data() failed");
+    FT_Done_Face (ft_face);
+    return;
+  }
 
   _hb_ft_font_set_funcs (font, ft_face, true);
   hb_ft_font_set_load_flags (font, FT_LOAD_DEFAULT | FT_LOAD_NO_HINTING);

@@ -101,7 +101,7 @@ struct MarkLigPosFormat1_2
 
     /* Now we search backwards for a non-mark glyph */
 
-    hb_ot_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
+    auto &skippy_iter = c->iter_input;
     skippy_iter.set_lookup_props (LookupFlag::IgnoreMarks);
 
     if (c->last_base_until > buffer->idx)
@@ -115,8 +115,8 @@ struct MarkLigPosFormat1_2
       auto match = skippy_iter.match (buffer->info[j - 1]);
       if (match == skippy_iter.MATCH)
       {
-        c->last_base = (signed) j - 1;
-        break;
+	c->last_base = (signed) j - 1;
+	break;
       }
     }
     c->last_base_until = buffer->idx;
@@ -196,23 +196,17 @@ struct MarkLigPosFormat1_2
       return_trace (false);
 
     if (unlikely (!out->markArray.serialize_subset (c, markArray, this,
-                                                    (this+markCoverage).iter (),
-                                                    &klass_mapping)))
+						    (this+markCoverage).iter (),
+						    &klass_mapping)))
       return_trace (false);
 
-    auto new_ligature_coverage =
-    + hb_iter (this + ligatureCoverage)
-    | hb_take ((this + ligatureArray).len)
-    | hb_map_retains_sorting (glyph_map)
-    | hb_filter ([] (hb_codepoint_t glyph) { return glyph != HB_MAP_VALUE_INVALID; })
-    ;
-
-    if (!out->ligatureCoverage.serialize_serialize (c->serializer, new_ligature_coverage))
+    hb_sorted_vector_t<hb_codepoint_t> new_lig_coverage;
+    if (!out->ligatureArray.serialize_subset (c, ligatureArray, this,
+					      hb_iter (this+ligatureCoverage),
+					      classCount, &klass_mapping, new_lig_coverage))
       return_trace (false);
 
-    return_trace (out->ligatureArray.serialize_subset (c, ligatureArray, this,
-                                                       hb_iter (this+ligatureCoverage),
-                                                       classCount, &klass_mapping));
+    return_trace (out->ligatureCoverage.serialize_serialize (c->serializer, new_lig_coverage.iter ()));
   }
 
 };

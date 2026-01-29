@@ -74,9 +74,9 @@ struct SimpleGlyph
       unsigned int repeat = 1;
       if (flag & FLAG_REPEAT)
       {
-        if (unlikely (glyph >= glyph_end)) return hb_bytes_t ();
-        repeat = *glyph + 1;
-        glyph++;
+	if (unlikely (glyph >= glyph_end)) return hb_bytes_t ();
+	repeat = *glyph + 1;
+	glyph++;
       }
 
       unsigned int xBytes, yBytes;
@@ -124,8 +124,8 @@ struct SimpleGlyph
   }
 
   static bool read_flags (const HBUINT8 *&p /* IN/OUT */,
-                          hb_array_t<contour_point_t> points_ /* IN/OUT */,
-                          const HBUINT8 *end)
+			  hb_array_t<contour_point_t> points_ /* IN/OUT */,
+			  const HBUINT8 *end)
   {
     auto *points = points_.arrayZ;
     unsigned count = points_.length;
@@ -136,22 +136,22 @@ struct SimpleGlyph
       points[i++].flag = flag;
       if (flag & FLAG_REPEAT)
       {
-        if (unlikely (p + 1 > end)) return false;
-        unsigned int repeat_count = *p++;
-        unsigned stop = hb_min (i + repeat_count, count);
-        for (; i < stop; i++)
-          points[i].flag = flag;
+	if (unlikely (p + 1 > end)) return false;
+	unsigned int repeat_count = *p++;
+	unsigned stop = hb_min (i + repeat_count, count);
+	for (; i < stop; i++)
+	  points[i].flag = flag;
       }
     }
     return true;
   }
 
   static bool read_points (const HBUINT8 *&p /* IN/OUT */,
-                           hb_array_t<contour_point_t> points_ /* IN/OUT */,
-                           const HBUINT8 *end,
-                           float contour_point_t::*m,
-                           const simple_glyph_flag_t short_flag,
-                           const simple_glyph_flag_t same_flag)
+			   hb_array_t<contour_point_t> points_ /* IN/OUT */,
+			   const HBUINT8 *end,
+			   float contour_point_t::*m,
+			   const simple_glyph_flag_t short_flag,
+			   const simple_glyph_flag_t same_flag)
   {
     int v = 0;
 
@@ -160,17 +160,17 @@ struct SimpleGlyph
       unsigned flag = point.flag;
       if (flag & short_flag)
       {
-        if (unlikely (p + 1 > end)) return false;
-        v += (bool(flag & same_flag) * 2 - 1) * *p++;
+	if (unlikely (p + 1 > end)) return false;
+	v += (bool(flag & same_flag) * 2 - 1) * *p++;
       }
       else
       {
-        if (!(flag & same_flag))
-        {
-          if (unlikely (p + HBINT16::static_size > end)) return false;
-          v += *(const HBINT16 *) p;
-          p += HBINT16::static_size;
-        }
+	if (!(flag & same_flag))
+	{
+	  if (unlikely (p + HBINT16::static_size > end)) return false;
+	  v += *(const HBINT16 *) p;
+	  p += HBINT16::static_size;
+	}
       }
       point.*m = v;
     }
@@ -178,7 +178,7 @@ struct SimpleGlyph
   }
 
   bool get_contour_points (contour_point_vector_t &points /* OUT */,
-                           bool phantom_only = false) const
+			   bool phantom_only = false) const
   {
     const HBUINT16 *endPtsOfContours = &StructAfter<HBUINT16> (header);
     int num_contours = header.numberOfContours;
@@ -189,7 +189,7 @@ struct SimpleGlyph
 
     unsigned old_length = points.length;
     points.alloc (points.length + num_points + 4); // Allocate for phantom points, to avoid a possible copy
-    if (unlikely (!points.resize (points.length + num_points, false))) return false;
+    if (unlikely (!points.resize_dirty (points.length + num_points))) return false;
     auto points_ = points.as_array ().sub_array (old_length);
     if (!phantom_only)
       hb_memset (points_.arrayZ, 0, sizeof (contour_point_t) * num_points);
@@ -200,7 +200,7 @@ struct SimpleGlyph
 
     /* Skip instructions */
     const HBUINT8 *p = &StructAtOffset<HBUINT8> (&endPtsOfContours[num_contours + 1],
-                                                 endPtsOfContours[num_contours]);
+						 endPtsOfContours[num_contours]);
 
     if (unlikely ((const char *) p < bytes.arrayZ)) return false; /* Unlikely overflow */
     const HBUINT8 *end = (const HBUINT8 *) (bytes.arrayZ + bytes.length);
@@ -209,9 +209,9 @@ struct SimpleGlyph
     /* Read x & y coordinates */
     return read_flags (p, points_, end)
         && read_points (p, points_, end, &contour_point_t::x,
-                        FLAG_X_SHORT, FLAG_X_SAME)
-        && read_points (p, points_, end, &contour_point_t::y,
-                        FLAG_Y_SHORT, FLAG_Y_SAME);
+			FLAG_X_SHORT, FLAG_X_SAME)
+	&& read_points (p, points_, end, &contour_point_t::y,
+			FLAG_Y_SHORT, FLAG_Y_SAME);
   }
 
   static void encode_coord (int value,

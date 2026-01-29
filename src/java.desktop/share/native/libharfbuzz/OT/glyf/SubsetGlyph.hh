@@ -21,8 +21,8 @@ struct SubsetGlyph
   bool allocated;
 
   bool serialize (hb_serialize_context_t *c,
-                  bool use_short_loca,
-                  const hb_subset_plan_t *plan) const
+		  bool use_short_loca,
+		  const hb_subset_plan_t *plan) const
   {
     TRACE_SERIALIZE (this);
 
@@ -51,7 +51,7 @@ struct SubsetGlyph
     {
       hb_codepoint_t new_gid;
       if (plan->new_gid_for_old_gid (_.get_gid(), &new_gid))
-        const_cast<CompositeGlyphRecord &> (_).set_gid (new_gid);
+	const_cast<CompositeGlyphRecord &> (_).set_gid (new_gid);
     }
 
 #ifndef HB_NO_BEYOND_64K
@@ -64,18 +64,18 @@ struct SubsetGlyph
       const char *end = dest_glyph.arrayZ + dest_glyph.length;
       while (it)
       {
-        auto &rec = const_cast<CompositeGlyphRecord &> (*it);
-        ++it;
+	auto &rec = const_cast<CompositeGlyphRecord &> (*it);
+	++it;
 
-        q += rec.get_size ();
+	q += rec.get_size ();
 
-        rec.lower_gid_24_to_16 ();
+	rec.lower_gid_24_to_16 ();
 
-        unsigned size = rec.get_size ();
+	unsigned size = rec.get_size ();
 
-        memmove (p, &rec, size);
+	memmove (p, &rec, size);
 
-        p += size;
+	p += size;
       }
       memmove (p, q, end - q);
       p += end - q;

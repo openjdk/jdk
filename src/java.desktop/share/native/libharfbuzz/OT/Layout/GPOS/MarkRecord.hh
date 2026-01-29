@@ -25,8 +25,8 @@ struct MarkRecord
   }
 
   bool subset (hb_subset_context_t    *c,
-               const void             *src_base,
-               const hb_map_t         *klass_mapping) const
+	       const void             *src_base,
+	       const hb_map_t         *klass_mapping) const
   {
     TRACE_SUBSET (this);
     auto *out = c->serializer->embed (this);

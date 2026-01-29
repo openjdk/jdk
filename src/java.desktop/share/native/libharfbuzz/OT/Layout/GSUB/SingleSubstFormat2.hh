@@ -43,10 +43,10 @@ struct SingleSubstFormat2_4
     {
       for (auto g : glyph_set)
       {
-        unsigned i = cov.get_coverage (g);
-        if (i == NOT_COVERED || i >= substitute.len)
-          continue;
-        c->output->add (substitute.arrayZ[i]);
+	unsigned i = cov.get_coverage (g);
+	if (i == NOT_COVERED || i >= substitute.len)
+	  continue;
+	c->output->add (substitute.arrayZ[i]);
       }
 
       return;
@@ -100,6 +100,17 @@ struct SingleSubstFormat2_4
     return 1;
   }
 
+  void
+  collect_glyph_alternates (hb_map_t  *alternate_count /* IN/OUT */,
+			    hb_map_t  *alternate_glyphs /* IN/OUT */) const
+  {
+    + hb_zip (this+coverage, substitute)
+    | hb_apply ([&] (const hb_pair_t<hb_codepoint_t, hb_codepoint_t> &p) -> void
+		{ _hb_collect_glyph_alternates_add (p.first, p.second,
+						    alternate_count, alternate_glyphs); })
+    ;
+  }
+
   bool apply (hb_ot_apply_context_t *c) const
   {
     TRACE_APPLY (this);
@@ -112,8 +123,8 @@ struct SingleSubstFormat2_4
     {
       c->buffer->sync_so_far ();
       c->buffer->message (c->font,
-                          "replacing glyph at %u (single substitution)",
-                          c->buffer->idx);
+			  "replacing glyph at %u (single substitution)",
+			  c->buffer->idx);
     }
 
     c->replace_glyph (substitute[index]);
@@ -121,8 +132,8 @@ struct SingleSubstFormat2_4
     if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
     {
       c->buffer->message (c->font,
-                          "replaced glyph at %u (single substitution)",
-                          c->buffer->idx - 1u);
+			  "replaced glyph at %u (single substitution)",
+			  c->buffer->idx - 1u);
     }
 
     return_trace (true);

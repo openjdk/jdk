@@ -55,7 +55,7 @@ static inline void free_static_shaper_list ();
 static const char * const nil_shaper_list[] = {nullptr};
 
 static struct hb_shaper_list_lazy_loader_t : hb_lazy_loader_t<const char *,
-                                                              hb_shaper_list_lazy_loader_t>
+							      hb_shaper_list_lazy_loader_t>
 {
   static const char ** create ()
   {
@@ -125,10 +125,10 @@ hb_shape_list_shapers ()
  **/
 hb_bool_t
 hb_shape_full (hb_font_t          *font,
-               hb_buffer_t        *buffer,
-               const hb_feature_t *features,
-               unsigned int        num_features,
-               const char * const *shaper_list)
+	       hb_buffer_t        *buffer,
+	       const hb_feature_t *features,
+	       unsigned int        num_features,
+	       const char * const *shaper_list)
 {
   if (unlikely (!buffer->len))
     return true;
@@ -143,26 +143,23 @@ hb_shape_full (hb_font_t          *font,
   }
 
   hb_shape_plan_t *shape_plan = hb_shape_plan_create_cached2 (font->face, &buffer->props,
-                                                              features, num_features,
-                                                              font->coords, font->num_coords,
-                                                              shaper_list);
+							      features, num_features,
+							      font->coords, font->num_coords,
+							      shaper_list);
 
   hb_bool_t res = hb_shape_plan_execute (shape_plan, font, buffer, features, num_features);
-
-  if (buffer->max_ops <= 0)
-    buffer->shaping_failed = true;
 
   hb_shape_plan_destroy (shape_plan);
 
   if (text_buffer)
   {
-    if (res && buffer->successful && !buffer->shaping_failed
-            && text_buffer->successful
-            && !buffer->verify (text_buffer,
-                                font,
-                                features,
-                                num_features,
-                                shaper_list))
+    if (res && buffer->successful
+	    && text_buffer->successful
+	    && !buffer->verify (text_buffer,
+				font,
+				features,
+				num_features,
+				shaper_list))
       res = false;
     hb_buffer_destroy (text_buffer);
   }
@@ -190,15 +187,16 @@ hb_shape_full (hb_font_t          *font,
  **/
 void
 hb_shape (hb_font_t           *font,
-          hb_buffer_t         *buffer,
-          const hb_feature_t  *features,
-          unsigned int         num_features)
+	  hb_buffer_t         *buffer,
+	  const hb_feature_t  *features,
+	  unsigned int         num_features)
 {
   hb_shape_full (font, buffer, features, num_features, nullptr);
 }
 
 
 #ifdef HB_EXPERIMENTAL_API
+#ifndef HB_NO_VAR
 
 static float
 buffer_advance (hb_buffer_t *buffer)
@@ -217,7 +215,7 @@ buffer_advance (hb_buffer_t *buffer)
 
 static void
 reset_buffer (hb_buffer_t *buffer,
-              hb_array_t<const hb_glyph_info_t> text)
+	      hb_array_t<const hb_glyph_info_t> text)
 {
   assert (buffer->ensure (text.length));
   buffer->have_positions = false;
@@ -259,15 +257,15 @@ reset_buffer (hb_buffer_t *buffer,
  **/
 hb_bool_t
 hb_shape_justify (hb_font_t          *font,
-                  hb_buffer_t        *buffer,
-                  const hb_feature_t *features,
-                  unsigned int        num_features,
-                  const char * const *shaper_list,
-                  float               min_target_advance,
-                  float               max_target_advance,
-                  float              *advance, /* IN/OUT */
-                  hb_tag_t           *var_tag, /* OUT */
-                  float              *var_value /* OUT */)
+		  hb_buffer_t        *buffer,
+		  const hb_feature_t *features,
+		  unsigned int        num_features,
+		  const char * const *shaper_list,
+		  float               min_target_advance,
+		  float               max_target_advance,
+		  float              *advance, /* IN/OUT */
+		  hb_tag_t           *var_tag, /* OUT */
+		  float              *var_value /* OUT */)
 {
   // TODO Negative font scales?
 
@@ -277,8 +275,8 @@ hb_shape_justify (hb_font_t          *font,
     *var_tag = HB_TAG_NONE;
     *var_value = 0.0f;
     return hb_shape_full (font, buffer,
-                          features, num_features,
-                          shaper_list);
+			  features, num_features,
+			  shaper_list);
   }
 
   hb_face_t *face = font->face;
@@ -306,8 +304,8 @@ hb_shape_justify (hb_font_t          *font,
     *var_tag = HB_TAG_NONE;
     *var_value = 0.0f;
     if (hb_shape_full (font, buffer,
-                       features, num_features,
-                       shaper_list))
+		       features, num_features,
+		       shaper_list))
     {
       *advance = buffer_advance (buffer);
       return true;
@@ -329,8 +327,8 @@ hb_shape_justify (hb_font_t          *font,
   {
     hb_font_set_variation (font, tag, axis_info.default_value);
     if (!hb_shape_full (font, buffer,
-                        features, num_features,
-                        shaper_list))
+			features, num_features,
+			shaper_list))
       return false;
     *advance = buffer_advance (buffer);
   }
@@ -359,8 +357,8 @@ hb_shape_justify (hb_font_t          *font,
     hb_font_set_variation (font, tag, (float) b);
     reset_buffer (buffer, text);
     if (!hb_shape_full (font, buffer,
-                        features, num_features,
-                        shaper_list))
+			features, num_features,
+			shaper_list))
       return false;
     yb = (double) buffer_advance (buffer);
     /* If the maximum expansion is less than max target,
@@ -384,8 +382,8 @@ hb_shape_justify (hb_font_t          *font,
     hb_font_set_variation (font, tag, (float) a);
     reset_buffer (buffer, text);
     if (!hb_shape_full (font, buffer,
-                        features, num_features,
-                        shaper_list))
+			features, num_features,
+			shaper_list))
       return false;
     ya = (double) buffer_advance (buffer);
     /* If the maximum shrinkate is more than min target,
@@ -409,8 +407,8 @@ hb_shape_justify (hb_font_t          *font,
     hb_font_set_variation (font, tag, (float) x);
     reset_buffer (buffer, text);
     if (unlikely (!hb_shape_full (font, buffer,
-                                  features, num_features,
-                                  shaper_list)))
+				  features, num_features,
+				  shaper_list)))
     {
       failed = true;
       return (double) min_target_advance;
@@ -418,17 +416,17 @@ hb_shape_justify (hb_font_t          *font,
 
     double w = (double) buffer_advance (buffer);
     DEBUG_MSG (JUSTIFY, nullptr, "Trying '%c%c%c%c' axis parameter %f. Advance %g. Target: min %g max %g",
-               HB_UNTAG (tag), x, w,
-               (double) min_target_advance, (double) max_target_advance);
+	       HB_UNTAG (tag), x, w,
+	       (double) min_target_advance, (double) max_target_advance);
     return w;
   };
 
   double y = 0;
   double itp = solve_itp (f,
-                          a, b,
-                          epsilon,
-                          (double) min_target_advance, (double) max_target_advance,
-                          ya, yb, y);
+			  a, b,
+			  epsilon,
+			  (double) min_target_advance, (double) max_target_advance,
+			  ya, yb, y);
 
   hb_free (text_info);
 
@@ -440,7 +438,7 @@ hb_shape_justify (hb_font_t          *font,
 
   return true;
 }
-
+#endif
 #endif
 
 

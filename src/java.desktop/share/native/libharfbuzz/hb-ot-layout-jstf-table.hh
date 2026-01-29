@@ -58,59 +58,59 @@ struct JstfPriority
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-                  shrinkageEnableGSUB.sanitize (c, this) &&
-                  shrinkageDisableGSUB.sanitize (c, this) &&
-                  shrinkageEnableGPOS.sanitize (c, this) &&
-                  shrinkageDisableGPOS.sanitize (c, this) &&
-                  shrinkageJstfMax.sanitize (c, this) &&
-                  extensionEnableGSUB.sanitize (c, this) &&
-                  extensionDisableGSUB.sanitize (c, this) &&
-                  extensionEnableGPOS.sanitize (c, this) &&
-                  extensionDisableGPOS.sanitize (c, this) &&
-                  extensionJstfMax.sanitize (c, this));
+		  shrinkageEnableGSUB.sanitize (c, this) &&
+		  shrinkageDisableGSUB.sanitize (c, this) &&
+		  shrinkageEnableGPOS.sanitize (c, this) &&
+		  shrinkageDisableGPOS.sanitize (c, this) &&
+		  shrinkageJstfMax.sanitize (c, this) &&
+		  extensionEnableGSUB.sanitize (c, this) &&
+		  extensionDisableGSUB.sanitize (c, this) &&
+		  extensionEnableGPOS.sanitize (c, this) &&
+		  extensionDisableGPOS.sanitize (c, this) &&
+		  extensionJstfMax.sanitize (c, this));
   }
 
   protected:
   Offset16To<JstfModList>
-                shrinkageEnableGSUB;    /* Offset to Shrinkage Enable GSUB
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		shrinkageEnableGSUB;	/* Offset to Shrinkage Enable GSUB
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfModList>
-                shrinkageDisableGSUB;   /* Offset to Shrinkage Disable GSUB
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		shrinkageDisableGSUB;	/* Offset to Shrinkage Disable GSUB
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfModList>
-                shrinkageEnableGPOS;    /* Offset to Shrinkage Enable GPOS
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		shrinkageEnableGPOS;	/* Offset to Shrinkage Enable GPOS
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfModList>
-                shrinkageDisableGPOS;   /* Offset to Shrinkage Disable GPOS
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		shrinkageDisableGPOS;	/* Offset to Shrinkage Disable GPOS
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfMax>
-                shrinkageJstfMax;       /* Offset to Shrinkage JstfMax table--
-                                         * from beginning of JstfPriority table
-                                         * --may be NULL */
+		shrinkageJstfMax;	/* Offset to Shrinkage JstfMax table--
+					 * from beginning of JstfPriority table
+					 * --may be NULL */
   Offset16To<JstfModList>
-                extensionEnableGSUB;    /* Offset to Extension Enable GSUB
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		extensionEnableGSUB;	/* Offset to Extension Enable GSUB
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfModList>
-                extensionDisableGSUB;   /* Offset to Extension Disable GSUB
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		extensionDisableGSUB;	/* Offset to Extension Disable GSUB
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfModList>
-                extensionEnableGPOS;    /* Offset to Extension Enable GPOS
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		extensionEnableGPOS;	/* Offset to Extension Enable GPOS
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfModList>
-                extensionDisableGPOS;   /* Offset to Extension Disable GPOS
-                                         * JstfModList table--from beginning of
-                                         * JstfPriority table--may be NULL */
+		extensionDisableGPOS;	/* Offset to Extension Disable GPOS
+					 * JstfModList table--from beginning of
+					 * JstfPriority table--may be NULL */
   Offset16To<JstfMax>
-                extensionJstfMax;       /* Offset to Extension JstfMax table--
-                                         * from beginning of JstfPriority table
-                                         * --may be NULL */
+		extensionJstfMax;	/* Offset to Extension JstfMax table--
+					 * from beginning of JstfPriority table
+					 * --may be NULL */
 
   public:
   DEFINE_SIZE_STATIC (20);
@@ -124,7 +124,7 @@ struct JstfPriority
 struct JstfLangSys : List16OfOffset16To<JstfPriority>
 {
   bool sanitize (hb_sanitize_context_t *c,
-                 const Record_sanitize_closure_t * = nullptr) const
+		 const Record_sanitize_closure_t * = nullptr) const
   {
     TRACE_SANITIZE (this);
     return_trace (List16OfOffset16To<JstfPriority>::sanitize (c));
@@ -150,8 +150,8 @@ struct JstfScript
   const Tag& get_lang_sys_tag (unsigned int i) const
   { return langSys.get_tag (i); }
   unsigned int get_lang_sys_tags (unsigned int start_offset,
-                                  unsigned int *lang_sys_count /* IN/OUT */,
-                                  hb_tag_t     *lang_sys_tags /* OUT */) const
+				  unsigned int *lang_sys_count /* IN/OUT */,
+				  hb_tag_t     *lang_sys_tags /* OUT */) const
   { return langSys.get_tags (start_offset, lang_sys_count, lang_sys_tags); }
   const JstfLangSys& get_lang_sys (unsigned int i) const
   {
@@ -165,24 +165,24 @@ struct JstfScript
   const JstfLangSys& get_default_lang_sys () const { return this+defaultLangSys; }
 
   bool sanitize (hb_sanitize_context_t *c,
-                 const Record_sanitize_closure_t * = nullptr) const
+		 const Record_sanitize_closure_t * = nullptr) const
   {
     TRACE_SANITIZE (this);
     return_trace (extenderGlyphs.sanitize (c, this) &&
-                  defaultLangSys.sanitize (c, this) &&
-                  langSys.sanitize (c, this));
+		  defaultLangSys.sanitize (c, this) &&
+		  langSys.sanitize (c, this));
   }
 
   protected:
   Offset16To<ExtenderGlyphs>
-                extenderGlyphs; /* Offset to ExtenderGlyph table--from beginning
-                                 * of JstfScript table-may be NULL */
+		extenderGlyphs;	/* Offset to ExtenderGlyph table--from beginning
+				 * of JstfScript table-may be NULL */
   Offset16To<JstfLangSys>
-                defaultLangSys; /* Offset to DefaultJstfLangSys table--from
-                                 * beginning of JstfScript table--may be Null */
+		defaultLangSys;	/* Offset to DefaultJstfLangSys table--from
+				 * beginning of JstfScript table--may be Null */
   RecordArrayOf<JstfLangSys>
-                langSys;        /* Array of JstfLangSysRecords--listed
-                                 * alphabetically by LangSysTag */
+		langSys;	/* Array of JstfLangSysRecords--listed
+				 * alphabetically by LangSysTag */
   public:
   DEFINE_SIZE_ARRAY (6, langSys);
 };
@@ -202,8 +202,8 @@ struct JSTF
   const Tag& get_script_tag (unsigned int i) const
   { return scriptList.get_tag (i); }
   unsigned int get_script_tags (unsigned int start_offset,
-                                unsigned int *script_count /* IN/OUT */,
-                                hb_tag_t     *script_tags /* OUT */) const
+				unsigned int *script_count /* IN/OUT */,
+				hb_tag_t     *script_tags /* OUT */) const
   { return scriptList.get_tags (start_offset, script_count, script_tags); }
   const JstfScript& get_script (unsigned int i) const
   { return this+scriptList[i].offset; }
@@ -214,17 +214,17 @@ struct JSTF
   {
     TRACE_SANITIZE (this);
     return_trace (version.sanitize (c) &&
-                  hb_barrier () &&
-                  likely (version.major == 1) &&
-                  scriptList.sanitize (c, this));
+		  hb_barrier () &&
+		  likely (version.major == 1) &&
+		  scriptList.sanitize (c, this));
   }
 
   protected:
-  FixedVersion<>version;        /* Version of the JSTF table--initially set
-                                 * to 0x00010000u */
+  FixedVersion<>version;	/* Version of the JSTF table--initially set
+				 * to 0x00010000u */
   RecordArrayOf<JstfScript>
-                scriptList;     /* Array of JstfScripts--listed
-                                 * alphabetically by ScriptTag */
+		scriptList;	/* Array of JstfScripts--listed
+				 * alphabetically by ScriptTag */
   public:
   DEFINE_SIZE_ARRAY (6, scriptList);
 };

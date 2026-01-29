@@ -70,10 +70,10 @@ _hb_fallback_shaper_font_data_destroy (hb_fallback_font_data_t *data HB_UNUSED)
 
 hb_bool_t
 _hb_fallback_shape (hb_shape_plan_t    *shape_plan HB_UNUSED,
-                    hb_font_t          *font,
-                    hb_buffer_t        *buffer,
-                    const hb_feature_t *features HB_UNUSED,
-                    unsigned int        num_features HB_UNUSED)
+		    hb_font_t          *font,
+		    hb_buffer_t        *buffer,
+		    const hb_feature_t *features HB_UNUSED,
+		    unsigned int        num_features HB_UNUSED)
 {
   hb_codepoint_t space;
   bool has_space = (bool) font->get_nominal_glyph (' ', &space);
@@ -95,13 +95,13 @@ _hb_fallback_shape (hb_shape_plan_t    *shape_plan HB_UNUSED,
     }
     (void) font->get_nominal_glyph (info[i].codepoint, &info[i].codepoint);
     font->get_glyph_advance_for_direction (info[i].codepoint,
-                                           direction,
-                                           &pos[i].x_advance,
-                                           &pos[i].y_advance);
+					   direction,
+					   &pos[i].x_advance,
+					   &pos[i].y_advance);
     font->subtract_glyph_origin_for_direction (info[i].codepoint,
-                                               direction,
-                                               &pos[i].x_offset,
-                                               &pos[i].y_offset);
+					       direction,
+					       &pos[i].x_offset,
+					       &pos[i].y_offset);
   }
 
   if (HB_DIRECTION_IS_BACKWARD (direction))

@@ -44,7 +44,7 @@ data_destroy_arabic (void *data);
 
 HB_INTERNAL void
 setup_masks_arabic_plan (const arabic_shape_plan_t *arabic_plan,
-                         hb_buffer_t               *buffer,
-                         hb_script_t                script);
+			 hb_buffer_t               *buffer,
+			 hb_script_t                script);
 
 #endif /* HB_OT_SHAPER_ARABIC_HH */

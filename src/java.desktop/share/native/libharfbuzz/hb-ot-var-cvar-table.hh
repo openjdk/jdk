@@ -45,9 +45,9 @@ struct cvar
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-                  hb_barrier () &&
-                  likely (version.major == 1) &&
-                  tupleVariationData.sanitize (c));
+		  hb_barrier () &&
+		  likely (version.major == 1) &&
+		  tupleVariationData.sanitize (c));
   }
 
   const TupleVariationData<>* get_tuple_var_data (void) const
@@ -84,7 +84,7 @@ struct cvar
     if (!coords) return true;
     hb_vector_t<unsigned> shared_indices;
     TupleVariationData<>::tuple_iterator_t iterator;
-    unsigned var_data_length = tuple_var_data->get_size (axis_count);
+    unsigned var_data_length = tuple_var_data->get_size (axis_count * 2);
     hb_bytes_t var_data_bytes = hb_bytes_t (reinterpret_cast<const char*> (tuple_var_data), var_data_length);
     if (!TupleVariationData<>::get_tuple_iterator (var_data_bytes, axis_count, base,
                                                  shared_indices, &iterator))
@@ -113,7 +113,7 @@ struct cvar
 
       bool apply_to_all = (indices.length == 0);
       unsigned num_deltas = apply_to_all ? num_cvt_item : indices.length;
-      if (unlikely (!unpacked_deltas.resize (num_deltas, false))) return false;
+      if (unlikely (!unpacked_deltas.resize_dirty  (num_deltas))) return false;
       if (unlikely (!TupleVariationData<>::decompile_deltas (p, unpacked_deltas, end))) return false;
 
       for (unsigned int i = 0; i < num_deltas; i++)
@@ -127,7 +127,7 @@ struct cvar
 
     return true;
   }
-
+  
   bool serialize (hb_serialize_context_t *c,
                   TupleVariationData<>::tuple_variations_t& tuple_variations) const
   {
@@ -158,7 +158,8 @@ struct cvar
                                      tuple_variations))
       return_trace (false);
 
-    if (!tuple_variations.instantiate (c->plan->axes_location, c->plan->axes_triple_distances))
+    optimize_scratch_t scratch;
+    if (!tuple_variations.instantiate (c->plan->axes_location, c->plan->axes_triple_distances, scratch))
       return_trace (false);
 
     if (!tuple_variations.compile_bytes (c->plan->axes_index_map, c->plan->axes_old_index_tag_map,
@@ -176,10 +177,10 @@ struct cvar
     hb_blob_t *cvt_blob = hb_face_reference_table (plan->source, cvt);
     hb_blob_t *cvt_prime_blob = hb_blob_copy_writable_or_fail (cvt_blob);
     hb_blob_destroy (cvt_blob);
-
+  
     if (unlikely (!cvt_prime_blob))
       return false;
-
+ 
     unsigned cvt_blob_length = hb_blob_get_length (cvt_prime_blob);
     unsigned num_cvt_item = cvt_blob_length / FWORD::static_size;
 
@@ -200,15 +201,15 @@ struct cvar
     FWORD *cvt_prime = (FWORD *) hb_blob_get_data_writable (cvt_prime_blob, nullptr);
     for (unsigned i = 0; i < num_cvt_item; i++)
       cvt_prime[i] += (int) roundf (cvt_deltas[i]);
-
+    
     bool success = plan->add_table (cvt, cvt_prime_blob);
     hb_blob_destroy (cvt_prime_blob);
     return success;
   }
 
   protected:
-  FixedVersion<>version;                /* Version of the CVT variation table
-                                         * initially set to 0x00010000u */
+  FixedVersion<>version;		/* Version of the CVT variation table
+					 * initially set to 0x00010000u */
   TupleVariationData<> tupleVariationData; /* TupleVariationDate for cvar table */
   public:
   DEFINE_SIZE_MIN (8);

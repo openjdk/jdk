@@ -12,9 +12,9 @@ struct Ligature
 {
   public:
   typename Types::HBGlyphID
-                ligGlyph;               /* GlyphID of ligature to substitute */
+		ligGlyph;               /* GlyphID of ligature to substitute */
   HeadlessArray16Of<typename Types::HBGlyphID>
-                component;              /* Array of component GlyphIDs--start
+		component;              /* Array of component GlyphIDs--start
                                          * with the second  component--ordered
                                          * in writing direction */
   public:
@@ -44,6 +44,18 @@ struct Ligature
     c->output->add (ligGlyph);
   }
 
+  template <typename set_t>
+  void collect_second (set_t &s) const
+  {
+    if (unlikely (!component.get_length ()))
+    {
+      // A ligature without any components. Anything matches.
+      s = set_t::full ();
+      return;
+    }
+    s.add (component.arrayZ[0]);
+  }
+
   bool would_apply (hb_would_apply_context_t *c) const
   {
     if (c->len != component.lenP1)
@@ -70,19 +82,19 @@ struct Ligature
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->sync_so_far ();
-        c->buffer->message (c->font,
-                            "replacing glyph at %u (ligature substitution)",
-                            c->buffer->idx);
+	c->buffer->sync_so_far ();
+	c->buffer->message (c->font,
+			    "replacing glyph at %u (ligature substitution)",
+			    c->buffer->idx);
       }
 
       c->replace_glyph (ligGlyph);
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->message (c->font,
-                            "replaced glyph at %u (ligature substitution)",
-                            c->buffer->idx - 1u);
+	c->buffer->message (c->font,
+			    "replaced glyph at %u (ligature substitution)",
+			    c->buffer->idx - 1u);
       }
 
       return_trace (true);
@@ -91,15 +103,6 @@ struct Ligature
     unsigned int total_component_count = 0;
 
     if (unlikely (count > HB_MAX_CONTEXT_LENGTH)) return false;
-    unsigned match_positions_stack[4];
-    unsigned *match_positions = match_positions_stack;
-    if (unlikely (count > ARRAY_LENGTH (match_positions_stack)))
-    {
-      match_positions = (unsigned *) hb_malloc (hb_max (count, 1u) * sizeof (unsigned));
-      if (unlikely (!match_positions))
-        return_trace (false);
-    }
-
     unsigned int match_end = 0;
 
     if (likely (!match_input (c, count,
@@ -107,12 +110,9 @@ struct Ligature
                               match_glyph,
                               nullptr,
                               &match_end,
-                              match_positions,
                               &total_component_count)))
     {
       c->buffer->unsafe_to_concat (c->buffer->idx, match_end);
-      if (match_positions != match_positions_stack)
-        hb_free (match_positions);
       return_trace (false);
     }
 
@@ -129,21 +129,20 @@ struct Ligature
       match_end += delta;
       for (unsigned i = 0; i < count; i++)
       {
-        match_positions[i] += delta;
-        if (i)
-          *p++ = ',';
-        snprintf (p, sizeof(buf) - (p - buf), "%u", match_positions[i]);
-        p += strlen(p);
+	c->match_positions[i] += delta;
+	if (i)
+	  *p++ = ',';
+	snprintf (p, sizeof(buf) - (p - buf), "%u", c->match_positions[i]);
+	p += strlen(p);
       }
 
       c->buffer->message (c->font,
-                          "ligating glyphs at %s",
-                          buf);
+			  "ligating glyphs at %s",
+			  buf);
     }
 
     ligate_input (c,
                   count,
-                  match_positions,
                   match_end,
                   ligGlyph,
                   total_component_count);
@@ -152,12 +151,10 @@ struct Ligature
     {
       c->buffer->sync_so_far ();
       c->buffer->message (c->font,
-                          "ligated glyph at %u",
-                          pos);
+			  "ligated glyph at %u",
+			  pos);
     }
 
-    if (match_positions != match_positions_stack)
-      hb_free (match_positions);
     return_trace (true);
   }
 

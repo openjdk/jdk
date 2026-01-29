@@ -100,12 +100,12 @@ is_consonant_myanmar (const hb_glyph_info_t &info)
 
 static bool
 setup_syllables_myanmar (const hb_ot_shape_plan_t *plan,
-                         hb_font_t *font,
-                         hb_buffer_t *buffer);
+			 hb_font_t *font,
+			 hb_buffer_t *buffer);
 static bool
 reorder_myanmar (const hb_ot_shape_plan_t *plan,
-                 hb_font_t *font,
-                 hb_buffer_t *buffer);
+		 hb_font_t *font,
+		 hb_buffer_t *buffer);
 
 static void
 collect_features_myanmar (hb_ot_shape_planner_t *plan)
@@ -136,8 +136,8 @@ collect_features_myanmar (hb_ot_shape_planner_t *plan)
 
 static void
 setup_masks_myanmar (const hb_ot_shape_plan_t *plan HB_UNUSED,
-                     hb_buffer_t              *buffer,
-                     hb_font_t                *font HB_UNUSED)
+		     hb_buffer_t              *buffer,
+		     hb_font_t                *font HB_UNUSED)
 {
   HB_BUFFER_ALLOCATE_VAR (buffer, myanmar_category);
   HB_BUFFER_ALLOCATE_VAR (buffer, myanmar_position);
@@ -152,8 +152,8 @@ setup_masks_myanmar (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
 static bool
 setup_syllables_myanmar (const hb_ot_shape_plan_t *plan HB_UNUSED,
-                         hb_font_t *font HB_UNUSED,
-                         hb_buffer_t *buffer)
+			 hb_font_t *font HB_UNUSED,
+			 hb_buffer_t *buffer)
 {
   HB_BUFFER_ALLOCATE_VAR (buffer, syllable);
   find_syllables_myanmar (buffer);
@@ -177,7 +177,7 @@ compare_myanmar_order (const hb_glyph_info_t *pa, const hb_glyph_info_t *pb)
 
 static void
 initial_reordering_consonant_syllable (hb_buffer_t *buffer,
-                                       unsigned int start, unsigned int end)
+				       unsigned int start, unsigned int end)
 {
   hb_glyph_info_t *info = buffer->info;
 
@@ -187,9 +187,9 @@ initial_reordering_consonant_syllable (hb_buffer_t *buffer,
   {
     unsigned int limit = start;
     if (start + 3 <= end &&
-        info[start  ].myanmar_category() == M_Cat(Ra) &&
-        info[start+1].myanmar_category() == M_Cat(As) &&
-        info[start+2].myanmar_category() == M_Cat(H))
+	info[start  ].myanmar_category() == M_Cat(Ra) &&
+	info[start+1].myanmar_category() == M_Cat(As) &&
+	info[start+2].myanmar_category() == M_Cat(H))
     {
       limit += 3;
       base = start;
@@ -198,14 +198,14 @@ initial_reordering_consonant_syllable (hb_buffer_t *buffer,
 
     {
       if (!has_reph)
-        base = limit;
+	base = limit;
 
       for (unsigned int i = limit; i < end; i++)
-        if (is_consonant_myanmar (info[i]))
-        {
-          base = i;
-          break;
-        }
+	if (is_consonant_myanmar (info[i]))
+	{
+	  base = i;
+	  break;
+	}
     }
   }
 
@@ -228,42 +228,42 @@ initial_reordering_consonant_syllable (hb_buffer_t *buffer,
     {
       if (info[i].myanmar_category() == M_Cat(MR)) /* Pre-base reordering */
       {
-        info[i].myanmar_position() = POS_PRE_C;
-        continue;
+	info[i].myanmar_position() = POS_PRE_C;
+	continue;
       }
       if (info[i].myanmar_category() == M_Cat(VPre)) /* Left matra */
       {
-        info[i].myanmar_position() = POS_PRE_M;
-        continue;
+	info[i].myanmar_position() = POS_PRE_M;
+	continue;
       }
       if (info[i].myanmar_category() == M_Cat(VS))
       {
-        info[i].myanmar_position() = info[i - 1].myanmar_position();
-        continue;
+	info[i].myanmar_position() = info[i - 1].myanmar_position();
+	continue;
       }
 
       if (pos == POS_AFTER_MAIN && info[i].myanmar_category() == M_Cat(VBlw))
       {
-        pos = POS_BELOW_C;
-        info[i].myanmar_position() = pos;
-        continue;
+	pos = POS_BELOW_C;
+	info[i].myanmar_position() = pos;
+	continue;
       }
 
       if (pos == POS_BELOW_C && info[i].myanmar_category() == M_Cat(A))
       {
-        info[i].myanmar_position() = POS_BEFORE_SUB;
-        continue;
+	info[i].myanmar_position() = POS_BEFORE_SUB;
+	continue;
       }
       if (pos == POS_BELOW_C && info[i].myanmar_category() == M_Cat(VBlw))
       {
-        info[i].myanmar_position() = pos;
-        continue;
+	info[i].myanmar_position() = pos;
+	continue;
       }
       if (pos == POS_BELOW_C && info[i].myanmar_category() != M_Cat(A))
       {
-        pos = POS_AFTER_SUB;
-        info[i].myanmar_position() = pos;
-        continue;
+	pos = POS_AFTER_SUB;
+	info[i].myanmar_position() = pos;
+	continue;
       }
       info[i].myanmar_position() = pos;
     }
@@ -280,7 +280,7 @@ initial_reordering_consonant_syllable (hb_buffer_t *buffer,
     if (info[i].myanmar_position() == POS_PRE_M)
     {
       if (first_left_matra == end)
-        first_left_matra = i;
+	first_left_matra = i;
       last_left_matra = i;
     }
   }
@@ -294,17 +294,17 @@ initial_reordering_consonant_syllable (hb_buffer_t *buffer,
     for (unsigned j = i; j <= last_left_matra; j++)
       if (info[j].myanmar_category() == M_Cat(VPre))
       {
-        buffer->reverse_range (i, j + 1);
-        i = j + 1;
+	buffer->reverse_range (i, j + 1);
+	i = j + 1;
       }
   }
 }
 
 static void
 reorder_syllable_myanmar (const hb_ot_shape_plan_t *plan HB_UNUSED,
-                          hb_face_t *face HB_UNUSED,
-                          hb_buffer_t *buffer,
-                          unsigned int start, unsigned int end)
+			  hb_face_t *face HB_UNUSED,
+			  hb_buffer_t *buffer,
+			  unsigned int start, unsigned int end)
 {
   myanmar_syllable_type_t syllable_type = (myanmar_syllable_type_t) (buffer->info[start].syllable() & 0x0F);
   switch (syllable_type) {
@@ -321,15 +321,15 @@ reorder_syllable_myanmar (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
 static bool
 reorder_myanmar (const hb_ot_shape_plan_t *plan,
-                 hb_font_t *font,
-                 hb_buffer_t *buffer)
+		 hb_font_t *font,
+		 hb_buffer_t *buffer)
 {
   bool ret = false;
   if (buffer->message (font, "start reordering myanmar"))
   {
     if (hb_syllabic_insert_dotted_circles (font, buffer,
-                                           myanmar_broken_cluster,
-                                           M_Cat(DOTTEDCIRCLE)))
+					   myanmar_broken_cluster,
+					   M_Cat(DOTTEDCIRCLE)))
       ret = true;
 
     foreach_syllable (buffer, start, end)

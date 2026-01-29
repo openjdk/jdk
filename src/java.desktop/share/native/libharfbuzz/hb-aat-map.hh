@@ -51,9 +51,9 @@ struct hb_aat_map_builder_t
   public:
 
   HB_INTERNAL hb_aat_map_builder_t (hb_face_t *face_,
-                                    const hb_segment_properties_t props_) :
-                                      face (face_),
-                                      props (props_) {}
+				    const hb_segment_properties_t props_) :
+				      face (face_),
+				      props (props_) {}
 
   HB_INTERNAL void add_feature (const hb_feature_t &feature);
 
@@ -73,15 +73,15 @@ struct hb_aat_map_builder_t
       const feature_info_t *b = (const feature_info_t *) pb;
       if (a->type != b->type) return (a->type < b->type ? -1 : 1);
       if (!a->is_exclusive &&
-          (a->setting & ~1) != (b->setting & ~1)) return (a->setting < b->setting ? -1 : 1);
-            return (a->seq < b->seq ? -1 : a->seq > b->seq ? 1 : 0);
+	  (a->setting & ~1) != (b->setting & ~1)) return (a->setting < b->setting ? -1 : 1);
+	    return (a->seq < b->seq ? -1 : a->seq > b->seq ? 1 : 0);
     }
 
     /* compares type & setting only */
     int cmp (const feature_info_t& f) const
     {
       return (f.type != type) ? (f.type < type ? -1 : 1) :
-             (f.setting != setting) ? (f.setting < setting ? -1 : 1) : 0;
+	     (f.setting != setting) ? (f.setting < setting ? -1 : 1) : 0;
     }
   };
 
@@ -103,8 +103,8 @@ struct hb_aat_map_builder_t
       const feature_event_t *a = (const feature_event_t *) pa;
       const feature_event_t *b = (const feature_event_t *) pb;
       return a->index < b->index ? -1 : a->index > b->index ? 1 :
-             a->start < b->start ? -1 : a->start > b->start ? 1 :
-             feature_info_t::cmp (&a->feature, &b->feature);
+	     a->start < b->start ? -1 : a->start > b->start ? 1 :
+	     feature_info_t::cmp (&a->feature, &b->feature);
     }
   };
 

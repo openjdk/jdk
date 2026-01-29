@@ -42,19 +42,19 @@ struct Sequence
     {
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->sync_so_far ();
-        c->buffer->message (c->font,
-                            "replacing glyph at %u (multiple substitution)",
-                            c->buffer->idx);
+	c->buffer->sync_so_far ();
+	c->buffer->message (c->font,
+			    "replacing glyph at %u (multiple substitution)",
+			    c->buffer->idx);
       }
 
       c->replace_glyph (substitute.arrayZ[0]);
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->message (c->font,
-                            "replaced glyph at %u (multiple substitution)",
-                            c->buffer->idx - 1u);
+	c->buffer->message (c->font,
+			    "replaced glyph at %u (multiple substitution)",
+			    c->buffer->idx - 1u);
       }
 
       return_trace (true);
@@ -65,20 +65,20 @@ struct Sequence
     {
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->sync_so_far ();
-        c->buffer->message (c->font,
-                            "deleting glyph at %u (multiple substitution)",
-                            c->buffer->idx);
+	c->buffer->sync_so_far ();
+	c->buffer->message (c->font,
+			    "deleting glyph at %u (multiple substitution)",
+			    c->buffer->idx);
       }
 
       c->buffer->delete_glyph ();
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->sync_so_far ();
-        c->buffer->message (c->font,
-                            "deleted glyph at %u (multiple substitution)",
-                            c->buffer->idx);
+	c->buffer->sync_so_far ();
+	c->buffer->message (c->font,
+			    "deleted glyph at %u (multiple substitution)",
+			    c->buffer->idx);
       }
 
       return_trace (true);
@@ -88,8 +88,8 @@ struct Sequence
     {
       c->buffer->sync_so_far ();
       c->buffer->message (c->font,
-                          "multiplying glyph at %u",
-                          c->buffer->idx);
+			  "multiplying glyph at %u",
+			  c->buffer->idx);
     }
 
     unsigned int klass = _hb_glyph_info_is_ligature (&c->buffer->cur()) ?
@@ -115,15 +115,15 @@ struct Sequence
 
       for (unsigned i = c->buffer->idx - count; i < c->buffer->idx; i++)
       {
-        if (buf < p)
-          *p++ = ',';
-        snprintf (p, sizeof(buf) - (p - buf), "%u", i);
-        p += strlen(p);
+	if (buf < p && sizeof(buf) - 1u > unsigned (p - buf))
+	  *p++ = ',';
+	snprintf (p, sizeof(buf) - (p - buf), "%u", i);
+	p += strlen(p);
       }
 
       c->buffer->message (c->font,
-                          "multiplied glyphs at %s",
-                          buf);
+			  "multiplied glyphs at %s",
+			  buf);
     }
 
     return_trace (true);

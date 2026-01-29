@@ -74,7 +74,7 @@ struct MultipleSubstFormat1_2
   template<typename Iterator,
            hb_requires (hb_is_sorted_iterator (Iterator))>
   bool serialize (hb_serialize_context_t *c,
-                  Iterator it)
+		  Iterator it)
   {
     TRACE_SERIALIZE (this);
     auto sequences =
@@ -92,7 +92,7 @@ struct MultipleSubstFormat1_2
     for (auto& pair : hb_zip (sequences, sequence))
     {
       if (unlikely (!pair.second
-                    .serialize_serialize (c, pair.first)))
+		    .serialize_serialize (c, pair.first)))
         return_trace (false);
     }
 

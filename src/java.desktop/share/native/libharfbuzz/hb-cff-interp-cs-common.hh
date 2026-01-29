@@ -51,7 +51,7 @@ struct call_context_t
   void fini () {}
 
   byte_str_ref_t  str_ref;
-  cs_type_t       type;
+  cs_type_t	  type;
   unsigned int    subr_num;
 };
 
@@ -153,7 +153,7 @@ struct cs_interp_env_t : interp_env_t<ARG>
     unsigned int subr_num = 0;
 
     if (unlikely (!pop_subr_num (biasedSubrs, subr_num)
-                 || callStack.get_count () >= kMaxCallLimit))
+		 || callStack.get_count () >= kMaxCallLimit))
     {
       SUPER::set_error ();
       return;
@@ -194,19 +194,19 @@ struct cs_interp_env_t : interp_env_t<ARG>
 
   public:
   call_context_t   context;
-  bool    endchar_flag;
-  bool    seen_moveto;
-  bool    seen_hintmask;
+  bool	  endchar_flag;
+  bool	  seen_moveto;
+  bool	  seen_hintmask;
 
   unsigned int  hstem_count;
   unsigned int  vstem_count;
   unsigned int  hintmask_size;
-  call_stack_t  callStack;
+  call_stack_t	callStack;
   biased_subrs_t<SUBRS>   globalSubrs;
   biased_subrs_t<SUBRS>   localSubrs;
 
   private:
-  point_t        pt;
+  point_t	 pt;
 
   typedef interp_env_t<ARG> SUPER;
 };
@@ -244,120 +244,120 @@ struct cs_opset_t : opset_t<ARG>
     switch (op) {
 
       case OpCode_return:
-        env.return_from_subr ();
-        break;
+	env.return_from_subr ();
+	break;
       case OpCode_endchar:
-        OPSET::check_width (op, env, param);
-        env.set_endchar (true);
-        OPSET::flush_args_and_op (op, env, param);
-        break;
+	OPSET::check_width (op, env, param);
+	env.set_endchar (true);
+	OPSET::flush_args_and_op (op, env, param);
+	break;
 
       case OpCode_fixedcs:
-        env.argStack.push_fixed_from_substr (env.str_ref);
-        break;
+	env.argStack.push_fixed_from_substr (env.str_ref);
+	break;
 
       case OpCode_callsubr:
-        env.call_subr (env.localSubrs, CSType_LocalSubr);
-        break;
+	env.call_subr (env.localSubrs, CSType_LocalSubr);
+	break;
 
       case OpCode_callgsubr:
-        env.call_subr (env.globalSubrs, CSType_GlobalSubr);
-        break;
+	env.call_subr (env.globalSubrs, CSType_GlobalSubr);
+	break;
 
       case OpCode_hstem:
       case OpCode_hstemhm:
-        OPSET::check_width (op, env, param);
-        OPSET::process_hstem (op, env, param);
-        break;
+	OPSET::check_width (op, env, param);
+	OPSET::process_hstem (op, env, param);
+	break;
       case OpCode_vstem:
       case OpCode_vstemhm:
-        OPSET::check_width (op, env, param);
-        OPSET::process_vstem (op, env, param);
-        break;
+	OPSET::check_width (op, env, param);
+	OPSET::process_vstem (op, env, param);
+	break;
       case OpCode_hintmask:
       case OpCode_cntrmask:
-        OPSET::check_width (op, env, param);
-        OPSET::process_hintmask (op, env, param);
-        break;
+	OPSET::check_width (op, env, param);
+	OPSET::process_hintmask (op, env, param);
+	break;
       case OpCode_rmoveto:
-        OPSET::check_width (op, env, param);
-        PATH::rmoveto (env, param);
-        OPSET::process_post_move (op, env, param);
-        break;
+	OPSET::check_width (op, env, param);
+	PATH::rmoveto (env, param);
+	OPSET::process_post_move (op, env, param);
+	break;
       case OpCode_hmoveto:
-        OPSET::check_width (op, env, param);
-        PATH::hmoveto (env, param);
-        OPSET::process_post_move (op, env, param);
-        break;
+	OPSET::check_width (op, env, param);
+	PATH::hmoveto (env, param);
+	OPSET::process_post_move (op, env, param);
+	break;
       case OpCode_vmoveto:
-        OPSET::check_width (op, env, param);
-        PATH::vmoveto (env, param);
-        OPSET::process_post_move (op, env, param);
-        break;
+	OPSET::check_width (op, env, param);
+	PATH::vmoveto (env, param);
+	OPSET::process_post_move (op, env, param);
+	break;
       case OpCode_rlineto:
-        PATH::rlineto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::rlineto (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_hlineto:
-        PATH::hlineto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::hlineto (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_vlineto:
-        PATH::vlineto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::vlineto (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_rrcurveto:
-        PATH::rrcurveto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::rrcurveto (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_rcurveline:
-        PATH::rcurveline (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::rcurveline (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_rlinecurve:
-        PATH::rlinecurve (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::rlinecurve (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_vvcurveto:
-        PATH::vvcurveto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::vvcurveto (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_hhcurveto:
-        PATH::hhcurveto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::hhcurveto (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_vhcurveto:
-        PATH::vhcurveto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::vhcurveto (env, param);
+	process_post_path (op, env, param);
+	break;
       case OpCode_hvcurveto:
-        PATH::hvcurveto (env, param);
-        process_post_path (op, env, param);
-        break;
+	PATH::hvcurveto (env, param);
+	process_post_path (op, env, param);
+	break;
 
       case OpCode_hflex:
-        PATH::hflex (env, param);
-        OPSET::process_post_flex (op, env, param);
-        break;
+	PATH::hflex (env, param);
+	OPSET::process_post_flex (op, env, param);
+	break;
 
       case OpCode_flex:
-        PATH::flex (env, param);
-        OPSET::process_post_flex (op, env, param);
-        break;
+	PATH::flex (env, param);
+	OPSET::process_post_flex (op, env, param);
+	break;
 
       case OpCode_hflex1:
-        PATH::hflex1 (env, param);
-        OPSET::process_post_flex (op, env, param);
-        break;
+	PATH::hflex1 (env, param);
+	OPSET::process_post_flex (op, env, param);
+	break;
 
       case OpCode_flex1:
-        PATH::flex1 (env, param);
-        OPSET::process_post_flex (op, env, param);
-        break;
+	PATH::flex1 (env, param);
+	OPSET::process_post_flex (op, env, param);
+	break;
 
       default:
-        SUPER::process_op (op, env);
-        break;
+	SUPER::process_op (op, env);
+	break;
     }
   }
 
@@ -436,11 +436,11 @@ struct cs_opset_t : opset_t<ARG>
       case OpCode_TwoBytePosInt2: case OpCode_TwoBytePosInt3:
       case OpCode_TwoByteNegInt0: case OpCode_TwoByteNegInt1:
       case OpCode_TwoByteNegInt2: case OpCode_TwoByteNegInt3:
-        return true;
+	return true;
 
       default:
-        /* 1-byte integer */
-        return (OpCode_OneByteIntFirst <= op) && (op <= OpCode_OneByteIntLast);
+	/* 1-byte integer */
+	return (OpCode_OneByteIntFirst <= op) && (op <= OpCode_OneByteIntLast);
     }
   }
 
@@ -638,47 +638,47 @@ struct path_procs_t
 
       for (; i + 8 <= env.argStack.get_count (); i += 8)
       {
-        PATH::curve (env, param, pt1, pt2, pt3);
-        pt1 = env.get_pt ();
-        pt1.move_x (env.eval_arg (i));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
-        pt3 = pt2;
-        pt3.move_y (env.eval_arg (i+3));
-        PATH::curve (env, param, pt1, pt2, pt3);
+	PATH::curve (env, param, pt1, pt2, pt3);
+	pt1 = env.get_pt ();
+	pt1.move_x (env.eval_arg (i));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
+	pt3 = pt2;
+	pt3.move_y (env.eval_arg (i+3));
+	PATH::curve (env, param, pt1, pt2, pt3);
 
-        pt1 = pt3;
-        pt1.move_y (env.eval_arg (i+4));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
-        pt3 = pt2;
-        pt3.move_x (env.eval_arg (i+7));
+	pt1 = pt3;
+	pt1.move_y (env.eval_arg (i+4));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
+	pt3 = pt2;
+	pt3.move_x (env.eval_arg (i+7));
       }
       if (i < env.argStack.get_count ())
-        pt3.move_y (env.eval_arg (i));
+	pt3.move_y (env.eval_arg (i));
       PATH::curve (env, param, pt1, pt2, pt3);
     }
     else
     {
       for (; i + 8 <= env.argStack.get_count (); i += 8)
       {
-        pt1 = env.get_pt ();
-        pt1.move_y (env.eval_arg (i));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
-        pt3 = pt2;
-        pt3.move_x (env.eval_arg (i+3));
-        PATH::curve (env, param, pt1, pt2, pt3);
+	pt1 = env.get_pt ();
+	pt1.move_y (env.eval_arg (i));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
+	pt3 = pt2;
+	pt3.move_x (env.eval_arg (i+3));
+	PATH::curve (env, param, pt1, pt2, pt3);
 
-        pt1 = pt3;
-        pt1.move_x (env.eval_arg (i+4));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
-        pt3 = pt2;
-        pt3.move_y (env.eval_arg (i+7));
-        if ((env.argStack.get_count () - i < 16) && ((env.argStack.get_count () & 1) != 0))
-          pt3.move_x (env.eval_arg (i+8));
-        PATH::curve (env, param, pt1, pt2, pt3);
+	pt1 = pt3;
+	pt1.move_x (env.eval_arg (i+4));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
+	pt3 = pt2;
+	pt3.move_y (env.eval_arg (i+7));
+	if ((env.argStack.get_count () - i < 16) && ((env.argStack.get_count () & 1) != 0))
+	  pt3.move_x (env.eval_arg (i+8));
+	PATH::curve (env, param, pt1, pt2, pt3);
       }
     }
   }
@@ -699,47 +699,47 @@ struct path_procs_t
 
       for (; i + 8 <= env.argStack.get_count (); i += 8)
       {
-        PATH::curve (env, param, pt1, pt2, pt3);
-        pt1 = env.get_pt ();
-        pt1.move_y (env.eval_arg (i));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
-        pt3 = pt2;
-        pt3.move_x (env.eval_arg (i+3));
-        PATH::curve (env, param, pt1, pt2, pt3);
+	PATH::curve (env, param, pt1, pt2, pt3);
+	pt1 = env.get_pt ();
+	pt1.move_y (env.eval_arg (i));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
+	pt3 = pt2;
+	pt3.move_x (env.eval_arg (i+3));
+	PATH::curve (env, param, pt1, pt2, pt3);
 
-        pt1 = pt3;
-        pt1.move_x (env.eval_arg (i+4));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
-        pt3 = pt2;
-        pt3.move_y (env.eval_arg (i+7));
+	pt1 = pt3;
+	pt1.move_x (env.eval_arg (i+4));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
+	pt3 = pt2;
+	pt3.move_y (env.eval_arg (i+7));
       }
       if (i < env.argStack.get_count ())
-        pt3.move_x (env.eval_arg (i));
+	pt3.move_x (env.eval_arg (i));
       PATH::curve (env, param, pt1, pt2, pt3);
     }
     else
     {
       for (; i + 8 <= env.argStack.get_count (); i += 8)
       {
-        pt1 = env.get_pt ();
-        pt1.move_x (env.eval_arg (i));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
-        pt3 = pt2;
-        pt3.move_y (env.eval_arg (i+3));
-        PATH::curve (env, param, pt1, pt2, pt3);
+	pt1 = env.get_pt ();
+	pt1.move_x (env.eval_arg (i));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+1), env.eval_arg (i+2));
+	pt3 = pt2;
+	pt3.move_y (env.eval_arg (i+3));
+	PATH::curve (env, param, pt1, pt2, pt3);
 
-        pt1 = pt3;
-        pt1.move_y (env.eval_arg (i+4));
-        pt2 = pt1;
-        pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
-        pt3 = pt2;
-        pt3.move_x (env.eval_arg (i+7));
-        if ((env.argStack.get_count () - i < 16) && ((env.argStack.get_count () & 1) != 0))
-          pt3.move_y (env.eval_arg (i+8));
-        PATH::curve (env, param, pt1, pt2, pt3);
+	pt1 = pt3;
+	pt1.move_y (env.eval_arg (i+4));
+	pt2 = pt1;
+	pt2.move (env.eval_arg (i+5), env.eval_arg (i+6));
+	pt3 = pt2;
+	pt3.move_x (env.eval_arg (i+7));
+	if ((env.argStack.get_count () - i < 16) && ((env.argStack.get_count () & 1) != 0))
+	  pt3.move_y (env.eval_arg (i+8));
+	PATH::curve (env, param, pt1, pt2, pt3);
       }
     }
   }
@@ -831,7 +831,7 @@ struct path_procs_t
     {
       point_t d;
       for (unsigned int i = 0; i < 10; i += 2)
-        d.move (env.eval_arg (i), env.eval_arg (i+1));
+	d.move (env.eval_arg (i), env.eval_arg (i+1));
 
       point_t pt1 = env.get_pt ();
       pt1.move (env.eval_arg (0), env.eval_arg (1));
@@ -847,13 +847,13 @@ struct path_procs_t
 
       if (fabs (d.x.to_real ()) > fabs (d.y.to_real ()))
       {
-        pt6.move_x (env.eval_arg (10));
-        pt6.y = env.get_pt ().y;
+	pt6.move_x (env.eval_arg (10));
+	pt6.y = env.get_pt ().y;
       }
       else
       {
-        pt6.x = env.get_pt ().x;
-        pt6.move_y (env.eval_arg (10));
+	pt6.x = env.get_pt ().x;
+	pt6.move_y (env.eval_arg (10));
       }
 
       curve2 (env, param, pt1, pt2, pt3, pt4, pt5, pt6);
@@ -864,8 +864,8 @@ struct path_procs_t
 
   protected:
   static void curve2 (ENV &env, PARAM& param,
-                      const point_t &pt1, const point_t &pt2, const point_t &pt3,
-                      const point_t &pt4, const point_t &pt5, const point_t &pt6)
+		      const point_t &pt1, const point_t &pt2, const point_t &pt3,
+		      const point_t &pt4, const point_t &pt5, const point_t &pt6)
   {
     PATH::curve (env, param, pt1, pt2, pt3);
     PATH::curve (env, param, pt4, pt5, pt6);
@@ -886,11 +886,11 @@ struct cs_interpreter_t : interpreter_t<ENV>
       OPSET::process_op (SUPER::env.fetch_op (), SUPER::env, param);
       if (unlikely (SUPER::env.in_error () || !--max_ops))
       {
-        SUPER::env.set_error ();
-        return false;
+	SUPER::env.set_error ();
+	return false;
       }
       if (SUPER::env.is_endchar ())
-        break;
+	break;
     }
 
     return true;

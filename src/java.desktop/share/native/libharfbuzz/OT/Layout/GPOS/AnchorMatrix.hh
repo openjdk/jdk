@@ -33,8 +33,8 @@ struct AnchorMatrix
   }
 
   const Anchor& get_anchor (hb_ot_apply_context_t *c,
-                            unsigned int row, unsigned int col,
-                            unsigned int cols, bool *found) const
+			    unsigned int row, unsigned int col,
+			    unsigned int cols, bool *found) const
   {
     *found = false;
     if (unlikely (row >= rows || col >= cols)) return Null (Anchor);
@@ -76,6 +76,13 @@ struct AnchorMatrix
     }
 
     return_trace (true);
+  }
+
+  bool offset_is_null (unsigned row, unsigned col, unsigned num_cols) const
+  {
+    if (unlikely (row >= rows || col >= num_cols)) return true;
+    auto &offset = matrixZ[row * num_cols + col];
+    return offset.is_null ();
   }
 };
 

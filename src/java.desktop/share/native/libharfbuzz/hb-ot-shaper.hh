@@ -35,8 +35,8 @@
 
 
 /* buffer var allocations, used by all OT shapers */
-#define ot_shaper_var_u8_category()     var2.u8[2]
-#define ot_shaper_var_u8_auxiliary()    var2.u8[3]
+#define ot_shaper_var_u8_category()	var2.u8[2]
+#define ot_shaper_var_u8_auxiliary()	var2.u8[3]
 
 
 #define HB_OT_SHAPE_MAX_COMBINING_MARKS 32
@@ -104,8 +104,8 @@ struct hb_ot_shaper_t
    * May be NULL.
    */
   void (*preprocess_text) (const hb_ot_shape_plan_t *plan,
-                           hb_buffer_t              *buffer,
-                           hb_font_t                *font);
+			   hb_buffer_t              *buffer,
+			   hb_font_t                *font);
 
   /* postprocess_glyphs()
    * Called during shape().
@@ -113,8 +113,8 @@ struct hb_ot_shaper_t
    * May be NULL.
    */
   void (*postprocess_glyphs) (const hb_ot_shape_plan_t *plan,
-                              hb_buffer_t              *buffer,
-                              hb_font_t                *font);
+			      hb_buffer_t              *buffer,
+			      hb_font_t                *font);
 
 
   /* decompose()
@@ -122,18 +122,18 @@ struct hb_ot_shaper_t
    * May be NULL.
    */
   bool (*decompose) (const hb_ot_shape_normalize_context_t *c,
-                     hb_codepoint_t  ab,
-                     hb_codepoint_t *a,
-                     hb_codepoint_t *b);
+		     hb_codepoint_t  ab,
+		     hb_codepoint_t *a,
+		     hb_codepoint_t *b);
 
   /* compose()
    * Called during shape()'s normalization.
    * May be NULL.
    */
   bool (*compose) (const hb_ot_shape_normalize_context_t *c,
-                   hb_codepoint_t  a,
-                   hb_codepoint_t  b,
-                   hb_codepoint_t *ab);
+		   hb_codepoint_t  a,
+		   hb_codepoint_t  b,
+		   hb_codepoint_t *ab);
 
   /* setup_masks()
    * Called during shape().
@@ -142,8 +142,8 @@ struct hb_ot_shaper_t
    * May be NULL.
    */
   void (*setup_masks) (const hb_ot_shape_plan_t *plan,
-                       hb_buffer_t              *buffer,
-                       hb_font_t                *font);
+		       hb_buffer_t              *buffer,
+		       hb_font_t                *font);
 
   /* reorder_marks()
    * Called during shape().
@@ -151,9 +151,9 @@ struct hb_ot_shaper_t
    * May be NULL.
    */
   void (*reorder_marks) (const hb_ot_shape_plan_t *plan,
-                         hb_buffer_t              *buffer,
-                         unsigned int              start,
-                         unsigned int              end);
+			 hb_buffer_t              *buffer,
+			 unsigned int              start,
+			 unsigned int              end);
 
   /* gpos_tag()
    * If not HB_TAG_NONE, then must match found GPOS script tag for
@@ -175,8 +175,8 @@ HB_OT_SHAPERS_IMPLEMENT_SHAPERS
 
 static inline const hb_ot_shaper_t *
 hb_ot_shaper_categorize (hb_script_t script,
-                         hb_direction_t direction,
-                         hb_tag_t gsub_script)
+			 hb_direction_t direction,
+			 hb_tag_t gsub_script)
 {
   switch ((hb_tag_t) script)
   {
@@ -195,10 +195,10 @@ hb_ot_shaper_categorize (hb_script_t script,
        * But note that Arabic shaping is applicable only to horizontal layout; for
        * vertical text, just use the generic shaper instead. */
       if ((gsub_script != HB_OT_TAG_DEFAULT_SCRIPT || script == HB_SCRIPT_ARABIC) &&
-          HB_DIRECTION_IS_HORIZONTAL (direction))
-        return &_hb_ot_shaper_arabic;
+	  HB_DIRECTION_IS_HORIZONTAL (direction))
+	return &_hb_ot_shaper_arabic;
       else
-        return &_hb_ot_shaper_default;
+	return &_hb_ot_shaper_default;
 
 
     /* Unicode-1.1 additions */
@@ -237,15 +237,15 @@ hb_ot_shaper_categorize (hb_script_t script,
        *
        * If it's indy3 tag, send to USE. */
       if (gsub_script == HB_TAG ('D','F','L','T') ||
-          gsub_script == HB_TAG ('l','a','t','n'))
-        return &_hb_ot_shaper_default;
+	  gsub_script == HB_TAG ('l','a','t','n'))
+	return &_hb_ot_shaper_default;
       else if ((gsub_script & 0x000000FF) == '3')
-        return &_hb_ot_shaper_use;
+	return &_hb_ot_shaper_use;
       else
-        return &_hb_ot_shaper_indic;
+	return &_hb_ot_shaper_indic;
 
     case HB_SCRIPT_KHMER:
-        return &_hb_ot_shaper_khmer;
+	return &_hb_ot_shaper_khmer;
 
     case HB_SCRIPT_MYANMAR:
       /* If the designer designed the font for the 'DFLT' script,
@@ -256,15 +256,15 @@ hb_ot_shaper_categorize (hb_script_t script,
        * shaper.  That's tag used from before Myanmar shaping spec
        * was developed.  The shaping spec uses 'mym2' tag. */
       if (gsub_script == HB_TAG ('D','F','L','T') ||
-          gsub_script == HB_TAG ('l','a','t','n') ||
-          gsub_script == HB_TAG ('m','y','m','r'))
-        return &_hb_ot_shaper_default;
+	  gsub_script == HB_TAG ('l','a','t','n') ||
+	  gsub_script == HB_TAG ('m','y','m','r'))
+	return &_hb_ot_shaper_default;
       else
-        return &_hb_ot_shaper_myanmar;
+	return &_hb_ot_shaper_myanmar;
 
 
 #ifndef HB_NO_OT_SHAPER_MYANMAR_ZAWGYI
-#define HB_SCRIPT_MYANMAR_ZAWGYI        ((hb_script_t) HB_TAG ('Q','a','a','g'))
+#define HB_SCRIPT_MYANMAR_ZAWGYI	((hb_script_t) HB_TAG ('Q','a','a','g'))
     case HB_SCRIPT_MYANMAR_ZAWGYI:
     /* https://github.com/harfbuzz/harfbuzz/issues/1162 */
 
@@ -396,16 +396,22 @@ hb_ot_shaper_categorize (hb_script_t script,
     case HB_SCRIPT_TODHRI:
     case HB_SCRIPT_TULU_TIGALARI:
 
+    /* Unicode-17.0 additions */
+    case HB_SCRIPT_BERIA_ERFE:
+    case HB_SCRIPT_SIDETIC:
+    case HB_SCRIPT_TAI_YO:
+    case HB_SCRIPT_TOLONG_SIKI:
+
       /* If the designer designed the font for the 'DFLT' script,
        * (or we ended up arbitrarily pick 'latn'), use the default shaper.
        * Otherwise, use the specific shaper.
        * Note that for some simple scripts, there may not be *any*
        * GSUB/GPOS needed, so there may be no scripts found! */
       if (gsub_script == HB_TAG ('D','F','L','T') ||
-          gsub_script == HB_TAG ('l','a','t','n'))
-        return &_hb_ot_shaper_default;
+	  gsub_script == HB_TAG ('l','a','t','n'))
+	return &_hb_ot_shaper_default;
       else
-        return &_hb_ot_shaper_use;
+	return &_hb_ot_shaper_use;
   }
 }
 

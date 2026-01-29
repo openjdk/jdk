@@ -85,17 +85,17 @@ typedef struct hb_blob_t hb_blob_t;
 
 HB_EXTERN hb_blob_t *
 hb_blob_create (const char        *data,
-                unsigned int       length,
-                hb_memory_mode_t   mode,
-                void              *user_data,
-                hb_destroy_func_t  destroy);
+		unsigned int       length,
+		hb_memory_mode_t   mode,
+		void              *user_data,
+		hb_destroy_func_t  destroy);
 
 HB_EXTERN hb_blob_t *
 hb_blob_create_or_fail (const char        *data,
-                        unsigned int       length,
-                        hb_memory_mode_t   mode,
-                        void              *user_data,
-                        hb_destroy_func_t  destroy);
+			unsigned int       length,
+			hb_memory_mode_t   mode,
+			void              *user_data,
+			hb_destroy_func_t  destroy);
 
 HB_EXTERN hb_blob_t *
 hb_blob_create_from_file (const char *file_name);
@@ -111,8 +111,8 @@ hb_blob_create_from_file_or_fail (const char *file_name);
  */
 HB_EXTERN hb_blob_t *
 hb_blob_create_sub_blob (hb_blob_t    *parent,
-                         unsigned int  offset,
-                         unsigned int  length);
+			 unsigned int  offset,
+			 unsigned int  length);
 
 HB_EXTERN hb_blob_t *
 hb_blob_copy_writable_or_fail (hb_blob_t *blob);
@@ -128,15 +128,15 @@ hb_blob_destroy (hb_blob_t *blob);
 
 HB_EXTERN hb_bool_t
 hb_blob_set_user_data (hb_blob_t          *blob,
-                       hb_user_data_key_t *key,
-                       void *              data,
-                       hb_destroy_func_t   destroy,
-                       hb_bool_t           replace);
+		       hb_user_data_key_t *key,
+		       void *              data,
+		       hb_destroy_func_t   destroy,
+		       hb_bool_t           replace);
 
 
 HB_EXTERN void *
 hb_blob_get_user_data (const hb_blob_t    *blob,
-                       hb_user_data_key_t *key);
+		       hb_user_data_key_t *key);
 
 
 HB_EXTERN void

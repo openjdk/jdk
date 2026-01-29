@@ -69,14 +69,14 @@ hb_map_destroy (hb_map_t *map);
 
 HB_EXTERN hb_bool_t
 hb_map_set_user_data (hb_map_t           *map,
-                      hb_user_data_key_t *key,
-                      void *              data,
-                      hb_destroy_func_t   destroy,
-                      hb_bool_t           replace);
+		      hb_user_data_key_t *key,
+		      void *              data,
+		      hb_destroy_func_t   destroy,
+		      hb_bool_t           replace);
 
 HB_EXTERN void *
 hb_map_get_user_data (const hb_map_t     *map,
-                      hb_user_data_key_t *key);
+		      hb_user_data_key_t *key);
 
 
 /* Returns false if allocation has failed before */
@@ -97,46 +97,46 @@ hb_map_get_population (const hb_map_t *map);
 
 HB_EXTERN hb_bool_t
 hb_map_is_equal (const hb_map_t *map,
-                 const hb_map_t *other);
+		 const hb_map_t *other);
 
 HB_EXTERN unsigned int
 hb_map_hash (const hb_map_t *map);
 
 HB_EXTERN void
 hb_map_set (hb_map_t       *map,
-            hb_codepoint_t  key,
-            hb_codepoint_t  value);
+	    hb_codepoint_t  key,
+	    hb_codepoint_t  value);
 
 HB_EXTERN hb_codepoint_t
 hb_map_get (const hb_map_t *map,
-            hb_codepoint_t  key);
+	    hb_codepoint_t  key);
 
 HB_EXTERN void
 hb_map_del (hb_map_t       *map,
-            hb_codepoint_t  key);
+	    hb_codepoint_t  key);
 
 HB_EXTERN hb_bool_t
 hb_map_has (const hb_map_t *map,
-            hb_codepoint_t  key);
+	    hb_codepoint_t  key);
 
 HB_EXTERN void
 hb_map_update (hb_map_t *map,
-               const hb_map_t *other);
+	       const hb_map_t *other);
 
 /* Pass -1 in for idx to get started. */
 HB_EXTERN hb_bool_t
 hb_map_next (const hb_map_t *map,
-             int *idx,
-             hb_codepoint_t *key,
-             hb_codepoint_t *value);
+	     int *idx,
+	     hb_codepoint_t *key,
+	     hb_codepoint_t *value);
 
 HB_EXTERN void
 hb_map_keys (const hb_map_t *map,
-             hb_set_t *keys);
+	     hb_set_t *keys);
 
 HB_EXTERN void
 hb_map_values (const hb_map_t *map,
-               hb_set_t *values);
+	       hb_set_t *values);
 
 HB_END_DECLS
 

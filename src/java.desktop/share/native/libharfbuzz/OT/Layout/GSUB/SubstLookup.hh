@@ -99,10 +99,10 @@ struct SubstLookup : Lookup
   }
 
   template<typename Glyphs, typename Substitutes,
-           hb_requires (hb_is_sorted_source_of (Glyphs,
-                                                const hb_codepoint_t) &&
-                        hb_is_source_of (Substitutes,
-                                         const hb_codepoint_t))>
+	   hb_requires (hb_is_sorted_source_of (Glyphs,
+						const hb_codepoint_t) &&
+			hb_is_source_of (Substitutes,
+					 const hb_codepoint_t))>
   bool serialize_single (hb_serialize_context_t *c,
                          uint32_t lookup_props,
                          Glyphs glyphs,
@@ -122,8 +122,8 @@ struct SubstLookup : Lookup
   template<typename Iterator,
            hb_requires (hb_is_sorted_iterator (Iterator))>
   bool serialize (hb_serialize_context_t *c,
-                  uint32_t lookup_props,
-                  Iterator it)
+		  uint32_t lookup_props,
+		  Iterator it)
   {
     TRACE_SERIALIZE (this);
     if (unlikely (!Lookup::serialize (c, SubTable::Multiple, lookup_props, 1))) return_trace (false);

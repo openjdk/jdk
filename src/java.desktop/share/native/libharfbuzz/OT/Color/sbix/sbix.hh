@@ -57,22 +57,22 @@ struct SBIXGlyph
     return_trace (new_glyph);
   }
 
-  HBINT16       xOffset;        /* The horizontal (x-axis) offset from the left
-                                 * edge of the graphic to the glyph’s origin.
-                                 * That is, the x-coordinate of the point on the
-                                 * baseline at the left edge of the glyph. */
-  HBINT16       yOffset;        /* The vertical (y-axis) offset from the bottom
-                                 * edge of the graphic to the glyph’s origin.
-                                 * That is, the y-coordinate of the point on the
-                                 * baseline at the left edge of the glyph. */
-  Tag           graphicType;    /* Indicates the format of the embedded graphic
-                                 * data: one of 'jpg ', 'png ' or 'tiff', or the
-                                 * special format 'dupe'. */
+  HBINT16	xOffset;	/* The horizontal (x-axis) offset from the left
+				 * edge of the graphic to the glyph’s origin.
+				 * That is, the x-coordinate of the point on the
+				 * baseline at the left edge of the glyph. */
+  HBINT16	yOffset;	/* The vertical (y-axis) offset from the bottom
+				 * edge of the graphic to the glyph’s origin.
+				 * That is, the y-coordinate of the point on the
+				 * baseline at the left edge of the glyph. */
+  Tag		graphicType;	/* Indicates the format of the embedded graphic
+				 * data: one of 'jpg ', 'png ' or 'tiff', or the
+				 * special format 'dupe'. */
   UnsizedArrayOf<HBUINT8>
-                data;           /* The actual embedded graphic data. The total
-                                 * length is inferred from sequential entries in
-                                 * the glyphDataOffsets array and the fixed size
-                                 * (8 bytes) of the preceding fields. */
+		data;		/* The actual embedded graphic data. The total
+				 * length is inferred from sequential entries in
+				 * the glyphDataOffsets array and the fixed size
+				 * (8 bytes) of the preceding fields. */
   public:
   DEFINE_SIZE_ARRAY (8, data);
 };
@@ -86,16 +86,16 @@ struct SBIXStrike
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-                  imageOffsetsZ.sanitize_shallow (c, c->get_num_glyphs () + 1));
+		  imageOffsetsZ.sanitize_shallow (c, c->get_num_glyphs () + 1));
   }
 
   hb_blob_t *get_glyph_blob (unsigned int  glyph_id,
-                             hb_blob_t    *sbix_blob,
-                             hb_tag_t      file_type,
-                             int          *x_offset,
-                             int          *y_offset,
-                             unsigned int  num_glyphs,
-                             unsigned int *strike_ppem) const
+			     hb_blob_t    *sbix_blob,
+			     hb_tag_t      file_type,
+			     int          *x_offset,
+			     int          *y_offset,
+			     unsigned int  num_glyphs,
+			     unsigned int *strike_ppem) const
   {
     if (unlikely (!ppem)) return hb_blob_get_empty (); /* To get Null() object out of the way. */
 
@@ -106,9 +106,9 @@ struct SBIXStrike
 
   retry:
     if (unlikely (glyph_id >= num_glyphs ||
-                  imageOffsetsZ[glyph_id + 1] <= imageOffsetsZ[glyph_id] ||
-                  imageOffsetsZ[glyph_id + 1] - imageOffsetsZ[glyph_id] <= SBIXGlyph::min_size ||
-                  (unsigned int) imageOffsetsZ[glyph_id + 1] > sbix_len - strike_offset))
+		  imageOffsetsZ[glyph_id + 1] <= imageOffsetsZ[glyph_id] ||
+		  imageOffsetsZ[glyph_id + 1] - imageOffsetsZ[glyph_id] <= SBIXGlyph::min_size ||
+		  (unsigned int) imageOffsetsZ[glyph_id + 1] > sbix_len - strike_offset))
       return hb_blob_get_empty ();
 
     unsigned int glyph_offset = strike_offset + (unsigned int) imageOffsetsZ[glyph_id] + SBIXGlyph::min_size;
@@ -120,9 +120,9 @@ struct SBIXStrike
     {
       if (glyph_length >= 2)
       {
-        glyph_id = *((HBUINT16 *) &glyph->data);
-        if (retry_count--)
-          goto retry;
+	glyph_id = *((HBUINT16 *) &glyph->data);
+	if (retry_count--)
+	  goto retry;
       }
       return hb_blob_get_empty ();
     }
@@ -154,20 +154,20 @@ struct SBIXStrike
     {
       hb_codepoint_t old_gid;
       if (!c->plan->old_gid_for_new_gid (new_gid, &old_gid) ||
-          unlikely (imageOffsetsZ[old_gid].is_null () ||
-                    imageOffsetsZ[old_gid + 1].is_null () ||
-                    imageOffsetsZ[old_gid + 1] <= imageOffsetsZ[old_gid] ||
-                    imageOffsetsZ[old_gid + 1] - imageOffsetsZ[old_gid] <= SBIXGlyph::min_size) ||
-                    (unsigned int) imageOffsetsZ[old_gid + 1] > available_len)
+	  unlikely (imageOffsetsZ[old_gid].is_null () ||
+		    imageOffsetsZ[old_gid + 1].is_null () ||
+		    imageOffsetsZ[old_gid + 1] <= imageOffsetsZ[old_gid] ||
+		    imageOffsetsZ[old_gid + 1] - imageOffsetsZ[old_gid] <= SBIXGlyph::min_size) ||
+		    (unsigned int) imageOffsetsZ[old_gid + 1] > available_len)
       {
-        out->imageOffsetsZ[new_gid] = head;
-        continue;
+	out->imageOffsetsZ[new_gid] = head;
+	continue;
       }
       has_glyphs = true;
       unsigned int delta = imageOffsetsZ[old_gid + 1] - imageOffsetsZ[old_gid];
       unsigned int glyph_data_length = delta - SBIXGlyph::min_size;
       if (!(this+imageOffsetsZ[old_gid]).copy (c->serializer, glyph_data_length))
-        return_trace (false);
+	return_trace (false);
       out->imageOffsetsZ[new_gid] = head;
       head += delta;
     }
@@ -179,13 +179,13 @@ struct SBIXStrike
   }
 
   public:
-  HBUINT16      ppem;           /* The PPEM size for which this strike was designed. */
-  HBUINT16      resolution;     /* The device pixel density (in PPI) for which this
-                                 * strike was designed. (E.g., 96 PPI, 192 PPI.) */
+  HBUINT16	ppem;		/* The PPEM size for which this strike was designed. */
+  HBUINT16	resolution;	/* The device pixel density (in PPI) for which this
+				 * strike was designed. (E.g., 96 PPI, 192 PPI.) */
   protected:
   UnsizedArrayOf<Offset32To<SBIXGlyph>>
-                imageOffsetsZ;  /* Offset from the beginning of the strike data header
-                                 * to bitmap data for an individual glyph ID. */
+		imageOffsetsZ;	/* Offset from the beginning of the strike data header
+				 * to bitmap data for an individual glyph ID. */
   public:
   DEFINE_SIZE_ARRAY (4, imageOffsetsZ);
 };
@@ -210,24 +210,24 @@ struct sbix
     bool has_data () const { return table->has_data (); }
 
     bool get_extents (hb_font_t          *font,
-                      hb_codepoint_t      glyph,
-                      hb_glyph_extents_t *extents,
-                      bool                scale = true) const
+		      hb_codepoint_t      glyph,
+		      hb_glyph_extents_t *extents,
+		      bool                scale = true) const
     {
       /* We only support PNG right now, and following function checks type. */
       return get_png_extents (font, glyph, extents, scale);
     }
 
     hb_blob_t *reference_png (hb_font_t      *font,
-                              hb_codepoint_t  glyph_id,
-                              int            *x_offset,
-                              int            *y_offset,
-                              unsigned int   *available_ppem) const
+			      hb_codepoint_t  glyph_id,
+			      int            *x_offset,
+			      int            *y_offset,
+			      unsigned int   *available_ppem) const
     {
       return choose_strike (font).get_glyph_blob (glyph_id, table.get_blob (),
-                                                  HB_TAG ('p','n','g',' '),
-                                                  x_offset, y_offset,
-                                                  num_glyphs, available_ppem);
+						  HB_TAG ('p','n','g',' '),
+						  x_offset, y_offset,
+						  num_glyphs, available_ppem);
     }
 
     bool paint_glyph (hb_font_t *font, hb_codepoint_t glyph, hb_paint_funcs_t *funcs, void *data) const
@@ -251,11 +251,11 @@ struct sbix
         return false;
 
       bool ret = funcs->image (data,
-                               blob,
-                               pixel_extents.width, -pixel_extents.height,
-                               HB_PAINT_IMAGE_FORMAT_PNG,
-                               0.f,
-                               &extents);
+			       blob,
+			       pixel_extents.width, -pixel_extents.height,
+			       HB_PAINT_IMAGE_FORMAT_PNG,
+			       0.f,
+			       &extents);
 
       hb_blob_destroy (blob);
 
@@ -268,24 +268,24 @@ struct sbix
     {
       unsigned count = table->strikes.len;
       if (unlikely (!count))
-        return Null (SBIXStrike);
+	return Null (SBIXStrike);
 
       unsigned int requested_ppem = hb_max (font->x_ppem, font->y_ppem);
       if (!requested_ppem)
-        requested_ppem = 1<<30; /* Choose largest strike. */
+	requested_ppem = 1<<30; /* Choose largest strike. */
       /* TODO Add DPI sensitivity as well? */
       unsigned int best_i = 0;
       unsigned int best_ppem = table->get_strike (0).ppem;
 
       for (unsigned int i = 1; i < count; i++)
       {
-        unsigned int ppem = (table->get_strike (i)).ppem;
-        if ((requested_ppem <= ppem && ppem < best_ppem) ||
-            (requested_ppem > best_ppem && ppem > best_ppem))
-        {
-          best_i = i;
-          best_ppem = ppem;
-        }
+	unsigned int ppem = (table->get_strike (i)).ppem;
+	if ((requested_ppem <= ppem && ppem < best_ppem) ||
+	    (requested_ppem > best_ppem && ppem > best_ppem))
+	{
+	  best_i = i;
+	  best_ppem = ppem;
+	}
       }
 
       return table->get_strike (best_i);
@@ -293,21 +293,21 @@ struct sbix
 
     struct PNGHeader
     {
-      HBUINT8   signature[8];
+      HBUINT8	signature[8];
       struct
       {
-        struct
-        {
-          HBUINT32      length;
-          Tag           type;
-        }               header;
-        HBUINT32        width;
-        HBUINT32        height;
-        HBUINT8         bitDepth;
-        HBUINT8         colorType;
-        HBUINT8         compressionMethod;
-        HBUINT8         filterMethod;
-        HBUINT8         interlaceMethod;
+	struct
+	{
+	  HBUINT32	length;
+	  Tag		type;
+	}		header;
+	HBUINT32	width;
+	HBUINT32	height;
+	HBUINT8		bitDepth;
+	HBUINT8		colorType;
+	HBUINT8		compressionMethod;
+	HBUINT8		filterMethod;
+	HBUINT8		interlaceMethod;
       } IHDR;
 
       public:
@@ -315,14 +315,14 @@ struct sbix
     };
 
     bool get_png_extents (hb_font_t          *font,
-                          hb_codepoint_t      glyph,
-                          hb_glyph_extents_t *extents,
-                          bool                scale = true) const
+			  hb_codepoint_t      glyph,
+			  hb_glyph_extents_t *extents,
+			  bool                scale = true) const
     {
       /* Following code is safe to call even without data.
        * But faster to short-circuit. */
       if (!has_data ())
-        return false;
+	return false;
 
       int x_offset = 0, y_offset = 0;
       unsigned int strike_ppem = 0;
@@ -332,8 +332,8 @@ struct sbix
 
       if (png.IHDR.height >= 65536 || png.IHDR.width >= 65536)
       {
-        hb_blob_destroy (blob);
-        return false;
+	hb_blob_destroy (blob);
+	return false;
       }
 
       extents->x_bearing = x_offset;
@@ -344,15 +344,15 @@ struct sbix
       /* Convert to font units. */
       if (strike_ppem && scale)
       {
-        float scale = font->face->get_upem () / (float) strike_ppem;
-        extents->x_bearing = roundf (extents->x_bearing * scale);
-        extents->y_bearing = roundf (extents->y_bearing * scale);
-        extents->width = roundf (extents->width * scale);
-        extents->height = roundf (extents->height * scale);
+	float scale = font->face->get_upem () / (float) strike_ppem;
+	extents->x_bearing = roundf (extents->x_bearing * scale);
+	extents->y_bearing = roundf (extents->y_bearing * scale);
+	extents->width = roundf (extents->width * scale);
+	extents->height = roundf (extents->height * scale);
       }
 
       if (scale)
-        font->scale_glyph_extents (extents);
+	font->scale_glyph_extents (extents);
 
       hb_blob_destroy (blob);
 
@@ -369,9 +369,9 @@ struct sbix
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-                          hb_barrier () &&
-                          version >= 1 &&
-                          strikes.sanitize (c, this)));
+			  hb_barrier () &&
+			  version >= 1 &&
+			  strikes.sanitize (c, this)));
   }
 
   bool
@@ -402,14 +402,14 @@ struct sbix
       bool ret = add_strike (c, i);
       if (!ret)
       {
-        c->serializer->pop_discard ();
-        out->pop ();
-        c->serializer->revert (snap);
+	c->serializer->pop_discard ();
+	out->pop ();
+	c->serializer->revert (snap);
       }
       else
       {
-        objidxs.push (c->serializer->pop_pack ());
-        new_strikes.push (o);
+	objidxs.push (c->serializer->pop_pack ());
+	new_strikes.push (o);
       }
     }
     for (unsigned int i = 0; i < new_strikes.length; ++i)
@@ -429,12 +429,12 @@ struct sbix
   }
 
   protected:
-  HBUINT16      version;        /* Table version number — set to 1 */
-  HBUINT16      flags;          /* Bit 0: Set to 1. Bit 1: Draw outlines.
-                                 * Bits 2 to 15: reserved (set to 0). */
+  HBUINT16	version;	/* Table version number — set to 1 */
+  HBUINT16	flags;		/* Bit 0: Set to 1. Bit 1: Draw outlines.
+				 * Bits 2 to 15: reserved (set to 0). */
   Array32OfOffset32To<SBIXStrike>
-                strikes;        /* Offsets from the beginning of the 'sbix'
-                                 * table to data for each individual bitmap strike. */
+		strikes;	/* Offsets from the beginning of the 'sbix'
+				 * table to data for each individual bitmap strike. */
   public:
   DEFINE_SIZE_ARRAY (8, strikes);
 };

@@ -74,9 +74,9 @@ struct shared_ptr
   T* reference() { return v::reference (p); }
   void destroy() { v::destroy (p); }
   void set_user_data (hb_user_data_key_t *key,
-                      void *value,
-                      hb_destroy_func_t destroy,
-                      hb_bool_t replace) { v::set_user_data (p, key, value, destroy, replace); }
+		      void *value,
+		      hb_destroy_func_t destroy,
+		      hb_bool_t replace) { v::set_user_data (p, key, value, destroy, replace); } 
   void * get_user_data (hb_user_data_key_t *key) { return v::get_user_data (p, key); }
 
   private:
@@ -119,16 +119,16 @@ template<typename T> struct is_unique_ptr : std::false_type {};
 template<typename T> struct is_unique_ptr<unique_ptr<T>> : std::true_type {};
 
 template <typename T,
-          T * (*_get_empty) (void),
-          T * (*_reference) (T *),
-          void (*_destroy) (T *),
-          hb_bool_t (*_set_user_data) (T *,
-                                       hb_user_data_key_t *,
-                                       void *,
-                                       hb_destroy_func_t,
-                                       hb_bool_t),
-          void * (*_get_user_data) (const T *,
-                                    hb_user_data_key_t *)>
+	  T * (*_get_empty) (void),
+	  T * (*_reference) (T *),
+	  void (*_destroy) (T *),
+	  hb_bool_t (*_set_user_data) (T *,
+				       hb_user_data_key_t *,
+				       void *,
+				       hb_destroy_func_t,
+				       hb_bool_t),
+	  void * (*_get_user_data) (const T *,
+				    hb_user_data_key_t *)>
 struct vtable_t
 {
   static constexpr auto get_empty = _get_empty;
@@ -139,14 +139,14 @@ struct vtable_t
 };
 
 #define HB_DEFINE_VTABLE(name) \
-        template<> \
-        struct vtable<hb_##name##_t> \
-             : vtable_t<hb_##name##_t, \
-                        &hb_##name##_get_empty, \
-                        &hb_##name##_reference, \
-                        &hb_##name##_destroy, \
-                        &hb_##name##_set_user_data, \
-                        &hb_##name##_get_user_data> {}
+	template<> \
+	struct vtable<hb_##name##_t> \
+	     : vtable_t<hb_##name##_t, \
+			&hb_##name##_get_empty, \
+			&hb_##name##_reference, \
+			&hb_##name##_destroy, \
+			&hb_##name##_set_user_data, \
+			&hb_##name##_get_user_data> {}
 
 HB_DEFINE_VTABLE (buffer);
 HB_DEFINE_VTABLE (blob);
@@ -166,14 +166,14 @@ HB_DEFINE_VTABLE (paint_funcs);
 #ifdef HB_SUBSET_H
 
 #define HB_DEFINE_VTABLE(name) \
-        template<> \
-        struct vtable<hb_##name##_t> \
-             : vtable_t<hb_##name##_t, \
-                        nullptr, \
-                        &hb_##name##_reference, \
-                        &hb_##name##_destroy, \
-                        &hb_##name##_set_user_data, \
-                        &hb_##name##_get_user_data> {}
+	template<> \
+	struct vtable<hb_##name##_t> \
+	     : vtable_t<hb_##name##_t, \
+			nullptr, \
+			&hb_##name##_reference, \
+			&hb_##name##_destroy, \
+			&hb_##name##_set_user_data, \
+			&hb_##name##_get_user_data> {}
 
 
 HB_DEFINE_VTABLE (subset_input);

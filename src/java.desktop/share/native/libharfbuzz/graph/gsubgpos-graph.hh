@@ -282,14 +282,12 @@ struct Lookup : public OT::Lookup
                                     const hb_vector_t<hb_pair_t<unsigned, hb_vector_t<unsigned>>>& subtable_ids)
   {
     auto& v = c.graph.vertices_[this_index];
-    Lookup* lookup = (Lookup*) v.obj.head;
-
     unsigned shift = 0;
     for (const auto& p : subtable_ids)
     {
       unsigned insert_index = p.first + shift;
       unsigned pos_offset = p.second.length * OT::Offset16::static_size;
-      unsigned insert_offset = (char*) &lookup->subTable[insert_index] - (char*) lookup;
+      unsigned insert_offset = Lookup::min_size + insert_index * OT::Offset16::static_size;
       shift += p.second.length;
 
       for (auto& l : v.obj.all_links_writer ())

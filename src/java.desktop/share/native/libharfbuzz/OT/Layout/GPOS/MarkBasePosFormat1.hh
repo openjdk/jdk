@@ -98,15 +98,15 @@ struct MarkBasePosFormat1_2
      * ...but stop if we find a mark in the MultipleSubst sequence:
      * https://github.com/harfbuzz/harfbuzz/issues/1020 */
     return !_hb_glyph_info_multiplied (&buffer->info[idx]) ||
-           0 == _hb_glyph_info_get_lig_comp (&buffer->info[idx]) ||
-           (idx == 0 ||
-            _hb_glyph_info_is_mark (&buffer->info[idx - 1]) ||
-            !_hb_glyph_info_multiplied (&buffer->info[idx - 1]) ||
-            _hb_glyph_info_get_lig_id (&buffer->info[idx]) !=
-            _hb_glyph_info_get_lig_id (&buffer->info[idx - 1]) ||
-            _hb_glyph_info_get_lig_comp (&buffer->info[idx]) !=
-            _hb_glyph_info_get_lig_comp (&buffer->info[idx - 1]) + 1
-            );
+	   0 == _hb_glyph_info_get_lig_comp (&buffer->info[idx]) ||
+	   (idx == 0 ||
+	    _hb_glyph_info_is_mark (&buffer->info[idx - 1]) ||
+	    !_hb_glyph_info_multiplied (&buffer->info[idx - 1]) ||
+	    _hb_glyph_info_get_lig_id (&buffer->info[idx]) !=
+	    _hb_glyph_info_get_lig_id (&buffer->info[idx - 1]) ||
+	    _hb_glyph_info_get_lig_comp (&buffer->info[idx]) !=
+	    _hb_glyph_info_get_lig_comp (&buffer->info[idx - 1]) + 1
+	    );
   }
 
   bool apply (hb_ot_apply_context_t *c) const
@@ -119,7 +119,7 @@ struct MarkBasePosFormat1_2
     /* Now we search backwards for a non-mark glyph.
      * We don't use skippy_iter.prev() to avoid O(n^2) behavior. */
 
-    hb_ot_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
+    auto &skippy_iter = c->iter_input;
     skippy_iter.set_lookup_props (LookupFlag::IgnoreMarks);
 
     if (c->last_base_until > buffer->idx)
@@ -134,14 +134,14 @@ struct MarkBasePosFormat1_2
       if (match == skippy_iter.MATCH)
       {
         // https://github.com/harfbuzz/harfbuzz/issues/4124
-        if (!accept (buffer, j - 1) &&
-            NOT_COVERED == (this+baseCoverage).get_coverage  (buffer->info[j - 1].codepoint))
-          match = skippy_iter.SKIP;
+	if (!accept (buffer, j - 1) &&
+	    NOT_COVERED == (this+baseCoverage).get_coverage  (buffer->info[j - 1].codepoint))
+	  match = skippy_iter.SKIP;
       }
       if (match == skippy_iter.MATCH)
       {
-        c->last_base = (signed) j - 1;
-        break;
+	c->last_base = (signed) j - 1;
+	break;
       }
     }
     c->last_base_until = buffer->idx;
@@ -198,8 +198,8 @@ struct MarkBasePosFormat1_2
       return_trace (false);
 
     if (unlikely (!out->markArray.serialize_subset (c, markArray, this,
-                                                    (this+markCoverage).iter (),
-                                                    &klass_mapping)))
+						    (this+markCoverage).iter (),
+						    &klass_mapping)))
       return_trace (false);
 
     unsigned basecount = (this+baseArray).rows;
@@ -209,19 +209,22 @@ struct MarkBasePosFormat1_2
     ;
 
     new_coverage.reset ();
-    + base_iter
-    | hb_map (hb_first)
-    | hb_map (glyph_map)
-    | hb_sink (new_coverage)
-    ;
-
-    if (!out->baseCoverage.serialize_serialize (c->serializer, new_coverage.iter ()))
-      return_trace (false);
-
     hb_sorted_vector_t<unsigned> base_indexes;
-    for (const unsigned row : + base_iter
-                              | hb_map (hb_second))
+    auto &base_array = (this+baseArray);
+    for (const auto _ : + base_iter)
     {
+      unsigned row = _.second;
+      bool non_empty = + hb_range ((unsigned) classCount)
+                       | hb_filter (klass_mapping)
+                       | hb_map ([&] (const unsigned col) { return !base_array.offset_is_null (row, col, (unsigned) classCount); })
+                       | hb_any
+                       ;
+
+      if (!non_empty) continue;
+      
+      hb_codepoint_t new_g = glyph_map.get ( _.first);
+      new_coverage.push (new_g);
+
       + hb_range ((unsigned) classCount)
       | hb_filter (klass_mapping)
       | hb_map ([&] (const unsigned col) { return row * (unsigned) classCount + col; })
@@ -229,9 +232,13 @@ struct MarkBasePosFormat1_2
       ;
     }
 
+    if (!new_coverage) return_trace (false);
+    if (!out->baseCoverage.serialize_serialize (c->serializer, new_coverage.iter ()))
+      return_trace (false);
+
     return_trace (out->baseArray.serialize_subset (c, baseArray, this,
-                                                   base_iter.len (),
-                                                   base_indexes.iter ()));
+						   new_coverage.length,
+						   base_indexes.iter ()));
   }
 };
 

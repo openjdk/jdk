@@ -47,40 +47,49 @@ void hb_outline_t::replay (hb_draw_funcs_t *pen, void *pen_data) const
       hb_outline_point_t p1 = *it++;
       switch (p1.type)
       {
-        case hb_outline_point_t::type_t::MOVE_TO:
-        {
-          pen->move_to (pen_data, st,
-                           p1.x, p1.y);
-        }
-        break;
-        case hb_outline_point_t::type_t::LINE_TO:
-        {
-          pen->line_to (pen_data, st,
-                           p1.x, p1.y);
-        }
-        break;
-        case hb_outline_point_t::type_t::QUADRATIC_TO:
-        {
-          hb_outline_point_t p2 = *it++;
-          pen->quadratic_to (pen_data, st,
-                                p1.x, p1.y,
-                                p2.x, p2.y);
-        }
-        break;
-        case hb_outline_point_t::type_t::CUBIC_TO:
-        {
-          hb_outline_point_t p2 = *it++;
-          hb_outline_point_t p3 = *it++;
-          pen->cubic_to (pen_data, st,
-                            p1.x, p1.y,
-                            p2.x, p2.y,
-                            p3.x, p3.y);
-        }
-        break;
+	case hb_outline_point_t::type_t::MOVE_TO:
+	{
+	  pen->move_to (pen_data, st,
+			   p1.x, p1.y);
+	}
+	break;
+	case hb_outline_point_t::type_t::LINE_TO:
+	{
+	  pen->line_to (pen_data, st,
+			   p1.x, p1.y);
+	}
+	break;
+	case hb_outline_point_t::type_t::QUADRATIC_TO:
+	{
+	  hb_outline_point_t p2 = *it++;
+	  pen->quadratic_to (pen_data, st,
+				p1.x, p1.y,
+				p2.x, p2.y);
+	}
+	break;
+	case hb_outline_point_t::type_t::CUBIC_TO:
+	{
+	  hb_outline_point_t p2 = *it++;
+	  hb_outline_point_t p3 = *it++;
+	  pen->cubic_to (pen_data, st,
+			    p1.x, p1.y,
+			    p2.x, p2.y,
+			    p3.x, p3.y);
+	}
+	break;
       }
     }
     pen->close_path (pen_data, st);
     first = contour;
+  }
+}
+
+void hb_outline_t::translate (float dx, float dy)
+{
+  for (auto &p : points)
+  {
+    p.x += dx;
+    p.y += dy;
   }
 }
 
@@ -111,7 +120,7 @@ float hb_outline_t::control_area () const
 }
 
 void hb_outline_t::embolden (float x_strength, float y_strength,
-                             float x_shift, float y_shift)
+			     float x_shift, float y_shift)
 {
   /* This function is a straight port of FreeType's FT_Outline_EmboldenXY.
    * Permission has been obtained from the FreeType authors of the code
@@ -140,81 +149,81 @@ void hb_outline_t::embolden (float x_strength, float y_strength,
     /* Counter j cycles though the points; counter i advances only  */
     /* when points are moved; anchor k marks the first moved point. */
     for ( signed i = last, j = first, k = -1;
-          j != i && i != k;
-          j = j < last ? j + 1 : first )
+	  j != i && i != k;
+	  j = j < last ? j + 1 : first )
     {
       if ( j != k )
       {
-        out.x = points[j].x - points[i].x;
-        out.y = points[j].y - points[i].y;
-        l_out = out.normalize_len ();
+	out.x = points[j].x - points[i].x;
+	out.y = points[j].y - points[i].y;
+	l_out = out.normalize_len ();
 
-        if ( l_out == 0 )
-          continue;
+	if ( l_out == 0 )
+	  continue;
       }
       else
       {
-        out   = anchor;
-        l_out = l_anchor;
+	out   = anchor;
+	l_out = l_anchor;
       }
 
       if ( l_in != 0 )
       {
-        if ( k < 0 )
-        {
-          k        = i;
-          anchor   = in;
-          l_anchor = l_in;
-        }
+	if ( k < 0 )
+	{
+	  k        = i;
+	  anchor   = in;
+	  l_anchor = l_in;
+	}
 
-        d = in.x * out.x + in.y * out.y;
+	d = in.x * out.x + in.y * out.y;
 
-        /* shift only if turn is less than ~160 degrees */
-        if ( d > -15.f/16.f )
-        {
-          d = d + 1.f;
+	/* shift only if turn is less than ~160 degrees */
+	if ( d > -15.f/16.f )
+	{
+	  d = d + 1.f;
 
-          /* shift components along lateral bisector in proper orientation */
-          shift.x = in.y + out.y;
-          shift.y = in.x + out.x;
+	  /* shift components along lateral bisector in proper orientation */
+	  shift.x = in.y + out.y;
+	  shift.y = in.x + out.x;
 
-          if ( orientation_negative )
-            shift.x = -shift.x;
-          else
-            shift.y = -shift.y;
+	  if ( orientation_negative )
+	    shift.x = -shift.x;
+	  else
+	    shift.y = -shift.y;
 
-          /* restrict shift magnitude to better handle collapsing segments */
-          q = out.x * in.y - out.y * in.x;
-          if ( orientation_negative )
-            q = -q;
+	  /* restrict shift magnitude to better handle collapsing segments */
+	  q = out.x * in.y - out.y * in.x;
+	  if ( orientation_negative )
+	    q = -q;
 
-          l = hb_min (l_in, l_out);
+	  l = hb_min (l_in, l_out);
 
-          /* non-strict inequalities avoid divide-by-zero when q == l == 0 */
-          if (x_strength * q <= l * d)
-            shift.x = shift.x * x_strength / d;
-          else
-            shift.x = shift.x * l / q;
+	  /* non-strict inequalities avoid divide-by-zero when q == l == 0 */
+	  if (x_strength * q <= l * d)
+	    shift.x = shift.x * x_strength / d;
+	  else
+	    shift.x = shift.x * l / q;
 
 
-          if (y_strength * q <= l * d)
-            shift.y = shift.y * y_strength / d;
-          else
-            shift.y = shift.y * l / q;
-        }
-        else
-          shift.x = shift.y = 0;
+	  if (y_strength * q <= l * d)
+	    shift.y = shift.y * y_strength / d;
+	  else
+	    shift.y = shift.y * l / q;
+	}
+	else
+	  shift.x = shift.y = 0;
 
-        for ( ;
-              i != j;
-              i = i < last ? i + 1 : first )
-        {
-          points[i].x += x_shift + shift.x;
-          points[i].y += y_shift + shift.y;
-        }
+	for ( ;
+	      i != j;
+	      i = i < last ? i + 1 : first )
+	{
+	  points[i].x += x_shift + shift.x;
+	  points[i].y += y_shift + shift.y;
+	}
       }
       else
-        i = j;
+	i = j;
 
       in   = out;
       l_in = l_out;
@@ -226,10 +235,10 @@ void hb_outline_t::embolden (float x_strength, float y_strength,
 
 static void
 hb_outline_recording_pen_move_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-                                  void *data,
-                                  hb_draw_state_t *st,
-                                  float to_x, float to_y,
-                                  void *user_data HB_UNUSED)
+				  void *data,
+				  hb_draw_state_t *st,
+				  float to_x, float to_y,
+				  void *user_data HB_UNUSED)
 {
   hb_outline_t *c = (hb_outline_t *) data;
 
@@ -238,10 +247,10 @@ hb_outline_recording_pen_move_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_outline_recording_pen_line_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-                                  void *data,
-                                  hb_draw_state_t *st,
-                                  float to_x, float to_y,
-                                  void *user_data HB_UNUSED)
+				  void *data,
+				  hb_draw_state_t *st,
+				  float to_x, float to_y,
+				  void *user_data HB_UNUSED)
 {
   hb_outline_t *c = (hb_outline_t *) data;
 
@@ -250,11 +259,11 @@ hb_outline_recording_pen_line_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_outline_recording_pen_quadratic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-                                       void *data,
-                                       hb_draw_state_t *st,
-                                       float control_x, float control_y,
-                                       float to_x, float to_y,
-                                       void *user_data HB_UNUSED)
+				       void *data,
+				       hb_draw_state_t *st,
+				       float control_x, float control_y,
+				       float to_x, float to_y,
+				       void *user_data HB_UNUSED)
 {
   hb_outline_t *c = (hb_outline_t *) data;
 
@@ -264,12 +273,12 @@ hb_outline_recording_pen_quadratic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_outline_recording_pen_cubic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
-                                   void *data,
-                                   hb_draw_state_t *st,
-                                   float control1_x, float control1_y,
-                                   float control2_x, float control2_y,
-                                   float to_x, float to_y,
-                                   void *user_data HB_UNUSED)
+				   void *data,
+				   hb_draw_state_t *st,
+				   float control1_x, float control1_y,
+				   float control2_x, float control2_y,
+				   float to_x, float to_y,
+				   void *user_data HB_UNUSED)
 {
   hb_outline_t *c = (hb_outline_t *) data;
 
@@ -280,9 +289,9 @@ hb_outline_recording_pen_cubic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
 
 static void
 hb_outline_recording_pen_close_path (hb_draw_funcs_t *dfuncs HB_UNUSED,
-                                     void *data,
-                                     hb_draw_state_t *st,
-                                     void *user_data HB_UNUSED)
+				     void *data,
+				     hb_draw_state_t *st,
+				     void *user_data HB_UNUSED)
 {
   hb_outline_t *c = (hb_outline_t *) data;
 

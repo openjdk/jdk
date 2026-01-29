@@ -136,18 +136,18 @@ struct ReverseChainSingleSubstFormat1
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->message (c->font,
-                            "replacing glyph at %u (reverse chaining substitution)",
-                            c->buffer->idx);
+	c->buffer->message (c->font,
+			    "replacing glyph at %u (reverse chaining substitution)",
+			    c->buffer->idx);
       }
 
       c->replace_glyph_inplace (substitute[index]);
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-        c->buffer->message (c->font,
-                            "replaced glyph at %u (reverse chaining substitution)",
-                            c->buffer->idx);
+	c->buffer->message (c->font,
+			    "replaced glyph at %u (reverse chaining substitution)",
+			    c->buffer->idx);
       }
 
       /* Note: We DON'T decrease buffer->idx.  The main loop does it

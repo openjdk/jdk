@@ -41,26 +41,26 @@ HB_BEGIN_DECLS
  *
  * The major component of the library version available at compile-time.
  */
-#define HB_VERSION_MAJOR 11
+#define HB_VERSION_MAJOR 12
 /**
  * HB_VERSION_MINOR:
  *
  * The minor component of the library version available at compile-time.
  */
-#define HB_VERSION_MINOR 2
+#define HB_VERSION_MINOR 3
 /**
  * HB_VERSION_MICRO:
  *
  * The micro component of the library version available at compile-time.
  */
-#define HB_VERSION_MICRO 0
+#define HB_VERSION_MICRO 2
 
 /**
  * HB_VERSION_STRING:
  *
  * A string literal containing the library version available at compile-time.
  */
-#define HB_VERSION_STRING "11.2.0"
+#define HB_VERSION_STRING "12.3.2"
 
 /**
  * HB_VERSION_ATLEAST:
@@ -72,22 +72,22 @@ HB_BEGIN_DECLS
  * as three integer components.
  */
 #define HB_VERSION_ATLEAST(major,minor,micro) \
-        ((major)*10000+(minor)*100+(micro) <= \
-         HB_VERSION_MAJOR*10000+HB_VERSION_MINOR*100+HB_VERSION_MICRO)
+	((major)*10000+(minor)*100+(micro) <= \
+	 HB_VERSION_MAJOR*10000+HB_VERSION_MINOR*100+HB_VERSION_MICRO)
 
 
 HB_EXTERN void
 hb_version (unsigned int *major,
-            unsigned int *minor,
-            unsigned int *micro);
+	    unsigned int *minor,
+	    unsigned int *micro);
 
 HB_EXTERN const char *
 hb_version_string (void);
 
 HB_EXTERN hb_bool_t
 hb_version_atleast (unsigned int major,
-                    unsigned int minor,
-                    unsigned int micro);
+		    unsigned int minor,
+		    unsigned int micro);
 
 
 HB_END_DECLS

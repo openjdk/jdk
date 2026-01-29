@@ -30,8 +30,8 @@ struct coord_setter_t
       if (idx < ARRAY_LENGTH (static_coords))
       {
         while (length <= idx)
-          static_coords[length++] = 0;
-        return static_coords[idx];
+	  static_coords[length++] = 0;
+	return static_coords[idx];
       }
       else
         dynamic_coords.extend (hb_array (static_coords, length));
@@ -40,7 +40,7 @@ struct coord_setter_t
     if (dynamic_coords.length <= idx)
     {
       if (unlikely (!dynamic_coords.resize (idx + 1)))
-        return Crap(int);
+	return Crap(int);
       length = idx + 1;
     }
     return dynamic_coords.arrayZ[idx];

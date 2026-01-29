@@ -73,14 +73,14 @@ struct Dict : UnsizedByteStr
 {
   template <typename DICTVAL, typename OP_SERIALIZER, typename ...Ts>
   bool serialize (hb_serialize_context_t *c,
-                  const DICTVAL &dictval,
-                  OP_SERIALIZER& opszr,
-                  Ts&&... ds)
+		  const DICTVAL &dictval,
+		  OP_SERIALIZER& opszr,
+		  Ts&&... ds)
   {
     TRACE_SERIALIZE (this);
     for (unsigned int i = 0; i < dictval.get_count (); i++)
-      if (unlikely (!opszr.serialize (c, dictval[i], std::forward<Ts> (ds)...)))
-        return_trace (false);
+      if (unlikely (!opszr.serialize (c, dictval[i], ds...)))
+	return_trace (false);
 
     return_trace (true);
   }
@@ -139,7 +139,7 @@ struct table_info_t
 
   unsigned int    offset;
   unsigned int    size;
-  objidx_t        link;
+  objidx_t	  link;
 };
 
 template <typename COUNT>
@@ -147,8 +147,8 @@ struct FDArray : CFFIndex<COUNT>
 {
   template <typename DICTVAL, typename INFO, typename Iterator, typename OP_SERIALIZER>
   bool serialize (hb_serialize_context_t *c,
-                  Iterator it,
-                  OP_SERIALIZER& opszr)
+		  Iterator it,
+		  OP_SERIALIZER& opszr)
   {
     TRACE_SERIALIZE (this);
 
@@ -163,9 +163,9 @@ struct FDArray : CFFIndex<COUNT>
     | hb_map ([&] (const hb_pair_t<const DICTVAL&, const INFO&> &_)
     {
       FontDict *dict = c->start_embed<FontDict> ();
-                dict->serialize (c, _.first, opszr, _.second);
-                return c->head - (const char*)dict;
-              })
+		dict->serialize (c, _.first, opszr, _.second);
+		return c->head - (const char*)dict;
+	      })
     | hb_sink (sizes)
     ;
     unsigned data_size = c->head - data_base;
@@ -216,8 +216,8 @@ struct FDSelect3_4_Range
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-                  hb_barrier () &&
-                  first < c->get_num_glyphs () && (fd < fdcount));
+		  hb_barrier () &&
+		  first < c->get_num_glyphs () && (fd < fdcount));
   }
 
   GID_TYPE    first;
@@ -236,19 +236,19 @@ struct FDSelect3_4
   {
     TRACE_SANITIZE (this);
     if (unlikely (!(c->check_struct (this) &&
-                    ranges.sanitize (c, nullptr, fdcount) &&
-                    hb_barrier () &&
-                    (nRanges () != 0) &&
-                    ranges[0].first == 0)))
+		    ranges.sanitize (c, nullptr, fdcount) &&
+		    hb_barrier () &&
+		    (nRanges () != 0) &&
+		    ranges[0].first == 0)))
       return_trace (false);
 
     for (unsigned int i = 1; i < nRanges (); i++)
       if (unlikely (ranges[i - 1].first >= ranges[i].first))
-        return_trace (false);
+	return_trace (false);
 
     if (unlikely (!(sentinel().sanitize (c) &&
-                   hb_barrier () &&
-                   (sentinel() == c->get_num_glyphs ()))))
+		   hb_barrier () &&
+		   (sentinel() == c->get_num_glyphs ()))))
       return_trace (false);
 
     return_trace (true);
@@ -353,10 +353,10 @@ struct FDSelect
     }
   }
 
-  HBUINT8       format;
+  HBUINT8	format;
   union {
-  FDSelect0     format0;
-  FDSelect3     format3;
+  FDSelect0	format0;
+  FDSelect3	format3;
   } u;
   public:
   DEFINE_SIZE_MIN (1);

@@ -55,11 +55,11 @@
  *   - For each glyph, if it doesn't match the subtable digest,
  *     skip it.
  *
- * The main filter we use is a combination of four bits-pattern
+ * The filter we use is a combination of three bits-pattern
  * filters. A bits-pattern filter checks a number of bits (5 or 6)
- * of the input number (glyph-id in this case) and checks whether
+ * of the input number (glyph-id in most cases) and checks whether
  * its pattern is amongst the patterns of any of the accepted values.
- * The accepted patterns are represented as a "long" integer. The
+ * The accepted patterns are represented as a "long" integer. Each
  * check is done using four bitwise operations only.
  */
 
@@ -99,7 +99,7 @@ struct hb_set_digest_t
     ret = false;
     for (unsigned i = 0; i < n; i++)
       if (masks[i] != all)
-        ret = true;
+	ret = true;
     if (!ret) return false;
 
     ret = false;
@@ -107,13 +107,13 @@ struct hb_set_digest_t
     {
       mask_t shift = hb_set_digest_shifts[i];
       if ((b >> shift) - (a >> shift) >= mb1)
-        masks[i] = all;
+	masks[i] = all;
       else
       {
-        mask_t ma = one << ((a >> shift) & mb1);
-        mask_t mb = one << ((b >> shift) & mb1);
-        masks[i] |= mb + (mb - ma) - (mb < ma);
-        ret = true;
+	mask_t ma = one << ((a >> shift) & mb1);
+	mask_t mb = one << ((b >> shift) & mb1);
+	masks[i] |= mb + (mb - ma) - (mb < ma);
+	ret = true;
       }
     }
     return ret;
@@ -154,7 +154,7 @@ struct hb_set_digest_t
   {
     for (unsigned i = 0; i < n; i++)
       if (!(masks[i] & (one << ((g >> hb_set_digest_shifts[i]) & mb1))))
-        return false;
+	return false;
     return true;
   }
 
@@ -162,7 +162,7 @@ struct hb_set_digest_t
   {
     for (unsigned i = 0; i < n; i++)
       if (!(masks[i] & o.masks[i]))
-        return false;
+	return false;
     return true;
   }
 

@@ -41,7 +41,7 @@ static_assert (0 != ARRAY_LENGTH_CONST (_hb_all_shapers), "No shaper enabled.");
 static inline void free_static_shapers ();
 
 static struct hb_shapers_lazy_loader_t : hb_lazy_loader_t<hb_shaper_entry_t,
-                                                          hb_shapers_lazy_loader_t>
+							  hb_shapers_lazy_loader_t>
 {
   static hb_shaper_entry_t *create ()
   {
@@ -62,23 +62,23 @@ static struct hb_shapers_lazy_loader_t : hb_lazy_loader_t<hb_shaper_entry_t,
     {
       end = strchr (p, ',');
       if (!end)
-        end = p + strlen (p);
+	end = p + strlen (p);
 
       for (unsigned int j = i; j < ARRAY_LENGTH_CONST (_hb_all_shapers); j++)
-        if (end - p == (int) strlen (shapers[j].name) &&
-            0 == strncmp (shapers[j].name, p, end - p))
-        {
-          /* Reorder this shaper to position i */
-         struct hb_shaper_entry_t t = shapers[j];
-         memmove (&shapers[i + 1], &shapers[i], sizeof (shapers[i]) * (j - i));
-         shapers[i] = t;
-         i++;
-        }
+	if (end - p == (int) strlen (shapers[j].name) &&
+	    0 == strncmp (shapers[j].name, p, end - p))
+	{
+	  /* Reorder this shaper to position i */
+	 struct hb_shaper_entry_t t = shapers[j];
+	 memmove (&shapers[i + 1], &shapers[i], sizeof (shapers[i]) * (j - i));
+	 shapers[i] = t;
+	 i++;
+	}
 
       if (!*end)
-        break;
+	break;
       else
-        p = end + 1;
+	p = end + 1;
     }
 
     hb_atexit (free_static_shapers);

@@ -6,10 +6,10 @@
  *
  * on files with these headers:
  *
- * # ArabicShaping-16.0.0.txt
- * # Date: 2024-07-30
- * # Blocks-16.0.0.txt
- * # Date: 2024-02-02
+ * # ArabicShaping-17.0.0.txt
+ * # Date: 2025-08-14
+ * # Blocks-17.0.0.txt
+ * # Date: 2025-08-01
  * UnicodeData.txt does not have a header.
  */
 
@@ -17,15 +17,15 @@
 #define HB_OT_SHAPER_ARABIC_TABLE_HH
 
 
-#define A       JOINING_GROUP_ALAPH
-#define DR      JOINING_GROUP_DALATH_RISH
-#define C       JOINING_TYPE_C
-#define D       JOINING_TYPE_D
-#define L       JOINING_TYPE_L
-#define R       JOINING_TYPE_R
-#define T       JOINING_TYPE_T
-#define U       JOINING_TYPE_U
-#define X       JOINING_TYPE_X
+#define A	JOINING_GROUP_ALAPH
+#define DR	JOINING_GROUP_DALATH_RISH
+#define C	JOINING_TYPE_C
+#define D	JOINING_TYPE_D
+#define L	JOINING_TYPE_L
+#define R	JOINING_TYPE_R
+#define T	JOINING_TYPE_T
+#define U	JOINING_TYPE_U
+#define X	JOINING_TYPE_X
 
 static const uint8_t joining_table[] =
 {
@@ -80,7 +80,7 @@ static const uint8_t joining_table[] =
   /* Arabic Extended-B */
 
   /* 0860 */                                 R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,
-  /* 0880 */ R,R,R,C,C,C,D,U,U,D,D,D,D,D,R,X,U,U,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+  /* 0880 */ R,R,R,C,C,C,D,U,U,D,D,D,D,D,R,D,U,U,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
 
   /* Arabic Extended-A */
 
@@ -140,9 +140,9 @@ static const uint8_t joining_table[] =
 
   /* Arabic Extended-C */
 
-  /* 10EC0 */     R,D,D,
+  /* 10EC0 */     R,D,D,X,D,D,
 
-#define joining_offset_0x10f30u 1185
+#define joining_offset_0x10f30u 1188
 
   /* Sogdian */
 
@@ -161,14 +161,14 @@ static const uint8_t joining_table[] =
   /* 10FA0 */                                 D,U,D,D,R,R,R,U,D,R,R,D,D,R,D,D,
   /* 10FC0 */ U,D,R,R,D,U,U,U,U,R,D,L,
 
-#define joining_offset_0x110bdu 1341
+#define joining_offset_0x110bdu 1344
 
   /* Kaithi */
 
   /* 110A0 */                                                           U,X,X,
   /* 110C0 */ X,X,X,X,X,X,X,X,X,X,X,X,X,U,
 
-#define joining_offset_0x1e900u 1358
+#define joining_offset_0x1e900u 1361
 
   /* Adlam */
 
@@ -176,7 +176,7 @@ static const uint8_t joining_table[] =
   /* 1E920 */ D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
   /* 1E940 */ D,D,D,D,X,X,X,X,X,X,X,T,
 
-}; /* Table items: 1434; occupancy: 57% */
+}; /* Table items: 1437; occupancy: 58% */
 
 
 static unsigned int
@@ -204,7 +204,7 @@ joining_type (hb_codepoint_t u)
       if (hb_in_range<hb_codepoint_t> (u, 0x10AC0u, 0x10AEFu)) return joining_table[u - 0x10AC0u + joining_offset_0x10ac0u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10B80u, 0x10BAFu)) return joining_table[u - 0x10B80u + joining_offset_0x10b80u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10D00u, 0x10D23u)) return joining_table[u - 0x10D00u + joining_offset_0x10d00u];
-      if (hb_in_range<hb_codepoint_t> (u, 0x10EC2u, 0x10EC4u)) return joining_table[u - 0x10EC2u + joining_offset_0x10ec2u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x10EC2u, 0x10EC7u)) return joining_table[u - 0x10EC2u + joining_offset_0x10ec2u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10F30u, 0x10FCBu)) return joining_table[u - 0x10F30u + joining_offset_0x10f30u];
       break;
 
@@ -416,8 +416,8 @@ static const uint16_t shaping_table[][4] =
   {0x0000u, 0x0000u, 0xFBB1u, 0xFBB0u}, /* U+06D3 ARABIC LETTER YEH BARREE WITH HAMZA ABOVE */
 };
 
-#define SHAPING_TABLE_FIRST     0x0621u
-#define SHAPING_TABLE_LAST      0x06D3u
+#define SHAPING_TABLE_FIRST	0x0621u
+#define SHAPING_TABLE_LAST	0x06D3u
 
 
 static const struct ligature_set_t {
