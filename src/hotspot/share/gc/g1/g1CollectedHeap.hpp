@@ -736,12 +736,10 @@ public:
   void iterate_regions_in_range(MemRegion range, const Func& func);
 
   // Commit the required number of G1 region(s) according to the size requested
-  // and mark them as 'old' region(s). Preferred address is treated as a hint for
-  // the location of the archive space in the heap. The returned address may or may
-  // not be same as the preferred address.
+  // and mark them as 'old' region(s).
   // This API is only used for allocating heap space for the archived heap objects
   // in the CDS archive.
-  HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
+  HeapWord* alloc_archive_region(size_t word_size);
 
   // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,9 @@ package java.lang.runtime;
  *   floating-point type is considered exact.</li>
  * </ul>
  *
- * @see <a href="../../../../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-5.7.1">
- * JLS 5.7.1 Exact Testing Conversions</a>
- * @see <a href="../../../../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-5.7.2">
- * JLS 5.7.2 Unconditionally Exact Testing Conversions</a>
- * @see <a href="../../../../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-15.20.2">
- * JLS 15.20.2 The instanceof Operator</a>
+ * @jls primitive-types-in-patterns-instanceof-switch-5.7.1 Exact Testing Conversions
+ * @jls primitive-types-in-patterns-instanceof-switch-5.7.2 Unconditionally Exact Testing Conversions
+ * @jls primitive-types-in-patterns-instanceof-switch-15.20.2 The {@code instanceof} Operator
  *
  * @implNote Some exactness checks describe a test which can be redirected
  * safely through one of the existing methods. Those are omitted too (i.e.,
