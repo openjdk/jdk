@@ -3515,7 +3515,7 @@ final class FdLibm {
      * Method :
      *
      *
-     *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha -INF < alpha < < INF
+     *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha, -INF < alpha < < INF
      *      and sinh(asinh(x)) = x, -INF < x  < INF.
      *      It can be written as asinh(x) = ln(x + sqrt(x^2 + 1)), -INF < x  < INF.
      *      1. Replace x by |x| as the function is odd.
