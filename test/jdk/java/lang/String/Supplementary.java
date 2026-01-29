@@ -389,7 +389,8 @@ public class Supplementary {
      * Test codePointCount(int, int) &
      *      codePointCount()
      *
-     * This test case assumes that Character.codePointCount(CharSequence, int, int) works
+     * This test case assumes that
+     * Character.codePointCount(CharSequence, int, int) works
      * correctly.
      */
     static void test8() {

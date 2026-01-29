@@ -1730,7 +1730,7 @@ public final class String
     /**
      * Returns the index within this {@code String} that is
      * offset from the given {@code index} by
-     * {@code codePointOffset} code points. Isolated surrogate code units
+     * {@code codePointOffset} code points. Unpaired surrogates
      * within the text range given by {@code index} and
      * {@code codePointOffset} count as one code point each.
      *
