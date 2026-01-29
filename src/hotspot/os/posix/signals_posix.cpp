@@ -882,6 +882,9 @@ int PosixSignals::install_sigaction_signal_handler(struct sigaction* sigAct,
   remove_error_signals_from_set(&sigAct->sa_mask);
   sigAct->sa_sigaction = handler;
   sigAct->sa_flags = SA_SIGINFO|SA_RESTART;
+  if (UseAltSigStacks && (sig == SIGSEGV || sig == SIGBUS)) {
+    sigAct->sa_flags = sigAct->sa_flags | SA_ONSTACK;
+  }
 #if defined(__APPLE__)
   // Needed for main thread as XNU (Mac OS X kernel) will only deliver SIGSEGV
   // (which starts as SIGBUS) on main thread with faulting address inside "stack+guard pages"
@@ -1628,6 +1631,11 @@ void PosixSignals::hotspot_sigmask(Thread* thread) {
       pthread_sigmask(SIG_BLOCK, vm_signals(), nullptr);
     }
   }
+
+  if (UseAltSigStacks) {
+    PosixSignals::enable_alternate_signal_stack_for_current_thread();
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1940,8 +1948,9 @@ void PosixSignals::enable_alternate_signal_stack_for_current_thread() {
   if (p != nullptr) {
     success = os::commit_memory(p, plus_guard, false);
   }
+  DEBUG_ONLY(memset(p, 0, plus_guard));
   if (success) {
-    success = os::protect_memory(p, os::vm_page_size(), os::MEM_PROT_NONE, true);
+ //   success = os::protect_memory(p, os::vm_page_size(), os::MEM_PROT_NONE, true);
   }
   if (success) {
     stack_t ss;
@@ -1953,7 +1962,7 @@ void PosixSignals::enable_alternate_signal_stack_for_current_thread() {
     if (rc == 0) {
       assert(oss.ss_flags == SS_DISABLE, "odd prior setting");
       log_info(os)("Thread " PTR_FORMAT ": alternate signal stack (" RANGEFMT ") enabled",
-          p2i(Thread::current_or_null_safe()), RANGEFMTARGS(ss.ss_sp, ss.ss_size));
+          p2i(Thread::current_or_null_safe()), RANGEFMTARGS((address)(ss.ss_sp), ss.ss_size));
     } else {
       log_info(os)("Failed to set alternative signal stack");
     }
@@ -1972,13 +1981,13 @@ void PosixSignals::disable_alternate_signal_stack_for_current_thread() {
   const int rc = ::sigaltstack(&ss, &oss);
   if (rc == 0) {
     log_info(os)("Thread " PTR_FORMAT ": alternate signal stack (" RANGEFMT ") disabled",
-        p2i(Thread::current_or_null_safe()), RANGEFMTARGS(ss.ss_sp, ss.ss_size));
+        p2i(Thread::current_or_null_safe()), RANGEFMTARGS((address)(ss.ss_sp), ss.ss_size));
   } else {
     log_info(os)("Failed to unset alternative signal stack");
   }
 
   if (oss.ss_flags != SS_DISABLE) {
-    char* p = oss.ss_sp;
+    char* p = (char*)oss.ss_sp;
     size_t s = oss.ss_size;
     assert(p != nullptr && s > 0, "invariant");
     os::release_memory(p, s);

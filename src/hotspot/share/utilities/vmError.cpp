@@ -2158,6 +2158,20 @@ static void ALWAYSINLINE crash_with_segfault() {
 
 } // end: crash_with_segfault
 
+PRAGMA_DIAG_PUSH
+PRAGMA_INFINITE_RECURSION_IGNORED
+// crash with sigsegv at non-null address.
+static int NOINLINE crash_with_stack_overflow(int i) {
+  int j = os::random() + i;
+  j += crash_with_stack_overflow(i);
+  j += os::random();
+  if (j == 0) {
+    return 0;
+  }
+  return j;
+} // end: crash_with_segfault
+PRAGMA_DIAG_POP
+
 // crash in a controlled way:
 // 1  - assert
 // 2  - guarantee
@@ -2204,6 +2218,13 @@ void VMError::controlled_crash(int how) {
       void* const p = os::malloc(4096, mtTest);
       os::free(p);
       os::free(p);
+    }
+    case 19: {
+printf("Thread " PTR_FORMAT " tid %zd", p2i(Thread::current_or_null_safe()), os::current_thread_id() );
+fflush(stdout);
+      // Trigger a native stack overflow
+      int i = MAX2(os::random(), 1000 * 1000);
+      crash_with_stack_overflow(i);
     }
     default:
       // If another number is given, give a generic crash.
