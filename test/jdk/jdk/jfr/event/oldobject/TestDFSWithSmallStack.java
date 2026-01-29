@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +21,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.event.oldobject;
 
-package jdk.jfr.jcmd;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.internal.test.WhiteBox;
+import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @summary Test dumping with path-to-gc-roots and DFS only with a very small stacksize for the VM thread
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
+ * @summary Tests that DFS works with a small stack
+ * @requires vm.flagless
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- *
- * @run main/othervm -Xmx1g -XX:VMThreadStackSize=128 jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsDFSWithSmallStack
+ * @modules jdk.jfr/jdk.jfr.internal.test
+ * @run main/othervm jdk.jfr.event.oldobject.TestDFSWithSmallStack
  */
-public class TestJcmdDumpPathToGCRootsDFSWithSmallStack extends TestJcmdDumpPathToGCRootsDFSBase {
+public class TestDFSWithSmallStack {
 
-    // Tests the new non-recursive implementation of the JFR leak profiler path-to-gc-roots-search.
+    // Tests depth first search with a small stack.
 
     // An non-zero exit code, together with a missing hs-err file or possibly a missing jfr file,
     // indicates a native stack overflow happened and is a fail condition for this test.
@@ -54,26 +62,34 @@ public class TestJcmdDumpPathToGCRootsDFSWithSmallStack extends TestJcmdDumpPath
 
     private static final int TOTAL_OBJECTS = 10_000_000;
     private static final int OBJECTS_PER_LIST = 5_000;
-    private LinkedList[] leak;
+    public static LinkedList<Object>[] leak;
 
-    @Override
-    protected final void buildLeak() {
-        leak = new LinkedList[TOTAL_OBJECTS/OBJECTS_PER_LIST];
-        for (int i = 0; i < leak.length; i++) {
-            leak[i] = new LinkedList();
-            for (int j = 0; j < OBJECTS_PER_LIST; j++) {
-                leak[i].add(new Object());
-            }
-        }
-    }
-
-    protected final void clearLeak() {
-        leak = null;
-        System.gc();
-    }
-
-    public static void main(String[] args) throws Exception {
-        new TestJcmdDumpPathToGCRootsDFSWithSmallStack().testDump("TestJcmdDumpPathToGCRootsDFSWithSmallStack", 30);
-    }
-
+    public static void main(String... args) throws Exception {
+         WhiteBox.setWriteAllObjectSamples(true);
+         WhiteBox.setSkipBFS(true);
+         int count = 10;
+         while (count > 0) {
+             try (Recording r = new Recording()) {
+                 r.enable(EventNames.OldObjectSample).with("cutoff", "infinity");
+                 r.start();
+                 leak = new LinkedList[TOTAL_OBJECTS/OBJECTS_PER_LIST];
+                 for (int i = 0; i < leak.length; i++) {
+                     leak[i] = new LinkedList<Object>();
+                     for (int j = 0; j < OBJECTS_PER_LIST; j++) {
+                         leak[i].add(new Object());
+                     }
+                 }
+                System.gc();
+                r.stop();
+                List<RecordedEvent> events = Events.fromRecording(r);
+                Events.hasEvents(events);
+                if (OldObjects.countChains(events) >= 30) {
+                    return;
+                }
+                System.out.println("Not enough chains found, retrying.");
+             }
+             count++;
+             leak = null;
+         }
+     }
 }
