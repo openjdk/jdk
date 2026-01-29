@@ -651,26 +651,24 @@ TEST_VM(os, release_multi_mappings) {
 //  On debug this would assert. Test that too.
 //  On other platforms, we are unable to recognize bad ranges.
 
+#ifdef ASSERT
+#define TEST_RELEASE_RANGE_ERROR(name) TEST_VM_ASSERT_MSG(os, name, ".*bad release")
+#else 
+#define TEST_RELEASE_RANGE_ERROR(name) TEST_VM_FATAL_ERROR_MSG(os, name, ".*Failed to release.*")
+#endif
+
 static char* setup_release_test_memory() {
   char* p = os::reserve_memory(4 * M, mtTest);
   EXPECT_NE(p, (char*)nullptr);
   return p;
 }
 
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, release_bad_range_start, ".*bad release") {
-#else
-TEST_VM_FATAL_ERROR_MSG(os, release_bad_range_start, ".*Failed to release.*") {
-#endif
+TEST_RELEASE_RANGE_ERROR(release_bad_range_start) {
   char* p = setup_release_test_memory();
   os::release_memory(p, M);  // Release part of the range
 }
 
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, release_bad_range_middle, ".*bad release") {
-#else
-TEST_VM_FATAL_ERROR_MSG(os, release_bad_range_middle, ".*Failed to release.*") {
-#endif
+TEST_RELEASE_RANGE_ERROR(release_bad_range_middle) {
   char* p = setup_release_test_memory();
   os::release_memory(p + M, M);  // Release middle part
 }
@@ -678,41 +676,25 @@ TEST_VM_FATAL_ERROR_MSG(os, release_bad_range_middle, ".*Failed to release.*") {
 // Release more than the range (explicitly switch off NUMA here
 //  to make os::release_memory() test more strict and to not
 //  accidentally release neighbors)
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, release_beyond_range1, ".*bad release") {
-#else
-TEST_VM_FATAL_ERROR_MSG(os, release_beyond_range1, ".*Failed to release.*") {
-#endif
+TEST_RELEASE_RANGE_ERROR(release_beyond_range1) {
   char* p = setup_release_test_memory();
   NUMASwitcher b(false);
   os::release_memory(p, M * 5);
 }
 
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, release_beyond_range2, ".*bad release") {
-#else
-TEST_VM_FATAL_ERROR_MSG(os, release_beyond_range2, ".*Failed to release.*") {
-#endif
+TEST_RELEASE_RANGE_ERROR(release_beyond_range2) {
   char* p = setup_release_test_memory();
   NUMASwitcher b(false);
   os::release_memory(p - M, M * 5);
 }
 
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, release_beyond_range3, ".*bad release") {
-#else
-TEST_VM_FATAL_ERROR_MSG(os, release_beyond_range3, ".*Failed to release.*") {
-#endif
+TEST_RELEASE_RANGE_ERROR(release_beyond_range3) {
   char* p = setup_release_test_memory();
   NUMASwitcher b(false);
   os::release_memory(p - M, M * 6);
 }
 
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, release_already_released, ".*bad release") {
-#else
-TEST_VM_FATAL_ERROR_MSG(os, release_already_released, ".*Failed to release.*") {
-#endif
+TEST_RELEASE_RANGE_ERROR(release_already_released) {
   char* p = setup_release_test_memory();
   os::release_memory(p, 4 * M); // Release for real
   os::release_memory(p, 4 * M); // Again, should fail
