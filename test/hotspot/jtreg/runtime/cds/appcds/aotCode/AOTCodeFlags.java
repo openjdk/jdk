@@ -23,7 +23,8 @@
  */
 
 /**
- * @test
+ * @test id=default_gc
+ * @requires vm.gc != "Z"
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
@@ -40,6 +41,63 @@
  *                 JavacBenchApp$SourceFile
  * @run driver AOTCodeFlags
  */
+/**
+ * @test id=Z
+ * @requires vm.gc.Z
+ * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
+ * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
+ * @comment VerifyOops flag switch off AOT code generation. Skip it.
+ * @library /test/lib /test/setup_aot
+ * @build AOTCodeFlags JavacBenchApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 JavacBenchApp
+ *                 JavacBenchApp$ClassFile
+ *                 JavacBenchApp$FileManager
+ *                 JavacBenchApp$SourceFile
+ * @run driver AOTCodeFlags Z
+ */
+/**
+ * @test id=shenandoah
+ * @requires vm.gc.Shenandoah
+ * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
+ * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
+ * @comment VerifyOops flag switch off AOT code generation. Skip it.
+ * @library /test/lib /test/setup_aot
+ * @build AOTCodeFlags JavacBenchApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 JavacBenchApp
+ *                 JavacBenchApp$ClassFile
+ *                 JavacBenchApp$FileManager
+ *                 JavacBenchApp$SourceFile
+ * @run driver AOTCodeFlags Shenandoah
+ */
+/**
+ * @test id=parallel
+ * @requires vm.gc.Parallel
+ * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
+ * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
+ * @comment VerifyOops flag switch off AOT code generation. Skip it.
+ * @library /test/lib /test/setup_aot
+ * @build AOTCodeFlags JavacBenchApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 JavacBenchApp
+ *                 JavacBenchApp$ClassFile
+ *                 JavacBenchApp$FileManager
+ *                 JavacBenchApp$SourceFile
+ * @run driver AOTCodeFlags Parallel
+ */
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +106,9 @@ import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTCodeFlags {
+    private static String gcName = null;
     public static void main(String... args) throws Exception {
-        Tester t = new Tester();
+        Tester t = new Tester(args.length == 0 ? null : args[0]);
         // Run only 2 modes (0 - no AOT code, 1 - AOT adapters) until JDK-8357398 is fixed
         for (int mode = 0; mode < 4; mode++) {
             t.setTestMode(mode);
@@ -58,10 +117,12 @@ public class AOTCodeFlags {
     }
     static class Tester extends CDSAppTester {
         private int testMode;
+        private String gcName;
 
-        public Tester() {
+        public Tester(String name) {
             super("AOTCodeFlags");
             testMode = 0;
+            gcName = name;
         }
 
         boolean isAdapterCachingOn() {
@@ -84,6 +145,23 @@ public class AOTCodeFlags {
             return list;
         }
 
+        public List<String> getGCArgs() {
+            List<String> args = new ArrayList<String>();
+            if (gcName == null) {
+                return args;
+            }
+            switch (gcName) {
+            case "G1":
+            case "Z":
+            case "Shenandoah":
+            case "Parallel":
+                args.add("-XX:+Use" + gcName + "GC");
+            return args;
+            default:
+                throw new RuntimeException("Unexpected GC name " + gcName);
+            }
+        }
+
         @Override
         public String classpath(RunMode runMode) {
             return "app.jar";
@@ -97,10 +175,12 @@ public class AOTCodeFlags {
                     List<String> args = getVMArgsForTestMode();
                     args.addAll(List.of("-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
+                    args.addAll(getGCArgs());
                     return args.toArray(new String[0]);
                 }
             }
-            return new String[] {};
+            List<String> args = getGCArgs();
+            return args.toArray(new String[args.size()]);
         }
 
         @Override
