@@ -47,7 +47,6 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 public final class JTableSerialization {
 
     private static JTable table;
-    private static JLabel label;
     private static final int ROW = 1;
     private static final int COLUMN = 1;
     private static final String SOME_TEST_LABEL = "Some TEST label";
@@ -73,7 +72,7 @@ public final class JTableSerialization {
     }
 
     private static void init() {
-        label = new JLabel(SOME_TEST_LABEL);
+        JLabel label = new JLabel(SOME_TEST_LABEL);
         table = new JTable(2, 2);
         table.add(label);
         table.setValueAt(TEST_EDIT_VALUE, ROW, COLUMN);
