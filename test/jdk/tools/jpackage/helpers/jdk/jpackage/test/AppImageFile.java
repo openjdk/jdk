@@ -41,7 +41,6 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -195,13 +194,16 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     }
 
     private static String getPlatform() {
-        return PLATFORM_LABELS.get(OperatingSystem.current());
+        if (TKit.isLinux()) {
+            return "linux";
+        } else if (TKit.isWindows()) {
+            return "windows";
+        }  else if (TKit.isOSX()) {
+            return "macOS";
+        } else {
+            throw new IllegalStateException();
+        }
     }
 
     private static final String FILENAME = ".jpackage.xml";
-
-    private static final Map<OperatingSystem, String> PLATFORM_LABELS = Map.of(
-            OperatingSystem.LINUX, "linux",
-            OperatingSystem.WINDOWS, "windows",
-            OperatingSystem.MACOS, "macOS");
 }

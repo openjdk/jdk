@@ -27,6 +27,7 @@ package jdk.jpackage.test;
 
 import java.nio.file.Path;
 import java.util.spi.ToolProvider;
+import jdk.internal.util.OperatingSystem;
 
 public enum JavaTool {
     JAVA, JAVAC, JPACKAGE, JAR, JLINK, JMOD, JSHELL;
@@ -50,7 +51,7 @@ public enum JavaTool {
 
     private Path relativePathInJavaHome() {
         Path path = Path.of("bin", toolName());
-        if (TKit.isWindows()) {
+        if (OperatingSystem.isWindows()) {
             path = path.getParent().resolve(path.getFileName().toString() + ".exe");
         }
         return path;
