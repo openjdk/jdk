@@ -709,7 +709,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
               = "vdso32.so";
 #endif
 
-            // Check vDSO binary at first (for referring debuginfo if possible).
+            // Check vDSO binary first (for referring debuginfo if possible).
             char vdso_path[PATH_MAX];
             snprintf(vdso_path, sizeof(vdso_path), "/lib/modules/%s/vdso/%s", uts.release, vdso_name);
             if (access(vdso_path, F_OK) == 0) {
