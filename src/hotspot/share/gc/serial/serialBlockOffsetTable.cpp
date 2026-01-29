@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memoryReserver.hpp"
@@ -57,7 +58,7 @@ SerialBlockOffsetTable::SerialBlockOffsetTable(MemRegion reserved,
 
   assert(initialized, "Should never fail when commmitted_size is 0");
 
-  _offset_base = (uint8_t*)(_vs.low_boundary() - (uintptr_t(reserved.start()) >> CardTable::card_shift()));
+  _offset_base = (Atomic<uint8_t>*)(_vs.low_boundary() - (uintptr_t(reserved.start()) >> CardTable::card_shift()));
   resize(init_word_size);
   log_trace(gc, bot)("SerialBlockOffsetTable::SerialBlockOffsetTable: ");
   log_trace(gc, bot)("   rs.base(): " PTR_FORMAT " rs.size(): " SIZE_FORMAT_X_0 " rs end(): " PTR_FORMAT,
@@ -87,9 +88,10 @@ void SerialBlockOffsetTable::resize(size_t new_word_size) {
   }
 }
 
-static void fill_range(uint8_t* start, uint8_t* end, uint8_t value) {
-  // + 1 for inclusive.
-  memset(start, value, pointer_delta(end, start, sizeof(uint8_t)) + 1);
+static void fill_range(Atomic<uint8_t>* start, Atomic<uint8_t>* end, uint8_t value) {
+  assert(start <= end, "indexes out of order");
+  size_t num_cards = end - start + 1;   // + 1 for inclusive.
+  memset_with_concurrent_readers(start, value, num_cards);
 }
 
 // Write the backskip value for each logarithmic region (array slots containing the same entry value).
@@ -127,22 +129,22 @@ static void fill_range(uint8_t* start, uint8_t* end, uint8_t value) {
 void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
                                                    HeapWord* blk_end) {
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
-  uint8_t* const offset_card = entry_for_addr(cur_card_boundary);
+  Atomic<uint8_t>* const offset_card = entry_for_addr(cur_card_boundary);
 
   // The first card holds the actual offset.
-  *offset_card = checked_cast<uint8_t>(pointer_delta(cur_card_boundary, blk_start));
+  offset_card->store_relaxed(checked_cast<uint8_t>(pointer_delta(cur_card_boundary, blk_start)));
 
   // Check if this block spans over other cards.
-  uint8_t* end_card = entry_for_addr(blk_end - 1);
+  Atomic<uint8_t>* end_card = entry_for_addr(blk_end - 1);
   assert(offset_card <= end_card, "inv");
 
   if (offset_card != end_card) {
     // Handling remaining cards.
-    uint8_t* start_card_for_region = offset_card + 1;
+    Atomic<uint8_t>* start_card_for_region = offset_card + 1;
     for (uint i = 0; i < BOTConstants::N_powers; i++) {
       // -1 so that the reach ends in this region and not at the start
       // of the next.
-      uint8_t* reach = offset_card + BOTConstants::power_to_cards_back(i + 1) - 1;
+      Atomic<uint8_t>* reach = offset_card + BOTConstants::power_to_cards_back(i + 1) - 1;
       uint8_t value = checked_cast<uint8_t>(CardTable::card_size_in_words() + i);
 
       fill_range(start_card_for_region, MIN2(reach, end_card), value);
@@ -159,14 +161,14 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
 }
 
 HeapWord* SerialBlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
-  uint8_t* entry = entry_for_addr(addr);
-  uint8_t offset = *entry;
+  Atomic<uint8_t>* entry = entry_for_addr(addr);
+  uint8_t offset = entry->load_relaxed();
   while (offset >= CardTable::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
     entry -= n_cards_back;
-    offset = *entry;
+    offset = entry->load_relaxed();
   }
   HeapWord* q = addr_for_entry(entry);
   return q - offset;
@@ -175,17 +177,17 @@ HeapWord* SerialBlockOffsetTable::block_start_reaching_into_card(const void* add
 void SerialBlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {
   assert(is_crossing_card_boundary(blk_start, blk_end), "precondition");
 
-  uint8_t* start_card = entry_for_addr(align_up_by_card_size(blk_start));
-  uint8_t* end_card = entry_for_addr(blk_end - 1);
+  Atomic<uint8_t>* start_card = entry_for_addr(align_up_by_card_size(blk_start));
+  Atomic<uint8_t>* end_card = entry_for_addr(blk_end - 1);
   // Check cards in [start_card, end_card]
-  assert(*start_card < CardTable::card_size_in_words(), "offset card");
+  assert(start_card->load_relaxed() < CardTable::card_size_in_words(), "offset card");
 
-  for (uint8_t* i = start_card + 1; i <= end_card; ++i) {
-    const uint8_t* prev  = i - 1;
-    const uint8_t* value = i;
-    if (*prev != *value) {
-      assert(*value >= *prev, "monotonic");
-      size_t n_cards_back = BOTConstants::entry_to_cards_back(*value);
+  for (Atomic<uint8_t>* i = start_card + 1; i <= end_card; ++i) {
+    const Atomic<uint8_t>* prev  = i - 1;
+    const Atomic<uint8_t>* value = i;
+    if (prev->load_relaxed() != value->load_relaxed()) {
+      assert(value->load_relaxed() >= prev->load_relaxed(), "monotonic");
+      size_t n_cards_back = BOTConstants::entry_to_cards_back(value->load_relaxed());
       assert(start_card == (i - n_cards_back), "inv");
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
 
 //
 // This class can be used to locate the beginning of an object in the
@@ -45,18 +46,18 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   PSVirtualSpace* _virtual_space;
 
   // Biased array-start of BOT array for fast heap-addr / BOT entry translation
-  uint8_t*        _offset_base;
+  Atomic<uint8_t>*        _offset_base;
 
   // Mapping from address to object start array entry
-  uint8_t* entry_for_addr(const void* const p) const {
+  Atomic<uint8_t>* entry_for_addr(const void* const p) const {
     assert(_covered_region.contains(p),
            "out of bounds access to object start array");
-    uint8_t* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
+    Atomic<uint8_t>* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
     return result;
   }
 
   // Mapping from object start array entry to address of first word
-  HeapWord* addr_for_entry(const uint8_t* const p) const {
+  HeapWord* addr_for_entry(const Atomic<uint8_t>* const p) const {
     // _offset_base can be "negative", so can't use pointer_delta().
     size_t delta = p - _offset_base;
     HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());

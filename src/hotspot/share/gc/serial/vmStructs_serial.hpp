@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,6 @@
   nonstatic_field(DefNewGeneration,                  _eden_space,            ContiguousSpace*)              \
   nonstatic_field(DefNewGeneration,                  _from_space,            ContiguousSpace*)              \
   nonstatic_field(DefNewGeneration,                  _to_space,              ContiguousSpace*)              \
-                                                                                                            \
-  nonstatic_field(SerialBlockOffsetTable,            _reserved,              MemRegion)                     \
-  nonstatic_field(SerialBlockOffsetTable,            _vs,                    VirtualSpace)                  \
-  nonstatic_field(SerialBlockOffsetTable,            _offset_base,           u_char*)                       \
                                                                                                             \
   nonstatic_field(SerialHeap,                        _young_gen,             DefNewGeneration*)             \
   nonstatic_field(SerialHeap,                        _old_gen,               TenuredGeneration*)            \

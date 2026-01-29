@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // This implementation of "G1BlockOffsetTable" divides the covered region
@@ -41,7 +42,7 @@ private:
   MemRegion _reserved;
 
   // Biased array-start of BOT array for fast BOT entry translation
-  volatile uint8_t* _offset_base;
+  Atomic<uint8_t>* _offset_base;
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset < CardTable::card_size_in_words(),
@@ -51,32 +52,32 @@ private:
 
   // Bounds checking accessors:
   // For performance these have to devolve to array accesses in product builds.
-  inline uint8_t offset_array(uint8_t* addr) const;
+  inline uint8_t offset_array(Atomic<uint8_t>* addr) const;
 
-  inline void set_offset_array(uint8_t* addr, uint8_t offset);
+  inline void set_offset_array(Atomic<uint8_t>* addr, uint8_t offset);
 
-  inline void set_offset_array(uint8_t* addr, HeapWord* high, HeapWord* low);
+  inline void set_offset_array(Atomic<uint8_t>* addr, HeapWord* high, HeapWord* low);
 
-  inline void set_offset_array(uint8_t* left, uint8_t* right, uint8_t offset);
+  inline void set_offset_array(Atomic<uint8_t>* left, Atomic<uint8_t>* right, uint8_t offset);
 
   // Mapping from address to object start array entry
-  inline uint8_t* entry_for_addr(const void* const p) const;
+  inline Atomic<uint8_t>* entry_for_addr(const void* const p) const;
 
   // Mapping from object start array entry to address of first word
-  inline HeapWord* addr_for_entry(const uint8_t* const p) const;
+  inline HeapWord* addr_for_entry(const Atomic<uint8_t>* const p) const;
 
-  void check_address(uint8_t* addr, const char* msg) const NOT_DEBUG_RETURN;
+  void check_address(Atomic<uint8_t>* addr, const char* msg) const NOT_DEBUG_RETURN;
 
   // Sets the entries corresponding to the cards starting at "start" and ending
   // at "end" to point back to the card before "start"; [start, end]
-  void set_remainder_to_point_to_start_incl(uint8_t* start, uint8_t* end);
+  void set_remainder_to_point_to_start_incl(Atomic<uint8_t>* start, Atomic<uint8_t>* end);
 
   // Update BOT entries corresponding to the mem range [blk_start, blk_end).
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
-  void check_all_cards(uint8_t* left_card, uint8_t* right_card) const NOT_DEBUG_RETURN;
+  void check_all_cards(Atomic<uint8_t>* left_card, Atomic<uint8_t>* right_card) const NOT_DEBUG_RETURN;
 
-  void verify_offset(uint8_t* card_index, uint8_t upper) const NOT_DEBUG_RETURN;
+  void verify_offset(Atomic<uint8_t>* card_index, uint8_t upper) const NOT_DEBUG_RETURN;
   void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const NOT_DEBUG_RETURN;
 
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {

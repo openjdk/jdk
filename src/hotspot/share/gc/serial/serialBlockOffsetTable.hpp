@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -51,17 +52,17 @@ class SerialBlockOffsetTable: public CHeapObj<mtGC> {
   VirtualSpace _vs;
 
   // Biased array-start of BOT array for fast BOT entry translation
-  uint8_t* _offset_base;
+  Atomic<uint8_t>* _offset_base;
 
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
   static size_t compute_size(size_t mem_region_words);
 
   // Mapping from address to object start array entry.
-  uint8_t* entry_for_addr(const void* const p) const;
+  Atomic<uint8_t>* entry_for_addr(const void* const p) const;
 
   // Mapping from object start array entry to address of first word.
-  HeapWord* addr_for_entry(const uint8_t* const p) const;
+  HeapWord* addr_for_entry(const Atomic<uint8_t>* const p) const;
 
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 

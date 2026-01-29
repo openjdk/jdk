@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,11 @@ HeapWord* ObjectStartArray::object_start(HeapWord* const addr) const {
 }
 
 HeapWord* ObjectStartArray::block_start_reaching_into_card(HeapWord* const addr) const {
-  const uint8_t* entry = entry_for_addr(addr);
+  const Atomic<uint8_t>* entry = entry_for_addr(addr);
 
   uint8_t offset;
   while (true) {
-    offset = *entry;
+    offset = entry->load_relaxed();
 
     if (offset < CardTable::card_size_in_words()) {
       break;
