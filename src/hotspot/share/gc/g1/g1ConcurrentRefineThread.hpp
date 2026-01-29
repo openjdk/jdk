@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
 #define SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
 
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -36,7 +35,6 @@ class G1ConcurrentRefine;
 // Concurrent refinement control thread watching card mark accrual on the card table
 // and starting refinement work.
 class G1ConcurrentRefineThread: public ConcurrentGCThread {
-  friend class VMStructs;
   friend class G1CollectedHeap;
 
   Monitor _notifier;

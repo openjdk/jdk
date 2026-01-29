@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073 8368514
+ * @bug 8029661 8325164 8368073 8368514 8368520
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
@@ -34,8 +34,12 @@
  *      -Djdk.tls.useExtendedMasterSecret=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS
  * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet.
- *   Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669
- * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS
+ *   Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669.
+ *   NSS-FIPS does not support ML-KEM, so configures the list of named groups.
+ * @run main/othervm/timeout=120
+ *      -Djdk.tls.client.protocols=TLSv1.3
+ *      -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,secp521r1,x448,ffdhe2048,ffdhe3072,ffdhe4096,ffdhe6144,ffdhe8192
+ *      FipsModeTLS
  */
 
 import java.io.File;
@@ -71,6 +75,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
 import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
@@ -88,15 +93,17 @@ public final class FipsModeTLS extends SecmodTest {
     private static PublicKey publicKey;
 
     public static void main(String[] args) throws Exception {
+        // reduce the limit to trigger a key update later
+        Security.setProperty("jdk.tls.keyLimits",
+                "AES/GCM/NoPadding KeyUpdate 10000");
         try {
             initialize();
         } catch (Exception e) {
-            System.out.println("Test skipped: failure during" +
-                    " initialization");
             if (enableDebug) {
                 System.out.println(e);
             }
-            return;
+            throw new SkippedException("Test skipped: failure during" +
+                                       " initialization");
         }
 
         if (shouldRun()) {
@@ -109,8 +116,8 @@ public final class FipsModeTLS extends SecmodTest {
 
             System.out.println("Test PASS - OK");
         } else {
-            System.out.println("Test skipped: TLS 1.2 mechanisms" +
-                    " not supported by current SunPKCS11 back-end");
+            throw new SkippedException("Test skipped: TLS 1.2 mechanisms" +
+                                       " not supported by current SunPKCS11 back-end");
         }
     }
 
@@ -305,10 +312,11 @@ public final class FipsModeTLS extends SecmodTest {
                 cTOs = ByteBuffer.allocateDirect(netBufferMax);
                 sTOc = ByteBuffer.allocateDirect(netBufferMax);
 
+                // big enough to trigger a key update
                 clientOut = ByteBuffer.wrap(
-                        "Hi Server, I'm Client".getBytes());
+                        "a".repeat(16000).getBytes());
                 serverOut = ByteBuffer.wrap(
-                        "Hello Client, I'm Server".getBytes());
+                        "b".repeat(16000).getBytes());
 
                 SSLEngineResult clientResult;
                 SSLEngineResult serverResult;
@@ -452,9 +460,8 @@ public final class FipsModeTLS extends SecmodTest {
         //  2. SUN (to handle X.509 certificates)
         //  3. SunJSSE (for a TLS engine)
 
-        if (initSecmod() == false) {
-            return;
-        }
+        initSecmod();
+
         String configName = BASE + SEP + "nss.cfg";
         sunPKCS11NSSProvider = getSunPKCS11(configName);
         System.out.println("SunPKCS11 provider: " + sunPKCS11NSSProvider);

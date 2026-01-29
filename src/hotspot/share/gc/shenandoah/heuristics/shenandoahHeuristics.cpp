@@ -72,10 +72,11 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
   FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
-void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
-  assert(collection_set->is_empty(), "Must be empty");
-
+size_t ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  assert(collection_set->is_empty(), "Must be empty");
+  assert(!heap->mode()->is_generational(), "Wrong heuristic for heap mode");
 
   // Check all pinned regions have updated status before choosing the collection set.
   heap->assert_pinned_region_status();
@@ -120,7 +121,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
-      bool bm_live = heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
+      bool bm_live = heap->global_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
@@ -152,8 +153,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
-
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
+  return 0;
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
@@ -242,7 +243,7 @@ void ShenandoahHeuristics::record_success_concurrent() {
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_success_degenerated() {
+void ShenandoahHeuristics::record_degenerated() {
   adjust_penalty(Degenerated_Penalty);
 }
 

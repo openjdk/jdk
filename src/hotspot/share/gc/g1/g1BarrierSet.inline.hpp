@@ -68,13 +68,13 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
   enqueue(field);
 }
 
-inline void G1BarrierSet::write_region(MemRegion mr) {
-  write_region(JavaThread::current(), mr);
-}
-
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_post(T* field) {
-  volatile CardValue* byte = _card_table->byte_for(field);
+  // Make sure that the card table reference is read only once. Otherwise the compiler
+  // might reload that value in the two accesses below, that could cause writes to
+  // the wrong card table.
+  CardTable* card_table = AtomicAccess::load(&_card_table);
+  CardValue* byte = card_table->byte_for(field);
   if (*byte == G1CardTable::clean_card_val()) {
     *byte = G1CardTable::dirty_card_val();
   }
@@ -98,7 +98,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_not_in_heap(T* addr) {
-  oop value = ModRef::oop_load_not_in_heap(addr);
+  oop value = CardTableBS::oop_load_not_in_heap(addr);
   enqueue_preloaded_if_weak(decorators, value);
   return value;
 }
@@ -107,7 +107,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap(T* addr) {
-  oop value = ModRef::oop_load_in_heap(addr);
+  oop value = CardTableBS::oop_load_in_heap(addr);
   enqueue_preloaded_if_weak(decorators, value);
   return value;
 }
@@ -115,7 +115,7 @@ oop_load_in_heap(T* addr) {
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap_at(oop base, ptrdiff_t offset) {
-  oop value = ModRef::oop_load_in_heap_at(base, offset);
+  oop value = CardTableBS::oop_load_in_heap_at(base, offset);
   enqueue_preloaded_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
   return value;
 }

@@ -33,11 +33,11 @@
 
 static void contains_expected_num_of_registers(const RegMask& rm, unsigned int expected) {
 
-  ASSERT_TRUE(rm.Size() == expected);
+  ASSERT_TRUE(rm.size() == expected);
   if (expected > 0) {
-    ASSERT_TRUE(!rm.is_Empty());
+    ASSERT_TRUE(!rm.is_empty());
   } else {
-    ASSERT_TRUE(rm.is_Empty());
+    ASSERT_TRUE(rm.is_empty());
     ASSERT_TRUE(!rm.is_infinite_stack());
   }
 
@@ -60,14 +60,14 @@ TEST_VM(RegMask, empty) {
 
 TEST_VM(RegMask, iteration) {
   RegMask rm;
-  rm.Insert(30);
-  rm.Insert(31);
-  rm.Insert(32);
-  rm.Insert(33);
-  rm.Insert(62);
-  rm.Insert(63);
-  rm.Insert(64);
-  rm.Insert(65);
+  rm.insert(30);
+  rm.insert(31);
+  rm.insert(32);
+  rm.insert(33);
+  rm.insert(62);
+  rm.insert(63);
+  rm.insert(64);
+  rm.insert(65);
 
   RegMaskIterator rmi(rm);
   ASSERT_TRUE(rmi.next() == OptoReg::Name(30));
@@ -82,12 +82,12 @@ TEST_VM(RegMask, iteration) {
 }
 
 TEST_VM(RegMask, Set_ALL) {
-  // Check that Set_All doesn't add bits outside of rm.rm_size_bits()
+  // Check that set_all doesn't add bits outside of rm.rm_size_bits()
   RegMask rm;
-  rm.Set_All();
-  ASSERT_TRUE(rm.Size() == rm.rm_size_in_bits());
-  ASSERT_TRUE(!rm.is_Empty());
-  // Set_All sets infinite_stack
+  rm.set_all();
+  ASSERT_TRUE(rm.size() == rm.rm_size_in_bits());
+  ASSERT_TRUE(!rm.is_empty());
+  // set_all sets infinite_stack
   ASSERT_TRUE(rm.is_infinite_stack());
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits());
 }
@@ -95,64 +95,64 @@ TEST_VM(RegMask, Set_ALL) {
 TEST_VM(RegMask, Clear) {
   // Check that Clear doesn't leave any stray bits
   RegMask rm;
-  rm.Set_All();
-  rm.Clear();
+  rm.set_all();
+  rm.clear();
   contains_expected_num_of_registers(rm, 0);
 }
 
-TEST_VM(RegMask, AND) {
+TEST_VM(RegMask, and_with) {
   RegMask rm1;
-  rm1.Insert(OptoReg::Name(1));
+  rm1.insert(OptoReg::Name(1));
   contains_expected_num_of_registers(rm1, 1);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(1)));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(1)));
 
-  rm1.AND(rm1);
+  rm1.and_with(rm1);
   contains_expected_num_of_registers(rm1, 1);
 
   RegMask rm2;
-  rm1.AND(rm2);
+  rm1.and_with(rm2);
   contains_expected_num_of_registers(rm1, 0);
   contains_expected_num_of_registers(rm2, 0);
 }
 
-TEST_VM(RegMask, OR) {
+TEST_VM(RegMask, or_with) {
   RegMask rm1;
-  rm1.Insert(OptoReg::Name(1));
+  rm1.insert(OptoReg::Name(1));
   contains_expected_num_of_registers(rm1, 1);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(1)));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(1)));
 
-  rm1.OR(rm1);
+  rm1.or_with(rm1);
   contains_expected_num_of_registers(rm1, 1);
 
   RegMask rm2;
-  rm1.OR(rm2);
+  rm1.or_with(rm2);
   contains_expected_num_of_registers(rm1, 1);
   contains_expected_num_of_registers(rm2, 0);
 }
 
-TEST_VM(RegMask, SUBTRACT) {
+TEST_VM(RegMask, subtract) {
   RegMask rm1;
   RegMask rm2;
 
-  rm2.Set_All();
+  rm2.set_all();
   for (int i = 17; i < (int)rm1.rm_size_in_bits(); i++) {
-    rm1.Insert(i);
+    rm1.insert(i);
   }
   rm1.set_infinite_stack(true);
   ASSERT_TRUE(rm1.is_infinite_stack());
-  rm2.SUBTRACT(rm1);
+  rm2.subtract(rm1);
   contains_expected_num_of_registers(rm1, rm1.rm_size_in_bits() - 17);
   contains_expected_num_of_registers(rm2, 17);
 }
 
-TEST_VM(RegMask, SUBTRACT_inner) {
+TEST_VM(RegMask, subtract_inner) {
   RegMask rm1;
   RegMask rm2;
-  rm2.Set_All();
+  rm2.set_all();
   for (int i = 17; i < (int)rm1.rm_size_in_bits(); i++) {
-    rm1.Insert(i);
+    rm1.insert(i);
   }
-  rm2.SUBTRACT_inner(rm1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm1, rm1.rm_size_in_bits() - 17);
   contains_expected_num_of_registers(rm2, 17);
 }
@@ -161,11 +161,11 @@ TEST_VM(RegMask, is_bound1) {
   RegMask rm;
   ASSERT_FALSE(rm.is_bound1());
   for (int i = 0; i < (int)rm.rm_size_in_bits() - 1; i++) {
-    rm.Insert(i);
+    rm.insert(i);
     ASSERT_TRUE(rm.is_bound1())       << "Index " << i;
     ASSERT_TRUE(rm.is_bound(Op_RegI)) << "Index " << i;
     contains_expected_num_of_registers(rm, 1);
-    rm.Remove(i);
+    rm.remove(i);
   }
   // infinite_stack does not count as a bound register
   rm.set_infinite_stack(true);
@@ -176,18 +176,18 @@ TEST_VM(RegMask, is_bound_pair) {
   RegMask rm;
   ASSERT_TRUE(rm.is_bound_pair());
   for (int i = 0; i < (int)rm.rm_size_in_bits() - 2; i++) {
-    rm.Insert(i);
-    rm.Insert(i + 1);
+    rm.insert(i);
+    rm.insert(i + 1);
     ASSERT_TRUE(rm.is_bound_pair())   << "Index " << i;
     ASSERT_TRUE(rm.is_bound_set(2))   << "Index " << i;
     ASSERT_TRUE(rm.is_bound(Op_RegI)) << "Index " << i;
     contains_expected_num_of_registers(rm, 2);
-    rm.Clear();
+    rm.clear();
   }
   // A pair with the infinite bit does not count as a bound pair
-  rm.Clear();
-  rm.Insert(rm.rm_size_in_bits() - 2);
-  rm.Insert(rm.rm_size_in_bits() - 1);
+  rm.clear();
+  rm.insert(rm.rm_size_in_bits() - 2);
+  rm.insert(rm.rm_size_in_bits() - 1);
   rm.set_infinite_stack(true);
   ASSERT_FALSE(rm.is_bound_pair());
 }
@@ -198,40 +198,40 @@ TEST_VM(RegMask, is_bound_set) {
     ASSERT_TRUE(rm.is_bound_set(size));
     for (int i = 0; i < (int)rm.rm_size_in_bits() - size; i++) {
       for (int j = i; j < i + size; j++) {
-        rm.Insert(j);
+        rm.insert(j);
       }
       ASSERT_TRUE(rm.is_bound_set(size))   << "Size " << size << " Index " << i;
       contains_expected_num_of_registers(rm, size);
-      rm.Clear();
+      rm.clear();
     }
     // A set with infinite_stack does not count as a bound set
     for (int j = rm.rm_size_in_bits() - size; j < (int)rm.rm_size_in_bits(); j++) {
-      rm.Insert(j);
+      rm.insert(j);
     }
     rm.set_infinite_stack(true);
     ASSERT_FALSE(rm.is_bound_set(size));
-    rm.Clear();
+    rm.clear();
   }
 }
 
 TEST_VM(RegMask, external_member) {
   RegMask rm;
   rm.set_infinite_stack(false);
-  ASSERT_FALSE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
+  ASSERT_FALSE(rm.member(OptoReg::Name(rm.rm_size_in_bits())));
   rm.set_infinite_stack(true);
-  ASSERT_TRUE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
+  ASSERT_TRUE(rm.member(OptoReg::Name(rm.rm_size_in_bits())));
 }
 
 TEST_VM(RegMask, find_element) {
   RegMask rm;
-  rm.Insert(OptoReg::Name(44));
-  rm.Insert(OptoReg::Name(30));
-  rm.Insert(OptoReg::Name(54));
+  rm.insert(OptoReg::Name(44));
+  rm.insert(OptoReg::Name(30));
+  rm.insert(OptoReg::Name(54));
   ASSERT_EQ(rm.find_first_elem(), OptoReg::Name(30));
   ASSERT_EQ(rm.find_last_elem(), OptoReg::Name(54));
   rm.set_infinite_stack(true);
   ASSERT_EQ(rm.find_last_elem(), OptoReg::Name(54));
-  rm.Clear();
+  rm.clear();
   ASSERT_EQ(rm.find_first_elem(), OptoReg::Bad);
   ASSERT_EQ(rm.find_last_elem(), OptoReg::Bad);
 }
@@ -242,58 +242,58 @@ TEST_VM(RegMask, find_first_set) {
   lrg._is_scalable = 0;
   lrg._is_vector = 0;
   ASSERT_EQ(rm.find_first_set(lrg, 2), OptoReg::Bad);
-  rm.Insert(OptoReg::Name(24));
-  rm.Insert(OptoReg::Name(25));
-  rm.Insert(OptoReg::Name(26));
-  rm.Insert(OptoReg::Name(27));
-  rm.Insert(OptoReg::Name(16));
-  rm.Insert(OptoReg::Name(17));
-  rm.Insert(OptoReg::Name(18));
-  rm.Insert(OptoReg::Name(19));
+  rm.insert(OptoReg::Name(24));
+  rm.insert(OptoReg::Name(25));
+  rm.insert(OptoReg::Name(26));
+  rm.insert(OptoReg::Name(27));
+  rm.insert(OptoReg::Name(16));
+  rm.insert(OptoReg::Name(17));
+  rm.insert(OptoReg::Name(18));
+  rm.insert(OptoReg::Name(19));
   ASSERT_EQ(rm.find_first_set(lrg, 4), OptoReg::Name(19));
 }
 
 TEST_VM(RegMask, alignment) {
   RegMask rm;
-  rm.Insert(OptoReg::Name(30));
-  rm.Insert(OptoReg::Name(31));
+  rm.insert(OptoReg::Name(30));
+  rm.insert(OptoReg::Name(31));
   ASSERT_TRUE(rm.is_aligned_sets(2));
-  rm.Insert(OptoReg::Name(32));
-  rm.Insert(OptoReg::Name(37));
-  rm.Insert(OptoReg::Name(62));
-  rm.Insert(OptoReg::Name(71));
-  rm.Insert(OptoReg::Name(74));
-  rm.Insert(OptoReg::Name(75));
+  rm.insert(OptoReg::Name(32));
+  rm.insert(OptoReg::Name(37));
+  rm.insert(OptoReg::Name(62));
+  rm.insert(OptoReg::Name(71));
+  rm.insert(OptoReg::Name(74));
+  rm.insert(OptoReg::Name(75));
   ASSERT_FALSE(rm.is_aligned_pairs());
   rm.clear_to_pairs();
   ASSERT_TRUE(rm.is_aligned_sets(2));
   ASSERT_TRUE(rm.is_aligned_pairs());
   contains_expected_num_of_registers(rm, 4);
-  ASSERT_TRUE(rm.Member(OptoReg::Name(30)));
-  ASSERT_TRUE(rm.Member(OptoReg::Name(31)));
-  ASSERT_TRUE(rm.Member(OptoReg::Name(74)));
-  ASSERT_TRUE(rm.Member(OptoReg::Name(75)));
+  ASSERT_TRUE(rm.member(OptoReg::Name(30)));
+  ASSERT_TRUE(rm.member(OptoReg::Name(31)));
+  ASSERT_TRUE(rm.member(OptoReg::Name(74)));
+  ASSERT_TRUE(rm.member(OptoReg::Name(75)));
   ASSERT_FALSE(rm.is_misaligned_pair());
-  rm.Remove(OptoReg::Name(30));
-  rm.Remove(OptoReg::Name(74));
+  rm.remove(OptoReg::Name(30));
+  rm.remove(OptoReg::Name(74));
   ASSERT_TRUE(rm.is_misaligned_pair());
 }
 
 TEST_VM(RegMask, clear_to_sets) {
   RegMask rm;
-  rm.Insert(OptoReg::Name(3));
-  rm.Insert(OptoReg::Name(20));
-  rm.Insert(OptoReg::Name(21));
-  rm.Insert(OptoReg::Name(22));
-  rm.Insert(OptoReg::Name(23));
-  rm.Insert(OptoReg::Name(25));
-  rm.Insert(OptoReg::Name(26));
-  rm.Insert(OptoReg::Name(27));
-  rm.Insert(OptoReg::Name(40));
-  rm.Insert(OptoReg::Name(42));
-  rm.Insert(OptoReg::Name(43));
-  rm.Insert(OptoReg::Name(44));
-  rm.Insert(OptoReg::Name(45));
+  rm.insert(OptoReg::Name(3));
+  rm.insert(OptoReg::Name(20));
+  rm.insert(OptoReg::Name(21));
+  rm.insert(OptoReg::Name(22));
+  rm.insert(OptoReg::Name(23));
+  rm.insert(OptoReg::Name(25));
+  rm.insert(OptoReg::Name(26));
+  rm.insert(OptoReg::Name(27));
+  rm.insert(OptoReg::Name(40));
+  rm.insert(OptoReg::Name(42));
+  rm.insert(OptoReg::Name(43));
+  rm.insert(OptoReg::Name(44));
+  rm.insert(OptoReg::Name(45));
   rm.clear_to_sets(2);
   ASSERT_TRUE(rm.is_aligned_sets(2));
   contains_expected_num_of_registers(rm, 10);
@@ -307,7 +307,7 @@ TEST_VM(RegMask, clear_to_sets) {
 
 TEST_VM(RegMask, smear_to_sets) {
   RegMask rm;
-  rm.Insert(OptoReg::Name(3));
+  rm.insert(OptoReg::Name(3));
   rm.smear_to_sets(2);
   ASSERT_TRUE(rm.is_aligned_sets(2));
   contains_expected_num_of_registers(rm, 2);
@@ -327,14 +327,14 @@ TEST_VM(RegMask, overlap) {
   RegMask rm2;
   ASSERT_FALSE(rm1.overlap(rm2));
   ASSERT_FALSE(rm2.overlap(rm1));
-  rm1.Insert(OptoReg::Name(23));
-  rm1.Insert(OptoReg::Name(2));
-  rm1.Insert(OptoReg::Name(12));
-  rm2.Insert(OptoReg::Name(1));
-  rm2.Insert(OptoReg::Name(4));
+  rm1.insert(OptoReg::Name(23));
+  rm1.insert(OptoReg::Name(2));
+  rm1.insert(OptoReg::Name(12));
+  rm2.insert(OptoReg::Name(1));
+  rm2.insert(OptoReg::Name(4));
   ASSERT_FALSE(rm1.overlap(rm2));
   ASSERT_FALSE(rm2.overlap(rm1));
-  rm1.Insert(OptoReg::Name(4));
+  rm1.insert(OptoReg::Name(4));
   ASSERT_TRUE(rm1.overlap(rm2));
   ASSERT_TRUE(rm2.overlap(rm1));
 }
@@ -342,10 +342,10 @@ TEST_VM(RegMask, overlap) {
 TEST_VM(RegMask, valid_reg) {
   RegMask rm;
   ASSERT_FALSE(rm.is_valid_reg(OptoReg::Name(42), 1));
-  rm.Insert(OptoReg::Name(3));
-  rm.Insert(OptoReg::Name(5));
-  rm.Insert(OptoReg::Name(6));
-  rm.Insert(OptoReg::Name(7));
+  rm.insert(OptoReg::Name(3));
+  rm.insert(OptoReg::Name(5));
+  rm.insert(OptoReg::Name(6));
+  rm.insert(OptoReg::Name(7));
   ASSERT_FALSE(rm.is_valid_reg(OptoReg::Name(7), 4));
   ASSERT_TRUE(rm.is_valid_reg(OptoReg::Name(7), 2));
 }
@@ -355,19 +355,19 @@ TEST_VM(RegMask, rollover_and_insert_remove) {
   OptoReg::Name reg1(rm.rm_size_in_bits() + 42);
   OptoReg::Name reg2(rm.rm_size_in_bits() * 2 + 42);
   rm.set_infinite_stack(true);
-  ASSERT_TRUE(rm.Member(reg1));
+  ASSERT_TRUE(rm.member(reg1));
   rm.rollover();
-  rm.Clear();
-  rm.Insert(reg1);
-  ASSERT_TRUE(rm.Member(reg1));
-  rm.Remove(reg1);
-  ASSERT_FALSE(rm.Member(reg1));
+  rm.clear();
+  rm.insert(reg1);
+  ASSERT_TRUE(rm.member(reg1));
+  rm.remove(reg1);
+  ASSERT_FALSE(rm.member(reg1));
   rm.set_infinite_stack(true);
   rm.rollover();
-  rm.Clear();
-  rm.Insert(reg2);
-  ASSERT_FALSE(rm.Member(reg1));
-  ASSERT_TRUE(rm.Member(reg2));
+  rm.clear();
+  rm.insert(reg2);
+  ASSERT_FALSE(rm.member(reg1));
+  ASSERT_TRUE(rm.member(reg2));
 }
 
 TEST_VM(RegMask, rollover_and_find) {
@@ -376,11 +376,11 @@ TEST_VM(RegMask, rollover_and_find) {
   OptoReg::Name reg2(rm.rm_size_in_bits() + 7);
   rm.set_infinite_stack(true);
   rm.rollover();
-  rm.Clear();
+  rm.clear();
   ASSERT_EQ(rm.find_first_elem(), OptoReg::Bad);
   ASSERT_EQ(rm.find_last_elem(), OptoReg::Bad);
-  rm.Insert(reg1);
-  rm.Insert(reg2);
+  rm.insert(reg1);
+  rm.insert(reg2);
   ASSERT_EQ(rm.find_first_elem(), reg2);
   ASSERT_EQ(rm.find_last_elem(), reg1);
 }
@@ -400,35 +400,35 @@ TEST_VM(RegMask, rollover_and_find_first_set) {
   OptoReg::Name reg8(rm.rm_size_in_bits() + 19);
   rm.set_infinite_stack(true);
   rm.rollover();
-  rm.Clear();
+  rm.clear();
   ASSERT_EQ(rm.find_first_set(lrg, 2), OptoReg::Bad);
-  rm.Insert(reg1);
-  rm.Insert(reg2);
-  rm.Insert(reg3);
-  rm.Insert(reg4);
-  rm.Insert(reg5);
-  rm.Insert(reg6);
-  rm.Insert(reg7);
-  rm.Insert(reg8);
+  rm.insert(reg1);
+  rm.insert(reg2);
+  rm.insert(reg3);
+  rm.insert(reg4);
+  rm.insert(reg5);
+  rm.insert(reg6);
+  rm.insert(reg7);
+  rm.insert(reg8);
   ASSERT_EQ(rm.find_first_set(lrg, 4), reg8);
 }
 
-TEST_VM(RegMask, rollover_and_Set_All_From) {
+TEST_VM(RegMask, rollover_and_set_all_from) {
   RegMask rm;
   OptoReg::Name reg1(rm.rm_size_in_bits() + 42);
   rm.set_infinite_stack(true);
   rm.rollover();
-  rm.Clear();
-  rm.Set_All_From(reg1);
+  rm.clear();
+  rm.set_all_from(reg1);
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - 42);
 }
 
-TEST_VM(RegMask, rollover_and_Set_All_From_Offset) {
+TEST_VM(RegMask, rollover_and_set_all_from_offset) {
   RegMask rm;
   rm.set_infinite_stack(true);
   rm.rollover();
-  rm.Clear();
-  rm.Set_All_From_Offset();
+  rm.clear();
+  rm.set_all_from_offset();
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits());
 }
 
@@ -440,11 +440,11 @@ TEST_VM(RegMask, rollover_and_iterate) {
   OptoReg::Name reg4(rm.rm_size_in_bits() + 43);
   rm.set_infinite_stack(true);
   rm.rollover();
-  rm.Clear();
-  rm.Insert(reg1);
-  rm.Insert(reg2);
-  rm.Insert(reg3);
-  rm.Insert(reg4);
+  rm.clear();
+  rm.insert(reg1);
+  rm.insert(reg2);
+  rm.insert(reg3);
+  rm.insert(reg4);
   RegMaskIterator rmi(rm);
   ASSERT_EQ(rmi.next(), reg1);
   ASSERT_EQ(rmi.next(), reg2);
@@ -453,45 +453,45 @@ TEST_VM(RegMask, rollover_and_iterate) {
   ASSERT_FALSE(rmi.has_next());
 }
 
-TEST_VM(RegMask, rollover_and_SUBTRACT_inner_disjoint) {
+TEST_VM(RegMask, rollover_and_subtract_inner_disjoint) {
   RegMask rm1;
   RegMask rm2;
   OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
   rm1.set_infinite_stack(true);
   rm1.rollover();
-  rm1.Clear();
-  rm1.SUBTRACT_inner(rm2);
+  rm1.clear();
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 0);
-  rm2.SUBTRACT_inner(rm1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 0);
-  rm1.Insert(reg1);
-  rm2.Insert(42);
-  rm1.SUBTRACT_inner(rm2);
+  rm1.insert(reg1);
+  rm2.insert(42);
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 1);
-  rm2.SUBTRACT_inner(rm1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 1);
 }
 
-TEST_VM(RegMask, rollover_and_SUBTRACT_inner_overlap) {
+TEST_VM(RegMask, rollover_and_subtract_inner_overlap) {
   RegMask rm1;
   RegMask rm2;
   OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
   rm1.set_infinite_stack(true);
   rm1.rollover();
-  rm1.Clear();
+  rm1.clear();
   rm2.set_infinite_stack(true);
   rm2.rollover();
-  rm2.Clear();
-  rm1.SUBTRACT_inner(rm2);
+  rm2.clear();
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 0);
-  rm2.SUBTRACT_inner(rm1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 0);
-  rm1.Insert(reg1);
-  rm2.Insert(reg1);
-  rm1.SUBTRACT_inner(rm2);
+  rm1.insert(reg1);
+  rm2.insert(reg1);
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 0);
-  rm1.Insert(reg1);
-  rm2.SUBTRACT_inner(rm1);
+  rm1.insert(reg1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 0);
 }
 
@@ -502,20 +502,20 @@ TEST_VM_ASSERT_MSG(RegMask, unexpected_clone, ".*clone sanity check") {
   RegMask rm2;
   // Copy contents of rm1 to rm2 inappropriately (no copy constructor)
   memcpy((void*)&rm2, (void*)&rm1, sizeof(RegMask));
-  rm2.Member(0); // Safeguard in RegMask must catch this.
+  rm2.member(0); // Safeguard in RegMask must catch this.
 }
 
 TEST_VM_ASSERT_MSG(RegMask, unexpected_growth, ".*unexpected register mask growth") {
   RegMask rm;
   // Add clearly out of range OptoReg::Name
-  rm.Insert(std::numeric_limits<OptoReg::Name>::max());
+  rm.insert(std::numeric_limits<OptoReg::Name>::max());
 }
 
 TEST_VM_ASSERT_MSG(RegMask, not_growable, ".*register mask not growable") {
   RegMask rm;
   // Add a bit just outside the mask, without having specified an arena for
   // extension.
-  rm.Insert(rm.rm_size_in_bits());
+  rm.insert(rm.rm_size_in_bits());
 }
 
 TEST_VM_ASSERT_MSG(RegMask, offset_mismatch, ".*offset mismatch") {
@@ -523,8 +523,8 @@ TEST_VM_ASSERT_MSG(RegMask, offset_mismatch, ".*offset mismatch") {
   RegMask rm2;
   rm1.set_infinite_stack(true);
   rm1.rollover();
-  // Cannot copy with different offsets
-  rm2 = rm1;
+  // Cannot assign with different offsets
+  rm2.assignFrom(rm1);
 }
 
 #endif
@@ -549,8 +549,8 @@ static int first_extended() {
 
 static void extend(RegMask& rm, unsigned int n = 4) {
   // Extend the given RegMask with at least n dynamically-allocated words.
-  rm.Insert(OptoReg::Name(first_extended() + (BitsPerWord * n) - 1));
-  rm.Clear();
+  rm.insert(OptoReg::Name(first_extended() + (BitsPerWord * n) - 1));
+  rm.clear();
   ASSERT_TRUE(rm.rm_size_in_words() >= RegMask::gtest_basic_rm_size_in_words() + n);
 }
 
@@ -562,14 +562,14 @@ TEST_VM(RegMask, static_by_default) {
 
 TEST_VM(RegMask, iteration_extended) {
   RegMask rm(arena());
-  rm.Insert(30);
-  rm.Insert(31);
-  rm.Insert(33);
-  rm.Insert(62);
-  rm.Insert(first_extended());
-  rm.Insert(first_extended() + 42);
-  rm.Insert(first_extended() + 55);
-  rm.Insert(first_extended() + 456);
+  rm.insert(30);
+  rm.insert(31);
+  rm.insert(33);
+  rm.insert(62);
+  rm.insert(first_extended());
+  rm.insert(first_extended() + 42);
+  rm.insert(first_extended() + 55);
+  rm.insert(first_extended() + 456);
 
   RegMaskIterator rmi(rm);
   ASSERT_TRUE(rmi.next() == OptoReg::Name(30));
@@ -583,125 +583,125 @@ TEST_VM(RegMask, iteration_extended) {
   ASSERT_FALSE(rmi.has_next());
 }
 
-TEST_VM(RegMask, Set_ALL_extended) {
-  // Check that Set_All doesn't add bits outside of rm.rm_size_bits() on
+TEST_VM(RegMask, set_all_extended) {
+  // Check that set_all doesn't add bits outside of rm.rm_size_bits() on
   // extended RegMasks.
   RegMask rm(arena());
   extend(rm);
-  rm.Set_All();
-  ASSERT_EQ(rm.Size(), rm.rm_size_in_bits());
-  ASSERT_TRUE(!rm.is_Empty());
-  // Set_All sets infinite_stack bit
+  rm.set_all();
+  ASSERT_EQ(rm.size(), rm.rm_size_in_bits());
+  ASSERT_TRUE(!rm.is_empty());
+  // set_all sets infinite_stack bit
   ASSERT_TRUE(rm.is_infinite_stack());
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits());
 }
 
-TEST_VM(RegMask, Set_ALL_From_extended) {
+TEST_VM(RegMask, set_all_from_extended) {
   RegMask rm(arena());
   extend(rm);
-  rm.Set_All_From(OptoReg::Name(42));
+  rm.set_all_from(OptoReg::Name(42));
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - 42);
 }
 
-TEST_VM(RegMask, Set_ALL_From_extended_grow) {
+TEST_VM(RegMask, set_all_from_extended_grow) {
   RegMask rm(arena());
-  rm.Set_All_From(first_extended() + OptoReg::Name(42));
+  rm.set_all_from(first_extended() + OptoReg::Name(42));
   is_extended(rm);
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - first_extended() - 42);
 }
 
-TEST_VM(RegMask, Clear_extended) {
-  // Check that Clear doesn't leave any stray bits on extended RegMasks.
+TEST_VM(RegMask, clear_extended) {
+  // Check that clear doesn't leave any stray bits on extended RegMasks.
   RegMask rm(arena());
-  rm.Insert(first_extended());
+  rm.insert(first_extended());
   is_extended(rm);
-  rm.Set_All();
-  rm.Clear();
+  rm.set_all();
+  rm.clear();
   contains_expected_num_of_registers(rm, 0);
 }
 
-TEST_VM(RegMask, AND_extended_basic) {
+TEST_VM(RegMask, and_with_extended_basic) {
   RegMask rm1(arena());
-  rm1.Insert(OptoReg::Name(first_extended()));
+  rm1.insert(OptoReg::Name(first_extended()));
   is_extended(rm1);
   contains_expected_num_of_registers(rm1, 1);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(first_extended())));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(first_extended())));
 
-  rm1.AND(rm1);
+  rm1.and_with(rm1);
   contains_expected_num_of_registers(rm1, 1);
 
   RegMask rm2;
   is_basic(rm2);
-  rm1.AND(rm2);
+  rm1.and_with(rm2);
   contains_expected_num_of_registers(rm1, 0);
   contains_expected_num_of_registers(rm2, 0);
 }
 
-TEST_VM(RegMask, AND_extended_extended) {
+TEST_VM(RegMask, and_with_extended_extended) {
   RegMask rm1(arena());
-  rm1.Insert(OptoReg::Name(first_extended()));
+  rm1.insert(OptoReg::Name(first_extended()));
   is_extended(rm1);
   contains_expected_num_of_registers(rm1, 1);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(first_extended())));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(first_extended())));
 
-  rm1.AND(rm1);
+  rm1.and_with(rm1);
   contains_expected_num_of_registers(rm1, 1);
 
   RegMask rm2(arena());
   extend(rm2);
-  rm1.AND(rm2);
+  rm1.and_with(rm2);
   contains_expected_num_of_registers(rm1, 0);
   contains_expected_num_of_registers(rm2, 0);
 }
 
-TEST_VM(RegMask, OR_extended_basic) {
+TEST_VM(RegMask, or_with_extended_basic) {
   RegMask rm1(arena());
-  rm1.Insert(OptoReg::Name(first_extended()));
+  rm1.insert(OptoReg::Name(first_extended()));
   is_extended(rm1);
   contains_expected_num_of_registers(rm1, 1);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(first_extended())));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(first_extended())));
 
-  rm1.OR(rm1);
+  rm1.or_with(rm1);
   contains_expected_num_of_registers(rm1, 1);
 
   RegMask rm2;
   is_basic(rm2);
-  rm1.OR(rm2);
+  rm1.or_with(rm2);
   contains_expected_num_of_registers(rm1, 1);
   contains_expected_num_of_registers(rm2, 0);
 }
 
-TEST_VM(RegMask, OR_extended_extended) {
+TEST_VM(RegMask, or_with_extended_extended) {
   RegMask rm1(arena());
-  rm1.Insert(OptoReg::Name(first_extended()));
+  rm1.insert(OptoReg::Name(first_extended()));
   is_extended(rm1);
   contains_expected_num_of_registers(rm1, 1);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(first_extended())));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(first_extended())));
 
-  rm1.OR(rm1);
+  rm1.or_with(rm1);
   contains_expected_num_of_registers(rm1, 1);
 
   RegMask rm2(arena());
   extend(rm2);
-  rm1.OR(rm2);
+  rm1.or_with(rm2);
   contains_expected_num_of_registers(rm1, 1);
   contains_expected_num_of_registers(rm2, 0);
 }
 
-TEST_VM(RegMask, SUBTRACT_extended) {
+TEST_VM(RegMask, subtract_extended) {
   RegMask rm1(arena());
   extend(rm1);
   RegMask rm2(arena());
   extend(rm2);
 
-  rm2.Set_All();
+  rm2.set_all();
   ASSERT_TRUE(rm2.is_infinite_stack());
   for (int i = first_extended() + 17; i < (int)rm1.rm_size_in_bits(); i++) {
-    rm1.Insert(i);
+    rm1.insert(i);
   }
   rm1.set_infinite_stack(true);
   ASSERT_TRUE(rm1.is_infinite_stack());
-  rm2.SUBTRACT(rm1);
+  rm2.subtract(rm1);
   contains_expected_num_of_registers(rm1, rm1.rm_size_in_bits() - first_extended() - 17);
   contains_expected_num_of_registers(rm2, first_extended() + 17);
 }
@@ -710,9 +710,9 @@ TEST_VM(RegMask, external_member_extended) {
   RegMask rm(arena());
   extend(rm);
   rm.set_infinite_stack(false);
-  ASSERT_FALSE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
+  ASSERT_FALSE(rm.member(OptoReg::Name(rm.rm_size_in_bits())));
   rm.set_infinite_stack(true);
-  ASSERT_TRUE(rm.Member(OptoReg::Name(rm.rm_size_in_bits())));
+  ASSERT_TRUE(rm.member(OptoReg::Name(rm.rm_size_in_bits())));
 }
 
 TEST_VM(RegMask, overlap_extended) {
@@ -722,14 +722,14 @@ TEST_VM(RegMask, overlap_extended) {
   extend(rm2);
   ASSERT_FALSE(rm1.overlap(rm2));
   ASSERT_FALSE(rm2.overlap(rm1));
-  rm1.Insert(OptoReg::Name(23));
-  rm1.Insert(OptoReg::Name(2));
-  rm1.Insert(OptoReg::Name(first_extended() + 12));
-  rm2.Insert(OptoReg::Name(1));
-  rm2.Insert(OptoReg::Name(first_extended() + 4));
+  rm1.insert(OptoReg::Name(23));
+  rm1.insert(OptoReg::Name(2));
+  rm1.insert(OptoReg::Name(first_extended() + 12));
+  rm2.insert(OptoReg::Name(1));
+  rm2.insert(OptoReg::Name(first_extended() + 4));
   ASSERT_FALSE(rm1.overlap(rm2));
   ASSERT_FALSE(rm2.overlap(rm1));
-  rm1.Insert(OptoReg::Name(first_extended() + 4));
+  rm1.insert(OptoReg::Name(first_extended() + 4));
   ASSERT_TRUE(rm1.overlap(rm2));
   ASSERT_TRUE(rm2.overlap(rm1));
 }
@@ -738,43 +738,43 @@ TEST_VM(RegMask, up_extended) {
   RegMask rm(arena());
   extend(rm);
   ASSERT_TRUE(rm.is_UP());
-  rm.Insert(OptoReg::Name(1));
+  rm.insert(OptoReg::Name(1));
   ASSERT_TRUE(rm.is_UP());
-  rm.Insert(OptoReg::Name(first_extended()));
+  rm.insert(OptoReg::Name(first_extended()));
   ASSERT_FALSE(rm.is_UP());
-  rm.Clear();
+  rm.clear();
   rm.set_infinite_stack(true);
   ASSERT_FALSE(rm.is_UP());
 }
 
-TEST_VM(RegMask, SUBTRACT_inner_basic_extended) {
+TEST_VM(RegMask, subtract_inner_basic_extended) {
   RegMask rm1;
   RegMask rm2(arena());
-  rm1.Insert(OptoReg::Name(1));
-  rm1.Insert(OptoReg::Name(42));
+  rm1.insert(OptoReg::Name(1));
+  rm1.insert(OptoReg::Name(42));
   is_basic(rm1);
-  rm2.Insert(OptoReg::Name(1));
-  rm2.Insert(OptoReg::Name(first_extended() + 20));
+  rm2.insert(OptoReg::Name(1));
+  rm2.insert(OptoReg::Name(first_extended() + 20));
   is_extended(rm2);
-  rm1.SUBTRACT_inner(rm2);
+  rm1.subtract_inner(rm2);
   is_basic(rm1);
   contains_expected_num_of_registers(rm1, 1);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(42)));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(42)));
 }
 
-TEST_VM(RegMask, SUBTRACT_inner_extended_basic) {
+TEST_VM(RegMask, subtract_inner_extended_basic) {
   RegMask rm1(arena());
   RegMask rm2;
-  rm1.Insert(OptoReg::Name(1));
-  rm1.Insert(OptoReg::Name(42));
-  rm1.Insert(OptoReg::Name(first_extended() + 20));
+  rm1.insert(OptoReg::Name(1));
+  rm1.insert(OptoReg::Name(42));
+  rm1.insert(OptoReg::Name(first_extended() + 20));
   is_extended(rm1);
-  rm2.Insert(OptoReg::Name(1));
+  rm2.insert(OptoReg::Name(1));
   is_basic(rm2);
-  rm1.SUBTRACT_inner(rm2);
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 2);
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(42)));
-  ASSERT_TRUE(rm1.Member(OptoReg::Name(first_extended() + 20)));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(42)));
+  ASSERT_TRUE(rm1.member(OptoReg::Name(first_extended() + 20)));
 }
 
 TEST_VM(RegMask, rollover_extended) {
@@ -784,48 +784,48 @@ TEST_VM(RegMask, rollover_extended) {
   OptoReg::Name reg1(rm.rm_size_in_bits() + 42);
   rm.set_infinite_stack(true);
   rm.rollover();
-  rm.Insert(reg1);
-  ASSERT_TRUE(rm.Member(reg1));
+  rm.insert(reg1);
+  ASSERT_TRUE(rm.member(reg1));
 }
 
-TEST_VM(RegMask, rollover_and_SUBTRACT_inner_disjoint_extended) {
+TEST_VM(RegMask, rollover_and_subtract_inner_disjoint_extended) {
   RegMask rm1(arena());
   RegMask rm2;
   extend(rm1);
   OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
   rm1.set_infinite_stack(true);
   rm1.rollover();
-  rm1.Clear();
-  rm1.SUBTRACT_inner(rm2);
+  rm1.clear();
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 0);
-  rm2.SUBTRACT_inner(rm1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 0);
-  rm1.Insert(reg1);
-  rm2.Insert(42);
-  rm1.SUBTRACT_inner(rm2);
+  rm1.insert(reg1);
+  rm2.insert(42);
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 1);
-  rm2.SUBTRACT_inner(rm1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 1);
 }
 
-TEST_VM(RegMask, rollover_and_SUBTRACT_inner_overlap_extended) {
+TEST_VM(RegMask, rollover_and_subtract_inner_overlap_extended) {
   RegMask rm1(arena());
   RegMask rm2;
   OptoReg::Name reg1(rm1.rm_size_in_bits() + 42);
   extend(rm1);
   rm2.set_infinite_stack(true);
   rm2.rollover();
-  rm2.Clear();
-  rm1.SUBTRACT_inner(rm2);
+  rm2.clear();
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 0);
-  rm2.SUBTRACT_inner(rm1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 0);
-  rm1.Insert(reg1);
-  rm2.Insert(reg1);
-  rm1.SUBTRACT_inner(rm2);
+  rm1.insert(reg1);
+  rm2.insert(reg1);
+  rm1.subtract_inner(rm2);
   contains_expected_num_of_registers(rm1, 0);
-  rm1.Insert(reg1);
-  rm2.SUBTRACT_inner(rm1);
+  rm1.insert(reg1);
+  rm2.subtract_inner(rm1);
   contains_expected_num_of_registers(rm2, 0);
 }
 
@@ -855,7 +855,7 @@ static void print(const char* name, const RegMask& mask) {
 static void assert_equivalent(const RegMask& mask,
                               const ResourceBitMap& mask_ref,
                               bool infinite_stack_ref) {
-  ASSERT_EQ(mask_ref.count_one_bits(), mask.Size());
+  ASSERT_EQ(mask_ref.count_one_bits(), mask.size());
   RegMaskIterator it(mask);
   OptoReg::Name reg = OptoReg::Bad;
   while (it.has_next()) {
@@ -870,7 +870,7 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
                                     ResourceBitMap& mask_aux_ref,
                                     uint reg_capacity, uint offset,
                                     bool random_offset) {
-  mask_aux.Clear();
+  mask_aux.clear();
   mask_aux_ref.clear();
   if (random_offset) {
     uint offset_in_words = offset / BitsPerWord;
@@ -936,7 +936,7 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
   }
   for (uint i = 0; i < regs; i++) {
     uint reg = (next_random() % max_size) + offset;
-    mask_aux.Insert(reg);
+    mask_aux.insert(reg);
     mask_aux_ref.set_bit(reg);
   }
   mask_aux.set_infinite_stack(next_random() % 2);
@@ -994,7 +994,7 @@ TEST_VM(RegMask, random) {
         OptoReg::dump(reg);
         tty->cr();
       }
-      mask.Insert(reg);
+      mask.insert(reg);
       mask_ref.set_bit(reg);
       if (mask.is_infinite_stack() && reg >= size_bits_before) {
         // Stack-extend reference bitset.
@@ -1010,36 +1010,36 @@ TEST_VM(RegMask, random) {
         OptoReg::dump(reg);
         tty->cr();
       }
-      mask.Remove(reg);
+      mask.remove(reg);
       mask_ref.clear_bit(reg);
       break;
     case 2:
       if (Verbose) {
         tty->print_cr("action: Clear");
       }
-      mask.Clear();
+      mask.clear();
       mask_ref.clear();
       infinite_stack_ref = false;
       break;
     case 3:
       if (offset_ref > 0) {
-        // Set_All expects a zero-offset.
+        // set_all expects a zero-offset.
         break;
       }
       if (Verbose) {
-        tty->print_cr("action: Set_All");
+        tty->print_cr("action: set_all");
       }
-      mask.Set_All();
+      mask.set_all();
       mask_ref.set_range(0, size_bits_before);
       infinite_stack_ref = true;
       break;
     case 4:
       if (Verbose) {
-        tty->print_cr("action: AND");
+        tty->print_cr("action: and_with");
       }
       populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ false);
-      mask.AND(mask_aux);
+      mask.and_with(mask_aux);
       stack_extend_ref_masks(mask_ref, infinite_stack_ref, size_bits_before,
                              offset_ref, mask_aux_ref, mask_aux.is_infinite_stack(),
                              mask_aux.rm_size_in_bits(), mask_aux.offset_bits());
@@ -1048,11 +1048,11 @@ TEST_VM(RegMask, random) {
       break;
     case 5:
       if (Verbose) {
-        tty->print_cr("action: OR");
+        tty->print_cr("action: or_with");
       }
       populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ false);
-      mask.OR(mask_aux);
+      mask.or_with(mask_aux);
       stack_extend_ref_masks(mask_ref, infinite_stack_ref, size_bits_before,
                              offset_ref, mask_aux_ref, mask_aux.is_infinite_stack(),
                              mask_aux.rm_size_in_bits(), mask_aux.offset_bits());
@@ -1061,11 +1061,11 @@ TEST_VM(RegMask, random) {
       break;
     case 6:
       if (Verbose) {
-        tty->print_cr("action: SUBTRACT");
+        tty->print_cr("action: subtract");
       }
       populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ false);
-      mask.SUBTRACT(mask_aux);
+      mask.subtract(mask_aux);
       stack_extend_ref_masks(mask_ref, infinite_stack_ref, size_bits_before,
                              offset_ref, mask_aux_ref, mask_aux.is_infinite_stack(),
                              mask_aux.rm_size_in_bits(), mask_aux.offset_bits());
@@ -1076,15 +1076,15 @@ TEST_VM(RegMask, random) {
       break;
     case 7:
       if (Verbose) {
-        tty->print_cr("action: SUBTRACT_inner");
+        tty->print_cr("action: subtract_inner");
       }
       populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_in_bits(),
                               offset_ref, /*random_offset*/ true);
-      // SUBTRACT_inner expects an argument register mask with infinite_stack =
+      // subtract_inner expects an argument register mask with infinite_stack =
       // false.
       mask_aux.set_infinite_stack(false);
-      mask.SUBTRACT_inner(mask_aux);
-      // SUBTRACT_inner does not have "stack-extension semantics".
+      mask.subtract_inner(mask_aux);
+      // subtract_inner does not have "stack-extension semantics".
       mask_ref.set_difference(mask_aux_ref);
       break;
     case 8:
@@ -1106,7 +1106,7 @@ TEST_VM(RegMask, random) {
         tty->print_cr("action: rollover");
       }
       // rollover expects the mask to be cleared and with infinite_stack = true
-      mask.Clear();
+      mask.clear();
       mask.set_infinite_stack(true);
       mask_ref.clear();
       infinite_stack_ref = true;
@@ -1120,28 +1120,28 @@ TEST_VM(RegMask, random) {
         tty->print_cr("action: reset");
       }
       mask.gtest_set_offset(0);
-      mask.Clear();
+      mask.clear();
       mask_ref.clear();
       infinite_stack_ref = false;
       offset_ref = 0;
       break;
     case 11:
       if (Verbose) {
-        tty->print_cr("action: Set_All_From_Offset");
+        tty->print_cr("action: set_all_from_offset");
       }
-      mask.Set_All_From_Offset();
+      mask.set_all_from_offset();
       mask_ref.set_range(offset_ref, offset_ref + size_bits_before);
       infinite_stack_ref = true;
       break;
     case 12:
       reg = (next_random() % size_bits_before) + offset_ref;
       if (Verbose) {
-        tty->print_cr("action: Set_All_From");
+        tty->print_cr("action: set_all_from");
         tty->print("value   : ");
         OptoReg::dump(reg);
         tty->cr();
       }
-      mask.Set_All_From(reg);
+      mask.set_all_from(reg);
       mask_ref.set_range(reg, offset_ref + size_bits_before);
       infinite_stack_ref = true;
       break;
@@ -1154,12 +1154,12 @@ TEST_VM(RegMask, random) {
 
 // Randomly sets register mask contents. Does not change register mask size.
 static void randomize(RegMask& rm) {
-  rm.Clear();
+  rm.clear();
   // Uniform distribution over number of registers.
   uint regs = next_random() % (rm.rm_size_in_bits() + 1);
   for (uint i = 0; i < regs; i++) {
     uint reg = (next_random() % rm.rm_size_in_bits()) + rm.offset_bits();
-    rm.Insert(reg);
+    rm.insert(reg);
   }
   rm.set_infinite_stack(next_random() % 2);
 }
@@ -1175,10 +1175,10 @@ static uint grow_randomly(RegMask& rm, uint min_growth = 1,
       break;
     }
     // Force grow
-    rm.Insert(reg);
+    rm.insert(reg);
     if (!rm.is_infinite_stack()) {
       // Restore
-      rm.Remove(reg);
+      rm.remove(reg);
     }
   }
   // Return how many times we grew
@@ -1241,8 +1241,8 @@ TEST_VM(RegMask, random_copy) {
     // Randomly initialize source
     randomize(src);
 
-    // Copy source to destination
-    dst = src;
+    // Set destination to source
+    dst.assignFrom(src);
 
     // Check equality
     bool passed = src.gtest_equals(dst);

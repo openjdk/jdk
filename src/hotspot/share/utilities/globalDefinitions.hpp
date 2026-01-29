@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
+#include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -33,10 +37,7 @@
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
-#include <cstddef>
 #include <cstdint>
-#include <limits>
-#include <type_traits>
 
 class oopDesc;
 
@@ -1253,6 +1254,32 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
 
+inline jlong java_negate(jlong v, BasicType bt) {
+  if (bt == T_INT) {
+    return java_negate(checked_cast<jint>(v));
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_negate(v);
+}
+
+// Some convenient bit shift operations that accepts a BasicType as the last
+// argument. These avoid potential mistakes with overloaded functions only
+// distinguished by lhs argument type.
+#define JAVA_INTEGER_SHIFT_BASIC_TYPE(FUNC)            \
+inline jlong FUNC(jlong lhs, jint rhs, BasicType bt) { \
+  if (bt == T_INT) {                                   \
+    return FUNC(checked_cast<jint>(lhs), rhs);         \
+  }                                                    \
+  assert(bt == T_LONG, "unsupported basic type");      \
+  return FUNC(lhs, rhs);                              \
+}
+
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_left)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right_unsigned)
+
+#undef JAVA_INTERGER_SHIFT_BASIC_TYPE
+
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
 // Checks overflow conditions and saturates the result to min_jint/max_jint.
@@ -1350,5 +1377,26 @@ std::add_rvalue_reference_t<T> declval() noexcept;
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.
 bool IEEE_subnormal_handling_OK();
+
+//----------------------------------------------------------------------------------------------------
+// Forbid using the global allocator by HotSpot code.
+//
+// This is a subset of allocator and deallocator functions. These are
+// implicitly declared in all translation units, without needing to include
+// <new>; see C++17 6.7.4. This isn't even the full set of those; implicit
+// declarations involving std::align_val_t are not covered here, since that
+// type is defined in <new>.  A translation unit that doesn't include <new> is
+// still likely to include this file.  See cppstdlib/new.hpp for more details.
+#ifndef HOTSPOT_GTEST
+
+[[deprecated]] void* operator new(std::size_t);
+[[deprecated]] void operator delete(void*) noexcept;
+[[deprecated]] void operator delete(void*, std::size_t) noexcept;
+
+[[deprecated]] void* operator new[](std::size_t);
+[[deprecated]] void operator delete[](void*) noexcept;
+[[deprecated]] void operator delete[](void*, std::size_t) noexcept;
+
+#endif // HOTSPOT_GTEST
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

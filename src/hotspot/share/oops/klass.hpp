@@ -30,7 +30,6 @@
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
-#include "utilities/accessFlags.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
@@ -120,9 +119,8 @@ class Klass : public Metadata {
   //  - Various type checking in the JVM
   const KlassKind _kind;
 
-  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
-                                // Some flags created by the JVM, not in the class file itself,
-                                // are in _misc_flags below.
+  // Some flags created by the JVM, not in the class file itself,
+  // are in _misc_flags below.
   KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
@@ -217,7 +215,7 @@ protected:
   enum class StaticLookupMode   { find, skip };
   enum class PrivateLookupMode  { find, skip };
 
-  virtual bool is_klass() const { return true; }
+  bool is_klass() const override { return true; }
 
   // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
   // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"
@@ -453,7 +451,6 @@ protected:
   static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
   static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
-  static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
 #if INCLUDE_JVMCI
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
@@ -513,18 +510,20 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // Want a pattern to quickly diff against layout header in register
-  // find something less clever!
+  // Return a value containing a single set bit that is in the bitset difference between the
+  // layout helpers for array-of-boolean and array-of-byte.
   static int layout_helper_boolean_diffbit() {
-    jint zlh = array_layout_helper(T_BOOLEAN);
-    jint blh = array_layout_helper(T_BYTE);
-    assert(zlh != blh, "array layout helpers must differ");
-    int diffbit = 1;
-    while ((diffbit & (zlh ^ blh)) == 0 && (diffbit & zlh) == 0) {
-      diffbit <<= 1;
-      assert(diffbit != 0, "make sure T_BOOLEAN has a different bit than T_BYTE");
-    }
-    return diffbit;
+    uint zlh = static_cast<uint>(array_layout_helper(T_BOOLEAN));
+    uint blh = static_cast<uint>(array_layout_helper(T_BYTE));
+    // get all the bits that are set in zlh and clear in blh
+    uint candidates = (zlh & ~blh);
+    assert(candidates != 0, "must be"); // must be some if there is a solution.
+    // Use well known bit hack to isolate the low bit of candidates.
+    uint result = candidates & (-candidates);
+    assert(is_power_of_2(result), "must be power of 2");
+    assert((result & zlh) != 0, "must be set in alh of T_BOOLEAN");
+    assert((result & blh) == 0, "must be clear in alh of T_BYTE");
+    return static_cast<int>(result);
   }
 
   static int layout_helper_log2_element_size(jint lh) {
@@ -580,6 +579,7 @@ public:
   virtual bool should_be_initialized() const    { return false; }
   // initializes the klass
   virtual void initialize(TRAPS);
+  virtual void initialize_preemptable(TRAPS);
   virtual Klass* find_field(Symbol* name, Symbol* signature, fieldDescriptor* fd) const;
   virtual Method* uncached_lookup_method(const Symbol* name, const Symbol* signature,
                                          OverpassLookupMode overpass_mode,
@@ -651,9 +651,6 @@ public:
   // actual oop size of obj in memory in word size.
   virtual size_t oop_size(oop obj) const = 0;
 
-  // Size of klass in word size.
-  virtual int size() const = 0;
-
   // Returns the Java name for a class (Resource allocated)
   // For arrays, this returns the name of the element with a leading '['.
   // For classes, this returns the name with the package separators
@@ -706,17 +703,10 @@ public:
   bool is_typeArray_klass()             const { return assert_same_query( _kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
   #undef assert_same_query
 
-  // Access flags
-  AccessFlags access_flags() const         { return _access_flags;  }
-  void set_access_flags(AccessFlags flags) { _access_flags = flags; }
 
-  bool is_public() const                { return _access_flags.is_public(); }
-  bool is_final() const                 { return _access_flags.is_final(); }
-  bool is_interface() const             { return _access_flags.is_interface(); }
-  bool is_abstract() const              { return _access_flags.is_abstract(); }
-  bool is_super() const                 { return _access_flags.is_super(); }
-  bool is_synthetic() const             { return _access_flags.is_synthetic(); }
-  void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
+  virtual bool is_interface() const     { return false; }
+  virtual bool is_abstract() const      { return false; }
+
   bool has_finalizer() const            { return _misc_flags.has_finalizer(); }
   void set_has_finalizer()              { _misc_flags.set_has_finalizer(true); }
   bool is_hidden() const                { return _misc_flags.is_hidden_class(); }
@@ -729,7 +719,7 @@ public:
   inline bool is_non_strong_hidden() const;
 
   bool is_cloneable() const;
-  void set_is_cloneable();
+  void set_is_cloneable_fast() { _misc_flags.set_is_cloneable_fast(true); }
 
   inline markWord prototype_header() const;
   inline void set_prototype_header(markWord header);
@@ -737,8 +727,8 @@ public:
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
-  virtual MetaspaceObj::Type type() const { return ClassType; }
+  void metaspace_pointers_do(MetaspaceClosure* iter) override;
+  MetaspaceObj::Type type() const override { return ClassType; }
 
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
@@ -773,14 +763,12 @@ public:
   virtual jint jvmti_class_status() const;
 
   // Printing
-  virtual void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
 
   virtual void oop_print_value_on(oop obj, outputStream* st);
   virtual void oop_print_on      (oop obj, outputStream* st);
 
   void print_secondary_supers_on(outputStream* st) const;
-
-  virtual const char* internal_name() const = 0;
 
   // Verification
   virtual void verify_on(outputStream* st);

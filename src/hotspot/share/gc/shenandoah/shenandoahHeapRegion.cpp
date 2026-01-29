@@ -75,6 +75,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _plab_allocs(0),
   _live_data(0),
   _critical_pins(0),
+  _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
 #ifdef SHENANDOAH_CENSUS_NOISE
@@ -315,9 +316,9 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
   // On this path, we know there are no marked objects in the region,
   // tell marking context about it to bypass bitmap resets.
-  assert(ShenandoahHeap::heap()->gc_generation()->is_mark_complete(), "Marking should be complete here.");
-  shenandoah_assert_generations_reconciled();
-  ShenandoahHeap::heap()->marking_context()->reset_top_bitmap(this);
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->generation_for(affiliation())->is_mark_complete(), "Marking should be complete here.");
+  heap->marking_context()->reset_top_bitmap(this);
 }
 
 void ShenandoahHeapRegion::make_empty() {
@@ -461,9 +462,9 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahMarkingContext* marking_context = heap->marking_context();
 
-  // Expect marking to be completed before these threads invoke this service.
-  assert(heap->gc_generation()->is_mark_complete(), "sanity");
-  shenandoah_assert_generations_reconciled();
+  // Expect marking to be completed for the old generation before we fill in unmarked objects
+  assert(heap->old_generation()->is_mark_complete(), "sanity");
+  assert(is_old(), "Only need to coalesce and fill old regions");
 
   // All objects above TAMS are considered live even though their mark bits will not be set.  Note that young-
   // gen evacuations that interrupt a long-running old-gen concurrent mark may promote objects into old-gen
@@ -565,6 +566,7 @@ void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  _mixed_candidate_garbage_words = 0;
   set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
@@ -578,21 +580,23 @@ void ShenandoahHeapRegion::recycle_internal() {
   set_affiliation(FREE);
 }
 
+// Upon return, this region has been recycled.  We try to recycle it.
+// We may fail if some other thread recycled it before we do.
 void ShenandoahHeapRegion::try_recycle_under_lock() {
   shenandoah_assert_heaplocked();
   if (is_trash() && _recycling.try_set()) {
     if (is_trash()) {
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      ShenandoahGeneration* generation = heap->generation_for(affiliation());
-
-      heap->decrease_used(generation, used());
-      generation->decrement_affiliated_region_count();
-
+      // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
+      // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
+      // for triggering heuristics.  It greatly simplifies and reduces the locking overhead required
+      // by more time-precise accounting of these details.
       recycle_internal();
     }
     _recycling.unset();
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
+    // Otherwise, the mutator might see region as fully recycled and might change its affiliation only to have
+    // the racing GC worker thread overwrite its affiliation to FREE.
     while (_recycling.is_set()) {
       if (os::is_MP()) {
         SpinPause();
@@ -603,16 +607,17 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
   }
 }
 
+// Note that return from try_recycle() does not mean the region has been recycled.  It only means that
+// some GC worker thread has taken responsibility to recycle the region, eventually.
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
   if (is_trash() && _recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      ShenandoahGeneration* generation = heap->generation_for(affiliation());
-      heap->decrease_used(generation, used());
-      generation->decrement_affiliated_region_count_without_lock();
-
+      // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
+      // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
+      // for triggering and pacing heuristics.  It greatly simplifies and reduces the locking overhead required
+      // by more time-precise accounting of these details.
       recycle_internal();
     }
     _recycling.unset();
@@ -900,12 +905,11 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
   heap->set_affiliation(this, new_affiliation);
 }
 
-void ShenandoahHeapRegion::decrement_humongous_waste() const {
+void ShenandoahHeapRegion::decrement_humongous_waste() {
   assert(is_humongous(), "Should only use this for humongous regions");
   size_t waste_bytes = free();
   if (waste_bytes > 0) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahGeneration* generation = heap->generation_for(affiliation());
-    heap->decrease_humongous_waste(generation, waste_bytes);
+    heap->free_set()->decrease_humongous_waste_for_regular_bypass(this, waste_bytes);
   }
 }

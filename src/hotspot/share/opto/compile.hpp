@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,16 @@ class Compile : public Phase {
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
-  int                   _major_progress;        // Count of something big happening
+  /* If major progress is set:
+   *   Marks that the loop tree information (get_ctrl, idom, get_loop, etc.) could be invalid, and we need to rebuild the loop tree.
+   *   It also indicates that the graph was changed in a way that is promising to be able to apply more loop optimization.
+   * If major progress is not set:
+   *   Loop tree information is valid.
+   *   If major progress is not set at the end of a loop opts phase, then we can stop loop opts, because we do not expect any further progress if we did more loop opts phases.
+   *
+   * This is not 100% accurate, the semantics of major progress has become less clear over time, but this is the general idea.
+   */
+  bool                  _major_progress;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
@@ -346,6 +355,7 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
+  bool                  _print_phase_loop_opts; // True if we should print before and after loop opts phase
 #ifndef PRODUCT
   uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers
@@ -354,8 +364,6 @@ class Compile : public Phase {
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
-  // JSR 292
-  bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
   bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
@@ -471,7 +479,9 @@ private:
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
-  uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
+  bool                          _has_mh_late_inlines; // Can there still be a method handle late inlining pending?
+                                                      // false: there can't be one
+                                                      // true: we've enqueued one at some point so there may still be one
 
   // "MemLimit" directive was specified and the memory limit was hit during compilation
   bool                          _oom;
@@ -585,16 +595,16 @@ public:
   // Control of this compilation.
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
-  int               major_progress() const      { return _major_progress; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
   int               inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
-  void          set_major_progress()            { _major_progress++; }
-  void          restore_major_progress(int progress) { _major_progress += progress; }
-  void        clear_major_progress()            { _major_progress = 0; }
+  bool              major_progress() const      { return _major_progress; }
+  void          set_major_progress()            { _major_progress = true; }
+  void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
+  void        clear_major_progress()            { _major_progress = false; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
@@ -657,7 +667,7 @@ public:
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
   void          print_phase(const char* phase_name);
-  void          print_ideal_ir(const char* phase_name);
+  void          print_ideal_ir(const char* compile_phase_name) const;
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
@@ -666,16 +676,12 @@ public:
   bool              has_irreducible_loop() const { return _has_irreducible_loop; }
   void          set_has_irreducible_loop(bool z) { _has_irreducible_loop = z; }
 
-  // JSR 292
-  bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
-
   Ticks _latest_stage_start_counter;
 
   void begin_method();
   void end_method();
 
-  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   bool should_print_igv(int level);
@@ -979,7 +985,8 @@ public:
                                    JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = nullptr,
                                    bool allow_intrinsics = true);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
-    return should_delay_string_inlining(call_method, jvms) ||
+    return C->directive()->should_delay_inline(call_method) ||
+           should_delay_string_inlining(call_method, jvms) ||
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
   }
@@ -1093,14 +1100,14 @@ public:
     }
   }
 
-  void inc_number_of_mh_late_inlines() { _number_of_mh_late_inlines++; }
-  void dec_number_of_mh_late_inlines() { assert(_number_of_mh_late_inlines > 0, "_number_of_mh_late_inlines < 0 !"); _number_of_mh_late_inlines--; }
-  bool has_mh_late_inlines() const     { return _number_of_mh_late_inlines > 0; }
+  void mark_has_mh_late_inlines() { _has_mh_late_inlines = true; }
+  bool has_mh_late_inlines() const { return _has_mh_late_inlines; }
 
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
-  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
+  bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
+  bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
@@ -1321,6 +1328,28 @@ public:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
+
+#ifndef PRODUCT
+private:
+  // getting rid of the template makes things easier
+  Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0 = nullptr, Node* parm1 = nullptr,
+                              Node* parm2 = nullptr, Node* parm3 = nullptr,
+                              Node* parm4 = nullptr, Node* parm5 = nullptr,
+                              Node* parm6 = nullptr) const;
+
+public:
+  // Creates a CallLeafNode for a runtime call that prints a static string and the values of the
+  // nodes passed as arguments.
+  // This function also takes care of doing the necessary wiring, including finding a suitable control
+  // based on the nodes that need to be printed. Note that passing nodes that have incompatible controls
+  // is undefined behavior.
+  template <typename... TT, typename... NN>
+  Node* make_debug_print(const char* str, PhaseGVN* gvn, NN... in) {
+    address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
+    return make_debug_print_call(str, call_addr, gvn, in...);
+  }
+#endif
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

@@ -23,6 +23,7 @@
 package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static jdk.jpackage.test.LauncherShortcut.WIN_DESKTOP_SHORTCUT;
 import static jdk.jpackage.test.LauncherShortcut.WIN_START_MENU_SHORTCUT;
 import static jdk.jpackage.test.WindowsHelper.getInstallationSubDirectory;
@@ -32,7 +33,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +51,7 @@ public final class WinShortcutVerifier {
     static void verifyBundleShortcuts(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
 
-        if (Stream.of("--win-menu", "--win-shortcut").noneMatch(cmd::hasArgument) && cmd.addLauncherNames().isEmpty()) {
+        if (Stream.of("--win-menu", "--win-shortcut").noneMatch(cmd::hasArgument) && cmd.addLauncherNames(true).isEmpty()) {
             return;
         }
 
@@ -170,7 +170,7 @@ public final class WinShortcutVerifier {
     private static Shortcut createLauncherShortcutSpec(JPackageCommand cmd, String launcherName,
             SpecialFolder installRoot, Path workDir, ShortcutType type) {
 
-        var name = Optional.ofNullable(launcherName).orElseGet(cmd::name);
+        var name = Optional.ofNullable(launcherName).orElseGet(cmd::mainLauncherName);
 
         var appLayout = ApplicationLayout.windowsAppImage().resolveAt(
                 Path.of(installRoot.getMsiPropertyName()).resolve(getInstallationSubDirectory(cmd)));
@@ -250,22 +250,19 @@ public final class WinShortcutVerifier {
     }
 
     private static Map<String, Collection<Shortcut>> expectShortcuts(JPackageCommand cmd) {
-        Map<String, Collection<Shortcut>> expectedShortcuts = new HashMap<>();
 
         var predefinedAppImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load);
 
-        predefinedAppImage.map(v -> {
-            return v.launchers().keySet().stream();
-        }).orElseGet(() -> {
-            return Stream.concat(Stream.of(cmd.name()), cmd.addLauncherNames().stream());
-        }).forEach(launcherName -> {
+        return cmd.launcherNames(true).stream().map(launcherName -> {
+            return Optional.ofNullable(launcherName).orElseGet(cmd::mainLauncherName);
+        }).map(launcherName -> {
             var shortcuts = expectLauncherShortcuts(cmd, predefinedAppImage, launcherName);
-            if (!shortcuts.isEmpty()) {
-                expectedShortcuts.put(launcherName, shortcuts);
+            if (shortcuts.isEmpty()) {
+                return null;
+            } else {
+                return Map.entry(launcherName, shortcuts);
             }
-        });
-
-        return expectedShortcuts;
+        }).filter(Objects::nonNull).collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private static InvokeShortcutSpec convert(JPackageCommand cmd, String launcherName, Shortcut shortcut) {

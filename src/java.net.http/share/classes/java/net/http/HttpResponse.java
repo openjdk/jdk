@@ -1330,7 +1330,7 @@ public interface HttpResponse<T> {
          * @implNote The {@code read} method of the {@code InputStream}
          * returned by the default implementation of this method will
          * throw an {@code IOException} with the {@linkplain Thread#isInterrupted()
-         * thread interrupt status set} if the thread is interrupted
+         * thread interrupted status set} if the thread is interrupted
          * while blocking on read. In that case, the request will also be
          * cancelled and the {@code InputStream} will be closed.
          *

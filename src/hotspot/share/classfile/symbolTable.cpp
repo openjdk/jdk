@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,9 +272,7 @@ public:
 void SymbolTable::symbols_do(SymbolClosure *cl) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   // all symbols from shared table
-  SharedSymbolIterator iter(cl);
-  _shared_table.iterate(&iter);
-  _dynamic_shared_table.iterate(&iter);
+  shared_symbols_do(cl);
 
   // all symbols from the dynamic table
   SymbolsDo sd(cl);
@@ -284,8 +282,8 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
 // Call function for all symbols in shared table. Used by -XX:+PrintSharedArchiveAndExit
 void SymbolTable::shared_symbols_do(SymbolClosure *cl) {
   SharedSymbolIterator iter(cl);
-  _shared_table.iterate(&iter);
-  _dynamic_shared_table.iterate(&iter);
+  _shared_table.iterate_all(&iter);
+  _dynamic_shared_table.iterate_all(&iter);
 }
 
 Symbol* SymbolTable::lookup_dynamic(const char* name,
@@ -669,14 +667,14 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
       st->print_cr("# Shared symbols:");
       st->print_cr("#----------------");
       DumpSharedSymbol dss(st);
-      _shared_table.iterate(&dss);
+      _shared_table.iterate_all(&dss);
     }
     if (!_dynamic_shared_table.empty()) {
       st->print_cr("#------------------------");
       st->print_cr("# Dynamic shared symbols:");
       st->print_cr("#------------------------");
       DumpSharedSymbol dss(st);
-      _dynamic_shared_table.iterate(&dss);
+      _dynamic_shared_table.iterate_all(&dss);
     }
   }
 }
@@ -765,6 +763,10 @@ struct SymbolTableDeleteCheck : StackObj {
 };
 
 void SymbolTable::clean_dead_entries(JavaThread* jt) {
+  // BulkDeleteTask::prepare() may take ConcurrentHashTableResize_lock (nosafepoint-2).
+  // When NativeHeapTrimmer is enabled, SuspendMark may take NativeHeapTrimmer::_lock (nosafepoint).
+  // Take SuspendMark first to keep lock order and avoid deadlock.
+  NativeHeapTrimmer::SuspendMark sm("symboltable");
   SymbolTableHash::BulkDeleteTask bdt(_local_table);
   if (!bdt.prepare(jt)) {
     return;
@@ -772,7 +774,6 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 
   SymbolTableDeleteCheck stdc;
   SymbolTableDoDelete stdd;
-  NativeHeapTrimmer::SuspendMark sm("symboltable");
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, symboltable, perf));
     while (bdt.do_task(jt, stdc, stdd)) {

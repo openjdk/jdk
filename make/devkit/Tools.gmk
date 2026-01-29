@@ -39,7 +39,7 @@
 # Fix this...
 #
 
-uppercase = $(shell echo $1 | tr a-z A-Z)
+lowercase = $(shell echo $1 | tr A-Z a-z)
 
 $(info TARGET=$(TARGET))
 $(info HOST=$(HOST))
@@ -104,26 +104,48 @@ endif
 ################################################################################
 # Define external dependencies
 
-gcc_ver_only := 14.2.0
-binutils_ver_only := 2.43
-ccache_ver_only := 4.10.2
+GNU_BASE_URL := https://ftp.gnu.org/pub/gnu
+
+BINUTILS_VER_ONLY := 2.43
+BINUTILS_BASE_URL := $(GNU_BASE_URL)/binutils
+BINUTILS_SHA512 := 93e063163e54d6a6ee2bd48dc754270bf757a3635b49a702ed6b310e929e94063958512d191e66beaf44275f7ea60865dbde138b624626739679fcc306b133bb
+
+CCACHE_VER_ONLY := 4.10.2
+CCACHE_BASE_URL := https://github.com/ccache/ccache/releases/download
 CCACHE_CMAKE_BASED := 1
-mpfr_ver_only := 4.2.1
-gmp_ver_only := 6.3.0
-mpc_ver_only := 1.3.1
-gdb_ver_only := 15.2
+CCACHE_SHA512 := 3815c71d7266c32839acb306763268018acc58b3bbbd9ec79fc101e4217c1720d2ad2f01645bf69168c1c61d27700b6f3bb755cfa82689cca69824f015653f3c
 
-dependencies := gcc binutils ccache mpfr gmp mpc gdb
+GCC_VER_ONLY := 14.2.0
+GCC_BASE_URL := $(GNU_BASE_URL)/gcc
+GCC_SHA512 := 932bdef0cda94bacedf452ab17f103c0cb511ff2cec55e9112fc0328cbf1d803b42595728ea7b200e0a057c03e85626f937012e49a7515bc5dd256b2bf4bc396
 
-$(foreach dep,$(dependencies),$(eval $(dep)_ver := $(dep)-$($(dep)_ver_only)))
+GDB_VER_ONLY := 15.2
+GDB_BASE_URL := $(GNU_BASE_URL)/gdb
+GDB_SHA512 := 624007deceb5b15ba89c0725883d1a699fa46714ef30887f3d0165e17c5d65d634671740a135aa69e437d916218abb08cfa2a38ed309ff19d48f51da56b2a8ba
 
-GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
-BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.gz
-CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
-MPFR := https://www.mpfr.org/$(mpfr_ver)/$(mpfr_ver).tar.bz2
-GMP := http://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
-MPC := http://ftp.gnu.org/pub/gnu/mpc/$(mpc_ver).tar.gz
-GDB := http://ftp.gnu.org/gnu/gdb/$(gdb_ver).tar.xz
+GMP_VER_ONLY := 6.3.0
+GMP_BASE_URL := $(GNU_BASE_URL)/gmp
+GMP_SHA512 := e85a0dab5195889948a3462189f0e0598d331d3457612e2d3350799dba2e244316d256f8161df5219538eb003e4b5343f989aaa00f96321559063ed8c8f29fd2
+
+MPC_VER_ONLY := 1.3.1
+MPC_BASE_URL := $(GNU_BASE_URL)/mpc
+MPC_SHA512 := 4bab4ef6076f8c5dfdc99d810b51108ced61ea2942ba0c1c932d624360a5473df20d32b300fc76f2ba4aa2a97e1f275c9fd494a1ba9f07c4cb2ad7ceaeb1ae97
+
+MPFR_VER_ONLY := 4.2.1
+MPFR_BASE_URL := https://www.mpfr.org
+MPFR_SHA512 := bc68c0d755d5446403644833ecbb07e37360beca45f474297b5d5c40926df1efc3e2067eecffdf253f946288bcca39ca89b0613f545d46a9e767d1d4cf358475
+
+DEPENDENCIES := BINUTILS CCACHE GCC GDB GMP MPC MPFR
+
+$(foreach dep,$(DEPENDENCIES),$(eval $(dep)_VER := $(call lowercase,$(dep)-$($(dep)_VER_ONLY))))
+
+BINUTILS_URL := $(BINUTILS_BASE_URL)/$(BINUTILS_VER).tar.xz
+CCACHE_URL := $(CCACHE_BASE_URL)/v$(CCACHE_VER_ONLY)/$(CCACHE_VER).tar.xz
+GCC_URL := $(GCC_BASE_URL)/$(GCC_VER)/$(GCC_VER).tar.xz
+GDB_URL := $(GDB_BASE_URL)/$(GDB_VER).tar.xz
+GMP_URL := $(GMP_BASE_URL)/$(GMP_VER).tar.xz
+MPC_URL := $(MPC_BASE_URL)/$(MPC_VER).tar.gz
+MPFR_URL := $(MPFR_BASE_URL)/$(MPFR_VER)/$(MPFR_VER).tar.xz
 
 REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
 ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
@@ -180,10 +202,10 @@ DOWNLOAD_RPMS := $(DOWNLOAD)/rpms/$(TARGET)-$(LINUX_VERSION)
 SRCDIR := $(OUTPUT_ROOT)/src
 
 # Marker file for unpacking rpms
-rpms := $(SYSROOT)/rpms_unpacked
+RPMS := $(SYSROOT)/rpms_unpacked
 
 # Need to patch libs that are linker scripts to use non-absolute paths
-libs := $(SYSROOT)/libs_patched
+LIBS := $(SYSROOT)/libs_patched
 
 ################################################################################
 # Download RPMs
@@ -198,10 +220,10 @@ download-rpms:
 ################################################################################
 # Unpack source packages
 
-# Generate downloading + unpacking of sources.
-define Download
+# Generate downloading + checksum verification of sources.
+define DownloadVerify
   # Allow override
-  $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)))))
+  $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)_URL))))
   $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
   ifeq ($$($(1)_CMAKE_BASED),)
     $(1)_CFG = $$($(1)_DIR)/configure
@@ -212,7 +234,7 @@ define Download
     $(1)_SRC_MARKER = $$($(1)_DIR)/CMakeLists.txt
     $(1)_CONFIG = $$(CMAKE_CONFIG) $$($(1)_DIR)
   endif
-  $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)))
+  $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)_URL))
 
   $$($(1)_SRC_MARKER) : $$($(1)_FILE)
 	mkdir -p $$(SRCDIR)
@@ -224,11 +246,20 @@ define Download
 	touch $$@
 
   $$($(1)_FILE) :
-	wget -P $(DOWNLOAD) $$($(1))
+	mkdir -p $$(@D)
+	wget -O - $$($(1)_URL) > $$@.tmp
+	sha512_actual="$$$$(sha512sum $$@.tmp | awk '{ print $$$$1; }')"; \
+	if [ x"$$$${sha512_actual}" != x"$$($(1)_SHA512)" ]; then \
+	    echo "Checksum mismatch for $$@.tmp"; \
+	    echo "    Expected: $$($(1)_SHA512)"; \
+	    echo "    Actual:   $$$${sha512_actual}"; \
+	    exit 1; \
+	fi
+	mv $$@.tmp $$@
 endef
 
 # Download and unpack all source packages
-$(foreach dep,$(dependencies),$(eval $(call Download,$(call uppercase,$(dep)))))
+$(foreach dep,$(DEPENDENCIES),$(eval $(call DownloadVerify,$(dep))))
 
 ################################################################################
 # Unpack RPMS
@@ -250,7 +281,7 @@ RPM_FILE_LIST := $(sort $(foreach a, $(RPM_ARCHS), \
 # Note. For building linux you should install rpm2cpio.
 define unrpm
   $(SYSROOT)/$(notdir $(1)).unpacked : $(1)
-  $$(rpms) : $(SYSROOT)/$(notdir $(1)).unpacked
+  $$(RPMS) : $(SYSROOT)/$(notdir $(1)).unpacked
 endef
 
 %.unpacked :
@@ -277,7 +308,7 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
 # have it anyway, but just to make sure...
 # Patch libc.so and libpthread.so to force linking against libraries in sysroot
 # and not the ones installed on the build machine.
-$(libs) : $(rpms)
+$(LIBS) : $(RPMS)
 	@echo Patching libc and pthreads
 	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
 	  (cat $$f | sed -e 's|/usr/lib64/||g' \
@@ -293,10 +324,10 @@ $(libs) : $(rpms)
 # Create links for ffi header files so that they become visible by default when using the
 # devkit.
 ifeq ($(ARCH), x86_64)
-  $(SYSROOT)/usr/include/ffi.h: $(rpms)
+  $(SYSROOT)/usr/include/ffi.h: $(RPMS)
 	cd $(@D) && rm -f $(@F) && ln -s ../lib/libffi-*/include/$(@F) .
 
-  $(SYSROOT)/usr/include/ffitarget.h: $(rpms)
+  $(SYSROOT)/usr/include/ffitarget.h: $(RPMS)
 	cd $(@D) && rm -f $(@F) && ln -s ../lib/libffi-*/include/$(@F) .
 
   SYSROOT_LINKS += $(SYSROOT)/usr/include/ffi.h $(SYSROOT)/usr/include/ffitarget.h
@@ -305,7 +336,7 @@ endif
 ################################################################################
 
 # Define marker files for each source package to be compiled
-$(foreach dep,$(dependencies),$(eval $(dep) = $(TARGETDIR)/$($(dep)_ver).done))
+$(foreach dep,$(DEPENDENCIES),$(eval $(dep) = $(TARGETDIR)/$($(dep)_VER).done))
 
 ################################################################################
 
@@ -345,48 +376,48 @@ TOOLS ?= $(call declare_tools,_FOR_TARGET,$(TARGET)-)
 # CFLAG_<name> to most likely -m32.
 define mk_bfd
   $$(info Libs for $(1))
-  $$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile \
+  $$(BUILDDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1))/Makefile \
       : CFLAGS += $$(CFLAGS_$(1))
-  $$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile \
+  $$(BUILDDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1))/Makefile \
       : LIBDIRS = --libdir=$(TARGETDIR)/$(1)
 
-  bfdlib += $$(TARGETDIR)/$$(binutils_ver)-$(subst /,-,$(1)).done
-  bfdmakes += $$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile
+  BFDLIB += $$(TARGETDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1)).done
+  BFDMAKES += $$(BUILDDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1))/Makefile
 endef
 
 # Create one set of bfds etc for each multilib arch
 $(foreach l,$(LIBDIRS),$(eval $(call mk_bfd,$(l))))
 
 # Only build these two libs.
-$(bfdlib) : MAKECMD = all-libiberty all-bfd
-$(bfdlib) : INSTALLCMD = install-libiberty install-bfd
+$(BFDLIB) : MAKECMD = all-libiberty all-bfd
+$(BFDLIB) : INSTALLCMD = install-libiberty install-bfd
 
 # Building targets libbfd + libiberty. HOST==TARGET, i.e not
 # for a cross env.
-$(bfdmakes) : CONFIG = --target=$(TARGET) \
+$(BFDMAKES) : CONFIG = --target=$(TARGET) \
     --host=$(TARGET) --build=$(BUILD) \
     --prefix=$(TARGETDIR) \
     --with-sysroot=$(SYSROOT) \
     $(LIBDIRS)
 
-$(bfdmakes) : TOOLS = $(call declare_tools,_FOR_TARGET,$(TARGET)-) $(call declare_tools,,$(TARGET)-)
+$(BFDMAKES) : TOOLS = $(call declare_tools,_FOR_TARGET,$(TARGET)-) $(call declare_tools,,$(TARGET)-)
 
 ################################################################################
 
-$(gcc) \
-    $(binutils) \
-    $(gmp) \
-    $(mpfr) \
-    $(mpc) \
-    $(bfdmakes) \
-    $(ccache) : ENVS += $(TOOLS)
+$(GCC) \
+    $(BINUTILS) \
+    $(GMP) \
+    $(MPFR) \
+    $(MPC) \
+    $(BFDMAKES) \
+    $(CCACHE) : ENVS += $(TOOLS)
 
 # libdir to work around hateful bfd stuff installing into wrong dirs...
 # ensure we have 64 bit bfd support in the HOST library. I.e our
 # compiler on i686 will know 64 bit symbols, BUT later
 # we build just the libs again for TARGET, then with whatever the arch
 # wants.
-$(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
+$(BUILDDIR)/$(BINUTILS_VER)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
 
 ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
   # gold compiles but cannot link properly on s390x @ gcc 13.2 and Fedore 41
@@ -397,8 +428,8 @@ endif
 
 # Makefile creation. Simply run configure in build dir.
 # Setting CFLAGS to -O2 generates a much faster ld.
-$(bfdmakes) \
-$(BUILDDIR)/$(binutils_ver)/Makefile \
+$(BFDMAKES) \
+$(BUILDDIR)/$(BINUTILS_VER)/Makefile \
     : $(BINUTILS_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
@@ -417,7 +448,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
-$(BUILDDIR)/$(mpfr_ver)/Makefile \
+$(BUILDDIR)/$(MPFR_VER)/Makefile \
     : $(MPFR_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
@@ -432,7 +463,7 @@ $(BUILDDIR)/$(mpfr_ver)/Makefile \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
-$(BUILDDIR)/$(gmp_ver)/Makefile \
+$(BUILDDIR)/$(GMP_VER)/Makefile \
     : $(GMP_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
@@ -449,7 +480,7 @@ $(BUILDDIR)/$(gmp_ver)/Makefile \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
-$(BUILDDIR)/$(mpc_ver)/Makefile \
+$(BUILDDIR)/$(MPC_VER)/Makefile \
     : $(MPC_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
@@ -468,11 +499,11 @@ $(BUILDDIR)/$(mpc_ver)/Makefile \
 # Only valid if glibc target -> linux
 # proper destructor handling for c++
 ifneq (,$(findstring linux,$(TARGET)))
-  $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG += --enable-__cxa_atexit
+  $(BUILDDIR)/$(GCC_VER)/Makefile : CONFIG += --enable-__cxa_atexit
 endif
 
 ifeq ($(ARCH), armhfp)
-  $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG +=  --with-float=hard
+  $(BUILDDIR)/$(GCC_VER)/Makefile : CONFIG +=  --with-float=hard
 endif
 
 ifneq ($(filter riscv64 ppc64le s390x, $(ARCH)), )
@@ -487,7 +518,7 @@ endif
 # skip native language.
 # and link and assemble with the binutils we created
 # earlier, so --with-gnu*
-$(BUILDDIR)/$(gcc_ver)/Makefile \
+$(BUILDDIR)/$(GCC_VER)/Makefile \
     : $(GCC_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	mkdir -p $(@D)
@@ -509,17 +540,17 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
 	@echo 'done'
 
 # need binutils for gcc
-$(gcc) : $(binutils)
+$(GCC) : $(BINUTILS)
 
 # as of 4.3 or so need these for doing config
-$(BUILDDIR)/$(gcc_ver)/Makefile : $(gmp) $(mpfr) $(mpc)
-$(mpfr) : $(gmp)
-$(mpc) : $(gmp) $(mpfr)
+$(BUILDDIR)/$(GCC_VER)/Makefile : $(GMP) $(MPFR) $(MPC)
+$(MPFR) : $(GMP)
+$(MPC) : $(GMP) $(MPFR)
 
 ################################################################################
 # Build gdb but only where host and target match
 ifeq ($(HOST), $(TARGET))
-  $(BUILDDIR)/$(gdb_ver)/Makefile: $(GDB_CFG)
+  $(BUILDDIR)/$(GDB_VER)/Makefile: $(GDB_CFG)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	mkdir -p $(@D)
 	( \
@@ -532,9 +563,9 @@ ifeq ($(HOST), $(TARGET))
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
-  $(gdb): $(gcc)
+  $(GDB): $(GCC)
 else
-  $(BUILDDIR)/$(gdb_ver)/Makefile:
+  $(BUILDDIR)/$(GDB_VER)/Makefile:
 	$(info Faking $@, not used when cross-compiling)
 	mkdir -p $(@D)
 	echo "install:" > $@
@@ -543,7 +574,7 @@ endif
 
 ################################################################################
 # very straightforward. just build a ccache. it is only for host.
-$(BUILDDIR)/$(ccache_ver)/Makefile \
+$(BUILDDIR)/$(CCACHE_VER)/Makefile \
     : $(CCACHE_SRC_MARKER)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
@@ -554,12 +585,12 @@ $(BUILDDIR)/$(ccache_ver)/Makefile \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
-gccpatch = $(TARGETDIR)/gcc-patched
+GCC_PATCHED = $(TARGETDIR)/gcc-patched
 
 ################################################################################
 # For some reason cpp is not created as a target-compiler
 ifeq ($(HOST),$(TARGET))
-  $(gccpatch) : $(gcc) link_libs
+  $(GCC_PATCHED) : $(GCC) link_libs
 	@echo -n 'Creating compiler symlinks...'
 	@for f in cpp; do \
 	  if [ ! -e $(PREFIX)/bin/$(TARGET)-$$f ]; \
@@ -587,7 +618,7 @@ ifeq ($(HOST),$(TARGET))
 	done;)
 	@echo 'done'
 else
-  $(gccpatch) :
+  $(GCC_PATCHED) :
 	@echo 'done'
 endif
 
@@ -615,7 +646,7 @@ $(PREFIX)/devkit.info:
 	echo '# This file describes to configure how to interpret the contents of this' >> $@
 	echo '# devkit' >> $@
 	echo '' >> $@
-	echo 'DEVKIT_NAME="$(gcc_ver) - $(LINUX_VERSION)"' >> $@
+	echo 'DEVKIT_NAME="$(GCC_VER) - $(LINUX_VERSION)"' >> $@
 	echo 'DEVKIT_TOOLCHAIN_PATH="$$DEVKIT_ROOT/bin"' >> $@
 	echo 'DEVKIT_SYSROOT="$$DEVKIT_ROOT/$(TARGET)/sysroot"' >> $@
 	echo 'DEVKIT_EXTRA_PATH="$$DEVKIT_ROOT/bin"' >> $@
@@ -651,32 +682,32 @@ ifeq ($(TARGET), $(HOST))
 	@echo 'Creating missing $* soft link'
 	ln -s $(TARGET)-$* $@
 
-  missing-links := $(addprefix $(PREFIX)/bin/, \
-      addr2line ar as c++ c++filt dwp elfedit g++ gcc gcc-$(gcc_ver_only) gprof ld ld.bfd \
+  MISSING_LINKS := $(addprefix $(PREFIX)/bin/, \
+      addr2line ar as c++ c++filt dwp elfedit g++ gcc gcc-$(GCC_VER_ONLY) gprof ld ld.bfd \
       ld.gold nm objcopy objdump ranlib readelf size strings strip)
 endif
 
 # Add link to work around "plugin needed to handle lto object" (JDK-8344272)
-$(PREFIX)/lib/bfd-plugins/liblto_plugin.so: $(PREFIX)/libexec/gcc/$(TARGET)/$(gcc_ver_only)/liblto_plugin.so
+$(PREFIX)/lib/bfd-plugins/liblto_plugin.so: $(PREFIX)/libexec/gcc/$(TARGET)/$(GCC_VER_ONLY)/liblto_plugin.so
 	@echo 'Creating missing $(@F) soft link'
 	@mkdir -p $(@D)
 	ln -s $$(realpath -s --relative-to=$(@D) $<) $@
 
-missing-links += $(PREFIX)/lib/bfd-plugins/liblto_plugin.so
+MISSING_LINKS += $(PREFIX)/lib/bfd-plugins/liblto_plugin.so
 
 ################################################################################
 
-bfdlib : $(bfdlib)
-binutils : $(binutils)
-rpms : $(rpms)
-libs : $(libs)
+bfdlib : $(BFDLIB)
+binutils : $(BINUTILS)
+rpms : $(RPMS)
+libs : $(LIBS)
 sysroot : rpms libs
-gcc : sysroot $(gcc) $(gccpatch)
-gdb : $(gdb)
-all : binutils gcc bfdlib $(PREFIX)/devkit.info $(missing-links) $(SYSROOT_LINKS) \
+gcc : sysroot $(GCC) $(GCC_PATCHED)
+gdb : $(GDB)
+all : binutils gcc bfdlib $(PREFIX)/devkit.info $(MISSING_LINKS) $(SYSROOT_LINKS) \
     $(THESE_MAKEFILES) gdb
 
 # this is only built for host. so separate.
-ccache : $(ccache)
+ccache : $(CCACHE)
 
 .PHONY : gcc all binutils bfdlib link_libs rpms libs sysroot

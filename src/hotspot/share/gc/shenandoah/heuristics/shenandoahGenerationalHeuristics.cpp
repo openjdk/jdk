@@ -37,7 +37,7 @@ ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGen
         : ShenandoahAdaptiveHeuristics(generation), _generation(generation) {
 }
 
-void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
+size_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
   assert(collection_set->is_empty(), "Must be empty");
 
   auto heap = ShenandoahGenerationalHeap::heap();
@@ -45,7 +45,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
 
   // Check all pinned regions have updated status before choosing the collection set.
-  heap->assert_pinned_region_status();
+  heap->assert_pinned_region_status(_generation);
 
   // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
 
@@ -104,7 +104,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
           // Note that for GLOBAL GC, region may be OLD, and OLD regions do not qualify for pre-selection
 
           // This region is old enough to be promoted but it was not preselected, either because its garbage is below
-          // ShenandoahOldGarbageThreshold so it will be promoted in place, or because there is not sufficient room
+          // old garbage threshold so it will be promoted in place, or because there is not sufficient room
           // in old gen to hold the evacuated copies of this region's live data.  In both cases, we choose not to
           // place this region into the collection set.
           if (region->get_top_before_promote() != nullptr) {
@@ -127,7 +127,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
-      bool bm_live = heap->active_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
+      bool bm_live = _generation->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
@@ -168,16 +168,12 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
           byte_size_in_proper_unit(total_garbage), proper_unit_for_byte_size(total_garbage));
 
   size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
-
   bool doing_promote_in_place = (humongous_regions_promoted + regular_regions_promoted_in_place > 0);
-  if (doing_promote_in_place || (preselected_candidates > 0) || (immediate_percent <= ShenandoahImmediateThreshold)) {
-    // Only young collections need to prime the collection set.
-    if (_generation->is_young()) {
-      heap->old_generation()->heuristics()->prime_collection_set(collection_set);
-    }
 
+  size_t add_regions_to_old = 0;
+  if (doing_promote_in_place || (preselected_candidates > 0) || (immediate_percent <= ShenandoahImmediateThreshold)) {
     // Call the subclasses to add young-gen regions into the collection set.
-    choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
+    add_regions_to_old = choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
 
   if (collection_set->has_old_regions()) {
@@ -194,6 +190,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
                                            regular_regions_promoted_free,
                                            immediate_regions,
                                            immediate_garbage);
+  return add_regions_to_old;
 }
 
 
@@ -210,13 +207,6 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
       assert(ShenandoahGenerationalHeap::heap()->is_tenurable(r), "Preselected regions must have tenure age");
       // Entire region will be promoted, This region does not impact young-gen or old-gen evacuation reserve.
       // This region has been pre-selected and its impact on promotion reserve is already accounted for.
-
-      // r->used() is r->garbage() + r->get_live_data_bytes()
-      // Since all live data in this region is being evacuated from young-gen, it is as if this memory
-      // is garbage insofar as young-gen is concerned.  Counting this as garbage reduces the need to
-      // reclaim highly utilized young-gen regions just for the sake of finding min_garbage to reclaim
-      // within young-gen memory.
-
       cur_young_garbage += r->garbage();
       cset->add_region(r);
     }

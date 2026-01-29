@@ -50,6 +50,8 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   _region_count(0),
   _old_garbage(0),
   _preselected_regions(nullptr),
+  _young_available_bytes_collected(0),
+  _old_available_bytes_collected(0),
   _current_index(0) {
 
   // The collection set map is reserved to cover the entire heap *and* zero addresses.
@@ -104,6 +106,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
     }
   } else if (r->is_old()) {
     _old_bytes_to_evacuate += live;
+    _old_available_bytes_collected += free;
     _old_garbage += garbage;
   }
 
@@ -140,6 +143,7 @@ void ShenandoahCollectionSet::clear() {
   _old_bytes_to_evacuate = 0;
 
   _young_available_bytes_collected = 0;
+  _old_available_bytes_collected = 0;
 
   _has_old_regions = false;
 }
@@ -225,9 +229,9 @@ void ShenandoahCollectionSet::summarize(size_t total_garbage, size_t immediate_g
                  count());
 
     if (garbage() > 0) {
-      const size_t young_evac_bytes = get_young_bytes_reserved_for_evacuation();
-      const size_t promote_evac_bytes = get_young_bytes_to_be_promoted();
-      const size_t old_evac_bytes = get_old_bytes_reserved_for_evacuation();
+      const size_t young_evac_bytes = get_live_bytes_in_untenurable_regions();
+      const size_t promote_evac_bytes = get_live_bytes_in_tenurable_regions();
+      const size_t old_evac_bytes = get_live_bytes_in_old_regions();
       const size_t total_evac_bytes = young_evac_bytes + promote_evac_bytes + old_evac_bytes;
       ls.print_cr("Evacuation Targets: "
                   "YOUNG: " PROPERFMT ", " "PROMOTE: " PROPERFMT ", " "OLD: " PROPERFMT ", " "TOTAL: " PROPERFMT,

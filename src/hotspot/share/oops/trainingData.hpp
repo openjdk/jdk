@@ -26,7 +26,6 @@
 #define SHARE_OOPS_TRAININGDATA_HPP
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -98,7 +97,9 @@ public:
   // It supports recursive locking and a read-only mode (in which case no locks are taken).
   // It is also a part of the TD collection termination protocol (see the "snapshot" field).
   class TrainingDataLocker {
+#if INCLUDE_CDS
     static volatile bool _snapshot; // If true we're not allocating new training data
+#endif
     static int _lock_mode;
     const bool _recursive;
     static void lock() {
@@ -153,7 +154,9 @@ public:
 #endif
     }
     static void assert_locked_or_snapshotted() {
+#if INCLUDE_CDS
       assert(safely_locked() || _snapshot, "use under TrainingDataLocker or after snapshot");
+#endif
     }
     static void assert_locked() {
       assert(safely_locked(), "use under TrainingDataLocker");
@@ -402,7 +405,7 @@ private:
       _deps_dyn = nullptr;
     }
 #endif
-    void prepare(ClassLoaderData* loader_data);
+    void prepare();
     void metaspace_pointers_do(MetaspaceClosure *iter);
   };
 
@@ -479,10 +482,6 @@ class KlassTrainingData : public TrainingData {
   }
   virtual KlassTrainingData* as_KlassTrainingData() const { return const_cast<KlassTrainingData*>(this); };
 
-  ClassLoaderData* class_loader_data() {
-    assert(has_holder(), "");
-    return holder()->class_loader_data();
-  }
   void notice_fully_initialized() NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
@@ -620,8 +619,8 @@ public:
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
 #endif
-      void prepare(ClassLoaderData* loader_data) {
-        _data.prepare(loader_data);
+      void prepare() {
+        _data.prepare();
       }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _data.metaspace_pointers_do(iter);
@@ -639,8 +638,8 @@ public:
       ciMethod__inline_instructions_size.remove_unshareable_info();
     }
 #endif
-    void prepare(ClassLoaderData* loader_data) {
-      ciMethod__inline_instructions_size.prepare(loader_data);
+    void prepare() {
+      ciMethod__inline_instructions_size.prepare();
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);
@@ -749,6 +748,9 @@ class MethodTrainingData : public TrainingData {
   MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
+  int _invocation_count;
+  int _backedge_count;
+
   MethodTrainingData();
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
@@ -759,6 +761,8 @@ class MethodTrainingData : public TrainingData {
     _highest_top_level = CompLevel_none;
     _level_mask = 0;
     _was_toplevel = false;
+    _invocation_count = 0;
+    _backedge_count = 0;
   }
 
   static int level_mask(int level) {
@@ -773,6 +777,8 @@ class MethodTrainingData : public TrainingData {
   bool saw_level(CompLevel l) const { return (_level_mask & level_mask(l)) != 0; }
   int highest_top_level()     const { return _highest_top_level; }
   MethodData* final_profile() const { return _final_profile; }
+  int invocation_count() const { return _invocation_count; }
+  int backedge_count() const { return _backedge_count; }
 
   Symbol* name() const {
     precond(has_holder());

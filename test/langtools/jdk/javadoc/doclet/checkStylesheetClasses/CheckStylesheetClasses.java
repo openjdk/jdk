@@ -122,7 +122,7 @@ public class CheckStylesheetClasses {
                 "modifiers", "permits", "return-type");
 
         // misc: these are defined in HtmlStyle, and used by the doclet
-        removeAll(htmlStyleNames, "col-plain", "external-link", "header", "index",
+        removeAll(htmlStyleNames, "col-plain", "external-link", "header",
                 "package-uses", "packages", "permits-note", "serialized-package-container",
                 "source-container");
 
@@ -142,9 +142,6 @@ public class CheckStylesheetClasses {
                 "ui-state-active", "ui-menu", "ui-menu-item-wrapper", "ui-static-link",
                 "search-result-desc", "search-result-label", "search-result-link", "selected",
                 "sort-asc", "sort-desc", "two-column-search-results", "visible");
-
-        // used for themes
-        removeAll(styleSheetNames, "theme-dark", "theme-light", "theme-os");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

@@ -37,6 +37,7 @@
 #include "runtime/continuationEntry.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -222,6 +223,7 @@
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
+  nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
@@ -242,7 +244,6 @@
   nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
-  volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   volatile_nonstatic_field(JavaThread,         _doing_unsafe_access,                          bool)                                  \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
@@ -256,18 +257,17 @@
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
-  nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
   nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   nonstatic_field(JavaThread,                  _unlocked_inflated_monitor,                    ObjectMonitor*)                        \
-  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
+  nonstatic_field(JavaThread,                  _is_in_vthread_transition,                     bool)                                  \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
   nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
-  JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \
+  static_field(MountUnmountDisabler,           _notify_jvmti_events,                          bool)                                  \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
@@ -283,7 +283,6 @@
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
-  nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(Klass,                       _secondary_supers_bitmap,                      uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
@@ -437,7 +436,7 @@
   JFR_ONLY(nonstatic_field(Thread,          _jfr_thread_local,                                JfrThreadLocal))                       \
                                                                                                                                      \
   static_field(java_lang_Thread,            _tid_offset,                                      int)                                   \
-  static_field(java_lang_Thread,            _jvmti_is_in_VTMS_transition_offset,              int)                                   \
+  static_field(java_lang_Thread,            _is_in_vthread_transition_offset,                 int)                                   \
   JFR_ONLY(static_field(java_lang_Thread,   _jfr_epoch_offset,                                int))                                  \
                                                                                                                                      \
   JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_id,                                      traceid))                              \
@@ -587,6 +586,7 @@
   declare_constant(nmethod::InvalidationReason::UNCOMMON_TRAP)                            \
   declare_constant(nmethod::InvalidationReason::WHITEBOX_DEOPTIMIZATION)                  \
   declare_constant(nmethod::InvalidationReason::ZOMBIE)                                   \
+  declare_constant(nmethod::InvalidationReason::RELOCATED)                                \
                                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
@@ -879,10 +879,6 @@
   declare_function(SharedRuntime::enable_stack_reserved_zone)             \
   declare_function(SharedRuntime::frem)                                   \
   declare_function(SharedRuntime::drem)                                   \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_start)) \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_end))   \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_mount)) \
-  JVMTI_ONLY(declare_function(SharedRuntime::notify_jvmti_vthread_unmount)) \
                                                                           \
   declare_function(os::dll_load)                                          \
   declare_function(os::dll_lookup)                                        \

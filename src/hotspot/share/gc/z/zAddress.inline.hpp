@@ -26,6 +26,7 @@
 
 #include "gc/z/zAddress.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "oops/oop.hpp"
@@ -37,8 +38,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include CPU_HEADER_INLINE(gc/z/zAddress)
-
-#include <type_traits>
 
 // Offset Operator Macro
 // Creates operators for the offset, offset_end style types
@@ -200,18 +199,18 @@ CREATE_ZOFFSET_OPERATORS(zoffset)
 
 inline uintptr_t untype(zbacking_offset offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value < ZBackingOffsetMax, "Offset out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value < ZBackingOffsetMax, "Offset out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZBackingOffsetMax);
   return value;
 }
 
 inline uintptr_t untype(zbacking_offset_end offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value <= ZBackingOffsetMax, "Offset out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value <= ZBackingOffsetMax, "Offset out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZBackingOffsetMax);
   return value;
 }
 
 inline zbacking_offset to_zbacking_offset(uintptr_t value) {
-  assert(value < ZBackingOffsetMax, "Value out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value < ZBackingOffsetMax, "Value out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZBackingOffsetMax);
   return zbacking_offset(value);
 }
 
@@ -228,7 +227,7 @@ inline zbacking_offset_end to_zbacking_offset_end(zbacking_offset start, size_t 
 }
 
 inline zbacking_offset_end to_zbacking_offset_end(uintptr_t value) {
-  assert(value <= ZBackingOffsetMax, "Value out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value <= ZBackingOffsetMax, "Value out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZBackingOffsetMax);
   return zbacking_offset_end(value);
 }
 
