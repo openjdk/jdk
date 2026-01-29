@@ -32,6 +32,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+// With ASAN, we omit NMT block integrity checks since ASAN does a better and faster
+// job of alerting us to memory corruptions
 #if INCLUDE_ASAN
 #undef NMT_BLOCK_INTEGRITY_CHECKS
 #else
