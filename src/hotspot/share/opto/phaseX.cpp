@@ -532,6 +532,10 @@ void PhaseValues::init_con_caches() {
   memset(_zcons,0,sizeof(_zcons));
 }
 
+PhaseIterGVN *PhaseValues::is_IterGVN() {
+  return (_phase == PhaseValuesType::iter_gvn || _phase == PhaseValuesType::ccp) ? static_cast<PhaseIterGVN*>(this) : nullptr;
+}
+
 //--------------------------------find_int_type--------------------------------
 const TypeInt* PhaseValues::find_int_type(Node* n) {
   if (n == nullptr)  return nullptr;

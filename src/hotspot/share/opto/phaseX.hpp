@@ -262,7 +262,7 @@ public:
     init_con_caches();
   }
   NOT_PRODUCT(~PhaseValues();)
-  PhaseIterGVN* is_IterGVN() { return (_phase == PhaseValuesType::iter_gvn || _phase == PhaseValuesType::ccp) ? static_cast<PhaseIterGVN*>(this) : nullptr; }
+  PhaseIterGVN* is_IterGVN();
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
