@@ -664,7 +664,7 @@ public class OptionsProcessorTest {
 
             var optionsBuilder = Utils.buildParser(os, bundlingEnv).create().apply(stringArgs).orElseThrow();
 
-            var op = new OptionsProcessor(optionsBuilder, bundlingEnv);
+            var op = new OptionsProcessor(optionsBuilder, OperatingSystem.current(), bundlingEnv);
 
             Collection<Map<String, Object>> errors;
             if (expectedValidationErrorsOrdered) {
