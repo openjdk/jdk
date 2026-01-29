@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 #define SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class ClassLoaderData;
 
@@ -54,6 +54,7 @@ class InstanceKlassFlags {
     flag(has_localvariable_table            , 1 << 11) /* has localvariable information */ \
     flag(has_miranda_methods                , 1 << 12) /* True if this class has miranda methods in it's vtable */ \
     flag(has_final_method                   , 1 << 13) /* True if klass has final method */ \
+    flag(trust_final_fields                 , 1 << 14) /* All instance final fields in this class should be trusted */ \
     /* end of list */
 
 #define IK_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,
@@ -68,6 +69,7 @@ class InstanceKlassFlags {
     status(has_been_redefined                , 1 << 2) /* class has been redefined */ \
     status(is_scratch_class                  , 1 << 3) /* class is the redefined scratch class */ \
     status(is_marked_dependent               , 1 << 4) /* class is the redefined scratch class */ \
+    status(has_init_deps_processed           , 1 << 5) /* all init dependencies are processed */ \
     /* end of list */
 
 #define IK_STATUS_ENUM_NAME(name, value)    _misc_##name = value,
@@ -121,8 +123,8 @@ class InstanceKlassFlags {
   IK_STATUS_DO(IK_STATUS_GET_SET)
 #undef IK_STATUS_GET_SET
 
-  void atomic_set_bits(u1 bits)   { Atomic::fetch_then_or(&_status, bits); }
-  void atomic_clear_bits(u1 bits) { Atomic::fetch_then_and(&_status, (u1)(~bits)); }
+  void atomic_set_bits(u1 bits)   { AtomicAccess::fetch_then_or(&_status, bits); }
+  void atomic_clear_bits(u1 bits) { AtomicAccess::fetch_then_and(&_status, (u1)(~bits)); }
   void print_on(outputStream* st) const;
 };
 

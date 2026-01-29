@@ -35,6 +35,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ModifiedUtf;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.util.Objects.requireNonNull;
@@ -141,7 +142,7 @@ public abstract sealed class AbstractPoolEntry {
         @Stable TypeDescriptor typeSym;
 
         Utf8EntryImpl(ConstantPool cpm, int index,
-                          byte[] rawBytes, int offset, int rawLen) {
+                      byte[] rawBytes, int offset, int rawLen) {
             super(cpm, index, 0);
             this.rawBytes = rawBytes;
             this.offset = offset;
@@ -154,6 +155,10 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
+            // Prevent creation of unwritable entries
+            if (!ModifiedUtf.isValidLengthInConstantPool(s)) {
+                throw new IllegalArgumentException("utf8 length out of range of u2: " + ModifiedUtf.utfLen(s));
+            }
             super(cpm, index, 0);
             this.rawBytes = null;
             this.offset = 0;
@@ -218,7 +223,7 @@ public abstract sealed class AbstractPoolEntry {
          * two-times-three-byte format instead.
          */
         private void inflate() {
-            int singleBytes = JLA.uncheckedCountPositives(rawBytes, offset, rawLen);
+            int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
             int hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
             if (singleBytes == rawLen) {
                 this.contentHash = hash;
@@ -233,7 +238,7 @@ public abstract sealed class AbstractPoolEntry {
             char[] chararr = new char[rawLen];
             int chararr_count = singleBytes;
             // Inflate prefix of bytes to characters
-            JLA.uncheckedInflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
+            JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
 
             int px = offset + singleBytes;
             int utfend = offset + rawLen;

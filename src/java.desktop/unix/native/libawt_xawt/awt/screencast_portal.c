@@ -716,6 +716,7 @@ static void callbackScreenCastStart(
         DEBUG_SCREENCAST("Failed to start screencast: %u\n", status);
         startHelper->result = RESULT_DENIED;
         helper->isDone = TRUE;
+        callbackEnd();
         return;
     }
 
@@ -731,6 +732,7 @@ static void callbackScreenCastStart(
         DEBUG_SCREENCAST("No streams available with current token\n",  NULL);
         startHelper->result = RESULT_NO_STREAMS;
         helper->isDone = TRUE;
+        callbackEnd();
         return;
     }
 

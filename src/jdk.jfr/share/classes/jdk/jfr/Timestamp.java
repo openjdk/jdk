@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public @interface Timestamp {
     /**
      * Unit for the time stamp.
      *
-     * @return time stamp unit, not {@code null}
+     * @return time stamp unit, default {@code MILLISECONDS_SINCE_EPOCH}
      */
     String value() default Timestamp.MILLISECONDS_SINCE_EPOCH;
 }

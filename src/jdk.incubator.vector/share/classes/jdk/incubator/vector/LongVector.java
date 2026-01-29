@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2724,9 +2724,11 @@ public abstract class LongVector extends AbstractVector<Long> {
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (long) Math.max(a, b)));
             case VECTOR_OP_UMIN: return (v, m) ->
-                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (long) VectorMath.minUnsigned(a, b)));
+                    toBits(v.rOp(UMAX_VALUE, m, (i, a, b) -> (long) VectorMath.minUnsigned(a, b)));
             case VECTOR_OP_UMAX: return (v, m) ->
-                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (long) VectorMath.maxUnsigned(a, b)));
+                    toBits(v.rOp(UMIN_VALUE, m, (i, a, b) -> (long) VectorMath.maxUnsigned(a, b)));
+            case VECTOR_OP_SUADD: return (v, m) ->
+                    toBits(v.rOp((long)0, m, (i, a, b) -> (long) VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((long)-1, m, (i, a, b) -> (long)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -2739,6 +2741,8 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     private static final long MIN_OR_INF = Long.MIN_VALUE;
     private static final long MAX_OR_INF = Long.MAX_VALUE;
+    private static final long UMIN_VALUE = (long)0;   // Minimum unsigned value
+    private static final long UMAX_VALUE = (long)-1;  // Maximum unsigned value
 
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op);
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op,
@@ -2976,8 +2980,8 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         return VectorSupport.loadWithMap(
             vectorType, null, long.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, null,
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
@@ -3267,7 +3271,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         VectorSupport.storeWithMap(
             vsp.vectorType(), null, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
             a, offset, indexMap, mapOffset,
@@ -3462,8 +3466,8 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, long.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, m,
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
@@ -3578,7 +3582,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         VectorSupport.storeWithMap(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
             a, offset, indexMap, mapOffset,
@@ -3649,6 +3653,18 @@ public abstract class LongVector extends AbstractVector<Long> {
                 .reinterpretAsLongs();
         }
         return this;
+    }
+
+    @Override
+    @ForceInline
+    final
+    LongVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<Long> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (LongVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

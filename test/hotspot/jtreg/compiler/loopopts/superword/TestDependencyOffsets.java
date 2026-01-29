@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,67 +24,73 @@
 /*
  * @test id=vanilla-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vanilla-A
  */
 
 /*
  * @test id=vanilla-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vanilla-U
  */
 
 /*
  * @test id=sse4-v016-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v016-A
  */
 
 /*
  * @test id=sse4-v016-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v016-U
  */
 
 /*
  * @test id=sse4-v008-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v008-A
  */
 
 /*
  * @test id=sse4-v008-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v008-U
  */
 
 /*
@@ -96,321 +102,348 @@
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v004-A
  */
 
 /*
  * @test id=sse4-v004-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v004-U
  */
 
 /*
  * @test id=avx1-v032-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v032-A
  */
 
 /*
  * @test id=avx1-v032-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v032-U
  */
 
 /*
  * @test id=avx1-v016-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v016-A
  */
 
 /*
  * @test id=avx1-v016-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v016-U
  */
 
 /*
  * @test id=avx2-v032-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v032-A
  */
 
 /*
  * @test id=avx2-v032-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v032-U
  */
 
 /*
  * @test id=avx2-v016-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v016-A
  */
 
 /*
  * @test id=avx2-v016-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v016-U
  */
 
 /*
  * @test id=avx512-v064-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v064-A
  */
 
 /*
  * @test id=avx512-v064-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v064-U
  */
 
 /*
  * @test id=avx512-v032-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v032-A
  */
 
 /*
  * @test id=avx512-v032-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v032-U
  */
 
 /*
  * @test id=avx512bw-v064-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-A
  */
 
 /*
  * @test id=avx512bw-v064-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-U
  */
 
 /*
  * @test id=avx512bw-v032-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-A
  */
 
 /*
  * @test id=avx512bw-v032-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-U
  */
 
 /*
  * @test id=vec-v064-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v064-A
  */
 
 /*
  * @test id=vec-v064-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v064-U
  */
 
 /*
  * @test id=vec-v032-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v032-A
  */
 
 /*
  * @test id=vec-v032-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v032-U
  */
 
 /*
  * @test id=vec-v016-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v016-A
  */
 
 /*
  * @test id=vec-v016-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v016-U
  */
 
 /*
  * @test id=vec-v008-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v008-A
  */
 
 /*
  * @test id=vec-v008-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v008-U
  */
 
 /*
  * @test id=vec-v004-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v004-A
  */
 
 /*
  * @test id=vec-v004-U
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
  */
 
 package compiler.loopopts.superword;
@@ -597,8 +630,7 @@ public class TestDependencyOffsets {
             case "byte"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "char"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
                                                      new CPUMinVectorWidth(ASIMD,      8 )};
-            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
-                                                     new CPUMinVectorWidth(ASIMD,      8 )};
+            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "int"    -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
             case "long"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 16)};
             case "float"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
@@ -752,11 +784,13 @@ public class TestDependencyOffsets {
                 // we use shorter vectors to avoid cycles and still vectorize. Vector lengths have to
                 // be powers-of-2, and smaller or equal to the byteOffset. So we round down to the next
                 // power of two.
+                // If we have two array references, then we can speculate that they do not alias, and
+                // still produce full vectorization.
                 int infinity = 256; // No vector size is ever larger than this.
                 int maxVectorWidth = infinity; // no constraint by default
                 int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                 int floorPow2Offset = 1 << log2;
-                if (0 < byteOffset && byteOffset < maxVectorWidth) {
+                if (isSingleArray && 0 < byteOffset && byteOffset < maxVectorWidth) {
                     maxVectorWidth = Math.min(maxVectorWidth, floorPow2Offset * type.size);
                     builder.append("    // Vectors must have at most " + floorPow2Offset +
                                    " elements: maxVectorWidth = " + maxVectorWidth +

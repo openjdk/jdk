@@ -34,11 +34,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage test that installer blocks on Windows of older version
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror WinOSConditionTest.java
  * @requires (os.family == "windows")
- * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinOSConditionTest
  */
@@ -62,6 +60,17 @@ public class WinOSConditionTest {
                     "--resource-dir", resourceDir.toString()).setFakeRuntime();
         })
         .addUninstallVerifier(cmd -> {
+            // Installation could have ended up with 1603 or 1625 error codes.
+            // MSI error code 1625 indicates the test is being executed in an environment
+            // that doesn't allow per-user installations. This means the test should be skipped.
+            try (final var lines = cmd.winMsiLogFileContents().orElseThrow()) {
+                if (lines.anyMatch(line -> {
+                    return line.endsWith("Installation success or error status: 1625.");
+                })) {
+                    TKit.throwSkippedException("Installation of per-user packages by the current user is forbidden by system policy");
+                }
+            }
+
             // MSI error code 1603 is generic.
             // Dig into the last msi log file for log messages specific to failed condition.
             try (final var lines = cmd.winMsiLogFileContents().orElseThrow()) {
@@ -72,7 +81,7 @@ public class WinOSConditionTest {
             }
         })
         .createMsiLog(true)
-        .setExpectedInstallExitCode(1603)
+        .setExpectedInstallExitCode(1603, 1625)
         // Create, try install the package (installation should fail) and verify it is not installed.
         .run(Action.CREATE, Action.INSTALL, Action.VERIFY_UNINSTALL);
     }

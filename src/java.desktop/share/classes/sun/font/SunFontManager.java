@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2481,7 +2481,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * performed normally. There may be some duplication of effort, but
      * that code is already written to be able to perform properly if called
      * to duplicate work. The main difference is that if we detect we are
-     * running in an applet/browser/Java plugin environment these new fonts
+     * in an AppContext environment these new fonts
      * are not placed in the "default" maps but into an AppContext instance.
      * The font lookup mechanism in java.awt.Font.getFont2D() is also updated
      * so that look-up for composite fonts will in that case always
@@ -2502,7 +2502,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * Calling the methods below is "heavyweight" but it is expected that
      * these methods will be called very rarely.
      *
-     * If _usingAlternateComposites is true, we are not in an "applet"
+     * If _usingAlternateComposites is true, we are not in an "AppContext"
      * environment and the (single) application has selected
      * an alternate composite font behaviour.
      *

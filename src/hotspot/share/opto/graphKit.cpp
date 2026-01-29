@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
+#include "asm/register.hpp"
+#include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
-#include "ci/ciObjArray.hpp"
-#include "asm/register.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -47,8 +47,8 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
@@ -1489,8 +1489,7 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
   }
   Node *if_f = _gvn.transform(new IfFalseNode(iff));
   Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
-  Node* halt = _gvn.transform(new HaltNode(if_f, frame, "unexpected null in intrinsic"));
-  C->root()->add_req(halt);
+  halt(if_f, frame, "unexpected null in intrinsic");
   Node *if_t = _gvn.transform(new IfTrueNode(iff));
   set_control(if_t);
   return cast_not_null(value, do_replace_in_map);
@@ -1880,14 +1879,20 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
 // after the call, if this call has restricted memory effects.
 Node* GraphKit::set_predefined_input_for_runtime_call(SafePointNode* call, Node* narrow_mem) {
   // Set fixed predefined input arguments
-  Node* memory = reset_memory();
-  Node* m = narrow_mem == nullptr ? memory : narrow_mem;
-  call->init_req( TypeFunc::Control,   control()  );
-  call->init_req( TypeFunc::I_O,       top()      ); // does no i/o
-  call->init_req( TypeFunc::Memory,    m          ); // may gc ptrs
-  call->init_req( TypeFunc::FramePtr,  frameptr() );
-  call->init_req( TypeFunc::ReturnAdr, top()      );
-  return memory;
+  call->init_req(TypeFunc::Control, control());
+  call->init_req(TypeFunc::I_O, top()); // does no i/o
+  call->init_req(TypeFunc::ReturnAdr, top());
+  if (call->is_CallLeafPure()) {
+    call->init_req(TypeFunc::Memory, top());
+    call->init_req(TypeFunc::FramePtr, top());
+    return nullptr;
+  } else {
+    Node* memory = reset_memory();
+    Node* m = narrow_mem == nullptr ? memory : narrow_mem;
+    call->init_req(TypeFunc::Memory, m); // may gc ptrs
+    call->init_req(TypeFunc::FramePtr, frameptr());
+    return memory;
+  }
 }
 
 //-------------------set_predefined_output_for_runtime_call--------------------
@@ -1905,6 +1910,11 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
                                                       const TypePtr* hook_mem) {
   // no i/o
   set_control(_gvn.transform( new ProjNode(call,TypeFunc::Control) ));
+  if (call->is_CallLeafPure()) {
+    // Pure function have only control (for now) and data output, in particular
+    // they don't touch the memory, so we don't want a memory proj that is set after.
+    return;
+  }
   if (keep_mem) {
     // First clone the existing memory state
     set_all_memory(keep_mem);
@@ -2062,6 +2072,12 @@ void GraphKit::increment_counter(Node* counter_addr) {
   store_to_memory(ctrl, counter_addr, incr, T_LONG, MemNode::unordered);
 }
 
+void GraphKit::halt(Node* ctrl, Node* frameptr, const char* reason, bool generate_code_in_product) {
+  Node* halt = new HaltNode(ctrl, frameptr, reason
+                            PRODUCT_ONLY(COMMA generate_code_in_product));
+  halt = _gvn.transform(halt);
+  root()->add_req(halt);
+}
 
 //------------------------------uncommon_trap----------------------------------
 // Bail out to the interpreter in mid-method.  Implemented by calling the
@@ -2184,11 +2200,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
   // The debug info is the only real input to this call.
 
   // Halt-and-catch fire here.  The above call should never return!
-  HaltNode* halt = new HaltNode(control(), frameptr(), "uncommon trap returned which should never happen"
-                                                       PRODUCT_ONLY(COMMA /*reachable*/false));
-  _gvn.set_type_bottom(halt);
-  root()->add_req(halt);
-
+  // We only emit code for the HaltNode in debug, which is enough for
+  // verifying correctness. In product, we don't want to emit it so
+  // that we can save on code space. HaltNode often get folded because
+  // the compiler can prove that the unreachable path is dead. But we
+  // cannot generally expect that for uncommon traps, which are often
+  // reachable and occasionally taken.
+  halt(control(), frameptr(),
+       "uncommon trap returned which should never happen",
+       false /* don't emit code in product */);
   stop_and_kill_map();
   return call;
 }
@@ -2298,16 +2318,18 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
       if (!data->as_BitData()->null_seen()) {
         ptr_kind = ProfileNeverNull;
       } else {
-        assert(data->is_ReceiverTypeData(), "bad profile data type");
-        ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
-        uint i = 0;
-        for (; i < call->row_limit(); i++) {
-          ciKlass* receiver = call->receiver(i);
-          if (receiver != nullptr) {
-            break;
+        if (TypeProfileCasts) {
+          assert(data->is_ReceiverTypeData(), "bad profile data type");
+          ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
+          uint i = 0;
+          for (; i < call->row_limit(); i++) {
+            ciKlass* receiver = call->receiver(i);
+            if (receiver != nullptr) {
+              break;
+            }
           }
+          ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
         }
-        ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
       }
     }
   }
@@ -2491,6 +2513,9 @@ Node* GraphKit::make_runtime_call(int flags,
   } else  if (flags & RC_VECTOR){
     uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
     call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+  } else if (flags & RC_PURE) {
+    assert(adr_type == nullptr, "pure call does not touch memory");
+    call = new CallLeafPureNode(call_type, call_addr, call_name);
   } else {
     call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
   }
@@ -2718,7 +2743,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // will always succeed.  We could leave a dependency behind to ensure this.
 
   // First load the super-klass's check-offset
-  Node *p1 = gvn.transform(new AddPNode(superklass, superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+  Node *p1 = gvn.transform(new AddPNode(C->top(), superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
   Node* m = C->immutable_memory();
   Node *chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
   int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
@@ -2736,7 +2761,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 #ifdef _LP64
   chk_off_X = gvn.transform(new ConvI2LNode(chk_off_X));
 #endif
-  Node *p2 = gvn.transform(new AddPNode(subklass,subklass,chk_off_X));
+  Node* p2 = gvn.transform(new AddPNode(C->top(), subklass, chk_off_X));
   // For some types like interfaces the following loadKlass is from a 1-word
   // cache which is mutable so can't use immutable memory.  Other
   // types load from the super-class display table which is immutable.
@@ -3402,6 +3427,7 @@ Node* GraphKit::insert_mem_bar(int opcode, Node* precedent) {
   mb->init_req(TypeFunc::Control, control());
   mb->init_req(TypeFunc::Memory,  reset_memory());
   Node* membar = _gvn.transform(mb);
+  record_for_igvn(membar);
   set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
   set_all_memory_call(membar);
   return membar;
@@ -3431,6 +3457,7 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
     mb->set_req(TypeFunc::Memory, memory(alias_idx));
   }
   Node* membar = _gvn.transform(mb);
+  record_for_igvn(membar);
   set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
   if (alias_idx == Compile::AliasIdxBot) {
     merged_memory()->set_base_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)));
@@ -3447,8 +3474,6 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if( !GenerateSynchronizationCode )
-    return nullptr;                // Not locking things?
   if (stopped())                // Dead monitor?
     return nullptr;
 
@@ -3511,8 +3536,6 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if( !GenerateSynchronizationCode )
-    return;
   if (stopped()) {               // Dead monitor?
     map()->pop_monitor();        // Kill monitor from debug info
     return;
@@ -3575,7 +3598,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
   }
   constant_value = Klass::_lh_neutral_value;  // put in a known value
-  Node* lhp = basic_plus_adr(klass_node, klass_node, in_bytes(Klass::layout_helper_offset()));
+  Node* lhp = basic_plus_adr(top(), klass_node, in_bytes(Klass::layout_helper_offset()));
   return make_load(nullptr, lhp, TypeInt::INT, T_INT, MemNode::unordered);
 }
 
@@ -3630,14 +3653,17 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     record_for_igvn(minit_in); // fold it up later, if possible
     Node* minit_out = memory(rawidx);
     assert(minit_out->is_Proj() && minit_out->in(0) == init, "");
-    // Add an edge in the MergeMem for the header fields so an access
-    // to one of those has correct memory state
-    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes())));
-    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes())));
+    int mark_idx = C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes()));
+    // Add an edge in the MergeMem for the header fields so an access to one of those has correct memory state.
+    // Use one NarrowMemProjNode per slice to properly record the adr type of each slice. The Initialize node will have
+    // multiple projections as a result.
+    set_memory(_gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(mark_idx))), mark_idx);
+    int klass_idx = C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes()));
+    set_memory(_gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(klass_idx))), klass_idx);
     if (oop_type->isa_aryptr()) {
       const TypePtr* telemref = oop_type->add_offset(Type::OffsetBot);
       int            elemidx  = C->get_alias_index(telemref);
-      hook_memory_on_init(*this, elemidx, minit_in, minit_out);
+      hook_memory_on_init(*this, elemidx, minit_in, _gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(elemidx))));
     } else if (oop_type->isa_instptr()) {
       ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
       for (int i = 0, len = ik->nof_nonstatic_fields(); i < len; i++) {
@@ -3646,7 +3672,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
           continue;  // do not bother to track really large numbers of fields
         // Find (or create) the alias category for this field:
         int fieldidx = C->alias_type(field)->index();
-        hook_memory_on_init(*this, fieldidx, minit_in, minit_out);
+        hook_memory_on_init(*this, fieldidx, minit_in, _gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(fieldidx))));
       }
     }
   }
@@ -3803,6 +3829,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     assert(!StressReflectiveCode, "stress mode does not use these paths");
     // Increase the size limit if we have exact knowledge of array type.
     int log2_esize = Klass::layout_helper_log2_element_size(layout_con);
+    assert(fast_size_limit == 0 || count_leading_zeros(fast_size_limit) > static_cast<unsigned>(LogBytesPerLong - log2_esize),
+           "fast_size_limit (%d) overflow when shifted left by %d", fast_size_limit, LogBytesPerLong - log2_esize);
     fast_size_limit <<= (LogBytesPerLong - log2_esize);
   }
 
@@ -3853,7 +3881,9 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     if (tilen != nullptr && tilen->_lo < 0) {
       // Add a manual constraint to a positive range.  Cf. array_element_address.
       jint size_max = fast_size_limit;
-      if (size_max > tilen->_hi)  size_max = tilen->_hi;
+      if (size_max > tilen->_hi && tilen->_hi >= 0) {
+        size_max = tilen->_hi;
+      }
       const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin);
 
       // Only do a narrow I2L conversion if the range check passed.
@@ -4050,13 +4080,20 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
 // Add Parse Predicates which serve as placeholders to create new Runtime Predicates above them. All
 // Runtime Predicates inside a Runtime Predicate block share the same uncommon trap as the Parse Predicate.
 void GraphKit::add_parse_predicates(int nargs) {
+  if (ShortRunningLongLoop) {
+    // Will narrow the limit down with a cast node. Predicates added later may depend on the cast so should be last when
+    // walking up from the loop.
+    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, nargs);
+  }
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, nargs);
     if (UseProfiledLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_profile_predicate, nargs);
     }
   }
-  add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
+  if (UseAutoVectorizationPredicate) {
+    add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
+  }
   // Loop Limit Check Predicate should be near the loop.
   add_parse_predicate(Deoptimization::Reason_loop_limit_check, nargs);
 }

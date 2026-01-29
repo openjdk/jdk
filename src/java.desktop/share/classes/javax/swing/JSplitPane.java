@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,23 +369,33 @@ public class JSplitPane extends JComponent implements Accessible
      */
     @Override
     public void setComponentOrientation(ComponentOrientation orientation) {
+        ComponentOrientation curOrn = this.getComponentOrientation();
         super.setComponentOrientation(orientation);
-        Component leftComponent = this.getLeftComponent();
-        Component rightComponent = this.getRightComponent();
-        if (!this.getComponentOrientation().isLeftToRight()) {
-            if (rightComponent != null) {
-                setLeftComponent(rightComponent);
+        Component comp = null;
+        if (!orientation.equals(curOrn)) {
+            Component leftComponent = this.getLeftComponent();
+            Component rightComponent = this.getRightComponent();
+            if (!this.getComponentOrientation().isLeftToRight()) {
+                if (rightComponent != null) {
+                    comp = this.leftComponent;
+                    this.leftComponent = this.rightComponent;
+                    this.rightComponent = comp;
+                } else if (leftComponent != null) {
+                    comp = this.rightComponent;
+                    this.rightComponent = this.leftComponent;
+                    this.leftComponent = comp;
+                }
+            } else {
+                if (leftComponent != null) {
+                    this.leftComponent = rightComponent;
+                }
+                if (rightComponent != null) {
+                    this.rightComponent = leftComponent;
+                }
             }
-            if (leftComponent != null) {
-                setRightComponent(leftComponent);
-            }
-        } else {
-            if (leftComponent != null) {
-                setLeftComponent(leftComponent);
-            }
-            if (rightComponent != null) {
-                setRightComponent(rightComponent);
-            }
+            firePropertyChange(ORIENTATION_PROPERTY, curOrn, orientation);
+            this.revalidate();
+            this.repaint();
         }
     }
 

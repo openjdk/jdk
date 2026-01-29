@@ -47,11 +47,13 @@ import jdk.internal.util.StaticProperty;
 
 public class CDS {
     // Must be in sync with cdsConfig.hpp
-    private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
-    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
-    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
-    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
-    private static final int IS_USING_ARCHIVE                = 1 << 4;
+    private static final int IS_DUMPING_AOT_LINKED_CLASSES   = 1 << 0;
+    private static final int IS_DUMPING_ARCHIVE              = 1 << 1;
+    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 2;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 3;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 4;
+    private static final int IS_USING_ARCHIVE                = 1 << 5;
+
     private static final int configStatus = getCDSConfigStatus();
 
     /**
@@ -80,6 +82,10 @@ public class CDS {
       */
     public static boolean isDumpingStaticArchive() {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
+    }
+
+    public static boolean isDumpingAOTLinkedClasses() {
+        return (configStatus & IS_DUMPING_AOT_LINKED_CLASSES) != 0;
     }
 
     public static boolean isSingleThreadVM() {
@@ -504,6 +510,49 @@ public class CDS {
             // by the C++ function 'ClassListParser::load_class_from_source()'.
             assert getParent() == getSystemClassLoader();
             return defineClass(name, bytes, 0, bytes.length);
+        }
+    }
+
+    /**
+     * This class is used only by native JVM code to spawn a child JVM process to assemble
+     * the AOT cache. <code>args[]</code> are passed in the <code>JAVA_TOOL_OPTIONS</code>
+     * environment variable.
+     */
+    private static class ProcessLauncher {
+        static int execWithJavaToolOptions(String javaLauncher, String args[]) throws IOException, InterruptedException {
+            ProcessBuilder pb = new ProcessBuilder().inheritIO().command(javaLauncher);
+            StringBuilder sb = new StringBuilder();
+
+            // Encode the args as described in
+            // https://docs.oracle.com/en/java/javase/24/docs/specs/jvmti.html#tooloptions
+            String prefix = "";
+            for (String arg : args) {
+                sb.append(prefix);
+
+                for (int i = 0; i < arg.length(); i++) {
+                    char c = arg.charAt(i);
+                    if (c == '"' || Character.isWhitespace(c)) {
+                        sb.append('\'');
+                        sb.append(c);
+                        sb.append('\'');
+                    } else if (c == '\'') {
+                        sb.append('"');
+                        sb.append(c);
+                        sb.append('"');
+                    } else {
+                        sb.append(c);
+                    }
+                }
+
+                prefix = " ";
+            }
+
+            Map<String, String> env = pb.environment();
+            env.put("JAVA_TOOL_OPTIONS", sb.toString());
+            env.remove("_JAVA_OPTIONS");
+            env.remove("CLASSPATH");
+            Process process = pb.start();
+            return process.waitFor();
         }
     }
 }

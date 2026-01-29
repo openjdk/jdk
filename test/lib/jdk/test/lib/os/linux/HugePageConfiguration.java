@@ -64,6 +64,7 @@ public class HugePageConfiguration {
 
     Set<ExplicitHugePageConfig> _explicitHugePageConfigurations;
     long _explicitDefaultHugePageSize = -1;
+    long _explicitAvailableHugePageNumber = -1;
 
     public enum THPMode {always, never, madvise}
     THPMode _thpMode;
@@ -78,6 +79,10 @@ public class HugePageConfiguration {
 
     public long getExplicitDefaultHugePageSize() {
         return _explicitDefaultHugePageSize;
+    }
+
+    public long getExplicitAvailableHugePageNumber() {
+        return _explicitAvailableHugePageNumber;
     }
 
     public THPMode getThpMode() {
@@ -116,9 +121,10 @@ public class HugePageConfiguration {
         return _explicitDefaultHugePageSize > 0 && _explicitHugePageConfigurations.size() > 0;
     }
 
-    public HugePageConfiguration(Set<ExplicitHugePageConfig> explicitHugePageConfigurations, long explicitDefaultHugePageSize, THPMode _thpMode, long _thpPageSize, ShmemTHPMode _shmemThpMode) {
+    public HugePageConfiguration(Set<ExplicitHugePageConfig> explicitHugePageConfigurations, long explicitDefaultHugePageSize, long explicitAvailableHugePageNumber, THPMode _thpMode, long _thpPageSize, ShmemTHPMode _shmemThpMode) {
         this._explicitHugePageConfigurations = explicitHugePageConfigurations;
         this._explicitDefaultHugePageSize = explicitDefaultHugePageSize;
+        this._explicitAvailableHugePageNumber = explicitAvailableHugePageNumber;
         this._thpMode = _thpMode;
         this._thpPageSize = _thpPageSize;
         this._shmemThpMode = _shmemThpMode;
@@ -129,6 +135,7 @@ public class HugePageConfiguration {
         return "Configuration{" +
                 "_explicitHugePageConfigurations=" + _explicitHugePageConfigurations +
                 ", _explicitDefaultHugePageSize=" + _explicitDefaultHugePageSize +
+                ", _explicitAvailableHugePageNumber=" + _explicitAvailableHugePageNumber +
                 ", _thpMode=" + _thpMode +
                 ", _thpPageSize=" + _thpPageSize +
                 ", _shmemThpMode=" + _shmemThpMode +
@@ -138,6 +145,7 @@ public class HugePageConfiguration {
     @Override
     public int hashCode() {
         return Objects.hash(_explicitDefaultHugePageSize,
+                            _explicitAvailableHugePageNumber,
                             _thpPageSize,
                             _explicitHugePageConfigurations,
                             _thpMode,
@@ -149,6 +157,7 @@ public class HugePageConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HugePageConfiguration that = (HugePageConfiguration) o;
+        // _explicitAvailableHugePageNumber is not compared here, because there is no direct counterpart on the JVM-side log.
         return _explicitDefaultHugePageSize == that._explicitDefaultHugePageSize && _thpPageSize == that._thpPageSize &&
                 Objects.equals(_explicitHugePageConfigurations, that._explicitHugePageConfigurations) && _thpMode == that._thpMode &&
                 _shmemThpMode == that._shmemThpMode;
@@ -161,6 +170,21 @@ public class HugePageConfiguration {
                 Matcher mat = pat.matcher(scanner.nextLine());
                 if (mat.matches()) {
                     return Long.parseLong(mat.group(1)) * 1024;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Could not open /proc/meminfo");
+        }
+        return 0;
+    }
+
+    private static long readAvailableHugePageNumberFromOS() {
+        Pattern pat = Pattern.compile("HugePages_Free: *(\\d+)$");
+        try (Scanner scanner = new Scanner(new File("/proc/meminfo"))) {
+            while (scanner.hasNextLine()) {
+                Matcher mat = pat.matcher(scanner.nextLine());
+                if (mat.matches()) {
+                    return Long.parseLong(mat.group(1));
                 }
             }
         } catch (FileNotFoundException e) {
@@ -263,6 +287,7 @@ public class HugePageConfiguration {
     public static HugePageConfiguration readFromOS() throws IOException {
         return new HugePageConfiguration(readSupportedHugePagesFromOS(),
                 readDefaultHugePageSizeFromOS(),
+                readAvailableHugePageNumberFromOS(),
                 readTHPModeFromOS(),
                 readTHPPageSizeFromOS(),
                 readShmemTHPModeFromOS());
@@ -333,7 +358,7 @@ public class HugePageConfiguration {
             }
         }
 
-        return new HugePageConfiguration(explicitHugePageConfigs, defaultHugepageSize, thpMode, thpPageSize, shmemThpMode);
+        return new HugePageConfiguration(explicitHugePageConfigs, defaultHugepageSize, -1, thpMode, thpPageSize, shmemThpMode);
     }
 
 }

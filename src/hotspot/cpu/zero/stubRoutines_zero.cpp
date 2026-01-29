@@ -28,4 +28,5 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
 
-// zero has no arch-specific stubs nor any associated entries
+address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
+address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }

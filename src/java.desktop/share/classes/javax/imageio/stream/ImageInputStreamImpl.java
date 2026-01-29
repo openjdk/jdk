@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -840,30 +840,5 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         checkClosed();
 
         isClosed = true;
-    }
-
-    /**
-     * Finalizes this object prior to garbage collection.  The
-     * {@code close} method is called to close any open input
-     * source.  This method should not be called from application
-     * code.
-     *
-     * @throws Throwable if an error occurs during superclass
-     * finalization.
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        if (!isClosed) {
-            try {
-                close();
-            } catch (IOException e) {
-            }
-        }
-        super.finalize();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -124,6 +126,8 @@ public final class HelloApp {
         if (appDesc.isWithMainClass()) {
             builder.setMainClass(appDesc.className());
         }
+        // Use an old release number to make test app classes runnable on older runtimes.
+        builder.setRelease(11);
         return builder;
     }
 
@@ -312,37 +316,33 @@ public final class HelloApp {
 
     public static void executeLauncherAndVerifyOutput(JPackageCommand cmd,
             String... args) {
-        AppOutputVerifier av = assertMainLauncher(cmd, args);
-        if (av != null) {
+        assertMainLauncher(cmd, args).ifPresent(av -> {
             av.executeAndVerifyOutput(args);
-        }
+        });
     }
 
     public static Executor.Result executeLauncher(JPackageCommand cmd,
             String... args) {
-        AppOutputVerifier av = assertMainLauncher(cmd, args);
-        if (av != null) {
+        return assertMainLauncher(cmd, args).map(av -> {
             return av.saveOutput(true).execute(args);
-        } else {
-            return null;
-        }
+        }).orElseThrow();
     }
 
-    public static AppOutputVerifier assertMainLauncher(JPackageCommand cmd,
+    public static Optional<AppOutputVerifier> assertMainLauncher(JPackageCommand cmd,
             String... args) {
         final Path launcherPath = cmd.appLauncherPath();
         if (!cmd.canRunLauncher(String.format("Not running [%s] launcher",
                 launcherPath))) {
-            return null;
+            return Optional.empty();
         }
 
-        return assertApp(launcherPath)
+        return Optional.of(assertApp(launcherPath)
         .addDefaultArguments(Optional
                 .ofNullable(cmd.getAllArgumentValues("--arguments"))
                 .orElseGet(() -> new String[0]))
         .addJavaOptions(Optional
                 .ofNullable(cmd.getAllArgumentValues("--java-options"))
-                .orElseGet(() -> new String[0]));
+                .orElseGet(() -> new String[0])));
     }
 
 
@@ -423,6 +423,11 @@ public final class HelloApp {
             .collect(Collectors.toList()));
         }
 
+        public AppOutputVerifier processListener(Consumer<Process> v) {
+            processListener = v;
+            return this;
+        }
+
         public void verifyOutput(String... args) {
             final List<String> launcherArgs = List.of(args);
             final List<String> appArgs;
@@ -476,6 +481,7 @@ public final class HelloApp {
                     .saveOutput(saveOutput)
                     .dumpOutput()
                     .setExecutable(executablePath)
+                    .processListener(processListener)
                     .addArguments(List.of(args));
 
             env.forEach((envVarName, envVarValue) -> {
@@ -490,6 +496,7 @@ public final class HelloApp {
         private final Path launcherPath;
         private Path outputFilePath;
         private int expectedExitCode;
+        private Consumer<Process> processListener;
         private final List<String> defaultLauncherArgs;
         private final Map<String, String> params;
         private final Map<String, String> env;
@@ -514,15 +521,24 @@ public final class HelloApp {
         }
     }
 
-    private static Executor configureEnvironment(Executor executor) {
+    static Executor configureEnvironment(Executor executor) {
         if (CLEAR_JAVA_ENV_VARS) {
-            executor.removeEnvVar("JAVA_TOOL_OPTIONS");
-            executor.removeEnvVar("_JAVA_OPTIONS");
+            JAVA_ENV_VARS.forEach(executor::removeEnvVar);
         }
         return executor;
     }
 
+    private static boolean javaEnvVariablesContainsModulePath() {
+        return JAVA_ENV_VARS.stream().map(System::getenv).filter(Objects::nonNull).anyMatch(HelloApp::containsModulePath);
+    }
+
+    private static boolean containsModulePath(String value) {
+        return value.contains("--module-path");
+    }
+
     static final String OUTPUT_FILENAME = "appOutput.txt";
+
+    private static final Set<String> JAVA_ENV_VARS = Set.of("JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS");
 
     private final JavaAppDesc appDesc;
 
@@ -532,6 +548,11 @@ public final class HelloApp {
     private static final String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];
 
-    private static final boolean CLEAR_JAVA_ENV_VARS = Optional.ofNullable(
-            TKit.getConfigProperty("clear-app-launcher-java-env-vars")).map(Boolean::parseBoolean).orElse(false);
+    //
+    // Runtime in the app image normally doesn't have .jmod files. Because of this `--module-path`
+    // option will cause failure at app launcher startup.
+    // Java environment variables containing this option should be removed from the
+    // environment in which app launchers are started.
+    //
+    static final boolean CLEAR_JAVA_ENV_VARS = javaEnvVariablesContainsModulePath();
 }

@@ -118,23 +118,20 @@ static ZMappedCacheEntry* create_entry(const ZVirtualMemory& vmem) {
   return entry;
 }
 
-int ZMappedCache::EntryCompare::cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
+bool ZMappedCache::EntryCompare::less_than(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
   const ZVirtualMemory vmem_a = ZMappedCacheEntry::cast_to_entry(a)->vmem();
   const ZVirtualMemory vmem_b = ZMappedCacheEntry::cast_to_entry(b)->vmem();
 
-  if (vmem_a.end() < vmem_b.start()) { return -1; }
-  if (vmem_b.end() < vmem_a.start()) { return 1; }
-
-  return 0; // Overlapping
+  return vmem_a.end() < vmem_b.start();
 }
 
-int ZMappedCache::EntryCompare::cmp(zoffset key, const IntrusiveRBNode* node) {
+RBTreeOrdering ZMappedCache::EntryCompare::cmp(zoffset key, const IntrusiveRBNode* node) {
   const ZVirtualMemory vmem = ZMappedCacheEntry::cast_to_entry(node)->vmem();
 
-  if (key < vmem.start()) { return -1; }
-  if (key > vmem.end()) { return 1; }
+  if (key < vmem.start()) { return RBTreeOrdering::LT; }
+  if (key > vmem.end()) { return RBTreeOrdering::GT; }
 
-  return 0; // Containing
+  return RBTreeOrdering::EQ; // Containing
 }
 
 void ZMappedCache::Tree::verify() const {
@@ -171,12 +168,12 @@ void ZMappedCache::Tree::insert(TreeNode* node, const TreeCursor& cursor) {
   // Insert in tree
   TreeImpl::insert_at_cursor(node, cursor);
 
-  if (_left_most == nullptr || EntryCompare::cmp(node, _left_most) < 0) {
+  if (_left_most == nullptr || EntryCompare::less_than(node, _left_most)) {
     // Keep track of left most node
     _left_most = node;
   }
 
-  if (_right_most == nullptr || EntryCompare::cmp(_right_most, node) < 0) {
+  if (_right_most == nullptr || EntryCompare::less_than(_right_most, node)) {
     // Keep track of right most node
     _right_most = node;
   }
@@ -219,7 +216,7 @@ void ZMappedCache::Tree::replace(TreeNode* old_node, TreeNode* new_node, const T
 }
 
 size_t ZMappedCache::Tree::size_atomic() const {
-  return Atomic::load(&_num_nodes);
+  return AtomicAccess::load(&_num_nodes);
 }
 
 const ZMappedCache::TreeNode* ZMappedCache::Tree::left_most() const {
@@ -405,7 +402,7 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
 
   // Update statistics
   _size -= to_remove;
-  _min = MIN2(_size, _min);
+  _min_size_watermark = MIN2(_size, _min_size_watermark);
 
   postcond(to_remove == vmem.size());
   return vmem;
@@ -414,6 +411,11 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
 template <typename SelectFunction, typename ConsumeFunction>
 bool ZMappedCache::try_remove_vmem_size_class(size_t min_size, SelectFunction select, ConsumeFunction consume) {
 new_max_size:
+  if (_size < min_size) {
+    // Not enough left in cache to satisfy the min_size
+    return false;
+  }
+
   // Query the max select size possible given the size of the cache
   const size_t max_size = select(_size);
 
@@ -551,9 +553,9 @@ size_t ZMappedCache::remove_discontiguous_with_strategy(size_t size, ZArray<ZVir
 
 ZMappedCache::ZMappedCache()
   : _tree(),
-    _size_class_lists{},
+    _size_class_lists(),
     _size(0),
-    _min(_size) {}
+    _min_size_watermark(_size) {}
 
 void ZMappedCache::insert(const ZVirtualMemory& vmem) {
   _size += vmem.size();
@@ -648,21 +650,50 @@ ZVirtualMemory ZMappedCache::remove_contiguous(size_t size) {
   return result;
 }
 
+ZVirtualMemory ZMappedCache::remove_contiguous_power_of_2(size_t min_size, size_t max_size) {
+  precond(is_aligned(min_size, ZGranuleSize));
+  precond(is_power_of_2(min_size));
+  precond(is_aligned(max_size, ZGranuleSize));
+  precond(is_power_of_2(max_size));
+  precond(min_size <= max_size);
+
+  ZVirtualMemory result;
+
+  const auto select_size_fn = [&](size_t size) {
+    // Always select a power of 2 within the [min_size, max_size] interval.
+    return clamp(round_down_power_of_2(size), min_size, max_size);
+  };
+
+  const auto consume_vmem_fn = [&](ZVirtualMemory vmem) {
+    assert(result.is_null(), "only consume once");
+    assert(min_size <= vmem.size() && vmem.size() <= max_size,
+      "Must be %zu <= %zu <= %zu", min_size, vmem.size(), max_size);
+    assert(is_power_of_2(vmem.size()), "Must be power_of_2(%zu)", vmem.size());
+
+    result = vmem;
+
+    // Only require one vmem
+    return true;
+  };
+
+  scan_remove_vmem<RemovalStrategy::SizeClasses>(min_size, select_size_fn, consume_vmem_fn);
+
+  return result;
+}
+
 size_t ZMappedCache::remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* out) {
   return remove_discontiguous_with_strategy<RemovalStrategy::SizeClasses>(size, out);
 }
 
-size_t ZMappedCache::reset_min() {
-  const size_t old_min = _min;
-
-  _min = _size;
-
-  return old_min;
+void ZMappedCache::reset_min_size_watermark() {
+  _min_size_watermark = _size;
 }
 
-size_t ZMappedCache::remove_from_min(size_t max_size, ZArray<ZVirtualMemory>* out) {
-  const size_t size = MIN2(_min, max_size);
+size_t ZMappedCache::min_size_watermark() {
+  return _min_size_watermark;
+}
 
+size_t ZMappedCache::remove_for_uncommit(size_t size, ZArray<ZVirtualMemory>* out) {
   if (size == 0) {
     return 0;
   }

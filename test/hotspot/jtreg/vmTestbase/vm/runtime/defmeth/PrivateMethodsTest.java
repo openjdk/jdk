@@ -680,6 +680,8 @@ public class PrivateMethodsTest extends DefMethTest {
      * public class C extends B { }
      *
      * TEST: { B b = new C(); b.m()I throws IllegalAccessError; }
+     * TEST: { I b = new B(); b.m()I returns 3; }
+     * TEST: { I c = new C(); c.m()I returns 3; }
      */
     public void testPrivateSuperClassMethodDefaultMethodNoOverride(TestBuilder b) {
         ConcreteClass A = b.clazz("A")
@@ -694,6 +696,10 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").extend(B).build();
 
-        b.test().privateCallSite(B, C, "m", "()I").throws_(IllegalAccessError.class).done();
+        b.test().privateCallSite(B, C, "m", "()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(I, B, "m", "()I").returns(3).done()
+         .test().       callSite(I, C, "m", "()I").returns(3).done()
+        ;
+
     }
 }

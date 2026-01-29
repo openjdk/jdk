@@ -138,6 +138,7 @@ public class ImmutableDescriptor implements Descriptor {
         if (names == null || values == null || names.length != values.length)
             bad = true;
         if (!bad) {
+            hashCode = -1; // Force recalculation
             if (names.length == 0 && getClass() == ImmutableDescriptor.class)
                 return EMPTY_DESCRIPTOR;
             final Comparator<String> compare = String.CASE_INSENSITIVE_ORDER;
@@ -343,30 +344,6 @@ public class ImmutableDescriptor implements Descriptor {
         return names.clone();
     }
 
-    /**
-     * Compares this descriptor to the given object.  The objects are equal if
-     * the given object is also a Descriptor, and if the two Descriptors have
-     * the same field names (possibly differing in case) and the same
-     * associated values.  The respective values for a field in the two
-     * Descriptors are equal if the following conditions hold:
-     *
-     * <ul>
-     * <li>If one value is null then the other must be too.</li>
-     * <li>If one value is a primitive array then the other must be a primitive
-     * array of the same type with the same elements.</li>
-     * <li>If one value is an object array then the other must be too and
-     * {@link Arrays#deepEquals(Object[],Object[])} must return true.</li>
-     * <li>Otherwise {@link Object#equals(Object)} must return true.</li>
-     * </ul>
-     *
-     * @param o the object to compare with.
-     *
-     * @return {@code true} if the objects are the same; {@code false}
-     * otherwise.
-     *
-     */
-    // Note: this Javadoc is copied from javax.management.Descriptor
-    //       due to 6369229.
     @Override
     public boolean equals(Object o) {
         if (o == this)
@@ -394,28 +371,6 @@ public class ImmutableDescriptor implements Descriptor {
         return Arrays.deepEquals(values, ovalues);
     }
 
-    /**
-     * <p>Returns the hash code value for this descriptor.  The hash
-     * code is computed as the sum of the hash codes for each field in
-     * the descriptor.  The hash code of a field with name {@code n}
-     * and value {@code v} is {@code n.toLowerCase().hashCode() ^ h}.
-     * Here {@code h} is the hash code of {@code v}, computed as
-     * follows:</p>
-     *
-     * <ul>
-     * <li>If {@code v} is null then {@code h} is 0.</li>
-     * <li>If {@code v} is a primitive array then {@code h} is computed using
-     * the appropriate overloading of {@code java.util.Arrays.hashCode}.</li>
-     * <li>If {@code v} is an object array then {@code h} is computed using
-     * {@link Arrays#deepHashCode(Object[])}.</li>
-     * <li>Otherwise {@code h} is {@code v.hashCode()}.</li>
-     * </ul>
-     *
-     * @return A hash code value for this object.
-     *
-     */
-    // Note: this Javadoc is copied from javax.management.Descriptor
-    //       due to 6369229.
     @Override
     public int hashCode() {
         if (hashCode == -1) {
@@ -487,12 +442,14 @@ public class ImmutableDescriptor implements Descriptor {
      */
     public final void setFields(String[] fieldNames, Object[] fieldValues)
         throws RuntimeOperationsException {
+
         if (fieldNames == null || fieldValues == null)
             illegal("Null argument");
         if (fieldNames.length != fieldValues.length)
             illegal("Different array sizes");
         for (int i = 0; i < fieldNames.length; i++)
             checkIllegalFieldName(fieldNames[i]);
+        hashCode = -1; // Force recalculation
         for (int i = 0; i < fieldNames.length; i++)
             setField(fieldNames[i], fieldValues[i]);
     }
@@ -508,10 +465,12 @@ public class ImmutableDescriptor implements Descriptor {
      */
     public final void setField(String fieldName, Object fieldValue)
         throws RuntimeOperationsException {
+
         checkIllegalFieldName(fieldName);
         int i = fieldIndex(fieldName);
         if (i < 0)
             unsupported();
+        hashCode = -1; // Force recalculation
         Object value = values[i];
         if ((value == null) ?
                 (fieldValue != null) :
@@ -531,6 +490,7 @@ public class ImmutableDescriptor implements Descriptor {
      * be an {@link UnsupportedOperationException}.
      */
     public final void removeField(String fieldName) {
+        hashCode = -1; // Force recalculation
         if (fieldName != null && fieldIndex(fieldName) >= 0)
             unsupported();
     }

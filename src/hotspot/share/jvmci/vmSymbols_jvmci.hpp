@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@
   template(bootstrapFinished_name,                                "bootstrapFinished")                                                    \
   template(forPrimitive_name,                                     "forPrimitive")                                                         \
   template(forPrimitive_signature,                                "(CJ)Ljdk/vm/ci/meta/PrimitiveConstant;")                               \
-  template(method_string_bool_long_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
+  template(method_string_bool_bool_long_signature,                "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZZJ)V") \
 
 #endif
 

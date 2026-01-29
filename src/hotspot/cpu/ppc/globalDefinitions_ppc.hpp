@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,8 +42,6 @@ const size_t pd_segfault_address = 1024;
 const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
-
-#define SUPPORT_MONITOR_COUNT
 
 // PPC64 is not specified as multi-copy-atomic
 // So we must not #define CPU_MULTI_COPY_ATOMIC

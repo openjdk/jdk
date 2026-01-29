@@ -192,6 +192,13 @@ public class SegmentFactories {
         }
         // Align the allocation size up to a multiple of 8 so we can init the memory with longs
         long alignedSize = init ? Utils.alignUp(byteSize, Long.BYTES) : byteSize;
+        // Check for wrap around
+        if (alignedSize < 0) {
+            throw new OutOfMemoryError();
+        }
+        // Always allocate at least some memory so that zero-length segments have distinct
+        // non-zero addresses.
+        alignedSize = Math.max(1, alignedSize);
 
         long allocationSize;
         long allocationBase;
@@ -205,7 +212,9 @@ public class SegmentFactories {
             allocationBase = allocateMemoryWrapper(allocationSize);
             result = Utils.alignUp(allocationBase, byteAlignment);
         } else {
-            allocationSize = alignedSize;
+            // always allocate at least 'byteAlignment' bytes, so that malloc is guaranteed to
+            // return a pointer aligned to that alignment, for cases where byteAlignment > alignedSize
+            allocationSize = Math.max(alignedSize, byteAlignment);
             if (shouldReserve) {
                 AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(allocationSize, byteSize);
             }

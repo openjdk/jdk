@@ -30,10 +30,10 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-static const int initial_size = 1009;
+static const int initial_size = 1024;
 
 static JfrCHeapTraceIdSet* c_heap_allocate_set(int size = initial_size) {
-  return new JfrCHeapTraceIdSet(size);
+  return new (mtTracing) JfrCHeapTraceIdSet(size);
 }
 
 // Track the set of unloaded klasses during a chunk / epoch.
@@ -68,18 +68,9 @@ static JfrCHeapTraceIdSet* get_unload_set_previous_epoch() {
   return get_unload_set(JfrTraceIdEpoch::previous());
 }
 
-static bool is_nonempty_set(u1 epoch) {
-  if (epoch == 0) {
-    return _unload_set_epoch_0 != nullptr && _unload_set_epoch_0->is_nonempty();
-  }
-  return _unload_set_epoch_1 != nullptr && _unload_set_epoch_1->is_nonempty();
-}
-
 void JfrKlassUnloading::clear() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  if (is_nonempty_set(JfrTraceIdEpoch::previous())) {
-    get_unload_set_previous_epoch()->clear();
-  }
+  get_unload_set_previous_epoch()->clear();
 }
 
 static void add_to_unloaded_klass_set(traceid klass_id) {

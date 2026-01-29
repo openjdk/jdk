@@ -24,14 +24,14 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "opto/arraycopynode.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "opto/arraycopynode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/vectornode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/macro.hpp"
 #include "opto/runtime.hpp"
-#include "opto/castnode.hpp"
+#include "opto/vectornode.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -204,53 +204,46 @@ void PhaseMacroExpand::generate_limit_guard(Node** ctrl, Node* offset, Node* sub
 void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
                                                        RegionNode** exit_block, Node** result_memory, Node* length,
                                                        Node* src_start, Node* dst_start, BasicType type) {
-  const TypePtr *src_adr_type = _igvn.type(src_start)->isa_ptr();
-  Node* inline_block = nullptr;
-  Node* stub_block = nullptr;
+  int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
 
-  int const_len = -1;
-  const TypeInt* lty = nullptr;
-  uint shift  = exact_log2(type2aelembytes(type));
-  if (length->Opcode() == Op_ConvI2L) {
-    lty = _igvn.type(length->in(1))->isa_int();
-  } else  {
-    lty = _igvn.type(length)->isa_int();
-  }
-  if (lty && lty->is_con()) {
-    const_len = lty->get_con() << shift;
+  const TypeLong* length_type = _igvn.type(length)->isa_long();
+  if (length_type == nullptr) {
+    assert(_igvn.type(length) == Type::TOP, "");
+    return;
   }
 
-  // Return if copy length is greater than partial inline size limit or
-  // target does not supports masked load/stores.
-  int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, const_len);
-  if ( const_len > ArrayOperationPartialInlineSize ||
-      !Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
+  const TypeLong* inline_range = TypeLong::make(0, inline_limit, Type::WidenMin);
+  if (length_type->join(inline_range) == Type::TOP) {
+    // The ranges do not intersect, the inline check will surely fail
+    return;
+  }
+
+  // Return if the target does not supports masked load/stores.
+  int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, length_type->_hi);
+  if (!Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
       !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
     return;
   }
 
-  int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
-  Node* casted_length = new CastLLNode(*ctrl, length, TypeLong::make(0, inline_limit, Type::WidenMin));
-  transform_later(casted_length);
-  Node* copy_bytes = new LShiftXNode(length, intcon(shift));
-  transform_later(copy_bytes);
-
-  Node* cmp_le = new CmpULNode(copy_bytes, longcon(ArrayOperationPartialInlineSize));
+  Node* cmp_le = new CmpULNode(length, longcon(inline_limit));
   transform_later(cmp_le);
   Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
   transform_later(bol_le);
-  inline_block  = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
-  stub_block = *ctrl;
+  Node* inline_block = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
+  Node* stub_block = *ctrl;
 
+  Node* casted_length = new CastLLNode(inline_block, length, inline_range, ConstraintCastNode::DependencyType::FloatingNarrowing);
+  transform_later(casted_length);
   Node* mask_gen = VectorMaskGenNode::make(casted_length, type);
   transform_later(mask_gen);
 
-  unsigned vec_size = lane_count *  type2aelembytes(type);
+  unsigned vec_size = lane_count * type2aelembytes(type);
   if (C->max_vector_size() < vec_size) {
     C->set_max_vector_size(vec_size);
   }
 
+  const TypePtr* src_adr_type = _igvn.type(src_start)->isa_ptr();
   const TypeVect * vt = TypeVect::make(type, lane_count);
   Node* mm = (*mem)->memory_at(C->get_alias_index(src_adr_type));
   Node* masked_load = new LoadVectorMaskedNode(inline_block, mm, src_start,
@@ -391,7 +384,6 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     transform_later(slow_region);
   }
 
-  Node* original_dest = dest;
   bool  dest_needs_zeroing   = false;
   bool  acopy_to_uninitialized = false;
 
@@ -431,7 +423,6 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // No zeroing elimination needed here.
     alloc                  = nullptr;
     acopy_to_uninitialized = false;
-    //original_dest        = dest;
     //dest_needs_zeroing   = false;
   }
 
@@ -564,10 +555,9 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
         MergeMemNode* local_mem = MergeMemNode::make(mem);
         transform_later(local_mem);
 
-        didit = generate_block_arraycopy(&local_ctrl, &local_mem, local_io,
-                                         adr_type, basic_elem_type, alloc,
-                                         src, src_offset, dest, dest_offset,
-                                         dest_size, acopy_to_uninitialized);
+        didit = generate_block_arraycopy(&local_ctrl, &local_mem, adr_type,
+                                         basic_elem_type, src, src_offset,
+                                         dest, dest_offset, dest_size, acopy_to_uninitialized);
         if (didit) {
           // Present the results of the block-copying fast call.
           result_region->init_req(bcopy_path, local_ctrl);
@@ -648,7 +638,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
 
         // (At this point we can assume disjoint_bases, since types differ.)
         int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-        Node* p1 = basic_plus_adr(dest_klass, ek_offset);
+        Node* p1 = basic_plus_adr(top(), dest_klass, ek_offset);
         Node* n1 = LoadKlassNode::make(_igvn, C->immutable_memory(), p1, TypeRawPtr::BOTTOM);
         Node* dest_elem_klass = transform_later(n1);
         Node* cv = generate_checkcast_arraycopy(&local_ctrl, &local_mem,
@@ -925,12 +915,12 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
   if (start_con >= 0 && end_con >= 0) {
     // Constant start and end.  Simple.
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end_con, &_igvn);
+                                       start_con, end_con, false, &_igvn);
   } else if (start_con >= 0 && dest_size != top()) {
     // Constant start, pre-rounded end after the tail of the array.
     Node* end = dest_size;
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end, &_igvn);
+                                       start_con, end, false, &_igvn);
   } else if (start_con >= 0 && slice_len != top()) {
     // Constant start, non-constant end.  End needs rounding up.
     // End offset = round_up(abase + ((slice_idx_con + slice_len) << scale), 8)
@@ -943,7 +933,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
     end = transform_later(new AddXNode(end, MakeConX(end_base)) );
     end = transform_later(new AndXNode(end, MakeConX(~end_round)) );
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end, &_igvn);
+                                       start_con, end, false, &_igvn);
   } else if (start_con < 0 && dest_size != top()) {
     // Non-constant start, pre-rounded end after the tail of the array.
     // This is almost certainly a "round-to-end" operation.
@@ -977,7 +967,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
     }
     Node* end = dest_size; // pre-rounded
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start, end, &_igvn);
+                                       start, end, false, &_igvn);
   } else {
     // Non-constant start, unrounded non-constant end.
     // (Nobody zeroes a random midsection of an array using this routine.)
@@ -988,11 +978,10 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
   merge_mem->set_memory_at(alias_idx, mem);
 }
 
-bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem, Node* io,
+bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                                 const TypePtr* adr_type,
                                                 BasicType basic_elem_type,
-                                                AllocateNode* alloc,
-                                                Node* src,  Node* src_offset,
+                                                Node* src, Node* src_offset,
                                                 Node* dest, Node* dest_offset,
                                                 Node* dest_size, bool dest_uninitialized) {
   // See if there is an advantage from block transfer.
@@ -1140,7 +1129,7 @@ Node* PhaseMacroExpand::generate_checkcast_arraycopy(Node** ctrl, MergeMemNode**
   // look in each non-null element's class, at the desired klass's
   // super_check_offset, for the desired klass.
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
-  Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
+  Node* p3 = basic_plus_adr(top(), dest_elem_klass, sco_offset);
   Node* n3 = new LoadINode(nullptr, *mem /*memory(p3)*/, p3, _igvn.type(p3)->is_ptr(), TypeInt::INT, MemNode::unordered);
   Node* check_offset = ConvI2X(transform_later(n3));
   Node* check_value  = dest_elem_klass;

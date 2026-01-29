@@ -143,23 +143,23 @@ public class invokemethod014 {
             return quitDebuggee();
         }
 
-        ReferenceType[] rType = new ReferenceType[3];
-        // debuggee main & dummy classes
-        rType[0] = debuggee.classByName(DEBUGGEE_CLASSES[0]);
-        rType[1] = debuggee.classByName(DEBUGGEE_CLASSES[1]);
-        rType[2] = debuggee.classByName(DEBUGGEE_CLASSES[2]);
+        try {
+            ReferenceType[] rType = new ReferenceType[3];
+            // debuggee main & dummy classes
+            rType[0] = debuggee.classByName(DEBUGGEE_CLASSES[0]);
+            rType[1] = debuggee.classByName(DEBUGGEE_CLASSES[1]);
+            rType[2] = debuggee.classByName(DEBUGGEE_CLASSES[2]);
 
-        ThreadReference thrRef =
-            debuggee.threadByFieldName(rType[0], "testThread", DEBUGGEE_THRNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
+            ThreadReference thrRef =
+                debuggee.threadByFieldName(rType[0], "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
 
 // Check the tested assersion
-        try {
             suspendAtBP(rType[0], DEBUGGEE_STOPATLINE);
             objRef = findObjRef(thrRef, DEBUGGEE_LOCALVAR);
 

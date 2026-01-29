@@ -224,6 +224,7 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     }
 
     unix_getUserInfo(env, jinfo, psinfo.pr_uid);
+    JNU_CHECK_EXCEPTION(env);
 
     /*
      * Now read psinfo.pr_psargs which contains the first PRARGSZ characters of the

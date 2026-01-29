@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class ISO_8859_1
             int dl = doff + dst.limit();
 
             int decodeLen = Math.min(sl - sp, dl - dp);
-            JLA.uncheckedInflateBytesToChars(sa, sp, da, dp, decodeLen);
+            JLA.inflateBytesToChars(sa, sp, da, dp, decodeLen);
             sp += decodeLen;
             dp += decodeLen;
             src.position(sp - soff);
@@ -134,6 +134,16 @@ public class ISO_8859_1
 
         public boolean canEncode(char c) {
             return c <= '\u00FF';
+        }
+
+        public boolean canEncode(CharSequence cs) {
+            int length = cs.length();
+            for (int i = 0; i < length; i++) {
+                if (!canEncode(cs.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public boolean isLegalReplacement(byte[] repl) {

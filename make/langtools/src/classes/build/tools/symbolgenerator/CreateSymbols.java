@@ -46,6 +46,8 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.classfile.*;
+import java.lang.classfile.TypeAnnotation.TargetInfo;
+import java.lang.classfile.TypeAnnotation.TypePathComponent;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
@@ -991,6 +993,12 @@ public class CreateSymbols {
         if (desc.runtimeAnnotations != null && !desc.runtimeAnnotations.isEmpty()) {
             builder.accept(RuntimeVisibleAnnotationsAttribute.of(createAnnotations(desc.runtimeAnnotations)));
         }
+        if (desc.classTypeAnnotations != null && !desc.classTypeAnnotations.isEmpty()) {
+            builder.accept(RuntimeInvisibleTypeAnnotationsAttribute.of(createTypeAnnotations(desc.classTypeAnnotations)));
+        }
+        if (desc.runtimeTypeAnnotations != null && !desc.runtimeTypeAnnotations.isEmpty()) {
+            builder.accept(RuntimeVisibleTypeAnnotationsAttribute.of(createTypeAnnotations(desc.runtimeTypeAnnotations)));
+        }
     }
 
     private List<Annotation> createAnnotations(List<AnnotationDescription> desc) {
@@ -1065,6 +1073,44 @@ public class CreateSymbols {
             case Collection<?> v -> AnnotationValue.ofArray(v.stream().map(this::createAttributeValue).collect(Collectors.toList()));
             default -> throw new IllegalArgumentException(value.getClass().getName());
         };
+    }
+
+    private List<TypeAnnotation> createTypeAnnotations(List<TypeAnnotationDescription> desc) {
+        return desc.stream().map(this::createTypeAnnotation).collect(Collectors.toList());
+    }
+
+    private TypeAnnotation createTypeAnnotation(TypeAnnotationDescription desc) {
+        Annotation baseAnn = createAnnotation(desc.annotation);
+        TargetInfo targetInfo = switch ((String) desc.targetInfo.get("targetType")) {
+            case "CLASS_TYPE_PARAMETER" -> //TODO: test!
+                TargetInfo.ofClassTypeParameter((int) desc.targetInfo.get("typeParameterIndex"));
+            case "METHOD_TYPE_PARAMETER" ->
+                TargetInfo.ofMethodTypeParameter((int) desc.targetInfo.get("typeParameterIndex"));
+            case "CLASS_EXTENDS" ->
+                TargetInfo.ofClassExtends((int) desc.targetInfo.get("supertypeIndex"));
+            case "CLASS_TYPE_PARAMETER_BOUND" ->
+                TargetInfo.ofClassTypeParameterBound((int) desc.targetInfo.get("typeParameterIndex"),
+                                                     (int) desc.targetInfo.get("boundIndex"));
+            case "METHOD_TYPE_PARAMETER_BOUND" ->
+                TargetInfo.ofMethodTypeParameterBound((int) desc.targetInfo.get("typeParameterIndex"),
+                                                      (int) desc.targetInfo.get("boundIndex"));
+            case "METHOD_RETURN" ->
+                TargetInfo.ofMethodReturn();
+            case "METHOD_RECEIVER" ->
+                TargetInfo.ofMethodReceiver();
+            case "METHOD_FORMAL_PARAMETER" ->
+                TargetInfo.ofMethodFormalParameter((int) desc.targetInfo.get("formalParameterIndex"));
+            case "THROWS" ->
+                TargetInfo.ofThrows((int) desc.targetInfo.get("throwsTargetIndex"));
+            case "FIELD" ->
+                TargetInfo.ofField();
+            case String targetType ->
+                throw new IllegalStateException("Unsupported targetType: " + targetType);
+        };
+
+        List<TypePathComponent> typePath = desc.typePath.stream().map(d -> TypePathComponent.of(TypePathComponent.Kind.valueOf(d.tag()), d.index())).toList();
+
+        return TypeAnnotation.of(targetInfo, typePath, baseAnn);
     }
     //</editor-fold>
     //</editor-fold>
@@ -2213,7 +2259,10 @@ public class CreateSymbols {
                 chd.permittedSubclasses = a.permittedSubclasses().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
             }
             case ModuleMainClassAttribute a -> ((ModuleHeaderDescription) feature).moduleMainClass = a.mainClass().asInternalName();
-            case RuntimeVisibleTypeAnnotationsAttribute a -> {/* do nothing for now */}
+            case RuntimeInvisibleTypeAnnotationsAttribute a ->
+                feature.classTypeAnnotations = typeAnnotations2Descriptions(a.annotations());
+            case RuntimeVisibleTypeAnnotationsAttribute a ->
+                feature.runtimeTypeAnnotations = typeAnnotations2Descriptions(a.annotations());
             default -> throw new IllegalArgumentException("Unhandled attribute: " + attr.attributeName()); // Do nothing
         }
 
@@ -2269,6 +2318,31 @@ public class CreateSymbols {
         }
 
         return new AnnotationDescription(annotationType, values);
+    }
+
+    private List<TypeAnnotationDescription> typeAnnotations2Descriptions(List<TypeAnnotation> annos) {
+        return annos.stream().map(ta -> {
+            TypeAnnotationDescription desc = new TypeAnnotationDescription();
+            desc.annotation = annotation2Description(ta.annotation());
+            desc.targetInfo = new HashMap<>();
+            desc.targetInfo.put("targetType", ta.targetInfo().targetType().name());
+            switch (ta.targetInfo()) {
+                case TypeAnnotation.TypeParameterTarget tpt -> desc.targetInfo.put("typeParameterIndex", tpt.typeParameterIndex());
+                case TypeAnnotation.SupertypeTarget st -> desc.targetInfo.put("supertypeIndex", st.supertypeIndex());
+                case TypeAnnotation.TypeParameterBoundTarget tpbt -> {
+                    desc.targetInfo.put("typeParameterIndex", tpbt.typeParameterIndex());
+                    desc.targetInfo.put("boundIndex", tpbt.boundIndex());
+                }
+                case TypeAnnotation.EmptyTarget _ -> {
+                    // nothing to write
+                }
+                case TypeAnnotation.FormalParameterTarget fpt -> desc.targetInfo.put("formalParameterIndex", fpt.formalParameterIndex());
+                case TypeAnnotation.ThrowsTarget tt -> desc.targetInfo.put("throwsTargetIndex", tt.throwsTargetIndex());
+                default -> throw new IllegalStateException(ta.targetInfo().targetType().name());
+            }
+            desc.typePath = ta.targetPath().stream().map(tpc -> new TypeAnnotationDescription.TypePathComponentDesc(tpc.typePathKind().name(), tpc.typeArgumentIndex())).toList();
+            return desc;
+        }).toList();
     }
     //</editor-fold>
 
@@ -2391,6 +2465,8 @@ public class CreateSymbols {
         String versions = "";
         List<AnnotationDescription> classAnnotations;
         List<AnnotationDescription> runtimeAnnotations;
+        List<TypeAnnotationDescription> classTypeAnnotations;
+        List<TypeAnnotationDescription> runtimeTypeAnnotations;
 
         protected void writeAttributes(Appendable output) throws IOException {
             if (flags != 0)
@@ -2410,6 +2486,18 @@ public class CreateSymbols {
             if (runtimeAnnotations != null && !runtimeAnnotations.isEmpty()) {
                 output.append(" runtimeAnnotations ");
                 for (AnnotationDescription a : runtimeAnnotations) {
+                    output.append(quote(a.toString(), false));
+                }
+            }
+            if (classTypeAnnotations != null && !classTypeAnnotations.isEmpty()) {
+                output.append(" classTypeAnnotations ");
+                for (TypeAnnotationDescription a : classTypeAnnotations) {
+                    output.append(quote(a.toString(), false));
+                }
+            }
+            if (runtimeTypeAnnotations != null && !runtimeTypeAnnotations.isEmpty()) {
+                output.append(" runtimeTypeAnnotations ");
+                for (TypeAnnotationDescription a : runtimeTypeAnnotations) {
                     output.append(quote(a.toString(), false));
                 }
             }
@@ -2442,6 +2530,14 @@ public class CreateSymbols {
             if (inRuntimeAnnotations != null) {
                 runtimeAnnotations = parseAnnotations(inRuntimeAnnotations, new int[1]);
             }
+            String inClassTypeAnnotations = reader.attributes.get("classTypeAnnotations");
+            if (inClassTypeAnnotations != null) {
+                classTypeAnnotations = parseTypeAnnotations(inClassTypeAnnotations, new int[1]);
+            }
+            String inRuntimeTypeAnnotations = reader.attributes.get("runtimeTypeAnnotations");
+            if (inRuntimeTypeAnnotations != null) {
+                runtimeTypeAnnotations = parseTypeAnnotations(inRuntimeTypeAnnotations, new int[1]);
+            }
         }
 
         public abstract boolean read(LineBasedReader reader) throws IOException;
@@ -2454,6 +2550,8 @@ public class CreateSymbols {
             hash = 89 * hash + Objects.hashCode(this.signature);
             hash = 89 * hash + listHashCode(this.classAnnotations);
             hash = 89 * hash + listHashCode(this.runtimeAnnotations);
+            hash = 89 * hash + listHashCode(this.classTypeAnnotations);
+            hash = 89 * hash + listHashCode(this.runtimeTypeAnnotations);
             return hash;
         }
 
@@ -2479,6 +2577,12 @@ public class CreateSymbols {
                 return false;
             }
             if (!listEquals(this.runtimeAnnotations, other.runtimeAnnotations)) {
+                return false;
+            }
+            if (!listEquals(this.classTypeAnnotations, other.classTypeAnnotations)) {
+                return false;
+            }
+            if (!listEquals(this.runtimeTypeAnnotations, other.runtimeTypeAnnotations)) {
                 return false;
             }
             return true;
@@ -3285,6 +3389,8 @@ public class CreateSymbols {
             hash = 59 * hash + Objects.hashCode(this.descriptor);
             hash = 59 * hash + Objects.hashCode(this.thrownTypes);
             hash = 59 * hash + Objects.hashCode(this.annotationDefaultValue);
+            hash = 59 * hash + Objects.hashCode(this.classParameterAnnotations);
+            hash = 59 * hash + Objects.hashCode(this.runtimeParameterAnnotations);
             return hash;
         }
 
@@ -3307,6 +3413,12 @@ public class CreateSymbols {
                 return false;
             }
             if (!Objects.equals(this.annotationDefaultValue, other.annotationDefaultValue)) {
+                return false;
+            }
+            if (!Objects.equals(this.classParameterAnnotations, other.classParameterAnnotations)) {
+                return false;
+            }
+            if (!Objects.equals(this.runtimeParameterAnnotations, other.runtimeParameterAnnotations)) {
                 return false;
             }
             return true;
@@ -3634,6 +3746,40 @@ public class CreateSymbols {
                 return value.toString();
             }
         }
+    }
+
+    static final class TypeAnnotationDescription {
+        AnnotationDescription annotation;
+        Map<String, Object> targetInfo;
+        List<TypePathComponentDesc> typePath;
+
+        public TypeAnnotationDescription() {
+        }
+
+        public TypeAnnotationDescription(AnnotationDescription annotation, Map<String, Object> targetInfo, List<TypePathComponentDesc> typePath) {
+            this.annotation = annotation;
+            this.targetInfo = targetInfo;
+            this.typePath = typePath;
+        }
+
+        @Override
+        public String toString() {
+            return annotation.toString() + "{" + targetInfo.entrySet().stream().map(e -> e.getKey() + "=" + quote(printValue(e.getValue()), false)).collect(Collectors.joining(",")) + "}" +
+                                           (!typePath.isEmpty() ? "[" + typePath.stream().map(desc -> desc.tag + ":" + desc.index).collect(Collectors.joining(",")) + "]" : "");
+        }
+
+        private String printValue(Object obj) {
+            if (obj instanceof String s) {
+                return "\"" + s + "\"";
+            } else if (obj instanceof Integer i) {
+                return "I" + String.valueOf(i);
+            } else {
+                throw new IllegalStateException("Unsupported value: " + obj.getClass());
+            }
+        }
+
+        //TODO: path
+        record TypePathComponentDesc(String tag, int index) {}
     }
 
     static final class EnumConstant {
@@ -3975,23 +4121,69 @@ public class CreateSymbols {
 
     private static AnnotationDescription parseAnnotation(String value, int[] valuePointer) {
         String className = className(value, valuePointer);
-        Map<String, Object> attribute2Value = new HashMap<>();
+        Map<String, Object> attribute2Value = Map.of();
 
         if (valuePointer[0] < value.length() && value.charAt(valuePointer[0]) == '(') {
-            while (value.charAt(valuePointer[0]) != ')') {
+            attribute2Value = parseMap(value, valuePointer, ')');
+        }
+
+        return new AnnotationDescription(className, attribute2Value);
+    }
+
+    private static Map<String, Object> parseMap(String value, int[] valuePointer, char endBracket) {
+        Map<String, Object> attribute2Value = new HashMap<>();
+
+        while (value.charAt(valuePointer[0]) != endBracket) {
+            int nameStart = ++valuePointer[0];
+
+            while (value.charAt(valuePointer[0]++) != '=');
+
+            String name = value.substring(nameStart, valuePointer[0] - 1);
+
+            attribute2Value.put(name, parseAnnotationValue(value, valuePointer));
+        }
+
+        valuePointer[0]++;
+
+        return attribute2Value;
+    }
+
+    public static List<TypeAnnotationDescription> parseTypeAnnotations(String encoded, int[] pointer) {
+        List<TypeAnnotationDescription> result = new ArrayList<>();
+
+        while (pointer[0] < encoded.length() && encoded.charAt(pointer[0]) == '@') {
+            pointer[0]++;
+            result.add(parseTypeAnnotation(encoded, pointer));
+        }
+
+        return result;
+    }
+
+    private static TypeAnnotationDescription parseTypeAnnotation(String value, int[] valuePointer) {
+        AnnotationDescription ann = parseAnnotation(value, valuePointer);
+        Map<String, Object> targetInfo = Map.of();
+
+        if (valuePointer[0] < value.length() && value.charAt(valuePointer[0]) == '{') {
+            targetInfo = parseMap(value, valuePointer, '}');
+        }
+
+        List<TypeAnnotationDescription.TypePathComponentDesc> typePath = new ArrayList<>();
+
+        if (valuePointer[0] < value.length() && value.charAt(valuePointer[0]) == '[') {
+            while (value.charAt(valuePointer[0]) != ']') {
                 int nameStart = ++valuePointer[0];
 
-                while (value.charAt(valuePointer[0]++) != '=');
+                while (value.charAt(valuePointer[0]++) != ':');
 
                 String name = value.substring(nameStart, valuePointer[0] - 1);
 
-                attribute2Value.put(name, parseAnnotationValue(value, valuePointer));
+                typePath.add(new TypeAnnotationDescription.TypePathComponentDesc(name, Integer.parseInt(readDigits(value, valuePointer))));
             }
 
             valuePointer[0]++;
         }
 
-        return new AnnotationDescription(className, attribute2Value);
+        return new TypeAnnotationDescription(ann, targetInfo, typePath);
     }
     //</editor-fold>
 

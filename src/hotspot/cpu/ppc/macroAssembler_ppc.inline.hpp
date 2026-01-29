@@ -65,7 +65,8 @@ inline void MacroAssembler::round_to(Register r, int modulus) {
 }
 
 // Move register if destination register and target register are different.
-inline void MacroAssembler::mr_if_needed(Register rd, Register rs) {
+inline void MacroAssembler::mr_if_needed(Register rd, Register rs, bool allow_noreg) {
+  if (allow_noreg && (rs == noreg)) return;
   if (rs != rd) mr(rd, rs);
 }
 inline void MacroAssembler::fmr_if_needed(FloatRegister rd, FloatRegister rs) {
@@ -467,18 +468,10 @@ inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register sr
 
 inline Register MacroAssembler::encode_heap_oop(Register d, Register src) {
   if (CompressedOops::base() != nullptr) {
-    if (VM_Version::has_isel()) {
-      cmpdi(CR0, src, 0);
-      Register co = encode_heap_oop_not_null(d, src);
-      assert(co == d, "sanity");
-      isel_0(d, CR0, Assembler::equal);
-    } else {
-      Label isNull;
-      or_(d, src, src); // move and compare 0
-      beq(CR0, isNull);
-      encode_heap_oop_not_null(d, src);
-      bind(isNull);
-    }
+    cmpdi(CR0, src, 0);
+    Register co = encode_heap_oop_not_null(d, src);
+    assert(co == d, "sanity");
+    isel_0(d, CR0, Assembler::equal);
     return d;
   } else {
     return encode_heap_oop_not_null(d, src);
@@ -510,11 +503,7 @@ inline void MacroAssembler::decode_heap_oop(Register d) {
   bool use_isel = false;
   if (CompressedOops::base() != nullptr) {
     cmpwi(CR0, d, 0);
-    if (VM_Version::has_isel()) {
-      use_isel = true;
-    } else {
-      beq(CR0, isNull);
-    }
+    use_isel = true;
   }
   decode_heap_oop_not_null(d);
   if (use_isel) {

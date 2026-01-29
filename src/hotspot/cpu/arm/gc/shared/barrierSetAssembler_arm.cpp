@@ -193,10 +193,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ bind(guard);
 
   // nmethod guard value. Skipped over in common case.
-  //
-  // Put a debug value to make any offsets skew
-  // clearly visible in coredump
-  __ emit_int32(0xDEADBEAF);
+  __ emit_int32(0); // initial armed value, will be reset later
 
   __ bind(skip);
   __ block_comment("nmethod_barrier end");

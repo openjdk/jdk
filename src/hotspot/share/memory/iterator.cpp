@@ -53,16 +53,10 @@ void MarkingNMethodClosure::do_nmethod(nmethod* nm) {
     // Process the oops in the nmethod
     nm->oops_do(_cl);
 
-    if (_keepalive_nmethods) {
-      // CodeCache unloading support
-      nm->mark_as_maybe_on_stack();
+    // CodeCache unloading support
+    nm->mark_as_maybe_on_stack();
 
-      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      bs_nm->disarm(nm);
-    }
-
-    if (_fix_relocations) {
-      nm->fix_oop_relocations();
-    }
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    bs_nm->disarm(nm);
   }
 }

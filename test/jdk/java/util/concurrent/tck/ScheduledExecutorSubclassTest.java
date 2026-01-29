@@ -741,11 +741,13 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
     public void testShutdownNow_delayedTasks() throws InterruptedException {
         final CustomExecutor p = new CustomExecutor(1);
         List<ScheduledFuture<?>> tasks = new ArrayList<>();
+        final int DELAY = 100;
+
         for (int i = 0; i < 3; i++) {
             Runnable r = new NoOpRunnable();
-            tasks.add(p.schedule(r, 9, SECONDS));
-            tasks.add(p.scheduleAtFixedRate(r, 9, 9, SECONDS));
-            tasks.add(p.scheduleWithFixedDelay(r, 9, 9, SECONDS));
+            tasks.add(p.schedule(r, DELAY, SECONDS));
+            tasks.add(p.scheduleAtFixedRate(r, DELAY, DELAY, SECONDS));
+            tasks.add(p.scheduleWithFixedDelay(r, DELAY, DELAY, SECONDS));
         }
         if (testImplementationDetails)
             assertEquals(new HashSet<Object>(tasks), new HashSet<Object>(p.getQueue()));

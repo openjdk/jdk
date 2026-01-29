@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import javax.swing.UIManager;
  * @key headful
  * @requires (os.family == "linux" | os.family == "mac")
  * @library /javax/swing/regtesthelpers
- * @build Util
  * @summary Verifies if menu mnemonic toggle on Alt press in GTK and Aqua LAF
  * @run main TestMenuMnemonicLinuxAndMac
  */
@@ -117,5 +116,7 @@ public class TestMenuMnemonicLinuxAndMac {
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        frame.toFront();
+        frame.requestFocus();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,20 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import jdk.jpackage.internal.util.RootedPath;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
-import jdk.jpackage.internal.model.AppImageSigningConfig;
 
 final class MacApplicationBuilder {
 
@@ -88,17 +93,34 @@ final class MacApplicationBuilder {
         return this;
     }
 
-    MacApplication create() throws ConfigException {
+    MacApplication create() {
         if (externalInfoPlistFile != null) {
             return createCopyForExternalInfoPlistFile().create();
         }
 
         validateAppVersion(app);
+        validateAppContentDirs(app);
 
-        final var mixin = new MacApplicationMixin.Stub(validatedIcon(), validatedBundleName(),
-                validatedBundleIdentifier(), validatedCategory(), appStore, createSigningConfig());
+        final var mixin = new MacApplicationMixin.Stub(
+                validatedIcon(),
+                validatedBundleName(),
+                validatedBundleIdentifier(),
+                validatedCategory(),
+                appStore,
+                createSigningConfig());
 
         return MacApplication.create(app, mixin);
+    }
+
+    static MacApplication overrideAppImageLayout(MacApplication app, AppImageLayout appImageLayout) {
+        final var mixin = new MacApplicationMixin.Stub(
+                app.icon(),
+                app.bundleName(),
+                app.bundleIdentifier(),
+                app.category(),
+                app.appStore(),
+                app.signingConfig());
+        return MacApplication.create(ApplicationBuilder.overrideAppImageLayout(app, appImageLayout), mixin);
     }
 
     static boolean isValidBundleIdentifier(String id) {
@@ -115,7 +137,7 @@ final class MacApplicationBuilder {
         return true;
     }
 
-    private static void validateAppVersion(Application app) throws ConfigException {
+    private static void validateAppVersion(Application app) {
         try {
             CFBundleVersion.of(app.version());
         } catch (IllegalArgumentException ex) {
@@ -123,7 +145,21 @@ final class MacApplicationBuilder {
         }
     }
 
-    private MacApplicationBuilder createCopyForExternalInfoPlistFile() throws ConfigException {
+    private static void validateAppContentDirs(Application app) {
+        app.contentDirSources().stream().filter(rootedPath -> {
+            return rootedPath.branch().getNameCount() == 1;
+        }).map(RootedPath::fullPath).forEach(contentDir -> {
+            if (!Files.isDirectory(contentDir)) {
+                Log.info(I18N.format("warning.app.content.is.not.dir",
+                        contentDir));
+            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName())) {
+                Log.info(I18N.format("warning.non.standard.contents.sub.dir",
+                        contentDir));
+            }
+        });
+    }
+
+    private MacApplicationBuilder createCopyForExternalInfoPlistFile() {
         try {
             final var plistFile = AppImageInfoPListFile.loadFromInfoPList(externalInfoPlistFile);
 
@@ -154,15 +190,11 @@ final class MacApplicationBuilder {
         }
     }
 
-    private Optional<AppImageSigningConfig> createSigningConfig() throws ConfigException {
-        if (signingBuilder != null) {
-            return signingBuilder.create();
-        } else {
-            return Optional.empty();
-        }
+    private Optional<AppImageSigningConfig> createSigningConfig() {
+        return Optional.ofNullable(signingBuilder).flatMap(AppImageSigningConfigBuilder::create);
     }
 
-    private String validatedBundleName() throws ConfigException {
+    private String validatedBundleName() {
         final var value = Optional.ofNullable(bundleName).orElseGet(() -> {
             final var appName = app.name();
 // Commented out for backward compatibility
@@ -181,7 +213,7 @@ final class MacApplicationBuilder {
         return value;
     }
 
-    private String validatedBundleIdentifier() throws ConfigException {
+    private String validatedBundleIdentifier() {
         final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
             return app.mainLauncher()
                     .flatMap(Launcher::startupInfo)
@@ -205,16 +237,12 @@ final class MacApplicationBuilder {
         return value;
     }
 
-    private String validatedCategory() throws ConfigException {
+    private String validatedCategory() {
         return "public.app-category." + Optional.ofNullable(category).orElseGet(DEFAULTS::category);
     }
 
-    private Optional<Path> validatedIcon() throws ConfigException {
-        if (icon != null) {
-            LauncherBuilder.validateIcon(icon);
-        }
-
-        return Optional.ofNullable(icon);
+    private Optional<Path> validatedIcon() {
+        return Optional.ofNullable(icon).map(LauncherBuilder::validateIcon);
     }
 
     private record Defaults(String category) {
@@ -233,4 +261,13 @@ final class MacApplicationBuilder {
     private static final Defaults DEFAULTS = new Defaults("utilities");
 
     private static final int MAX_BUNDLE_NAME_LENGTH = 16;
+
+    // List of standard subdirectories of the "Contents" directory
+    private static final Set<Path> CONTENTS_SUB_DIRS = Stream.of(
+            "MacOS",
+            "Resources",
+            "Frameworks",
+            "PlugIns",
+            "SharedSupport"
+    ).map(Path::of).collect(Collectors.toUnmodifiableSet());
 }

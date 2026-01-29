@@ -28,8 +28,10 @@
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zPhysicalMemoryManager.hpp"
 #include "gc/z/zRangeRegistry.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
+#include "gc/z/zVirtualMemoryManager.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -60,9 +62,108 @@ public:
 };
 
 class ZTest : public testing::Test {
+public:
+  class ZAddressReserver {
+    ZVirtualMemoryReserver* _reserver;
+    bool _active;
+
+    public:
+      ZAddressReserver()
+        : _reserver(nullptr),
+          _active(false) {}
+
+      ~ZAddressReserver() {
+        GTEST_EXPECT_FALSE(_active) << "ZAddressReserver deconstructed without calling TearDown";
+      }
+
+      void SetUp(size_t reservation_size) {
+        GTEST_EXPECT_FALSE(_active) << "SetUp called twice without a TearDown";
+        _active = true;
+
+        _reserver = (ZVirtualMemoryReserver*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
+        _reserver = ::new (_reserver) ZVirtualMemoryReserver(reservation_size);
+      }
+
+      void TearDown() {
+        GTEST_EXPECT_TRUE(_active) << "TearDown called without a preceding SetUp";
+        _active = false;
+
+        // Best-effort cleanup
+        _reserver->unreserve_all();
+        _reserver->~ZVirtualMemoryReserver();
+        os::free(_reserver);
+      }
+
+      ZVirtualMemoryReserver* reserver() {
+        GTEST_EXPECT_TRUE(_active) << "Should only use HeapReserver while active";
+        return _reserver;
+      }
+
+      ZVirtualMemoryRegistry* registry() {
+        GTEST_EXPECT_TRUE(_active) << "Should only use HeapReserver while active";
+        return &_reserver->_registry;
+      }
+  };
+
+  class ZPhysicalMemoryBackingMocker {
+    size_t                  _old_max;
+    ZPhysicalMemoryBacking* _backing;
+    bool                    _active;
+
+    static size_t set_max(size_t max_capacity) {
+      size_t old_max = ZBackingOffsetMax;
+
+      ZBackingOffsetMax = max_capacity;
+      ZBackingIndexMax = checked_cast<uint32_t>(ZBackingOffsetMax >> ZGranuleSizeShift);
+
+      return old_max;
+    }
+
+  public:
+    ZPhysicalMemoryBackingMocker()
+      : _old_max(0),
+        _backing(nullptr),
+        _active(false) {}
+
+    void SetUp(size_t max_capacity) {
+      GTEST_EXPECT_FALSE(_active) << "SetUp called twice without a TearDown";
+
+      _old_max = set_max(max_capacity);
+
+      char* const mem = (char*)os::malloc(sizeof(ZPhysicalMemoryBacking), mtTest);
+      _backing = new (mem) ZPhysicalMemoryBacking(ZGranuleSize);
+
+      _active = true;
+    }
+
+    void TearDown() {
+      GTEST_EXPECT_TRUE(_active) << "TearDown called without a preceding SetUp";
+
+      _active = false;
+
+      _backing->~ZPhysicalMemoryBacking();
+      os::free(_backing);
+      _backing = nullptr;
+
+      set_max(_old_max);
+    }
+
+    ZPhysicalMemoryBacking* operator()() {
+      return _backing;
+    }
+  };
+
 private:
   ZAddressOffsetMaxSetter _zaddress_offset_max_setter;
   unsigned int _rand_seed;
+
+  void skip_all_tests() {
+    // Skipping from the constructor currently works, but according to the
+    // documentation the GTEST_SKIP macro should be used from the test or
+    // from the SetUp function. If this start to fail down the road, then
+    // we'll have to explicitly call this for each inheriting gtest.
+    GTEST_SKIP() << "OS not supported";
+  }
 
 protected:
   ZTest()
@@ -70,6 +171,7 @@ protected:
       _rand_seed(static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed())) {
     if (!is_os_supported()) {
       // If the OS does not support ZGC do not run initialization, as it may crash the VM.
+      skip_all_tests();
       return;
     }
 

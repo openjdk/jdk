@@ -68,6 +68,8 @@ public sealed interface MethodParametersAttribute
     /**
      * {@return a {@code MethodParameters} attribute}
      * @param parameters the method parameter descriptions
+     * @throws IllegalArgumentException if the number of parameters exceeds the
+     *         limit of {@link java.lang.classfile##u1 u1}
      */
     static MethodParametersAttribute of(List<MethodParameterInfo> parameters) {
         return new UnboundAttribute.UnboundMethodParametersAttribute(parameters);
@@ -76,6 +78,8 @@ public sealed interface MethodParametersAttribute
     /**
      * {@return a {@code MethodParameters} attribute}
      * @param parameters the method parameter descriptions
+     * @throws IllegalArgumentException if the number of parameters exceeds the
+     *         limit of {@link java.lang.classfile##u1 u1}
      */
     static MethodParametersAttribute of(MethodParameterInfo... parameters) {
         return of(List.of(parameters));

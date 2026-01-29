@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "oops/weakHandle.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class JvmtiEnv;
 class JvmtiTagMapKeyClosure;
@@ -65,14 +65,14 @@ class JvmtiTagMapKey : public CHeapObj<mtServiceability> {
 };
 
 typedef
-ResizeableResourceHashtable <JvmtiTagMapKey, jlong,
+ResizeableHashTable <JvmtiTagMapKey, jlong,
                               AnyObj::C_HEAP, mtServiceability,
                               JvmtiTagMapKey::get_hash,
-                              JvmtiTagMapKey::equals> ResizableResourceHT;
+                              JvmtiTagMapKey::equals> ResizableHT;
 
 class JvmtiTagMapTable : public CHeapObj<mtServiceability> {
  private:
-  ResizableResourceHT _table;
+  ResizableHT _table;
 
  public:
   JvmtiTagMapTable();

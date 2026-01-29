@@ -148,56 +148,34 @@ extern "C" void disnm(intptr_t p);
 //                 strictly should be 64 bit movz #imm16<<0
 //       110___10100 (i.e. requires insn[31:21] == 11010010100)
 //
-class RelocActions {
-protected:
-  typedef int (*reloc_insn)(address insn_addr, address &target);
 
-  virtual reloc_insn adrpMem() = 0;
-  virtual reloc_insn adrpAdd() = 0;
-  virtual reloc_insn adrpMovk() = 0;
+static uint32_t insn_at(address insn_addr, int n) {
+  return ((uint32_t*)insn_addr)[n];
+}
 
-  const address _insn_addr;
-  const uint32_t _insn;
-
-  static uint32_t insn_at(address insn_addr, int n) {
-    return ((uint32_t*)insn_addr)[n];
-  }
-  uint32_t insn_at(int n) const {
-    return insn_at(_insn_addr, n);
-  }
+template<typename T>
+class RelocActions : public AllStatic {
 
 public:
 
-  RelocActions(address insn_addr) : _insn_addr(insn_addr), _insn(insn_at(insn_addr, 0)) {}
-  RelocActions(address insn_addr, uint32_t insn)
-    :  _insn_addr(insn_addr), _insn(insn) {}
-
-  virtual int unconditionalBranch(address insn_addr, address &target) = 0;
-  virtual int conditionalBranch(address insn_addr, address &target) = 0;
-  virtual int testAndBranch(address insn_addr, address &target) = 0;
-  virtual int loadStore(address insn_addr, address &target) = 0;
-  virtual int adr(address insn_addr, address &target) = 0;
-  virtual int adrp(address insn_addr, address &target, reloc_insn inner) = 0;
-  virtual int immediate(address insn_addr, address &target) = 0;
-  virtual void verify(address insn_addr, address &target) = 0;
-
-  int ALWAYSINLINE run(address insn_addr, address &target) {
+  static int ALWAYSINLINE run(address insn_addr, address &target) {
     int instructions = 1;
+    uint32_t insn = insn_at(insn_addr, 0);
 
-    uint32_t dispatch = Instruction_aarch64::extract(_insn, 30, 25);
+    uint32_t dispatch = Instruction_aarch64::extract(insn, 30, 25);
     switch(dispatch) {
       case 0b001010:
       case 0b001011: {
-        instructions = unconditionalBranch(insn_addr, target);
+        instructions = T::unconditionalBranch(insn_addr, target);
         break;
       }
       case 0b101010:   // Conditional branch (immediate)
       case 0b011010: { // Compare & branch (immediate)
-        instructions = conditionalBranch(insn_addr, target);
-          break;
+        instructions = T::conditionalBranch(insn_addr, target);
+        break;
       }
       case 0b011011: {
-        instructions = testAndBranch(insn_addr, target);
+        instructions = T::testAndBranch(insn_addr, target);
         break;
       }
       case 0b001100:
@@ -209,9 +187,9 @@ public:
       case 0b111100:
       case 0b111110: {
         // load/store
-        if ((Instruction_aarch64::extract(_insn, 29, 24) & 0b111011) == 0b011000) {
+        if ((Instruction_aarch64::extract(insn, 29, 24) & 0b111011) == 0b011000) {
           // Load register (literal)
-          instructions = loadStore(insn_addr, target);
+          instructions = T::loadStore(insn_addr, target);
           break;
         } else {
           // nothing to do
@@ -224,27 +202,27 @@ public:
       case 0b101000:
       case 0b111000: {
         // adr/adrp
-        assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
-        int shift = Instruction_aarch64::extract(_insn, 31, 31);
+        assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
+        int shift = Instruction_aarch64::extract(insn, 31, 31);
         if (shift) {
-          uint32_t insn2 = insn_at(1);
+          uint32_t insn2 = insn_at(insn_addr, 1);
           if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
-              Instruction_aarch64::extract(_insn, 4, 0) ==
+              Instruction_aarch64::extract(insn, 4, 0) ==
               Instruction_aarch64::extract(insn2, 9, 5)) {
-            instructions = adrp(insn_addr, target, adrpMem());
+            instructions = T::adrp(insn_addr, target, T::adrpMem);
           } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
-                     Instruction_aarch64::extract(_insn, 4, 0) ==
+                     Instruction_aarch64::extract(insn, 4, 0) ==
                      Instruction_aarch64::extract(insn2, 4, 0)) {
-            instructions = adrp(insn_addr, target, adrpAdd());
+            instructions = T::adrp(insn_addr, target, T::adrpAdd);
           } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
-                     Instruction_aarch64::extract(_insn, 4, 0) ==
+                     Instruction_aarch64::extract(insn, 4, 0) ==
                      Instruction_aarch64::extract(insn2, 4, 0)) {
-            instructions = adrp(insn_addr, target, adrpMovk());
+            instructions = T::adrp(insn_addr, target, T::adrpMovk);
           } else {
             ShouldNotReachHere();
           }
         } else {
-          instructions = adr(insn_addr, target);
+          instructions = T::adr(insn_addr, target);
         }
         break;
       }
@@ -252,7 +230,7 @@ public:
       case 0b011001:
       case 0b101001:
       case 0b111001: {
-        instructions = immediate(insn_addr, target);
+        instructions = T::immediate(insn_addr, target);
         break;
       }
       default: {
@@ -260,42 +238,36 @@ public:
       }
     }
 
-    verify(insn_addr, target);
+    T::verify(insn_addr, target);
     return instructions * NativeInstruction::instruction_size;
   }
 };
 
-class Patcher : public RelocActions {
-  virtual reloc_insn adrpMem() { return &Patcher::adrpMem_impl; }
-  virtual reloc_insn adrpAdd() { return &Patcher::adrpAdd_impl; }
-  virtual reloc_insn adrpMovk() { return &Patcher::adrpMovk_impl; }
-
+class Patcher : public AllStatic {
 public:
-  Patcher(address insn_addr) : RelocActions(insn_addr) {}
-
-  virtual int unconditionalBranch(address insn_addr, address &target) {
+  static int unconditionalBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
     return 1;
   }
-  virtual int conditionalBranch(address insn_addr, address &target) {
+  static int conditionalBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     return 1;
   }
-  virtual int testAndBranch(address insn_addr, address &target) {
+  static int testAndBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 18, 5, offset);
     return 1;
   }
-  virtual int loadStore(address insn_addr, address &target) {
+  static int loadStore(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     return 1;
   }
-  virtual int adr(address insn_addr, address &target) {
+  static int adr(address insn_addr, address &target) {
 #ifdef ASSERT
-    assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
+    assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 28, 24) == 0b10000, "must be");
 #endif
     // PC-rel. addressing
     ptrdiff_t offset = target - insn_addr;
@@ -305,17 +277,18 @@ public:
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
     return 1;
   }
-  virtual int adrp(address insn_addr, address &target, reloc_insn inner) {
+  template<typename U>
+  static int adrp(address insn_addr, address &target, U inner) {
     int instructions = 1;
 #ifdef ASSERT
-    assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
+    assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 28, 24) == 0b10000, "must be");
 #endif
     ptrdiff_t offset = target - insn_addr;
     instructions = 2;
     precond(inner != nullptr);
     // Give the inner reloc a chance to modify the target.
     address adjusted_target = target;
-    instructions = (*inner)(insn_addr, adjusted_target);
+    instructions = inner(insn_addr, adjusted_target);
     uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
     uintptr_t adr_page = (uintptr_t)adjusted_target >> 12;
     offset = adr_page - pc_page;
@@ -325,7 +298,7 @@ public:
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
     return instructions;
   }
-  static int adrpMem_impl(address insn_addr, address &target) {
+  static int adrpMem(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     uint32_t insn2 = insn_at(insn_addr, 1);
@@ -334,21 +307,21 @@ public:
     guarantee(((dest >> size) << size) == dest, "misaligned target");
     return 2;
   }
-  static int adrpAdd_impl(address insn_addr, address &target) {
+  static int adrpAdd(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 21, 10, offset_lo);
     return 2;
   }
-  static int adrpMovk_impl(address insn_addr, address &target) {
+  static int adrpMovk(address insn_addr, address &target) {
     uintptr_t dest = uintptr_t(target);
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
     dest = (dest & 0xffffffffULL) | (uintptr_t(insn_addr) & 0xffff00000000ULL);
     target = address(dest);
     return 2;
   }
-  virtual int immediate(address insn_addr, address &target) {
-    assert(Instruction_aarch64::extract(_insn, 31, 21) == 0b11010010100, "must be");
+  static int immediate(address insn_addr, address &target) {
+    assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 31, 21) == 0b11010010100, "must be");
     uint64_t dest = (uint64_t)target;
     // Move wide constant
     assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
@@ -358,7 +331,7 @@ public:
     Instruction_aarch64::patch(insn_addr+8, 20, 5, (dest >>= 16) & 0xffff);
     return 3;
   }
-  virtual void verify(address insn_addr, address &target) {
+  static void verify(address insn_addr, address &target) {
 #ifdef ASSERT
     address address_is = MacroAssembler::target_addr_for_insn(insn_addr);
     if (!(address_is == target)) {
@@ -392,56 +365,54 @@ static bool offset_for(uint32_t insn1, uint32_t insn2, ptrdiff_t &byte_offset) {
   return false;
 }
 
-class AArch64Decoder : public RelocActions {
-  virtual reloc_insn adrpMem() { return &AArch64Decoder::adrpMem_impl; }
-  virtual reloc_insn adrpAdd() { return &AArch64Decoder::adrpAdd_impl; }
-  virtual reloc_insn adrpMovk() { return &AArch64Decoder::adrpMovk_impl; }
-
+class AArch64Decoder : public AllStatic {
 public:
-  AArch64Decoder(address insn_addr, uint32_t insn) : RelocActions(insn_addr, insn) {}
 
-  virtual int loadStore(address insn_addr, address &target) {
-    intptr_t offset = Instruction_aarch64::sextract(_insn, 23, 5);
+  static int loadStore(address insn_addr, address &target) {
+    intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 23, 5);
     target = insn_addr + (offset << 2);
     return 1;
   }
-  virtual int unconditionalBranch(address insn_addr, address &target) {
-    intptr_t offset = Instruction_aarch64::sextract(_insn, 25, 0);
+  static int unconditionalBranch(address insn_addr, address &target) {
+    intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 25, 0);
     target = insn_addr + (offset << 2);
     return 1;
   }
-  virtual int conditionalBranch(address insn_addr, address &target) {
-    intptr_t offset = Instruction_aarch64::sextract(_insn, 23, 5);
+  static int conditionalBranch(address insn_addr, address &target) {
+    intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 23, 5);
     target = address(((uint64_t)insn_addr + (offset << 2)));
     return 1;
   }
-  virtual int testAndBranch(address insn_addr, address &target) {
-    intptr_t offset = Instruction_aarch64::sextract(_insn, 18, 5);
+  static int testAndBranch(address insn_addr, address &target) {
+    intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 18, 5);
     target = address(((uint64_t)insn_addr + (offset << 2)));
     return 1;
   }
-  virtual int adr(address insn_addr, address &target) {
+  static int adr(address insn_addr, address &target) {
     // PC-rel. addressing
-    intptr_t offset = Instruction_aarch64::extract(_insn, 30, 29);
-    offset |= Instruction_aarch64::sextract(_insn, 23, 5) << 2;
+    uint32_t insn = insn_at(insn_addr, 0);
+    intptr_t offset = Instruction_aarch64::extract(insn, 30, 29);
+    offset |= Instruction_aarch64::sextract(insn, 23, 5) << 2;
     target = address((uint64_t)insn_addr + offset);
     return 1;
   }
-  virtual int adrp(address insn_addr, address &target, reloc_insn inner) {
-    assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
-    intptr_t offset = Instruction_aarch64::extract(_insn, 30, 29);
-    offset |= Instruction_aarch64::sextract(_insn, 23, 5) << 2;
+  template<typename U>
+  static int adrp(address insn_addr, address &target, U inner) {
+    uint32_t insn = insn_at(insn_addr, 0);
+    assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
+    intptr_t offset = Instruction_aarch64::extract(insn, 30, 29);
+    offset |= Instruction_aarch64::sextract(insn, 23, 5) << 2;
     int shift = 12;
     offset <<= shift;
     uint64_t target_page = ((uint64_t)insn_addr) + offset;
     target_page &= ((uint64_t)-1) << shift;
-    uint32_t insn2 = insn_at(1);
+    uint32_t insn2 = insn_at(insn_addr, 1);
     target = address(target_page);
     precond(inner != nullptr);
-    (*inner)(insn_addr, target);
+    inner(insn_addr, target);
     return 2;
   }
-  static int adrpMem_impl(address insn_addr, address &target) {
+  static int adrpMem(address insn_addr, address &target) {
     uint32_t insn2 = insn_at(insn_addr, 1);
     // Load/store register (unsigned immediate)
     ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
@@ -450,14 +421,14 @@ public:
     target += byte_offset;
     return 2;
   }
-  static int adrpAdd_impl(address insn_addr, address &target) {
+  static int adrpAdd(address insn_addr, address &target) {
     uint32_t insn2 = insn_at(insn_addr, 1);
     // add (immediate)
     ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
     target += byte_offset;
     return 2;
   }
-  static int adrpMovk_impl(address insn_addr, address &target) {
+  static int adrpMovk(address insn_addr, address &target) {
     uint32_t insn2 = insn_at(insn_addr, 1);
     uint64_t dest = uint64_t(target);
     dest = (dest & 0xffff0000ffffffff) |
@@ -476,35 +447,33 @@ public:
       return 2;
     }
   }
-  virtual int immediate(address insn_addr, address &target) {
+  static int immediate(address insn_addr, address &target) {
     uint32_t *insns = (uint32_t *)insn_addr;
-    assert(Instruction_aarch64::extract(_insn, 31, 21) == 0b11010010100, "must be");
+    assert(Instruction_aarch64::extract(insns[0], 31, 21) == 0b11010010100, "must be");
     // Move wide constant: movz, movk, movk.  See movptr().
     assert(nativeInstruction_at(insns+1)->is_movk(), "wrong insns in patch");
     assert(nativeInstruction_at(insns+2)->is_movk(), "wrong insns in patch");
-    target = address(uint64_t(Instruction_aarch64::extract(_insn, 20, 5))
-                 + (uint64_t(Instruction_aarch64::extract(insns[1], 20, 5)) << 16)
-                 + (uint64_t(Instruction_aarch64::extract(insns[2], 20, 5)) << 32));
+    target = address(uint64_t(Instruction_aarch64::extract(insns[0], 20, 5))
+                  + (uint64_t(Instruction_aarch64::extract(insns[1], 20, 5)) << 16)
+                  + (uint64_t(Instruction_aarch64::extract(insns[2], 20, 5)) << 32));
     assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
     assert(nativeInstruction_at(insn_addr+8)->is_movk(), "wrong insns in patch");
     return 3;
   }
-  virtual void verify(address insn_addr, address &target) {
+  static void verify(address insn_addr, address &target) {
   }
 };
 
-address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
-  AArch64Decoder decoder(insn_addr, insn);
+address MacroAssembler::target_addr_for_insn(address insn_addr) {
   address target;
-  decoder.run(insn_addr, target);
+  RelocActions<AArch64Decoder>::run(insn_addr, target);
   return target;
 }
 
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
-  Patcher patcher(insn_addr);
-  return patcher.run(insn_addr, target);
+  return RelocActions<Patcher>::run(insn_addr, target);
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {
@@ -546,20 +515,15 @@ int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
   return 2 * NativeInstruction::instruction_size;
 }
 
-address MacroAssembler::target_addr_for_insn_or_null(address insn_addr, unsigned insn) {
-  if (NativeInstruction::is_ldrw_to_zr(address(&insn))) {
+address MacroAssembler::target_addr_for_insn_or_null(address insn_addr) {
+  if (NativeInstruction::is_ldrw_to_zr(insn_addr)) {
     return nullptr;
   }
-  return MacroAssembler::target_addr_for_insn(insn_addr, insn);
+  return MacroAssembler::target_addr_for_insn(insn_addr);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp) {
-  if (acquire) {
-    lea(tmp, Address(rthread, JavaThread::polling_word_offset()));
-    ldar(tmp, tmp);
-  } else {
-    ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
-  }
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
+  ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use the sp instead to perform the stack watermark check.
@@ -639,12 +603,13 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     last_java_sp = esp;
   }
 
-  str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
-
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {
     str(last_java_fp, Address(rthread, JavaThread::last_Java_fp_offset()));
   }
+
+  // We must set sp last.
+  str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -778,13 +743,10 @@ static void pass_arg3(MacroAssembler* masm, Register arg) {
   }
 }
 
-static bool is_preemptable(address entry_point) {
-  return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter);
-}
-
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register java_thread,
                                   Register last_java_sp,
+                                  Label*   return_pc,
                                   address  entry_point,
                                   int      number_of_arguments,
                                   bool     check_exceptions) {
@@ -817,12 +779,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(last_java_sp != rfp, "can't use rfp");
 
   Label l;
-  if (is_preemptable(entry_point)) {
-    // skip setting last_pc since we already set it to desired value.
-    set_last_Java_frame(last_java_sp, rfp, noreg, rscratch1);
-  } else {
-    set_last_Java_frame(last_java_sp, rfp, l, rscratch1);
-  }
+  set_last_Java_frame(last_java_sp, rfp, return_pc != nullptr ? *return_pc : l, rscratch1);
 
   // do the call, remove parameters
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments, &l);
@@ -857,7 +814,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 }
 
 void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions) {
-  call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
+  call_VM_base(oop_result, noreg, noreg, nullptr, entry_point, number_of_arguments, check_exceptions);
 }
 
 // Check the entry target is always reachable from any branch.
@@ -989,11 +946,19 @@ void MacroAssembler::emit_static_call_stub() {
   mov_metadata(rmethod, nullptr);
 
   // Jump to the entry point of the c2i stub.
-  movptr(rscratch1, 0);
-  br(rscratch1);
+  if (codestub_branch_needs_far_jump()) {
+    movptr(rscratch1, 0);
+    br(rscratch1);
+  } else {
+    b(pc());
+  }
 }
 
 int MacroAssembler::static_call_stub_size() {
+  if (!codestub_branch_needs_far_jump()) {
+    // isb; movk; movz; movz; b
+    return 5 * NativeInstruction::instruction_size;
+  }
   // isb; movk; movz; movz; movk; movz; movz; br
   return 8 * NativeInstruction::instruction_size;
 }
@@ -1107,7 +1072,7 @@ void MacroAssembler::call_VM(Register oop_result,
                              address entry_point,
                              int number_of_arguments,
                              bool check_exceptions) {
-  call_VM_base(oop_result, rthread, last_java_sp, entry_point, number_of_arguments, check_exceptions);
+  call_VM_base(oop_result, rthread, last_java_sp, nullptr, entry_point, number_of_arguments, check_exceptions);
 }
 
 void MacroAssembler::call_VM(Register oop_result,
@@ -2153,6 +2118,161 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   }
 }
 
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  assert_different_registers(recv, mdp, rscratch1, rscratch2);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets.
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    increment(Address(mdp, poly_count_offset), DataLayout::counter_increment);
+    return;
+  }
+
+  Register offset = rscratch2;
+
+  Label L_loop_search_receiver, L_loop_search_empty;
+  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  mov(offset, base_receiver_offset);
+  bind(L_loop_search_receiver);
+    ldr(rscratch1, Address(mdp, offset));
+    cmp(rscratch1, recv);
+    br(Assembler::EQ, L_found_recv);
+  add(offset, offset, receiver_step);
+  sub(rscratch1, offset, end_receiver_offset);
+  cbnz(rscratch1, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is full
+  mov(offset, base_receiver_offset);
+  bind(L_loop_search_empty);
+    ldr(rscratch1, Address(mdp, offset));
+    cbz(rscratch1, L_found_empty);
+  add(offset, offset, receiver_step);
+  sub(rscratch1, offset, end_receiver_offset);
+  cbnz(rscratch1, L_loop_search_empty);
+  b(L_polymorphic);
+
+  // Slow: try to install receiver
+  bind(L_found_empty);
+
+  // Atomically swing receiver slot: null -> recv.
+  //
+  // The update uses CAS, which clobbers rscratch1. Therefore, rscratch2
+  // is used to hold the destination address. This is safe because the
+  // offset is no longer needed after the address is computed.
+
+  lea(rscratch2, Address(mdp, offset));
+  cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
+          /*acquire*/ false, /*release*/ false, /*weak*/ true, noreg);
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  b(L_restart);
+
+  // Counter updates:
+
+  // Increment polymorphic counter instead of receiver slot.
+  bind(L_polymorphic);
+  mov(offset, poly_count_offset);
+  b(L_count_update);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  add(offset, offset, receiver_to_count_step);
+
+  bind(L_count_update);
+  increment(Address(mdp, offset), DataLayout::counter_increment);
+}
+
+
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
@@ -2256,7 +2376,7 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
+    os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
     block_comment(buffer);
   }
 #endif
@@ -2314,7 +2434,7 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
+    os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
     block_comment(buffer);
   }
 #endif
@@ -2427,7 +2547,7 @@ void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)
 #ifndef PRODUCT
     {
       char buffer[64];
-      snprintf(buffer, sizeof(buffer), "0x%" PRIX32, imm32);
+      os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX32, imm32);
       block_comment(buffer);
     }
 #endif
@@ -2899,11 +3019,11 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode m
   {
     char buffer[48];
     if (mode == PushPopSVE) {
-      snprintf(buffer, sizeof(buffer), "push_fp: %d SVE registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "push_fp: %d SVE registers", count);
     } else if (mode == PushPopNeon) {
-      snprintf(buffer, sizeof(buffer), "push_fp: %d Neon registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "push_fp: %d Neon registers", count);
     } else {
-      snprintf(buffer, sizeof(buffer), "push_fp: %d fp registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "push_fp: %d fp registers", count);
     }
     block_comment(buffer);
   }
@@ -3011,11 +3131,11 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mo
   {
     char buffer[48];
     if (mode == PushPopSVE) {
-      snprintf(buffer, sizeof(buffer), "pop_fp: %d SVE registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "pop_fp: %d SVE registers", count);
     } else if (mode == PushPopNeon) {
-      snprintf(buffer, sizeof(buffer), "pop_fp: %d Neon registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "pop_fp: %d Neon registers", count);
     } else {
-      snprintf(buffer, sizeof(buffer), "pop_fp: %d fp registers", count);
+      os::snprintf_checked(buffer, sizeof(buffer), "pop_fp: %d fp registers", count);
     }
     block_comment(buffer);
   }
@@ -3348,97 +3468,6 @@ void MacroAssembler::reinit_heapbase()
       ldr(rheapbase, Address(rheapbase));
     }
   }
-}
-
-// this simulates the behaviour of the x86 cmpxchg instruction using a
-// load linked/store conditional pair. we use the acquire/release
-// versions of these instructions so that we flush pending writes as
-// per Java semantics.
-
-// n.b the x86 version assumes the old value to be compared against is
-// in rax and updates rax with the value located in memory if the
-// cmpxchg fails. we supply a register for the old value explicitly
-
-// the aarch64 load linked/store conditional instructions do not
-// accept an offset. so, unlike x86, we must provide a plain register
-// to identify the memory word to be compared/exchanged rather than a
-// register+offset Address.
-
-void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                                Label &succeed, Label *fail) {
-  // oldv holds comparison value
-  // newv holds value to write in exchange
-  // addr identifies memory word to compare against/update
-  if (UseLSE) {
-    mov(tmp, oldv);
-    casal(Assembler::xword, oldv, newv, addr);
-    cmp(tmp, oldv);
-    br(Assembler::EQ, succeed);
-    membar(AnyAny);
-  } else {
-    Label retry_load, nope;
-    prfm(Address(addr), PSTL1STRM);
-    bind(retry_load);
-    // flush and load exclusive from the memory location
-    // and fail if it is not what we expect
-    ldaxr(tmp, addr);
-    cmp(tmp, oldv);
-    br(Assembler::NE, nope);
-    // if we store+flush with no intervening write tmp will be zero
-    stlxr(tmp, newv, addr);
-    cbzw(tmp, succeed);
-    // retry so we only ever return after a load fails to compare
-    // ensures we don't return a stale value after a failed write.
-    b(retry_load);
-    // if the memory word differs we return it in oldv and signal a fail
-    bind(nope);
-    membar(AnyAny);
-    mov(oldv, tmp);
-  }
-  if (fail)
-    b(*fail);
-}
-
-void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                                        Label &succeed, Label *fail) {
-  assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
-  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
-}
-
-void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,
-                                Label &succeed, Label *fail) {
-  // oldv holds comparison value
-  // newv holds value to write in exchange
-  // addr identifies memory word to compare against/update
-  // tmp returns 0/1 for success/failure
-  if (UseLSE) {
-    mov(tmp, oldv);
-    casal(Assembler::word, oldv, newv, addr);
-    cmp(tmp, oldv);
-    br(Assembler::EQ, succeed);
-    membar(AnyAny);
-  } else {
-    Label retry_load, nope;
-    prfm(Address(addr), PSTL1STRM);
-    bind(retry_load);
-    // flush and load exclusive from the memory location
-    // and fail if it is not what we expect
-    ldaxrw(tmp, addr);
-    cmp(tmp, oldv);
-    br(Assembler::NE, nope);
-    // if we store+flush with no intervening write tmp will be zero
-    stlxrw(tmp, newv, addr);
-    cbzw(tmp, succeed);
-    // retry so we only ever return after a load fails to compare
-    // ensures we don't return a stale value after a failed write.
-    b(retry_load);
-    // if the memory word differs we return it in oldv and signal a fail
-    bind(nope);
-    membar(AnyAny);
-    mov(oldv, tmp);
-  }
-  if (fail)
-    b(*fail);
 }
 
 // A generic CAS; success or failure is in the EQ flag.  A weak CAS
@@ -5505,7 +5534,6 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
   assert (oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int index = oop_recorder()->find_index(k);
-  assert(! Universe::heap()->is_in(k), "should not be an oop");
 
   InstructionMark im(this);
   RelocationHolder rspec = metadata_Relocation::spec(index);
@@ -5627,38 +5655,6 @@ void MacroAssembler::tlab_allocate(Register obj,
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
 }
 
-void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst(rthread, JavaThread::held_monitor_count_offset());
-#ifdef ASSERT
-  ldr(tmp, dst);
-  increment(tmp);
-  str(tmp, dst);
-  Label ok;
-  tbz(tmp, 63, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#else
-  increment(dst);
-#endif
-}
-
-void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst(rthread, JavaThread::held_monitor_count_offset());
-#ifdef ASSERT
-  ldr(tmp, dst);
-  decrement(tmp);
-  str(tmp, dst);
-  Label ok;
-  tbz(tmp, 63, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#else
-  decrement(dst);
-#endif
-}
-
 void MacroAssembler::verify_tlab() {
 #ifdef ASSERT
   if (UseTLAB && VerifyOops) {
@@ -5765,12 +5761,11 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  CardTable::CardValue* byte_map_base =
-    ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
-  // Strictly speaking the byte_map_base isn't an address at all, and it might
+  // Strictly speaking the card table base isn't an address at all, and it might
   // even be negative. It is thus materialised as a constant.
-  mov(reg, (uint64_t)byte_map_base);
+  mov(reg, (uint64_t)ctbs->card_table_base_const());
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -5917,7 +5912,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   {
     const char kind = (elem_size == 2) ? 'U' : 'L';
     char comment[64];
-    snprintf(comment, sizeof comment, "array_equals%c{", kind);
+    os::snprintf_checked(comment, sizeof comment, "array_equals%c{", kind);
     BLOCK_COMMENT(comment);
   }
 #endif
@@ -5941,6 +5936,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
+    ldrw(tmp5, Address(a2, length_offset));
+    cmp(cnt1, tmp5);
+    br(NE, DONE); // If lengths differ, return false
     // Increase loop counter by diff between base- and actual start-offset.
     addw(cnt1, cnt1, extra_length);
     lea(a1, Address(a1, start_offset));
@@ -6007,6 +6005,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbz(a1, DONE);
     ldrw(cnt1, Address(a1, length_offset));
     cbz(a2, DONE);
+    ldrw(tmp5, Address(a2, length_offset));
+    cmp(cnt1, tmp5);
+    br(NE, DONE); // If lengths differ, return false
     // Increase loop counter by diff between base- and actual start-offset.
     addw(cnt1, cnt1, extra_length);
 
@@ -6115,7 +6116,7 @@ void MacroAssembler::string_equals(Register a1, Register a2,
 #ifndef PRODUCT
   {
     char comment[64];
-    snprintf(comment, sizeof comment, "{string_equalsL");
+    os::snprintf_checked(comment, sizeof comment, "{string_equalsL");
     BLOCK_COMMENT(comment);
   }
 #endif
@@ -6263,7 +6264,7 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
 #ifndef PRODUCT
     {
       char buf[64];
-      snprintf(buf, sizeof buf, "zero_words (count = %" PRIu64 ") {", cnt);
+      os::snprintf_checked(buf, sizeof buf, "zero_words (count = %" PRIu64 ") {", cnt);
       BLOCK_COMMENT(buf);
     }
 #endif
@@ -6800,6 +6801,7 @@ void MacroAssembler::verify_cross_modify_fence_not_required() {
 #endif
 
 void MacroAssembler::spin_wait() {
+  block_comment("spin_wait {");
   for (int i = 0; i < VM_Version::spin_wait_desc().inst_count(); ++i) {
     switch (VM_Version::spin_wait_desc().inst()) {
       case SpinWait::NOP:
@@ -6811,10 +6813,15 @@ void MacroAssembler::spin_wait() {
       case SpinWait::YIELD:
         yield();
         break;
+      case SpinWait::SB:
+        assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
+        sb();
+        break;
       default:
         ShouldNotReachHere();
     }
   }
+  block_comment("}");
 }
 
 // Stack frame creation/removal
@@ -7082,13 +7089,12 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
-// Implements lightweight-locking.
+// Implements fast-locking.
 //
 //  - obj: the object to be locked
 //  - t1, t2, t3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails, absolute offset may larger than 32KB (imm14 encoding).
-void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert_different_registers(basic_lock, obj, t1, t2, t3, rscratch1);
 
   Label push;
@@ -7142,13 +7148,12 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   strw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
 }
 
-// Implements lightweight-unlocking.
+// Implements fast-unlocking.
 //
 // - obj: the object to be unlocked
 // - t1, t2, t3: temporary registers
 // - slow: branched to if unlocking fails, absolute offset may larger than 32KB (imm14 encoding).
-void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
   // cmpxchg clobbers rscratch1.
   assert_different_registers(obj, t1, t2, t3, rscratch1);
 
@@ -7194,7 +7199,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
   // Check header not unlocked (0b01).
   Label not_unlocked;
   tbz(mark, log2i_exact(markWord::unlocked_value), not_unlocked);
-  stop("lightweight_unlock already unlocked");
+  stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif
 

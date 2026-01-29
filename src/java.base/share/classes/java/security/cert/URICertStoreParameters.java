@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.security.cert;
+
+import jdk.internal.vm.annotation.Stable;
 
 import java.net.URI;
 
@@ -57,7 +59,8 @@ public final class URICertStoreParameters implements CertStoreParameters {
     /*
      * Hash code for this parameters object.
      */
-    private int myhash = -1;
+    @Stable
+    private int myhash;
 
     /**
      * Creates an instance of {@code URICertStoreParameters} with the
@@ -105,10 +108,11 @@ public final class URICertStoreParameters implements CertStoreParameters {
      */
     @Override
     public int hashCode() {
-        if (myhash == -1) {
-            myhash = uri.hashCode()*7;
+        int h = myhash;
+        if (h == 0) {
+            myhash = h = uri.hashCode()*7;
         }
-        return myhash;
+        return h;
     }
 
     /**

@@ -34,7 +34,6 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.FileAssociation;
-import jdk.jpackage.internal.util.CollectionUtils;
 
 final record FileAssociationGroup(List<FileAssociation> items) {
 
@@ -112,13 +111,17 @@ final record FileAssociationGroup(List<FileAssociation> items) {
             return this;
         }
 
+        Optional<String> description() {
+            return Optional.ofNullable(description);
+        }
+
         Builder mimeTypes(Collection<String> v) {
-            mimeTypes = CollectionUtils.toSet(v);
+            mimeTypes = Set.copyOf(v);
             return this;
         }
 
         Builder extensions(Collection<String> v) {
-            extensions = CollectionUtils.toSet(v);
+            extensions = Set.copyOf(v);
             return this;
         }
 

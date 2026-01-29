@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,6 +348,8 @@ public:
 
   static ImmutableOopMapSet* build_from(const OopMapSet* oopmap_set);
 
+  ImmutableOopMapSet* clone() const;
+
   int find_slot_for_offset(int pc_offset) const;
   const ImmutableOopMap* find_map_at_offset(int pc_offset) const;
   const ImmutableOopMap* find_map_at_slot(int slot, int pc_offset) const;
@@ -479,7 +481,6 @@ private:
 // pointers are updated based on their base pointers new value and an offset.
 #if COMPILER2_OR_JVMCI
 class DerivedPointerTable : public AllStatic {
-  friend class VMStructs;
  private:
   class Entry;
   static bool _active;                                           // do not record pointers for verify pass etc.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,21 @@
  * @run main/othervm SourceClassName
  */
 
+import java.util.Locale;
 import java.util.logging.*;
 import java.io.*;
 import sun.util.logging.PlatformLogger;
 
 public class SourceClassName {
     public static void main(String[] args) throws Exception {
+        Locale savedLocale = Locale.getDefault();
+        Locale.setDefault(Locale.US);
         File dir = new File(System.getProperty("user.dir", "."));
         File log = new File(dir, "testlog.txt");
         PrintStream logps = new PrintStream(log);
         writeLogRecords(logps);
         checkLogRecords(log);
+        Locale.setDefault(savedLocale);
     }
 
     private static void writeLogRecords(PrintStream logps) throws Exception {

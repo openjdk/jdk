@@ -94,7 +94,7 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
                           CHECK_NULL);
   assert(result.get_type() == T_OBJECT, "just checking");
 
-  return InstanceKlass::cast(java_lang_Class::as_Klass(result.get_oop()));
+  return java_lang_Class::as_InstanceKlass(result.get_oop());
 }
 
 bool UnregisteredClasses::check_for_exclusion(const InstanceKlass* k) {

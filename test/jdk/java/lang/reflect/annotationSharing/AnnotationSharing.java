@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@
  * @summary Test sharing of annotations between Executable/Field instances.
  *          Sharing should not be noticeable when performing mutating
  *          operations.
- * @run testng AnnotationSharing
+ * @run junit AnnotationSharing
  */
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class AnnotationSharing {
     @Test

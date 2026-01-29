@@ -115,22 +115,23 @@ public class stop002 {
             return quitDebuggee();
         }
 
-        // debuggee main class
-        mainClass = debuggee.classByName(DEBUGGEE_CLASS);
-
-        ThreadReference thrRef = debuggee.threadByFieldName(mainClass, "testThread", DEBUGGEE_THRNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-
         Field stopLoop1 = null;
         Field stopLoop2 = null;
         ObjectReference objRef = null;
         ObjectReference throwableRef = null;
+
         try {
+            // debuggee main class
+            mainClass = debuggee.classByName(DEBUGGEE_CLASS);
+
+            ThreadReference thrRef = debuggee.threadByFieldName(mainClass, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
+
             suspendAtBP(mainClass, DEBUGGEE_STOPATLINE);
             objRef = findObjRef(thrRef, DEBUGGEE_NON_THROWABLE_VAR);
             throwableRef = findObjRef(thrRef, DEBUGGEE_THROWABLE_VAR);

@@ -93,12 +93,12 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
     JNU_CHECK_EXCEPTION(env);
 
     J2dTraceLn(J2D_TRACE_INFO, "WindowsFlags (native):");
-    J2dTraceLn1(J2D_TRACE_INFO, "  d3dEnabled = %s",
-                (useD3D ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  d3dSet = %s",
-                (forceD3DUsage ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  setHighDPIAware = %s",
-                (setHighDPIAware ? "true" : "false"));
+    J2dTraceLn(J2D_TRACE_INFO, "  d3dEnabled = %s",
+               (useD3D ? "true" : "false"));
+    J2dTraceLn(J2D_TRACE_INFO, "  d3dSet = %s",
+               (forceD3DUsage ? "true" : "false"));
+    J2dTraceLn(J2D_TRACE_INFO, "  setHighDPIAware = %s",
+               (setHighDPIAware ? "true" : "false"));
 }
 
 void SetD3DEnabledFlag(JNIEnv *env, BOOL d3dEnabled, BOOL d3dSet)

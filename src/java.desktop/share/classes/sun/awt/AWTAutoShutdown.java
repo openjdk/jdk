@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,8 +358,7 @@ public final class AWTAutoShutdown implements Runnable {
     void unregisterPeer(final Object target, final Object peer) {
         synchronized (activationLock) {
             synchronized (mainLock) {
-                if (peerMap.get(target) == peer) {
-                    peerMap.remove(target);
+                if (peerMap.remove(target, peer)) {
                     notifyPeerMapUpdated();
                 }
             }

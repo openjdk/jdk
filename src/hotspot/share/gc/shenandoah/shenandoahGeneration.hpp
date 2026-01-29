@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
@@ -40,7 +41,6 @@ class ShenandoahHeuristics;
 class ShenandoahMode;
 class ShenandoahReferenceProcessor;
 
-
 class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahSpaceInfo {
   friend class VMStructs;
 private:
@@ -52,42 +52,27 @@ private:
 
   ShenandoahReferenceProcessor* const _ref_processor;
 
-  volatile size_t _affiliated_region_count;
-
-  // How much free memory is left in the last region of humongous objects.
-  // This is _not_ included in used, but it _is_ deducted from available,
-  // which gives the heuristics a more accurate view of how much memory remains
-  // for allocation. This figure is also included the heap status logging.
-  // The units are bytes. The value is only changed on a safepoint or under the
-  // heap lock.
-  size_t _humongous_waste;
-
   // Bytes reserved within this generation to hold evacuated objects from the collection set
   size_t _evacuation_reserve;
 
 protected:
-  // Usage
-
-  volatile size_t _used;
-  volatile size_t _bytes_allocated_since_gc_start;
-  size_t _max_capacity;
-  size_t _soft_max_capacity;
-
+  ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
 
 private:
   // Compute evacuation budgets prior to choosing collection set.
   void compute_evacuation_budgets(ShenandoahHeap* heap);
 
-  // Adjust evacuation budgets after choosing collection set.
+  // Adjust evacuation budgets after choosing collection set.  The argument regions_to_xfer represents regions to be
+  // transfered to old based on decisions made in top_off_collection_set()
   void adjust_evacuation_budgets(ShenandoahHeap* heap,
-                                 ShenandoahCollectionSet* collection_set);
+                                 ShenandoahCollectionSet* collection_set, size_t regions_to_xfer);
 
   // Preselect for possible inclusion into the collection set exactly the most
   // garbage-dense regions, including those that satisfy criteria 1 & 2 below,
   // and whose live bytes will fit within old_available budget:
   // Criterion 1. region age >= tenuring threshold
-  // Criterion 2. region garbage percentage > ShenandoahOldGarbageThreshold
+  // Criterion 2. region garbage percentage > old garbage threshold
   //
   // Identifies regions eligible for promotion in place,
   // being those of at least tenuring_threshold age that have lower garbage
@@ -98,27 +83,25 @@ private:
   // regions, which are marked in the preselected_regions() indicator
   // array of the heap's collection set, which should be initialized
   // to false.
-  size_t select_aged_regions(size_t old_available);
+  size_t select_aged_regions(size_t old_promotion_reserve);
 
+  // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
  public:
   ShenandoahGeneration(ShenandoahGenerationType type,
-                       uint max_workers,
-                       size_t max_capacity,
-                       size_t soft_max_capacity);
+                       uint max_workers);
   ~ShenandoahGeneration();
 
-  bool is_young() const  { return _type == YOUNG; }
-  bool is_old() const    { return _type == OLD; }
-  bool is_global() const { return _type == GLOBAL || _type == NON_GEN; }
+  inline bool is_young() const                 { return _type == YOUNG; }
+  inline bool is_old() const                   { return _type == OLD; }
+  inline bool is_global() const                { return _type == GLOBAL || _type == NON_GEN; }
+  inline ShenandoahGenerationType type() const { return _type; }
 
   // see description in field declaration
   void set_evacuation_reserve(size_t new_val);
   size_t get_evacuation_reserve() const;
   void augment_evacuation_reserve(size_t increment);
-
-  inline ShenandoahGenerationType type() const { return _type; }
 
   virtual ShenandoahHeuristics* heuristics() const { return _heuristics; }
 
@@ -126,35 +109,25 @@ private:
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
-  size_t soft_max_capacity() const override { return _soft_max_capacity; }
-  size_t max_capacity() const override      { return _max_capacity; }
-  virtual size_t used_regions() const;
-  virtual size_t used_regions_size() const;
-  virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override { return Atomic::load(&_used); }
+  virtual void post_initialize(ShenandoahHeap* heap);
+
+  virtual size_t bytes_allocated_since_gc_start() const override = 0;
+  virtual size_t used() const override = 0;
+  virtual size_t used_regions() const = 0;
+  virtual size_t used_regions_size() const = 0;
+  virtual size_t get_humongous_waste() const = 0;
+  virtual size_t free_unaffiliated_regions() const = 0;
+  virtual size_t get_affiliated_region_count() const = 0;
+  virtual size_t max_capacity() const override = 0;
+
   size_t available() const override;
   size_t available_with_reserve() const;
-  size_t used_including_humongous_waste() const {
-    return used() + get_humongous_waste();
-  }
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
   // to believe it has less memory available than is _really_ available. Lowering the soft
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
-  size_t soft_available() const override;
-
-  size_t bytes_allocated_since_gc_start() const override;
-  void reset_bytes_allocated_since_gc_start();
-  void increase_allocated(size_t bytes);
-
-  // These methods change the capacity of the generation by adding or subtracting the given number of bytes from the current
-  // capacity, returning the capacity of the generation following the change.
-  size_t increase_capacity(size_t increment);
-  size_t decrease_capacity(size_t decrement);
-
-  // Set the capacity of the generation, returning the value set
-  size_t set_capacity(size_t byte_size);
+  size_t soft_mutator_available() const override;
 
   void log_status(const char* msg) const;
 
@@ -172,6 +145,22 @@ private:
   virtual void prepare_gc();
 
   // Called during final mark, chooses collection set, rebuilds free set.
+  // Upon return from prepare_regions_and_collection_set(), certain parameters have been established to govern the
+  // evacuation efforts that are about to begin.  In particular:
+  //
+  // old_generation->get_promoted_reserve() represents the amount of memory within old-gen's available memory that has
+  //   been set aside to hold objects promoted from young-gen memory.  This represents an estimated percentage
+  //   of the live young-gen memory within the collection set.  If there is more data ready to be promoted than
+  //   can fit within this reserve, the promotion of some objects will be deferred until a subsequent evacuation
+  //   pass.
+  //
+  // old_generation->get_evacuation_reserve() represents the amount of memory within old-gen's available memory that has been
+  //  set aside to hold objects evacuated from the old-gen collection set.
+  //
+  // young_generation->get_evacuation_reserve() represents the amount of memory within young-gen's available memory that has
+  //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
+  //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
+  //  will likely be promoted.
   virtual void prepare_regions_and_collection_set(bool concurrent);
 
   // Cancel marking (used by Full collect and when cancelling cycle).
@@ -201,7 +190,7 @@ private:
   bool is_bitmap_clear();
 
   // We need to track the status of marking for different generations.
-  bool is_mark_complete() { return _is_marking_complete.is_set(); }
+  bool is_mark_complete() const { return _is_marking_complete.is_set(); }
   virtual void set_mark_complete();
   virtual void set_mark_incomplete();
 
@@ -214,29 +203,6 @@ private:
 
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
-
-  // Return the updated value of affiliated_region_count
-  size_t increment_affiliated_region_count();
-
-  // Return the updated value of affiliated_region_count
-  size_t decrement_affiliated_region_count();
-  // Same as decrement_affiliated_region_count, but w/o the need to hold heap lock before being called.
-  size_t decrement_affiliated_region_count_without_lock();
-
-  // Return the updated value of affiliated_region_count
-  size_t increase_affiliated_region_count(size_t delta);
-
-  // Return the updated value of affiliated_region_count
-  size_t decrease_affiliated_region_count(size_t delta);
-
-  void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
-
-  void increase_used(size_t bytes);
-  void decrease_used(size_t bytes);
-
-  void increase_humongous_waste(size_t bytes);
-  void decrease_humongous_waste(size_t bytes);
-  size_t get_humongous_waste() const { return _humongous_waste; }
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();

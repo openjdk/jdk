@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,6 @@ public:
 };
 
 class os: AllStatic {
-  friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class MallocTracker;
 
@@ -293,12 +292,7 @@ class os: AllStatic {
   static jlong elapsed_counter();
   static jlong elapsed_frequency();
 
-  // The "virtual time" of a thread is the amount of time a thread has
-  // actually run.  The first function indicates whether the OS supports
-  // this functionality for the current thread, and if so the second
-  // returns the elapsed virtual time for the current thread.
-  static bool supports_vtime();
-  static double elapsedVTime();
+  static double elapsed_process_cpu_time();
 
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone
@@ -337,17 +331,62 @@ class os: AllStatic {
   // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
-  static julong available_memory();
-  static julong used_memory();
-  static julong free_memory();
+  [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+  [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
+  [[nodiscard]] static bool free_memory(physical_memory_size_type& value);
 
-  static jlong total_swap_space();
-  static jlong free_swap_space();
+  [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+  [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
 
-  static julong physical_memory();
-  static bool has_allocatable_memory_limit(size_t* limit);
+  static physical_memory_size_type physical_memory();
   static bool is_server_class_machine();
   static size_t rss();
+
+  // On platforms with container support (currently only Linux) we combine machine values with
+  // potential container values in os:: methods, abstracting which value is actually used.
+  // The os::Machine and os::Container classes and containing methods are used to get machine
+  // and container values (when available) separately.
+  static bool is_containerized();
+
+  // The os::Machine class reports system resource metrics from the perspective of the operating
+  // system, without considering container-imposed limits. The values returned by these methods
+  // reflect the resources visible to the process as reported by the OS, and may already be
+  // affected by mechanisms such as virtualization, hypervisor limits, or process affinity,
+  // but do NOT consider further restrictions imposed by container runtimes (e.g., cgroups)
+  class Machine : AllStatic {
+  public:
+    static int active_processor_count();
+
+    [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_memory(physical_memory_size_type& value);
+
+    [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
+
+    static physical_memory_size_type physical_memory();
+  };
+
+  // The os::Container class reports resource limits as imposed by a supported container runtime
+  // (currently only cgroup-based Linux runtimes). If the process is running inside a
+  // containerized environment, methods from this class report the effective limits imposed
+  // by the container, which may be more restrictive than what os::Machine reports.
+  // Methods return true and set the out-parameter if a limit is found,
+  // or false if no limit exists or it cannot be determined.
+  class Container : AllStatic {
+  public:
+    [[nodiscard]] static bool processor_count(double& value); // Returns the core-equivalent CPU quota
+
+    [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
+
+    [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
+
+    [[nodiscard]] static bool memory_limit(physical_memory_size_type& value);
+    [[nodiscard]] static bool memory_soft_limit(physical_memory_size_type& value);
+    [[nodiscard]] static bool memory_throttle_limit(physical_memory_size_type& value);
+  };
 
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
@@ -397,6 +436,8 @@ class os: AllStatic {
   static jint set_minimum_stack_sizes();
 
  public:
+  // get allowed minimum java stack size
+  static jlong get_minimum_java_stack_size();
   // Find committed memory region within specified range (start, start + size),
   // return true if found any
   static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
@@ -453,6 +494,16 @@ class os: AllStatic {
 
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
+
+  // Returns an upper limit beyond which reserve_memory() calls are guaranteed
+  // to fail. It is not guaranteed that reserving less memory than this will
+  // succeed, however.
+  static size_t reserve_memory_limit();
+
+  // Returns an upper limit beyond which commit_memory() calls are guaranteed
+  // to fail. It is not guaranteed that committing less memory than this will
+  // succeed, however.
+  static size_t commit_memory_limit();
 
   inline static size_t cds_core_region_alignment();
 
@@ -531,12 +582,11 @@ class os: AllStatic {
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
-  static bool   numa_has_group_homing();
+  static void   numa_set_thread_affinity(Thread* thread, int node);
   static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
   static size_t numa_get_leaf_groups(uint *ids, size_t size);
-  static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);
   static bool   numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count);
@@ -623,6 +673,7 @@ class os: AllStatic {
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
   static frame      fetch_compiled_frame_from_context(const void* ucVoid);
+  static intptr_t*  fetch_bcp_from_context(const void* ucVoid);
 
   // For saving an os specific context generated by an assert or guarantee.
   static void       save_assert_context(const void* ucVoid);
@@ -799,12 +850,20 @@ class os: AllStatic {
 
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
-  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
-  static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
-  // Performs snprintf and asserts the result is non-negative (so there was not
-  // an encoding error) and that the output was not truncated.
-  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+  // Performs vsnprintf and asserts the result is non-negative (so there was not
+  // an encoding error or any other kind of usage error).
+  [[nodiscard]]
+  ATTRIBUTE_PRINTF(3, 0)
+  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args);
+  // Delegates to vsnprintf.
+  [[nodiscard]]
+  ATTRIBUTE_PRINTF(3, 4)
+  static int snprintf(char* buf, size_t len, const char* fmt, ...);
+
+  // Delegates to snprintf and asserts that the output was not truncated.
+  ATTRIBUTE_PRINTF(3, 4)
+  static void snprintf_checked(char* buf, size_t len, const char* fmt, ...);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);
@@ -969,10 +1028,7 @@ class os: AllStatic {
   // The thread_cpu_time() and current_thread_cpu_time() are only
   // supported if is_thread_cpu_time_supported() returns true.
 
-  // Thread CPU Time - return the fast estimate on a platform
-  // On Linux   - fast clock_gettime where available - user+sys
-  //            - otherwise: very slow /proc fs - user+sys
-  // On Windows - GetThreadTimes - user+sys
+  // Thread CPU Time - return the fast estimate on a platform - user+sys
   static jlong current_thread_cpu_time();
   static jlong thread_cpu_time(Thread* t);
 
@@ -1093,7 +1149,7 @@ class os: AllStatic {
 };
 
 // Note that "PAUSE" is almost always used with synchronization
-// so arguably we should provide Atomic::SpinPause() instead
+// so arguably we should provide AtomicAccess::SpinPause() instead
 // of the global SpinPause() with C linkage.
 // It'd also be eligible for inlining on many platforms.
 

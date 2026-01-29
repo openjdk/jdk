@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import sun.java2d.pipe.Region;
  *
  * @author Clemens Eisserer
  */
-public class XRMaskBlit extends MaskBlit {
+public final class XRMaskBlit extends MaskBlit {
     static void register() {
         GraphicsPrimitive[] primitives = {
                 new XRMaskBlit(XRSurfaceData.IntArgbPreX11, SrcOver,
@@ -65,6 +65,7 @@ public class XRMaskBlit extends MaskBlit {
             int srcy, int dstx, int dsty, int w, int h, int maskoff,
             int maskscan, int masklen, byte[] mask);
 
+    @Override
     public void MaskBlit(SurfaceData src, SurfaceData dst, Composite comp,
             Region clip, int srcx, int srcy, int dstx, int dsty, int width,
             int height, byte[] mask, int maskoff, int maskscan) {
