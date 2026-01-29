@@ -702,16 +702,9 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
             struct utsname uts;
             uname(&uts);
 
-            const char *vdso_name
-#ifdef _LP64
-              = "vdso64.so";
-#else
-              = "vdso32.so";
-#endif
-
             // Check vDSO binary first (for referring debuginfo if possible).
             char vdso_path[PATH_MAX];
-            snprintf(vdso_path, sizeof(vdso_path), "/lib/modules/%s/vdso/%s", uts.release, vdso_name);
+            snprintf(vdso_path, sizeof(vdso_path), "/lib/modules/%s/vdso/vdso64.so", uts.release);
             if (access(vdso_path, F_OK) == 0) {
                print_debug("replace vDSO: %s -> %s\n", lib_name, vdso_path);
                strcpy(lib_name, vdso_path);
