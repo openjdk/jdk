@@ -1911,7 +1911,7 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   oop thread_oop;
 
   bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
-  assert((has_java_thread && thread_oop != nullptr) || !has_java_thread, "Missing Thread oop");
+  assert(!has_java_thread || thread_oop != nullptr, "Missing Thread oop");
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
   if (!has_java_thread && !is_virtual) {
     return nullptr;
@@ -1941,7 +1941,7 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       }
 
       bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
-      bool vthread_carrier = !is_virtual && (java_thread != nullptr) && (java_thread->vthread_continuation() != nullptr);
+      bool vthread_carrier = !is_virtual && (java_thread->vthread_continuation() != nullptr);
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;

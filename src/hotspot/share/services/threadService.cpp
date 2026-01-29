@@ -1297,7 +1297,7 @@ public:
       return;
     }
 
-    bool vthread_carrier = !is_virtual && (_java_thread != nullptr) && (_java_thread->vthread_continuation() != nullptr);
+    bool vthread_carrier = !is_virtual && (_java_thread->vthread_continuation() != nullptr);
 
     oop park_blocker = java_lang_Thread::park_blocker(_thread_h());
     if (park_blocker != nullptr) {
@@ -1457,7 +1457,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   JavaThread* java_thread = nullptr;
   oop thread_oop;
   bool has_javathread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
-  assert((has_javathread && thread_oop != nullptr) || !has_javathread, "Missing Thread oop");
+  assert(!has_javathread || thread_oop != nullptr, "Missing Thread oop");
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);  // Deals with null
 
   if (!has_javathread && !is_virtual) {
