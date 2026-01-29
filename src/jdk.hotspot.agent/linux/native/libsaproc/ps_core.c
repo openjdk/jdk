@@ -717,7 +717,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
                strcpy(lib_name, vdso_path);
                lib_fd = pathmap_open(lib_name);
             } else {
-               // Copy vDSO memory segment to temporal memory from core
+               // Copy vDSO memory segment from core to temporal memory
                // if vDSO binary is not available.
                lib_fd = memfd_create("[vdso] in core", 0);
                off64_t ofs = ph->core->vdso_offset;
