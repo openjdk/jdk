@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
-#define SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
+ /**
+ * @test
+ * @bug 8374862
+ * @summary Regression test for -XX:+Verbose -XX:+WizardMode -XX:+PrintDeoptimizationDetails crash
+ * @requires vm.debug
+ * @run main/othervm -XX:+Verbose -XX:+WizardMode -XX:+PrintDeoptimizationDetails compiler.uncommontrap.TestDeoptDetailsLockRank
+ */
 
-#include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+package compiler.uncommontrap;
 
-#include "gc/shared/gc_globals.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
+public class TestDeoptDetailsLockRank {
 
-inline bool G1CMObjArrayProcessor::should_be_sliced(oop obj) {
-  return obj->is_objArray() && ((objArrayOop)obj)->size() >= 2 * ObjArrayMarkingStride;
+    public static void main(String[] args) {
+        System.out.println("passed");
+    }
 }
-
-#endif // SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
