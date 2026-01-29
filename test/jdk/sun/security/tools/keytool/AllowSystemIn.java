@@ -29,6 +29,7 @@
  * @run main AllowSystemIn succeed
  * @run main/othervm -Djdk.security.password.allowSystemIn=true AllowSystemIn succeed
  * @run main/othervm -Djdk.security.password.allowSystemIn=false AllowSystemIn fail
+ * @run main/othervm -Djdk.security.password.allowSystemIn=bogus AllowSystemIn invalid
  */
 
 import com.sun.security.auth.callback.TextCallbackHandler;
@@ -42,10 +43,13 @@ import java.nio.charset.StandardCharsets;
 public class AllowSystemIn{
 
     public static void main(String[] args) throws Exception {
-        if (args[0].equals("succeed")) {
-            Asserts.assertEQ("password", getPassword());
-        } else {
-            Asserts.assertThrows(UnsupportedOperationException.class,
+        switch (args[0]) {
+            case "succeed" -> Asserts.assertEQ("password", getPassword());
+            case "fail" -> Asserts.assertThrows(
+                    UnsupportedOperationException.class,
+                    AllowSystemIn::getPassword);
+            case "invalid" -> Asserts.assertThrows(
+                    ExceptionInInitializerError.class, // implementation detail
                     AllowSystemIn::getPassword);
         }
     }

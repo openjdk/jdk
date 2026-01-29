@@ -1712,9 +1712,9 @@ com.sun.security.allowedAIALocations=
 # formally specified, and is not widely adopted by tools from other vendors.
 #
 # This security property determines whether passwords can be read from the
-# standard input stream when a console is not available. The value can be
-# "true" or "false". The default value is "true". This default may change in
-# a future release.
+# standard input stream when a console is not available. The value can be set
+# to either "true" or "false". The default value is "true". This default may
+# change in a future release.
 #
 # If a system property of the same name is also specified, it supersedes the
 # security property value defined here.
