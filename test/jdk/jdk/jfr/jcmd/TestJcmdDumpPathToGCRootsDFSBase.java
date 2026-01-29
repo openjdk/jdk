@@ -43,21 +43,16 @@ public abstract class TestJcmdDumpPathToGCRootsDFSBase {
     protected void testDump(String jfrFileName, int minChainsExpected) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
         WhiteBox.setSkipBFS(true);
-        final String settingName = EventNames.OldObjectSample + "#" + "cutoff";
-        Map<String, String> settings = Collections.singletonMap(settingName, "infinity");
         final String pathToGcRoots = "path-to-gc-roots=true";
         int numTries = 10;
         while (--numTries >= 0) {
             try (Recording r = new Recording()) {
-                Map<String, String> p = new HashMap<>(settings);
-                p.put(EventNames.OldObjectSample + "#" + Enabled.NAME, "true");
                 r.setName("dodo");
-                r.setSettings(p);
+                r.enable(EventNames.OldObjectSample);
                 r.setToDisk(true);
                 r.start();
                 clearLeak();
                 System.out.println("Recording id: " + r.getId());
-                System.out.println("Settings: " + settings.toString());
                 System.out.println("Command: JFR.dump " + pathToGcRoots);
                 buildLeak();
                 System.gc();
@@ -65,7 +60,6 @@ public abstract class TestJcmdDumpPathToGCRootsDFSBase {
                 File recording = new File(jfrFileName + r.getId() + ".jfr");
                 recording.delete();
                 JcmdHelper.jcmd("JFR.dump", "name=dodo", pathToGcRoots, "filename=" + recording.getAbsolutePath());
-                r.setSettings(Collections.emptyMap());
                 List<RecordedEvent> events = RecordingFile.readAllEvents(recording.toPath());
                 if (events.isEmpty()) {
                     System.out.println("No events found in recording. Retrying.");

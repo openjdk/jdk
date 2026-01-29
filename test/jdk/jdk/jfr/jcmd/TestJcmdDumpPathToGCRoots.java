@@ -92,7 +92,9 @@ public class TestJcmdDumpPathToGCRoots {
                 System.gc();
                 File recording = new File("TestJcmdDumpPathToGCRoots" + r.getId() + ".jfr");
                 recording.delete();
+System.out.println("JCMD");
                 JcmdHelper.jcmd("JFR.dump", "name=dodo", pathToGcRoots, "filename=" + recording.getAbsolutePath());
+System.out.println("/JCMD");
                 r.setSettings(Collections.emptyMap());
                 List<RecordedEvent> events = RecordingFile.readAllEvents(recording.toPath());
                 if (events.isEmpty()) {
