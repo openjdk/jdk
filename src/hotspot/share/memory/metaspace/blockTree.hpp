@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@ namespace metaspace {
 //  memory blocks themselves are the nodes, with the block size being the key.
 //
 // We store node pointer information in these blocks when storing them. That
-//  imposes a minimum size to the managed memory blocks (1 word)
+//  imposes a minimum size to the managed memory blocks (1 MinWordSize)
 //
 // We want to manage many memory blocks of the same size, but we want
 //  to prevent the tree from blowing up and degenerating into a list. Therefore
@@ -89,8 +89,7 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     Node* _next;
 
     // Word size of node. Note that size cannot be larger than max metaspace size,
-    // so this could be very well a 32bit value (in case we ever make this a balancing
-    // tree and need additional space for weighting information).
+    // so this could very well be a 32bit value.
     const size_t _word_size;
 
     Node(size_t word_size) :

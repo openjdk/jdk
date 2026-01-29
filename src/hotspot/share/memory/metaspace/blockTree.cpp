@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -88,7 +88,7 @@ void BlockTree::verify() const {
   MemRangeCounter counter;
 
   // Verifies node ordering (n1 < n2 => word_size1 < word_size2),
-  // node vadility, and that the tree is balanced and not ill-formed.
+  // node validity, and that the tree is balanced and not ill-formed.
   _tree.verify_self([&](const TreeNode* tree_node) {
     const Node* n = Node::cast_to_node(tree_node);
 
