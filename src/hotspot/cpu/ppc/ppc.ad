@@ -7321,65 +7321,65 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovF_cmpF(cmpOp cop, regF dst, regF src1, regF src2, regF op1, regF op2, regD tmp) %{
-  match(Set dst (CMoveF (Binary cop (CmpF op1 op2)) (Binary src1 src2)));
+instruct cmovF_cmpF(cmpOp cop, regF op1, regF op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
   predicate(PowerArchitecturePPC64 >= 9);
   effect(TEMP tmp);
   ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
   size(8);
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src2$$FloatRegister->to_vsr(), // true case result
-             $src1$$FloatRegister->to_vsr(), // false case result
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovF_cmpD(cmpOp cop, regF dst, regF src1, regF src2, regD op1, regD op2, regD tmp) %{
-  match(Set dst (CMoveF (Binary cop (CmpD op1 op2)) (Binary src1 src2)));
+instruct cmovF_cmpD(cmpOp cop, regD op1, regD op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
   predicate(PowerArchitecturePPC64 >= 9);
   effect(TEMP tmp);
   ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
   size(8);
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src2$$FloatRegister->to_vsr(), // true case result
-             $src1$$FloatRegister->to_vsr(), // false case result
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovD_cmpD(cmpOp cop, regD dst, regD src1, regD src2, regD op1, regD op2, regD tmp) %{
-  match(Set dst (CMoveD (Binary cop (CmpD op1 op2)) (Binary src1 src2)));
+instruct cmovD_cmpD(cmpOp cop, regD op1, regD op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
   predicate(PowerArchitecturePPC64 >= 9);
   effect(TEMP tmp);
   ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
   size(8);
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src2$$FloatRegister->to_vsr(), // true case result
-             $src1$$FloatRegister->to_vsr(), // false case result
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovD_cmpF(cmpOp cop, regD dst, regD src1, regD src2, regF op1, regF op2, regD tmp) %{
-  match(Set dst (CMoveD (Binary cop (CmpF op1 op2)) (Binary src1 src2)));
+instruct cmovD_cmpF(cmpOp cop, regF op1, regF op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
   predicate(PowerArchitecturePPC64 >= 9);
   effect(TEMP tmp);
   ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
   size(8);
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src2$$FloatRegister->to_vsr(), // true case result
-             $src1$$FloatRegister->to_vsr(), // false case result
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
