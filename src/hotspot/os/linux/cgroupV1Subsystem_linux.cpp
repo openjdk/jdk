@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,8 +328,8 @@ CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
     _pids(pids) {
   CgroupUtil::adjust_controller(memory);
   CgroupUtil::adjust_controller(cpu);
-  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
-  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController, physical_memory_size_type>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController, double>(cpu);
 }
 
 bool CgroupV1Subsystem::is_containerized() {
@@ -467,9 +467,9 @@ void CgroupV1MemoryController::print_version_specific_info(outputStream* st, phy
     kmem_max_usage.set_value(temp);
   }
 
-  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit_in_bytes");
-  OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit");
+  OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage");
+  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage");
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {

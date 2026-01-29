@@ -607,7 +607,7 @@ public:
   virtual SafePointNode* outer_safepoint() const;
   CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
   CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
-  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->false_proj(); }
 
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
@@ -1368,6 +1368,9 @@ public:
 #endif
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
+
+  void add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* inner_head, SafePointNode* cloned_sfpt);
+
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
   IdealLoopTree* create_outer_strip_mined_loop(Node* init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
