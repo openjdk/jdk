@@ -164,7 +164,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/libpng
-    LIBSPLASHSCREEN_CFLAGS += -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0 \
       -DPNG_ARM_NEON_IMPLEMENTATION=0 -DPNG_LOONGARCH_LSX_OPT=0
 
     ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
@@ -226,6 +226,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := SIZE, \
+      LINK_TIME_OPTIMIZATION := true, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
           $(ICONV_CFLAGS), \
