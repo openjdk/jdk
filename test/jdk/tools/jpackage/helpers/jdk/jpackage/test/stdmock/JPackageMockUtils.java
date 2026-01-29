@@ -213,7 +213,7 @@ public final class JPackageMockUtils {
 
         var impl = new Main.Provider(runOnce(() -> {
             return createBundlingEnvironment(os);
-        }));
+        }), os);
 
         return new ToolProvider() {
 

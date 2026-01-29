@@ -108,7 +108,9 @@ public class AppImageFileTest {
 
     @Test
     public void testNoSuchFile() throws IOException {
-        var ex = assertThrowsExactly(JPackageException.class, () -> AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder)));
+        var ex = assertThrowsExactly(JPackageException.class, () -> {
+            AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder), OperatingSystem.current());
+        });
         Assertions.assertEquals(I18N.format("error.missing-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
         assertNull(ex.getCause());
     }
@@ -117,7 +119,9 @@ public class AppImageFileTest {
     public void testDirectory() throws IOException {
         Files.createDirectory(AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(tempFolder)));
 
-        var ex = assertThrowsExactly(JPackageException.class, () -> AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder)));
+        var ex = assertThrowsExactly(JPackageException.class, () -> {
+            AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder), OperatingSystem.current());
+        });
         Assertions.assertEquals(I18N.format("error.reading-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
         assertNotNull(ex.getCause());
     }
@@ -131,7 +135,9 @@ public class AppImageFileTest {
         Files.writeString(appImageFile, "");
 
         try (var out = new FileOutputStream(appImageFile.toFile()); var lock = out.getChannel().lock()) {
-            var ex = assertThrowsExactly(JPackageException.class, () -> AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder)));
+            var ex = assertThrowsExactly(JPackageException.class, () -> {
+                AppImageFile.load(DUMMY_LAYOUT.resolveAt(tempFolder), OperatingSystem.current());
+            });
             Assertions.assertEquals(I18N.format("error.reading-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
             assertNotNull(ex.getCause());
         }
@@ -237,7 +243,7 @@ public class AppImageFileTest {
             final var copy = toSupplier(() -> {
                 var layout = DUMMY_LAYOUT.resolveAt(dir);
                 new AppImageFile(app).save(layout);
-                return AppImageFile.load(layout);
+                return AppImageFile.load(layout, OperatingSystem.current());
             }).get();
 
             assertEquals(createExternalApplication(OperatingSystem.current()), copy);

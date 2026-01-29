@@ -67,14 +67,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  */
 public final class Main {
 
-    public record Provider(Supplier<CliBundlingEnvironment> bundlingEnvSupplier) implements ToolProvider {
+    public record Provider(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, OperatingSystem os) implements ToolProvider {
 
         public Provider {
             Objects.requireNonNull(bundlingEnvSupplier);
+            Objects.requireNonNull(os);
         }
 
         public Provider() {
-            this(DefaultBundlingEnvironmentLoader.INSTANCE);
+            this(DefaultBundlingEnvironmentLoader.INSTANCE, OperatingSystem.current());
         }
 
         @Override
@@ -84,7 +85,7 @@ public final class Main {
 
         @Override
         public int run(PrintWriter out, PrintWriter err, String... args) {
-            return Main.run(bundlingEnvSupplier, out, err, args);
+            return Main.run(os, bundlingEnvSupplier, out, err, args);
         }
 
         @Override
@@ -110,25 +111,29 @@ public final class Main {
     public static void main(String... args) {
         var out = toPrintWriter(System.out);
         var err = toPrintWriter(System.err);
-        System.exit(run(out, err, args));
+        System.exit(run(OperatingSystem.current(), DefaultBundlingEnvironmentLoader.INSTANCE, out, err, args));
     }
 
-    static int run(PrintWriter out, PrintWriter err, String... args) {
-        return run(DefaultBundlingEnvironmentLoader.INSTANCE, out, err, args);
-    }
-
-    static int run(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, PrintWriter out, PrintWriter err, String... args) {
-        return Globals.main(() -> {
-            return runWithGlobals(bundlingEnvSupplier, out, err, args);
-        });
-    }
-
-    private static int runWithGlobals(
+    static int run(
+            OperatingSystem os,
             Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
             PrintWriter out,
             PrintWriter err,
             String... args) {
 
+        return Globals.main(() -> {
+            return runWithGlobals(os, bundlingEnvSupplier, out, err, args);
+        });
+    }
+
+    private static int runWithGlobals(
+            OperatingSystem os,
+            Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
+            PrintWriter out,
+            PrintWriter err,
+            String... args) {
+
+        Objects.requireNonNull(os);
         Objects.requireNonNull(bundlingEnvSupplier);
         Objects.requireNonNull(args);
         for (String arg : args) {
@@ -163,7 +168,7 @@ public final class Main {
 
             final var bundlingEnv = bundlingEnvSupplier.get();
 
-            final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(mappedArgs.get());
+            final var parseResult = Utils.buildParser(os, bundlingEnv).create().apply(mappedArgs.get());
 
             return runner.run(() -> {
                 var parsedOptionsBuilder = parseResult.orElseThrow();
@@ -213,7 +218,7 @@ public final class Main {
                     parsedOptionsBuilder = parsedOptionsBuilder.copyWithExcludes(skippedOptions);
                 }
 
-                final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, bundlingEnv);
+                final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, os, bundlingEnv);
 
                 final var validationResult = optionsProcessor.validate();
 
