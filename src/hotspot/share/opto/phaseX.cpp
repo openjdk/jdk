@@ -2698,6 +2698,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
+  // Allow GC to enqueue barriers that depend on transitive inputs
+  if (has_load_barrier_nodes) {
+    bs->enqueue_dependent_gc_barriers(worklist, use);
+  }
+
   // From CastX2PNode::Ideal
   // CastX2P(AddX(x, y))
   // CastX2P(SubX(x, y))

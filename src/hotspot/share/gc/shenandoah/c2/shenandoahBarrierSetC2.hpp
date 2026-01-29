@@ -118,6 +118,7 @@ public:
   virtual bool is_gc_pre_barrier_node(Node* node) const;
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual Node* step_over_gc_barrier(Node* c) const;
+  virtual void enqueue_dependent_gc_barriers(Unique_Node_List& worklist, Node* use) const;
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const;
   virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand; }
