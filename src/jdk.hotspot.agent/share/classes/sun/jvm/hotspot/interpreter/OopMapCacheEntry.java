@@ -96,7 +96,7 @@ public class OopMapCacheEntry {
 
   Method method()        { return method; }
   int bci()              { return bci; }
-  public int numberOfEntries()  { return maskSize; }
+  public int numberOfEntries() { return maskSize; }
   boolean entryAt(int offset) {
     return mask.at(offset);
   }
