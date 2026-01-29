@@ -151,8 +151,8 @@ class VectorSupport : AllStatic {
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
 
-  static int vop2ideal(jint vop, int lt);
-  static const char* lanetype2name(int lane_type);
+  static int vop2ideal(jint vop, LaneType lt);
+  static const char* lanetype2name(LaneType lane_type);
   static bool has_scalar_op(jint id);
   static bool is_unsigned_op(jint id);
 

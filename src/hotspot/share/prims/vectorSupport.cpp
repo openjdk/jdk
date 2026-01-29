@@ -199,7 +199,7 @@ bool VectorSupport::is_unsigned_op(jint id) {
   }
 }
 
-const char* VectorSupport::lanetype2name(int lane_type) {
+const char* VectorSupport::lanetype2name(LaneType lane_type) {
   assert(lane_type >= LT_FLOAT && lane_type <= LT_LONG, "");
   const char* lanetype2name[] = {
     nullptr, nullptr, nullptr,
@@ -214,7 +214,7 @@ const char* VectorSupport::lanetype2name(int lane_type) {
   return lanetype2name[lane_type];
 }
 
-int VectorSupport::vop2ideal(jint id, int lt) {
+int VectorSupport::vop2ideal(jint id, LaneType lt) {
   VectorOperation vop = (VectorOperation)id;
   switch (vop) {
     case VECTOR_OP_ADD: {
