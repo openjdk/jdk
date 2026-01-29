@@ -668,30 +668,25 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
 // dst = (op1 cmp(cc) op2) ? src1 : src2;
 void C2_MacroAssembler::cmovF(int cc, VectorSRegister dst, VectorSRegister op1, VectorSRegister op2,
                               VectorSRegister src1, VectorSRegister src2, VectorSRegister tmp) {
-  VectorSRegister first  = src1;
-  VectorSRegister second = src2;
-  int exchange = (~cc) & 8;
-  if (exchange) {
-    first  = src2;
-    second = src1;
-  }
+  // See operand cmpOp() for details.
+  bool invert_cond = ((~cc) & 8) != 0; // invert reflects bcondCRbiIs0
+  VectorSRegister true_case_result  = invert_cond ? src2 : src1;
+  VectorSRegister false_case_result = invert_cond ? src1 : src2;
 
   auto cmp = (Assembler::Condition)(cc & 3);
   switch(cmp) {
   case Assembler::Condition::equal:
     xscmpeqdp(tmp, op1, op2);
-    xxsel(dst, first, second, tmp);
     break;
   case Assembler::Condition::less:
-    xscmpgedp(tmp, op1, op2);
-    xxsel(dst, second, first, tmp);
+    xscmpgedp(tmp, op2, op1);
     break;
   case Assembler::Condition::greater:
     xscmpgtdp(tmp, op1, op2);
-    xxsel(dst, first, second, tmp);
     break;
   default:
     assert(false, "unsupported compare condition: %d", cc);
     ShouldNotReachHere();
   }
+  xxsel(dst, false_case_result, true_case_result, tmp);
 }

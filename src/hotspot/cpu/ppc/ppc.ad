@@ -7330,7 +7330,8 @@ instruct cmovF_cmpF(cmpOp cop, regF dst, regF src1, regF src2, regF op1, regF op
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $src2$$FloatRegister->to_vsr(), // true case result
+             $src1$$FloatRegister->to_vsr(), // false case result
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
@@ -7345,7 +7346,8 @@ instruct cmovF_cmpD(cmpOp cop, regF dst, regF src1, regF src2, regD op1, regD op
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $src2$$FloatRegister->to_vsr(), // true case result
+             $src1$$FloatRegister->to_vsr(), // false case result
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
@@ -7360,7 +7362,8 @@ instruct cmovD_cmpD(cmpOp cop, regD dst, regD src1, regD src2, regD op1, regD op
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $src2$$FloatRegister->to_vsr(), // true case result
+             $src1$$FloatRegister->to_vsr(), // false case result
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
@@ -7375,7 +7378,8 @@ instruct cmovD_cmpF(cmpOp cop, regD dst, regD src1, regD src2, regF op1, regF op
   ins_encode %{
     __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
              $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
-             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $src2$$FloatRegister->to_vsr(), // true case result
+             $src1$$FloatRegister->to_vsr(), // false case result
              $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
