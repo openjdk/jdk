@@ -239,7 +239,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * Since {@code MultiPixelPackedSampleModel} has only one band,
      * this method ignores the {@code band} parameter and returns
      * the sample size of the single band.
-     * @param band the specified band (ignored).
+     * @param band the specified band (ignored)
      * @return the number of bits per sample for the specified band.
      */
     public int getSampleSize(int band) {
