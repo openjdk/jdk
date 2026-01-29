@@ -2805,16 +2805,16 @@ public class FdlibmTranslit {
      * Return the Inverse Hyperbolic Cosine of x
      *
      * Method :
-     *	Based on
-     *		acosh(x) = log [ x + sqrt(x*x-1) ]
-     *	we have
-     *		acosh(x) := log(x)+ln2,	if x is large; else
-     *		         := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
-     *		         := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
+     * Based on
+     *  acosh(x) = log [ x + sqrt(x*x-1) ]
+     *  we have
+     *   acosh(x) := log(x)+ln2,	if x is large; else
+     *            := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
+     *            := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
      *
      * Special cases:
-     *	acosh(x) is NaN with signal if x<1.
-     *	acosh(NaN) is NaN without signal.
+     *  acosh(x) is NaN with signal if x<1.
+     *  acosh(NaN) is NaN without signal.
      */
     private static final class Acosh {
         private static final double one = 1.0;
@@ -2823,19 +2823,19 @@ public class FdlibmTranslit {
             double t;
             int hx;
             hx = __HI(x);
-            if(hx<0x3ff00000) {		/* x < 1 */
+            if(hx<0x3ff00000) {      /* x < 1 */
                 return (x-x)/(x-x);
-            } else if(hx >=0x41b00000) {	/* x > 2**28 */
-                if(hx >=0x7ff00000) {	/* x is inf of NaN */
+            } else if(hx >=0x41b00000) {    /* x > 2**28 */
+                if(hx >=0x7ff00000) {    /* x is inf of NaN */
                     return x+x;
                 } else
-                    return log(x)+ln2;	/* acosh(huge)=log(2x) */
+                    return log(x)+ln2;   /* acosh(huge)=log(2x) */
             } else if(((hx-0x3ff00000)|__LO(x))==0) {
-                return 0.0;			/* acosh(1) = 0 */
-            } else if (hx > 0x40000000) {	/* 2**28 > x > 2 */
+                return 0.0;         /* acosh(1) = 0 */
+            } else if (hx > 0x40000000) {   /* 2**28 > x > 2 */
                 t=x*x;
                 return log(2.0*x-one/(x+sqrt(t-one)));
-            } else {			/* 1<x<2 */
+            } else {            /* 1<x<2 */
                 t = x-one;
                 return log1p(t+sqrt(2.0*t+t*t));
             }
