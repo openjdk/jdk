@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 /**
- * Dedicated socket to send data from the flag and test VM back to the driver VM.
+ * Dedicated socket to send data from the flag and Test VM back to the Driver VM.
  */
 public class TestFrameworkSocket implements AutoCloseable {
     public static final String STDOUT_PREFIX = "[STDOUT]";
@@ -46,7 +46,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     public static final String PRINT_TIMES_TAG = "[PRINT_TIMES]";
     public static final String NOT_COMPILABLE_TAG = "[NOT_COMPILABLE]";
 
-    // Static fields used for test VM only.
+    // Static fields used for Test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
     private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
 
@@ -85,7 +85,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     }
 
     /**
-     * Waits for a client (created by flag or test VM) to connect. Return the messages received from the client.
+     * Waits for a client (created by flag or Test VM) to connect. Return the messages received from the client.
      */
     private FutureTask<String> initSocketTask() {
         return new FutureTask<>(() -> {
@@ -117,18 +117,18 @@ public class TestFrameworkSocket implements AutoCloseable {
     }
 
     /**
-     * Only called by test VM to write to server socket.
+     * Only called by Test VM to write to server socket.
      */
     public static void write(String msg, String tag) {
         write(msg, tag, false);
     }
 
     /**
-     * Only called by test VM to write to server socket.
+     * Only called by Test VM to write to server socket.
      * <p>
-     * The test VM is spawned by the main jtreg VM. The stdout of the test VM is hidden
+     * The Test VM is spawned by the main jtreg VM. The stdout of the Test VM is hidden
      * unless the Verbose or ReportStdout flag is used. TestFrameworkSocket is used by the parent jtreg
-     * VM and the test VM to communicate. By sending the prints through the TestFrameworkSocket with the
+     * VM and the Test VM to communicate. By sending the prints through the TestFrameworkSocket with the
      * parameter stdout set to true, the parent VM will print the received messages to its stdout, making it
      * visible to the user.
      */
@@ -137,10 +137,10 @@ public class TestFrameworkSocket implements AutoCloseable {
             System.out.println("Debugging Test VM: Skip writing due to -DReproduce");
             return;
         }
-        TestFramework.check(SERVER_PORT != -1, "Server port was not set correctly for flag and/or test VM "
-                                               + "or method not called from flag or test VM");
+        TestFramework.check(SERVER_PORT != -1, "Server port was not set correctly for flag and/or Test VM "
+                                               + "or method not called from flag or Test VM");
         try {
-            // Keep the client socket open until the test VM terminates (calls closeClientSocket before exiting main()).
+            // Keep the client socket open until the Test VM terminates (calls closeClientSocket before exiting main()).
             if (clientSocket == null) {
                 clientSocket = new Socket(InetAddress.getLoopbackAddress(), SERVER_PORT);
                 clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -150,11 +150,11 @@ public class TestFrameworkSocket implements AutoCloseable {
             }
             clientWriter.println(msg);
         } catch (Exception e) {
-            // When the test VM is directly run, we should ignore all messages that would normally be sent to the
-            // driver VM.
+            // When the Test VM is directly run, we should ignore all messages that would normally be sent to the
+            // Driver VM.
             String failMsg = System.lineSeparator() + System.lineSeparator() + """
                              ###########################################################
-                              Did you directly run the test VM (TestVM class)
+                              Did you directly run the Test VM (TestVM class)
                               to reproduce a bug?
                               => Append the flag -DReproduce=true and try again!
                              ###########################################################
@@ -169,7 +169,7 @@ public class TestFrameworkSocket implements AutoCloseable {
 
     /**
      * Closes (and flushes) the printer to the socket and the socket itself. Is called as last thing before exiting
-     * the main() method of the flag and the test VM.
+     * the main() method of the flag and the Test VM.
      */
     public static void closeClientSocket() {
         if (clientSocket != null) {
@@ -183,7 +183,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     }
 
     /**
-     * Get the socket output of the flag VM.
+     * Get the socket output of the Flag VM.
      */
     public String getOutput() {
         try {
@@ -197,7 +197,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     }
 
     /**
-     * Return whether test VM sent messages to be put on stdout (starting with {@link ::STDOUT_PREFIX}).
+     * Return whether Test VM sent messages to be put on stdout (starting with {@link ::STDOUT_PREFIX}).
      */
     public boolean hasStdOut() {
         return receivedStdOut;
