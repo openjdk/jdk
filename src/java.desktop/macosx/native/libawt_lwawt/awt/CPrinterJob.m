@@ -66,9 +66,12 @@ static jmethodID sjm_printerJob = NULL;
 static NSPrintInfo* createDefaultNSPrintInfo(JNIEnv* env, jstring printer);
 
 static void makeBestFit(NSPrintInfo* src);
+static NSPrinter* getPrinter(JNIEnv* env, jobject srcPrintJob);
+static PMPageFormat getPageFormat(JNIEnv* env, NSPrintInfo* printInfo, jobject paper);
+static PMPaper findExistedPaper(JNIEnv* env, NSPrintInfo* printInfo, jobject paper);
 
 static void nsPrintInfoToJavaPaper(JNIEnv* env, NSPrintInfo* src, jobject dst);
-static void javaPaperToNSPrintInfo(JNIEnv* env, jobject src, NSPrintInfo* dst);
+static void javaPaperToNSPrintInfo(JNIEnv* env, jobject src, NSPrintInfo* dst, PMOrientation orientation);
 
 static void nsPrintInfoToJavaPageFormat(JNIEnv* env, NSPrintInfo* src, jobject dst);
 static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobject srcPageFormat, NSPrintInfo* dst);
@@ -152,6 +155,159 @@ static void makeBestFit(NSPrintInfo* src)
     }
 }
 
+
+static NSPrinter* getPrinter(JNIEnv* env, jobject srcPrintJob)
+{
+    GET_CPRINTERJOB_CLASS_RETURN(NULL);
+    DECLARE_METHOD_RETURN(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;", NULL);
+
+    // <rdar://problem/4022422> NSPrinterInfo is not correctly set to the selected printer
+    // from the Java side of CPrinterJob. Has always assumed the default printer was the one we wanted.
+    if (srcPrintJob == NULL)
+        return NULL;
+    jobject printerNameObj = (*env)->CallObjectMethod(env, srcPrintJob, jm_getPrinterName);
+    CHECK_EXCEPTION();
+    if (printerNameObj == NULL)
+        return NULL;
+    NSString *printerName = JavaStringToNSString(env, printerNameObj);
+    if (printerName == nil)
+        return NULL;
+    return [NSPrinter printerWithName:printerName];
+}
+
+static PMPaper findExistedPaper(JNIEnv* env, NSPrintInfo* printInfo, jobject paper)
+{
+    GET_CLASS_RETURN(sjc_Paper, "java/awt/print/Paper", NULL);
+    DECLARE_METHOD_RETURN(jm_getWidth, sjc_Paper, "getWidth", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getHeight, sjc_Paper, "getHeight", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableX, sjc_Paper, "getImageableX", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableY, sjc_Paper, "getImageableY", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableW, sjc_Paper, "getImageableWidth", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableH, sjc_Paper, "getImageableHeight", "()D", NULL);
+
+    jdouble jPaperW = (*env)->CallDoubleMethod(env, paper, jm_getWidth);
+    CHECK_EXCEPTION();
+    jdouble jPaperH = (*env)->CallDoubleMethod(env, paper, jm_getHeight);
+    CHECK_EXCEPTION();
+    jdouble jMarginLeft = (*env)->CallDoubleMethod(env, paper, jm_getImageableX);
+    CHECK_EXCEPTION();
+    jdouble jMarginTop = (*env)->CallDoubleMethod(env, paper, jm_getImageableY);
+    CHECK_EXCEPTION();
+    jdouble jImageW = (*env)->CallDoubleMethod(env, paper, jm_getImageableW);
+    CHECK_EXCEPTION();
+    jdouble jImageH = (*env)->CallDoubleMethod(env, paper, jm_getImageableH);
+    CHECK_EXCEPTION();
+
+    jdouble jMarginRight = jPaperW - (jImageW + jMarginLeft);
+    jdouble jMarginBottom = jPaperH - (jImageH + jMarginTop);
+
+    PMPrintSession printSession = (PMPrintSession) ([printInfo PMPrintSession]);
+    PMPrinter printer = NULL;
+    if (PMSessionGetCurrentPrinter(printSession, &printer) != noErr)
+    {
+        return NULL;
+    }
+
+    CFArrayRef availablePapers = NULL;
+    if (PMPrinterGetPaperList(printer, &availablePapers) != noErr)
+    {
+        return NULL;
+    }
+
+    PMPaper result = NULL;
+    CFIndex paperCount = CFArrayGetCount(availablePapers);
+
+    double actualDifference = 99999999.99;
+    double acceptableDifference = 1.5;
+    for (CFIndex i = 0; i < paperCount; i++)
+    {
+        PMPaper paper = (PMPaper)CFArrayGetValueAtIndex(availablePapers, i);
+        double paperWidth = 0.0;
+        double paperHeight = 0.0;
+        PMPaperGetWidth(paper, &paperWidth);
+        PMPaperGetHeight(paper, &paperHeight);
+
+        double widthDiff = jPaperW - paperWidth;
+        double heightDiff = jPaperH - paperHeight;
+        double difference = fmax(fabs(widthDiff), fabs(heightDiff));
+
+        if (difference > acceptableDifference || difference > actualDifference)
+        {
+            continue;
+        }
+
+        PMPaperMargins margins;
+        if (difference < actualDifference && PMPaperGetMargins(paper, &margins) == noErr)
+        {
+            if(jMarginLeft >= margins.left && jMarginRight >= margins.right &&
+                jMarginTop >= margins.top && jMarginBottom >= margins.bottom)
+            {
+                result = paper;
+                actualDifference = difference;
+                // Borderless printing is slower than a printing with margins. Try to find a paper with margins.
+                if (difference < 0.85 && margins.left > 0 && margins.right > 0 && margins.top > 0 && margins.bottom > 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+static PMPageFormat getPageFormat(JNIEnv* env, NSPrintInfo* printInfo, jobject jPaper)
+{
+    GET_CLASS_RETURN(sjc_Paper, "java/awt/print/Paper", NULL);
+    DECLARE_METHOD_RETURN(jm_getWidth, sjc_Paper, "getWidth", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getHeight, sjc_Paper, "getHeight", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableX, sjc_Paper, "getImageableX", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableY, sjc_Paper, "getImageableY", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableW, sjc_Paper, "getImageableWidth", "()D", NULL);
+    DECLARE_METHOD_RETURN(jm_getImageableH, sjc_Paper, "getImageableHeight", "()D", NULL);
+
+    OSStatus status;
+    PMPageFormat pageFormat;
+    PMPaper pmPaper = findExistedPaper(env, printInfo, jPaper);
+    if (pmPaper != NULL)
+    {
+        status = PMCreatePageFormatWithPMPaper(&pageFormat, pmPaper);
+    } else
+    {
+        jdouble jPaperW = (*env)->CallDoubleMethod(env, jPaper, jm_getWidth);
+        CHECK_EXCEPTION();
+        jdouble jPaperH = (*env)->CallDoubleMethod(env, jPaper, jm_getHeight);
+        CHECK_EXCEPTION();
+        jdouble jImageX = (*env)->CallDoubleMethod(env, jPaper, jm_getImageableX);
+        CHECK_EXCEPTION();
+        jdouble jImageY = (*env)->CallDoubleMethod(env, jPaper, jm_getImageableY);
+        CHECK_EXCEPTION();
+        jdouble jImageW = (*env)->CallDoubleMethod(env, jPaper, jm_getImageableW);
+        CHECK_EXCEPTION();
+        jdouble jImageH = (*env)->CallDoubleMethod(env, jPaper, jm_getImageableH);
+        CHECK_EXCEPTION();
+
+        PMPaperMargins paperMargins;
+        paperMargins.left = jImageX;
+        paperMargins.top = jImageY;
+        paperMargins.right = jPaperW - (jImageW + jImageX);
+        paperMargins.bottom = jPaperH - (jImageH + jImageY);
+
+        PMPrintSession printSession = (PMPrintSession) [printInfo PMPrintSession];
+        PMPrinter pmPrinter;
+
+        if (PMSessionGetCurrentPrinter(printSession, &pmPrinter) != noErr
+            || PMPaperCreateCustom(pmPrinter, CFSTR("Java paper"), CFSTR("Java paper"),
+                                    jPaperW, jPaperH, &paperMargins, &pmPaper) != noErr)
+        {
+            return NULL;
+        }
+        status = PMCreatePageFormatWithPMPaper(&pageFormat, pmPaper);
+        PMRelease(pmPaper);
+    }
+
+    return status == noErr ? pageFormat : NULL;
+}
+
 // In AppKit Printing, the rectangle is always oriented. In AppKit Printing, setting
 //  the rectangle will always set the orientation.
 // In java printing, the rectangle is oriented if accessed from PageFormat. It is
@@ -164,49 +320,58 @@ static void nsPrintInfoToJavaPaper(JNIEnv* env, NSPrintInfo* src, jobject dst)
     DECLARE_METHOD(jm_setSize, sjc_Paper, "setSize", "(DD)V");
     DECLARE_METHOD(jm_setImageableArea, sjc_Paper, "setImageableArea", "(DDDD)V");
 
-    jdouble jPaperW, jPaperH;
-
-    // NSPrintInfo paperSize is oriented. java Paper is not oriented. Take
-    //  the -[NSPrintInfo orientation] into account when setting the Paper
-    //  rectangle.
-
-    NSSize paperSize = [src paperSize];
-    switch ([src orientation]) {
-        case NS_PORTRAIT:
-            jPaperW = paperSize.width;
-            jPaperH = paperSize.height;
-            break;
-
-        case NS_LANDSCAPE:
-            jPaperW = paperSize.height;
-            jPaperH = paperSize.width;
-            break;
-
-        default:
-            jPaperW = paperSize.width;
-            jPaperH = paperSize.height;
-            break;
+    PMPaper pmPaper;
+    PMOrientation pmOrientation;
+    PMPaperMargins pmMargins;
+    double paperWidth;
+    double paperHeight;
+    if (PMGetPageFormatPaper([src PMPageFormat], &pmPaper) != noErr ||
+            PMPaperGetWidth(pmPaper, &paperWidth) != noErr ||
+            PMPaperGetHeight(pmPaper, &paperHeight) != noErr ||
+            PMGetOrientation([src PMPageFormat], &pmOrientation) != noErr) {
+        return;
     }
+
+    jdouble jPaperW = paperWidth;
+    jdouble jPaperH = paperHeight;
 
     (*env)->CallVoidMethod(env, dst, jm_setSize, jPaperW, jPaperH); // AWT_THREADING Safe (known object - always actual Paper)
     CHECK_EXCEPTION();
 
-    // Set the imageable area from the margins
-    CGFloat leftM = [src leftMargin];
-    CGFloat rightM = [src rightMargin];
-    CGFloat topM = [src topMargin];
-    CGFloat bottomM = [src bottomMargin];
-
-    jdouble jImageX = leftM;
-    jdouble jImageY = topM;
-    jdouble jImageW = jPaperW - (leftM + rightM);
-    jdouble jImageH = jPaperH - (topM + bottomM);
+    // Should set user's margins, not paper's.
+    jdouble jImageX ,jImageY ,jImageW, jImageH;
+    switch (pmOrientation) {
+        case kPMLandscape:
+            jImageX = [src topMargin];
+            jImageY = [src rightMargin];
+            jImageW = jPaperW - (jImageX + [src bottomMargin]);
+            jImageH = jPaperH - (jImageY + [src leftMargin]);
+            break;
+        case kPMReverseLandscape:
+            jImageX = [src bottomMargin];
+            jImageY = [src leftMargin];
+            jImageW = jPaperW - (jImageX + [src topMargin]);
+            jImageH = jPaperH - (jImageY + [src rightMargin]);
+            break;
+        case kPMReversePortrait:
+            jImageX = [src rightMargin];
+            jImageY = [src bottomMargin];
+            jImageW = jPaperW - (jImageX + [src leftMargin]);
+            jImageH = jPaperH - (jImageY + [src topMargin]);
+        case kPMPortrait:
+        default:
+            jImageX = [src leftMargin];
+            jImageY = [src topMargin];
+            jImageW = jPaperW - (jImageX + [src rightMargin]);
+            jImageH = jPaperH - (jImageY + [src bottomMargin]);
+            break;
+    }
 
     (*env)->CallVoidMethod(env, dst, jm_setImageableArea, jImageX, jImageY, jImageW, jImageH); // AWT_THREADING Safe (known object - always actual Paper)
     CHECK_EXCEPTION();
 }
 
-static void javaPaperToNSPrintInfo(JNIEnv* env, jobject src, NSPrintInfo* dst)
+static void javaPaperToNSPrintInfo(JNIEnv* env, jobject src, NSPrintInfo* dst, PMOrientation orientation)
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
@@ -219,32 +384,68 @@ static void javaPaperToNSPrintInfo(JNIEnv* env, jobject src, NSPrintInfo* dst)
     DECLARE_METHOD(jm_getImageableW, sjc_Paper, "getImageableWidth", "()D");
     DECLARE_METHOD(jm_getImageableH, sjc_Paper, "getImageableHeight", "()D");
 
-    // java Paper is always Portrait oriented. Set NSPrintInfo with this
-    //  rectangle, and it's orientation may change. If necessary, be sure to call
-    //  -[NSPrintInfo setOrientation] after this call, which will then
-    //  adjust the -[NSPrintInfo paperSize] as well.
+    PMPageFormat pageFormat = getPageFormat(env, dst, src);
+    if (pageFormat == NULL)
+    {
+        return;
+    }
+    PMPrintSession printSession = (PMPrintSession) [dst PMPrintSession];
+    Boolean updated;
 
-    jdouble jPhysicalWidth = (*env)->CallDoubleMethod(env, src, jm_getWidth); // AWT_THREADING Safe (!appKit)
+    if (PMSetOrientation(pageFormat, orientation, kPMUnlocked) != noErr
+        || PMSessionValidatePageFormat(printSession, pageFormat, &updated) != noErr
+        || PMCopyPageFormat(pageFormat, [dst PMPageFormat]) != noErr
+        || updated == YES)
+    {
+        PMRelease(pageFormat);
+        return;
+    }
+    [dst updateFromPMPrintSettings];
+
+    jdouble jPaperW = (*env)->CallDoubleMethod(env, src, jm_getWidth);
     CHECK_EXCEPTION();
-    jdouble jPhysicalHeight = (*env)->CallDoubleMethod(env, src, jm_getHeight); // AWT_THREADING Safe (!appKit)
+    jdouble jPaperH = (*env)->CallDoubleMethod(env, src, jm_getHeight);
+    CHECK_EXCEPTION();
+    jdouble jMarginLeft = (*env)->CallDoubleMethod(env, src, jm_getImageableX);
+    CHECK_EXCEPTION();
+    jdouble jMarginTop = (*env)->CallDoubleMethod(env, src, jm_getImageableY);
+    CHECK_EXCEPTION();
+    jdouble jImageW = (*env)->CallDoubleMethod(env, src, jm_getImageableW);
+    CHECK_EXCEPTION();
+    jdouble jImageH = (*env)->CallDoubleMethod(env, src, jm_getImageableH);
     CHECK_EXCEPTION();
 
-    [dst setPaperSize:NSMakeSize(jPhysicalWidth, jPhysicalHeight)];
+    jdouble jMarginRight = jPaperW - (jImageW + jMarginLeft);
+    jdouble jMarginBottom = jPaperH - (jImageH + jMarginTop);
 
-    // Set the margins from the imageable area
-    jdouble jImageX = (*env)->CallDoubleMethod(env, src, jm_getImageableX); // AWT_THREADING Safe (!appKit)
-    CHECK_EXCEPTION();
-    jdouble jImageY = (*env)->CallDoubleMethod(env, src, jm_getImageableY); // AWT_THREADING Safe (!appKit)
-    CHECK_EXCEPTION();
-    jdouble jImageW = (*env)->CallDoubleMethod(env, src, jm_getImageableW); // AWT_THREADING Safe (!appKit)
-    CHECK_EXCEPTION();
-    jdouble jImageH = (*env)->CallDoubleMethod(env, src, jm_getImageableH); // AWT_THREADING Safe (!appKit)
-    CHECK_EXCEPTION();
+    switch (orientation) {
+        case kPMLandscape:
+            [dst setTopMargin: jMarginLeft];
+            [dst setRightMargin: jMarginTop];
+            [dst setBottomMargin: jMarginRight];
+            [dst setLeftMargin: jMarginBottom];
+            break;
+        case kPMReverseLandscape:
+            [dst setTopMargin: jMarginRight];
+            [dst setRightMargin: jMarginBottom];
+            [dst setBottomMargin: jMarginLeft];
+            [dst setLeftMargin: jMarginTop];
+            break;
+        case kPMReversePortrait:
+            [dst setRightMargin: jMarginLeft];
+            [dst setBottomMargin: jMarginTop];
+            [dst setLeftMargin: jMarginRight];
+            [dst setTopMargin: jMarginBottom];
+        case kPMPortrait:
+        default:
+            [dst setLeftMargin: jMarginLeft];
+            [dst setTopMargin: jMarginTop];
+            [dst setRightMargin: jMarginRight];
+            [dst setBottomMargin: jMarginBottom];
+            break;
+    }
 
-    [dst setLeftMargin:(CGFloat)jImageX];
-    [dst setTopMargin:(CGFloat)jImageY];
-    [dst setRightMargin:(CGFloat)(jPhysicalWidth - jImageW - jImageX)];
-    [dst setBottomMargin:(CGFloat)(jPhysicalHeight - jImageH - jImageY)];
+    PMRelease(pageFormat);
 }
 
 static void nsPrintInfoToJavaPageFormat(JNIEnv* env, NSPrintInfo* src, jobject dst)
@@ -258,23 +459,23 @@ static void nsPrintInfoToJavaPageFormat(JNIEnv* env, NSPrintInfo* src, jobject d
     DECLARE_METHOD(jm_setPaper, sjc_PageFormat, "setPaper", "(Ljava/awt/print/Paper;)V");
     DECLARE_METHOD(jm_Paper_ctor, sjc_Paper, "<init>", "()V");
 
-    jint jOrientation;
-    switch ([src orientation]) {
-        case NS_PORTRAIT:
+    PMOrientation pmOrientation;
+    if (PMGetOrientation([src PMPageFormat], &pmOrientation) != noErr) {
+        return;
+    }
+
+    jint jOrientation = java_awt_print_PageFormat_PORTRAIT;
+    switch (pmOrientation) {
+        case kPMPortrait:
+        case kPMReversePortrait:
             jOrientation = java_awt_print_PageFormat_PORTRAIT;
             break;
-
-        case NS_LANDSCAPE:
-            jOrientation = java_awt_print_PageFormat_LANDSCAPE; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+        case kPMLandscape:
+            jOrientation = java_awt_print_PageFormat_LANDSCAPE;
             break;
-
-/*
-        // AppKit printing doesn't support REVERSE_LANDSCAPE. Radar 2960295.
-        case NSReverseLandscapeOrientation:
-            jOrientation = java_awt_print_PageFormat.REVERSE_LANDSCAPE; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+        case kPMReverseLandscape:
+            jOrientation = java_awt_print_PageFormat_REVERSE_LANDSCAPE;
             break;
-*/
-
         default:
             jOrientation = java_awt_print_PageFormat_PORTRAIT;
             break;
@@ -310,49 +511,40 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
     DECLARE_METHOD(jm_getPaper, sjc_PageFormat, "getPaper", "()Ljava/awt/print/Paper;");
     DECLARE_METHOD(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;");
 
-    // When setting page information (orientation, size) in NSPrintInfo, set the
-    //  rectangle first. This is because setting the orientation will change the
-    //  rectangle to match.
+    NSPrinter *printer = getPrinter(env, srcPrintJob);
+    if (printer != nil)
+    {
+        [dstPrintInfo setPrinter:printer];
+    }
 
-    // Set up the paper. This will force Portrait since java Paper is
-    //  not oriented. Then setting the NSPrintInfo orientation below
-    //  will flip NSPrintInfo's info as necessary.
     jobject paper = (*env)->CallObjectMethod(env, srcPageFormat, jm_getPaper); // AWT_THREADING Safe (!appKit)
     CHECK_EXCEPTION();
-    javaPaperToNSPrintInfo(env, paper, dstPrintInfo);
-    (*env)->DeleteLocalRef(env, paper);
 
-    switch ((*env)->CallIntMethod(env, srcPageFormat, jm_getOrientation)) { // AWT_THREADING Safe (!appKit)
+    jint jOrientation = (*env)->CallIntMethod(env, srcPageFormat, jm_getOrientation);
+    CHECK_EXCEPTION();
+
+    PMOrientation orientation;
+    switch (jOrientation)
+    {
         case java_awt_print_PageFormat_PORTRAIT:
-            [dstPrintInfo setOrientation:NS_PORTRAIT];
+            orientation = kPMPortrait;
             break;
 
         case java_awt_print_PageFormat_LANDSCAPE:
-            [dstPrintInfo setOrientation:NS_LANDSCAPE]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+            orientation = kPMLandscape;
             break;
 
-        // AppKit printing doesn't support REVERSE_LANDSCAPE. Radar 2960295.
         case java_awt_print_PageFormat_REVERSE_LANDSCAPE:
-            [dstPrintInfo setOrientation:NS_LANDSCAPE]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+            orientation = kPMReverseLandscape;
             break;
 
         default:
-            [dstPrintInfo setOrientation:NS_PORTRAIT];
-            break;
+            orientation = kPMPortrait;
     }
-    CHECK_EXCEPTION();
 
-    // <rdar://problem/4022422> NSPrinterInfo is not correctly set to the selected printer
-    // from the Java side of CPrinterJob. Has always assumed the default printer was the one we wanted.
-    if (srcPrintJob == NULL) return;
-    jobject printerNameObj = (*env)->CallObjectMethod(env, srcPrintJob, jm_getPrinterName);
-    CHECK_EXCEPTION();
-    if (printerNameObj == NULL) return;
-    NSString *printerName = JavaStringToNSString(env, printerNameObj);
-    if (printerName == nil) return;
-    NSPrinter *printer = [NSPrinter printerWithName:printerName];
-    if (printer == nil) return;
-    [dstPrintInfo setPrinter:printer];
+    javaPaperToNSPrintInfo(env, paper, dstPrintInfo, orientation);
+
+    (*env)->DeleteLocalRef(env, paper);
 }
 
 static jint duplexModeToSides(PMDuplexMode duplexMode) {
@@ -597,13 +789,31 @@ JNI_COCOA_EXIT(env);
  * Signature: (Ljava/awt/print/Paper;Ljava/awt/print/Paper;)V
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_validatePaper
-  (JNIEnv *env, jobject jthis, jobject origpaper, jobject newpaper)
+  (JNIEnv *env, jobject jthis, jobject origpaper, jobject newpaper, jint jorientation)
 {
 JNI_COCOA_ENTER(env);
 
+    PMOrientation orientation;
+    switch (jorientation)
+    {
+        case java_awt_print_PageFormat_PORTRAIT:
+            orientation = kPMPortrait;
+            break;
+
+        case java_awt_print_PageFormat_LANDSCAPE:
+            orientation = kPMLandscape;
+            break;
+
+        case java_awt_print_PageFormat_REVERSE_LANDSCAPE:
+            orientation = kPMReverseLandscape;
+            break;
+
+        default:
+            orientation = kPMPortrait;
+    }
 
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
-    javaPaperToNSPrintInfo(env, origpaper, printInfo);
+    javaPaperToNSPrintInfo(env, origpaper, printInfo, orientation);
     makeBestFit(printInfo);
     nsPrintInfoToJavaPaper(env, printInfo, newpaper);
     [printInfo release];
@@ -684,6 +894,13 @@ JNI_COCOA_ENTER(env);
         GET_NSPRINTINFO_METHOD_RETURN(NO)
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
         CHECK_EXCEPTION();
+
+        NSPrinter *printer = getPrinter(env, jthis);
+        if (printer != nil)
+        {
+            [printInfo setPrinter:printer];
+        }
+
         jobject printerTrayObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterTray);
         CHECK_EXCEPTION();
         if (printerTrayObj != NULL) {
@@ -695,18 +912,6 @@ JNI_COCOA_ENTER(env);
 
         // <rdar://problem/4156975> passing jthis CPrinterJob as well, so we can extract the printer name from the current job
         javaPageFormatToNSPrintInfo(env, jthis, page, printInfo);
-
-        // <rdar://problem/4093799> NSPrinterInfo is not correctly set to the selected printer
-        // from the Java side of CPrinterJob. Had always assumed the default printer was the one we wanted.
-        jobject printerNameObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterName);
-        CHECK_EXCEPTION();
-        if (printerNameObj != NULL) {
-            NSString *printerName = JavaStringToNSString(env, printerNameObj);
-            if (printerName != nil) {
-                NSPrinter *printer = [NSPrinter printerWithName:printerName];
-                if (printer != nil) [printInfo setPrinter:printer];
-            }
-        }
 
         // <rdar://problem/4367998> JTable.print attributes are ignored
         jobject pageable = (*env)->CallObjectMethod(env, jthis, jm_getPageable); // AWT_THREADING Safe (!appKit)
