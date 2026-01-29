@@ -1068,11 +1068,6 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
 }
 
 void ShenandoahGenerationalHeap::complete_cycle() {
-  if (young_generation()->is_bootstrap_cycle()) {
-    // Once the bootstrap cycle is completed, the young generation is no longer obliged to mark old
-    young_generation()->clear_bootstrap_configuration();
-  }
-
   // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
   // transient state. Otherwise, these actions have no effect.
   reset_generation_reserves();

@@ -57,6 +57,10 @@ void ShenandoahOldGC::op_final_mark() {
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
 
+    // Old collection is complete, the young generation no longer needs this
+    // reference to the old concurrent mark so clean it up.
+    heap->young_generation()->clear_bootstrap_configuration();
+
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();
 
