@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,8 +397,8 @@ final class DualPivotQuicksort {
                  * excluding known pivots.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
-                    sort(sorter, a, bits | 1, indices[1] + 1, high);
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
                     sorter.fork(bits | 1, indices[0] + 1, indices[1]);
                     sorter.fork(bits | 1, indices[1] + 1, high);
@@ -415,7 +415,7 @@ final class DualPivotQuicksort {
                  * equal and therefore already sorted.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[1], high);
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
                     sorter.fork(bits | 1, indices[1], high);
                 }
@@ -1199,8 +1199,8 @@ final class DualPivotQuicksort {
                  * excluding known pivots.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
-                    sort(sorter, a, bits | 1, indices[1] + 1, high);
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
                     sorter.fork(bits | 1, indices[0] + 1, indices[1]);
                     sorter.fork(bits | 1, indices[1] + 1, high);
@@ -1217,7 +1217,7 @@ final class DualPivotQuicksort {
                  * equal and therefore already sorted.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[1], high);
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
                     sorter.fork(bits | 1, indices[1], high);
                 }
@@ -2955,8 +2955,8 @@ final class DualPivotQuicksort {
                  * excluding known pivots.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
-                    sort(sorter, a, bits | 1, indices[1] + 1, high);
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
                     sorter.fork(bits | 1, indices[0] + 1, indices[1]);
                     sorter.fork(bits | 1, indices[1] + 1, high);
@@ -2973,7 +2973,7 @@ final class DualPivotQuicksort {
                  * equal and therefore already sorted.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[1], high);
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
                     sorter.fork(bits | 1, indices[1], high);
                 }
@@ -3814,8 +3814,8 @@ final class DualPivotQuicksort {
                  * excluding known pivots.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
-                    sort(sorter, a, bits | 1, indices[1] + 1, high);
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
                     sorter.fork(bits | 1, indices[0] + 1, indices[1]);
                     sorter.fork(bits | 1, indices[1] + 1, high);
@@ -3832,7 +3832,7 @@ final class DualPivotQuicksort {
                  * equal and therefore already sorted.
                  */
                 if (sorter == null) {
-                    sort(sorter, a, bits | 1, indices[1], high);
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
                     sorter.fork(bits | 1, indices[1], high);
                 }

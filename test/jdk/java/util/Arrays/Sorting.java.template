@@ -1,6 +1,6 @@
 #if[Common1]
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,20 +312,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor($type$[] a) {
-            int checkSum = 0;
+        private long checkSumXor($type$[] a) {
+            long checkSum = 0;
 
             for ($type$ e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus($type$[] a) {
-            int checkSum = 0;
+        private long checkSumPlus($type$[] a) {
+            long checkSum = 0;
 
             for ($type$ e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,20 +276,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor(int[] a) {
-            int checkSum = 0;
+        private long checkSumXor(int[] a) {
+            long checkSum = 0;
 
             for (int e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus(int[] a) {
-            int checkSum = 0;
+        private long checkSumPlus(int[] a) {
+            long checkSum = 0;
 
             for (int e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }
@@ -752,20 +752,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor(long[] a) {
-            int checkSum = 0;
+        private long checkSumXor(long[] a) {
+            long checkSum = 0;
 
             for (long e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus(long[] a) {
-            int checkSum = 0;
+        private long checkSumPlus(long[] a) {
+            long checkSum = 0;
 
             for (long e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }
@@ -1225,20 +1225,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor(byte[] a) {
-            int checkSum = 0;
+        private long checkSumXor(byte[] a) {
+            long checkSum = 0;
 
             for (byte e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus(byte[] a) {
-            int checkSum = 0;
+        private long checkSumPlus(byte[] a) {
+            long checkSum = 0;
 
             for (byte e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }
@@ -1698,20 +1698,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor(char[] a) {
-            int checkSum = 0;
+        private long checkSumXor(char[] a) {
+            long checkSum = 0;
 
             for (char e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus(char[] a) {
-            int checkSum = 0;
+        private long checkSumPlus(char[] a) {
+            long checkSum = 0;
 
             for (char e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }
@@ -2171,20 +2171,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor(short[] a) {
-            int checkSum = 0;
+        private long checkSumXor(short[] a) {
+            long checkSum = 0;
 
             for (short e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus(short[] a) {
-            int checkSum = 0;
+        private long checkSumPlus(short[] a) {
+            long checkSum = 0;
 
             for (short e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }
@@ -2661,20 +2661,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor(float[] a) {
-            int checkSum = 0;
+        private long checkSumXor(float[] a) {
+            long checkSum = 0;
 
             for (float e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus(float[] a) {
-            int checkSum = 0;
+        private long checkSumPlus(float[] a) {
+            long checkSum = 0;
 
             for (float e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }
@@ -3218,20 +3218,20 @@ public class Sorting {
             }
         }
 
-        private int checkSumXor(double[] a) {
-            int checkSum = 0;
+        private long checkSumXor(double[] a) {
+            long checkSum = 0;
 
             for (double e : a) {
-                checkSum ^= (int) e;
+                checkSum ^= (long) e;
             }
             return checkSum;
         }
 
-        private int checkSumPlus(double[] a) {
-            int checkSum = 0;
+        private long checkSumPlus(double[] a) {
+            long checkSum = 0;
 
             for (double e : a) {
-                checkSum += (int) e;
+                checkSum += (long) e;
             }
             return checkSum;
         }
