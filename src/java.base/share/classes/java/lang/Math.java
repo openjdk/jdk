@@ -108,8 +108,8 @@ import static java.lang.Double.*;
  * sin}, {@link cos cos}, {@link tan tan}, {@link asin asin}, {@link
  * acos acos}, {@link atan atan}, {@link exp exp}, {@link expm1
  * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
- * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link
- * hypot hypot}, and {@link pow pow}.  (The {@link sqrt sqrt}
+ * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link asinh asinh},
+ * {@link hypot hypot}, and {@link pow pow}.  (The {@link sqrt sqrt}
  * operation is a required part of IEEE 754 from a different section
  * of the standard.) The special case behavior of the recommended
  * operations generally follows the guidance of the IEEE 754
