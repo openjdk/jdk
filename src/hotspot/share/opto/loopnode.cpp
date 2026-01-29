@@ -4978,48 +4978,17 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 
 static AddNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
   switch (opcode) {
-    case Op_AddI:
-      return new AddINode(a, b);
-    case Op_AddL:
-      return new AddLNode(a, b);
-    case Op_MinD:
-      return new MinDNode(a, b);
-    case Op_MaxD:
-      return new MaxDNode(a, b);
-    case Op_MinF:
-      return new MinFNode(a, b);
-    case Op_MaxF:
-      return new MaxFNode(a, b);
-    // case Op_MinHF:
-    //   return new MinHFNode(a, b);
-    // case Op_MaxHF:
-    //   return new MaxHFNode(a, b);
-    case Op_MinI:
-      return new MinINode(a, b);
-    case Op_MaxI:
-      return new MaxINode(a, b);
     case Op_MinL:
       return new MinLNode(phase->C, a, b);
     case Op_MaxL:
       return new MaxLNode(phase->C, a, b);
-    case Op_OrI:
-      return new OrINode(a, b);
-    case Op_OrL:
-      return new OrLNode(a, b);
-    case Op_XorI:
-      return new XorINode(a, b);
-    case Op_XorL:
-      return new XorLNode(a, b);
     default:
       ShouldNotReachHere();
   }
 }
 
 static bool is_associative(Node* node) {
-  return node->is_MinMax() ||
-    node->Opcode() == Op_AddI || node->Opcode() == Op_AddL ||
-    node->Opcode() == Op_OrI || node->Opcode() == Op_OrL ||
-    node->Opcode() == Op_XorI || node->Opcode() == Op_XorL;
+  return node->Opcode() == Op_MinL || node->Opcode() == Op_MaxL;
 }
 
 static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* loop_head, PhaseIdealLoop* phase) {
@@ -5042,9 +5011,6 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
   }
 
   Node* reassoc = build_min_max(add_opcode, left, right, phase);
-  // tty->print("[avoid-cmov] reassociate_chain: new node:");
-  // reassoc->dump();
-
   phase->register_new_node(reassoc, loop_head);
   return reassoc;
 }
@@ -5092,22 +5058,12 @@ static void try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
     return;
   }
 
-  // tty->print("[avoid-cmov] try reassociate; chain length: %d\n", chain_length);
-  // tty->print("[avoid-cmov] try reassociate:\n");
-  // tty->print("[avoid-cmov] phi: ");
-  // phi->dump();
-  // tty->print("[avoid-cmov] try reassociate; chain head:\n");
-  // chain_head->dump();
-
   Node* loop_head = lpt->head();
   Node* reassociated = reassociate_chain(opcode, chain_head, phi, loop_head, phase);
 
   Node* new_chain_head = build_min_max(opcode, phi, reassociated, phase);
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
-
-  // tty->print("[avoid-cmov] after reassociate; new chain head:\n");
-  // new_chain_head->dump();
 }
 
 //=============================================================================

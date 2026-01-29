@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8351409
- * @summary Test the IR effects of reduction reassociation on all associative add operations
+ * @summary Test the IR effects of reduction reassociation on long min/max loops
  * @library /test/lib /
  * @compile ../lib/verify/Verify.java
  * @run driver ${test.main.class}
@@ -49,6 +49,13 @@ import java.util.stream.Stream;
 import static compiler.lib.template_framework.Template.*;
 import static compiler.lib.template_framework.Template.let;
 
+/**
+ * For the time being this test only covers Min/Max for Long values,
+ * but it has been designed to easily extend it to other associative AddNode
+ * implementations. For example, if implementing it for AddI or AddL nodes,
+ * a typical loop would generate additional IR nodes. Hence, the test uses
+ * a custom while loop with non-inlined helper methods.
+ */
 public class TestReductionReassociationForAssociativeAdds {
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -93,32 +100,14 @@ public class TestReductionReassociationForAssociativeAdds {
     }
 
     enum AssociativeAdd {
-        ADD_I(CodeGenerationDataNameType.ints()),
-        ADD_L(CodeGenerationDataNameType.longs()),
-        MIN_D(CodeGenerationDataNameType.doubles()),
-        MAX_D(CodeGenerationDataNameType.doubles()),
-//        MIN_HF(CodeGenerationDataNameType.float16()),
-//        MAX_HF(CodeGenerationDataNameType.float16()),
-        MIN_F(CodeGenerationDataNameType.floats()),
-        MAX_F(CodeGenerationDataNameType.floats()),
-        MIN_I(CodeGenerationDataNameType.ints()),
-        MAX_I(CodeGenerationDataNameType.ints()),
         MIN_L(CodeGenerationDataNameType.longs()),
-        MAX_L(CodeGenerationDataNameType.longs()),
-        OR_I(CodeGenerationDataNameType.ints()),
-        OR_L(CodeGenerationDataNameType.longs()),
-        XOR_I(CodeGenerationDataNameType.ints()),
-        XOR_L(CodeGenerationDataNameType.longs());
+        MAX_L(CodeGenerationDataNameType.longs());
 
         final CodeGenerationDataNameType type;
 
         AssociativeAdd(CodeGenerationDataNameType type) {
             this.type = type;
         }
-
-//        boolean isFloat16() {
-//            return MIN_HF == this || MAX_HF == this;
-//        }
     }
 
     record TestGenerator(AssociativeAdd add, int batchSize, int size) {
@@ -191,17 +180,8 @@ public class TestReductionReassociationForAssociativeAdds {
                 let("a", a),
                 let("b", b),
                 switch (add) {
-                    case ADD_I, ADD_L -> "#a + #b";
-                    case MIN_D -> "Double.min(#a, #b)";
-                    case MAX_D -> "Double.max(#a, #b)";
-                    case MIN_F -> "Float.min(#a, #b)";
-                    case MAX_F -> "Float.max(#a, #b)";
-                    case MIN_I -> "Integer.min(#a, #b)";
-                    case MAX_I -> "Integer.max(#a, #b)";
                     case MIN_L -> "Long.min(#a, #b)";
                     case MAX_L -> "Long.max(#a, #b)";
-                    case OR_I, OR_L -> "#a | #b";
-                    case XOR_I, XOR_L -> "#a ^ #b";
                 }
             ));
             return template.asToken();
@@ -214,9 +194,8 @@ public class TestReductionReassociationForAssociativeAdds {
                 let("type", add.type.name()),
                 "#type ", resultName, " = ",
                 switch (add) {
-                    case MIN_D, MIN_F, MIN_I, MIN_L -> "#boxedType.MAX_VALUE";
-                    case ADD_I, ADD_L, MAX_D, MAX_F, MAX_I, MAX_L -> "#boxedType.MIN_VALUE";
-                    case OR_I, OR_L, XOR_I, XOR_L -> "0";
+                    case MIN_L -> "#boxedType.MAX_VALUE";
+                    case MAX_L -> "#boxedType.MIN_VALUE";
                 },
                 ";\n"
             ));
@@ -247,6 +226,9 @@ public class TestReductionReassociationForAssociativeAdds {
                 """,
                 generateResultInit("result"),
                 generateResultInit("result2"),
+                // A manually constructed loop that uses auxiliary methods
+                // that doesn't produce associative Add nodes that could get
+                // in the way of commoning.
                 """
                 int i = 0;
                 while (i < #input.length) {
