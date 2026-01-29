@@ -389,8 +389,7 @@ public class Supplementary {
      * Test codePointCount(int, int) &
      *      codePointCount()
      *
-     * This test case assumes that Character.codePointCount() &
-     * Character.codePointCount(CharSequence, int, int) works
+     * This test case assumes that Character.codePointCount(CharSequence, int, int) works
      * correctly.
      */
     static void test8() {
@@ -421,7 +420,7 @@ public class Supplementary {
             }
 
             int result = str.codePointCount();
-            int expected = Character.codePointCount(str);
+            int expected = Character.codePointCount(str, 0, str.length());
             check(result != expected, "substring:codePointCount()", result, expected);
 
             // test exceptions
