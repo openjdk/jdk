@@ -134,7 +134,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 MenuSelectionManager msm = MenuSelectionManager.defaultManager();
                 msm.addChangeListener(helper);
                 menuKeyboardHelper = helper;
-                
+
             }
         }
     }
