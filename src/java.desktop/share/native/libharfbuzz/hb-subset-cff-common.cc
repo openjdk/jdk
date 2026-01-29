@@ -47,13 +47,13 @@ using namespace CFF;
 
 bool
 hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
-			     unsigned int fdCount,
-			     const FDSelect &src, /* IN */
-			     unsigned int &subset_fd_count /* OUT */,
-			     unsigned int &subset_fdselect_size /* OUT */,
-			     unsigned int &subset_fdselect_format /* OUT */,
-			     hb_vector_t<code_pair_t> &fdselect_ranges /* OUT */,
-			     hb_inc_bimap_t &fdmap /* OUT */)
+                             unsigned int fdCount,
+                             const FDSelect &src, /* IN */
+                             unsigned int &subset_fd_count /* OUT */,
+                             unsigned int &subset_fdselect_size /* OUT */,
+                             unsigned int &subset_fdselect_format /* OUT */,
+                             hb_vector_t<code_pair_t> &fdselect_ranges /* OUT */,
+                             hb_inc_bimap_t &fdmap /* OUT */)
 {
   subset_fd_count = 0;
   subset_fdselect_size = 0;
@@ -76,27 +76,27 @@ hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
       hb_codepoint_t old_glyph;
       if (gid == _.first)
       {
-	old_glyph = _.second;
-	_ = *++it;
+        old_glyph = _.second;
+        _ = *++it;
       }
       else
       {
-	/* fonttools retains FDSelect & font dicts for missing glyphs. do the same */
-	old_glyph = gid;
+        /* fonttools retains FDSelect & font dicts for missing glyphs. do the same */
+        old_glyph = gid;
       }
       if (old_glyph >= last_range.second)
-	last_range = src.get_fd_range (old_glyph);
+        last_range = src.get_fd_range (old_glyph);
       unsigned fd = last_range.first;
 
       if (fd != prev_fd)
       {
-	set.add (fd);
-	num_ranges++;
-	prev_fd = fd;
-	fdselect_ranges.push (code_pair_t { fd, gid });
+        set.add (fd);
+        num_ranges++;
+        prev_fd = fd;
+        fdselect_ranges.push (code_pair_t { fd, gid });
 
-	if (gid == old_glyph)
-	  gid = hb_min (_.first - 1, last_range.second - 1);
+        if (gid == old_glyph)
+          gid = hb_min (_.first - 1, last_range.second - 1);
       }
     }
 
@@ -113,9 +113,9 @@ hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
 
       hb_codepoint_t fd = CFF_UNDEF_CODE;
       while (set.next (&fd))
-	fdmap.add (fd);
+        fdmap.add (fd);
       if (unlikely (fdmap.get_population () != subset_fd_count))
-	return false;
+        return false;
     }
 
     /* update each font dict index stored as "code" in fdselect_ranges */
@@ -158,10 +158,10 @@ hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
 template <typename FDSELECT3_4>
 static inline bool
 serialize_fdselect_3_4 (hb_serialize_context_t *c,
-			const unsigned int num_glyphs,
-			const FDSelect &src,
-			unsigned int size,
-			const hb_vector_t<code_pair_t> &fdselect_ranges)
+                        const unsigned int num_glyphs,
+                        const FDSelect &src,
+                        unsigned int size,
+                        const hb_vector_t<code_pair_t> &fdselect_ranges)
 {
   TRACE_SERIALIZE (this);
   FDSELECT3_4 *p = c->allocate_size<FDSELECT3_4> (size);
@@ -179,12 +179,12 @@ serialize_fdselect_3_4 (hb_serialize_context_t *c,
 /* Serialize a subset FDSelect format planned above. */
 bool
 hb_serialize_cff_fdselect (hb_serialize_context_t *c,
-			   const unsigned int num_glyphs,
-			   const FDSelect &src,
-			   unsigned int fd_count,
-			   unsigned int fdselect_format,
-			   unsigned int size,
-			   const hb_vector_t<code_pair_t> &fdselect_ranges)
+                           const unsigned int num_glyphs,
+                           const FDSelect &src,
+                           unsigned int fd_count,
+                           unsigned int fdselect_format,
+                           unsigned int size,
+                           const hb_vector_t<code_pair_t> &fdselect_ranges)
 {
   TRACE_SERIALIZE (this);
   FDSelect *p = c->allocate_min<FDSelect> ();
@@ -204,9 +204,9 @@ hb_serialize_cff_fdselect (hb_serialize_context_t *c,
     for (unsigned int i = 0; i < num_glyphs; i++)
     {
       if ((range_index < fdselect_ranges.len) &&
-	  (i >= fdselect_ranges[range_index].glyph))
+          (i >= fdselect_ranges[range_index].glyph))
       {
-	fd = fdselect_ranges[range_index++].code;
+        fd = fdselect_ranges[range_index++].code;
       }
       p->fds[i] = fd;
     }
@@ -216,11 +216,11 @@ hb_serialize_cff_fdselect (hb_serialize_context_t *c,
 
   case 3:
     return serialize_fdselect_3_4<FDSelect3> (c, num_glyphs, src,
-					      size, fdselect_ranges);
+                                              size, fdselect_ranges);
 
   case 4:
     return serialize_fdselect_3_4<FDSelect4> (c, num_glyphs, src,
-					      size, fdselect_ranges);
+                                              size, fdselect_ranges);
 
   default:
     return_trace (false);

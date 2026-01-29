@@ -178,15 +178,15 @@ template <typename T1, typename T2> struct hb_non_void_t { typedef T1 value; };
 template <typename T2> struct hb_non_void_t<void, T2> { typedef T2 value; };
 
 template <typename Returned,
-	  typename Subclass = void,
-	  typename Data = void,
-	  unsigned int WheresData = 0,
-	  typename Stored = Returned>
+          typename Subclass = void,
+          typename Data = void,
+          unsigned int WheresData = 0,
+          typename Stored = Returned>
 struct hb_lazy_loader_t : hb_data_wrapper_t<Data, WheresData>
 {
   typedef typename hb_non_void_t<Subclass,
-				 hb_lazy_loader_t<Returned,Subclass,Data,WheresData,Stored>
-				>::value Funcs;
+                                 hb_lazy_loader_t<Returned,Subclass,Data,WheresData,Stored>
+                                >::value Funcs;
 
   hb_lazy_loader_t () = default;
   hb_lazy_loader_t (const hb_lazy_loader_t &other) = delete;
@@ -224,16 +224,16 @@ struct hb_lazy_loader_t : hb_data_wrapper_t<Data, WheresData>
     if (unlikely (!p))
     {
       if (unlikely (this->is_inert ()))
-	return const_cast<Stored *> (Funcs::get_null ());
+        return const_cast<Stored *> (Funcs::get_null ());
 
       p = this->template call_create<Stored, Funcs> ();
       if (unlikely (!p))
-	p = const_cast<Stored *> (Funcs::get_null ());
+        p = const_cast<Stored *> (Funcs::get_null ());
 
       if (unlikely (!cmpexch (nullptr, p)))
       {
-	do_destroy (p);
-	goto retry;
+        do_destroy (p);
+        goto retry;
       }
     }
     return p;
@@ -288,8 +288,8 @@ struct hb_lazy_loader_t : hb_data_wrapper_t<Data, WheresData>
 
 template <typename T, unsigned int WheresFace>
 struct hb_face_lazy_loader_t : hb_lazy_loader_t<T,
-						hb_face_lazy_loader_t<T, WheresFace>,
-						hb_face_t, WheresFace>
+                                                hb_face_lazy_loader_t<T, WheresFace>,
+                                                hb_face_t, WheresFace>
 {
   // Hack; have them here for API parity with hb_table_lazy_loader_t
   hb_blob_t *get_blob () { return this->get ()->get_blob (); }
@@ -297,9 +297,9 @@ struct hb_face_lazy_loader_t : hb_lazy_loader_t<T,
 
 template <typename T, unsigned int WheresFace, bool core=false>
 struct hb_table_lazy_loader_t : hb_lazy_loader_t<T,
-						 hb_table_lazy_loader_t<T, WheresFace, core>,
-						 hb_face_t, WheresFace,
-						 hb_blob_t>
+                                                 hb_table_lazy_loader_t<T, WheresFace, core>,
+                                                 hb_face_t, WheresFace,
+                                                 hb_blob_t>
 {
   static hb_blob_t *create (hb_face_t *face)
   {

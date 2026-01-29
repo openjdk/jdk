@@ -55,26 +55,26 @@ struct str_encoder_t
     if ((-1131 <= v) && (v <= 1131))
     {
       if ((-107 <= v) && (v <= 107))
-	encode_byte (v + 139);
+        encode_byte (v + 139);
       else if (v > 0)
       {
-	v -= 108;
-	encode_byte ((v >> 8) + OpCode_TwoBytePosInt0);
-	encode_byte (v & 0xFF);
+        v -= 108;
+        encode_byte ((v >> 8) + OpCode_TwoBytePosInt0);
+        encode_byte (v & 0xFF);
       }
       else
       {
-	v = -v - 108;
-	encode_byte ((v >> 8) + OpCode_TwoByteNegInt0);
-	encode_byte (v & 0xFF);
+        v = -v - 108;
+        encode_byte ((v >> 8) + OpCode_TwoByteNegInt0);
+        encode_byte (v & 0xFF);
       }
     }
     else
     {
       if (unlikely (v < -32768))
-	v = -32768;
+        v = -32768;
       else if (unlikely (v > 32767))
-	v = 32767;
+        v = 32767;
       encode_byte (OpCode_shortint);
       encode_byte ((v >> 8) & 0xFF);
       encode_byte (v & 0xFF);
@@ -136,92 +136,92 @@ struct str_encoder_t
       size_t len;
       char *comma = strchr (s, ',');
       if (comma) // Comma for some European locales in case no uselocale available.
-	*comma = '.';
+        *comma = '.';
       if (s[0] == '0' && s[1] == '.')
-	s++;
+        s++;
       else if (s[0] == '-' && s[1] == '0' && s[2] == '.')
       {
-	s[1] = '-';
-	s++;
+        s[1] = '-';
+        s++;
       }
       else if ((len = strlen (s)) > 3 && !strcmp (s + len - 3, "000"))
       {
-	unsigned exponent = len - 3;
-	char *s2 = s + exponent - 1;
-	while (*s2 == '0' && exponent > 1)
-	{
-	  s2--;
-	  exponent++;
-	}
-	snprintf (s2 + 1, sizeof (buf) - (s2 + 1 - buf), "E%u", exponent);
+        unsigned exponent = len - 3;
+        char *s2 = s + exponent - 1;
+        while (*s2 == '0' && exponent > 1)
+        {
+          s2--;
+          exponent++;
+        }
+        snprintf (s2 + 1, sizeof (buf) - (s2 + 1 - buf), "E%u", exponent);
       }
       else
       {
-	char *dot = strchr (s, '.');
-	char *e = strchr (s, 'E');
-	if (dot && e)
-	{
-	  memmove (dot, dot + 1, e - (dot + 1));
-	  int exponent = atoi (e + 1);
-	  int new_exponent = exponent - (e - (dot + 1));
-	  if (new_exponent == 1)
-	  {
-	    e[-1] = '0';
-	    e[0] = '\0';
-	  }
-	  else
-	    snprintf (e - 1, sizeof (buf) - (e - 1 - buf), "E%d", new_exponent);
-	}
+        char *dot = strchr (s, '.');
+        char *e = strchr (s, 'E');
+        if (dot && e)
+        {
+          memmove (dot, dot + 1, e - (dot + 1));
+          int exponent = atoi (e + 1);
+          int new_exponent = exponent - (e - (dot + 1));
+          if (new_exponent == 1)
+          {
+            e[-1] = '0';
+            e[0] = '\0';
+          }
+          else
+            snprintf (e - 1, sizeof (buf) - (e - 1 - buf), "E%d", new_exponent);
+        }
       }
       if ((s[0] == '.' && s[1] == '0') || (s[0] == '-' && s[1] == '.' && s[2] == '0'))
       {
-	int sign = s[0] == '-';
-	char *s2 = s + sign + 1;
-	while (*s2 == '0')
-	  s2++;
-	len = strlen (s2);
-	memmove (s + sign, s2, len);
-	snprintf (s + sign + len, sizeof (buf) - (s + sign + len - buf), "E-%u", (unsigned) (strlen (s + sign) - 1));
+        int sign = s[0] == '-';
+        char *s2 = s + sign + 1;
+        while (*s2 == '0')
+          s2++;
+        len = strlen (s2);
+        memmove (s + sign, s2, len);
+        snprintf (s + sign + len, sizeof (buf) - (s + sign + len - buf), "E-%u", (unsigned) (strlen (s + sign) - 1));
       }
       hb_vector_t<char> nibbles;
       while (*s)
       {
-	char c = s[0];
-	s++;
+        char c = s[0];
+        s++;
 
-	switch (c)
-	{
-	  case 'E':
-	  {
-	    char c2 = *s;
-	    if (c2 == '-')
-	    {
-	      s++;
-	      nibbles.push (0x0C); // E-
-	    } else {
-	      if (c2 == '+')
-		s++;
-	      nibbles.push (0x0B); // E
-	    }
-	    if (*s == '0')
-	      s++;
-	    continue;
-	  }
+        switch (c)
+        {
+          case 'E':
+          {
+            char c2 = *s;
+            if (c2 == '-')
+            {
+              s++;
+              nibbles.push (0x0C); // E-
+            } else {
+              if (c2 == '+')
+                s++;
+              nibbles.push (0x0B); // E
+            }
+            if (*s == '0')
+              s++;
+            continue;
+          }
 
-	  case '.':
-	    nibbles.push (0x0A); // .
-	    continue;
+          case '.':
+            nibbles.push (0x0A); // .
+            continue;
 
-	  case '-':
-	    nibbles.push (0x0E); // -
-	    continue;
-	}
+          case '-':
+            nibbles.push (0x0E); // -
+            continue;
+        }
 
-	nibbles.push (c - '0');
+        nibbles.push (c - '0');
       }
       nibbles.push (0x0F);
       if (nibbles.length % 2)
-	nibbles.push (0x0F);
+        nibbles.push (0x0F);
 
       unsigned count = nibbles.length;
       for (unsigned i = 0; i < count; i += 2)
@@ -263,32 +263,32 @@ struct cff_sub_table_info_t {
   }
 
   table_info_t     fd_select;
-  objidx_t     	   fd_array_link;
-  objidx_t     	   char_strings_link;
+  objidx_t         fd_array_link;
+  objidx_t         char_strings_link;
 };
 
 template <typename OPSTR=op_str_t>
 struct cff_top_dict_op_serializer_t : op_serializer_t
 {
   bool serialize (hb_serialize_context_t *c,
-		  const OPSTR &opstr,
-		  const cff_sub_table_info_t &info) const
+                  const OPSTR &opstr,
+                  const cff_sub_table_info_t &info) const
   {
     TRACE_SERIALIZE (this);
 
     switch (opstr.op)
     {
       case OpCode_CharStrings:
-	return_trace (FontDict::serialize_link4_op(c, opstr.op, info.char_strings_link, whence_t::Absolute));
+        return_trace (FontDict::serialize_link4_op(c, opstr.op, info.char_strings_link, whence_t::Absolute));
 
       case OpCode_FDArray:
-	return_trace (FontDict::serialize_link4_op(c, opstr.op, info.fd_array_link, whence_t::Absolute));
+        return_trace (FontDict::serialize_link4_op(c, opstr.op, info.fd_array_link, whence_t::Absolute));
 
       case OpCode_FDSelect:
-	return_trace (FontDict::serialize_link4_op(c, opstr.op, info.fd_select.link, whence_t::Absolute));
+        return_trace (FontDict::serialize_link4_op(c, opstr.op, info.fd_select.link, whence_t::Absolute));
 
       default:
-	return_trace (copy_opstr (c, opstr));
+        return_trace (copy_opstr (c, opstr));
     }
     return_trace (true);
   }
@@ -297,8 +297,8 @@ struct cff_top_dict_op_serializer_t : op_serializer_t
 struct cff_font_dict_op_serializer_t : op_serializer_t
 {
   bool serialize (hb_serialize_context_t *c,
-		  const op_str_t &opstr,
-		  const table_info_t &privateDictInfo) const
+                  const op_str_t &opstr,
+                  const table_info_t &privateDictInfo) const
   {
     TRACE_SERIALIZE (this);
 
@@ -306,7 +306,7 @@ struct cff_font_dict_op_serializer_t : op_serializer_t
     {
       /* serialize the private dict size & offset as 2-byte & 4-byte integers */
       return_trace (UnsizedByteStr::serialize_int2 (c, privateDictInfo.size) &&
-		    Dict::serialize_link4_op (c, opstr.op, privateDictInfo.link, whence_t::Absolute));
+                    Dict::serialize_link4_op (c, opstr.op, privateDictInfo.link, whence_t::Absolute));
     }
     else
     {
@@ -314,7 +314,7 @@ struct cff_font_dict_op_serializer_t : op_serializer_t
       if (unlikely (!d)) return_trace (false);
       /* Faster than hb_memcpy for small strings. */
       for (unsigned i = 0; i < opstr.length; i++)
-	d[i] = opstr.ptr[i];
+        d[i] = opstr.ptr[i];
       //hb_memcpy (d, opstr.ptr, opstr.length);
     }
     return_trace (true);
@@ -324,7 +324,7 @@ struct cff_font_dict_op_serializer_t : op_serializer_t
 struct flatten_param_t
 {
   str_buff_t     &flatStr;
-  bool	drop_hints;
+  bool  drop_hints;
   const hb_subset_plan_t *plan;
 };
 
@@ -332,8 +332,8 @@ template <typename ACC, typename ENV, typename OPSET, op_code_t endchar_op=OpCod
 struct subr_flattener_t
 {
   subr_flattener_t (const ACC &acc_,
-		    const hb_subset_plan_t *plan_)
-		   : acc (acc_), plan (plan_) {}
+                    const hb_subset_plan_t *plan_)
+                   : acc (acc_), plan (plan_) {}
 
   bool flatten (str_buff_vec_t &flat_charstrings)
   {
@@ -345,26 +345,26 @@ struct subr_flattener_t
       hb_codepoint_t  glyph;
       if (!plan->old_gid_for_new_gid (i, &glyph))
       {
-	/* add an endchar only charstring for a missing glyph if CFF1 */
-	if (endchar_op != OpCode_Invalid) flat_charstrings[i].push (endchar_op);
-	continue;
+        /* add an endchar only charstring for a missing glyph if CFF1 */
+        if (endchar_op != OpCode_Invalid) flat_charstrings[i].push (endchar_op);
+        continue;
       }
       const hb_ubytes_t str = (*acc.charStrings)[glyph];
       unsigned int fd = acc.fdSelect->get_fd (glyph);
       if (unlikely (fd >= acc.fdCount))
-	return false;
+        return false;
 
 
       ENV env (str, acc, fd,
-	       plan->normalized_coords.arrayZ, plan->normalized_coords.length);
+               plan->normalized_coords.arrayZ, plan->normalized_coords.length);
       cs_interpreter_t<ENV, OPSET, flatten_param_t> interp (env);
       flatten_param_t  param = {
         flat_charstrings.arrayZ[i],
         (bool) (plan->flags & HB_SUBSET_FLAGS_NO_HINTING),
-	plan
+        plan
       };
       if (unlikely (!interp.interpret (param)))
-	return false;
+        return false;
     }
     return true;
   }
@@ -404,7 +404,7 @@ struct parsed_cs_op_t : op_str_t
    * padding of op_str_t! */
 
   protected:
-  bool	  hinting_flag = false;
+  bool    hinting_flag = false;
 
   public:
   uint16_t subr_num;
@@ -450,7 +450,7 @@ struct parsed_cs_str_t : parsed_values_t<parsed_cs_op_t>
   bool at_end (unsigned int pos) const
   {
     return ((pos + 1 >= values.length) /* CFF2 */
-	|| (values[pos + 1].op == OpCode_return));
+        || (values[pos + 1].op == OpCode_return));
   }
 
   bool is_parsed () const { return parsed; }
@@ -486,12 +486,12 @@ struct parsed_cs_str_t : parsed_values_t<parsed_cs_op_t>
 
       if (combine)
       {
-	opstr[j].length += opstr[i].length;
-	opstr[j].op = OpCode_Invalid;
+        opstr[j].length += opstr[i].length;
+        opstr[j].op = OpCode_Invalid;
       }
       else
       {
-	opstr[++j] = opstr[i];
+        opstr[++j] = opstr[i];
       }
     }
     values.shrink (j + 1);
@@ -503,8 +503,8 @@ struct parsed_cs_str_t : parsed_values_t<parsed_cs_op_t>
   bool    vsindex_dropped : 1;
   bool    has_prefix_ : 1;
   bool    has_calls_ : 1;
-  op_code_t	prefix_op_;
-  number_t	prefix_num_;
+  op_code_t     prefix_op_;
+  number_t      prefix_num_;
 
   private:
   typedef parsed_values_t<parsed_cs_op_t> SUPER;
@@ -579,11 +579,11 @@ struct cff_subset_accelerator_t
 struct subr_subset_param_t
 {
   subr_subset_param_t (parsed_cs_str_t *parsed_charstring_,
-		       parsed_cs_str_vec_t *parsed_global_subrs_,
-		       parsed_cs_str_vec_t *parsed_local_subrs_,
-		       hb_set_t *global_closure_,
-		       hb_set_t *local_closure_,
-		       bool drop_hints_) :
+                       parsed_cs_str_vec_t *parsed_global_subrs_,
+                       parsed_cs_str_vec_t *parsed_local_subrs_,
+                       hb_set_t *global_closure_,
+                       hb_set_t *local_closure_,
+                       bool drop_hints_) :
       current_parsed_str (parsed_charstring_),
       parsed_charstring (parsed_charstring_),
       parsed_global_subrs (parsed_global_subrs_),
@@ -597,17 +597,17 @@ struct subr_subset_param_t
     switch (context.type)
     {
       case CSType_CharString:
-	return parsed_charstring;
+        return parsed_charstring;
 
       case CSType_LocalSubr:
-	if (likely (context.subr_num < parsed_local_subrs->length))
-	  return &(*parsed_local_subrs)[context.subr_num];
-	break;
+        if (likely (context.subr_num < parsed_local_subrs->length))
+          return &(*parsed_local_subrs)[context.subr_num];
+        break;
 
       case CSType_GlobalSubr:
-	if (likely (context.subr_num < parsed_global_subrs->length))
-	  return &(*parsed_global_subrs)[context.subr_num];
-	break;
+        if (likely (context.subr_num < parsed_global_subrs->length))
+          return &(*parsed_global_subrs)[context.subr_num];
+        break;
     }
     return nullptr;
   }
@@ -634,14 +634,14 @@ struct subr_subset_param_t
     }
   }
 
-  parsed_cs_str_t	*current_parsed_str;
+  parsed_cs_str_t       *current_parsed_str;
 
-  parsed_cs_str_t	*parsed_charstring;
-  parsed_cs_str_vec_t	*parsed_global_subrs;
-  parsed_cs_str_vec_t	*parsed_local_subrs;
+  parsed_cs_str_t       *parsed_charstring;
+  parsed_cs_str_vec_t   *parsed_global_subrs;
+  parsed_cs_str_vec_t   *parsed_local_subrs;
   hb_set_t      *global_closure;
   hb_set_t      *local_closure;
-  bool	  drop_hints;
+  bool    drop_hints;
 };
 
 struct subr_remap_t : hb_inc_bimap_t
@@ -693,7 +693,7 @@ struct subr_remaps_t
       local_remaps.arrayZ[i].create (&closures.local_closures[i]);
   }
 
-  subr_remap_t	       global_remap;
+  subr_remap_t         global_remap;
   hb_vector_t<subr_remap_t>  local_remaps;
 };
 
@@ -802,20 +802,20 @@ struct subr_subsetter_t
       /* mark hint ops and arguments for drop */
       if ((plan->flags & HB_SUBSET_FLAGS_NO_HINTING) || plan->inprogress_accelerator)
       {
-	subr_subset_param_t  param (&parsed_charstrings[new_glyph],
-				    &parsed_global_subrs_storage,
-				    &parsed_local_subrs_storage[fd],
-				    &closures.global_closure,
-				    &closures.local_closures[fd],
-				    plan->flags & HB_SUBSET_FLAGS_NO_HINTING);
+        subr_subset_param_t  param (&parsed_charstrings[new_glyph],
+                                    &parsed_global_subrs_storage,
+                                    &parsed_local_subrs_storage[fd],
+                                    &closures.global_closure,
+                                    &closures.local_closures[fd],
+                                    plan->flags & HB_SUBSET_FLAGS_NO_HINTING);
 
-	drop_hints_param_t  drop;
-	if (drop_hints_in_str (parsed_charstrings[new_glyph], param, drop))
-	{
-	  parsed_charstrings[new_glyph].set_hint_dropped ();
-	  if (drop.vsindex_dropped)
-	    parsed_charstrings[new_glyph].set_vsindex_dropped ();
-	}
+        drop_hints_param_t  drop;
+        if (drop_hints_in_str (parsed_charstrings[new_glyph], param, drop))
+        {
+          parsed_charstrings[new_glyph].set_hint_dropped ();
+          if (drop.vsindex_dropped)
+            parsed_charstrings[new_glyph].set_vsindex_dropped ();
+        }
       }
 
       /* Doing this here one by one instead of compacting all at the end
@@ -834,7 +834,7 @@ struct subr_subsetter_t
      * Or if we are dropping hinting, redo closure to get actually used subrs.
      */
     if ((cff_accelerator ||
-	(!cff_accelerator && plan->flags & HB_SUBSET_FLAGS_NO_HINTING)) &&
+        (!cff_accelerator && plan->flags & HB_SUBSET_FLAGS_NO_HINTING)) &&
         !closure_subroutines(*parsed_global_subrs,
                              *parsed_local_subrs))
       return false;
@@ -858,25 +858,25 @@ struct subr_subsetter_t
 
       if (endchar_op != OpCode_Invalid)
         for (; last < gid; last++)
-	{
-	  // Hack to point vector to static string.
-	  auto &b = buffArray.arrayZ[last];
-	  b.set_storage (const_cast<unsigned char *>(endchar_str), 1);
-	}
+        {
+          // Hack to point vector to static string.
+          auto &b = buffArray.arrayZ[last];
+          b.set_storage (const_cast<unsigned char *>(endchar_str), 1);
+        }
 
       last++; // Skip over gid
       unsigned int  fd = acc.fdSelect->get_fd (old_glyph);
       if (unlikely (fd >= acc.fdCount))
-	return false;
+        return false;
       if (unlikely (!encode_str (get_parsed_charstring (gid), fd, buffArray.arrayZ[gid], encode_prefix)))
-	return false;
+        return false;
     }
     if (endchar_op != OpCode_Invalid)
       for (; last < num_glyphs; last++)
       {
-	// Hack to point vector to static string.
-	auto &b = buffArray.arrayZ[last];
-	b.set_storage (const_cast<unsigned char *>(endchar_str), 1);
+        // Hack to point vector to static string.
+        auto &b = buffArray.arrayZ[last];
+        b.set_storage (const_cast<unsigned char *>(endchar_str), 1);
       }
 
     return true;
@@ -894,7 +894,7 @@ struct subr_subsetter_t
       assert (old_num != CFF_UNDEF_CODE);
 
       if (unlikely (!encode_str (subrs[old_num], fd, buffArray[new_num])))
-	return false;
+        return false;
     }
     return true;
   }
@@ -914,9 +914,9 @@ struct subr_subsetter_t
   {
     drop_hints_param_t ()
       : seen_moveto (false),
-	ends_in_hint (false),
-	all_dropped (false),
-	vsindex_dropped (false) {}
+        ends_in_hint (false),
+        all_dropped (false),
+        vsindex_dropped (false) {}
 
     bool  seen_moveto;
     bool  ends_in_hint;
@@ -925,8 +925,8 @@ struct subr_subsetter_t
   };
 
   bool drop_hints_in_subr (parsed_cs_str_t &str, unsigned int pos,
-			   parsed_cs_str_vec_t &subrs, unsigned int subr_num,
-			   const subr_subset_param_t &param, drop_hints_param_t &drop)
+                           parsed_cs_str_vec_t &subrs, unsigned int subr_num,
+                           const subr_subset_param_t &param, drop_hints_param_t &drop)
   {
     drop.ends_in_hint = false;
     bool has_hint = drop_hints_in_str (subrs[subr_num], param, drop);
@@ -939,7 +939,7 @@ struct subr_subsetter_t
       /* if this subr call is at the end of the parent subr, propagate the flag
        * otherwise reset the flag */
       if (!str.at_end (pos))
-	drop.ends_in_hint = false;
+        drop.ends_in_hint = false;
     }
     else if (drop.all_dropped)
     {
@@ -961,63 +961,63 @@ struct subr_subsetter_t
       bool  has_hint = false;
       switch (values[pos].op)
       {
-	case OpCode_callsubr:
-	  has_hint = drop_hints_in_subr (str, pos,
-					*param.parsed_local_subrs, values[pos].subr_num,
-					param, drop);
-	  break;
+        case OpCode_callsubr:
+          has_hint = drop_hints_in_subr (str, pos,
+                                        *param.parsed_local_subrs, values[pos].subr_num,
+                                        param, drop);
+          break;
 
-	case OpCode_callgsubr:
-	  has_hint = drop_hints_in_subr (str, pos,
-					*param.parsed_global_subrs, values[pos].subr_num,
-					param, drop);
-	  break;
+        case OpCode_callgsubr:
+          has_hint = drop_hints_in_subr (str, pos,
+                                        *param.parsed_global_subrs, values[pos].subr_num,
+                                        param, drop);
+          break;
 
-	case OpCode_rmoveto:
-	case OpCode_hmoveto:
-	case OpCode_vmoveto:
-	  drop.seen_moveto = true;
-	  break;
+        case OpCode_rmoveto:
+        case OpCode_hmoveto:
+        case OpCode_vmoveto:
+          drop.seen_moveto = true;
+          break;
 
-	case OpCode_hintmask:
-	case OpCode_cntrmask:
-	  if (drop.seen_moveto)
-	  {
-	    values[pos].set_hinting ();
-	    break;
-	  }
-	  HB_FALLTHROUGH;
+        case OpCode_hintmask:
+        case OpCode_cntrmask:
+          if (drop.seen_moveto)
+          {
+            values[pos].set_hinting ();
+            break;
+          }
+          HB_FALLTHROUGH;
 
-	case OpCode_hstemhm:
-	case OpCode_vstemhm:
-	case OpCode_hstem:
-	case OpCode_vstem:
-	  has_hint = true;
-	  values[pos].set_hinting ();
-	  if (str.at_end (pos))
-	    drop.ends_in_hint = true;
-	  break;
+        case OpCode_hstemhm:
+        case OpCode_vstemhm:
+        case OpCode_hstem:
+        case OpCode_vstem:
+          has_hint = true;
+          values[pos].set_hinting ();
+          if (str.at_end (pos))
+            drop.ends_in_hint = true;
+          break;
 
-	case OpCode_dotsection:
-	  values[pos].set_hinting ();
-	  break;
+        case OpCode_dotsection:
+          values[pos].set_hinting ();
+          break;
 
-	default:
-	  /* NONE */
-	  break;
+        default:
+          /* NONE */
+          break;
       }
       if (has_hint)
       {
-	for (int i = pos - 1; i >= 0; i--)
-	{
-	  parsed_cs_op_t  &csop = values[(unsigned)i];
-	  if (csop.is_hinting ())
-	    break;
-	  csop.set_hinting ();
-	  if (csop.op == OpCode_vsindexcs)
-	    drop.vsindex_dropped = true;
-	}
-	seen_hint |= has_hint;
+        for (int i = pos - 1; i >= 0; i--)
+        {
+          parsed_cs_op_t  &csop = values[(unsigned)i];
+          if (csop.is_hinting ())
+            break;
+          csop.set_hinting ();
+          if (csop.op == OpCode_vsindexcs)
+            drop.vsindex_dropped = true;
+        }
+        seen_hint |= has_hint;
       }
     }
 
@@ -1030,11 +1030,11 @@ struct subr_subsetter_t
     {
       parsed_cs_op_t  &csop = values[pos];
       if (csop.op == OpCode_return)
-	break;
+        break;
       if (!csop.is_hinting ())
       {
-	drop.all_dropped = false;
-	break;
+        drop.all_dropped = false;
+        break;
       }
     }
 
@@ -1068,8 +1068,8 @@ struct subr_subsetter_t
   }
 
   void collect_subr_refs_in_subr (unsigned int subr_num, parsed_cs_str_vec_t &subrs,
-				  hb_set_t *closure,
-				  const subr_subset_param_t &param)
+                                  hb_set_t *closure,
+                                  const subr_subset_param_t &param)
   {
     if (closure->has (subr_num))
       return;
@@ -1087,20 +1087,20 @@ struct subr_subsetter_t
     {
       if (!param.drop_hints || !opstr.is_hinting ())
       {
-	switch (opstr.op)
-	{
-	  case OpCode_callsubr:
-	    collect_subr_refs_in_subr (opstr.subr_num, *param.parsed_local_subrs,
-				       param.local_closure, param);
-	    break;
+        switch (opstr.op)
+        {
+          case OpCode_callsubr:
+            collect_subr_refs_in_subr (opstr.subr_num, *param.parsed_local_subrs,
+                                       param.local_closure, param);
+            break;
 
-	  case OpCode_callgsubr:
-	    collect_subr_refs_in_subr (opstr.subr_num, *param.parsed_global_subrs,
-				       param.global_closure, param);
-	    break;
+          case OpCode_callgsubr:
+            collect_subr_refs_in_subr (opstr.subr_num, *param.parsed_global_subrs,
+                                       param.global_closure, param);
+            break;
 
-	  default: break;
-	}
+          default: break;
+        }
       }
     }
   }
@@ -1116,7 +1116,7 @@ struct subr_subsetter_t
     {
       encoder.encode_num_cs (str.prefix_num ());
       if (str.prefix_op () != OpCode_Invalid)
-	encoder.encode_op (str.prefix_op ());
+        encoder.encode_op (str.prefix_op ());
     }
 
     unsigned size = 0;
@@ -1133,22 +1133,22 @@ struct subr_subsetter_t
     {
       if (hinting || !opstr.is_hinting ())
       {
-	switch (opstr.op)
-	{
-	  case OpCode_callsubr:
-	    encoder.encode_int (remaps.local_remaps[fd].biased_num (opstr.subr_num));
-	    encoder.copy_str (opstr.ptr, opstr.length);
-	    break;
+        switch (opstr.op)
+        {
+          case OpCode_callsubr:
+            encoder.encode_int (remaps.local_remaps[fd].biased_num (opstr.subr_num));
+            encoder.copy_str (opstr.ptr, opstr.length);
+            break;
 
-	  case OpCode_callgsubr:
-	    encoder.encode_int (remaps.global_remap.biased_num (opstr.subr_num));
-	    encoder.copy_str (opstr.ptr, opstr.length);
-	    break;
+          case OpCode_callgsubr:
+            encoder.encode_int (remaps.global_remap.biased_num (opstr.subr_num));
+            encoder.copy_str (opstr.ptr, opstr.length);
+            break;
 
-	  default:
-	    encoder.copy_str (opstr.ptr, opstr.length);
-	    break;
-	}
+          default:
+            encoder.copy_str (opstr.ptr, opstr.length);
+            break;
+        }
       }
     }
     return !encoder.in_error ();
@@ -1160,7 +1160,7 @@ struct subr_subsetter_t
       cs.compact ();
     for (auto &vec : parsed_local_subrs_storage)
       for (auto &cs : vec)
-	cs.compact ();
+        cs.compact ();
   }
 
   void populate_subset_accelerator () const
@@ -1183,21 +1183,21 @@ struct subr_subsetter_t
   }
 
   protected:
-  const ACC			&acc;
-  const hb_subset_plan_t	*plan;
+  const ACC                     &acc;
+  const hb_subset_plan_t        *plan;
 
-  subr_closures_t		closures;
+  subr_closures_t               closures;
 
   hb_vector_t<const parsed_cs_str_t*>     cached_charstrings;
   const parsed_cs_str_vec_t*              parsed_global_subrs;
   const hb_vector_t<parsed_cs_str_vec_t>* parsed_local_subrs;
 
-  subr_remaps_t			remaps;
+  subr_remaps_t                 remaps;
 
   private:
 
-  parsed_cs_str_vec_t		parsed_charstrings;
-  parsed_cs_str_vec_t		parsed_global_subrs_storage;
+  parsed_cs_str_vec_t           parsed_charstrings;
+  parsed_cs_str_vec_t           parsed_global_subrs_storage;
   hb_vector_t<parsed_cs_str_vec_t>  parsed_local_subrs_storage;
   typedef typename SUBRS::count_type subr_count_type;
 };
@@ -1206,21 +1206,21 @@ struct subr_subsetter_t
 
 HB_INTERNAL bool
 hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
-			    unsigned int fdCount,
-			    const CFF::FDSelect &src, /* IN */
-			    unsigned int &subset_fd_count /* OUT */,
-			    unsigned int &subset_fdselect_size /* OUT */,
-			    unsigned int &subset_fdselect_format /* OUT */,
-			    hb_vector_t<CFF::code_pair_t> &fdselect_ranges /* OUT */,
-			    hb_inc_bimap_t &fdmap /* OUT */);
+                            unsigned int fdCount,
+                            const CFF::FDSelect &src, /* IN */
+                            unsigned int &subset_fd_count /* OUT */,
+                            unsigned int &subset_fdselect_size /* OUT */,
+                            unsigned int &subset_fdselect_format /* OUT */,
+                            hb_vector_t<CFF::code_pair_t> &fdselect_ranges /* OUT */,
+                            hb_inc_bimap_t &fdmap /* OUT */);
 
 HB_INTERNAL bool
 hb_serialize_cff_fdselect (hb_serialize_context_t *c,
-			  unsigned int num_glyphs,
-			  const CFF::FDSelect &src,
-			  unsigned int fd_count,
-			  unsigned int fdselect_format,
-			  unsigned int size,
-			  const hb_vector_t<CFF::code_pair_t> &fdselect_ranges);
+                          unsigned int num_glyphs,
+                          const CFF::FDSelect &src,
+                          unsigned int fd_count,
+                          unsigned int fdselect_format,
+                          unsigned int size,
+                          const hb_vector_t<CFF::code_pair_t> &fdselect_ranges);
 
 #endif /* HB_SUBSET_CFF_COMMON_HH */

@@ -72,22 +72,22 @@ HB_BEGIN_DECLS
  * as three integer components.
  */
 #define HB_VERSION_ATLEAST(major,minor,micro) \
-	((major)*10000+(minor)*100+(micro) <= \
-	 HB_VERSION_MAJOR*10000+HB_VERSION_MINOR*100+HB_VERSION_MICRO)
+        ((major)*10000+(minor)*100+(micro) <= \
+         HB_VERSION_MAJOR*10000+HB_VERSION_MINOR*100+HB_VERSION_MICRO)
 
 
 HB_EXTERN void
 hb_version (unsigned int *major,
-	    unsigned int *minor,
-	    unsigned int *micro);
+            unsigned int *minor,
+            unsigned int *micro);
 
 HB_EXTERN const char *
 hb_version_string (void);
 
 HB_EXTERN hb_bool_t
 hb_version_atleast (unsigned int major,
-		    unsigned int minor,
-		    unsigned int micro);
+                    unsigned int minor,
+                    unsigned int micro);
 
 
 HB_END_DECLS

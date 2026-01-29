@@ -42,7 +42,7 @@ struct MarkMarkPosFormat1_2
                   mark1Coverage.sanitize (c, this) &&
                   mark2Coverage.sanitize (c, this) &&
                   mark1Array.sanitize (c, this) &&
-		  hb_barrier () &&
+                  hb_barrier () &&
                   mark2Array.sanitize (c, this, (unsigned int) classCount));
   }
 
@@ -185,8 +185,8 @@ struct MarkMarkPosFormat1_2
       return_trace (false);
 
     if (unlikely (!out->mark1Array.serialize_subset (c, mark1Array, this,
-						     (this+mark1Coverage).iter (),
-						     &klass_mapping)))
+                                                     (this+mark1Coverage).iter (),
+                                                     &klass_mapping)))
       return_trace (false);
 
     unsigned mark2count = (this+mark2Array).rows;
@@ -225,8 +225,8 @@ struct MarkMarkPosFormat1_2
       return_trace (false);
 
     return_trace (out->mark2Array.serialize_subset (c, mark2Array, this,
-						    mark2_iter.len (),
-						    mark2_indexes.iter ()));
+                                                    mark2_iter.len (),
+                                                    mark2_indexes.iter ()));
 
   }
 };

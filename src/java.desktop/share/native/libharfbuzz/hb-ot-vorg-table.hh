@@ -48,8 +48,8 @@ struct VertOriginMetric
   }
 
   public:
-  HBGlyphID16	glyph;
-  FWORD		vertOriginY;
+  HBGlyphID16   glyph;
+  FWORD         vertOriginY;
 
   public:
   DEFINE_SIZE_STATIC (4);
@@ -71,10 +71,10 @@ struct VORG
   }
 
   template <typename Iterator,
-	    hb_requires (hb_is_iterator (Iterator))>
+            hb_requires (hb_is_iterator (Iterator))>
   void serialize (hb_serialize_context_t *c,
-		  Iterator it,
-		  FWORD defaultVertOriginY)
+                  Iterator it,
+                  FWORD defaultVertOriginY)
   {
 
     if (unlikely (!c->extend_min ((*this))))  return;
@@ -98,15 +98,15 @@ struct VORG
     + vertYOrigins.as_array ()
     | hb_filter (c->plan->glyphset (), &VertOriginMetric::glyph)
     | hb_map ([&] (const VertOriginMetric& _)
-	      {
-		hb_codepoint_t new_glyph = HB_SET_VALUE_INVALID;
-		c->plan->new_gid_for_old_gid (_.glyph, &new_glyph);
+              {
+                hb_codepoint_t new_glyph = HB_SET_VALUE_INVALID;
+                c->plan->new_gid_for_old_gid (_.glyph, &new_glyph);
 
-		VertOriginMetric metric;
-		metric.glyph = new_glyph;
-		metric.vertOriginY = _.vertOriginY;
-		return metric;
-	      })
+                VertOriginMetric metric;
+                metric.glyph = new_glyph;
+                metric.vertOriginY = _.vertOriginY;
+                return metric;
+              })
     ;
 
     /* serialize the new table */
@@ -118,17 +118,17 @@ struct VORG
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  version.major == 1 &&
-		  vertYOrigins.sanitize (c));
+                  hb_barrier () &&
+                  version.major == 1 &&
+                  vertYOrigins.sanitize (c));
   }
 
   protected:
-  FixedVersion<>version;	/* Version of VORG table. Set to 0x00010000u. */
-  FWORD		defaultVertOriginY;
-				/* The default vertical origin. */
+  FixedVersion<>version;        /* Version of VORG table. Set to 0x00010000u. */
+  FWORD         defaultVertOriginY;
+                                /* The default vertical origin. */
   SortedArray16Of<VertOriginMetric>
-		vertYOrigins;	/* The array of vertical origins. */
+                vertYOrigins;   /* The array of vertical origins. */
 
   public:
   DEFINE_SIZE_ARRAY(8, vertYOrigins);

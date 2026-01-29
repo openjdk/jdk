@@ -131,19 +131,19 @@ struct InstanceRecord
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  c->check_array (coordinatesZ.arrayZ, axis_count));
+                  hb_barrier () &&
+                  c->check_array (coordinatesZ.arrayZ, axis_count));
   }
 
   protected:
-  NameID	subfamilyNameID;/* The name ID for entries in the 'name' table
-				 * that provide subfamily names for this instance. */
-  HBUINT16	flags;		/* Reserved for future use — set to 0. */
+  NameID        subfamilyNameID;/* The name ID for entries in the 'name' table
+                                 * that provide subfamily names for this instance. */
+  HBUINT16      flags;          /* Reserved for future use — set to 0. */
   UnsizedArrayOf<F16DOT16>
-		coordinatesZ;	/* The coordinates array for this instance. */
-  //NameID	postScriptNameIDX;/*Optional. The name ID for entries in the 'name'
-  //				  * table that provide PostScript names for this
-  //				  * instance. */
+                coordinatesZ;   /* The coordinates array for this instance. */
+  //NameID      postScriptNameIDX;/*Optional. The name ID for entries in the 'name'
+  //                              * table that provide PostScript names for this
+  //                              * instance. */
 
   public:
   DEFINE_SIZE_UNBOUNDED (4);
@@ -155,7 +155,7 @@ struct AxisRecord
 
   enum
   {
-    AXIS_FLAG_HIDDEN	= 0x0001,
+    AXIS_FLAG_HIDDEN    = 0x0001,
   };
 
 #ifndef HB_DISABLE_DEPRECATED
@@ -243,15 +243,15 @@ struct AxisRecord
   }
 
   public:
-  Tag		axisTag;	/* Tag identifying the design variation for the axis. */
+  Tag           axisTag;        /* Tag identifying the design variation for the axis. */
   protected:
-  F16DOT16	minValue;	/* The minimum coordinate value for the axis. */
-  F16DOT16	defaultValue;	/* The default coordinate value for the axis. */
-  F16DOT16	maxValue;	/* The maximum coordinate value for the axis. */
+  F16DOT16      minValue;       /* The minimum coordinate value for the axis. */
+  F16DOT16      defaultValue;   /* The default coordinate value for the axis. */
+  F16DOT16      maxValue;       /* The maximum coordinate value for the axis. */
   public:
-  HBUINT16	flags;		/* Axis flags. */
-  NameID	axisNameID;	/* The name ID for entries in the 'name' table that
-				 * provide a display name for this axis. */
+  HBUINT16      flags;          /* Axis flags. */
+  NameID        axisNameID;     /* The name ID for entries in the 'name' table that
+                                 * provide a display name for this axis. */
 
   public:
   DEFINE_SIZE_STATIC (20);
@@ -267,43 +267,43 @@ struct fvar
   {
     TRACE_SANITIZE (this);
     return_trace (version.sanitize (c) &&
-		  hb_barrier () &&
-		  likely (version.major == 1) &&
-		  c->check_struct (this) &&
-		  hb_barrier () &&
-		  axisSize == 20 && /* Assumed in our code. */
-		  instanceSize >= axisCount * 4 + 4 &&
-		  get_axes ().sanitize (c) &&
-		  c->check_range (&StructAfter<InstanceRecord> (get_axes ()),
-				  instanceCount, instanceSize));
+                  hb_barrier () &&
+                  likely (version.major == 1) &&
+                  c->check_struct (this) &&
+                  hb_barrier () &&
+                  axisSize == 20 && /* Assumed in our code. */
+                  instanceSize >= axisCount * 4 + 4 &&
+                  get_axes ().sanitize (c) &&
+                  c->check_range (&StructAfter<InstanceRecord> (get_axes ()),
+                                  instanceCount, instanceSize));
   }
 
   unsigned int get_axis_count () const { return axisCount; }
 
 #ifndef HB_DISABLE_DEPRECATED
   unsigned int get_axes_deprecated (unsigned int      start_offset,
-				    unsigned int     *axes_count /* IN/OUT */,
-				    hb_ot_var_axis_t *axes_array /* OUT */) const
+                                    unsigned int     *axes_count /* IN/OUT */,
+                                    hb_ot_var_axis_t *axes_array /* OUT */) const
   {
     if (axes_count)
     {
       hb_array_t<const AxisRecord> arr = get_axes ().sub_array (start_offset, axes_count);
       for (unsigned i = 0; i < arr.length; ++i)
-	arr[i].get_axis_deprecated (&axes_array[i]);
+        arr[i].get_axis_deprecated (&axes_array[i]);
     }
     return axisCount;
   }
 #endif
 
   unsigned int get_axis_infos (unsigned int           start_offset,
-			       unsigned int          *axes_count /* IN/OUT */,
-			       hb_ot_var_axis_info_t *axes_array /* OUT */) const
+                               unsigned int          *axes_count /* IN/OUT */,
+                               hb_ot_var_axis_info_t *axes_array /* OUT */) const
   {
     if (axes_count)
     {
       hb_array_t<const AxisRecord> arr = get_axes ().sub_array (start_offset, axes_count);
       for (unsigned i = 0; i < arr.length; ++i)
-	arr[i].get_axis_info (start_offset + i, &axes_array[i]);
+        arr[i].get_axis_info (start_offset + i, &axes_array[i]);
     }
     return axisCount;
   }
@@ -349,30 +349,30 @@ struct fvar
   }
 
   unsigned int get_instance_coords (unsigned int  instance_index,
-				    unsigned int *coords_length, /* IN/OUT */
-				    float        *coords         /* OUT */) const
+                                    unsigned int *coords_length, /* IN/OUT */
+                                    float        *coords         /* OUT */) const
   {
     const InstanceRecord *instance = get_instance (instance_index);
     if (unlikely (!instance))
     {
       if (coords_length)
-	*coords_length = 0;
+        *coords_length = 0;
       return 0;
     }
 
     if (coords_length && *coords_length)
     {
       hb_array_t<const F16DOT16> instanceCoords = instance->get_coordinates (axisCount)
-							 .sub_array (0, coords_length);
+                                                         .sub_array (0, coords_length);
       for (unsigned int i = 0; i < instanceCoords.length; i++)
-	coords[i] = instanceCoords.arrayZ[i].to_float ();
+        coords[i] = instanceCoords.arrayZ[i].to_float ();
     }
     return axisCount;
   }
 
   void collect_name_ids (hb_hashmap_t<hb_tag_t, Triple> *user_axes_location,
-			 hb_map_t *axes_old_index_tag_map,
-			 hb_set_t *nameids  /* IN/OUT */) const
+                         hb_map_t *axes_old_index_tag_map,
+                         hb_set_t *nameids  /* IN/OUT */) const
   {
     if (!has_data ()) return;
 
@@ -458,25 +458,25 @@ struct fvar
   {
     if (unlikely (i >= instanceCount)) return nullptr;
    return &StructAtOffset<InstanceRecord> (&StructAfter<InstanceRecord> (get_axes ()),
-					   i * instanceSize);
+                                           i * instanceSize);
   }
 
   protected:
-  FixedVersion<>version;	/* Version of the fvar table
-				 * initially set to 0x00010000u */
+  FixedVersion<>version;        /* Version of the fvar table
+                                 * initially set to 0x00010000u */
   Offset16To<AxisRecord>
-		firstAxis;	/* Offset in bytes from the beginning of the table
-				 * to the start of the AxisRecord array. */
-  HBUINT16	reserved;	/* This field is permanently reserved. Set to 2. */
-  HBUINT16	axisCount;	/* The number of variation axes in the font (the
-				 * number of records in the axes array). */
-  HBUINT16	axisSize;	/* The size in bytes of each VariationAxisRecord —
-				 * set to 20 (0x0014) for this version. */
-  HBUINT16	instanceCount;	/* The number of named instances defined in the font
-				 * (the number of records in the instances array). */
-  HBUINT16	instanceSize;	/* The size in bytes of each InstanceRecord — set
-				 * to either axisCount * sizeof(F16DOT16) + 4, or to
-				 * axisCount * sizeof(F16DOT16) + 6. */
+                firstAxis;      /* Offset in bytes from the beginning of the table
+                                 * to the start of the AxisRecord array. */
+  HBUINT16      reserved;       /* This field is permanently reserved. Set to 2. */
+  HBUINT16      axisCount;      /* The number of variation axes in the font (the
+                                 * number of records in the axes array). */
+  HBUINT16      axisSize;       /* The size in bytes of each VariationAxisRecord —
+                                 * set to 20 (0x0014) for this version. */
+  HBUINT16      instanceCount;  /* The number of named instances defined in the font
+                                 * (the number of records in the instances array). */
+  HBUINT16      instanceSize;   /* The size in bytes of each InstanceRecord — set
+                                 * to either axisCount * sizeof(F16DOT16) + 4, or to
+                                 * axisCount * sizeof(F16DOT16) + 6. */
 
   public:
   DEFINE_SIZE_STATIC (16);

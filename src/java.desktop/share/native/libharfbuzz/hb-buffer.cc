@@ -62,13 +62,13 @@
  **/
 hb_bool_t
 hb_segment_properties_equal (const hb_segment_properties_t *a,
-			     const hb_segment_properties_t *b)
+                             const hb_segment_properties_t *b)
 {
   return a->direction == b->direction &&
-	 a->script    == b->script    &&
-	 a->language  == b->language  &&
-	 a->reserved1 == b->reserved1 &&
-	 a->reserved2 == b->reserved2;
+         a->script    == b->script    &&
+         a->language  == b->language  &&
+         a->reserved1 == b->reserved1 &&
+         a->reserved2 == b->reserved2;
 
 }
 
@@ -87,8 +87,8 @@ unsigned int
 hb_segment_properties_hash (const hb_segment_properties_t *p)
 {
   return ((unsigned int) p->direction * 31 +
-	  (unsigned int) p->script) * 31 +
-	 (intptr_t) (p->language);
+          (unsigned int) p->script) * 31 +
+         (intptr_t) (p->language);
 }
 
 /**
@@ -111,7 +111,7 @@ hb_segment_properties_hash (const hb_segment_properties_t *p)
  **/
 void
 hb_segment_properties_overlay (hb_segment_properties_t *p,
-			       const hb_segment_properties_t *src)
+                               const hb_segment_properties_t *src)
 {
   if (unlikely (!p || !src))
     return;
@@ -205,7 +205,7 @@ done:
 
 bool
 hb_buffer_t::make_room_for (unsigned int num_in,
-			    unsigned int num_out)
+                            unsigned int num_out)
 {
   if (unlikely (!ensure (out_len + num_out))) return false;
 
@@ -350,7 +350,7 @@ hb_buffer_t::leave ()
 
 void
 hb_buffer_t::add (hb_codepoint_t  codepoint,
-		  unsigned int    cluster)
+                  unsigned int    cluster)
 {
   hb_glyph_info_t *glyph;
 
@@ -377,7 +377,7 @@ hb_buffer_t::add_info (const hb_glyph_info_t &glyph_info)
 }
 void
 hb_buffer_t::add_info_and_pos (const hb_glyph_info_t &glyph_info,
-			       const hb_glyph_position_t &glyph_pos)
+                               const hb_glyph_position_t &glyph_pos)
 {
   if (unlikely (!ensure (len + 1))) return;
 
@@ -515,9 +515,9 @@ hb_buffer_t::move_to (unsigned int i)
 
 void
 hb_buffer_t::set_masks (hb_mask_t    value,
-			hb_mask_t    mask,
-			unsigned int cluster_start,
-			unsigned int cluster_end)
+                        hb_mask_t    mask,
+                        unsigned int cluster_start,
+                        unsigned int cluster_end)
 {
   if (!mask)
     return;
@@ -545,7 +545,7 @@ hb_buffer_t::set_masks (hb_mask_t    value,
 
 void
 hb_buffer_t::merge_clusters_impl (unsigned int start,
-				  unsigned int end)
+                                  unsigned int end)
 {
   if (!HB_BUFFER_CLUSTER_LEVEL_IS_MONOTONE (cluster_level))
   {
@@ -582,7 +582,7 @@ hb_buffer_t::merge_clusters_impl (unsigned int start,
 }
 void
 hb_buffer_t::merge_out_clusters (unsigned int start,
-				 unsigned int end)
+                                 unsigned int end)
 {
   if (!HB_BUFFER_CLUSTER_LEVEL_IS_MONOTONE (cluster_level))
     return;
@@ -636,7 +636,7 @@ hb_buffer_t::delete_glyph ()
       unsigned int mask = info[idx].mask;
       unsigned int old_cluster = out_info[out_len - 1].cluster;
       for (unsigned i = out_len; i && out_info[i - 1].cluster == old_cluster; i--)
-	set_cluster (out_info[i - 1], cluster, mask);
+        set_cluster (out_info[i - 1], cluster, mask);
     }
     goto done;
   }
@@ -668,23 +668,23 @@ hb_buffer_t::delete_glyphs_inplace (bool (*filter) (const hb_glyph_info_t *info)
 
       unsigned int cluster = info[i].cluster;
       if (i + 1 < count && cluster == info[i + 1].cluster)
-	continue; /* Cluster survives; do nothing. */
+        continue; /* Cluster survives; do nothing. */
 
       if (j)
       {
-	/* Merge cluster backward. */
-	if (cluster < info[j - 1].cluster)
-	{
-	  unsigned int mask = info[i].mask;
-	  unsigned int old_cluster = info[j - 1].cluster;
-	  for (unsigned k = j; k && info[k - 1].cluster == old_cluster; k--)
-	    set_cluster (info[k - 1], cluster, mask);
-	}
-	continue;
+        /* Merge cluster backward. */
+        if (cluster < info[j - 1].cluster)
+        {
+          unsigned int mask = info[i].mask;
+          unsigned int old_cluster = info[j - 1].cluster;
+          for (unsigned k = j; k && info[k - 1].cluster == old_cluster; k--)
+            set_cluster (info[k - 1], cluster, mask);
+        }
+        continue;
       }
 
       if (i + 1 < count)
-	merge_clusters (i, i + 2); /* Merge cluster forward. */
+        merge_clusters (i, i + 2); /* Merge cluster forward. */
 
       continue;
     }
@@ -709,10 +709,10 @@ hb_buffer_t::guess_segment_properties ()
     for (unsigned int i = 0; i < len; i++) {
       hb_script_t script = unicode->script (info[i].codepoint);
       if (likely (script != HB_SCRIPT_COMMON &&
-		  script != HB_SCRIPT_INHERITED &&
-		  script != HB_SCRIPT_UNKNOWN)) {
-	props.script = script;
-	break;
+                  script != HB_SCRIPT_INHERITED &&
+                  script != HB_SCRIPT_UNKNOWN)) {
+        props.script = script;
+        break;
       }
     }
   }
@@ -904,10 +904,10 @@ hb_buffer_destroy (hb_buffer_t *buffer)
  **/
 hb_bool_t
 hb_buffer_set_user_data (hb_buffer_t        *buffer,
-			 hb_user_data_key_t *key,
-			 void *              data,
-			 hb_destroy_func_t   destroy,
-			 hb_bool_t           replace)
+                         hb_user_data_key_t *key,
+                         void *              data,
+                         hb_destroy_func_t   destroy,
+                         hb_bool_t           replace)
 {
   return hb_object_set_user_data (buffer, key, data, destroy, replace);
 }
@@ -926,7 +926,7 @@ hb_buffer_set_user_data (hb_buffer_t        *buffer,
  **/
 void *
 hb_buffer_get_user_data (const hb_buffer_t  *buffer,
-			 hb_user_data_key_t *key)
+                         hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (buffer, key);
 }
@@ -970,7 +970,7 @@ hb_buffer_get_user_data (const hb_buffer_t  *buffer,
  **/
 void
 hb_buffer_set_content_type (hb_buffer_t              *buffer,
-			    hb_buffer_content_type_t  content_type)
+                            hb_buffer_content_type_t  content_type)
 {
   buffer->content_type = content_type;
 }
@@ -1006,7 +1006,7 @@ hb_buffer_get_content_type (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_unicode_funcs (hb_buffer_t        *buffer,
-			     hb_unicode_funcs_t *unicode_funcs)
+                             hb_unicode_funcs_t *unicode_funcs)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1052,7 +1052,7 @@ hb_buffer_get_unicode_funcs (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_direction (hb_buffer_t    *buffer,
-			 hb_direction_t  direction)
+                         hb_direction_t  direction)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1096,7 +1096,7 @@ hb_buffer_get_direction (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_script (hb_buffer_t *buffer,
-		      hb_script_t  script)
+                      hb_script_t  script)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1140,7 +1140,7 @@ hb_buffer_get_script (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_language (hb_buffer_t   *buffer,
-			hb_language_t  language)
+                        hb_language_t  language)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1178,7 +1178,7 @@ hb_buffer_get_language (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_segment_properties (hb_buffer_t *buffer,
-				  const hb_segment_properties_t *props)
+                                  const hb_segment_properties_t *props)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1197,7 +1197,7 @@ hb_buffer_set_segment_properties (hb_buffer_t *buffer,
  **/
 void
 hb_buffer_get_segment_properties (const hb_buffer_t *buffer,
-				  hb_segment_properties_t *props)
+                                  hb_segment_properties_t *props)
 {
   *props = buffer->props;
 }
@@ -1214,7 +1214,7 @@ hb_buffer_get_segment_properties (const hb_buffer_t *buffer,
  **/
 void
 hb_buffer_set_flags (hb_buffer_t       *buffer,
-		     hb_buffer_flags_t  flags)
+                     hb_buffer_flags_t  flags)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1252,7 +1252,7 @@ hb_buffer_get_flags (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_cluster_level (hb_buffer_t               *buffer,
-			     hb_buffer_cluster_level_t  cluster_level)
+                             hb_buffer_cluster_level_t  cluster_level)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1293,7 +1293,7 @@ hb_buffer_get_cluster_level (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
-				     hb_codepoint_t  replacement)
+                                     hb_codepoint_t  replacement)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1334,7 +1334,7 @@ hb_buffer_get_replacement_codepoint (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_invisible_glyph (hb_buffer_t    *buffer,
-			       hb_codepoint_t  invisible)
+                               hb_codepoint_t  invisible)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1374,7 +1374,7 @@ hb_buffer_get_invisible_glyph (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_not_found_glyph (hb_buffer_t    *buffer,
-			       hb_codepoint_t  not_found)
+                               hb_codepoint_t  not_found)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1417,7 +1417,7 @@ hb_buffer_get_not_found_glyph (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_not_found_variation_selector_glyph (hb_buffer_t    *buffer,
-						  hb_codepoint_t  not_found_variation_selector)
+                                                  hb_codepoint_t  not_found_variation_selector)
 {
   buffer->not_found_variation_selector = not_found_variation_selector;
 }
@@ -1458,7 +1458,7 @@ hb_buffer_get_not_found_variation_selector_glyph (const hb_buffer_t *buffer)
  **/
 void
 hb_buffer_set_random_state (hb_buffer_t    *buffer,
-			    unsigned        state)
+                            unsigned        state)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return;
@@ -1555,8 +1555,8 @@ hb_buffer_allocation_successful (hb_buffer_t  *buffer)
  **/
 void
 hb_buffer_add (hb_buffer_t    *buffer,
-	       hb_codepoint_t  codepoint,
-	       unsigned int    cluster)
+               hb_codepoint_t  codepoint,
+               unsigned int    cluster)
 {
   buffer->add (codepoint, cluster);
   buffer->clear_context (1);
@@ -1577,7 +1577,7 @@ hb_buffer_add (hb_buffer_t    *buffer,
  **/
 hb_bool_t
 hb_buffer_set_length (hb_buffer_t  *buffer,
-		      unsigned int  length)
+                      unsigned int  length)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
     return length == 0;
@@ -1638,7 +1638,7 @@ hb_buffer_get_length (const hb_buffer_t *buffer)
  **/
 hb_glyph_info_t *
 hb_buffer_get_glyph_infos (hb_buffer_t  *buffer,
-			   unsigned int *length)
+                           unsigned int *length)
 {
   if (length)
     *length = buffer->len;
@@ -1667,7 +1667,7 @@ hb_buffer_get_glyph_infos (hb_buffer_t  *buffer,
  **/
 hb_glyph_position_t *
 hb_buffer_get_glyph_positions (hb_buffer_t  *buffer,
-			       unsigned int *length)
+                               unsigned int *length)
 {
   if (length)
     *length = buffer->len;
@@ -1745,7 +1745,7 @@ hb_buffer_reverse (hb_buffer_t *buffer)
  **/
 void
 hb_buffer_reverse_range (hb_buffer_t *buffer,
-			 unsigned int start, unsigned int end)
+                         unsigned int start, unsigned int end)
 {
   buffer->reverse_range (start, end);
 }
@@ -1803,10 +1803,10 @@ hb_buffer_guess_segment_properties (hb_buffer_t *buffer)
 template <typename utf_t>
 static inline void
 hb_buffer_add_utf (hb_buffer_t  *buffer,
-		   const typename utf_t::codepoint_t *text,
-		   int           text_length,
-		   unsigned int  item_offset,
-		   int           item_length)
+                   const typename utf_t::codepoint_t *text,
+                   int           text_length,
+                   unsigned int  item_offset,
+                   int           item_length)
 {
   typedef typename utf_t::codepoint_t T;
   const hb_codepoint_t replacement = buffer->replacement;
@@ -1823,8 +1823,8 @@ hb_buffer_add_utf (hb_buffer_t  *buffer,
     item_length = text_length - item_offset;
 
   if (unlikely (item_length < 0 ||
-		item_length > INT_MAX / 8 ||
-		!buffer->ensure (buffer->len + item_length * sizeof (T) / 4)))
+                item_length > INT_MAX / 8 ||
+                !buffer->ensure (buffer->len + item_length * sizeof (T) / 4)))
     return;
 
   /* If buffer is empty and pre-context provided, install it.
@@ -1890,10 +1890,10 @@ hb_buffer_add_utf (hb_buffer_t  *buffer,
  **/
 void
 hb_buffer_add_utf8 (hb_buffer_t  *buffer,
-		    const char   *text,
-		    int           text_length,
-		    unsigned int  item_offset,
-		    int           item_length)
+                    const char   *text,
+                    int           text_length,
+                    unsigned int  item_offset,
+                    int           item_length)
 {
   hb_buffer_add_utf<hb_utf8_t> (buffer, (const uint8_t *) text, text_length, item_offset, item_length);
 }
@@ -1916,10 +1916,10 @@ hb_buffer_add_utf8 (hb_buffer_t  *buffer,
  **/
 void
 hb_buffer_add_utf16 (hb_buffer_t    *buffer,
-		     const uint16_t *text,
-		     int             text_length,
-		     unsigned int    item_offset,
-		     int             item_length)
+                     const uint16_t *text,
+                     int             text_length,
+                     unsigned int    item_offset,
+                     int             item_length)
 {
   hb_buffer_add_utf<hb_utf16_t> (buffer, text, text_length, item_offset, item_length);
 }
@@ -1942,10 +1942,10 @@ hb_buffer_add_utf16 (hb_buffer_t    *buffer,
  **/
 void
 hb_buffer_add_utf32 (hb_buffer_t    *buffer,
-		     const uint32_t *text,
-		     int             text_length,
-		     unsigned int    item_offset,
-		     int             item_length)
+                     const uint32_t *text,
+                     int             text_length,
+                     unsigned int    item_offset,
+                     int             item_length)
 {
   hb_buffer_add_utf<hb_utf32_t> (buffer, text, text_length, item_offset, item_length);
 }
@@ -1969,10 +1969,10 @@ hb_buffer_add_utf32 (hb_buffer_t    *buffer,
  **/
 void
 hb_buffer_add_latin1 (hb_buffer_t   *buffer,
-		      const uint8_t *text,
-		      int            text_length,
-		      unsigned int   item_offset,
-		      int            item_length)
+                      const uint8_t *text,
+                      int            text_length,
+                      unsigned int   item_offset,
+                      int            item_length)
 {
   hb_buffer_add_utf<hb_latin1_t> (buffer, text, text_length, item_offset, item_length);
 }
@@ -2005,10 +2005,10 @@ hb_buffer_add_latin1 (hb_buffer_t   *buffer,
  **/
 void
 hb_buffer_add_codepoints (hb_buffer_t          *buffer,
-			  const hb_codepoint_t *text,
-			  int                   text_length,
-			  unsigned int          item_offset,
-			  int                   item_length)
+                          const hb_codepoint_t *text,
+                          int                   text_length,
+                          unsigned int          item_offset,
+                          int                   item_length)
 {
   hb_buffer_add_utf<hb_utf32_novalidate_t> (buffer, text, text_length, item_offset, item_length);
 }
@@ -2027,15 +2027,15 @@ hb_buffer_add_codepoints (hb_buffer_t          *buffer,
  **/
 HB_EXTERN void
 hb_buffer_append (hb_buffer_t *buffer,
-		  const hb_buffer_t *source,
-		  unsigned int start,
-		  unsigned int end)
+                  const hb_buffer_t *source,
+                  unsigned int start,
+                  unsigned int end)
 {
   assert (!buffer->have_output && !source->have_output);
   assert (buffer->have_positions == source->have_positions ||
-	  !buffer->len || !source->len);
+          !buffer->len || !source->len);
   assert (buffer->content_type == source->content_type ||
-	  !buffer->len || !source->len);
+          !buffer->len || !source->len);
 
   if (end > source->len)
     end = source->len;
@@ -2075,9 +2075,9 @@ hb_buffer_append (hb_buffer_t *buffer,
     {
       buffer->clear_context (0);
       while (start > 0 && buffer->context_len[0] < buffer->CONTEXT_LENGTH)
-	buffer->context[0][buffer->context_len[0]++] = source->info[--start].codepoint;
+        buffer->context[0][buffer->context_len[0]++] = source->info[--start].codepoint;
       for (auto i = 0u; i < source->context_len[0] && buffer->context_len[0] < buffer->CONTEXT_LENGTH; i++)
-	buffer->context[0][buffer->context_len[0]++] = source->context[0][i];
+        buffer->context[0][buffer->context_len[0]++] = source->context[0][i];
     }
 
     /* post-context */
@@ -2092,16 +2092,16 @@ hb_buffer_append (hb_buffer_t *buffer,
 
 static int
 compare_info_codepoint (const hb_glyph_info_t *pa,
-			const hb_glyph_info_t *pb)
+                        const hb_glyph_info_t *pb)
 {
   return (int) pb->codepoint - (int) pa->codepoint;
 }
 
 static inline void
 normalize_glyphs_cluster (hb_buffer_t *buffer,
-			  unsigned int start,
-			  unsigned int end,
-			  bool backward)
+                          unsigned int start,
+                          unsigned int end,
+                          bool backward)
 {
   hb_glyph_position_t *pos = buffer->pos;
 
@@ -2210,9 +2210,9 @@ hb_buffer_t::sort (unsigned int start, unsigned int end, int(*compar)(const hb_g
  **/
 hb_buffer_diff_flags_t
 hb_buffer_diff (hb_buffer_t *buffer,
-		hb_buffer_t *reference,
-		hb_codepoint_t dottedcircle_glyph,
-		unsigned int position_fuzz)
+                hb_buffer_t *reference,
+                hb_codepoint_t dottedcircle_glyph,
+                unsigned int position_fuzz)
 {
   if (buffer->content_type != reference->content_type && buffer->len && reference->len)
     return HB_BUFFER_DIFF_FLAG_CONTENT_TYPE_MISMATCH;
@@ -2233,9 +2233,9 @@ hb_buffer_diff (hb_buffer_t *buffer,
     for (i = 0; i < count; i++)
     {
       if (contains && info[i].codepoint == dottedcircle_glyph)
-	result |= HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT;
+        result |= HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT;
       if (contains && info[i].codepoint == 0)
-	result |= HB_BUFFER_DIFF_FLAG_NOTDEF_PRESENT;
+        result |= HB_BUFFER_DIFF_FLAG_NOTDEF_PRESENT;
     }
     result |= HB_BUFFER_DIFF_FLAG_LENGTH_MISMATCH;
     return hb_buffer_diff_flags_t (result);
@@ -2270,12 +2270,12 @@ hb_buffer_diff (hb_buffer_t *buffer,
     for (unsigned int i = 0; i < count; i++)
     {
       if ((unsigned int) abs (buf_pos->x_advance - ref_pos->x_advance) > position_fuzz ||
-	  (unsigned int) abs (buf_pos->y_advance - ref_pos->y_advance) > position_fuzz ||
-	  (unsigned int) abs (buf_pos->x_offset - ref_pos->x_offset) > position_fuzz ||
-	  (unsigned int) abs (buf_pos->y_offset - ref_pos->y_offset) > position_fuzz)
+          (unsigned int) abs (buf_pos->y_advance - ref_pos->y_advance) > position_fuzz ||
+          (unsigned int) abs (buf_pos->x_offset - ref_pos->x_offset) > position_fuzz ||
+          (unsigned int) abs (buf_pos->y_offset - ref_pos->y_offset) > position_fuzz)
       {
-	result |= HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH;
-	break;
+        result |= HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH;
+        break;
       }
       buf_pos++;
       ref_pos++;
@@ -2304,8 +2304,8 @@ hb_buffer_diff (hb_buffer_t *buffer,
  **/
 void
 hb_buffer_set_message_func (hb_buffer_t *buffer,
-			    hb_buffer_message_func_t func,
-			    void *user_data, hb_destroy_func_t destroy)
+                            hb_buffer_message_func_t func,
+                            void *user_data, hb_destroy_func_t destroy)
 {
   if (unlikely (hb_object_is_immutable (buffer)))
   {

@@ -64,7 +64,7 @@ void hb_aat_map_builder_t::add_feature (const hb_feature_t &feature)
      * small-caps if necessary, so we need to check for that possibility.
      * https://github.com/harfbuzz/harfbuzz/issues/2307 */
     if (mapping->aatFeatureType == HB_AAT_LAYOUT_FEATURE_TYPE_LOWER_CASE &&
-	mapping->selectorToEnable == HB_AAT_LAYOUT_FEATURE_SELECTOR_LOWER_CASE_SMALL_CAPS)
+        mapping->selectorToEnable == HB_AAT_LAYOUT_FEATURE_SELECTOR_LOWER_CASE_SMALL_CAPS)
     {
       feature_name = &face->table.feat->get_feature (HB_AAT_LAYOUT_FEATURE_TYPE_LETTER_CASE);
       if (!feature_name->has_data ()) return;
@@ -142,16 +142,16 @@ hb_aat_map_builder_t::compile (hb_aat_map_t  &m)
       range_last = event->index - 1;
       if (current_features.length)
       {
-	current_features.qsort ();
-	unsigned int j = 0;
-	for (unsigned int i = 1; i < current_features.length; i++)
-	  if (current_features.arrayZ[i].type != current_features.arrayZ[j].type ||
-	      /* Nonexclusive feature selectors come in even/odd pairs to turn a setting on/off
-	       * respectively, so we mask out the low-order bit when checking for "duplicates"
-	       * (selectors referring to the same feature setting) here. */
-	      (!current_features.arrayZ[i].is_exclusive && ((current_features.arrayZ[i].setting & ~1) != (current_features.arrayZ[j].setting & ~1))))
-	    current_features.arrayZ[++j] = current_features.arrayZ[i];
-	current_features.shrink (j + 1);
+        current_features.qsort ();
+        unsigned int j = 0;
+        for (unsigned int i = 1; i < current_features.length; i++)
+          if (current_features.arrayZ[i].type != current_features.arrayZ[j].type ||
+              /* Nonexclusive feature selectors come in even/odd pairs to turn a setting on/off
+               * respectively, so we mask out the low-order bit when checking for "duplicates"
+               * (selectors referring to the same feature setting) here. */
+              (!current_features.arrayZ[i].is_exclusive && ((current_features.arrayZ[i].setting & ~1) != (current_features.arrayZ[j].setting & ~1))))
+            current_features.arrayZ[++j] = current_features.arrayZ[i];
+        current_features.shrink (j + 1);
       }
 
       hb_aat_layout_compile_map (this, &m);
@@ -165,7 +165,7 @@ hb_aat_map_builder_t::compile (hb_aat_map_t  &m)
     } else {
       feature_info_t *feature = active_features.lsearch (event->feature);
       if (feature)
-	active_features.remove_ordered (feature - active_features.arrayZ);
+        active_features.remove_ordered (feature - active_features.arrayZ);
     }
   }
 

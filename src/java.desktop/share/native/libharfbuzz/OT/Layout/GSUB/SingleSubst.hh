@@ -13,12 +13,12 @@ struct SingleSubst
 {
   protected:
   union {
-  struct { HBUINT16 v; }		format;         /* Format identifier */
-  SingleSubstFormat1_3<SmallTypes>	format1;
-  SingleSubstFormat2_4<SmallTypes>	format2;
+  struct { HBUINT16 v; }                format;         /* Format identifier */
+  SingleSubstFormat1_3<SmallTypes>      format1;
+  SingleSubstFormat2_4<SmallTypes>      format2;
 #ifndef HB_NO_BEYOND_64K
-  SingleSubstFormat1_3<MediumTypes>	format3;
-  SingleSubstFormat2_4<MediumTypes>	format4;
+  SingleSubstFormat1_3<MediumTypes>     format3;
+  SingleSubstFormat2_4<MediumTypes>     format4;
 #endif
   } u;
 
@@ -57,11 +57,11 @@ struct SingleSubst
 
 #ifndef HB_NO_BEYOND_64K
        if (+ glyphs
-	   | hb_map_retains_sorting (hb_second)
-	   | hb_filter ([] (hb_codepoint_t gid) { return gid > 0xFFFFu; }))
+           | hb_map_retains_sorting (hb_second)
+           | hb_filter ([] (hb_codepoint_t gid) { return gid > 0xFFFFu; }))
        {
-	 format += 2;
-	 mask = 0xFFFFFFu;
+         format += 2;
+         mask = 0xFFFFFFu;
        }
 #endif
 

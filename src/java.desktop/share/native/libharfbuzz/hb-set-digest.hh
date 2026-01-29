@@ -99,7 +99,7 @@ struct hb_set_digest_t
     ret = false;
     for (unsigned i = 0; i < n; i++)
       if (masks[i] != all)
-	ret = true;
+        ret = true;
     if (!ret) return false;
 
     ret = false;
@@ -107,13 +107,13 @@ struct hb_set_digest_t
     {
       mask_t shift = hb_set_digest_shifts[i];
       if ((b >> shift) - (a >> shift) >= mb1)
-	masks[i] = all;
+        masks[i] = all;
       else
       {
-	mask_t ma = one << ((a >> shift) & mb1);
-	mask_t mb = one << ((b >> shift) & mb1);
-	masks[i] |= mb + (mb - ma) - (mb < ma);
-	ret = true;
+        mask_t ma = one << ((a >> shift) & mb1);
+        mask_t mb = one << ((b >> shift) & mb1);
+        masks[i] |= mb + (mb - ma) - (mb < ma);
+        ret = true;
       }
     }
     return ret;
@@ -154,7 +154,7 @@ struct hb_set_digest_t
   {
     for (unsigned i = 0; i < n; i++)
       if (!(masks[i] & (one << ((g >> hb_set_digest_shifts[i]) & mb1))))
-	return false;
+        return false;
     return true;
   }
 
@@ -162,7 +162,7 @@ struct hb_set_digest_t
   {
     for (unsigned i = 0; i < n; i++)
       if (!(masks[i] & o.masks[i]))
-	return false;
+        return false;
     return true;
   }
 

@@ -154,9 +154,9 @@ thai_pua_shape (hb_codepoint_t u, thai_action_t action, hb_font_t *font)
     {
       hb_codepoint_t glyph;
       if (hb_font_get_glyph (font, pua_mappings->win_pua, 0, &glyph))
-	return pua_mappings->win_pua;
+        return pua_mappings->win_pua;
       if (hb_font_get_glyph (font, pua_mappings->mac_pua, 0, &glyph))
-	return pua_mappings->mac_pua;
+        return pua_mappings->mac_pua;
       break;
     }
   return u;
@@ -219,8 +219,8 @@ static const struct thai_below_state_machine_edge_t {
 
 static void
 do_thai_pua_shaping (const hb_ot_shape_plan_t *plan HB_UNUSED,
-		     hb_buffer_t              *buffer,
-		     hb_font_t                *font)
+                     hb_buffer_t              *buffer,
+                     hb_font_t                *font)
 {
 #ifdef HB_NO_OT_SHAPER_THAI_FALLBACK
   return;
@@ -263,8 +263,8 @@ do_thai_pua_shaping (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
 static void
 preprocess_text_thai (const hb_ot_shape_plan_t *plan,
-		      hb_buffer_t              *buffer,
-		      hb_font_t                *font)
+                      hb_buffer_t              *buffer,
+                      hb_font_t                *font)
 {
   /* This function implements the shaping logic documented here:
    *
@@ -302,14 +302,14 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
   /*
    * Here are the characters of significance:
    *
-   *			Thai	Lao
-   * SARA AM:		U+0E33	U+0EB3
-   * SARA AA:		U+0E32	U+0EB2
-   * Nikhahit:		U+0E4D	U+0ECD
+   *                    Thai    Lao
+   * SARA AM:           U+0E33  U+0EB3
+   * SARA AA:           U+0E32  U+0EB2
+   * Nikhahit:          U+0E4D  U+0ECD
    *
    * Testing shows that Uniscribe reorder the following marks:
-   * Thai:	<0E31,0E34..0E37,     0E47..0E4E>
-   * Lao:	<0EB1,0EB4..0EB7,0EBB,0EC8..0ECD>
+   * Thai:      <0E31,0E34..0E37,     0E47..0E4E>
+   * Lao:       <0EB1,0EB4..0EB7,0EBB,0EC8..0ECD>
    *
    * Note how the Lao versions are the same as Thai + 0x80.
    */
@@ -352,8 +352,8 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
       buffer->merge_out_clusters (start, end);
       hb_glyph_info_t t = buffer->out_info[end - 2];
       memmove (buffer->out_info + start + 1,
-	       buffer->out_info + start,
-	       sizeof (buffer->out_info[0]) * (end - start - 2));
+               buffer->out_info + start,
+               sizeof (buffer->out_info[0]) * (end - start - 2));
       buffer->out_info[start] = t;
     }
     else
@@ -361,7 +361,7 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
       /* Since we decomposed, and NIKHAHIT is combining, merge clusters with the
        * previous cluster. */
       if (start)
-	buffer->merge_out_clusters (start - 1, end);
+        buffer->merge_out_clusters (start - 1, end);
     }
   }
   buffer->sync ();

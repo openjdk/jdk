@@ -130,7 +130,7 @@ struct glyph_variations_t
                                           iterator, &(plan->axes_old_index_tag_map),
                                           shared_indices, shared_tuples,
                                           tuple_vars, /* OUT */
-					  &pool,
+                                          &pool,
                                           is_composite_glyph))
         return false;
       glyph_variations.push (std::move (tuple_vars));
@@ -166,7 +166,7 @@ struct glyph_variations_t
                                true, /* use shared points*/
                                true,
                                &shared_tuples_idx_map,
-			       &pool))
+                               &pool))
         return false;
 
     return true;
@@ -187,9 +187,9 @@ struct glyph_variations_t
         if (!var.compile_coords (axes_index_map, axes_old_index_tag_map, &pool))
           return false;
         unsigned *count;
-	unsigned hash = hb_hash (&var.compiled_peak_coords);
+        unsigned hash = hb_hash (&var.compiled_peak_coords);
         if (coords_count_map.has_with_hash (&(var.compiled_peak_coords), hash, &count))
-	  (*count)++;
+          (*count)++;
         else
           coords_count_map.set_with_hash (&(var.compiled_peak_coords), hash, 1);
       }
@@ -314,12 +314,12 @@ struct gvar_GVAR
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  hb_barrier () &&
-		  (version.major == 1) &&
-		  sharedTuples.sanitize (c, this, axisCount * sharedTupleCount) &&
-		  (is_long_offset () ?
-		     c->check_array (get_long_offset_array (), c->get_num_glyphs () + 1) :
-		     c->check_array (get_short_offset_array (), c->get_num_glyphs () + 1)));
+                  hb_barrier () &&
+                  (version.major == 1) &&
+                  sharedTuples.sanitize (c, this, axisCount * sharedTupleCount) &&
+                  (is_long_offset () ?
+                     c->check_array (get_long_offset_array (), c->get_num_glyphs () + 1) :
+                     c->check_array (get_short_offset_array (), c->get_num_glyphs () + 1)));
   }
 
   /* GlyphVariationData not sanitized here; must be checked while accessing each glyph variation data */
@@ -517,15 +517,15 @@ struct gvar_GVAR
       hb_codepoint_t old_gid = _.second;
 
       if (long_offset)
-	for (; last < gid; last++)
-	  ((HBUINT32 *) subset_offsets)[last] = glyph_offset;
+        for (; last < gid; last++)
+          ((HBUINT32 *) subset_offsets)[last] = glyph_offset;
       else
-	for (; last < gid; last++)
-	  ((HBUINT16 *) subset_offsets)[last] = glyph_offset / 2;
+        for (; last < gid; last++)
+          ((HBUINT16 *) subset_offsets)[last] = glyph_offset / 2;
 
       hb_bytes_t var_data_bytes = get_glyph_var_data_bytes (c->source_blob,
-							    glyph_count,
-							    old_gid);
+                                                            glyph_count,
+                                                            old_gid);
 
       hb_memcpy (subset_data, var_data_bytes.arrayZ, var_data_bytes.length);
       unsigned glyph_data_size = var_data_bytes.length;
@@ -540,27 +540,27 @@ struct gvar_GVAR
       }
 
       if (long_offset)
-	((HBUINT32 *) subset_offsets)[gid] = glyph_offset;
+        ((HBUINT32 *) subset_offsets)[gid] = glyph_offset;
       else
-	((HBUINT16 *) subset_offsets)[gid] = glyph_offset / 2;
+        ((HBUINT16 *) subset_offsets)[gid] = glyph_offset / 2;
 
       last++; // Skip over gid
     }
 
     if (long_offset)
       for (; last < num_glyphs; last++)
-	((HBUINT32 *) subset_offsets)[last] = glyph_offset;
+        ((HBUINT32 *) subset_offsets)[last] = glyph_offset;
     else
       for (; last < num_glyphs; last++)
-	((HBUINT16 *) subset_offsets)[last] = glyph_offset / 2;
+        ((HBUINT16 *) subset_offsets)[last] = glyph_offset / 2;
 
     return_trace (true);
   }
 
   protected:
   const hb_bytes_t get_glyph_var_data_bytes (hb_blob_t *blob,
-					     unsigned glyph_count,
-					     hb_codepoint_t glyph) const
+                                             unsigned glyph_count,
+                                             hb_codepoint_t glyph) const
   {
     unsigned start_offset = get_offset (glyph_count, glyph);
     unsigned end_offset = get_offset (glyph_count, glyph+1);
@@ -609,9 +609,9 @@ struct gvar_GVAR
     private:
 
     static float infer_delta (const hb_array_t<contour_point_t> points,
-			      const hb_array_t<contour_point_t> deltas,
-			      unsigned int target, unsigned int prev, unsigned int next,
-			      float contour_point_t::*m)
+                              const hb_array_t<contour_point_t> deltas,
+                              unsigned int target, unsigned int prev, unsigned int next,
+                              float contour_point_t::*m)
     {
       float target_val = points.arrayZ[target].*m;
       float prev_val = points.arrayZ[prev].*m;
@@ -620,11 +620,11 @@ struct gvar_GVAR
       float next_delta =  deltas.arrayZ[next].*m;
 
       if (prev_val == next_val)
-	return (prev_delta == next_delta) ? prev_delta : 0.f;
+        return (prev_delta == next_delta) ? prev_delta : 0.f;
       else if (target_val <= hb_min (prev_val, next_val))
-	return (prev_val < next_val) ? prev_delta : next_delta;
+        return (prev_val < next_val) ? prev_delta : next_delta;
       else if (target_val >= hb_max (prev_val, next_val))
-	return (prev_val > next_val) ? prev_delta : next_delta;
+        return (prev_val > next_val) ? prev_delta : next_delta;
 
       /* linear interpolation */
       float r = (target_val - prev_val) / (next_val - prev_val);
@@ -636,11 +636,11 @@ struct gvar_GVAR
 
     public:
     bool apply_deltas_to_points (hb_codepoint_t glyph,
-				 hb_array_t<const int> coords,
-				 const hb_array_t<contour_point_t> points,
-				 hb_glyf_scratch_t &scratch,
-				 hb_scalar_cache_t *gvar_cache = nullptr,
-				 bool phantom_only = false) const
+                                 hb_array_t<const int> coords,
+                                 const hb_array_t<contour_point_t> points,
+                                 hb_glyf_scratch_t &scratch,
+                                 hb_scalar_cache_t *gvar_cache = nullptr,
+                                 bool phantom_only = false) const
     {
       if (unlikely (glyph >= glyphCount)) return true;
 
@@ -652,9 +652,9 @@ struct gvar_GVAR
 
       typename GlyphVariationData::tuple_iterator_t iterator;
       if (!GlyphVariationData::get_tuple_iterator (var_data_bytes, table->axisCount,
-						   var_data_bytes.arrayZ,
-						   shared_indices, &iterator))
-	return true; /* so isn't applied at all */
+                                                   var_data_bytes.arrayZ,
+                                                   shared_indices, &iterator))
+        return true; /* so isn't applied at all */
 
       /* Save original points for inferred delta calculation */
       auto &orig_points_vec = scratch.orig_points;
@@ -678,190 +678,190 @@ struct gvar_GVAR
 
       do
       {
-	float scalar = iterator.current_tuple->calculate_scalar (coords, num_coords, shared_tuples,
-								 gvar_cache);
+        float scalar = iterator.current_tuple->calculate_scalar (coords, num_coords, shared_tuples,
+                                                                 gvar_cache);
 
-	if (scalar == 0.f) continue;
-	const HBUINT8 *p = iterator.get_serialized_data ();
-	unsigned int length = iterator.current_tuple->get_data_size ();
-	if (unlikely (!iterator.var_data_bytes.check_range (p, length)))
-	  return false;
+        if (scalar == 0.f) continue;
+        const HBUINT8 *p = iterator.get_serialized_data ();
+        unsigned int length = iterator.current_tuple->get_data_size ();
+        if (unlikely (!iterator.var_data_bytes.check_range (p, length)))
+          return false;
 
-	if (!deltas)
-	{
-	  if (unlikely (!deltas_vec.resize_dirty  (count))) return false;
-	  deltas = deltas_vec.as_array ();
-	  hb_memset (deltas.arrayZ + (phantom_only ? count - 4 : 0), 0,
-		     (phantom_only ? 4 : count) * sizeof (deltas[0]));
-	}
+        if (!deltas)
+        {
+          if (unlikely (!deltas_vec.resize_dirty  (count))) return false;
+          deltas = deltas_vec.as_array ();
+          hb_memset (deltas.arrayZ + (phantom_only ? count - 4 : 0), 0,
+                     (phantom_only ? 4 : count) * sizeof (deltas[0]));
+        }
 
-	const HBUINT8 *end = p + length;
+        const HBUINT8 *end = p + length;
 
-	bool has_private_points = iterator.current_tuple->has_private_points ();
-	if (has_private_points &&
-	    !GlyphVariationData::decompile_points (p, private_indices, end))
-	  return false;
-	const hb_array_t<unsigned int> &indices = has_private_points ? private_indices : shared_indices;
+        bool has_private_points = iterator.current_tuple->has_private_points ();
+        if (has_private_points &&
+            !GlyphVariationData::decompile_points (p, private_indices, end))
+          return false;
+        const hb_array_t<unsigned int> &indices = has_private_points ? private_indices : shared_indices;
 
-	bool apply_to_all = (indices.length == 0);
-	unsigned num_deltas = apply_to_all ? points.length : indices.length;
-	unsigned start_deltas = (apply_to_all && phantom_only && num_deltas >= 4 ? num_deltas - 4 : 0);
-	if (unlikely (!x_deltas.resize_dirty  (num_deltas))) return false;
-	if (unlikely (!GlyphVariationData::decompile_deltas (p, x_deltas, end, false, start_deltas))) return false;
-	if (unlikely (!y_deltas.resize_dirty  (num_deltas))) return false;
-	if (unlikely (!GlyphVariationData::decompile_deltas (p, y_deltas, end, false, start_deltas))) return false;
+        bool apply_to_all = (indices.length == 0);
+        unsigned num_deltas = apply_to_all ? points.length : indices.length;
+        unsigned start_deltas = (apply_to_all && phantom_only && num_deltas >= 4 ? num_deltas - 4 : 0);
+        if (unlikely (!x_deltas.resize_dirty  (num_deltas))) return false;
+        if (unlikely (!GlyphVariationData::decompile_deltas (p, x_deltas, end, false, start_deltas))) return false;
+        if (unlikely (!y_deltas.resize_dirty  (num_deltas))) return false;
+        if (unlikely (!GlyphVariationData::decompile_deltas (p, y_deltas, end, false, start_deltas))) return false;
 
-	if (!apply_to_all)
-	{
-	  if (!orig_points && !phantom_only)
-	  {
-	    orig_points_vec.extend (points);
-	    if (unlikely (orig_points_vec.in_error ())) return false;
-	    orig_points = orig_points_vec.as_array ();
-	  }
+        if (!apply_to_all)
+        {
+          if (!orig_points && !phantom_only)
+          {
+            orig_points_vec.extend (points);
+            if (unlikely (orig_points_vec.in_error ())) return false;
+            orig_points = orig_points_vec.as_array ();
+          }
 
-	  if (flush)
-	  {
-	    for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
-	      points.arrayZ[i].translate (deltas.arrayZ[i]);
-	    flush = false;
+          if (flush)
+          {
+            for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
+              points.arrayZ[i].translate (deltas.arrayZ[i]);
+            flush = false;
 
-	  }
-	  hb_memset (deltas.arrayZ + (phantom_only ? count - 4 : 0), 0,
-		     (phantom_only ? 4 : count) * sizeof (deltas[0]));
-	}
+          }
+          hb_memset (deltas.arrayZ + (phantom_only ? count - 4 : 0), 0,
+                     (phantom_only ? 4 : count) * sizeof (deltas[0]));
+        }
 
-	if (HB_OPTIMIZE_SIZE_VAL)
-	{
-	  for (unsigned int i = 0; i < num_deltas; i++)
-	  {
-	    unsigned int pt_index;
-	    if (apply_to_all)
-	      pt_index = i;
-	    else
-	    {
-	      pt_index = indices[i];
-	      if (unlikely (pt_index >= deltas.length)) continue;
-	    }
-	    if (phantom_only && pt_index < count - 4) continue;
-	    auto &delta = deltas.arrayZ[pt_index];
-	    delta.flag = 1;	/* this point is referenced, i.e., explicit deltas specified */
-	    delta.add_delta (x_deltas.arrayZ[i] * scalar,
-			     y_deltas.arrayZ[i] * scalar);
-	  }
-	}
-	else
-	{
-	  /* Ouch. Four cases... for optimization. */
-	  if (scalar != 1.0f)
-	  {
-	    if (apply_to_all)
-	      for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
-	      {
-		auto &delta = deltas.arrayZ[i];
-		delta.add_delta (x_deltas.arrayZ[i] * scalar,
-				 y_deltas.arrayZ[i] * scalar);
-	      }
-	    else
-	      for (unsigned int i = 0; i < num_deltas; i++)
-	      {
-		unsigned int pt_index = indices[i];
-		if (unlikely (pt_index >= deltas.length)) continue;
-		if (phantom_only && pt_index < count - 4) continue;
-		auto &delta = deltas.arrayZ[pt_index];
-		delta.flag = 1;	/* this point is referenced, i.e., explicit deltas specified */
-		delta.add_delta (x_deltas.arrayZ[i] * scalar,
-				 y_deltas.arrayZ[i] * scalar);
-	      }
-	  }
-	  else
-	  {
-	    if (apply_to_all)
-	      for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
-	      {
-		auto &delta = deltas.arrayZ[i];
-		delta.add_delta (x_deltas.arrayZ[i],
-				 y_deltas.arrayZ[i]);
-	      }
-	    else
-	      for (unsigned int i = 0; i < num_deltas; i++)
-	      {
-		unsigned int pt_index = indices[i];
-		if (unlikely (pt_index >= deltas.length)) continue;
-		if (phantom_only && pt_index < count - 4) continue;
-		auto &delta = deltas.arrayZ[pt_index];
-		delta.flag = 1;	/* this point is referenced, i.e., explicit deltas specified */
-		delta.add_delta (x_deltas.arrayZ[i],
-				 y_deltas.arrayZ[i]);
-	      }
-	  }
-	}
+        if (HB_OPTIMIZE_SIZE_VAL)
+        {
+          for (unsigned int i = 0; i < num_deltas; i++)
+          {
+            unsigned int pt_index;
+            if (apply_to_all)
+              pt_index = i;
+            else
+            {
+              pt_index = indices[i];
+              if (unlikely (pt_index >= deltas.length)) continue;
+            }
+            if (phantom_only && pt_index < count - 4) continue;
+            auto &delta = deltas.arrayZ[pt_index];
+            delta.flag = 1;     /* this point is referenced, i.e., explicit deltas specified */
+            delta.add_delta (x_deltas.arrayZ[i] * scalar,
+                             y_deltas.arrayZ[i] * scalar);
+          }
+        }
+        else
+        {
+          /* Ouch. Four cases... for optimization. */
+          if (scalar != 1.0f)
+          {
+            if (apply_to_all)
+              for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
+              {
+                auto &delta = deltas.arrayZ[i];
+                delta.add_delta (x_deltas.arrayZ[i] * scalar,
+                                 y_deltas.arrayZ[i] * scalar);
+              }
+            else
+              for (unsigned int i = 0; i < num_deltas; i++)
+              {
+                unsigned int pt_index = indices[i];
+                if (unlikely (pt_index >= deltas.length)) continue;
+                if (phantom_only && pt_index < count - 4) continue;
+                auto &delta = deltas.arrayZ[pt_index];
+                delta.flag = 1; /* this point is referenced, i.e., explicit deltas specified */
+                delta.add_delta (x_deltas.arrayZ[i] * scalar,
+                                 y_deltas.arrayZ[i] * scalar);
+              }
+          }
+          else
+          {
+            if (apply_to_all)
+              for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
+              {
+                auto &delta = deltas.arrayZ[i];
+                delta.add_delta (x_deltas.arrayZ[i],
+                                 y_deltas.arrayZ[i]);
+              }
+            else
+              for (unsigned int i = 0; i < num_deltas; i++)
+              {
+                unsigned int pt_index = indices[i];
+                if (unlikely (pt_index >= deltas.length)) continue;
+                if (phantom_only && pt_index < count - 4) continue;
+                auto &delta = deltas.arrayZ[pt_index];
+                delta.flag = 1; /* this point is referenced, i.e., explicit deltas specified */
+                delta.add_delta (x_deltas.arrayZ[i],
+                                 y_deltas.arrayZ[i]);
+              }
+          }
+        }
 
-	/* infer deltas for unreferenced points */
-	if (!apply_to_all && !phantom_only)
-	{
-	  unsigned start_point = 0;
-	  unsigned end_point = 0;
-	  while (true)
-	  {
-	    while (end_point < count && !points.arrayZ[end_point].is_end_point)
-	      end_point++;
-	    if (unlikely (end_point == count)) break;
+        /* infer deltas for unreferenced points */
+        if (!apply_to_all && !phantom_only)
+        {
+          unsigned start_point = 0;
+          unsigned end_point = 0;
+          while (true)
+          {
+            while (end_point < count && !points.arrayZ[end_point].is_end_point)
+              end_point++;
+            if (unlikely (end_point == count)) break;
 
-	    /* Check the number of unreferenced points in a contour. If no unref points or no ref points, nothing to do. */
-	    unsigned unref_count = 0;
-	    for (unsigned i = start_point; i < end_point + 1; i++)
-	      unref_count += deltas.arrayZ[i].flag;
-	    unref_count = (end_point - start_point + 1) - unref_count;
+            /* Check the number of unreferenced points in a contour. If no unref points or no ref points, nothing to do. */
+            unsigned unref_count = 0;
+            for (unsigned i = start_point; i < end_point + 1; i++)
+              unref_count += deltas.arrayZ[i].flag;
+            unref_count = (end_point - start_point + 1) - unref_count;
 
-	    unsigned j = start_point;
-	    if (unref_count == 0 || unref_count > end_point - start_point)
-	      goto no_more_gaps;
+            unsigned j = start_point;
+            if (unref_count == 0 || unref_count > end_point - start_point)
+              goto no_more_gaps;
 
-	    for (;;)
-	    {
-	      /* Locate the next gap of unreferenced points between two referenced points prev and next.
-	       * Note that a gap may wrap around at left (start_point) and/or at right (end_point).
-	       */
-	      unsigned int prev, next, i;
-	      for (;;)
-	      {
-		i = j;
-		j = next_index (i, start_point, end_point);
-		if (deltas.arrayZ[i].flag && !deltas.arrayZ[j].flag) break;
-	      }
-	      prev = j = i;
-	      for (;;)
-	      {
-		i = j;
-		j = next_index (i, start_point, end_point);
-		if (!deltas.arrayZ[i].flag && deltas.arrayZ[j].flag) break;
-	      }
-	      next = j;
-	      /* Infer deltas for all unref points in the gap between prev and next */
-	      i = prev;
-	      for (;;)
-	      {
-		i = next_index (i, start_point, end_point);
-		if (i == next) break;
-		deltas.arrayZ[i].x = infer_delta (orig_points, deltas, i, prev, next, &contour_point_t::x);
-		deltas.arrayZ[i].y = infer_delta (orig_points, deltas, i, prev, next, &contour_point_t::y);
-		if (--unref_count == 0) goto no_more_gaps;
-	      }
-	    }
-	  no_more_gaps:
-	    start_point = end_point = end_point + 1;
-	  }
-	}
+            for (;;)
+            {
+              /* Locate the next gap of unreferenced points between two referenced points prev and next.
+               * Note that a gap may wrap around at left (start_point) and/or at right (end_point).
+               */
+              unsigned int prev, next, i;
+              for (;;)
+              {
+                i = j;
+                j = next_index (i, start_point, end_point);
+                if (deltas.arrayZ[i].flag && !deltas.arrayZ[j].flag) break;
+              }
+              prev = j = i;
+              for (;;)
+              {
+                i = j;
+                j = next_index (i, start_point, end_point);
+                if (!deltas.arrayZ[i].flag && deltas.arrayZ[j].flag) break;
+              }
+              next = j;
+              /* Infer deltas for all unref points in the gap between prev and next */
+              i = prev;
+              for (;;)
+              {
+                i = next_index (i, start_point, end_point);
+                if (i == next) break;
+                deltas.arrayZ[i].x = infer_delta (orig_points, deltas, i, prev, next, &contour_point_t::x);
+                deltas.arrayZ[i].y = infer_delta (orig_points, deltas, i, prev, next, &contour_point_t::y);
+                if (--unref_count == 0) goto no_more_gaps;
+              }
+            }
+          no_more_gaps:
+            start_point = end_point = end_point + 1;
+          }
+        }
 
-	flush = true;
+        flush = true;
 
       } while (iterator.move_to_next ());
 
       if (flush)
       {
-	for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
-	  points.arrayZ[i].translate (deltas.arrayZ[i]);
+        for (unsigned int i = phantom_only ? count - 4 : 0; i < count; i++)
+          points.arrayZ[i].translate (deltas.arrayZ[i]);
       }
 
       return true;
@@ -875,29 +875,29 @@ struct gvar_GVAR
   };
 
   protected:
-  FixedVersion<>version;	/* Version number of the glyph variations table
-				 * Set to 0x00010000u. */
-  HBUINT16	axisCount;	/* The number of variation axes for this font. This must be
-				 * the same number as axisCount in the 'fvar' table. */
-  HBUINT16	sharedTupleCount;
-				/* The number of shared tuple records. Shared tuple records
-				 * can be referenced within glyph variation data tables for
-				 * multiple glyphs, as opposed to other tuple records stored
-				 * directly within a glyph variation data table. */
+  FixedVersion<>version;        /* Version number of the glyph variations table
+                                 * Set to 0x00010000u. */
+  HBUINT16      axisCount;      /* The number of variation axes for this font. This must be
+                                 * the same number as axisCount in the 'fvar' table. */
+  HBUINT16      sharedTupleCount;
+                                /* The number of shared tuple records. Shared tuple records
+                                 * can be referenced within glyph variation data tables for
+                                 * multiple glyphs, as opposed to other tuple records stored
+                                 * directly within a glyph variation data table. */
   NNOffset32To<UnsizedArrayOf<F2DOT14>>
-		sharedTuples;	/* Offset from the start of this table to the shared tuple records.
-				 * Array of tuple records shared across all glyph variation data tables. */
-  GidOffsetType	glyphCountX;	/* The number of glyphs in this font. This must match the number of
-				 * glyphs stored elsewhere in the font. */
-  HBUINT16	flags;		/* Bit-field that gives the format of the offset array that follows.
-				 * If bit 0 is clear, the offsets are uint16; if bit 0 is set, the
-				 * offsets are uint32. */
+                sharedTuples;   /* Offset from the start of this table to the shared tuple records.
+                                 * Array of tuple records shared across all glyph variation data tables. */
+  GidOffsetType glyphCountX;    /* The number of glyphs in this font. This must match the number of
+                                 * glyphs stored elsewhere in the font. */
+  HBUINT16      flags;          /* Bit-field that gives the format of the offset array that follows.
+                                 * If bit 0 is clear, the offsets are uint16; if bit 0 is set, the
+                                 * offsets are uint32. */
   Offset32To<GlyphVariationData>
-		dataZ;		/* Offset from the start of this table to the array of
-				 * GlyphVariationData tables. */
+                dataZ;          /* Offset from the start of this table to the array of
+                                 * GlyphVariationData tables. */
   UnsizedArrayOf<HBUINT8>
-		offsetZ;	/* Offsets from the start of the GlyphVariationData array
-				 * to each GlyphVariationData table. */
+                offsetZ;        /* Offsets from the start of the GlyphVariationData array
+                                 * to each GlyphVariationData table. */
   public:
   DEFINE_SIZE_ARRAY (20, offsetZ);
 };

@@ -11,7 +11,7 @@ namespace glyf_impl {
 
 template <typename CompositeGlyphRecord>
 struct composite_iter_tmpl : hb_iter_with_fallback_t<composite_iter_tmpl<CompositeGlyphRecord>,
-						     const CompositeGlyphRecord &>
+                                                     const CompositeGlyphRecord &>
 {
   typedef const CompositeGlyphRecord *__item_t__;
   composite_iter_tmpl (hb_bytes_t glyph_, __item_t__ current_) :

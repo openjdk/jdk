@@ -39,8 +39,8 @@
 
 #ifndef HB_BEGIN_DECLS
 # ifdef __cplusplus
-#  define HB_BEGIN_DECLS	extern "C" {
-#  define HB_END_DECLS		}
+#  define HB_BEGIN_DECLS        extern "C" {
+#  define HB_END_DECLS          }
 # else /* !__cplusplus */
 #  define HB_BEGIN_DECLS
 #  define HB_END_DECLS
@@ -88,7 +88,7 @@ HB_BEGIN_DECLS
 
 /**
  * hb_bool_t:
- * 
+ *
  * Data type for booleans.
  *
  **/
@@ -96,7 +96,7 @@ typedef int hb_bool_t;
 
 /**
  * hb_codepoint_t:
- * 
+ *
  * Data type for holding Unicode codepoints. Also
  * used to hold glyph IDs.
  *
@@ -114,7 +114,7 @@ typedef uint32_t hb_codepoint_t;
 
 /**
  * hb_position_t:
- * 
+ *
  * Data type for holding a single coordinate value.
  * Contour points and other multi-dimensional data are
  * stored as tuples of #hb_position_t's.
@@ -123,7 +123,7 @@ typedef uint32_t hb_codepoint_t;
 typedef int32_t hb_position_t;
 /**
  * hb_mask_t:
- * 
+ *
  * Data type for bitmasks.
  *
  **/
@@ -228,9 +228,9 @@ hb_tag_to_string (hb_tag_t tag, char *buf);
  * @HB_DIRECTION_BTT: Text is set vertically from bottom to top.
  *
  * The direction of a text segment or buffer.
- * 
+ *
  * A segment can also be tested for horizontal or vertical
- * orientation (irrespective of specific direction) with 
+ * orientation (irrespective of specific direction) with
  * HB_DIRECTION_IS_HORIZONTAL() or HB_DIRECTION_IS_VERTICAL().
  *
  */
@@ -256,7 +256,7 @@ hb_direction_to_string (hb_direction_t direction);
  * Tests whether a text direction is valid.
  *
  **/
-#define HB_DIRECTION_IS_VALID(dir)	((((unsigned int) (dir)) & ~3U) == 4)
+#define HB_DIRECTION_IS_VALID(dir)      ((((unsigned int) (dir)) & ~3U) == 4)
 /* Direction must be valid for the following */
 /**
  * HB_DIRECTION_IS_HORIZONTAL:
@@ -266,7 +266,7 @@ hb_direction_to_string (hb_direction_t direction);
  * that the direction be valid.
  *
  **/
-#define HB_DIRECTION_IS_HORIZONTAL(dir)	((((unsigned int) (dir)) & ~1U) == 4)
+#define HB_DIRECTION_IS_HORIZONTAL(dir) ((((unsigned int) (dir)) & ~1U) == 4)
 /**
  * HB_DIRECTION_IS_VERTICAL:
  * @dir: #hb_direction_t to test
@@ -275,7 +275,7 @@ hb_direction_to_string (hb_direction_t direction);
  * that the direction be valid.
  *
  **/
-#define HB_DIRECTION_IS_VERTICAL(dir)	((((unsigned int) (dir)) & ~1U) == 6)
+#define HB_DIRECTION_IS_VERTICAL(dir)   ((((unsigned int) (dir)) & ~1U) == 6)
 /**
  * HB_DIRECTION_IS_FORWARD:
  * @dir: #hb_direction_t to test
@@ -284,7 +284,7 @@ hb_direction_to_string (hb_direction_t direction);
  * top to bottom). Requires that the direction be valid.
  *
  **/
-#define HB_DIRECTION_IS_FORWARD(dir)	((((unsigned int) (dir)) & ~2U) == 4)
+#define HB_DIRECTION_IS_FORWARD(dir)    ((((unsigned int) (dir)) & ~2U) == 4)
 /**
  * HB_DIRECTION_IS_BACKWARD:
  * @dir: #hb_direction_t to test
@@ -293,7 +293,7 @@ hb_direction_to_string (hb_direction_t direction);
  * bottom to top). Requires that the direction be valid.
  *
  **/
-#define HB_DIRECTION_IS_BACKWARD(dir)	((((unsigned int) (dir)) & ~2U) == 5)
+#define HB_DIRECTION_IS_BACKWARD(dir)   ((((unsigned int) (dir)) & ~2U) == 5)
 /**
  * HB_DIRECTION_REVERSE:
  * @dir: #hb_direction_t to reverse
@@ -302,7 +302,7 @@ hb_direction_to_string (hb_direction_t direction);
  * be valid.
  *
  **/
-#define HB_DIRECTION_REVERSE(dir)	((hb_direction_t) (((unsigned int) (dir)) ^ 1))
+#define HB_DIRECTION_REVERSE(dir)       ((hb_direction_t) (((unsigned int) (dir)) ^ 1))
 
 
 /* hb_language_t */
@@ -336,7 +336,7 @@ hb_language_get_default (void);
 
 HB_EXTERN hb_bool_t
 hb_language_matches (hb_language_t language,
-		     hb_language_t specific);
+                     hb_language_t specific);
 
 #include "hb-script-list.h"
 
@@ -388,7 +388,7 @@ typedef void (*hb_destroy_func_t) (void *user_data);
  *
  * Since: 2.0.0
  */
-#define HB_FEATURE_GLOBAL_START	0
+#define HB_FEATURE_GLOBAL_START 0
 
 /**
  * HB_FEATURE_GLOBAL_END:
@@ -398,7 +398,7 @@ typedef void (*hb_destroy_func_t) (void *user_data);
  *
  * Since: 2.0.0
  */
-#define HB_FEATURE_GLOBAL_END	((unsigned int) -1)
+#define HB_FEATURE_GLOBAL_END   ((unsigned int) -1)
 
 /**
  * hb_feature_t:
@@ -424,11 +424,11 @@ typedef struct hb_feature_t {
 
 HB_EXTERN hb_bool_t
 hb_feature_from_string (const char *str, int len,
-			hb_feature_t *feature);
+                        hb_feature_t *feature);
 
 HB_EXTERN void
 hb_feature_to_string (hb_feature_t *feature,
-		      char *buf, unsigned int size);
+                      char *buf, unsigned int size);
 
 /**
  * hb_variation_t:
@@ -438,7 +438,7 @@ hb_feature_to_string (hb_feature_t *feature,
  * Data type for holding variation data. Registered OpenType
  * variation-axis tags are listed in
  * [OpenType Axis Tag Registry](https://docs.microsoft.com/en-us/typography/opentype/spec/dvaraxisreg).
- * 
+ *
  * Since: 1.4.2
  */
 typedef struct hb_variation_t {
@@ -448,11 +448,11 @@ typedef struct hb_variation_t {
 
 HB_EXTERN hb_bool_t
 hb_variation_from_string (const char *str, int len,
-			  hb_variation_t *variation);
+                          hb_variation_t *variation);
 
 HB_EXTERN void
 hb_variation_to_string (hb_variation_t *variation,
-			char *buf, unsigned int size);
+                        char *buf, unsigned int size);
 
 /**
  * hb_color_t:
@@ -479,19 +479,19 @@ typedef uint32_t hb_color_t;
 
 HB_EXTERN uint8_t
 hb_color_get_alpha (hb_color_t color);
-#define hb_color_get_alpha(color)	((color) & 0xFF)
+#define hb_color_get_alpha(color)       ((color) & 0xFF)
 
 HB_EXTERN uint8_t
 hb_color_get_red (hb_color_t color);
-#define hb_color_get_red(color)		(((color) >> 8) & 0xFF)
+#define hb_color_get_red(color)         (((color) >> 8) & 0xFF)
 
 HB_EXTERN uint8_t
 hb_color_get_green (hb_color_t color);
-#define hb_color_get_green(color)	(((color) >> 16) & 0xFF)
+#define hb_color_get_green(color)       (((color) >> 16) & 0xFF)
 
 HB_EXTERN uint8_t
 hb_color_get_blue (hb_color_t color);
-#define hb_color_get_blue(color)	(((color) >> 24) & 0xFF)
+#define hb_color_get_blue(color)        (((color) >> 24) & 0xFF)
 
 /**
  * hb_glyph_extents_t:

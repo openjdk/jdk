@@ -15,20 +15,20 @@ struct CompositeGlyphRecord
   protected:
   enum composite_glyph_flag_t
   {
-    ARG_1_AND_2_ARE_WORDS	= 0x0001,
-    ARGS_ARE_XY_VALUES		= 0x0002,
-    ROUND_XY_TO_GRID		= 0x0004,
-    WE_HAVE_A_SCALE		= 0x0008,
-    MORE_COMPONENTS		= 0x0020,
-    WE_HAVE_AN_X_AND_Y_SCALE	= 0x0040,
-    WE_HAVE_A_TWO_BY_TWO	= 0x0080,
-    WE_HAVE_INSTRUCTIONS	= 0x0100,
-    USE_MY_METRICS		= 0x0200,
-    OVERLAP_COMPOUND		= 0x0400,
-    SCALED_COMPONENT_OFFSET	= 0x0800,
-    UNSCALED_COMPONENT_OFFSET	= 0x1000,
+    ARG_1_AND_2_ARE_WORDS       = 0x0001,
+    ARGS_ARE_XY_VALUES          = 0x0002,
+    ROUND_XY_TO_GRID            = 0x0004,
+    WE_HAVE_A_SCALE             = 0x0008,
+    MORE_COMPONENTS             = 0x0020,
+    WE_HAVE_AN_X_AND_Y_SCALE    = 0x0040,
+    WE_HAVE_A_TWO_BY_TWO        = 0x0080,
+    WE_HAVE_INSTRUCTIONS        = 0x0100,
+    USE_MY_METRICS              = 0x0200,
+    OVERLAP_COMPOUND            = 0x0400,
+    SCALED_COMPONENT_OFFSET     = 0x0800,
+    UNSCALED_COMPONENT_OFFSET   = 0x1000,
 #ifndef HB_NO_BEYOND_64K
-    GID_IS_24BIT		= 0x2000
+    GID_IS_24BIT                = 0x2000
 #endif
   };
 
@@ -88,43 +88,43 @@ struct CompositeGlyphRecord
   }
 
   static void transform (const float (&matrix)[4],
-			 hb_array_t<contour_point_t> points)
+                         hb_array_t<contour_point_t> points)
   {
     if (matrix[0] != 1.f || matrix[1] != 0.f ||
-	matrix[2] != 0.f || matrix[3] != 1.f)
+        matrix[2] != 0.f || matrix[3] != 1.f)
       for (auto &point : points)
         point.transform (matrix);
   }
 
   static void translate (const contour_point_t &trans,
-			 hb_array_t<contour_point_t> points)
+                         hb_array_t<contour_point_t> points)
   {
     if (HB_OPTIMIZE_SIZE_VAL)
     {
       if (trans.x != 0.f || trans.y != 0.f)
         for (auto &point : points)
-	  point.translate (trans);
+          point.translate (trans);
     }
     else
     {
       if (trans.x != 0.f && trans.y != 0.f)
         for (auto &point : points)
-	  point.translate (trans);
+          point.translate (trans);
       else
       {
-	if (trans.x != 0.f)
-	  for (auto &point : points)
-	    point.x += trans.x;
-	else if (trans.y != 0.f)
-	  for (auto &point : points)
-	    point.y += trans.y;
+        if (trans.x != 0.f)
+          for (auto &point : points)
+            point.x += trans.x;
+        else if (trans.y != 0.f)
+          for (auto &point : points)
+            point.y += trans.y;
       }
     }
   }
 
   void transform_points (hb_array_t<contour_point_t> points,
-			 const float (&matrix)[4],
-			 const contour_point_t &trans) const
+                         const float (&matrix)[4],
+                         const contour_point_t &trans) const
   {
     if (scaled_offsets ())
     {
@@ -186,7 +186,7 @@ struct CompositeGlyphRecord
       {
         // new point value has an int8 overflow
         hb_memcpy (out, this, len_before_val);
-        
+
         //update flags
         CompositeGlyphRecord *o = reinterpret_cast<CompositeGlyphRecord *> (out);
         o->flags = flags | ARG_1_AND_2_ARE_WORDS;
@@ -247,22 +247,22 @@ struct CompositeGlyphRecord
       const F2DOT14 *points = (const F2DOT14 *) p;
       if (flags & WE_HAVE_A_SCALE)
       {
-	matrix[0] = matrix[3] = points[0].to_float ();
-	return true;
+        matrix[0] = matrix[3] = points[0].to_float ();
+        return true;
       }
       else if (flags & WE_HAVE_AN_X_AND_Y_SCALE)
       {
-	matrix[0] = points[0].to_float ();
-	matrix[3] = points[1].to_float ();
-	return true;
+        matrix[0] = points[0].to_float ();
+        matrix[3] = points[1].to_float ();
+        return true;
       }
       else if (flags & WE_HAVE_A_TWO_BY_TWO)
       {
-	matrix[0] = points[0].to_float ();
-	matrix[1] = points[1].to_float ();
-	matrix[2] = points[2].to_float ();
-	matrix[3] = points[3].to_float ();
-	return true;
+        matrix[0] = points[0].to_float ();
+        matrix[1] = points[1].to_float ();
+        matrix[2] = points[2].to_float ();
+        matrix[3] = points[3].to_float ();
+        return true;
       }
     }
     return tx || ty;
@@ -310,8 +310,8 @@ struct CompositeGlyphRecord
 #endif
 
   protected:
-  HBUINT16	flags;
-  HBUINT24	pad;
+  HBUINT16      flags;
+  HBUINT24      pad;
   public:
   DEFINE_SIZE_MIN (4);
 };
@@ -360,7 +360,7 @@ struct CompositeGlyph
   void set_overlaps_flag ()
   {
     CompositeGlyphRecord& glyph_chain = const_cast<CompositeGlyphRecord &> (
-	StructAfter<CompositeGlyphRecord, GlyphHeader> (header));
+        StructAfter<CompositeGlyphRecord, GlyphHeader> (header));
     if (!bytes.check_range(&glyph_chain, CompositeGlyphRecord::min_size))
       return;
     glyph_chain.set_overlaps_flag ();

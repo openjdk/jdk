@@ -54,9 +54,9 @@ struct PairPosFormat2_4 : ValueBase
     return_trace (c->check_range ((const void *) values,
                                   count,
                                   stride) &&
-		  (c->lazy_some_gpos ||
-		   (valueFormat1.sanitize_values_stride_unsafe (c, this, &values[0], count, stride) &&
-		    valueFormat2.sanitize_values_stride_unsafe (c, this, &values[len1], count, stride))));
+                  (c->lazy_some_gpos ||
+                   (valueFormat1.sanitize_values_stride_unsafe (c, this, &values[0], count, stride) &&
+                    valueFormat2.sanitize_values_stride_unsafe (c, this, &values[len1], count, stride))));
   }
 
   bool intersects (const hb_set_t *glyphs) const
@@ -250,8 +250,8 @@ struct PairPosFormat2_4 : ValueBase
     if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
     {
       c->buffer->message (c->font,
-			  "try kerning glyphs at %u,%u",
-			  c->buffer->idx, skippy_iter.idx);
+                          "try kerning glyphs at %u,%u",
+                          c->buffer->idx, skippy_iter.idx);
     }
 
     applied_first = len1 && valueFormat1.apply_value (c, this, v, buffer->cur_pos());
@@ -260,16 +260,16 @@ struct PairPosFormat2_4 : ValueBase
     if (applied_first || applied_second)
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-	c->buffer->message (c->font,
-			    "kerned glyphs at %u,%u",
-			    c->buffer->idx, skippy_iter.idx);
+        c->buffer->message (c->font,
+                            "kerned glyphs at %u,%u",
+                            c->buffer->idx, skippy_iter.idx);
       }
 
     if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
     {
       c->buffer->message (c->font,
-			  "tried kerning glyphs at %u,%u",
-			  c->buffer->idx, skippy_iter.idx);
+                          "tried kerning glyphs at %u,%u",
+                          c->buffer->idx, skippy_iter.idx);
     }
 
     success:

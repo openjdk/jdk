@@ -76,7 +76,7 @@ hb_subset_input_t::hb_subset_input_t ()
     HB_TAG ('D', 'S', 'I', 'G'),
   };
   sets.no_subset_tables->add_array (default_no_subset_tables,
-					 ARRAY_LENGTH (default_no_subset_tables));
+                                         ARRAY_LENGTH (default_no_subset_tables));
 
   //copied from _layout_features_groups in fonttools
   hb_tag_t default_layout_features[] = {
@@ -329,7 +329,7 @@ hb_subset_input_get_flags (hb_subset_input_t *input)
  **/
 HB_EXTERN void
 hb_subset_input_set_flags (hb_subset_input_t *input,
-			   unsigned value)
+                           unsigned value)
 {
   input->flags = (hb_subset_flags_t) value;
 }
@@ -350,10 +350,10 @@ hb_subset_input_set_flags (hb_subset_input_t *input,
  **/
 hb_bool_t
 hb_subset_input_set_user_data (hb_subset_input_t  *input,
-			       hb_user_data_key_t *key,
-			       void *		   data,
-			       hb_destroy_func_t   destroy,
-			       hb_bool_t	   replace)
+                               hb_user_data_key_t *key,
+                               void *              data,
+                               hb_destroy_func_t   destroy,
+                               hb_bool_t           replace)
 {
   return hb_object_set_user_data (input, key, data, destroy, replace);
 }
@@ -372,7 +372,7 @@ hb_subset_input_set_user_data (hb_subset_input_t  *input,
  **/
 void *
 hb_subset_input_get_user_data (const hb_subset_input_t *input,
-			       hb_user_data_key_t     *key)
+                               hb_user_data_key_t     *key)
 {
   return hb_object_get_user_data (input, key);
 }
@@ -393,11 +393,11 @@ void
 hb_subset_input_keep_everything (hb_subset_input_t *input)
 {
   const hb_subset_sets_t indices[] = {HB_SUBSET_SETS_UNICODE,
-				      HB_SUBSET_SETS_GLYPH_INDEX,
-				      HB_SUBSET_SETS_NAME_ID,
-				      HB_SUBSET_SETS_NAME_LANG_ID,
-				      HB_SUBSET_SETS_LAYOUT_FEATURE_TAG,
-				      HB_SUBSET_SETS_LAYOUT_SCRIPT_TAG};
+                                      HB_SUBSET_SETS_GLYPH_INDEX,
+                                      HB_SUBSET_SETS_NAME_ID,
+                                      HB_SUBSET_SETS_NAME_LANG_ID,
+                                      HB_SUBSET_SETS_LAYOUT_FEATURE_TAG,
+                                      HB_SUBSET_SETS_LAYOUT_SCRIPT_TAG};
 
   for (auto idx : hb_iter (indices))
   {
@@ -410,10 +410,10 @@ hb_subset_input_keep_everything (hb_subset_input_t *input)
   hb_set_clear (hb_subset_input_set (input, HB_SUBSET_SETS_DROP_TABLE_TAG));
 
   hb_subset_input_set_flags (input,
-			     HB_SUBSET_FLAGS_NOTDEF_OUTLINE |
-			     HB_SUBSET_FLAGS_GLYPH_NAMES |
-			     HB_SUBSET_FLAGS_NAME_LEGACY |
-			     HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES |
+                             HB_SUBSET_FLAGS_NOTDEF_OUTLINE |
+                             HB_SUBSET_FLAGS_GLYPH_NAMES |
+                             HB_SUBSET_FLAGS_NAME_LEGACY |
+                             HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES |
                              HB_SUBSET_FLAGS_PASSTHROUGH_UNRECOGNIZED);
 }
 
@@ -580,10 +580,10 @@ hb_subset_input_set_axis_range (hb_subset_input_t  *input,
  **/
 HB_EXTERN hb_bool_t
 hb_subset_input_get_axis_range (hb_subset_input_t  *input,
-				hb_tag_t            axis_tag,
-				float              *axis_min_value,
-				float              *axis_max_value,
-				float              *axis_def_value)
+                                hb_tag_t            axis_tag,
+                                float              *axis_min_value,
+                                float              *axis_max_value,
+                                float              *axis_def_value)
 
 {
   Triple* triple;

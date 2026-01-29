@@ -59,8 +59,8 @@ struct BaseCoordFormat1
   }
 
   protected:
-  HBUINT16	format;		/* Format identifier--format = 1 */
-  FWORD		coordinate;	/* X or Y value, in design units */
+  HBUINT16      format;         /* Format identifier--format = 1 */
+  FWORD         coordinate;     /* X or Y value, in design units */
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -91,11 +91,11 @@ struct BaseCoordFormat2
   }
 
   protected:
-  HBUINT16	format;		/* Format identifier--format = 2 */
-  FWORD		coordinate;	/* X or Y value, in design units */
-  HBGlyphID16	referenceGlyph;	/* Glyph ID of control glyph */
-  HBUINT16	coordPoint;	/* Index of contour point on the
-				 * reference glyph */
+  HBUINT16      format;         /* Format identifier--format = 2 */
+  FWORD         coordinate;     /* X or Y value, in design units */
+  HBGlyphID16   referenceGlyph; /* Glyph ID of control glyph */
+  HBUINT16      coordPoint;     /* Index of contour point on the
+                                 * reference glyph */
   public:
   DEFINE_SIZE_STATIC (8);
 };
@@ -103,14 +103,14 @@ struct BaseCoordFormat2
 struct BaseCoordFormat3
 {
   hb_position_t get_coord (hb_font_t *font,
-			   const ItemVariationStore &var_store,
-			   hb_direction_t direction) const
+                           const ItemVariationStore &var_store,
+                           hb_direction_t direction) const
   {
     const Device &device = this+deviceTable;
 
     return HB_DIRECTION_IS_HORIZONTAL (direction)
-	 ? font->em_scale_y (coordinate) + device.get_y_delta (font, var_store)
-	 : font->em_scale_x (coordinate) + device.get_x_delta (font, var_store);
+         ? font->em_scale_y (coordinate) + device.get_y_delta (font, var_store)
+         : font->em_scale_x (coordinate) + device.get_x_delta (font, var_store);
   }
 
   void collect_variation_indices (hb_set_t& varidx_set /* OUT */) const
@@ -133,7 +133,7 @@ struct BaseCoordFormat3
         hb_pair_t<unsigned, int> *v;
         if (!c->plan->base_variation_idx_map.has (var_idx, &v))
           return_trace (false);
-        
+
         if (unlikely (!c->serializer->check_assign (out->coordinate, coordinate + hb_second (*v),
                                                     HB_SERIALIZE_ERROR_INT_OVERFLOW)))
           return_trace (false);
@@ -149,16 +149,16 @@ struct BaseCoordFormat3
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  deviceTable.sanitize (c, this)));
+                          deviceTable.sanitize (c, this)));
   }
 
   protected:
-  HBUINT16	format;		/* Format identifier--format = 3 */
-  FWORD		coordinate;	/* X or Y value, in design units */
+  HBUINT16      format;         /* Format identifier--format = 3 */
+  FWORD         coordinate;     /* X or Y value, in design units */
   Offset16To<Device>
-		deviceTable;	/* Offset to Device table for X or
-				 * Y value, from beginning of
-				 * BaseCoord table (may be NULL). */
+                deviceTable;    /* Offset to Device table for X or
+                                 * Y value, from beginning of
+                                 * BaseCoord table (may be NULL). */
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -168,8 +168,8 @@ struct BaseCoord
   bool has_data () const { return u.format.v; }
 
   hb_position_t get_coord (hb_font_t            *font,
-			   const ItemVariationStore &var_store,
-			   hb_direction_t        direction) const
+                           const ItemVariationStore &var_store,
+                           hb_direction_t        direction) const
   {
     switch (u.format.v) {
     case 1: hb_barrier (); return u.format1.get_coord (font, direction);
@@ -215,10 +215,10 @@ struct BaseCoord
 
   protected:
   union {
-  struct { HBUINT16 v; }	format;
-  BaseCoordFormat1	format1;
-  BaseCoordFormat2	format2;
-  BaseCoordFormat3	format3;
+  struct { HBUINT16 v; }        format;
+  BaseCoordFormat1      format1;
+  BaseCoordFormat2      format2;
+  BaseCoordFormat3      format3;
   } u;
   public:
   DEFINE_SIZE_UNION (2, format.v);
@@ -265,21 +265,21 @@ struct FeatMinMaxRecord
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  minCoord.sanitize (c, base) &&
-			  maxCoord.sanitize (c, base)));
+                          minCoord.sanitize (c, base) &&
+                          maxCoord.sanitize (c, base)));
   }
 
   protected:
-  Tag		tag;		/* 4-byte feature identification tag--must
-				 * match feature tag in FeatureList */
+  Tag           tag;            /* 4-byte feature identification tag--must
+                                 * match feature tag in FeatureList */
   Offset16To<BaseCoord>
-		minCoord;	/* Offset to BaseCoord table that defines
-				 * the minimum extent value, from beginning
-				 * of MinMax table (may be NULL) */
+                minCoord;       /* Offset to BaseCoord table that defines
+                                 * the minimum extent value, from beginning
+                                 * of MinMax table (may be NULL) */
   Offset16To<BaseCoord>
-		maxCoord;	/* Offset to BaseCoord table that defines
-				 * the maximum extent value, from beginning
-				 * of MinMax table (may be NULL) */
+                maxCoord;       /* Offset to BaseCoord table that defines
+                                 * the maximum extent value, from beginning
+                                 * of MinMax table (may be NULL) */
   public:
   DEFINE_SIZE_STATIC (8);
 };
@@ -287,8 +287,8 @@ struct FeatMinMaxRecord
 struct MinMax
 {
   void get_min_max (hb_tag_t          feature_tag,
-		    const BaseCoord **min,
-		    const BaseCoord **max) const
+                    const BaseCoord **min,
+                    const BaseCoord **max) const
   {
     const FeatMinMaxRecord &minMaxCoord = featMinMaxRecords.bsearch (feature_tag);
     if (minMaxCoord.has_data ())
@@ -337,24 +337,24 @@ struct MinMax
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  minCoord.sanitize (c, this) &&
-			  maxCoord.sanitize (c, this) &&
-			  featMinMaxRecords.sanitize (c, this)));
+                          minCoord.sanitize (c, this) &&
+                          maxCoord.sanitize (c, this) &&
+                          featMinMaxRecords.sanitize (c, this)));
   }
 
   protected:
   Offset16To<BaseCoord>
-		minCoord;	/* Offset to BaseCoord table that defines
-				 * minimum extent value, from the beginning
-				 * of MinMax table (may be NULL) */
+                minCoord;       /* Offset to BaseCoord table that defines
+                                 * minimum extent value, from the beginning
+                                 * of MinMax table (may be NULL) */
   Offset16To<BaseCoord>
-		maxCoord;	/* Offset to BaseCoord table that defines
-				 * maximum extent value, from the beginning
-				 * of MinMax table (may be NULL) */
+                maxCoord;       /* Offset to BaseCoord table that defines
+                                 * maximum extent value, from the beginning
+                                 * of MinMax table (may be NULL) */
   SortedArray16Of<FeatMinMaxRecord>
-		featMinMaxRecords;
-				/* Array of FeatMinMaxRecords, in alphabetical
-				 * order by featureTableTag */
+                featMinMaxRecords;
+                                /* Array of FeatMinMaxRecords, in alphabetical
+                                 * order by featureTableTag */
   public:
   DEFINE_SIZE_ARRAY (6, featMinMaxRecords);
 };
@@ -391,20 +391,20 @@ struct BaseValues
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  baseCoords.sanitize (c, this)));
+                          baseCoords.sanitize (c, this)));
   }
 
   protected:
-  Index		defaultIndex;	/* Index number of default baseline for this
-				 * script — equals index position of baseline tag
-				 * in baselineTags array of the BaseTagList */
+  Index         defaultIndex;   /* Index number of default baseline for this
+                                 * script — equals index position of baseline tag
+                                 * in baselineTags array of the BaseTagList */
   Array16OfOffset16To<BaseCoord>
-		baseCoords;	/* Number of BaseCoord tables defined — should equal
-				 * baseTagCount in the BaseTagList
-				 *
-				 * Array of offsets to BaseCoord tables, from beginning of
-				 * BaseValues table — order matches baselineTags array in
-				 * the BaseTagList */
+                baseCoords;     /* Number of BaseCoord tables defined — should equal
+                                 * baseTagCount in the BaseTagList
+                                 *
+                                 * Array of offsets to BaseCoord tables, from beginning of
+                                 * BaseValues table — order matches baselineTags array in
+                                 * the BaseTagList */
   public:
   DEFINE_SIZE_ARRAY (4, baseCoords);
 };
@@ -436,14 +436,14 @@ struct BaseLangSysRecord
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  minMax.sanitize (c, base)));
+                          minMax.sanitize (c, base)));
   }
 
   protected:
-  Tag		baseLangSysTag;	/* 4-byte language system identification tag */
+  Tag           baseLangSysTag; /* 4-byte language system identification tag */
   Offset16To<MinMax>
-		minMax;		/* Offset to MinMax table, from beginning
-				 * of BaseScript table */
+                minMax;         /* Offset to MinMax table, from beginning
+                                 * of BaseScript table */
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -467,7 +467,7 @@ struct BaseScript
   {
     (this+baseValues).collect_variation_indices (varidx_set);
     (this+defaultMinMax).collect_variation_indices (plan, varidx_set);
-    
+
     for (const BaseLangSysRecord& _ : baseLangSysRecords)
       _.collect_variation_indices (this, plan, varidx_set);
   }
@@ -495,22 +495,22 @@ struct BaseScript
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  baseValues.sanitize (c, this) &&
-			  defaultMinMax.sanitize (c, this) &&
-			  baseLangSysRecords.sanitize (c, this)));
+                          baseValues.sanitize (c, this) &&
+                          defaultMinMax.sanitize (c, this) &&
+                          baseLangSysRecords.sanitize (c, this)));
   }
 
   protected:
   Offset16To<BaseValues>
-		baseValues;	/* Offset to BaseValues table, from beginning
-				 * of BaseScript table (may be NULL) */
+                baseValues;     /* Offset to BaseValues table, from beginning
+                                 * of BaseScript table (may be NULL) */
   Offset16To<MinMax>
-		defaultMinMax;	/* Offset to MinMax table, from beginning of
-				 * BaseScript table (may be NULL) */
+                defaultMinMax;  /* Offset to MinMax table, from beginning of
+                                 * BaseScript table (may be NULL) */
   SortedArray16Of<BaseLangSysRecord>
-		baseLangSysRecords;
-				/* Number of BaseLangSysRecords
-				 * defined — may be zero (0) */
+                baseLangSysRecords;
+                                /* Number of BaseLangSysRecords
+                                 * defined — may be zero (0) */
 
   public:
   DEFINE_SIZE_ARRAY (6, baseLangSysRecords);
@@ -552,14 +552,14 @@ struct BaseScriptRecord
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  baseScript.sanitize (c, base)));
+                          baseScript.sanitize (c, base)));
   }
 
   protected:
-  Tag		baseScriptTag;	/* 4-byte script identification tag */
+  Tag           baseScriptTag;  /* 4-byte script identification tag */
   Offset16To<BaseScript>
-		baseScript;	/* Offset to BaseScript table, from beginning
-				 * of BaseScriptList */
+                baseScript;     /* Offset to BaseScript table, from beginning
+                                 * of BaseScriptList */
 
   public:
   DEFINE_SIZE_STATIC (6);
@@ -605,12 +605,12 @@ struct BaseScriptList
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  baseScriptRecords.sanitize (c, this));
+                  baseScriptRecords.sanitize (c, this));
   }
 
   protected:
   SortedArray16Of<BaseScriptRecord>
-			baseScriptRecords;
+                        baseScriptRecords;
 
   public:
   DEFINE_SIZE_ARRAY (2, baseScriptRecords);
@@ -619,9 +619,9 @@ struct BaseScriptList
 struct Axis
 {
   bool get_baseline (hb_tag_t          baseline_tag,
-		     hb_tag_t          script_tag,
-		     hb_tag_t          language_tag,
-		     const BaseCoord **coord) const
+                     hb_tag_t          script_tag,
+                     hb_tag_t          language_tag,
+                     const BaseCoord **coord) const
   {
     const BaseScript &base_script = (this+baseScriptList).get_base_script (script_tag);
     if (!base_script.has_values ())
@@ -645,10 +645,10 @@ struct Axis
   }
 
   bool get_min_max (hb_tag_t          script_tag,
-		    hb_tag_t          language_tag,
-		    hb_tag_t          feature_tag,
-		    const BaseCoord **min_coord,
-		    const BaseCoord **max_coord) const
+                    hb_tag_t          language_tag,
+                    hb_tag_t          feature_tag,
+                    const BaseCoord **min_coord,
+                    const BaseCoord **max_coord) const
   {
     const BaseScript &base_script = (this+baseScriptList).get_base_script (script_tag);
     if (!base_script.has_min_max ())
@@ -680,21 +680,21 @@ struct Axis
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  baseTagList.sanitize (c, this) &&
-			  baseScriptList.sanitize (c, this)));
+                          baseTagList.sanitize (c, this) &&
+                          baseScriptList.sanitize (c, this)));
   }
 
   protected:
   Offset16To<SortedArray16Of<Tag>>
-		baseTagList;	/* Offset to BaseTagList table, from beginning
-				 * of Axis table (may be NULL)
-				 * Array of 4-byte baseline identification tags — must
-				 * be in alphabetical order */
+                baseTagList;    /* Offset to BaseTagList table, from beginning
+                                 * of Axis table (may be NULL)
+                                 * Array of 4-byte baseline identification tags — must
+                                 * be in alphabetical order */
   Offset16To<BaseScriptList>
-		baseScriptList;	/* Offset to BaseScriptList table, from beginning
-				 * of Axis table
-				 * Array of BaseScriptRecords, in alphabetical order
-				 * by baseScriptTag */
+                baseScriptList; /* Offset to BaseScriptList table, from beginning
+                                 * of Axis table
+                                 * Array of BaseScriptRecords, in alphabetical order
+                                 * by baseScriptTag */
 
   public:
   DEFINE_SIZE_STATIC (4);
@@ -780,15 +780,15 @@ struct BASE
   }
 
   bool get_baseline (hb_font_t      *font,
-		     hb_tag_t        baseline_tag,
-		     hb_direction_t  direction,
-		     hb_tag_t        script_tag,
-		     hb_tag_t        language_tag,
-		     hb_position_t  *base) const
+                     hb_tag_t        baseline_tag,
+                     hb_direction_t  direction,
+                     hb_tag_t        script_tag,
+                     hb_tag_t        language_tag,
+                     hb_position_t  *base) const
   {
     const BaseCoord *base_coord = nullptr;
     if (unlikely (!get_axis (direction).get_baseline (baseline_tag, script_tag, language_tag, &base_coord) ||
-		  !base_coord || !base_coord->has_data ()))
+                  !base_coord || !base_coord->has_data ()))
       return false;
 
     if (likely (base))
@@ -798,16 +798,16 @@ struct BASE
   }
 
   bool get_min_max (hb_font_t      *font,
-		    hb_direction_t  direction,
-		    hb_tag_t        script_tag,
-		    hb_tag_t        language_tag,
-		    hb_tag_t        feature_tag,
-		    hb_position_t  *min,
-		    hb_position_t  *max) const
+                    hb_direction_t  direction,
+                    hb_tag_t        script_tag,
+                    hb_tag_t        language_tag,
+                    hb_tag_t        feature_tag,
+                    hb_position_t  *min,
+                    hb_position_t  *max) const
   {
     const BaseCoord *min_coord, *max_coord;
     if (!get_axis (direction).get_min_max (script_tag, language_tag, feature_tag,
-					   &min_coord, &max_coord))
+                                           &min_coord, &max_coord))
       return false;
 
     const ItemVariationStore &var_store = get_var_store ();
@@ -820,24 +820,24 @@ struct BASE
   {
     TRACE_SANITIZE (this);
     return_trace (likely (c->check_struct (this) &&
-			  hb_barrier () &&
-			  likely (version.major == 1) &&
-			  hAxis.sanitize (c, this) &&
-			  vAxis.sanitize (c, this) &&
-			  (version.to_int () < 0x00010001u || varStore.sanitize (c, this))));
+                          hb_barrier () &&
+                          likely (version.major == 1) &&
+                          hAxis.sanitize (c, this) &&
+                          vAxis.sanitize (c, this) &&
+                          (version.to_int () < 0x00010001u || varStore.sanitize (c, this))));
   }
 
   protected:
-  FixedVersion<>version;	/* Version of the BASE table */
-  Offset16To<Axis>hAxis;		/* Offset to horizontal Axis table, from beginning
-				 * of BASE table (may be NULL) */
-  Offset16To<Axis>vAxis;		/* Offset to vertical Axis table, from beginning
-				 * of BASE table (may be NULL) */
+  FixedVersion<>version;        /* Version of the BASE table */
+  Offset16To<Axis>hAxis;                /* Offset to horizontal Axis table, from beginning
+                                 * of BASE table (may be NULL) */
+  Offset16To<Axis>vAxis;                /* Offset to vertical Axis table, from beginning
+                                 * of BASE table (may be NULL) */
   Offset32To<ItemVariationStore>
-		varStore;	/* Offset to the table of Item Variation
-				 * Store--from beginning of BASE
-				 * header (may be NULL).  Introduced
-				 * in version 0x00010001. */
+                varStore;       /* Offset to the table of Item Variation
+                                 * Store--from beginning of BASE
+                                 * header (may be NULL).  Introduced
+                                 * in version 0x00010001. */
   public:
   DEFINE_SIZE_MIN (8);
 };

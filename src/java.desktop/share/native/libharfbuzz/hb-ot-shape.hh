@@ -38,21 +38,21 @@ struct hb_ot_shape_plan_key_t
   unsigned int variations_index[2];
 
   void init (hb_face_t *face,
-	     const int *coords,
-	     unsigned   num_coords)
+             const int *coords,
+             unsigned   num_coords)
   {
     for (unsigned int table_index = 0; table_index < 2; table_index++)
       hb_ot_layout_table_find_feature_variations (face,
-						  table_tags[table_index],
-						  coords,
-						  num_coords,
-						  &variations_index[table_index]);
+                                                  table_tags[table_index],
+                                                  coords,
+                                                  num_coords,
+                                                  &variations_index[table_index]);
   }
 
   bool equal (const hb_ot_shape_plan_key_t *other)
   {
     return variations_index[0] == other->variations_index[0] &&
-	   variations_index[1] == other->variations_index[1];
+           variations_index[1] == other->variations_index[1];
   }
 };
 
@@ -128,7 +128,7 @@ struct hb_ot_shape_plan_t
   }
 
   HB_INTERNAL bool init0 (hb_face_t                     *face,
-			  const hb_shape_plan_key_t     *key);
+                          const hb_shape_plan_key_t     *key);
   HB_INTERNAL void fini ();
 
   HB_INTERNAL void substitute (hb_font_t *font, hb_buffer_t *buffer) const;
@@ -154,10 +154,10 @@ struct hb_ot_shape_planner_t
   const struct hb_ot_shaper_t *shaper;
 
   HB_INTERNAL hb_ot_shape_planner_t (hb_face_t                     *face,
-				     const hb_segment_properties_t &props);
+                                     const hb_segment_properties_t &props);
 
   HB_INTERNAL void compile (hb_ot_shape_plan_t           &plan,
-			    const hb_ot_shape_plan_key_t &key);
+                            const hb_ot_shape_plan_key_t &key);
 };
 
 

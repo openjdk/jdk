@@ -61,8 +61,8 @@ struct hb_alloc_pool_t
       if (chunks.length > 1)
       {
         // Bring back the previous last chunk to the end, so that
-	// we can continue to allocate from it.
-	hb_swap (chunks.arrayZ[chunks.length - 1], chunks.arrayZ[chunks.length - 2]);
+        // we can continue to allocate from it.
+        hb_swap (chunks.arrayZ[chunks.length - 1], chunks.arrayZ[chunks.length - 2]);
       }
       return ret;
     }

@@ -12,9 +12,9 @@ struct Ligature
 {
   public:
   typename Types::HBGlyphID
-		ligGlyph;               /* GlyphID of ligature to substitute */
+                ligGlyph;               /* GlyphID of ligature to substitute */
   HeadlessArray16Of<typename Types::HBGlyphID>
-		component;              /* Array of component GlyphIDs--start
+                component;              /* Array of component GlyphIDs--start
                                          * with the second  component--ordered
                                          * in writing direction */
   public:
@@ -82,19 +82,19 @@ struct Ligature
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-	c->buffer->sync_so_far ();
-	c->buffer->message (c->font,
-			    "replacing glyph at %u (ligature substitution)",
-			    c->buffer->idx);
+        c->buffer->sync_so_far ();
+        c->buffer->message (c->font,
+                            "replacing glyph at %u (ligature substitution)",
+                            c->buffer->idx);
       }
 
       c->replace_glyph (ligGlyph);
 
       if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
       {
-	c->buffer->message (c->font,
-			    "replaced glyph at %u (ligature substitution)",
-			    c->buffer->idx - 1u);
+        c->buffer->message (c->font,
+                            "replaced glyph at %u (ligature substitution)",
+                            c->buffer->idx - 1u);
       }
 
       return_trace (true);
@@ -129,16 +129,16 @@ struct Ligature
       match_end += delta;
       for (unsigned i = 0; i < count; i++)
       {
-	c->match_positions[i] += delta;
-	if (i)
-	  *p++ = ',';
-	snprintf (p, sizeof(buf) - (p - buf), "%u", c->match_positions[i]);
-	p += strlen(p);
+        c->match_positions[i] += delta;
+        if (i)
+          *p++ = ',';
+        snprintf (p, sizeof(buf) - (p - buf), "%u", c->match_positions[i]);
+        p += strlen(p);
       }
 
       c->buffer->message (c->font,
-			  "ligating glyphs at %s",
-			  buf);
+                          "ligating glyphs at %s",
+                          buf);
     }
 
     ligate_input (c,
@@ -151,8 +151,8 @@ struct Ligature
     {
       c->buffer->sync_so_far ();
       c->buffer->message (c->font,
-			  "ligated glyph at %u",
-			  pos);
+                          "ligated glyph at %u",
+                          pos);
     }
 
     return_trace (true);

@@ -138,9 +138,9 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
       *p++ = '"';
       for (char *q = g; *q; q++)
       {
-	if (unlikely (*q == '"' || *q == '\\'))
-	  *p++ = '\\';
-	*p++ = *q;
+        if (unlikely (*q == '"' || *q == '\\'))
+          *p++ = '\\';
+        *p++ = *q;
       }
       *p++ = '"';
     }
@@ -154,10 +154,10 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
     if (!(flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS))
     {
       p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"dx\":%d,\"dy\":%d",
-		   x+pos[i].x_offset, y+pos[i].y_offset));
+                   x+pos[i].x_offset, y+pos[i].y_offset));
       if (!(flags & HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES))
         p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"ax\":%d,\"ay\":%d",
-		     pos[i].x_advance, pos[i].y_advance));
+                     pos[i].x_advance, pos[i].y_advance));
     }
 
     if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS)
@@ -171,10 +171,10 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
       hb_glyph_extents_t extents;
       if (hb_font_get_glyph_extents(font, info[i].codepoint, &extents))
       {
-	p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"xb\":%d,\"yb\":%d",
-				  extents.x_bearing, extents.y_bearing));
-	p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"w\":%d,\"h\":%d",
-				  extents.width, extents.height));
+        p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"xb\":%d,\"yb\":%d",
+                                  extents.x_bearing, extents.y_bearing));
+        p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"w\":%d,\"h\":%d",
+                                  extents.width, extents.height));
       }
     }
 
@@ -321,7 +321,7 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
     {
       hb_glyph_extents_t extents;
       if (hb_font_get_glyph_extents(font, info[i].codepoint, &extents))
-	p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "<%d,%d,%d,%d>", extents.x_bearing, extents.y_bearing, extents.width, extents.height));
+        p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "<%d,%d,%d,%d>", extents.x_bearing, extents.y_bearing, extents.width, extents.height));
     }
 
     if (i == end-1) {
@@ -673,16 +673,16 @@ hb_buffer_serialize (hb_buffer_t *buffer,
 
     case HB_BUFFER_CONTENT_TYPE_GLYPHS:
       return hb_buffer_serialize_glyphs (buffer, start, end, buf, buf_size,
-					 buf_consumed, font, format, flags);
+                                         buf_consumed, font, format, flags);
 
     case HB_BUFFER_CONTENT_TYPE_UNICODE:
       return hb_buffer_serialize_unicode (buffer, start, end, buf, buf_size,
-					  buf_consumed, format, flags);
+                                          buf_consumed, format, flags);
 
     case HB_BUFFER_CONTENT_TYPE_INVALID:
     default:
       return _hb_buffer_serialize_invalid (buffer, start, end, buf, buf_size,
-					   buf_consumed, format, flags);
+                                           buf_consumed, format, flags);
   }
 }
 
@@ -783,8 +783,8 @@ hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
   {
     case HB_BUFFER_SERIALIZE_FORMAT_TEXT:
       return _hb_buffer_deserialize_text_glyphs (buffer,
-						 buf, buf_len, end_ptr,
-						 font);
+                                                 buf, buf_len, end_ptr,
+                                                 font);
 
     case HB_BUFFER_SERIALIZE_FORMAT_JSON:
       return _hb_buffer_deserialize_json (buffer,
@@ -853,8 +853,8 @@ hb_buffer_deserialize_unicode (hb_buffer_t *buffer,
   {
     case HB_BUFFER_SERIALIZE_FORMAT_TEXT:
       return _hb_buffer_deserialize_text_unicode (buffer,
-						  buf, buf_len, end_ptr,
-						  font);
+                                                  buf, buf_len, end_ptr,
+                                                  font);
 
     case HB_BUFFER_SERIALIZE_FORMAT_JSON:
       return _hb_buffer_deserialize_json (buffer,

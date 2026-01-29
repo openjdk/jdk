@@ -57,8 +57,8 @@ struct graph_t
     auto parents_iter () const HB_AUTO_RETURN
     (
       hb_concat (
-	hb_iter (&single_parent, single_parent != (unsigned) -1),
-	parents.keys_ref ()
+        hb_iter (&single_parent, single_parent != (unsigned) -1),
+        parents.keys_ref ()
       )
     )
 
@@ -200,8 +200,8 @@ struct graph_t
     {
       if (HB_DEBUG_SUBSET_REPACK)
        {
-	assert (incoming_edges_ == (single_parent != (unsigned) -1) +
-		(parents.values_ref () | hb_reduce (hb_add, 0)));
+        assert (incoming_edges_ == (single_parent != (unsigned) -1) +
+                (parents.values_ref () | hb_reduce (hb_add, 0)));
        }
       return incoming_edges_;
     }
@@ -230,51 +230,51 @@ struct graph_t
 
       if (incoming_edges_ == 0)
       {
-	single_parent = parent_index;
-	incoming_edges_ = 1;
-	return;
+        single_parent = parent_index;
+        incoming_edges_ = 1;
+        return;
       }
       else if (single_parent != (unsigned) -1)
       {
         assert (incoming_edges_ == 1);
-	if (!parents.set (single_parent, 1))
-	  return;
-	single_parent = (unsigned) -1;
+        if (!parents.set (single_parent, 1))
+          return;
+        single_parent = (unsigned) -1;
       }
 
       unsigned *v;
       if (parents.has (parent_index, &v))
       {
         (*v)++;
-	incoming_edges_++;
+        incoming_edges_++;
       }
       else if (parents.set (parent_index, 1))
-	incoming_edges_++;
+        incoming_edges_++;
     }
 
     void remove_parent (unsigned parent_index)
     {
       if (parent_index == single_parent)
       {
-	single_parent = (unsigned) -1;
-	incoming_edges_--;
-	return;
+        single_parent = (unsigned) -1;
+        incoming_edges_--;
+        return;
       }
 
       unsigned *v;
       if (parents.has (parent_index, &v))
       {
-	incoming_edges_--;
-	if (*v > 1)
-	  (*v)--;
-	else
-	  parents.del (parent_index);
+        incoming_edges_--;
+        if (*v > 1)
+          (*v)--;
+        else
+          parents.del (parent_index);
 
-	if (incoming_edges_ == 1)
-	{
-	  single_parent = *parents.keys ();
-	  parents.reset ();
-	}
+        if (incoming_edges_ == 1)
+        {
+          single_parent = *parents.keys ();
+          parents.reset ();
+        }
       }
     }
 
@@ -300,17 +300,17 @@ struct graph_t
       if (single_parent != (unsigned) -1)
       {
         assert (single_parent < id_map.length);
-	single_parent = id_map[single_parent];
-	return true;
+        single_parent = id_map[single_parent];
+        return true;
       }
 
       hb_hashmap_t<unsigned, unsigned> new_parents;
       new_parents.alloc (parents.get_population ());
       for (auto _ : parents)
       {
-	assert (_.first < id_map.length);
-	assert (!new_parents.has (id_map[_.first]));
-	new_parents.set (id_map[_.first], _.second);
+        assert (_.first < id_map.length);
+        assert (!new_parents.has (id_map[_.first]));
+        new_parents.set (id_map[_.first], _.second);
       }
 
       if (parents.in_error() || new_parents.in_error ())
@@ -325,7 +325,7 @@ struct graph_t
       if (single_parent != (unsigned) -1)
       {
         if (single_parent == old_index)
-	  single_parent = new_index;
+          single_parent = new_index;
         return;
       }
 
@@ -333,15 +333,15 @@ struct graph_t
       if (parents.has (old_index, &pv))
       {
         unsigned v = *pv;
-	if (!parents.set (new_index, v))
+        if (!parents.set (new_index, v))
           incoming_edges_ -= v;
-	parents.del (old_index);
+        parents.del (old_index);
 
         if (incoming_edges_ == 1)
-	{
-	  single_parent = *parents.keys ();
-	  parents.reset ();
-	}
+        {
+          single_parent = *parents.keys ();
+          parents.reset ();
+        }
       }
     }
 

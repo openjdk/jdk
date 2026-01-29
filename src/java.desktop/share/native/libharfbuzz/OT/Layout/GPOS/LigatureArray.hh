@@ -48,10 +48,10 @@ struct LigatureArray : List16OfOffset16To<LigatureAttach>
           | hb_filter ([=] (unsigned index) { return klass_mapping->has (index % class_count); })
           ;
       ret |= matrix->serialize_subset (c,
-				       _.second,
-				       this,
-				       src.rows,
-				       indexes);
+                                       _.second,
+                                       this,
+                                       src.rows,
+                                       indexes);
 
       hb_codepoint_t new_gid = glyph_map.get (_.first);
       new_coverage.push (new_gid);

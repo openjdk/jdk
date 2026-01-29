@@ -72,7 +72,7 @@ struct hb_outline_t
   HB_INTERNAL void translate (float dx, float dy);
   HB_INTERNAL void slant (float slant_xy);
   HB_INTERNAL void embolden (float x_strength, float y_strength,
-			     float x_shift, float y_shift);
+                             float x_shift, float y_shift);
 
   hb_vector_t<hb_outline_point_t> points;
   hb_vector_t<unsigned> contours;

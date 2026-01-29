@@ -29,11 +29,11 @@ struct loca
 
   protected:
   UnsizedArrayOf<HBUINT8>
-		dataZ;	/* Location data. */
+                dataZ;  /* Location data. */
   public:
-  DEFINE_SIZE_MIN (0);	/* In reality, this is UNBOUNDED() type; but since we always
-			 * check the size externally, allow Null() object of it by
-			 * defining it _MIN instead. */
+  DEFINE_SIZE_MIN (0);  /* In reality, this is UNBOUNDED() type; but since we always
+                         * check the size externally, allow Null() object of it by
+                         * defining it _MIN instead. */
 };
 
 

@@ -89,13 +89,13 @@ template <typename T> using hb_type_identity = typename hb_type_identity_t<T>::t
 template <typename T> static inline T hb_declval ();
 #define hb_declval(T) (hb_declval<T> ())
 
-template <typename T> struct hb_match_const		: hb_type_identity_t<T>, hb_false_type	{};
-template <typename T> struct hb_match_const<const T>	: hb_type_identity_t<T>, hb_true_type	{};
+template <typename T> struct hb_match_const             : hb_type_identity_t<T>, hb_false_type  {};
+template <typename T> struct hb_match_const<const T>    : hb_type_identity_t<T>, hb_true_type   {};
 template <typename T> using hb_remove_const = typename hb_match_const<T>::type;
 
-template <typename T> struct hb_match_reference		: hb_type_identity_t<T>, hb_false_type	{};
-template <typename T> struct hb_match_reference<T &>	: hb_type_identity_t<T>, hb_true_type	{};
-template <typename T> struct hb_match_reference<T &&>	: hb_type_identity_t<T>, hb_true_type	{};
+template <typename T> struct hb_match_reference         : hb_type_identity_t<T>, hb_false_type  {};
+template <typename T> struct hb_match_reference<T &>    : hb_type_identity_t<T>, hb_true_type   {};
+template <typename T> struct hb_match_reference<T &&>   : hb_type_identity_t<T>, hb_true_type   {};
 template <typename T> using hb_remove_reference = typename hb_match_reference<T>::type;
 template <typename T> auto _hb_try_add_lvalue_reference (hb_priority<1>) -> hb_type_identity<T&>;
 template <typename T> auto _hb_try_add_lvalue_reference (hb_priority<0>) -> hb_type_identity<T>;
@@ -104,8 +104,8 @@ template <typename T> auto _hb_try_add_rvalue_reference (hb_priority<1>) -> hb_t
 template <typename T> auto _hb_try_add_rvalue_reference (hb_priority<0>) -> hb_type_identity<T>;
 template <typename T> using hb_add_rvalue_reference = decltype (_hb_try_add_rvalue_reference<T> (hb_prioritize));
 
-template <typename T> struct hb_match_pointer		: hb_type_identity_t<T>, hb_false_type	{};
-template <typename T> struct hb_match_pointer<T *>	: hb_type_identity_t<T>, hb_true_type	{};
+template <typename T> struct hb_match_pointer           : hb_type_identity_t<T>, hb_false_type  {};
+template <typename T> struct hb_match_pointer<T *>      : hb_type_identity_t<T>, hb_true_type   {};
 template <typename T> using hb_remove_pointer = typename hb_match_pointer<T>::type;
 template <typename T> auto _hb_try_add_pointer (hb_priority<1>) -> hb_type_identity<hb_remove_reference<T>*>;
 template <typename T> auto _hb_try_add_pointer (hb_priority<1>) -> hb_type_identity<T>;
@@ -138,7 +138,7 @@ struct
 
   template <typename T> constexpr auto
   operator () (hb::shared_ptr<T>& v) const HB_AUTO_RETURN (*v)
-  
+
   template <typename T> constexpr auto
   operator () (const hb::unique_ptr<T>& v) const HB_AUTO_RETURN (*v)
 
@@ -172,31 +172,31 @@ struct hb_reference_wrapper<T&>
 /* Type traits */
 
 template <typename T> struct hb_int_min;
-template <> struct hb_int_min<char>			: hb_integral_constant<char,			CHAR_MIN>	{};
-template <> struct hb_int_min<signed char>		: hb_integral_constant<signed char,		SCHAR_MIN>	{};
-template <> struct hb_int_min<unsigned char>		: hb_integral_constant<unsigned char,		0>		{};
-template <> struct hb_int_min<signed short>		: hb_integral_constant<signed short,		SHRT_MIN>	{};
-template <> struct hb_int_min<unsigned short>		: hb_integral_constant<unsigned short,		0>		{};
-template <> struct hb_int_min<signed int>		: hb_integral_constant<signed int,		INT_MIN>	{};
-template <> struct hb_int_min<unsigned int>		: hb_integral_constant<unsigned int,		0>		{};
-template <> struct hb_int_min<signed long>		: hb_integral_constant<signed long,		LONG_MIN>	{};
-template <> struct hb_int_min<unsigned long>		: hb_integral_constant<unsigned long,		0>		{};
-template <> struct hb_int_min<signed long long>		: hb_integral_constant<signed long long,	LLONG_MIN>	{};
-template <> struct hb_int_min<unsigned long long>	: hb_integral_constant<unsigned long long,	0>		{};
-template <typename T> struct hb_int_min<T *>		: hb_integral_constant<T *,			nullptr>	{};
+template <> struct hb_int_min<char>                     : hb_integral_constant<char,                    CHAR_MIN>       {};
+template <> struct hb_int_min<signed char>              : hb_integral_constant<signed char,             SCHAR_MIN>      {};
+template <> struct hb_int_min<unsigned char>            : hb_integral_constant<unsigned char,           0>              {};
+template <> struct hb_int_min<signed short>             : hb_integral_constant<signed short,            SHRT_MIN>       {};
+template <> struct hb_int_min<unsigned short>           : hb_integral_constant<unsigned short,          0>              {};
+template <> struct hb_int_min<signed int>               : hb_integral_constant<signed int,              INT_MIN>        {};
+template <> struct hb_int_min<unsigned int>             : hb_integral_constant<unsigned int,            0>              {};
+template <> struct hb_int_min<signed long>              : hb_integral_constant<signed long,             LONG_MIN>       {};
+template <> struct hb_int_min<unsigned long>            : hb_integral_constant<unsigned long,           0>              {};
+template <> struct hb_int_min<signed long long>         : hb_integral_constant<signed long long,        LLONG_MIN>      {};
+template <> struct hb_int_min<unsigned long long>       : hb_integral_constant<unsigned long long,      0>              {};
+template <typename T> struct hb_int_min<T *>            : hb_integral_constant<T *,                     nullptr>        {};
 #define hb_int_min(T) hb_int_min<T>::value
 template <typename T> struct hb_int_max;
-template <> struct hb_int_max<char>			: hb_integral_constant<char,			CHAR_MAX>	{};
-template <> struct hb_int_max<signed char>		: hb_integral_constant<signed char,		SCHAR_MAX>	{};
-template <> struct hb_int_max<unsigned char>		: hb_integral_constant<unsigned char,		UCHAR_MAX>	{};
-template <> struct hb_int_max<signed short>		: hb_integral_constant<signed short,		SHRT_MAX>	{};
-template <> struct hb_int_max<unsigned short>		: hb_integral_constant<unsigned short,		USHRT_MAX>	{};
-template <> struct hb_int_max<signed int>		: hb_integral_constant<signed int,		INT_MAX>	{};
-template <> struct hb_int_max<unsigned int>		: hb_integral_constant<unsigned int,		UINT_MAX>	{};
-template <> struct hb_int_max<signed long>		: hb_integral_constant<signed long,		LONG_MAX>	{};
-template <> struct hb_int_max<unsigned long>		: hb_integral_constant<unsigned long,		ULONG_MAX>	{};
-template <> struct hb_int_max<signed long long>		: hb_integral_constant<signed long long,	LLONG_MAX>	{};
-template <> struct hb_int_max<unsigned long long>	: hb_integral_constant<unsigned long long,	ULLONG_MAX>	{};
+template <> struct hb_int_max<char>                     : hb_integral_constant<char,                    CHAR_MAX>       {};
+template <> struct hb_int_max<signed char>              : hb_integral_constant<signed char,             SCHAR_MAX>      {};
+template <> struct hb_int_max<unsigned char>            : hb_integral_constant<unsigned char,           UCHAR_MAX>      {};
+template <> struct hb_int_max<signed short>             : hb_integral_constant<signed short,            SHRT_MAX>       {};
+template <> struct hb_int_max<unsigned short>           : hb_integral_constant<unsigned short,          USHRT_MAX>      {};
+template <> struct hb_int_max<signed int>               : hb_integral_constant<signed int,              INT_MAX>        {};
+template <> struct hb_int_max<unsigned int>             : hb_integral_constant<unsigned int,            UINT_MAX>       {};
+template <> struct hb_int_max<signed long>              : hb_integral_constant<signed long,             LONG_MAX>       {};
+template <> struct hb_int_max<unsigned long>            : hb_integral_constant<unsigned long,           ULONG_MAX>      {};
+template <> struct hb_int_max<signed long long>         : hb_integral_constant<signed long long,        LLONG_MAX>      {};
+template <> struct hb_int_max<unsigned long long>       : hb_integral_constant<unsigned long long,      ULLONG_MAX>     {};
 #define hb_int_max(T) hb_int_max<T>::value
 
 #if defined(__GNUC__) && __GNUC__ < 5 && !defined(__clang__)

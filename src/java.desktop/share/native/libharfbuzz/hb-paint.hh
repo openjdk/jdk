@@ -169,9 +169,9 @@ struct hb_paint_funcs_t
     int xscale = font->x_scale, yscale = font->y_scale;
 
     push_transform (paint_data,
-		    xscale/upem, 0,
-		    0, yscale/upem,
-		    0, 0);
+                    xscale/upem, 0,
+                    0, yscale/upem,
+                    0, 0);
   }
 
   void push_inverse_font_transform (void *paint_data,
@@ -182,9 +182,9 @@ struct hb_paint_funcs_t
     int yscale = font->y_scale ? font->y_scale : upem;
 
     push_transform (paint_data,
-		    upem/xscale, 0,
-		    0, upem/yscale,
-		    0, 0);
+                    upem/xscale, 0,
+                    0, upem/yscale,
+                    0, 0);
   }
 
   void push_transform (void *paint_data, hb_transform_t<float> t)
@@ -196,50 +196,50 @@ struct hb_paint_funcs_t
                        float dx, float dy)
   {
     push_transform (paint_data,
-		    hb_transform_t<float>::translation (dx, dy));
+                    hb_transform_t<float>::translation (dx, dy));
   }
 
   void push_scale (void *paint_data,
                    float sx, float sy)
   {
     push_transform (paint_data,
-		    hb_transform_t<float>::scaling (sx, sy));
+                    hb_transform_t<float>::scaling (sx, sy));
   }
   void push_scale_around_center (void *paint_data,
-				 float sx, float sy,
-				 float cx, float cy)
+                                 float sx, float sy,
+                                 float cx, float cy)
   {
     push_transform (paint_data,
-		    hb_transform_t<float>::scaling_around_center (sx, sy, cx, cy));
+                    hb_transform_t<float>::scaling_around_center (sx, sy, cx, cy));
   }
 
   void push_rotate (void *paint_data,
                     float a)
   {
     push_transform (paint_data,
-		    hb_transform_t<float>::rotation (a * HB_PI));
+                    hb_transform_t<float>::rotation (a * HB_PI));
   }
 
   void push_rotate_around_center (void *paint_data,
-				  float a,
-				  float cx, float cy)
+                                  float a,
+                                  float cx, float cy)
   {
     push_transform (paint_data,
-		    hb_transform_t<float>::rotation_around_center (a * HB_PI, cx, cy));
+                    hb_transform_t<float>::rotation_around_center (a * HB_PI, cx, cy));
   }
 
   void push_skew (void *paint_data,
                   float sx, float sy)
   {
     push_transform (paint_data,
-		    hb_transform_t<float>::skewing (-sx * HB_PI, sy * HB_PI));
+                    hb_transform_t<float>::skewing (-sx * HB_PI, sy * HB_PI));
   }
   void push_skew_around_center (void *paint_data,
-				float sx, float sy,
-				float cx, float cy)
+                                float sx, float sy,
+                                float cx, float cy)
   {
     push_transform (paint_data,
-		    hb_transform_t<float>::skewing_around_center (-sx * HB_PI, sy * HB_PI, cx, cy));
+                    hb_transform_t<float>::skewing_around_center (-sx * HB_PI, sy * HB_PI, cx, cy));
   }
 };
 DECLARE_NULL_INSTANCE (hb_paint_funcs_t);

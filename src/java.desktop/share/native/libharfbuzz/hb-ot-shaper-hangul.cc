@@ -123,7 +123,7 @@ data_destroy_hangul (void *data)
 
 static bool
 is_zero_width_char (hb_font_t *font,
-		    hb_codepoint_t unicode)
+                    hb_codepoint_t unicode)
 {
   hb_codepoint_t glyph;
   return hb_font_get_glyph (font, unicode, 0, &glyph) && hb_font_get_glyph_h_advance (font, glyph) == 0;
@@ -131,8 +131,8 @@ is_zero_width_char (hb_font_t *font,
 
 static void
 preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
-			hb_buffer_t              *buffer,
-			hb_font_t                *font)
+                        hb_buffer_t              *buffer,
+                        hb_font_t                *font)
 {
   HB_BUFFER_ALLOCATE_VAR (buffer, hangul_shaping_feature);
 
@@ -186,8 +186,8 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
   buffer->clear_output ();
   unsigned int start = 0, end = 0; /* Extent of most recently seen syllable;
-				    * valid only if start < end
-				    */
+                                    * valid only if start < end
+                                    */
   unsigned int count = buffer->len;
 
   for (buffer->idx = 0; buffer->idx < count && buffer->successful;)
@@ -203,49 +203,49 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
        */
       if (start < end && end == buffer->out_len)
       {
-	/* Tone mark follows a valid syllable; move it in front, unless it's zero width. */
-	buffer->unsafe_to_break_from_outbuffer (start, buffer->idx);
-	if (unlikely (!buffer->next_glyph ())) break;
-	if (!is_zero_width_char (font, u))
-	{
-	  buffer->merge_out_clusters (start, end + 1);
-	  hb_glyph_info_t *info = buffer->out_info;
-	  hb_glyph_info_t tone = info[end];
-	  memmove (&info[start + 1], &info[start], (end - start) * sizeof (hb_glyph_info_t));
-	  info[start] = tone;
-	}
+        /* Tone mark follows a valid syllable; move it in front, unless it's zero width. */
+        buffer->unsafe_to_break_from_outbuffer (start, buffer->idx);
+        if (unlikely (!buffer->next_glyph ())) break;
+        if (!is_zero_width_char (font, u))
+        {
+          buffer->merge_out_clusters (start, end + 1);
+          hb_glyph_info_t *info = buffer->out_info;
+          hb_glyph_info_t tone = info[end];
+          memmove (&info[start + 1], &info[start], (end - start) * sizeof (hb_glyph_info_t));
+          info[start] = tone;
+        }
       }
       else
       {
-	/* No valid syllable as base for tone mark; try to insert dotted circle. */
-	if (!(buffer->flags & HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE) &&
-	    font->has_glyph (0x25CCu))
-	{
-	  hb_codepoint_t chars[2];
-	  if (!is_zero_width_char (font, u))
-	  {
-	    chars[0] = u;
-	    chars[1] = 0x25CCu;
-	  } else
-	  {
-	    chars[0] = 0x25CCu;
-	    chars[1] = u;
-	  }
-	  (void) buffer->replace_glyphs (1, 2, chars);
-	}
-	else
-	{
-	  /* No dotted circle available in the font; just leave tone mark untouched. */
-	  (void) buffer->next_glyph ();
-	}
+        /* No valid syllable as base for tone mark; try to insert dotted circle. */
+        if (!(buffer->flags & HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE) &&
+            font->has_glyph (0x25CCu))
+        {
+          hb_codepoint_t chars[2];
+          if (!is_zero_width_char (font, u))
+          {
+            chars[0] = u;
+            chars[1] = 0x25CCu;
+          } else
+          {
+            chars[0] = 0x25CCu;
+            chars[1] = u;
+          }
+          (void) buffer->replace_glyphs (1, 2, chars);
+        }
+        else
+        {
+          /* No dotted circle available in the font; just leave tone mark untouched. */
+          (void) buffer->next_glyph ();
+        }
       }
       start = end = buffer->out_len;
       continue;
     }
 
     start = buffer->out_len; /* Remember current position as a potential syllable start;
-			      * will only be used if we set end to a later position.
-			      */
+                              * will only be used if we set end to a later position.
+                              */
 
     if (isL (u) && buffer->idx + 1 < count)
     {
@@ -253,53 +253,53 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
       hb_codepoint_t v = buffer->cur(+1).codepoint;
       if (isV (v))
       {
-	/* Have <L,V> or <L,V,T>. */
-	hb_codepoint_t t = 0;
-	unsigned int tindex = 0;
-	if (buffer->idx + 2 < count)
-	{
-	  t = buffer->cur(+2).codepoint;
-	  if (isT (t))
-	    tindex = t - TBase; /* Only used if isCombiningT (t); otherwise invalid. */
-	  else
-	    t = 0; /* The next character was not a trailing jamo. */
-	}
-	buffer->unsafe_to_break (buffer->idx, buffer->idx + (t ? 3 : 2));
+        /* Have <L,V> or <L,V,T>. */
+        hb_codepoint_t t = 0;
+        unsigned int tindex = 0;
+        if (buffer->idx + 2 < count)
+        {
+          t = buffer->cur(+2).codepoint;
+          if (isT (t))
+            tindex = t - TBase; /* Only used if isCombiningT (t); otherwise invalid. */
+          else
+            t = 0; /* The next character was not a trailing jamo. */
+        }
+        buffer->unsafe_to_break (buffer->idx, buffer->idx + (t ? 3 : 2));
 
-	/* We've got a syllable <L,V,T?>; see if it can potentially be composed. */
-	if (isCombiningL (l) && isCombiningV (v) && (t == 0 || isCombiningT (t)))
-	{
-	  /* Try to compose; if this succeeds, end is set to start+1. */
-	  hb_codepoint_t s = SBase + (l - LBase) * NCount + (v - VBase) * TCount + tindex;
-	  if (font->has_glyph (s))
-	  {
-	    (void) buffer->replace_glyphs (t ? 3 : 2, 1, &s);
-	    end = start + 1;
-	    continue;
-	  }
-	}
+        /* We've got a syllable <L,V,T?>; see if it can potentially be composed. */
+        if (isCombiningL (l) && isCombiningV (v) && (t == 0 || isCombiningT (t)))
+        {
+          /* Try to compose; if this succeeds, end is set to start+1. */
+          hb_codepoint_t s = SBase + (l - LBase) * NCount + (v - VBase) * TCount + tindex;
+          if (font->has_glyph (s))
+          {
+            (void) buffer->replace_glyphs (t ? 3 : 2, 1, &s);
+            end = start + 1;
+            continue;
+          }
+        }
 
-	/* We didn't compose, either because it's an Old Hangul syllable without a
-	 * precomposed character in Unicode, or because the font didn't support the
-	 * necessary precomposed glyph.
-	 * Set jamo features on the individual glyphs, and advance past them.
-	 */
-	buffer->cur().hangul_shaping_feature() = LJMO;
-	(void) buffer->next_glyph ();
-	buffer->cur().hangul_shaping_feature() = VJMO;
-	(void) buffer->next_glyph ();
-	if (t)
-	{
-	  buffer->cur().hangul_shaping_feature() = TJMO;
-	  (void) buffer->next_glyph ();
-	  end = start + 3;
-	}
-	else
-	  end = start + 2;
-	if (unlikely (!buffer->successful))
-	  break;
-	buffer->merge_out_clusters (start, end);
-	continue;
+        /* We didn't compose, either because it's an Old Hangul syllable without a
+         * precomposed character in Unicode, or because the font didn't support the
+         * necessary precomposed glyph.
+         * Set jamo features on the individual glyphs, and advance past them.
+         */
+        buffer->cur().hangul_shaping_feature() = LJMO;
+        (void) buffer->next_glyph ();
+        buffer->cur().hangul_shaping_feature() = VJMO;
+        (void) buffer->next_glyph ();
+        if (t)
+        {
+          buffer->cur().hangul_shaping_feature() = TJMO;
+          (void) buffer->next_glyph ();
+          end = start + 3;
+        }
+        else
+          end = start + 2;
+        if (unlikely (!buffer->successful))
+          break;
+        buffer->merge_out_clusters (start, end);
+        continue;
       }
     }
 
@@ -314,74 +314,74 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
       unsigned int tindex = nindex % TCount;
 
       if (!tindex &&
-	  buffer->idx + 1 < count &&
-	  isCombiningT (buffer->cur(+1).codepoint))
+          buffer->idx + 1 < count &&
+          isCombiningT (buffer->cur(+1).codepoint))
       {
-	/* <LV,T>, try to combine. */
-	unsigned int new_tindex = buffer->cur(+1).codepoint - TBase;
-	hb_codepoint_t new_s = s + new_tindex;
-	if (font->has_glyph (new_s))
-	{
-	  (void) buffer->replace_glyphs (2, 1, &new_s);
-	  end = start + 1;
-	  continue;
-	}
-	else
-	  buffer->unsafe_to_break (buffer->idx, buffer->idx + 2); /* Mark unsafe between LV and T. */
+        /* <LV,T>, try to combine. */
+        unsigned int new_tindex = buffer->cur(+1).codepoint - TBase;
+        hb_codepoint_t new_s = s + new_tindex;
+        if (font->has_glyph (new_s))
+        {
+          (void) buffer->replace_glyphs (2, 1, &new_s);
+          end = start + 1;
+          continue;
+        }
+        else
+          buffer->unsafe_to_break (buffer->idx, buffer->idx + 2); /* Mark unsafe between LV and T. */
       }
 
       /* Otherwise, decompose if font doesn't support <LV> or <LVT>,
        * or if having non-combining <LV,T>.  Note that we already handled
        * combining <LV,T> above. */
       if (!has_glyph ||
-	  (!tindex &&
-	   buffer->idx + 1 < count &&
-	   isT (buffer->cur(+1).codepoint)))
+          (!tindex &&
+           buffer->idx + 1 < count &&
+           isT (buffer->cur(+1).codepoint)))
       {
-	hb_codepoint_t decomposed[3] = {LBase + lindex,
-					VBase + vindex,
-					TBase + tindex};
-	if (font->has_glyph (decomposed[0]) &&
-	    font->has_glyph (decomposed[1]) &&
-	    (!tindex || font->has_glyph (decomposed[2])))
-	{
-	  unsigned int s_len = tindex ? 3 : 2;
-	  (void) buffer->replace_glyphs (1, s_len, decomposed);
+        hb_codepoint_t decomposed[3] = {LBase + lindex,
+                                        VBase + vindex,
+                                        TBase + tindex};
+        if (font->has_glyph (decomposed[0]) &&
+            font->has_glyph (decomposed[1]) &&
+            (!tindex || font->has_glyph (decomposed[2])))
+        {
+          unsigned int s_len = tindex ? 3 : 2;
+          (void) buffer->replace_glyphs (1, s_len, decomposed);
 
-	  /* If we decomposed an LV because of a non-combining T following,
-	   * we want to include this T in the syllable.
-	   */
-	  if (has_glyph && !tindex)
-	  {
-	    (void) buffer->next_glyph ();
-	    s_len++;
-	  }
-	  if (unlikely (!buffer->successful))
-	    break;
+          /* If we decomposed an LV because of a non-combining T following,
+           * we want to include this T in the syllable.
+           */
+          if (has_glyph && !tindex)
+          {
+            (void) buffer->next_glyph ();
+            s_len++;
+          }
+          if (unlikely (!buffer->successful))
+            break;
 
-	  /* We decomposed S: apply jamo features to the individual glyphs
-	   * that are now in buffer->out_info.
-	   */
-	  hb_glyph_info_t *info = buffer->out_info;
-	  end = start + s_len;
+          /* We decomposed S: apply jamo features to the individual glyphs
+           * that are now in buffer->out_info.
+           */
+          hb_glyph_info_t *info = buffer->out_info;
+          end = start + s_len;
 
-	  unsigned int i = start;
-	  info[i++].hangul_shaping_feature() = LJMO;
-	  info[i++].hangul_shaping_feature() = VJMO;
-	  if (i < end)
-	    info[i++].hangul_shaping_feature() = TJMO;
+          unsigned int i = start;
+          info[i++].hangul_shaping_feature() = LJMO;
+          info[i++].hangul_shaping_feature() = VJMO;
+          if (i < end)
+            info[i++].hangul_shaping_feature() = TJMO;
 
-	  buffer->merge_out_clusters (start, end);
-	  continue;
-	}
-	else if ((!tindex && buffer->idx + 1 < count && isT (buffer->cur(+1).codepoint)))
-	  buffer->unsafe_to_break (buffer->idx, buffer->idx + 2); /* Mark unsafe between LV and T. */
+          buffer->merge_out_clusters (start, end);
+          continue;
+        }
+        else if ((!tindex && buffer->idx + 1 < count && isT (buffer->cur(+1).codepoint)))
+          buffer->unsafe_to_break (buffer->idx, buffer->idx + 2); /* Mark unsafe between LV and T. */
       }
 
       if (has_glyph)
       {
-	/* We didn't decompose the S, so just advance past it and fall through. */
-	end = start + 1;
+        /* We didn't decompose the S, so just advance past it and fall through. */
+        end = start + 1;
       }
     }
 
@@ -395,8 +395,8 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
 static void
 setup_masks_hangul (const hb_ot_shape_plan_t *plan,
-		    hb_buffer_t              *buffer,
-		    hb_font_t                *font HB_UNUSED)
+                    hb_buffer_t              *buffer,
+                    hb_font_t                *font HB_UNUSED)
 {
   const hangul_shape_plan_t *hangul_plan = (const hangul_shape_plan_t *) plan->data;
 

@@ -33,8 +33,8 @@ struct AnchorMatrix
   }
 
   const Anchor& get_anchor (hb_ot_apply_context_t *c,
-			    unsigned int row, unsigned int col,
-			    unsigned int cols, bool *found) const
+                            unsigned int row, unsigned int col,
+                            unsigned int cols, bool *found) const
   {
     *found = false;
     if (unlikely (row >= rows || col >= cols)) return Null (Anchor);

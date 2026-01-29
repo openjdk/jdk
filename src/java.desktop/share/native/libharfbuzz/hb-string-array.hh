@@ -34,10 +34,10 @@
 /* Based on Bruno Haible's code in Appendix B of Ulrich Drepper's dsohowto.pdf:
  * https://software.intel.com/sites/default/files/m/a/1/e/dsohowto.pdf */
 
-#define HB_STRING_ARRAY_TYPE_NAME	HB_PASTE(HB_STRING_ARRAY_NAME, _msgstr_t)
-#define HB_STRING_ARRAY_POOL_NAME	HB_PASTE(HB_STRING_ARRAY_NAME, _msgstr)
-#define HB_STRING_ARRAY_OFFS_NAME	HB_PASTE(HB_STRING_ARRAY_NAME, _msgidx)
-#define HB_STRING_ARRAY_LENG_NAME	HB_PASTE(HB_STRING_ARRAY_NAME, _length)
+#define HB_STRING_ARRAY_TYPE_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _msgstr_t)
+#define HB_STRING_ARRAY_POOL_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _msgstr)
+#define HB_STRING_ARRAY_OFFS_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _msgidx)
+#define HB_STRING_ARRAY_LENG_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _length)
 
 static const union HB_STRING_ARRAY_TYPE_NAME {
   struct {
@@ -74,7 +74,7 @@ HB_STRING_ARRAY_NAME (unsigned int i)
 {
   assert (i < ARRAY_LENGTH (HB_STRING_ARRAY_OFFS_NAME) - 1);
   return hb_bytes_t (HB_STRING_ARRAY_POOL_NAME.str + HB_STRING_ARRAY_OFFS_NAME[i],
-		     HB_STRING_ARRAY_OFFS_NAME[i + 1] - HB_STRING_ARRAY_OFFS_NAME[i] - 1);
+                     HB_STRING_ARRAY_OFFS_NAME[i + 1] - HB_STRING_ARRAY_OFFS_NAME[i] - 1);
 }
 
 #undef HB_STRING_ARRAY_TYPE_NAME

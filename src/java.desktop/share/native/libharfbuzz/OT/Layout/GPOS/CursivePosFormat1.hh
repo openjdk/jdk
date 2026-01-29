@@ -25,7 +25,7 @@ struct EntryExitRecord
   }
 
   bool subset (hb_subset_context_t *c,
-	       const struct CursivePosFormat1 *src_base) const
+               const struct CursivePosFormat1 *src_base) const
   {
     TRACE_SERIALIZE (this);
     auto *out = c->serializer->embed (this);
@@ -128,7 +128,7 @@ struct CursivePosFormat1
 
     const EntryExitRecord &this_record = entryExitRecord[(this+coverage).get_coverage  (buffer->cur().codepoint)];
     if (!this_record.entryAnchor ||
-	unlikely (!this_record.entryAnchor.sanitize (&c->sanitizer, this))) return_trace (false);
+        unlikely (!this_record.entryAnchor.sanitize (&c->sanitizer, this))) return_trace (false);
     hb_barrier ();
 
     auto &skippy_iter = c->iter_input;
@@ -142,7 +142,7 @@ struct CursivePosFormat1
 
     const EntryExitRecord &prev_record = entryExitRecord[(this+coverage).get_coverage  (buffer->info[skippy_iter.idx].codepoint)];
     if (!prev_record.exitAnchor ||
-	unlikely (!prev_record.exitAnchor.sanitize (&c->sanitizer, this)))
+        unlikely (!prev_record.exitAnchor.sanitize (&c->sanitizer, this)))
     {
       buffer->unsafe_to_concat_from_outbuffer (skippy_iter.idx, buffer->idx + 1);
       return_trace (false);
@@ -155,8 +155,8 @@ struct CursivePosFormat1
     if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
     {
       c->buffer->message (c->font,
-			  "cursive attaching glyph at %u to glyph at %u",
-			  i, j);
+                          "cursive attaching glyph at %u to glyph at %u",
+                          i, j);
     }
 
     buffer->unsafe_to_break (i, j + 1);
@@ -250,16 +250,16 @@ struct CursivePosFormat1
     {
       pos[parent].attach_chain() = 0;
       if (likely (HB_DIRECTION_IS_HORIZONTAL (c->direction)))
-	pos[parent].y_offset = 0;
+        pos[parent].y_offset = 0;
       else
-	pos[parent].x_offset = 0;
+        pos[parent].x_offset = 0;
     }
 
     if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
     {
       c->buffer->message (c->font,
-			  "cursive attached glyph at %u to glyph at %u",
-			  i, j);
+                          "cursive attached glyph at %u to glyph at %u",
+                          i, j);
     }
 
   overflow:

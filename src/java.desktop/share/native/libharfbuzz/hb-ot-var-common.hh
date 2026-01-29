@@ -111,8 +111,8 @@ struct TupleVariationHeader
 
   HB_ALWAYS_INLINE
   double calculate_scalar (hb_array_t<const int> coords, unsigned int coord_count,
-			   const hb_array_t<const F2DOT14> shared_tuples,
-			   hb_scalar_cache_t *shared_tuple_scalar_cache = nullptr) const
+                           const hb_array_t<const F2DOT14> shared_tuples,
+                           hb_scalar_cache_t *shared_tuple_scalar_cache = nullptr) const
   {
     unsigned tuple_index = tupleIndex;
 
@@ -131,12 +131,12 @@ struct TupleVariationHeader
 
       float scalar;
       if (shared_tuple_scalar_cache &&
-	  shared_tuple_scalar_cache->get (index, &scalar))
+          shared_tuple_scalar_cache->get (index, &scalar))
       {
         if (has_interm && (scalar != 0 && scalar != 1.f))
-	  shared_tuple_scalar_cache = nullptr;
-	else
-	  return (double) scalar;
+          shared_tuple_scalar_cache = nullptr;
+        else
+          return (double) scalar;
       }
 
       if (unlikely ((index + 1) * coord_count > shared_tuples.length))
@@ -166,12 +166,12 @@ struct TupleVariationHeader
 #if HB_FAST_NUM_ACCESS
       if (skip)
       {
-	while (i + 4 <= coord_count && * (HBUINT64LE *) &peak_tuple[i] == 0)
-	  i += 4;
-	while (i < coord_count && peak_tuple[i].to_int () == 0)
-	  i += 1;
-	if (i >= coord_count)
-	  break;
+        while (i + 4 <= coord_count && * (HBUINT64LE *) &peak_tuple[i] == 0)
+          i += 4;
+        while (i < coord_count && peak_tuple[i].to_int () == 0)
+          i += 1;
+        if (i >= coord_count)
+          break;
       }
 #endif
 #endif
@@ -185,7 +185,7 @@ struct TupleVariationHeader
 
       if (has_interm)
       {
-	shared_tuple_scalar_cache = nullptr;
+        shared_tuple_scalar_cache = nullptr;
         int start = start_tuple[i].to_int ();
         int end = end_tuple[i].to_int ();
         if (unlikely (start > peak || peak > end ||
@@ -370,24 +370,24 @@ struct tuple_delta_t
     if (deltas_y)
       for (unsigned i = 0; i < num; i++)
       {
-	if (!indices.arrayZ[i]) continue;
-	deltas_x[i] *= scalar;
-	deltas_y[i] *= scalar;
+        if (!indices.arrayZ[i]) continue;
+        deltas_x[i] *= scalar;
+        deltas_y[i] *= scalar;
       }
     else
       for (unsigned i = 0; i < num; i++)
       {
-	if (!indices.arrayZ[i]) continue;
-	deltas_x[i] *= scalar;
+        if (!indices.arrayZ[i]) continue;
+        deltas_x[i] *= scalar;
       }
     return *this;
   }
 
   void change_tuple_var_axis_limit (hb_tag_t axis_tag, Triple axis_limit,
-				    TripleDistances axis_triple_distances,
-				    hb_vector_t<tuple_delta_t>& out,
-				    rebase_tent_result_scratch_t &scratch,
-				    hb_alloc_pool_t *pool = nullptr)
+                                    TripleDistances axis_triple_distances,
+                                    hb_vector_t<tuple_delta_t>& out,
+                                    rebase_tent_result_scratch_t &scratch,
+                                    hb_alloc_pool_t *pool = nullptr)
   {
     // May move *this out.
 
@@ -417,9 +417,9 @@ struct tuple_delta_t
 
       tuple_delta_t new_var;
       if (i < solutions.length - 1)
-	new_var.copy_from (*this, pool);
+        new_var.copy_from (*this, pool);
       else
-	new_var = std::move (*this);
+        new_var = std::move (*this);
 
       if (t.second == Triple ())
         new_var.remove_axis (axis_tag);
@@ -432,14 +432,14 @@ struct tuple_delta_t
   }
 
   bool compile_coords (const hb_map_t& axes_index_map,
-		       const hb_map_t& axes_old_index_tag_map,
-		       hb_alloc_pool_t *pool= nullptr)
+                       const hb_map_t& axes_old_index_tag_map,
+                       hb_alloc_pool_t *pool= nullptr)
   {
     unsigned cur_axis_count = axes_index_map.get_population ();
     if (pool)
     {
       if (unlikely (!compiled_peak_coords.allocate_from_pool (pool, cur_axis_count)))
-	return false;
+        return false;
     }
     else if (unlikely (!compiled_peak_coords.resize (cur_axis_count)))
       return false;
@@ -457,42 +457,42 @@ struct tuple_delta_t
       Triple *coords = nullptr;
       if (axis_tuples.has (axis_tag, &coords))
       {
-	float min_val = coords->minimum;
-	float val = coords->middle;
-	float max_val = coords->maximum;
+        float min_val = coords->minimum;
+        float val = coords->middle;
+        float max_val = coords->maximum;
 
-	compiled_peak_coords.arrayZ[j].set_float (val);
+        compiled_peak_coords.arrayZ[j].set_float (val);
 
-	if (min_val != hb_min (val, 0.f) || max_val != hb_max (val, 0.f))
-	{
-	  if (!compiled_interm_coords)
-	  {
-	    if (pool)
-	    {
-	      if (unlikely (!compiled_interm_coords.allocate_from_pool (pool, 2 * cur_axis_count)))
-		return false;
-	    }
-	    else if (unlikely (!compiled_interm_coords.resize (2 * cur_axis_count)))
-	      return false;
-	    start_coords = compiled_interm_coords.as_array ().sub_array (0, cur_axis_count);
-	    end_coords = compiled_interm_coords.as_array ().sub_array (cur_axis_count);
+        if (min_val != hb_min (val, 0.f) || max_val != hb_max (val, 0.f))
+        {
+          if (!compiled_interm_coords)
+          {
+            if (pool)
+            {
+              if (unlikely (!compiled_interm_coords.allocate_from_pool (pool, 2 * cur_axis_count)))
+                return false;
+            }
+            else if (unlikely (!compiled_interm_coords.resize (2 * cur_axis_count)))
+              return false;
+            start_coords = compiled_interm_coords.as_array ().sub_array (0, cur_axis_count);
+            end_coords = compiled_interm_coords.as_array ().sub_array (cur_axis_count);
 
-	    for (unsigned k = 0; k < j; k++)
-	    {
-	      signed peak = compiled_peak_coords.arrayZ[k].to_int ();
-	      if (!peak) continue;
-	      start_coords.arrayZ[k].set_int (hb_min (peak, 0));
-	      end_coords.arrayZ[k].set_int (hb_max (peak, 0));
-	    }
-	  }
+            for (unsigned k = 0; k < j; k++)
+            {
+              signed peak = compiled_peak_coords.arrayZ[k].to_int ();
+              if (!peak) continue;
+              start_coords.arrayZ[k].set_int (hb_min (peak, 0));
+              end_coords.arrayZ[k].set_int (hb_max (peak, 0));
+            }
+          }
 
-	}
+        }
 
-	if (compiled_interm_coords)
-	{
-	  start_coords.arrayZ[j].set_float (min_val);
-	  end_coords.arrayZ[j].set_float (max_val);
-	}
+        if (compiled_interm_coords)
+        {
+          start_coords.arrayZ[j].set_float (min_val);
+          end_coords.arrayZ[j].set_float (max_val);
+        }
       }
 
       j++;
@@ -508,7 +508,7 @@ struct tuple_delta_t
                                  unsigned points_data_length,
                                  const hb_map_t& axes_old_index_tag_map,
                                  const hb_hashmap_t<const hb_vector_t<F2DOT14>*, unsigned>* shared_tuples_idx_map,
-				 hb_alloc_pool_t *pool = nullptr)
+                                 hb_alloc_pool_t *pool = nullptr)
   {
     /* compiled_deltas could be empty after iup delta optimization, we can skip
      * compiling this tuple and return true */
@@ -580,15 +580,15 @@ struct tuple_delta_t
   }
 
   bool compile_deltas (hb_vector_t<int> &rounded_deltas_scratch,
-		       hb_alloc_pool_t *pool = nullptr)
+                       hb_alloc_pool_t *pool = nullptr)
   { return compile_deltas (indices, deltas_x, deltas_y, compiled_deltas, rounded_deltas_scratch, pool); }
 
   static bool compile_deltas (hb_array_t<const bool> point_indices,
-			      hb_array_t<const float> x_deltas,
-			      hb_array_t<const float> y_deltas,
-			      hb_vector_t<unsigned char> &compiled_deltas, /* OUT */
-			      hb_vector_t<int> &rounded_deltas, /* scratch */
-			      hb_alloc_pool_t *pool = nullptr)
+                              hb_array_t<const float> x_deltas,
+                              hb_array_t<const float> y_deltas,
+                              hb_vector_t<unsigned char> &compiled_deltas, /* OUT */
+                              hb_vector_t<int> &rounded_deltas, /* scratch */
+                              hb_alloc_pool_t *pool = nullptr)
   {
     if (unlikely (!rounded_deltas.resize_dirty  (point_indices.length)))
       return false;
@@ -637,13 +637,13 @@ struct tuple_delta_t
   }
 
   static unsigned compile_deltas (hb_array_t<unsigned char> encoded_bytes,
-				  hb_array_t<const int> deltas)
+                                  hb_array_t<const int> deltas)
   {
     return TupleValues::compile_unsafe (deltas, encoded_bytes);
   }
 
   bool calc_inferred_deltas (const contour_point_vector_t& orig_points,
-			     hb_vector_t<unsigned> &scratch)
+                             hb_vector_t<unsigned> &scratch)
   {
     unsigned point_count = orig_points.length;
     if (point_count != indices.length)
@@ -738,7 +738,7 @@ struct tuple_delta_t
 
   bool optimize (const contour_point_vector_t& contour_points,
                  bool is_composite,
-		 optimize_scratch_t &scratch,
+                 optimize_scratch_t &scratch,
                  double tolerance = 0.5 + 1e-10)
   {
     unsigned count = contour_points.length;
@@ -791,7 +791,7 @@ struct tuple_delta_t
                          is_comp_glyph_wo_deltas ? opt_deltas_x : deltas_x,
                          is_comp_glyph_wo_deltas ? opt_deltas_y : deltas_y,
                          opt_deltas_data,
-			 scratch.rounded_deltas))
+                         scratch.rounded_deltas))
       return false;
 
     hb_vector_t<unsigned char> &point_data = scratch.point_data.reset ();
@@ -1000,7 +1000,7 @@ struct TupleVariationData
                                      const hb_map_t *axes_old_index_tag_map,
                                      const hb_vector_t<unsigned> &shared_indices,
                                      const hb_array_t<const F2DOT14> shared_tuples,
-				     hb_alloc_pool_t *pool = nullptr,
+                                     hb_alloc_pool_t *pool = nullptr,
                                      bool is_composite_glyph = false)
     {
       hb_vector_t<unsigned> private_indices;
@@ -1013,12 +1013,12 @@ struct TupleVariationData
         if (unlikely (!iterator.var_data_bytes.check_range (p, length)))
           return false;
 
-	hb_hashmap_t<hb_tag_t, Triple> axis_tuples;
+        hb_hashmap_t<hb_tag_t, Triple> axis_tuples;
         if (!iterator.current_tuple->unpack_axis_tuples (iterator.get_axis_count (), shared_tuples, axes_old_index_tag_map, axis_tuples)
             || axis_tuples.is_empty ())
           return false;
 
-	private_indices.reset ();
+        private_indices.reset ();
         bool has_private_points = iterator.current_tuple->has_private_points ();
         const HBUINT8 *end = p + length;
         if (has_private_points &&
@@ -1118,7 +1118,7 @@ struct TupleVariationData
 
     bool change_tuple_variations_axis_limits (const hb_hashmap_t<hb_tag_t, Triple>& normalized_axes_location,
                                               const hb_hashmap_t<hb_tag_t, TripleDistances>& axes_triple_distances,
-					      hb_alloc_pool_t *pool = nullptr)
+                                              hb_alloc_pool_t *pool = nullptr)
     {
       /* sort axis_tag/axis_limits, make result deterministic */
       hb_vector_t<hb_tag_t> axis_tags;
@@ -1144,8 +1144,8 @@ struct TupleVariationData
         hb_vector_t<tuple_delta_t> new_vars;
         for (tuple_delta_t& var : tuple_vars)
         {
-	  // This may move var out.
-	  var.change_tuple_var_axis_limit (axis_tag, *axis_limit, axis_triple_distances, out, scratch, pool);
+          // This may move var out.
+          var.change_tuple_var_axis_limit (axis_tag, *axis_limit, axis_triple_distances, out, scratch, pool);
           if (!out) continue;
 
           unsigned new_len = new_vars.length + out.length;
@@ -1169,7 +1169,7 @@ struct TupleVariationData
       // The pre-allocation is essential for address stability of pointers
       // we store in the hashmap.
       if (unlikely (!new_vars.alloc (tuple_vars.length)))
-	return false;
+        return false;
       hb_hashmap_t<const hb_hashmap_t<hb_tag_t, Triple>*, unsigned> m;
       for (tuple_delta_t& var : tuple_vars)
       {
@@ -1191,17 +1191,17 @@ struct TupleVariationData
         }
         else
         {
-	  auto *new_var = new_vars.push ();
-	  if (unlikely (new_vars.in_error ()))
-	    return false;
+          auto *new_var = new_vars.push ();
+          if (unlikely (new_vars.in_error ()))
+            return false;
           hb_swap (*new_var, var);
           if (unlikely (!m.set (&(new_var->axis_tuples), new_vars.length - 1)))
             return false;
         }
       }
       m.fini (); // Just in case, since it points into new_vars data.
-		 // Shouldn't be necessary though, since we only move new_vars, not its
-		 // contents.
+                 // Shouldn't be necessary though, since we only move new_vars, not its
+                 // contents.
       tuple_vars = std::move (new_vars);
       return true;
     }
@@ -1262,7 +1262,7 @@ struct TupleVariationData
     }
 
     bool calc_inferred_deltas (const contour_point_vector_t& contour_points,
-			       hb_vector_t<unsigned> &scratch)
+                               hb_vector_t<unsigned> &scratch)
     {
       for (tuple_delta_t& var : tuple_vars)
         if (!var.calc_inferred_deltas (contour_points, scratch))
@@ -1272,7 +1272,7 @@ struct TupleVariationData
     }
 
     bool iup_optimize (const contour_point_vector_t& contour_points,
-		       optimize_scratch_t &scratch)
+                       optimize_scratch_t &scratch)
     {
       for (tuple_delta_t& var : tuple_vars)
       {
@@ -1285,8 +1285,8 @@ struct TupleVariationData
     public:
     bool instantiate (const hb_hashmap_t<hb_tag_t, Triple>& normalized_axes_location,
                       const hb_hashmap_t<hb_tag_t, TripleDistances>& axes_triple_distances,
-		      optimize_scratch_t &scratch,
-		      hb_alloc_pool_t *pool = nullptr,
+                      optimize_scratch_t &scratch,
+                      hb_alloc_pool_t *pool = nullptr,
                       contour_point_vector_t* contour_points = nullptr,
                       bool optimize = false)
     {
@@ -1296,9 +1296,9 @@ struct TupleVariationData
       /* compute inferred deltas only for gvar */
       if (contour_points)
       {
-	hb_vector_t<unsigned> scratch;
-	if (!calc_inferred_deltas (*contour_points, scratch))
-	  return false;
+        hb_vector_t<unsigned> scratch;
+        if (!calc_inferred_deltas (*contour_points, scratch))
+          return false;
       }
 
       /* if iup delta opt is on, contour_points can't be null */
@@ -1317,7 +1317,7 @@ struct TupleVariationData
                         bool use_shared_points,
                         bool is_gvar = false,
                         const hb_hashmap_t<const hb_vector_t<F2DOT14>*, unsigned>* shared_tuples_idx_map = nullptr,
-			hb_alloc_pool_t *pool = nullptr)
+                        hb_alloc_pool_t *pool = nullptr)
     {
       // return true for empty glyph
       if (!tuple_vars)
@@ -1357,7 +1357,7 @@ struct TupleVariationData
         unsigned points_data_length = (points_data != shared_points_bytes) ? points_data->length : 0;
         if (!tuple.compile_tuple_var_header (axes_index_map, points_data_length, axes_old_index_tag_map,
                                              shared_tuples_idx_map,
-					     pool))
+                                             pool))
           return false;
         compiled_byte_size += tuple.compiled_tuple_header.length + points_data_length + tuple.compiled_deltas.length;
       }
@@ -1451,15 +1451,15 @@ struct TupleVariationData
     bool is_valid ()
     {
       if (unlikely (tuples_left <= 0))
-	return false;
+        return false;
 
       current_tuple_size = TupleVariationHeader::min_size;
       if (unlikely (!var_data_bytes.check_end ((const char *) current_tuple + current_tuple_size)))
-	return false;
+        return false;
 
       current_tuple_size = current_tuple->get_size (axis_count_times_2);
       if (unlikely (!var_data_bytes.check_end ((const char *) current_tuple + current_tuple_size)))
-	return false;
+        return false;
 
       return true;
     }
@@ -1505,8 +1505,8 @@ struct TupleVariationData
   bool has_shared_point_numbers () const { return tupleVarCount.has_shared_point_numbers (); }
 
   static bool decompile_points (const HBUINT8 *&p /* IN/OUT */,
-				hb_vector_t<unsigned int> &points /* OUT */,
-				const HBUINT8 *end)
+                                hb_vector_t<unsigned int> &points /* OUT */,
+                                const HBUINT8 *end)
   {
     enum packed_point_flag_t
     {
@@ -1559,10 +1559,10 @@ struct TupleVariationData
   template <typename T>
   HB_ALWAYS_INLINE
   static bool decompile_deltas (const HBUINT8 *&p /* IN/OUT */,
-				hb_vector_t<T> &deltas /* IN/OUT */,
-				const HBUINT8 *end,
-				bool consume_all = false,
-				unsigned start = 0)
+                                hb_vector_t<T> &deltas /* IN/OUT */,
+                                const HBUINT8 *end,
+                                bool consume_all = false,
+                                unsigned start = 0)
   {
     return TupleValues::decompile (p, deltas, end, consume_all, start);
   }
@@ -1576,7 +1576,7 @@ struct TupleVariationData
                                    const hb_vector_t<unsigned> &shared_indices,
                                    const hb_array_t<const F2DOT14> shared_tuples,
                                    tuple_variations_t& tuple_variations, /* OUT */
-				   hb_alloc_pool_t *pool = nullptr,
+                                   hb_alloc_pool_t *pool = nullptr,
                                    bool is_composite_glyph = false) const
   {
     return tuple_variations.create_from_tuple_var_data (iterator, tupleVarCount,
@@ -1584,7 +1584,7 @@ struct TupleVariationData
                                                         axes_old_index_tag_map,
                                                         shared_indices,
                                                         shared_tuples,
-							pool,
+                                                        pool,
                                                         is_composite_glyph);
   }
 
@@ -1913,35 +1913,35 @@ struct item_variations_t
       major_rows.reset ();
       for (unsigned minor = 0; minor < num_rows; minor++)
       {
-	const hb_vector_t<int>& row = delta_rows[start_row + minor];
-	if (use_no_variation_idx)
-	{
-	  bool all_zeros = true;
-	  for (int delta : row)
-	  {
-	    if (delta != 0)
-	    {
-	      all_zeros = false;
-	      break;
-	    }
-	  }
-	  if (all_zeros)
-	    continue;
-	}
+        const hb_vector_t<int>& row = delta_rows[start_row + minor];
+        if (use_no_variation_idx)
+        {
+          bool all_zeros = true;
+          for (int delta : row)
+          {
+            if (delta != 0)
+            {
+              all_zeros = false;
+              break;
+            }
+          }
+          if (all_zeros)
+            continue;
+        }
 
-	if (!front_mapping.set ((major<<16) + minor, &row))
-	  return false;
+        if (!front_mapping.set ((major<<16) + minor, &row))
+          return false;
 
-	if (delta_rows_map.has (&row))
-	  continue;
+        if (delta_rows_map.has (&row))
+          continue;
 
-	delta_rows_map.set (&row, 1);
+        delta_rows_map.set (&row, 1);
 
-	major_rows.push (&row);
+        major_rows.push (&row);
       }
 
       if (major_rows)
-	encoding_objs.push (delta_row_encoding_t (std::move (major_rows), num_cols));
+        encoding_objs.push (delta_row_encoding_t (std::move (major_rows), num_cols));
 
       start_row += num_rows;
     }
@@ -2002,14 +2002,14 @@ struct item_variations_t
         if (removed_todo_idxes.has (idx)) continue;
 
         const delta_row_encoding_t& obj = encoding_objs.arrayZ[idx];
-	// In the unlikely event that the same encoding exists already, combine it.
+        // In the unlikely event that the same encoding exists already, combine it.
         if (obj.width == encoding.width && obj.chars == encoding.chars)
         {
-	  // This is straight port from fonttools algorithm. I added this branch there
-	  // because I thought it can happen. But looks like we never get in here in
-	  // practice. I'm not confident enough to remove it though; in theory it can
-	  // happen. I think it's just that our tests are not extensive enough to hit
-	  // this path.
+          // This is straight port from fonttools algorithm. I added this branch there
+          // because I thought it can happen. But looks like we never get in here in
+          // practice. I'm not confident enough to remove it though; in theory it can
+          // happen. I think it's just that our tests are not extensive enough to hit
+          // this path.
 
           for (const auto& row : obj.items)
             encoding.add_row (row);
