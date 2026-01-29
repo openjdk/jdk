@@ -29,7 +29,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
  *                   -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0
- *                   -XX:HotCodeSampleSeconds=5 -XX:HotCodeSteadyThreshold=1 -XX:HotCodeSampleRatio=1
+ *                   -XX:HotCodeSampleSeconds=5 -XX:HotCodeSteadyThreshold=1 -XX:HotCodeSampleRatio=1 -XX:HotCodeStartupDelaySeconds=0
  *                   compiler.hotcodegrouper.HotCodeGrouperMoveFunction
  */
 

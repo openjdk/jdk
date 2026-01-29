@@ -93,9 +93,10 @@ bool HotCodeGrouper::hot_heap_has_space(size_t size) {
 }
 
 void HotCodeGrouper::run() {
-  while (true) {
-    os::naked_sleep(HotCodeIntervalSeconds * 1000);
+  // Initial sleep to allow JVM to warm up
+  os::naked_sleep(HotCodeStartupDelaySeconds * 1000);
 
+  while (true) {
     ResourceMark rm;
 
     { // Acquire CodeCache_lock and check if c2 nmethod count is steady
@@ -108,10 +109,13 @@ void HotCodeGrouper::run() {
       }
     }
 
-    // Sample application and group hot nmethods
-    ThreadSampler sampler;
-    sampler.do_sampling();
-    do_grouping(sampler);
+    { // Sample application and group hot nmethods
+      ThreadSampler sampler;
+      sampler.do_sampling();
+      do_grouping(sampler);
+    }
+
+    os::naked_sleep(HotCodeIntervalSeconds * 1000);
   }
 }
 
