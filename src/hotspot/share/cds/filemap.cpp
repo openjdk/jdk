@@ -249,6 +249,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
 
+  _offset_shift = ArchiveUtils::OFFSET_SHIFT;
+
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
@@ -717,8 +719,8 @@ bool FileMapInfo::init_from_file(int fd) {
 }
 
 void FileMapInfo::seek_to_position(size_t pos) {
-  if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
-    aot_log_error(aot)("Unable to seek to position %zu", pos);
+  if (os::lseek(_fd, (jlong)pos, SEEK_SET) < 0) {
+    aot_log_error(aot)("Unable to seek to position %zu (errno=%d: %s)", pos, errno, os::strerror(errno));
     AOTMetaspace::unrecoverable_loading_error();
   }
 }

@@ -34,6 +34,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
@@ -2090,6 +2091,14 @@ MapArchiveResult AOTMetaspace::map_archive(FileMapInfo* mapinfo, char* mapped_ba
   if (result != MAP_ARCHIVE_SUCCESS) {
     unmap_archive(mapinfo);
     return result;
+  }
+
+  const int offset_shift = mapinfo->header()->offset_shift();
+  if (offset_shift != ArchiveUtils::OFFSET_SHIFT) {
+    report_loading_error("Unable to map CDS archive -- unexpected offset_shift: %d expected: %d",
+                         offset_shift, ArchiveUtils::OFFSET_SHIFT);
+    unmap_archive(mapinfo);
+    return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
   if (!mapinfo->validate_class_location()) {

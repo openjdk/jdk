@@ -260,7 +260,14 @@ class ArchiveUtils {
   template <typename T> static Array<T>* archive_ptr_array(GrowableArray<T>* tmp_array);
 
 public:
-  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
+  static constexpr int OFFSET_SHIFT = 3;
+  static constexpr uintx MAX_SHARED_DELTA = LP64_ONLY(32ULL * G) NOT_LP64(0x7FFFFFFF);
+
+  static void init_offset_shift_from_header(int shift) {
+    if (shift != OFFSET_SHIFT) {
+      log_warning(cds)("Archive has unexpected offset_shift=%d, expected %d", shift, OFFSET_SHIFT);
+    }
+  }
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
   static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
 
@@ -284,18 +291,19 @@ public:
 
   // offset must represent an object of type T in the mapped shared space. Return
   // a direct pointer to this object.
-  template <typename T> T static offset_to_archived_address(u4 offset) {
-    assert(offset != 0, "sanity");
-    T p = (T)(SharedBaseAddress + offset);
+  template <typename T> T static offset_to_archived_address(u4 offset_units) {
+    assert(offset_units != 0, "sanity");
+    uintx offset_bytes = ((uintx)offset_units) << OFFSET_SHIFT;
+    T p = (T)(SharedBaseAddress + offset_bytes);
     assert(Metaspace::in_aot_cache(p), "must be");
     return p;
   }
 
-  template <typename T> T static offset_to_archived_address_or_null(u4 offset) {
-    if (offset == 0) {
+  template <typename T> T static offset_to_archived_address_or_null(u4 offset_units) {
+    if (offset_units == 0) {
       return nullptr;
     } else {
-      return offset_to_archived_address<T>(offset);
+      return offset_to_archived_address<T>(offset_units);
     }
   }
 
@@ -305,9 +313,11 @@ public:
     uintx base = (uintx)SharedBaseAddress;
     assert(Metaspace::in_aot_cache(p), "must be");
     assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
-    uintx offset = pn - base;
-    assert(offset <= MAX_SHARED_DELTA, "range check");
-    return static_cast<u4>(offset);
+    uintx offset_bytes = pn - base;
+    assert(is_aligned(offset_bytes, (size_t)1 << OFFSET_SHIFT), "offset not aligned");
+    uintx offset_units = offset_bytes >> OFFSET_SHIFT;
+    assert(offset_units <= 0xFFFFFFFF, "offset units must fit in u4");
+    return static_cast<u4>(offset_units);
   }
 
   template <typename T> static u4 archived_address_or_null_to_offset(T p) {

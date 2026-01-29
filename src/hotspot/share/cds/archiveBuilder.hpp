@@ -329,13 +329,16 @@ public:
     return current()->buffer_to_requested_delta();
   }
 
-  inline static u4 to_offset_u4(uintx offset) {
-    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
-    return (u4)offset;
+  inline static u4 to_offset_u4(uintx offset_bytes) {
+    guarantee(is_aligned(offset_bytes, (size_t)1 << ArchiveUtils::OFFSET_SHIFT),
+              "offset not aligned for scaled encoding");
+    uintx offset_units = offset_bytes >> ArchiveUtils::OFFSET_SHIFT;
+    guarantee(offset_units <= 0xFFFFFFFF, "offset units must fit in u4");
+    return (u4)offset_units;
   }
 
 public:
-  static const uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;;
+  static constexpr uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;
 
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
@@ -346,7 +349,7 @@ public:
   uintx any_to_offset(address p) const;
 
   // The reverse of buffer_to_offset()
-  address offset_to_buffered_address(u4 offset) const;
+  address offset_to_buffered_address(u4 offset_units) const;
 
   template <typename T>
   u4 buffer_to_offset_u4(T p) const {
@@ -371,8 +374,8 @@ public:
   }
 
   template <typename T>
-  T offset_to_buffered(u4 offset) const {
-    return (T)offset_to_buffered_address(offset);
+  T offset_to_buffered(u4 offset_units) const {
+    return (T)offset_to_buffered_address(offset_units);
   }
 
 public:

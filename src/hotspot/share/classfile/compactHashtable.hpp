@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 #define SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 
+#include "cds/archiveUtils.hpp"
 #include "cds/cds_globals.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -374,8 +375,9 @@ public:
 // offset from the CDS base address.
 
 template <typename V>
-inline V read_value_from_compact_hashtable(address base_address, u4 offset) {
-  return (V)(base_address + offset);
+inline V read_value_from_compact_hashtable(address base_address, u4 offset_units) {
+  uintx offset_bytes = ((uintx)offset_units) << ArchiveUtils::OFFSET_SHIFT;
+  return (V)(base_address + offset_bytes);
 }
 
 template <
