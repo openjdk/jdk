@@ -3515,7 +3515,7 @@ final class FdLibm {
      * Method :
      *
      *
-     *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha -INF < alpha < < INF
+     *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha, -INF < alpha < < INF
      *      and sinh(asinh(x)) = x, -INF < x  < INF.
      *      It can be written as asinh(x) = ln(x + sqrt(x^2 + 1)), -INF < x  < INF.
      *      1. Replace x by |x| as the function is odd.
@@ -3561,4 +3561,51 @@ final class FdLibm {
             return hx > 0 ? w : -w;
         }
     }
+
+    /**
+     * Return the Inverse Hyperbolic Cosine of x
+     *
+     * Method :
+     *
+     *
+     *      acosh(x) is defined so that acosh(cosh(alpha)) = alpha, -INF < alpha < < INF
+     *      and cosh(acosh(x)) = x, 1 <= x  < INF.
+     *      It can be written as acosh(x) = ln(x + sqrt(x^2 - 1)), 1 <= x  < INF.
+     *      acosh(x) := log(x)+ln2,	if x is large; else
+     *               := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
+     *               := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
+     *
+     *
+     *
+     * Special cases:
+     *      acosh(x) is NaN with signal if x < 1.
+     *      acosh(NaN) is NaN without signal.
+     */
+    static final class Acosh {
+        private static final double ln2 = 6.93147180559945286227e-01;
+
+        static double compute(double x) {
+            double t;
+            int hx;
+            hx = __HI(x);
+            if(hx < 0x3ff00000) {		                    // x < 1 */
+                return (x - x) / (x - x);
+            } else if (hx >= 0x41b00000) {	                // x > 2**28
+                if(hx >= 0x7ff00000) {	                    // x is inf of NaN
+                    return x + x;
+                } else {
+                    return Log.compute(x) + ln2;            // acosh(huge) = log(2x)
+                }
+            } else if (((hx - 0x3ff00000) | __LO(x)) == 0) {
+                return 0.0;			                        // acosh(1) = 0
+            } else if (hx > 0x40000000) {	                // 2**28 > x > 2
+                t = x * x;
+                return Log.compute(2.0 * x - 1.0 / (x + Sqrt.compute(t - 1.0)));
+            } else {			                            // 1< x <2
+                t = x - 1.0;
+                return Log1p.compute(t + Sqrt.compute(2.0 * t + t * t));
+            }
+        }
+    }
+
 }
