@@ -574,7 +574,7 @@ abstract class AbstractVector<E> extends Vector<E> {
                                         ML.contains("/") ? String.format("(%s)", ML) : ML,
                                         MP.contains("/") ? String.format("(%s)", MP) : MP));
         String M = String.format("%s=%s%d", formula, limit < 0 ? "1/" : "", Math.max(1, Math.abs(limit)));
-        String msg = String.format("bad part number %d should be %s; M=%s%s%s; %s %s -> %s",
+        String msg = String.format("bad part number %d should be %s; MS=%s%s%s; %s %s -> %s",
                                    part, shouldBe,
                                    M, laneChange, shapeChange,
                                    converting, dsp, rsp);
