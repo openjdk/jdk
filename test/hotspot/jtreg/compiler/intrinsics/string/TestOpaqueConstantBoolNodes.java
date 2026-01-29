@@ -25,6 +25,7 @@
  * @test
  * @bug 8374582
  * @summary Tests the creation and removal of opaque nodes at range checks points in string intrinsics.
+ * @requires vm.flagless
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
