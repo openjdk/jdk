@@ -2138,12 +2138,12 @@ public class TreeMap<K,V>
                 return null;
             }
             public void forEachRemaining(Consumer<? super K> action) {
-                if (action == null) throw new NullPointerException();
+                Objects.requireNonNull(action);
                 while (hasNext())
                     action.accept(next());
             }
             public boolean tryAdvance(Consumer<? super K> action) {
-                if (action == null) throw new NullPointerException();
+                Objects.requireNonNull(action);
                 if (hasNext()) {
                     action.accept(next());
                     return true;
@@ -2178,12 +2178,12 @@ public class TreeMap<K,V>
                 return null;
             }
             public void forEachRemaining(Consumer<? super K> action) {
-                if (action == null) throw new NullPointerException();
+                Objects.requireNonNull(action);
                 while (hasNext())
                     action.accept(next());
             }
             public boolean tryAdvance(Consumer<? super K> action) {
-                if (action == null) throw new NullPointerException();
+                Objects.requireNonNull(action);
                 if (hasNext()) {
                     action.accept(next());
                     return true;
