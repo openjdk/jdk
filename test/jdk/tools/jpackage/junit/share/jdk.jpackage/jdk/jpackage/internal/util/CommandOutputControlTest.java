@@ -203,17 +203,29 @@ public class CommandOutputControlTest {
             exec = coc.createExecutable(new ProcessBuilder("runme", "--foo", "--baz=10"));
         }
 
-        assertEquals("runme --foo --baz=10", exec.attributes().toString());
+        assertEquals("runme --foo --baz=10", exec.attributes().printableCommandLine());
     }
 
     @Test
-    public void test_Result_no_args_ctor() {
+    public void test_Result_single_arg_ctor() {
         var result = new CommandOutputControl.Result(7);
         assertFalse(result.findContent().isPresent());
         assertFalse(result.findStdout().isPresent());
         assertFalse(result.findStderr().isPresent());
         assertEquals(7, result.getExitCode());
         assertSame(Objects.requireNonNull(CommandOutputControl.EMPTY_EXECUTABLE_ATTRIBUTES), result.execAttrs());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void test_Result_unexpected(boolean customMessage) throws IOException {
+        var result = new CommandOutputControl.Result(7);
+
+        if (customMessage) {
+            assertEquals("Kaput!", result.unexpected("Kaput!").getMessage());
+        } else {
+            assertEquals("Unexpected result from executing the command <unknown>", result.unexpected().getMessage());
+        }
     }
 
     @Test
@@ -277,13 +289,8 @@ public class CommandOutputControlTest {
 
         var execAttrs = new CommandOutputControl.ExecutableAttributes() {
             @Override
-            public String toString() {
-                return "foo";
-            }
-
-            @Override
             public List<String> commandLine() {
-                return List.of();
+                return List.of("foo");
             }
         };
 
@@ -293,6 +300,20 @@ public class CommandOutputControlTest {
         assertSame(empty.output(), copy.output());
         assertSame(empty.byteOutput(), copy.byteOutput());
         assertSame(execAttrs, copy.execAttrs());
+    }
+
+    @Test
+    public void test_UnexpectedExitCodeException_no_exit_code() {
+
+        var resultWithoutExitCode = CommandOutputControl.Result.build().create();
+
+        assertThrowsExactly(IllegalArgumentException.class, () -> {
+            new CommandOutputControl.UnexpectedExitCodeException(resultWithoutExitCode);
+        });
+
+        assertThrowsExactly(IllegalArgumentException.class, () -> {
+            new CommandOutputControl.UnexpectedExitCodeException(resultWithoutExitCode, "Kaput!");
+        });
     }
 
     @ParameterizedTest
@@ -1781,7 +1802,7 @@ public class CommandOutputControlTest {
         }
     }
 
-    private final static class InterruptibleToolProvider implements ToolProvider {
+    private static final class InterruptibleToolProvider implements ToolProvider {
 
         InterruptibleToolProvider(ToolProvider impl) {
             this.impl = impl;
