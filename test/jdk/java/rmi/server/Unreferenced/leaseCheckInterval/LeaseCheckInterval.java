@@ -77,9 +77,8 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
          * we can test if expirations are detected in a roughly comparable
          * time.
          */
-        System.setProperty("java.rmi.dgc.leaseValue",
-                           String.valueOf(LEASE_VALUE));
-
+        System.setProperty("java.rmi.dgc.leaseValue", String.valueOf(LEASE_VALUE));
+        System.err.println("running test with java.rmi.dgc.leaseValue set to " + LEASE_VALUE);
         LeaseCheckInterval obj = new LeaseCheckInterval();
         JavaVM jvm = null;
 
