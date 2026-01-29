@@ -207,7 +207,7 @@ final class PackageBuilder {
         });
     }
 
-    private static Path mapInstallDir(Path installDir, PackageType pkgType) {
+    private static Path mapInstallDir(Path installDir, PackageType type) {
         var ex = buildConfigException("error.invalid-install-dir", installDir).create();
 
         if (installDir.getNameCount() == 0) {
@@ -223,15 +223,17 @@ final class PackageBuilder {
             throw ex;
         }
 
-        switch (pkgType) {
-            case StandardPackageType.WIN_EXE, StandardPackageType.WIN_MSI -> {
-                if (installDir.isAbsolute()) {
-                    throw ex;
+        if (type instanceof StandardPackageType stdType) {
+            switch (stdType) {
+                case WIN_EXE, WIN_MSI -> {
+                    if (installDir.isAbsolute()) {
+                        throw ex;
+                    }
                 }
-            }
-            default -> {
-                if (!installDir.isAbsolute()) {
-                    throw ex;
+                default -> {
+                    if (!installDir.isAbsolute()) {
+                        throw ex;
+                    }
                 }
             }
         }
