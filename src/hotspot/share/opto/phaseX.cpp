@@ -1181,7 +1181,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
     // control sub of the allocation. The problems is that sometimes dominates answers
     // false conservatively, and later it can determine that it is indeed true. Loops with
     // Region heads can lead to giving up, whereas LoopNodes can be skipped easier, and
-    // so the traversal becomes more powerful. This is difficult to remidy, we would have
+    // so the traversal becomes more powerful. This is difficult to remedy, we would have
     // to notify the CmpP of CFG updates. Luckily, we recompute CmpP::Value during CCP
     // after loop-opts, so that should take care of many of these cases.
     return;
