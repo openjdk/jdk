@@ -43,6 +43,10 @@ public class Password {
         return readPassword(in, false);
     }
 
+    // Default true now
+    private static final boolean ALLOW_STDIN = !"false".equalsIgnoreCase(
+            SecurityProperties.getOverridableProperty("jdk.security.password.allowSystemIn"));
+
     /** Reads user password from given input stream.
      * @param isEchoOn true if the password should be echoed on the screen
      */
@@ -66,6 +70,9 @@ public class Password {
                     }
                     consoleBytes = ConsoleHolder.convertToBytes(consoleEntered);
                     in = new ByteArrayInputStream(consoleBytes);
+                } else if (in == System.in && !ALLOW_STDIN) {
+                    throw new UnsupportedOperationException("Console not available." +
+                            " Reading passwords from System.in is disallowed.");
                 } else if (in == System.in && VM.isBooted()
                             && System.in.available() == 0) {
                     // Warn if reading password from System.in but it's empty.
