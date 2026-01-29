@@ -56,8 +56,17 @@ bool JvmtiThreadState::_seen_interp_only_mode = false;
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
-  _thread               = thread;
-  _thread_saved         = nullptr;
+
+  if (JvmtiEnvBase::is_thread_carrying_vthread(thread, thread_oop)) {
+    // Carrier and virtual threads can temporary share the same JavaThread.
+    // Only virtual thread should have a link from JvmtiThreadState to JavaThread.
+    // It is needed for interp-only mechanism.
+    _thread = nullptr;
+    _thread_saved = thread;
+  } else { // virtual or non-carrying platform thread
+    _thread = thread;
+    _thread_saved = nullptr;
+  }
   _exception_state      = ES_CLEARED;
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
@@ -123,10 +132,6 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
       thread->set_jvmti_thread_state(this);
     }
     thread->set_interp_only_mode(false);
-  }
-  if (JvmtiEnvBase::is_thread_carrying_vthread(thread, thread_oop)) {
-    _thread_saved = thread;
-    _thread = nullptr;
   }
 }
 
