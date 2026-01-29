@@ -38,12 +38,12 @@ void RegionsTree::visit_committed_regions(const VirtualMemoryRegion& rgn, F func
   visit_range_in_order(start, end, [&](Node* node) {
     NodeHelper curr(node);
     if (prev.is_valid() && prev.is_committed_begin()) {
-      VirtualMemoryRegion cmr((address)prev.position(),
+      VirtualMemoryRegion rgn((address)prev.position(),
                               curr.distance_from(prev),
                               reserved_stack(prev),
                               committed_stack(prev),
                               prev.out_tag());
-      if (!func(cmr)) {
+      if (!func(rgn)) {
         return false;
       }
     }
@@ -72,8 +72,8 @@ void RegionsTree::visit_reserved_regions(F func) {
         prev.clear_node();
         return true;
       }
-      VirtualMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
-      if (!func(rmr)) {
+      VirtualMemoryRegion rgn((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
+      if (!func(rgn)) {
         return false;
       }
       rgn_size = 0;

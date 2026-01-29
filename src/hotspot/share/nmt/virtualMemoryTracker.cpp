@@ -193,14 +193,14 @@ bool VirtualMemoryTracker::Instance::print_containing_region(const void* p, outp
 }
 
 bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
-  VirtualMemoryRegion rmr = tree()->find_reserved_region((address)p);
-  if (!rmr.is_valid() || !rmr.contain_address((address)p)) {
+  VirtualMemoryRegion rgn = tree()->find_reserved_region((address)p);
+  if (!rgn.is_valid() || !rgn.contain_address((address)p)) {
     return false;
   }
   st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
-               p2i(p), p2i(rmr.base()), p2i(rmr.end()), NMTUtil::tag_to_enum_name(rmr.mem_tag()));
+               p2i(p), p2i(rgn.base()), p2i(rgn.end()), NMTUtil::tag_to_enum_name(rgn.mem_tag()));
   if (MemTracker::tracking_level() == NMT_detail) {
-    rmr.reserved_call_stack()->print_on(st);
+    rgn.reserved_call_stack()->print_on(st);
   }
   st->cr();
   return true;
@@ -223,29 +223,29 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   return ret;
 }
 
-size_t VirtualMemoryTracker::committed_size(const VirtualMemoryRegion* rmr) {
+size_t VirtualMemoryTracker::committed_size(const VirtualMemoryRegion* rgn) {
   size_t result = 0;
-  tree()->visit_committed_regions(*rmr, [&](VirtualMemoryRegion& crgn) {
+  tree()->visit_committed_regions(*rgn, [&](VirtualMemoryRegion& crgn) {
     result += crgn.size();
     return true;
   });
   return result;
 }
 
-size_t VirtualMemoryTracker::Instance::committed_size(const VirtualMemoryRegion* rmr) {
+size_t VirtualMemoryTracker::Instance::committed_size(const VirtualMemoryRegion* rgn) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->committed_size(rmr);
+  return _tracker->committed_size(rgn);
 }
 
-address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rmr) {
+address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rgn) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->thread_stack_uncommitted_bottom(rmr);
+  return _tracker->thread_stack_uncommitted_bottom(rgn);
 }
 
-address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rmr) {
-  address bottom = rmr->base();
-  address top = rmr->end();
-    tree()->visit_committed_regions(*rmr, [&](VirtualMemoryRegion& crgn) {
+address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rgn) {
+  address bottom = rgn->base();
+  address top = rgn->end();
+    tree()->visit_committed_regions(*rgn, [&](VirtualMemoryRegion& crgn) {
     address committed_top = crgn.base() + crgn.size();
     if (committed_top < top) {
       // committed stack guard pages, skip them
@@ -341,18 +341,18 @@ void VirtualMemoryTracker::Instance::snapshot_thread_stacks() {
 }
 
 VirtualMemoryRegion RegionsTree::find_reserved_region(address addr) {
-    VirtualMemoryRegion rmr;
+    VirtualMemoryRegion rgn;
     auto contain_region = [&](VirtualMemoryRegion& region_in_tree) {
       if (region_in_tree.contain_address(addr)) {
-        rmr = region_in_tree;
+        rgn = region_in_tree;
         return false;
       }
       return true;
     };
     visit_reserved_regions(contain_region);
-    return rmr;
+    return rgn;
 }
 
-bool VirtualMemoryRegion::equals_including_stacks(const VirtualMemoryRegion& rmr) const {
-  return size() == rmr.size() && committed_call_stack()->equals(*(rmr.reserved_call_stack()));
+bool VirtualMemoryRegion::equals_including_stacks(const VirtualMemoryRegion& rgn) const {
+  return size() == rgn.size() && committed_call_stack()->equals(*(rgn.reserved_call_stack()));
 }
