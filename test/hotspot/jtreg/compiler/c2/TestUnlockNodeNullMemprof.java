@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "ci/ciUtilities.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gc_globals.hpp"
+/**
+ * @test
+ * @bug 8370502
+ * @summary Do not segfault while adding node to IGVN worklist
+ *
+ * @run main/othervm -Xbatch ${test.main.class}
+ */
 
-// ciUtilities
-//
-// Miscellaneous internal compiler interface routines.
+package compiler.c2;
 
-// ------------------------------------------------------------------
-// basictype_to_str
-const char* basictype_to_str(BasicType t) {
-  const char* str = type2name(t);
-  if (str == nullptr) return "illegal";
-  return str;
-}
+public class TestUnlockNodeNullMemprof {
+    public static void main(String[] args) {
+        int[] a = new int[0]; // test only valid when size is 0.
+        for (int i = 0; i < Integer.valueOf(10000); i++) // test only valid with boxed loop limit
+            try {
+                test(a);
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
+    }
 
-// ------------------------------------------------------------------
-// card_table_base
-CardTable::CardValue* ci_card_table_address_const() {
-  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
-  return ctbs->card_table_base_const();
+    static void test(int[] a) {
+        for (int i = 0; i < 1;) {
+            a[i] = 0;
+            synchronized (TestUnlockNodeNullMemprof.class) {
+            }
+            for (int j = 0; Integer.valueOf(j) < 1;)
+                j = 0;
+        }
+    }
 }
