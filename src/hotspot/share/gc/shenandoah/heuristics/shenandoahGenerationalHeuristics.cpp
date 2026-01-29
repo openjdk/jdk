@@ -24,8 +24,8 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectionSetPreselector.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahCollectionSetPreselector.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
