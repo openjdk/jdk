@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import java.util.Objects;
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 
+import sun.swing.SwingAccessor;
 
 /**
  * {@code UIManager} manages the current look and feel, the set of
@@ -233,8 +234,9 @@ public class UIManager implements Serializable
      */
     public UIManager() {}
 
+    private static final LAFState LAF_STATE = new LAFState();
     /**
-     * Return the <code>LAFState</code> object, lazily create one if necessary.
+     * Return the <code>LAFState</code> object.
      * All access to the <code>LAFState</code> fields is done via this method,
      * for example:
      * <pre>
@@ -242,22 +244,18 @@ public class UIManager implements Serializable
      * </pre>
      */
     private static LAFState getLAFState() {
-        LAFState rv = (LAFState)SwingUtilities.appContextGet(
-                SwingUtilities2.LAF_STATE_KEY);
-        if (rv == null) {
-            synchronized (classLock) {
-                rv = (LAFState)SwingUtilities.appContextGet(
-                        SwingUtilities2.LAF_STATE_KEY);
-                if (rv == null) {
-                    SwingUtilities.appContextPut(
-                            SwingUtilities2.LAF_STATE_KEY,
-                            (rv = new LAFState()));
-                }
-            }
+        synchronized (classLock) {
+            return LAF_STATE;
         }
-        return rv;
     }
 
+    static {
+        SwingAccessor.setLAFStateAccessor(UIManager::isLafStateInitialized);
+    }
+
+    private static boolean isLafStateInitialized() {
+        return LAF_STATE.initialized;
+    }
 
     /* Keys used in the <code>swing.properties</code> properties file.
      * See loadUserProperties(), initialize().
