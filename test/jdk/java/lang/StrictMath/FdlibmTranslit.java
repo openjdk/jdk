@@ -2808,7 +2808,7 @@ public class FdlibmTranslit {
      * Based on
      *  acosh(x) = log [ x + sqrt(x*x-1) ]
      *  we have
-     *   acosh(x) := log(x)+ln2,	if x is large; else
+     *   acosh(x) := log(x)+ln2,    if x is large; else
      *            := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
      *            := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
      *
