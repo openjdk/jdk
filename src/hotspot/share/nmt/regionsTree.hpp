@@ -70,6 +70,7 @@ class RegionsTree : public VMATree {
         return position() - other.position();
       }
       inline NativeCallStackStorage::StackIndex out_stack_index() const { return _node->val().out.reserved_stack(); }
+      inline NativeCallStackStorage::StackIndex out_committed_stack_index() const { return _node->val().out.committed_stack(); }
       inline MemTag in_tag() const { return _node->val().in.mem_tag(); }
       inline MemTag out_tag() const { return _node->val().out.mem_tag(); }
       inline void set_in_tag(MemTag tag) { _node->val().in.set_tag(tag); }
@@ -89,11 +90,19 @@ class RegionsTree : public VMATree {
     return RegionData(_ncs_storage.push(ncs), tag);
   }
 
-  inline const NativeCallStack stack(NodeHelper& node) {
+  inline const NativeCallStack reserved_stack(NodeHelper& node) {
     if (!_with_storage) {
       return NativeCallStack::empty_stack();
     }
     NativeCallStackStorage::StackIndex si = node.out_stack_index();
+    return _ncs_storage.get(si);
+  }
+
+  inline const NativeCallStack committed_stack(NodeHelper& node) {
+    if (!_with_storage) {
+      return NativeCallStack::empty_stack();
+    }
+    NativeCallStackStorage::StackIndex si = node.out_committed_stack_index();
     return _ncs_storage.get(si);
   }
 

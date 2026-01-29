@@ -214,10 +214,10 @@ class VirtualMemoryRegion {
      assert(size > 0, "Invalid size");
   }
 
-  VirtualMemoryRegion(address addr, size_t size, const NativeCallStack& stack, bool committed) :
-    _base_address(addr), _size(size), _mem_tag(mtNone),
-    _reserved_stack(NativeCallStack::empty_stack()) ,
-    _committed_stack(stack) {
+  VirtualMemoryRegion(address addr, size_t size, const NativeCallStack& reserved_stack, const NativeCallStack& committed_stack, MemTag mem_tag = mtNone) :
+    _base_address(addr), _size(size), _mem_tag(mem_tag),
+    _reserved_stack(reserved_stack),
+    _committed_stack(committed_stack) {
      assert(addr != nullptr, "Invalid address");
      assert(size > 0, "Invalid size");
   }
