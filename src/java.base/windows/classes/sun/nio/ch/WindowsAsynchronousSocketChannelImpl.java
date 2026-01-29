@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 
 package sun.nio.ch;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.*;
 import java.nio.ByteBuffer;
 import java.nio.BufferOverflowException;
 import java.net.*;
 import java.util.concurrent.*;
 import java.io.IOException;
+import jdk.internal.util.Exceptions;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.Unsafe;
-import sun.net.util.SocketExceptions;
 
 /**
  * Windows implementation of AsynchronousSocketChannel using overlapped I/O.
@@ -250,7 +253,7 @@ class WindowsAsynchronousSocketChannelImpl
 
             if (exc != null) {
                 closeChannel();
-                exc = SocketExceptions.of(toIOException(exc), remote);
+                exc = Exceptions.ioException(toIOException(exc), remote);
                 result.setFailure(exc);
             }
             Invoker.invoke(result);
@@ -277,7 +280,7 @@ class WindowsAsynchronousSocketChannelImpl
             if (exc != null) {
                 closeChannel();
                 IOException ee = toIOException(exc);
-                ee = SocketExceptions.of(ee, remote);
+                ee = Exceptions.ioException(ee, remote);
                 result.setFailure(ee);
             }
 
@@ -293,12 +296,12 @@ class WindowsAsynchronousSocketChannelImpl
          */
         @Override
         public void failed(int error, IOException x) {
-            x = SocketExceptions.of(x, remote);
+            x = Exceptions.ioException(x, remote);
             if (isOpen()) {
                 closeChannel();
                 result.setFailure(x);
             } else {
-                x = SocketExceptions.of(new AsynchronousCloseException(), remote);
+                x = Exceptions.ioException(new AsynchronousCloseException(), remote);
                 result.setFailure(x);
             }
             Invoker.invoke(result);
@@ -367,10 +370,13 @@ class WindowsAsynchronousSocketChannelImpl
      * result when the read completes.
      */
     private class ReadTask<V,A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer[] bufs;
         private final int numBufs;
         private final boolean scatteringRead;
         private final PendingFuture<V,A> result;
+        private volatile boolean released;
 
         // set by run method
         private ByteBuffer[] shadow;
@@ -461,12 +467,14 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         void releaseBuffers() {
-            for (int i=0; i<numBufs; i++) {
-                if (!(bufs[i] instanceof DirectBuffer)) {
-                    Util.releaseTemporaryDirectBuffer(shadow[i]);
+            if (RELEASED.compareAndSet(this, false, true)) {
+                for (int i = 0; i < numBufs; i++) {
+                    if (!(bufs[i] instanceof DirectBuffer)) {
+                        Util.releaseTemporaryDirectBuffer(shadow[i]);
+                    }
                 }
+                IOUtil.releaseScopes(scopeHandleReleasers);
             }
-            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override
@@ -641,10 +649,13 @@ class WindowsAsynchronousSocketChannelImpl
      * result when the write completes.
      */
     private class WriteTask<V,A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer[] bufs;
         private final int numBufs;
         private final boolean gatheringWrite;
         private final PendingFuture<V,A> result;
+        private volatile boolean released;
 
         // set by run method
         private ByteBuffer[] shadow;
@@ -728,12 +739,14 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         void releaseBuffers() {
-            for (int i=0; i<numBufs; i++) {
-                if (!(bufs[i] instanceof DirectBuffer)) {
-                    Util.releaseTemporaryDirectBuffer(shadow[i]);
+            if (RELEASED.compareAndSet(this, false, true)) {
+                for (int i = 0; i < numBufs; i++) {
+                    if (!(bufs[i] instanceof DirectBuffer)) {
+                        Util.releaseTemporaryDirectBuffer(shadow[i]);
+                    }
                 }
+                IOUtil.releaseScopes(scopeHandleReleasers);
             }
-            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override

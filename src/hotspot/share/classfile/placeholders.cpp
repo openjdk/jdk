@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/placeholders.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
 #include "logging/logStream.hpp"
+#include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class PlaceholderKey {
   SymbolHandle _name;
@@ -50,7 +49,7 @@ class PlaceholderKey {
 };
 
 const int _placeholder_table_size = 503;   // Does this really have to be prime?
-using InternalPlaceholderTable = ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
+using InternalPlaceholderTable = HashTable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
                   PlaceholderKey::hash, PlaceholderKey::equals>;
 static InternalPlaceholderTable* _placeholders;
 

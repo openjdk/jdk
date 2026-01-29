@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
@@ -72,5 +71,9 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_reset() {
+  return ConcGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup() {
   return ConcGCThreads;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,17 +292,6 @@ class Example implements Comparable<Example> {
 
         if (procFiles.size() > 0) {
             List<String> pOpts = new ArrayList<>(Arrays.asList("-d", classesDir.getPath()));
-
-            // hack to automatically add exports; a better solution would be to grep the
-            // source for import statements or a magic comment
-            for (File pf: procFiles) {
-                if (pf.getName().equals("CreateBadClassFile.java")) {
-                    pOpts.add("--enable-preview");
-                    pOpts.add("--source");
-                    pOpts.add(String.valueOf(Runtime.version().feature()));
-                    pOpts.add("--add-exports=java.base/jdk.internal.classfile.impl=ALL-UNNAMED");
-                }
-            }
 
             new Jsr199Compiler(verbose).run(null, null, false, pOpts, procFiles);
             opts.add("-classpath"); // avoid using -processorpath for now

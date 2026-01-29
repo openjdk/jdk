@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -104,7 +105,7 @@ public class NativeCalls {
             ArrayList<String> command = new ArrayList<String>(v.options);
             command.addAll(baseOptions);
             command.add(v.compile);
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(command);
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
             OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
             analyzer.shouldHaveExitValue(0);
             System.out.println(analyzer.getOutput());

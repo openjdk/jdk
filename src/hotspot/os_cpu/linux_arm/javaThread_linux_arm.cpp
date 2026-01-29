@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
@@ -44,7 +43,8 @@ void JavaThread::cache_global_variables() {
   BarrierSet* bs = BarrierSet::barrier_set();
 
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
-    _card_table_base = (address) (barrier_set_cast<CardTableBarrierSet>(bs)->card_table()->byte_map_base());
+    CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
+    _card_table_base = (address)ctbs->card_table_base_const();
   } else {
     _card_table_base = nullptr;
   }

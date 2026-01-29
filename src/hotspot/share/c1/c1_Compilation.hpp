@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
 
 class CompilationFailureInfo;
@@ -80,7 +79,6 @@ class Compilation: public StackObj {
   bool               _has_unsafe_access;
   bool               _has_irreducible_loops;
   bool               _would_profile;
-  bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
   bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _has_scoped_access; // For shared scope closure
@@ -156,7 +154,7 @@ class Compilation: public StackObj {
   CodeOffsets* offsets()                         { return &_offsets; }
   Arena* arena()                                 { return _arena; }
   bool has_access_indexed()                      { return _has_access_indexed; }
-  bool should_install_code()                     { return _install_code && InstallMethods; }
+  bool should_install_code()                     { return _install_code; }
   LinearScan* allocator()                        { return _allocator; }
 
   // Instruction ids
@@ -180,10 +178,6 @@ class Compilation: public StackObj {
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering
   void notice_inlined_method(ciMethod* method);
-
-  // JSR 292
-  bool     has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   bool     has_reserved_stack_access() const { return _has_reserved_stack_access; }
   void set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
@@ -217,12 +211,8 @@ class Compilation: public StackObj {
   const char* bailout_msg() const                { return _bailout_msg; }
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  static uint desired_max_code_buffer_size() {
-    return (uint)NMethodSizeLimit;  // default 64K
-  }
-  static uint desired_max_constant_size() {
-    return desired_max_code_buffer_size() / 10;
-  }
+  const static uint desired_max_code_buffer_size = 64*K * wordSize;
+  const static uint desired_max_constant_size = desired_max_code_buffer_size / 10;
 
   static bool setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
 

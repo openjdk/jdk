@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 
 /**
  *
@@ -32,12 +33,17 @@ import com.sun.hotspot.igv.graph.Figure;
 public final class ExpandPredecessorsAction extends ExpandAdjacentAction {
 
     @Override
-    public void performAction() {
+    public void performAction(DiagramViewModel model) {
         expandFigures(Figure::getPredecessors);
     }
 
     @Override
     public String getName() {
         return "Expand Above";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Expand predecessors of current set of selected nodes";
     }
 }

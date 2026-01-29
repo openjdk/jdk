@@ -127,9 +127,9 @@ void avx2_emu_mask_compressstoreu32(void *base_addr,
     T *leftStore = (T *)base_addr;
 
     int32_t shortMask = convert_avx2_mask_to_int(k);
-    const __m256i &perm = _mm256_loadu_si256(
+    const __m256i perm = _mm256_loadu_si256(
         (const __m256i *)avx2_compressstore_lut32_perm[shortMask].data());
-    const __m256i &left = _mm256_loadu_si256(
+    const __m256i left = _mm256_loadu_si256(
         (const __m256i *)avx2_compressstore_lut32_left[shortMask].data());
 
     typename vtype::reg_t temp = vtype::permutevar(reg, perm);
@@ -148,7 +148,7 @@ int avx2_double_compressstore32(void *left_addr, void *right_addr,
     T *rightStore = (T *)right_addr;
 
     int32_t shortMask = convert_avx2_mask_to_int(k);
-    const __m256i &perm = _mm256_loadu_si256(
+    const __m256i perm = _mm256_loadu_si256(
         (const __m256i *)avx2_compressstore_lut32_perm[shortMask].data());
 
     typename vtype::reg_t temp = vtype::permutevar(reg, perm);

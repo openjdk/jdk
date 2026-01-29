@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -563,20 +562,20 @@ void Assembler::test_asm() {
   li(     R3, -4711);
 
   // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
-  cmpi(   CCR7,  0, R27, 4711);
-  cmp(    CCR0, 1, R14, R11);
-  cmpli(  CCR5,  1, R17, 45);
-  cmpl(   CCR3, 0, R9,  R10);
+  cmpi(   CR7,  0, R27, 4711);
+  cmp(    CR0, 1, R14, R11);
+  cmpli(  CR5,  1, R17, 45);
+  cmpl(   CR3, 0, R9,  R10);
 
-  cmpwi(  CCR7,  R27, 4711);
-  cmpw(   CCR0, R14, R11);
-  cmplwi( CCR5,  R17, 45);
-  cmplw(  CCR3, R9,  R10);
+  cmpwi(  CR7,  R27, 4711);
+  cmpw(   CR0, R14, R11);
+  cmplwi( CR5,  R17, 45);
+  cmplw(  CR3, R9,  R10);
 
-  cmpdi(  CCR7,  R27, 4711);
-  cmpd(   CCR0, R14, R11);
-  cmpldi( CCR5,  R17, 45);
-  cmpld(  CCR3, R9,  R10);
+  cmpdi(  CR7,  R27, 4711);
+  cmpd(   CR0, R14, R11);
+  cmpldi( CR5,  R17, 45);
+  cmpld(  CR3, R9,  R10);
 
   // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
   andi_(  R4,  R5,  0xff);
@@ -716,23 +715,23 @@ void Assembler::test_asm() {
   bcctr( 4, 6, 0);
   bcctrl(4, 6, 0);
 
-  blt(CCR0, lbl2);
-  bgt(CCR1, lbl2);
-  beq(CCR2, lbl2);
-  bso(CCR3, lbl2);
-  bge(CCR4, lbl2);
-  ble(CCR5, lbl2);
-  bne(CCR6, lbl2);
-  bns(CCR7, lbl2);
+  blt(CR0, lbl2);
+  bgt(CR1, lbl2);
+  beq(CR2, lbl2);
+  bso(CR3, lbl2);
+  bge(CR4, lbl2);
+  ble(CR5, lbl2);
+  bne(CR6, lbl2);
+  bns(CR7, lbl2);
 
-  bltl(CCR0, lbl2);
-  bgtl(CCR1, lbl2);
-  beql(CCR2, lbl2);
-  bsol(CCR3, lbl2);
-  bgel(CCR4, lbl2);
-  blel(CCR5, lbl2);
-  bnel(CCR6, lbl2);
-  bnsl(CCR7, lbl2);
+  bltl(CR0, lbl2);
+  bgtl(CR1, lbl2);
+  beql(CR2, lbl2);
+  bsol(CR3, lbl2);
+  bgel(CR4, lbl2);
+  blel(CR5, lbl2);
+  bnel(CR6, lbl2);
+  bnsl(CR7, lbl2);
   blr();
 
   sync();
@@ -795,7 +794,7 @@ void Assembler::test_asm() {
   fcfid( F22, F23);
 
   // PPC 1, section 4.6.7 Floating-Point Compare Instructions
-  fcmpu( CCR7, F24, F25);
+  fcmpu( CR7, F24, F25);
 
   tty->print_cr("\ntest_asm disassembly (0x%lx 0x%lx):", p2i(code()->insts_begin()), p2i(code()->insts_end()));
   code()->decode();

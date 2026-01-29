@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,32 @@
  * @requires os.family == "windows"
  * @library /test/lib
  * @summary Test "keytool -list" displays correctly same named certificates
- * @ignore Uses certutil.exe that isn't guaranteed to be installed
  */
 
 import jdk.test.lib.process.ProcessTools;
 
+import java.io.IOException;
 import java.security.KeyStore;
 import java.util.Collections;
+import jtreg.SkippedException;
 
 public class NonUniqueAliases {
     public static void main(String[] args) throws Throwable {
-
         try {
-            String testSrc = System.getProperty("test.src", ".");
+            runTest();
+        } catch (IOException ex) {
+            // It uses certutil.exe that isn't guaranteed to be installed
+            String certutilMsg = "Cannot run program \"certutil\"";
+            if (ex.getMessage().contains(certutilMsg)) {
+                throw new SkippedException("certutil is not installed");
+            }
+            throw ex;
+        }
+    }
 
+    private static void runTest() throws Exception {
+        String testSrc = System.getProperty("test.src", ".");
+        try {
             // removing the alias NonUniqueName if it already exists
             ProcessTools.executeCommand("certutil", "-user", "-delstore", "MY",
                     "NonUniqueName");

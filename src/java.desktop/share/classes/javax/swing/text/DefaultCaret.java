@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1431,8 +1431,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
             return component.getToolkit().getSystemSelection();
         } catch (HeadlessException he) {
             // do nothing... there is no system clipboard
-        } catch (SecurityException se) {
-            // do nothing... there is no allowed system clipboard
         }
         return null;
     }

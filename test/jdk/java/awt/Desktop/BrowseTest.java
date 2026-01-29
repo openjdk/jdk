@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 6255196
  * @summary  Verifies the function of method browse(java.net.URI uri).
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual BrowseTest
  */
 
@@ -36,28 +36,41 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import javax.swing.JPanel;
 
+import jtreg.SkippedException;
+
 public class BrowseTest extends JPanel {
     static final String INSTRUCTIONS = """
-            This test could launch default file manager to open user's home
-            directory, and default web browser to show the URL of java vendor.
-            After test execution close the native file manager and web browser
+            Set your default browser as per the test platform.
+            macOS - Safari
+            windows - MS Edge
+            linux - Firefox
+
+            This test checks 2 cases:
+
+            1) Directory URI:
+               On macOS and windows, verify that a browser window opens and
+               EITHER the browser OR native file manager shows the user's
+               home directory.
+
+               On Linux verify that the user's home directory is shown by the
+               default file manager.
+
+            2) Web URI:
+               Verify that the Web URI (URL of java vendor) opens in the browser.
+
+            After test execution close the native file manager and any web browser
             windows if they were launched by test.
+
             Also check output for any unexpected EXCEPTIONS,
             if you see any failure messages press Fail otherwise press Pass.
             """;
 
     public BrowseTest() {
-        if (!Desktop.isDesktopSupported()) {
-            PassFailJFrame.log("Class java.awt.Desktop is not supported on " +
-                    "current platform. Farther testing will not be performed");
-            PassFailJFrame.forcePass();
-        }
-
         Desktop desktop = Desktop.getDesktop();
 
         URI dirURI = new File(System.getProperty("user.home")).toURI();
         URI webURI = URI.create(System.getProperty("java.vendor.url", "http://www.java.com"));
-        boolean failed = false;
+        PassFailJFrame.log("Testing 1st case: Directory URI ...");
         try {
             PassFailJFrame.log("Try to browse " + dirURI + " ...");
             desktop.browse(dirURI);
@@ -66,6 +79,7 @@ public class BrowseTest extends JPanel {
             PassFailJFrame.log("EXCEPTION: " + e.getMessage());
         }
 
+        PassFailJFrame.log("Testing 2nd case: Web URI ...");
         try {
             PassFailJFrame.log("Try to browse " + webURI + " ...");
             desktop.browse(webURI);
@@ -77,6 +91,11 @@ public class BrowseTest extends JPanel {
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
+        if (!Desktop.isDesktopSupported()) {
+            throw new SkippedException("Class java.awt.Desktop is not supported " +
+                    "on current platform. Further testing will not be performed");
+        }
+
         PassFailJFrame.builder()
                 .title("Browser Test")
                 .splitUI(BrowseTest::new)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8078320 8247788 8273244 8298405
+ * @bug 7021614 8078320 8247788 8273244 8298405 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,15 +39,15 @@ class ElementTest {
      */
     void simple() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    StartElement[START_ELEMENT, pos:1
+    StartElement[START_ELEMENT, pos:0
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:4, para]
+    Text[TEXT, pos:3, para]
   body: 1
-    EndElement[END_ELEMENT, pos:8, p]
+    EndElement[END_ELEMENT, pos:7, p]
   block tags: empty
 ]
 */
@@ -57,10 +57,10 @@ DocComment[DOC_COMMENT, pos:1
      */
     void self_closing() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    StartElement[START_ELEMENT, pos:5
+    Text[TEXT, pos:0, abc_]
+    StartElement[START_ELEMENT, pos:4
       name:hr
       attributes: empty
     ]
@@ -74,14 +74,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_lt() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.malformed.html
       body: <
     ]
-    Text[TEXT, pos:6, _def]
+    Text[TEXT, pos:5, _def]
   body: empty
   block tags: empty
 ]
@@ -92,9 +92,9 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_gt() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_>_def]
+    Text[TEXT, pos:0, abc_>_def]
   body: empty
   block tags: empty
 ]
@@ -105,14 +105,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_chars_start();
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.malformed.html
       body: <
     ]
-    Text[TEXT, pos:6, p_123>_def]
+    Text[TEXT, pos:5, p_123>_def]
   body: empty
   block tags: empty
 ]
@@ -123,14 +123,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_chars_end();
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.malformed.html
       body: <
     ]
-    Text[TEXT, pos:6, /p_123>_def]
+    Text[TEXT, pos:5, /p_123>_def]
   body: empty
   block tags: empty
 ]
@@ -141,14 +141,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void unterminated_eoi() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.malformed.html
       body: <
     ]
-    Text[TEXT, pos:6, hr]
+    Text[TEXT, pos:5, hr]
   body: empty
   block tags: empty
 ]
@@ -160,19 +160,19 @@ DocComment[DOC_COMMENT, pos:1
      */
     void unterminated_block() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.malformed.html
       body: <
     ]
-    Text[TEXT, pos:6, hr]
+    Text[TEXT, pos:5, hr]
   body: empty
   block tags: 1
-    Author[AUTHOR, pos:10
+    Author[AUTHOR, pos:8
       name: 1
-        Text[TEXT, pos:18, jjg]
+        Text[TEXT, pos:16, jjg]
     ]
 ]
 */
@@ -183,14 +183,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void unterminated_end_eoi() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.malformed.html
       body: <
     ]
-    Text[TEXT, pos:6, /p]
+    Text[TEXT, pos:5, /p]
   body: empty
   block tags: empty
 ]
@@ -202,19 +202,19 @@ DocComment[DOC_COMMENT, pos:1
      */
     void unterminated_end_block() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.malformed.html
       body: <
     ]
-    Text[TEXT, pos:6, /p]
+    Text[TEXT, pos:5, /p]
   body: empty
   block tags: 1
-    Author[AUTHOR, pos:10
+    Author[AUTHOR, pos:8
       name: 1
-        Text[TEXT, pos:18, jjg]
+        Text[TEXT, pos:16, jjg]
     ]
 ]
 */
@@ -226,11 +226,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void comment() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc|_]
-    Comment[COMMENT, pos:6, <!--_comment_-->]
-    Text[TEXT, pos:22, |_def]
+    Text[TEXT, pos:0, abc|]
+    Comment[COMMENT, pos:4, <!--_comment_-->]
+    Text[TEXT, pos:20, |def]
   body: empty
   block tags: empty
 ]

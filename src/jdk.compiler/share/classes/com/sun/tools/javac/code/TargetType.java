@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import com.sun.tools.javac.util.Assert;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-// Code duplicated in com.sun.tools.classfile.TypeAnnotation.TargetType
 public enum TargetType {
     /** For annotations on a class type parameter declaration. */
     CLASS_TYPE_PARAMETER(0x00),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.text.*;
 import java.util.*;
 import java.io.*;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -34,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 4029195 4052408 4056591 4059917 4060212 4061287 4065240 4071441 4073003
  * 4089106 4100302 4101483 4103340 4103341 4104136 4104522 4106807 4108407
  * 4134203 4138203 4148168 4151631 4151706 4153860 4162071 4182066 4209272 4210209
- * 4213086 4250359 4253490 4266432 4406615 4413980 8008577 8305853 8174269
+ * 4213086 4250359 4253490 4266432 4406615 4413980 8008577 8305853 8174269 8347841
  * @library /java/text/testlib
  * @run junit DateFormatRegression
  */
@@ -170,10 +171,8 @@ public class DateFormatRegression {
     @Test
     public void Test4059917() {
         Locale locale = Locale.getDefault();
-        if (!TestUtils.usesAsciiDigits(locale)) {
-            System.out.println("Skipping this test because locale is " + locale);
-            return;
-        }
+        Assumptions.assumeTrue(TestUtils.usesAsciiDigits(locale),
+                locale + " does not use ASCII digits");
 
         SimpleDateFormat fmt;
         String myDate;
@@ -274,7 +273,7 @@ public class DateFormatRegression {
         try {
             Locale curLocale = Locale.GERMANY;
             Locale.setDefault(curLocale);
-            TimeZone.setDefault(TimeZone.getTimeZone("EST"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Panama"));
             curDate = new Date(98, 0, 1);
             shortdate = DateFormat.getDateInstance(DateFormat.SHORT);
             fulldate = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG
@@ -453,7 +452,7 @@ public class DateFormatRegression {
         TimeZone savedTimeZone = TimeZone.getDefault();
         try {
             boolean pass = true;
-            String[] IDs = new String[] {"Undefined", "PST", "US/Pacific",
+            String[] IDs = new String[] {"Undefined", "America/Los_Angeles", "US/Pacific",
                                          "GMT+3:00", "GMT-01:30"};
             for (int i = 0; i < IDs.length; i++) {
                 TimeZone tz = TimeZone.getTimeZone(IDs[i]);
@@ -543,7 +542,7 @@ public class DateFormatRegression {
     public void Test4103341() {
         TimeZone saveZone  =TimeZone.getDefault();
         try {
-            TimeZone.setDefault(TimeZone.getTimeZone("CST"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Chicago"));
             SimpleDateFormat simple = new SimpleDateFormat("MM/dd/yyyy HH:mm");
             if (!simple.getTimeZone().equals(TimeZone.getDefault()))
                 fail("Fail: SimpleDateFormat not using default zone");
@@ -794,7 +793,7 @@ public class DateFormatRegression {
       Locale savedLocale = Locale.getDefault();
       TimeZone savedTimeZone = TimeZone.getDefault();
       Locale.setDefault(Locale.US);
-      TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+      TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
 
       Date d1, d2;
       String dt = "Mon, 1 Jan 2001 00:00:00";
@@ -1096,7 +1095,7 @@ public class DateFormatRegression {
 
         // XXX: Test assumes "PST" is not TimeZoneNames_ja. Need to
         // pick up another time zone when L10N is done to that file.
-        TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
         SimpleDateFormat fmt = new SimpleDateFormat("yy/MM/dd hh:ss zzz", Locale.JAPAN);
         @SuppressWarnings("deprecation")
         String result = fmt.format(new Date(1999 - 1900, 0, 1));

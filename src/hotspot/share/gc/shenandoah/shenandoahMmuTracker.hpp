@@ -101,6 +101,10 @@ public:
   // GCPauseIntervalMillis and defaults to 5 seconds. This method computes
   // the MMU over the elapsed interval and records it in a running average.
   void report();
+
+  // Unenrolls the periodic task that collects CPU utilization for GC threads. This must happen _before_ the
+  // gc threads are stopped and terminated.
+  void stop() const;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHMMUTRACKER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,12 +85,12 @@ public final class MediaPrintableArea
       implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
 
     /**
-     * Printable {@code x}, {@code y}, {@code width} and {@code height}.
+     * @serial Printable {@code x}, {@code y}, {@code width} and {@code height}.
      */
     private int x, y, w, h;
 
     /**
-     * The units in which the values are expressed.
+     * @serial The units in which the values are expressed.
      */
     private int units;
 

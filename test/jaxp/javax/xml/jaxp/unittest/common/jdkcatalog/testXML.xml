@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testXMLXSD xmlns="http://xml.xsd.test/testXMLXSD"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:xml="http://www.w3.org/XML/1998/namespace"
+          xsi:schemaLocation="http://xml.xsd.test/testXMLXSD testXML.xsd"
+          xml:lang="en"
+          xml:base="http://xml.xsd.test/base">
+
+    <message>Hello, World!</message>
+</testXMLXSD>

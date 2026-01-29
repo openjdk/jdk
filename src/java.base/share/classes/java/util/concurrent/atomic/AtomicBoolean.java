@@ -55,6 +55,7 @@ public class AtomicBoolean implements java.io.Serializable {
     private static final VarHandle VALUE = MhUtil.findVarHandle(
             MethodHandles.lookup(), "value", int.class);
 
+    /** @serial */
     private volatile int value;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
-
-import sun.awt.AppContext;
 
 import sun.lwawt.macosx.CPlatformWindow;
 import sun.swing.SwingUtilities2;
@@ -150,19 +148,40 @@ final class AquaUtils {
         protected abstract T create();
     }
 
-    abstract static class RecyclableSingleton<T> {
-        final T get() {
-            return AppContext.getSoftReferenceValue(this, () -> getInstance());
-        }
+    abstract static class LazySingleton<T> {
+        T instance;
 
-        void reset() {
-            AppContext.getAppContext().remove(this);
+         final T get() {
+            if (instance == null) {
+                instance = getInstance();
+            }
+            return instance;
+         }
+
+        abstract T getInstance();
+    }
+
+    abstract static class RecyclableSingleton<T> {
+
+        SoftReference<T> ref;
+
+        final T get() {
+            T instance;
+            if (ref != null) {
+                instance = ref.get();
+                if (instance != null) {
+                    return instance;
+                }
+            }
+            instance = getInstance();
+            ref = new SoftReference<>(instance);
+            return instance;
         }
 
         abstract T getInstance();
     }
 
-    static class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
+    static final class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
         private final Class<T> clazz;
 
         RecyclableSingletonFromDefaultConstructor(final Class<T> clazz) {
@@ -197,11 +216,11 @@ final class AquaUtils {
         protected abstract V getInstance(K key);
     }
 
-    private static final RecyclableSingleton<Boolean> enableAnimations = new RecyclableSingleton<Boolean>() {
+    private static final LazySingleton<Boolean> enableAnimations = new LazySingleton<Boolean>() {
         @Override
         protected Boolean getInstance() {
-            final String sizeProperty = System.getProperty(ANIMATIONS_PROPERTY);
-            return !"false".equals(sizeProperty); // should be true by default
+            final String animationsProperty = System.getProperty(ANIMATIONS_PROPERTY);
+            return !"false".equals(animationsProperty); // should be true by default
         }
     };
     private static boolean animationsEnabled() {
@@ -308,7 +327,7 @@ final class AquaUtils {
         }
     }
 
-    static class SlicedShadowBorder extends ShadowBorder {
+    static final class SlicedShadowBorder extends ShadowBorder {
         private final SlicedImageControl slices;
 
         SlicedShadowBorder(final Painter prePainter, final Painter postPainter, final int offsetX, final int offsetY, final float distance, final float intensity, final int blur, final int templateWidth, final int templateHeight, final int leftCut, final int topCut, final int rightCut, final int bottomCut) {

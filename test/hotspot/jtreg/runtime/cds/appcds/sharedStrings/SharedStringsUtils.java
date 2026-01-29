@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class SharedStringsUtils {
 
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
         String[] args =
-            TestCommon.concat(extraOptions, "-XX:+UseCompressedOops",
+            TestCommon.concat(extraOptions,
             "-XX:SharedArchiveConfigFile=" +
             TestCommon.getSourceFile(sharedDataFile));
         args = TestCommon.concat(childVMOptionsPrefix, args);
@@ -124,7 +124,7 @@ public class SharedStringsUtils {
 
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
         String[] args = TestCommon.concat(extraOptions,
-            "-cp", appJar, "-XX:+UseCompressedOops", className);
+            "-cp", appJar, className);
         args = TestCommon.concat(childVMOptionsPrefix, args);
 
         OutputAnalyzer output = TestCommon.execAuto(args);
@@ -142,8 +142,7 @@ public class SharedStringsUtils {
         String className, String... extraOptions) throws Exception {
 
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
-        String[] args = TestCommon.concat(extraOptions,
-            "-XX:+UseCompressedOops", className);
+        String[] args = TestCommon.concat(extraOptions, className);
         args = TestCommon.concat(childVMOptionsPrefix, args);
 
         OutputAnalyzer output = TestCommon.exec(appJar, args);

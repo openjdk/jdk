@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires vm.bits == 64
+ * @modules java.base/sun.nio.ch
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
@@ -58,6 +59,12 @@ public class TestSegments {
         try (Arena arena = Arena.ofConfined()) {
             var segment = arena.allocate(0, 1);
             assertEquals(segment.byteSize(), 0);
+            if (segment.address() == 0) {
+                fail("Segment address is zero");
+            }
+            if (segment.address() == arena.allocate(0, 1).address()) {
+                fail("Segment address was not distinct");
+            }
             MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
             segment = arena.allocate(seq);
             assertEquals(segment.byteSize(), 0);
@@ -70,6 +77,20 @@ public class TestSegments {
             assertEquals(rawAddress.address() % 4, 0);
         }
     }
+
+    @Test
+    public void testZeroLengthNativeSegmentHyperAligned() {
+        long byteAlignment = 1024;
+        try (Arena arena = Arena.ofConfined()) {
+            var segment = arena.allocate(0, byteAlignment);
+            assertEquals(segment.byteSize(), 0);
+            if (segment.address() == 0) {
+                fail("Segment address is zero");
+            }
+            assertTrue(segment.maxByteAlignment() >= byteAlignment);
+        }
+    }
+
 
     @Test(expectedExceptions = { OutOfMemoryError.class,
                                  IllegalArgumentException.class })
@@ -191,14 +212,32 @@ public class TestSegments {
     }
 
     @Test
-    public void testSegmentOOBMessage() {
+    public void testSegmentAccessOOBMessage() {
         try {
             var segment = Arena.global().allocate(10, 1);
             segment.getAtIndex(ValueLayout.JAVA_INT, 2);
+            fail("Expected IndexOutOfBoundsException was not thrown");
         } catch (IndexOutOfBoundsException ex) {
-            assertTrue(ex.getMessage().contains("Out of bound access"));
-            assertTrue(ex.getMessage().contains("offset = 8"));
-            assertTrue(ex.getMessage().contains("length = 4"));
+            assertTrue(ex.getMessage().startsWith("Out of bound access"));
+            assertTrue(ex.getMessage().endsWith("attempting to access an element of length 4 at offset 8 " +
+                    "which is outside the valid range 0 <= offset+length < byteSize (=10)"));
+        } catch (Exception ex) {
+            fail("Unexpected exception type thrown: " + ex);
+        }
+    }
+
+    @Test
+    public void testSegmentSliceOOBMessage() {
+        try {
+            var segment = Arena.global().allocate(10, 1);
+            var slice = segment.asSlice(8, 4);
+            fail("Expected IndexOutOfBoundsException was not thrown");
+        } catch (IndexOutOfBoundsException ex) {
+            assertTrue(ex.getMessage().startsWith("Out of bound access"));
+            assertTrue(ex.getMessage().endsWith("attempting to get slice of length 4 at offset 8 " +
+                    "which is outside the valid range 0 <= offset+length < byteSize (=10)"));
+        } catch (Exception ex) {
+            fail("Unexpected exception type thrown: " + ex);
         }
     }
 
@@ -234,8 +273,10 @@ public class TestSegments {
         assertTrue(s.contains("byteSize: "));
         if (segment.heapBase().isPresent()) {
             assertTrue(s.contains("heapBase: ["));
+            assertFalse(s.contains("native"));
         } else {
             assertFalse(s.contains("heapBase: "));
+            assertTrue(s.contains("native"));
         }
         assertFalse(s.contains("Optional"));
     }

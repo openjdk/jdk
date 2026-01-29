@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcTimer.hpp"
 #include "utilities/growableArray.hpp"
 
 // the "time" parameter for most functions

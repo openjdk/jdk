@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.function.Supplier;
+
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 public class Http2RedirectHandler implements Http2Handler {
@@ -48,13 +49,17 @@ public class Http2RedirectHandler implements Http2Handler {
             System.err.println("Redirecting to: " + location);
             HttpHeadersBuilder headersBuilder = t.getResponseHeaders();
             headersBuilder.addHeader("Location", location);
-            t.sendResponseHeaders(redirectCode(), 1024);
-            byte[] bb = new byte[1024];
+            byte[] bb = getResponseBytes();
+            t.sendResponseHeaders(redirectCode(), bb.length == 0 ? -1 : bb.length);
             OutputStream os = t.getResponseBody();
             os.write(bb);
             os.close();
             t.close();
         }
+    }
+
+    protected byte[] getResponseBytes() {
+        return new byte[1024];
     }
 
     protected int redirectCode() {

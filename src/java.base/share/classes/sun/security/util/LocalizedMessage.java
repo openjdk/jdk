@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.security.util;
 
+import java.util.ListResourceBundle;
+
 /**
  * This class produces formatted and localized messages describing security
  * issues. Some messages may be required when the VM is not fully booted. In
@@ -42,15 +44,16 @@ package sun.security.util;
 
 public class LocalizedMessage {
 
-    private static final Resources RESOURCES = new Resources();
+    private static final ListResourceBundle RESOURCES =
+            new sun.security.util.resources.security();
 
     private final String key;
 
     /**
      * A LocalizedMessage can be instantiated with a key and formatted with
      * arguments later in the style of MessageFormat. This organization
-     * allows the actual formatting (and associated permission checks) to be
-     * avoided unless the resulting string is needed.
+     * allows the actual formatting to be avoided unless the resulting string
+     * is needed.
      * @param key
      */
     public LocalizedMessage(String key) {
@@ -73,7 +76,7 @@ public class LocalizedMessage {
     /**
      * Return a non-localized string corresponding to the key stored in this
      * object, formatted with the provided arguments. All strings are obtained
-     * from sun.security.util.Resources, and the formatting only supports
+     * from sun.security.util.resources, and the formatting only supports
      * simple positional argument replacement (e.g. {1}).
      *
      * @param arguments The arguments that should be placed in the message
@@ -86,10 +89,10 @@ public class LocalizedMessage {
     /**
      * Return a non-localized string corresponding to the provided key, and
      * formatted with the provided arguments. All strings are obtained from
-     * sun.security.util.Resources, and the formatting only supports
+     * sun.security.util.resources, and the formatting only supports
      * simple positional argument replacement (e.g. {1}).
      *
-     * @param key The key of the desired string in Resources
+     * @param key The key of the desired string in resources
      * @param arguments The arguments that should be placed in the message
      * @return A formatted message string
      */

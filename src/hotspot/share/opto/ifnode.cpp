@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -32,9 +31,9 @@
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/predicates.hpp"
-#include "opto/runtime.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 
@@ -83,7 +82,7 @@ const Type* IfNode::Value(PhaseGVN* phase) const {
 }
 
 const RegMask &IfNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------split_if---------------------------------------
@@ -470,7 +469,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
-IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol) {
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol) {
   // Assert here that we only try to create a clone from an If node with the same profiling if that actually makes sense.
   // Some If node subtypes should not be cloned in this way. In theory, we should not clone BaseCountedLoopEndNodes.
   // But they can end up being used as normal If nodes when peeling a loop - they serve as zero-trip guard.
@@ -488,7 +487,7 @@ IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Bool
 
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
-ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
+IfProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) const {
   if (outcnt() != 2) {
     return nullptr;
   }
@@ -516,8 +515,10 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
   //  Flip 1:  If (Bool[<] CmpU(l, LoadRange)) ...
   //  Flip 2:  If (Bool[<=] CmpU(LoadRange, l)) ...
 
-  ProjNode* iftrap = proj_out_or_null(flip_test == 2 ? true : false);
-  return iftrap;
+  if (flip_test == 2) {
+    return true_proj_or_null();
+  }
+  return false_proj_or_null();
 }
 
 
@@ -529,7 +530,7 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
   int flip_test = 0;
   Node* l = nullptr;
   Node* r = nullptr;
-  ProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
+  IfProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
 
   if (iftrap == nullptr) {
     return 0;
@@ -770,7 +771,7 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
 // Is a dominating control suitable for folding with this if?
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return ctrl != nullptr &&
-    ctrl->is_Proj() &&
+    ctrl->is_IfProj() &&
     ctrl->outcnt() == 1 && // No side-effects
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
@@ -783,8 +784,8 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
 }
 
 // Do this If and the dominating If share a region?
-bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail) {
-  ProjNode* otherproj = proj->other_if_proj();
+bool IfNode::has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const {
+  IfProjNode* otherproj = proj->other_if_proj();
   Node* otherproj_ctrl_use = otherproj->unique_ctrl_out_or_null();
   RegionNode* region = (otherproj_ctrl_use != nullptr && otherproj_ctrl_use->is_Region()) ? otherproj_ctrl_use->as_Region() : nullptr;
   success = nullptr;
@@ -792,13 +793,14 @@ bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fa
 
   if (otherproj->outcnt() == 1 && region != nullptr && !region->has_phi()) {
     for (int i = 0; i < 2; i++) {
-      ProjNode* proj = proj_out(i);
-      if (success == nullptr && proj->outcnt() == 1 && proj->unique_out() == region) {
-        success = proj;
+      IfProjNode* next_proj = proj_out(i)->as_IfProj();
+      if (success == nullptr && next_proj->outcnt() == 1 && next_proj->unique_out() == region) {
+        success = next_proj;
       } else if (fail == nullptr) {
-        fail = proj;
+        fail = next_proj;
       } else {
-        success = fail = nullptr;
+        success = nullptr;
+        fail = nullptr;
       }
     }
   }
@@ -849,8 +851,8 @@ ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::
 }
 
 // Do this If and the dominating If both branch out to an uncommon trap
-bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn) {
-  ProjNode* otherproj = proj->other_if_proj();
+bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail, PhaseIterGVN* igvn) const {
+  IfProjNode* otherproj = proj->other_if_proj();
   CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
 
   if (otherproj->outcnt() == 1 && dom_unc != nullptr) {
@@ -887,8 +889,8 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
           !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check) &&
           // Return true if c2 manages to reconcile with UnstableIf optimization. See the comments for it.
           igvn->C->remove_unstable_if_trap(dom_unc, true/*yield*/)) {
-        success = unc_proj;
-        fail = unc_proj->other_if_proj();
+        success = unc_proj->as_IfProj();
+        fail = unc_proj->as_IfProj()->other_if_proj();
         return true;
       }
     }
@@ -897,7 +899,7 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
 }
 
 // Check that the 2 CmpI can be folded into as single CmpU and proceed with the folding
-bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
+bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
   Node* this_cmp = in(1)->in(1);
   BoolNode* this_bool = in(1)->as_Bool();
   IfNode* dom_iff = proj->in(0)->as_If();
@@ -905,7 +907,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   Node* lo = dom_iff->in(1)->in(1)->in(2);
   Node* hi = this_cmp->in(2);
   Node* n = this_cmp->in(1);
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
 
   const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
   const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
@@ -1047,8 +1049,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     if (failtype != nullptr) {
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != nullptr) {
-        failtype = failtype->join(type2)->is_int();
-        if (failtype->empty()) {
+        if (failtype->filter(type2) == Type::TOP) {
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
@@ -1108,11 +1109,11 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
 // Merge the branches that trap for this If and the dominating If into
 // a single region that branches to the uncommon trap for the
 // dominating If
-Node* IfNode::merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
+Node* IfNode::merge_uncommon_traps(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
   Node* res = this;
   assert(success->in(0) == this, "bad projection");
 
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
 
   CallStaticJavaNode* unc = success->is_uncommon_trap_proj();
   CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
@@ -1239,7 +1240,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
 #endif
 }
 
-bool IfNode::is_cmp_with_loadrange(ProjNode* proj) {
+bool IfNode::is_cmp_with_loadrange(IfProjNode* proj) const {
   if (in(1) != nullptr &&
       in(1)->in(1) != nullptr &&
       in(1)->in(1)->in(2) != nullptr) {
@@ -1258,7 +1259,7 @@ bool IfNode::is_cmp_with_loadrange(ProjNode* proj) {
   return false;
 }
 
-bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
+bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   Node* other = in(1)->in(1)->in(2);
   if (other->in(MemNode::Address) != nullptr &&
       proj->in(0)->in(1) != nullptr &&
@@ -1275,7 +1276,7 @@ bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
 
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
-bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
+bool IfNode::is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const {
   if (proj == nullptr) {
     return false;
   }
@@ -1315,9 +1316,9 @@ bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
 // won't be guarded by the first CmpI anymore. It can trap in cases
 // where the first CmpI would have prevented it from executing: on a
 // trap, we need to restart execution at the state of the first CmpI
-void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn) {
+void IfNode::reroute_side_effect_free_unc(IfProjNode* proj, IfProjNode* dom_proj, PhaseIterGVN* igvn) {
   CallStaticJavaNode* dom_unc = dom_proj->is_uncommon_trap_if_pattern();
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
   CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern();
   Node* call_proj = dom_unc->unique_ctrl_out();
   Node* halt = call_proj->unique_ctrl_out();
@@ -1348,9 +1349,9 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
     if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
       // comparison
-      ProjNode* success = nullptr;
-      ProjNode* fail = nullptr;
-      ProjNode* dom_cmp = ctrl->as_Proj();
+      IfProjNode* success = nullptr;
+      IfProjNode* fail = nullptr;
+      IfProjNode* dom_cmp = ctrl->as_IfProj();
       if (has_shared_region(dom_cmp, success, fail) &&
           // Next call modifies graph so must be last
           fold_compares_helper(dom_cmp, success, fail, igvn)) {
@@ -1364,11 +1365,11 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
       return nullptr;
     } else if (ctrl->in(0) != nullptr &&
                ctrl->in(0)->in(0) != nullptr) {
-      ProjNode* success = nullptr;
-      ProjNode* fail = nullptr;
+      IfProjNode* success = nullptr;
+      IfProjNode* fail = nullptr;
       Node* dom = ctrl->in(0)->in(0);
-      ProjNode* dom_cmp = dom->isa_Proj();
-      ProjNode* other_cmp = ctrl->isa_Proj();
+      IfProjNode* dom_cmp = dom->isa_IfProj();
+      IfProjNode* other_cmp = ctrl->isa_IfProj();
 
       // Check if it's an integer comparison dominated by another
       // integer comparison with another test in between
@@ -1877,8 +1878,8 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   assert(iff->in(0) != nullptr, "If must be live");
 
   if (iff->outcnt() != 2)  return nullptr; // Malformed projections.
-  Node* old_if_f = iff->proj_out(false);
-  Node* old_if_t = iff->proj_out(true);
+  IfFalseNode* old_if_f = iff->false_proj();
+  IfTrueNode* old_if_t = iff->true_proj();
 
   // CountedLoopEnds want the back-control test to be TRUE, regardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
@@ -2170,7 +2171,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn)
     : IfNode(control, gvn->intcon(1), PROB_MAX, COUNT_UNKNOWN),
       _deopt_reason(deopt_reason),
-      _useless(false) {
+      _predicate_state(PredicateState::Useful) {
   init_class_id(Class_ParsePredicate);
   gvn->C->add_parse_predicate(this);
   gvn->C->record_for_post_loop_opts_igvn(this);
@@ -2178,7 +2179,9 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
   switch (deopt_reason) {
     case Deoptimization::Reason_predicate:
     case Deoptimization::Reason_profile_predicate:
+    case Deoptimization::Reason_auto_vectorization_check:
     case Deoptimization::Reason_loop_limit_check:
+    case Deoptimization::Reason_short_running_long_loop:
       break;
     default:
       assert(false, "unsupported deoptimization reason for Parse Predicate");
@@ -2186,8 +2189,13 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
 #endif // ASSERT
 }
 
+void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _predicate_state = PredicateState::Useless;
+  igvn._worklist.push(this);
+}
+
 Node* ParsePredicateNode::uncommon_trap() const {
-  ParsePredicateUncommonProj* uncommon_proj = proj_out(0)->as_IfFalse();
+  ParsePredicateUncommonProj* uncommon_proj = false_proj();
   Node* uct_region_or_call = uncommon_proj->unique_ctrl_out();
   assert(uct_region_or_call->is_Region() || uct_region_or_call->is_Call(), "must be a region or call uct");
   return uct_region_or_call;
@@ -2195,14 +2203,15 @@ Node* ParsePredicateNode::uncommon_trap() const {
 
 // Fold this node away once it becomes useless or at latest in post loop opts IGVN.
 const Type* ParsePredicateNode::Value(PhaseGVN* phase) const {
+  assert(_predicate_state != PredicateState::MaybeUseful, "should only be MaybeUseful when eliminating useless "
+                                                          "predicates during loop opts");
   if (phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
   }
-  if (_useless || phase->C->post_loop_opts_phase()) {
+  if (_predicate_state == PredicateState::Useless || phase->C->post_loop_opts_phase()) {
     return TypeTuple::IFTRUE;
-  } else {
-    return bottom_type();
   }
+  return bottom_type();
 }
 
 #ifndef PRODUCT
@@ -2213,15 +2222,21 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       st->print("Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      st->print("Profiled Loop ");
+      st->print("Profiled_Loop ");
+      break;
+    case Deoptimization::DeoptReason::Reason_auto_vectorization_check:
+      st->print("Auto_Vectorization_Check ");
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      st->print("Loop Limit Check ");
+      st->print("Loop_Limit_Check ");
+      break;
+    case Deoptimization::DeoptReason::Reason_short_running_long_loop:
+      st->print("Short_Running_Long_Loop ");
       break;
     default:
       fatal("unknown kind");
   }
-  if (_useless) {
+  if (_predicate_state == PredicateState::Useless) {
     st->print("#useless ");
   }
 }

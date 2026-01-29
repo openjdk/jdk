@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ class       ciTypeArrayKlass;
 // Everyone gives access to ciObjectFactory
 #define CI_PACKAGE_ACCESS \
 friend class ciObjectFactory; \
-friend class VMStructs;
 
 // These are the packages that have access to ciEnv
 // Any more access must be given explicitly.

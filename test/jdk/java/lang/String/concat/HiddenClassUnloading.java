@@ -26,13 +26,20 @@ import java.lang.StringBuilder;
 import java.lang.invoke.*;
 import java.lang.management.ManagementFactory;
 
+import jdk.test.whitebox.WhiteBox;
+
 /**
  * @test
  * @summary Test whether the hidden class unloading of StringConcatFactory works
  *
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @requires vm.flagless
- * @run main/othervm -Xmx8M -Xms8M -Xverify:all HiddenClassUnloading
- * @run main/othervm -Xmx8M -Xms8M -Xverify:all -XX:-CompactStrings HiddenClassUnloading
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                   -Xverify:all HiddenClassUnloading
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                   -Xverify:all -XX:-CompactStrings HiddenClassUnloading
  */
 public class HiddenClassUnloading {
     public static void main(String[] args) throws Throwable {
@@ -43,7 +50,7 @@ public class HiddenClassUnloading {
 
         long initUnloadedClassCount = ManagementFactory.getClassLoadingMXBean().getUnloadedClassCount();
 
-        for (int i = 0; i < 12000; i++) {
+        for (int i = 0; i < 2000; i++) {
             int radix = types.length;
             String str = Integer.toString(i, radix);
             int length = str.length();
@@ -60,6 +67,9 @@ public class HiddenClassUnloading {
                     new Object[0]
             );
         }
+
+        // Request GC which performs class unloading
+        WhiteBox.getWhiteBox().fullGC();
 
         long unloadedClassCount = ManagementFactory.getClassLoadingMXBean().getUnloadedClassCount();
         if (initUnloadedClassCount == unloadedClassCount) {

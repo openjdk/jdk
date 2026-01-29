@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import sun.awt.SunToolkit;
 import static sun.awt.AWTAccessor.MenuComponentAccessor;
 import static sun.awt.AWTAccessor.getMenuComponentAccessor;
 
-public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
+public final class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     private final TrayIcon target;
     private PopupMenu popup;
 
@@ -140,6 +140,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
      * kind of window in Lion, NSPopover, so perhaps it could be used it
      * to implement better looking notifications.
      */
+    @Override
     public void displayMessage(final String caption, final String text,
                                final String messageType) {
         // obtain icon to show along the message
@@ -357,7 +358,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
     }
 
-    class IconObserver implements ImageObserver {
+    final class IconObserver implements ImageObserver {
         @Override
         public boolean imageUpdate(Image image, int flags, int x, int y, int width, int height) {
             if (image != target.getImage()) //if the image has been changed

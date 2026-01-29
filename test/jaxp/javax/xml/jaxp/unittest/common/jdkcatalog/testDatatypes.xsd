@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://xmlschema.datatypes/testSchema"
+           xmlns="http://xmlschema.datatypes/testSchema"
+           elementFormDefault="qualified">
+
+    <!-- Import the XMLSchema-datatypes.xsd -->
+    <xs:import namespace="http://www.w3.org/2001/XMLSchema-datatypes" schemaLocation="http://www.w3.org/2009/XMLSchema/XMLSchema-datatypes.xsd">
+      <xs:annotation>
+        <xs:documentation>
+          Get access to the type defined in datatypes
+        </xs:documentation>
+      </xs:annotation>
+    </xs:import>
+
+    <!-- Define a root element that uses built-in datatypes -->
+    <xs:element name="testDatatypes">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="stringType" type="xs:string"/>
+                <xs:element name="integerType" type="xs:integer"/>
+                <xs:element name="decimalType" type="xs:decimal"/>
+                <xs:element name="booleanType" type="xs:boolean"/>
+                <xs:element name="dateType" type="xs:date"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
  */
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import java.util.List;
+import java.util.Set;
 
 public class UnloadUnregisteredLoader {
     public static void main(String args[]) throws Exception {
@@ -39,14 +42,16 @@ public class UnloadUnregisteredLoader {
         for (int i=0; i<5; i++) {
             doit(urls, className, (i == 0));
 
-            ClassUnloadCommon.triggerUnloading();
-            ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
+            Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
+            ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should have been unloaded: " + aliveClasses);
         }
     }
 
-  public static void doit(URL urls[], String className, boolean isFirstTime) throws Exception {
+    public static void doit(URL urls[], String className, boolean isFirstTime) throws Exception {
         ClassLoader appLoader = UnloadUnregisteredLoader.class.getClassLoader();
-        URLClassLoader custLoader = new URLClassLoader(urls, appLoader);
+        CustomLoader custLoader = new CustomLoader(urls, appLoader);
+
+        // Part 1 -- load CustomLoadee. It should be loaded from archive when isFirstTime==true
 
         Class klass = custLoader.loadClass(className);
         WhiteBox wb = WhiteBox.getWhiteBox();
@@ -65,6 +70,44 @@ public class UnloadUnregisteredLoader {
                     throw new RuntimeException("wb.isSharedClass(klass) should be false for second time");
                 }
             }
+        }
+
+        // Part 2
+        //
+        // CustomLoadee5 is never loaded from the archive, because the classfile bytes don't match
+        // CustomLoadee5Child is never loaded from the archive, its super is not loaded from the archive
+        try (InputStream in = appLoader.getResourceAsStream("CustomLoadee5.class")) {
+            byte[] b = in.readAllBytes();
+            Util.replace(b, "this is", "DAS IST"); // Modify the bytecodes
+            Class<?> c = custLoader.myDefineClass(b, 0, b.length);
+            System.out.println(c.newInstance());
+            if (!"DAS IST CustomLoadee5".equals(c.newInstance().toString())) {
+                throw new RuntimeException("Bytecode modification not successful");
+            }
+            if (wb.isSharedClass(c)) {
+                throw new RuntimeException(c + "should not be loaded from CDS");
+            }
+        }
+
+        // When isFirstTime==true, the VM will try to load the archived copy of CustomLoadee5Child,
+        // but it will fail (because CustomLoadee5 was not loaded from the archive) and will recover
+        // by decoding the class from its classfile data.
+        // This failure should not leave the JVM in an inconsistent state.
+        Class<?> child = custLoader.loadClass("CustomLoadee5Child");
+        if (wb.isSharedClass(child)) {
+            throw new RuntimeException(child + "should not be loaded from CDS");
+        }
+    }
+
+    static class CustomLoader extends URLClassLoader {
+        public CustomLoader(URL[] urls, ClassLoader parent) {
+            super(urls, parent);
+        }
+
+        public Class<?> myDefineClass(byte[] b, int off, int len)
+            throws ClassFormatError
+        {
+            return super.defineClass(b, off, len);
         }
     }
 }

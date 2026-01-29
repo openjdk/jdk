@@ -68,6 +68,7 @@ public class TestAbortOnVMOperationTimeout {
                 "-XX:+AbortVMOnVMOperationTimeout",
                 "-XX:AbortVMOnVMOperationTimeoutDelay=" + delay,
                 "-Xmx256m",
+                "-XX:NewSize=64m",
                 "-XX:+UseSerialGC",
                 "-XX:-CreateCoredumpOnCrash",
                 "-Xlog:gc*=info",

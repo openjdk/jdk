@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 
 
-public class UnixPrintJob implements CancelablePrintJob {
+public final class UnixPrintJob implements CancelablePrintJob {
     private static String debugPrefix = "UnixPrintJob>> ";
 
     private transient ArrayList<PrintJobListener> jobListeners;
@@ -132,10 +132,12 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public PrintService getPrintService() {
         return service;
     }
 
+    @Override
     public PrintJobAttributeSet getAttributes() {
         synchronized (this) {
             if (jobAttrSet == null) {
@@ -148,6 +150,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void addPrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null) {
@@ -160,6 +163,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null || jobListeners == null ) {
@@ -269,6 +273,7 @@ public class UnixPrintJob implements CancelablePrintJob {
        }
     }
 
+    @Override
     public void addPrintJobAttributeListener(
                                   PrintJobAttributeListener listener,
                                   PrintJobAttributeSet attributes) {
@@ -288,6 +293,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobAttributeListener(
                                         PrintJobAttributeListener listener) {
         synchronized (this) {
@@ -308,6 +314,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void print(Doc doc, PrintRequestAttributeSet attributes)
         throws PrintException {
 
@@ -707,12 +714,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
 
         /* add the user name to the job */
-        String userName = "";
-        try {
-          userName = System.getProperty("user.name");
-        } catch (SecurityException se) {
-        }
-
+        String userName = System.getProperty("user.name");
         if (userName == null || userName.isEmpty()) {
             RequestingUserName ruName =
                 (RequestingUserName)reqSet.get(RequestingUserName.class);
@@ -791,17 +793,6 @@ public class UnixPrintJob implements CancelablePrintJob {
                     } catch (Exception e) {
                         throw new PrintException(e);
                     }
-                    // check write access
-                    @SuppressWarnings("removal")
-                    SecurityManager security = System.getSecurityManager();
-                    if (security != null) {
-                      try {
-                        security.checkWrite(mDestination);
-                      } catch (SecurityException se) {
-                        notifyEvent(PrintJobEvent.JOB_FAILED);
-                        throw new PrintException(se);
-                      }
-                    }
                 }
             } else if (category == JobSheets.class) {
                 if ((JobSheets)attr == JobSheets.NONE) {
@@ -852,7 +843,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
         if (options != null && !options.isEmpty()) {
             pFlags |= OPTIONS;
-            ncomps+=1;
+            ncomps+=options.trim().split(" ").length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
             pFlags |= JOBTITLE;
@@ -887,7 +878,9 @@ public class UnixPrintJob implements CancelablePrintJob {
             execCmd[n++] = "-o job-sheets=standard";
         }
         if ((pFlags & OPTIONS) != 0) {
-            execCmd[n++] = "-o" + options;
+            for (String option : options.trim().split(" ")) {
+                execCmd[n++] = "-o " + option;
+            }
         }
         execCmd[n++] = spoolFile;
         if (IPPPrintService.debugPrint) {
@@ -908,7 +901,7 @@ public class UnixPrintJob implements CancelablePrintJob {
     private String mDestination, mOptions="";
     private boolean mNoJobSheet = false;
 
-    private class PrinterOpener {
+    private final class PrinterOpener {
         PrintException pex;
         OutputStream result;
 
@@ -936,7 +929,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
-    private class PrinterSpooler {
+    private final class PrinterSpooler {
         PrintException pex;
 
         private void handleProcessFailure(final Process failedProcess,
@@ -998,6 +991,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void cancel() throws PrintException {
         synchronized (this) {
             if (!printing) {

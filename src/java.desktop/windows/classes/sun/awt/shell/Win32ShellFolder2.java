@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         static final List<KnownFolderDefinition> INSTANCE = getLibraries();
     }
 
-    static class FolderDisposer implements sun.java2d.DisposerRecord {
+    static final class FolderDisposer implements sun.java2d.DisposerRecord {
         /*
          * This is cached as a concession to getFolderType(), which needs
          * an absolute PIDL.
@@ -226,6 +226,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         long relativePIDL;
 
         boolean disposed;
+        @Override
         public void dispose() {
             if (disposed) return;
             invoke(new Callable<Void>() {
@@ -387,6 +388,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * is a not a normal directory, then returns the first non-removable
      * drive (normally "C:\").
      */
+    @Override
     @Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return invoke(new Callable<File>() {
@@ -541,6 +543,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Check to see if two ShellFolder objects are the same
      */
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof Win32ShellFolder2 rhs)) {
             // Short-circuit circuitous delegation path
@@ -588,6 +591,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return Whether this is a file system shell folder
      */
+    @Override
     public boolean isFileSystem() {
         if (cachedIsFileSystem == null) {
             cachedIsFileSystem = hasAttribute(ATTRIB_FILESYSTEM);
@@ -666,13 +670,6 @@ final class Win32ShellFolder2 extends ShellFolder {
                 return getFileSystemPath0(csidl);
             }
         }, IOException.class);
-        if (path != null) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkRead(path);
-            }
-        }
         return path;
     }
 
@@ -689,10 +686,12 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @return The parent shell folder of this shell folder, null if
      * there is no parent
      */
+    @Override
     public File getParentFile() {
         return parent;
     }
 
+    @Override
     public boolean isDirectory() {
         if (isDir == null) {
             // Folders with SFGAO_BROWSABLE have "shell extension" handlers and are
@@ -749,12 +748,8 @@ final class Win32ShellFolder2 extends ShellFolder {
      *         object. The array will be empty if the folder is empty.  Returns
      *         {@code null} if this shellfolder does not denote a directory.
      */
+    @Override
     public File[] listFiles(final boolean includeHiddenFiles) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(getPath());
-        }
 
         try {
             File[] files = invoke(new Callable<File[]>() {
@@ -813,7 +808,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                 }
             }, InterruptedException.class);
 
-            return Win32ShellFolderManager2.checkFiles(files);
+            return files;
         } catch (InterruptedException e) {
             return new File[0];
         }
@@ -863,6 +858,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * symbolic links and junctions.
      */
 
+    @Override
     public boolean isLink() {
         if (cachedIsLink == null) {
             cachedIsLink = hasAttribute(ATTRIB_LINK)
@@ -876,6 +872,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return Whether this shell folder is marked as hidden
      */
+    @Override
     public boolean isHidden() {
         return hasAttribute(ATTRIB_HIDDEN);
     }
@@ -890,6 +887,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * @return The shell folder linked to by this shell folder, or null
      * if this shell folder is not a link or is a broken or invalid link
      */
+    @Override
     public ShellFolder getLinkLocation()  {
         return getLinkLocation(true);
     }
@@ -945,6 +943,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return The name used to display this shell folder
      */
+    @Override
     public String getDisplayName() {
         if (displayName == null) {
             displayName =
@@ -965,6 +964,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return The type of shell folder as a string
      */
+    @Override
     public String getFolderType() {
         if (folderType == null) {
             final long absolutePIDL = getAbsolutePIDL();
@@ -984,6 +984,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return The executable type as a string
      */
+    @Override
     public String getExecutableType() {
         if (!isFileSystem()) {
             return null;
@@ -1059,6 +1060,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return The icon image used to display this shell folder
      */
+    @Override
     public Image getIcon(final boolean getLargeIcon) {
         Image icon = getLargeIcon ? largeIcon : smallIcon;
         int size = getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE;
@@ -1152,6 +1154,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return The icon image of specified size used to display this shell folder
      */
+    @Override
     public Image getIcon(int width, int height) {
         int size = Math.max(width, height);
         return invoke(() -> {
@@ -1213,8 +1216,12 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     static Image getSystemIcon(SystemIcon iconType) {
         long hIcon = getSystemIcon(iconType.getIconID());
+        if (hIcon == 0) {
+            return null;
+        }
+
         Image icon = makeIcon(hIcon);
-        if (LARGE_ICON_SIZE != icon.getWidth(null)) {
+        if (icon != null && LARGE_ICON_SIZE != icon.getWidth(null)) {
             icon = new MultiResolutionIconImage(LARGE_ICON_SIZE, icon);
         }
         disposeIcon(hIcon);
@@ -1226,15 +1233,16 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     static Image getShell32Icon(int iconID, int size) {
         long hIcon = getIconResource("shell32.dll", iconID, size, size);
-        if (hIcon != 0) {
-            Image icon = makeIcon(hIcon);
-            if (size != icon.getWidth(null)) {
-                icon = new MultiResolutionIconImage(size, icon);
-            }
-            disposeIcon(hIcon);
-            return icon;
+        if (hIcon == 0) {
+            return null;
         }
-        return null;
+
+        Image icon = makeIcon(hIcon);
+        if (icon != null && size != icon.getWidth(null)) {
+            icon = new MultiResolutionIconImage(size, icon);
+        }
+        disposeIcon(hIcon);
+        return icon;
     }
 
     /**
@@ -1243,6 +1251,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      *
      * @see java.io.File#getCanonicalFile
      */
+    @Override
     public File getCanonicalFile() throws IOException {
         return this;
     }
@@ -1259,6 +1268,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      *
      * @see sun.awt.shell.ShellFolder#compareTo(File)
      */
+    @Override
     public int compareTo(File file2) {
         if (!(file2 instanceof Win32ShellFolder2)) {
             if (isFileSystem() && !isSpecial()) {
@@ -1275,6 +1285,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static final int LVCFMT_RIGHT = 1;
     private static final int LVCFMT_CENTER = 2;
 
+    @Override
     public ShellFolderColumnInfo[] getFolderColumns() {
         ShellFolder library = resolveLibrary();
         if (library != null) return library.getFolderColumns();
@@ -1307,6 +1318,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         });
     }
 
+    @Override
     public Object getFolderColumnValue(final int column) {
         if(!isLibrary()) {
             ShellFolder library = resolveLibrary();
@@ -1349,6 +1361,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native int compareIDsByColumn(long pParentIShellFolder, long pidl1, long pidl2, int columnIdx);
 
 
+    @Override
     public void sortChildren(final List<? extends File> files) {
         // To avoid loads of synchronizations with Invoker and improve performance we
         // synchronize the whole code of the sort method once
@@ -1361,7 +1374,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         });
     }
 
-    private static class ColumnComparator implements Comparator<File> {
+    private static final class ColumnComparator implements Comparator<File> {
         private final Win32ShellFolder2 shellFolder;
 
         private final int columnIdx;
@@ -1372,6 +1385,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
 
         // compares 2 objects within this folder by the specified column
+        @Override
         public int compare(final File o, final File o1) {
             Integer result = invoke(new Callable<Integer>() {
                 public Integer call() {
@@ -1412,7 +1426,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         });
     }
 
-    static class MultiResolutionIconImage extends AbstractMultiResolutionImage {
+    static final class MultiResolutionIconImage extends AbstractMultiResolutionImage {
         final int baseSize;
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 

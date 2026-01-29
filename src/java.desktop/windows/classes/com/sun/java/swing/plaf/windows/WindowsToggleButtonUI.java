@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,12 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.basic.BasicToggleButtonUI;
 
-import sun.awt.AppContext;
-
 /**
  * A Windows toggle button.
  *
  * @author Jeff Dinkins
  */
-public class WindowsToggleButtonUI extends BasicToggleButtonUI
+public final class WindowsToggleButtonUI extends BasicToggleButtonUI
 {
     protected int dashedRectGapX;
     protected int dashedRectGapY;
@@ -54,25 +52,19 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
 
     protected Color focusColor;
 
-    private static final Object WINDOWS_TOGGLE_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new WindowsToggleButtonUI();
 
     private boolean defaults_initialized = false;
 
     public static ComponentUI createUI(JComponent b) {
-        AppContext appContext = AppContext.getAppContext();
-        WindowsToggleButtonUI windowsToggleButtonUI =
-                (WindowsToggleButtonUI) appContext.get(WINDOWS_TOGGLE_BUTTON_UI_KEY);
-        if (windowsToggleButtonUI == null) {
-            windowsToggleButtonUI = new WindowsToggleButtonUI();
-            appContext.put(WINDOWS_TOGGLE_BUTTON_UI_KEY, windowsToggleButtonUI);
-        }
-        return windowsToggleButtonUI;
+        return UI;
     }
 
 
     // ********************************
     //            Defaults
     // ********************************
+    @Override
     protected void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -93,6 +85,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -112,6 +105,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
     private transient Color cachedBackgroundColor = null;
     private transient Color cachedHighlightColor = null;
 
+    @Override
     protected void paintButtonPressed(Graphics g, AbstractButton b) {
         if (XPStyle.getXP() == null && b.isContentAreaFilled()) {
             Color oldColor = g.getColor();
@@ -135,6 +129,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
         }
     }
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {
             WindowsButtonUI.paintXPButtonBackground(g, c);
@@ -146,10 +141,12 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
     /**
      * Overridden method to render the text without the mnemonic
      */
+    @Override
     protected void paintText(Graphics g, AbstractButton b, Rectangle textRect, String text) {
         WindowsGraphicsUtils.paintText(g, b, textRect, text, getTextShiftOffset());
     }
 
+    @Override
     protected void paintFocus(Graphics g, AbstractButton b,
                               Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
         g.setColor(getFocusColor());
@@ -161,6 +158,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
     // ********************************
     //          Layout Methods
     // ********************************
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension d = super.getPreferredSize(c);
 

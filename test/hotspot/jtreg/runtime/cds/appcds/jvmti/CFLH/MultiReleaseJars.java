@@ -49,8 +49,8 @@ public class MultiReleaseJars {
         String sts = """
             public class Main {
                 public static void main(String[] args) throws Exception {
-                    System.out.println(Class.forName(\"Foo\"));
-                    System.out.println(Class.forName(\"Bar\"));
+                    System.out.println(Class.forName("pkg1.Foo"));
+                    System.out.println(Class.forName("pkg2.Bar"));
                 }
             }
             """;
@@ -59,6 +59,7 @@ public class MultiReleaseJars {
 
     static String getFoo() {
         String sts = """
+            package pkg1;
             class Foo {
                 static {
                     System.out.println("Hello from Foo old version");
@@ -70,6 +71,7 @@ public class MultiReleaseJars {
 
     static String getFooNewVersion() {
         String sts = """
+            package pkg1;
             class Foo {
                 static {
                     System.out.println("Hello from Foo new version");
@@ -81,6 +83,7 @@ public class MultiReleaseJars {
 
     static String getBar() {
         String sts = """
+            package pkg2;
             class Bar {
                 static {
                     System.out.println("Hello from Bar");
@@ -107,13 +110,17 @@ public class MultiReleaseJars {
     /* version.jar entries and files:
      * META-INF/
      * META-INF/MANIFEST.MF
-     * Bar.class
      * Main.class
+     * pkg2/
+     * pkg2/Bar.class
      * META-INF/versions/9/
-     * META-INF/versions/9/Bar.class
-     * META-INF/versions/9/Foo.class
+     * META-INF/versions/9/pkg1
+     * META-INF/versions/9/pkg1/Foo.class
+     * META-INF/versions/9/pkg2
+     * META-INF/versions/9/pkg2/Bar.class
      * META-INF/versions/24/
-     * META-INF/versions/24/Foo.class
+     * META-INF/versions/24/pkg1
+     * META-INF/versions/24/pkg1Foo.class
      */
     static void createClassFilesAndJar() throws Exception {
         String tempDir = CDSTestUtils.getOutputDir();
@@ -163,25 +170,25 @@ public class MultiReleaseJars {
 
         String mainClass    = "Main";
         String appJar       = TestCommon.getTestJar("multi-version.jar");
-        String appClasses[] = {"Foo", "Bar"};
+        String appClasses[] = {"pkg1/Foo", "pkg2/Bar"};
 
         OutputAnalyzer output = TestCommon.dump(appJar, appClasses);
         output.shouldContain("Loading classes to share: done.")
               .shouldHaveExitValue(0);
 
-        String agentCmdArg = "-agentlib:SimpleClassFileLoadHook=Foo,Hello,HELLO";
+        String agentCmdArg = "-agentlib:SimpleClassFileLoadHook=pkg1/Foo,Hello,HELLO";
         output = TestCommon.execAuto("-cp", appJar,
                                      "-Xlog:cds=info,class+load",
                                      agentCmdArg,
                                      mainClass);
 
-        output.shouldMatch(".*Foo.source:.*multi-version.jar")
+        output.shouldMatch(".*pkg1.Foo.source:.*multi-version.jar")
               // New version of Foo is loaded from jar since it was modified by CFLH
               .shouldContain("HELLO from Foo new version") // CFLH changed "Hello" to "HELLO"
-              .shouldContain("class Foo") // output from Main
+              .shouldContain("class pkg1.Foo") // output from Main
               // Bar is loaded from archive
               .shouldContain("Bar source: shared objects file")
               .shouldContain("Hello from Bar")
-              .shouldContain("class Bar"); // output from Main
+              .shouldContain("class pkg2.Bar"); // output from Main
     }
 }

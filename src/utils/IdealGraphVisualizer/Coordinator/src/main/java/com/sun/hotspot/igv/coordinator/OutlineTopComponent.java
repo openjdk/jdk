@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,18 @@ import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.view.EditorTopComponent;
+import com.sun.hotspot.igv.view.PlaceholderTopComponent;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.HeadlessException;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
@@ -92,6 +102,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private GraphNode[] selectedGraphs = new GraphNode[0];
     private Path documentPath = null;
 
+    private final DropTargetListener fileDropListener = new FileDropListener();
+    private final PlaceholderTopComponent editorPlaceholder = new PlaceholderTopComponent(fileDropListener);
+
     private OutlineTopComponent() {
         initComponents();
 
@@ -100,6 +113,17 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         initListView();
         initToolbar();
         server.startServer();
+
+        showEditorPlaceholder();
+
+        WindowManager.getDefault().invokeWhenUIReady(() -> {
+           new DropTarget(WindowManager.getDefault().getMainWindow(), fileDropListener);
+        });
+    }
+
+    private void showEditorPlaceholder() {
+        editorPlaceholder.open();
+        editorPlaceholder.requestActive();
     }
 
     public static GraphDocument getDocument() {
@@ -236,6 +260,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         saveAction.setEnabled(enableButton);
         saveAsAction.setEnabled(enableButton);
         removeAllAction.setEnabled(enableButton);
+        if (document.getElements().isEmpty()) {
+            showEditorPlaceholder();
+        } else {
+            editorPlaceholder.close();
+        }
     }
 
     @Override
@@ -372,15 +401,20 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         JFileChooser fc = new JFileChooser(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT));
         fc.setFileFilter(graphFileFilter);
         if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            clearWorkspace();
-            String path = fc.getSelectedFile().getAbsolutePath();
-            Settings.get().put(Settings.DIRECTORY, path);
-            setDocumentPath(path);
-            try {
-                loadGraphDocument(path, true);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            handleOpen(fc.getSelectedFile());
+        }
+    }
+
+    private void handleOpen(File file) {
+        clearWorkspace();
+        editorPlaceholder.close();
+        String path = file.getAbsolutePath();
+        Settings.get().put(Settings.DIRECTORY, path);
+        setDocumentPath(path);
+        try {
+            loadGraphDocument(path, true);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -588,6 +622,65 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             Exceptions.printStackTrace(ex);
         }
         handle.finish();
+    }
+
+    private class FileDropListener implements DropTargetListener {
+        @Override
+        public void dragEnter(DropTargetDragEvent dtde) {
+            if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                dtde.acceptDrag(DnDConstants.ACTION_COPY);
+            } else {
+                dtde.rejectDrag();
+            }
+        }
+
+        @Override
+        public void dragOver(DropTargetDragEvent dtde) {
+            dragEnter(dtde);
+        }
+
+        @Override
+        public void dropActionChanged(DropTargetDragEvent dtde) {}
+
+        @Override
+        public void dragExit(DropTargetEvent dte) {}
+
+        @Override
+        public void drop(DropTargetDropEvent dtde) {
+            try {
+                if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                    dtde.acceptDrop(DnDConstants.ACTION_COPY);
+
+                    List<File> droppedFiles = (List<File>) dtde.getTransferable()
+                            .getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (droppedFiles.isEmpty()) return;
+                    if (droppedFiles.size() > 1) {
+                        JOptionPane.showMessageDialog(null,
+                                "Please only drag and drop one file as only one file can be open at a time.",
+                                "Multiple Files Dropped", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    File file = droppedFiles.get(0);
+
+                    if (file.getName().endsWith(".xml") || file.getName().endsWith(".igv")) {
+                        handleOpen(file);
+                    } else {
+                        JOptionPane.showMessageDialog(null,
+                                "Unsupported file type: " + file.getName(),
+                                "Unsupported File", JOptionPane.WARNING_MESSAGE);
+                    }
+
+                    dtde.dropComplete(true);
+                } else {
+                    dtde.rejectDrop();
+                }
+            } catch (HeadlessException | UnsupportedFlavorException | IOException ex) {
+                ex.printStackTrace();
+                dtde.dropComplete(false);
+            }
+        }
     }
 
     /** This method is called from within the constructor to

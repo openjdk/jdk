@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ import javax.management.openmbean.TabularType;
 
 public class TabularDataOrderTest {
     private static String failure;
-
-    private static final String COMPAT_PROP_NAME = "jmx.tabular.data.hash.map";
 
     private static final String[] intNames = {
         "unus", "duo", "tres", "quatuor", "quinque", "sex", "septem",
@@ -128,44 +126,6 @@ public class TabularDataOrderTest {
         }
         if (!ordered)
             fail("Order not preserved");
-
-        // Now test the undocumented property that causes HashMap to be used
-        // instead of LinkedHashMap, in case serializing to a 1.3 client.
-        // We serialize and deserialize in case the implementation handles
-        // this at serialization time.  Then we look at object fields; that's
-        // not guaranteed to work but at worst it will fail spuriously and
-        // we'll have to update the test.
-        System.out.println("Testing compatible behaviour");
-        System.setProperty(COMPAT_PROP_NAME, "true");
-        td = makeTable();
-        System.out.println(td);
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectOutputStream oout = new ObjectOutputStream(bout);
-        oout.writeObject(td);
-        oout.close();
-        byte[] bytes = bout.toByteArray();
-        ByteArrayInputStream bin = new ByteArrayInputStream(bytes);
-        ObjectInputStream oin = new ObjectInputStream(bin);
-        td = (TabularData) oin.readObject();
-        boolean found = false;
-        for (Field f : td.getClass().getDeclaredFields()) {
-            if (Modifier.isStatic(f.getModifiers()))
-                continue;
-            f.setAccessible(true);
-            Object x = f.get(td);
-            if (x != null && x.getClass() == HashMap.class) {
-                found = true;
-                System.out.println(
-                        x.getClass().getName() + " TabularDataSupport." +
-                        f.getName() + " = " + x);
-                break;
-            }
-        }
-        if (!found) {
-            fail("TabularDataSupport does not contain HashMap though " +
-                    COMPAT_PROP_NAME + "=true");
-        }
-        System.clearProperty(COMPAT_PROP_NAME);
 
         System.out.println("Testing MXBean behaviour");
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();

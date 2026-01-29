@@ -43,6 +43,7 @@ class ShenandoahHeapRegion {
   friend class VMStructs;
   friend class ShenandoahHeapRegionStateConstant;
 private:
+
   /*
     Region state is described by a state machine. Transitions are guarded by
     heap lock, which allows changing the state of several regions atomically.
@@ -165,6 +166,7 @@ private:
   }
 
   void report_illegal_transition(const char* method);
+  void recycle_internal();
 
 public:
   static int region_states_num() {
@@ -188,33 +190,35 @@ public:
   void make_uncommitted();
   void make_committed_bypass();
 
-  // Individual states:
-  bool is_empty_uncommitted()      const { return _state == _empty_uncommitted; }
-  bool is_empty_committed()        const { return _state == _empty_committed; }
-  bool is_regular()                const { return _state == _regular; }
-  bool is_humongous_continuation() const { return _state == _humongous_cont; }
+  // Primitive state predicates
+  bool is_empty_uncommitted()      const { return state() == _empty_uncommitted; }
+  bool is_empty_committed()        const { return state() == _empty_committed; }
+  bool is_regular()                const { return state() == _regular; }
+  bool is_humongous_continuation() const { return state() == _humongous_cont; }
+  bool is_regular_pinned()         const { return state() == _pinned; }
+  bool is_trash()                  const { return state() == _trash; }
 
-  // Participation in logical groups:
-  bool is_empty()                  const { return is_empty_committed() || is_empty_uncommitted(); }
-  bool is_active()                 const { return !is_empty() && !is_trash(); }
-  bool is_trash()                  const { return _state == _trash; }
-  bool is_humongous_start()        const { return _state == _humongous_start || _state == _pinned_humongous_start; }
-  bool is_humongous()              const { return is_humongous_start() || is_humongous_continuation(); }
+  // Derived state predicates (boolean combinations of individual states)
+  bool static is_empty_state(RegionState state) { return state == _empty_committed || state == _empty_uncommitted; }
+  bool static is_humongous_start_state(RegionState state) { return state == _humongous_start || state == _pinned_humongous_start; }
+  bool is_empty()                  const { return is_empty_state(this->state()); }
+  bool is_active()                 const { auto cur_state = state(); return !is_empty_state(cur_state) && cur_state != _trash; }
+  bool is_humongous_start()        const { return is_humongous_start_state(state()); }
+  bool is_humongous()              const { auto cur_state = state(); return is_humongous_start_state(cur_state) || cur_state == _humongous_cont; }
   bool is_committed()              const { return !is_empty_uncommitted(); }
-  bool is_cset()                   const { return _state == _cset   || _state == _pinned_cset; }
-  bool is_pinned()                 const { return _state == _pinned || _state == _pinned_cset || _state == _pinned_humongous_start; }
-  bool is_regular_pinned()         const { return _state == _pinned; }
+  bool is_cset()                   const { auto cur_state = state(); return cur_state == _cset || cur_state == _pinned_cset; }
+  bool is_pinned()                 const { auto cur_state = state(); return cur_state == _pinned || cur_state == _pinned_cset || cur_state == _pinned_humongous_start; }
 
   inline bool is_young() const;
   inline bool is_old() const;
   inline bool is_affiliated() const;
 
   // Macro-properties:
-  bool is_alloc_allowed()          const { return is_empty() || is_regular() || _state == _pinned; }
-  bool is_stw_move_allowed()       const { return is_regular() || _state == _cset || (ShenandoahHumongousMoves && _state == _humongous_start); }
+  bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
+  bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return _state; }
-  int  state_ordinal()             const { return region_state_to_ordinal(_state); }
+  RegionState state()              const { return AtomicAccess::load(&_state); }
+  int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();
   void record_unpin();
@@ -243,7 +247,7 @@ private:
   HeapWord* _top_before_promoted;
 
   // Seldom updated fields
-  RegionState _state;
+  volatile RegionState _state;
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
@@ -256,10 +260,17 @@ private:
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
+  size_t _mixed_candidate_garbage_words;
+
   HeapWord* volatile _update_watermark;
 
   uint _age;
+  bool _promoted_in_place;
   CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+
+  ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
+
+  bool _needs_bitmap_reset;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -347,6 +358,15 @@ public:
 
   inline void save_top_before_promote();
   inline HeapWord* get_top_before_promote() const { return _top_before_promoted; }
+
+  inline void set_promoted_in_place() {
+    _promoted_in_place = true;
+  }
+
+  // Returns true iff this region was promoted in place subsequent to the most recent start of concurrent old marking.
+  inline bool was_promoted_in_place() {
+    return _promoted_in_place;
+  }
   inline void restore_top_before_promote();
   inline size_t garbage_before_padded_for_promote() const;
 
@@ -359,6 +379,9 @@ public:
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
+  // Allocate fill after top
+  inline HeapWord* allocate_fill(size_t word_size);
+
   inline void clear_live_data();
   void set_live_data(size_t s);
 
@@ -369,14 +392,30 @@ public:
   inline void increase_live_data_gc_words(size_t s);
 
   inline bool has_live() const;
+
+  // Represents the number of live bytes identified by most recent marking effort.  Does not include the bytes
+  // above TAMS.
   inline size_t get_live_data_bytes() const;
+
+  // Represents the number of live words identified by most recent marking effort.  Does not include the words
+  // above TAMS.
   inline size_t get_live_data_words() const;
 
+  inline size_t get_mixed_candidate_live_data_bytes() const;
+  inline size_t get_mixed_candidate_live_data_words() const;
+
+  inline void capture_mixed_candidate_garbage();
+
+  // Returns garbage by calculating difference between used and get_live_data_words.  The value returned is only
+  // meaningful immediately following completion of marking.  If there have been subsequent allocations in this region,
+  // use a different approach to determine garbage, such as (used() - get_mixed_candidate_live_data_bytes())
   inline size_t garbage() const;
 
   void print_on(outputStream* st) const;
 
-  void recycle();
+  void try_recycle_under_lock();
+
+  void try_recycle();
 
   inline void begin_preemptible_coalesce_and_fill() {
     _coalesce_and_fill_boundary = _bottom;
@@ -435,7 +474,7 @@ public:
     return (bottom() <= p) && (p < top());
   }
 
-  inline void adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t);
+  inline void adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t);
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;
@@ -470,8 +509,20 @@ public:
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
+  inline bool need_bitmap_reset() const {
+    return _needs_bitmap_reset;
+  }
+
+  inline void set_needs_bitmap_reset() {
+    _needs_bitmap_reset = true;
+  }
+
+  inline void unset_needs_bitmap_reset() {
+    _needs_bitmap_reset = false;
+  }
+
 private:
-  void decrement_humongous_waste() const;
+  void decrement_humongous_waste();
   void do_commit();
   void do_uncommit();
 

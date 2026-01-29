@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,10 @@ import jdk.test.lib.Utils;
  * @test
  * @library /test/lib
  * @requires vm.hasSA & vm.bits == "64"
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run driver TestObjectAlignment
+ * @run driver/timeout=480 TestObjectAlignment
  */
 
 public class TestObjectAlignment {

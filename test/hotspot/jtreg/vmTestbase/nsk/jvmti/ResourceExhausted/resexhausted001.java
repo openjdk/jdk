@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class resexhausted001 {
                 makeThread();
             }
 
-            System.out.println("Can't reproduce OOME due to a limit on iterations/execution time. Test was useless."
+            System.out.println("Test resexhausted001: Can't reproduce OOME due to a limit on iterations/execution time. Test was useless."
                     + " threadCount=" + threadCount.get());
             throw new SkippedException("Test did not get an OutOfMemory error");
 

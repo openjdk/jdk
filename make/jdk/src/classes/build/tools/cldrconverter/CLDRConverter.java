@@ -33,6 +33,7 @@ import java.nio.file.*;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -1242,7 +1243,8 @@ public class CLDRConverter {
     private static Stream<String> tzDataLinkEntry() {
         try {
             return Files.walk(Paths.get(tzDataDir), 1)
-                .filter(p -> !Files.isDirectory(p))
+                .filter(p -> p.toFile().isFile())
+                .filter(p -> p.getFileName().toString().matches("africa|antarctica|asia|australasia|backward|etcetera|europe|northamerica|southamerica"))
                 .flatMap(CLDRConverter::extractLinks)
                 .sorted();
         } catch (IOException e) {
@@ -1273,8 +1275,27 @@ public class CLDRConverter {
     // Note: the entries are alphabetically sorted, *except* the "world" region
     // code, i.e., "001". It should be the last entry for the same windows time
     // zone name entries. (cf. TimeZone_md.c)
+    //
+    // The default entries from CLDR's windowsZones.xml file can be modified
+    // with <tzDataDir>/tzmappings.override where mapping overrides
+    // can be specified.
+    private static Pattern OVERRIDE_PATTERN = Pattern.compile("(?<win>([^:]+:[^:]+)):(?<java>[^:]+):");
     private static void generateWindowsTZMappings() throws Exception {
         Files.createDirectories(Paths.get(DESTINATION_DIR, "windows", "conf"));
+        var override = Path.of(tzDataDir, "tzmappings.override");
+        if (override.toFile().exists()) {
+            Files.readAllLines(override).stream()
+                .map(String::trim)
+                .filter(o -> !o.isBlank() && !o.startsWith("#"))
+                .forEach(o -> {
+                    var m = OVERRIDE_PATTERN.matcher(o);
+                    if (m.matches()) {
+                        handlerWinZones.put(m.group("win"), m.group("java"));
+                    } else {
+                        System.out.printf("Unrecognized tzmappings override: %s. Ignored%n", o);
+                    }
+                });
+        }
         Files.write(Paths.get(DESTINATION_DIR, "windows", "conf", "tzmappings"),
             handlerWinZones.keySet().stream()
                 .filter(k -> k.endsWith(":001") ||

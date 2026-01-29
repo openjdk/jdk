@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
+import jdk.test.lib.Platform;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.os.TestThreadContextSwitches
@@ -40,15 +41,25 @@ public class TestThreadContextSwitches {
     private final static String EVENT_NAME = EventNames.ThreadContextSwitchRate;
 
     public static void main(String[] args) throws Throwable {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME);
-        recording.start();
-        recording.stop();
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        Events.hasEvents(events);
-        for (RecordedEvent event : events) {
-            System.out.println("Event: " + event);
-            Events.assertField(event, "switchRate").atLeast(0.0f);
+        while (true) {
+            try (Recording recording = new Recording()) {
+                recording.enable(EVENT_NAME);
+                recording.start();
+                recording.stop();
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                if (!events.isEmpty()) {
+                    for (RecordedEvent event : events) {
+                        System.out.println("Event: " + event);
+                        Events.assertField(event, "switchRate").atLeast(0.0f);
+                    }
+                    return;
+                }
+                // Thread context switch rate is unreliable on Windows because
+                // the way processes are identified with performance counters.
+                if (!Platform.isWindows()) {
+                    Events.hasEvents(events);
+                }
+            }
         }
     }
 }

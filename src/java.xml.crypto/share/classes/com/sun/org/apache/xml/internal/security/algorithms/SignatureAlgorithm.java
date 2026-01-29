@@ -495,6 +495,18 @@ public class SignatureAlgorithm extends Algorithm {
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA512, SignatureECDSA.SignatureECDSASHA512.class
         );
         algorithmHash.put(
+            XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_224, SignatureECDSA.SignatureECDSASHA3_224.class
+        );
+        algorithmHash.put(
+            XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_256, SignatureECDSA.SignatureECDSASHA3_256.class
+        );
+        algorithmHash.put(
+                XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_384, SignatureECDSA.SignatureECDSASHA3_384.class
+        );
+        algorithmHash.put(
+                XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_512, SignatureECDSA.SignatureECDSASHA3_512.class
+        );
+        algorithmHash.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_RIPEMD160, SignatureECDSA.SignatureECDSARIPEMD160.class
         );
         algorithmHash.put(

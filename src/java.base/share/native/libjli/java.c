@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -666,7 +666,14 @@ JavaMain(void* _args)
         ret = 1;
     }
     LEAVE();
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
+#endif
 }
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 /*
  * Test if the given name is one of the class path options.
@@ -1018,6 +1025,8 @@ SetClassPath(const char *s)
     if (s == NULL)
         return;
     s = JLI_WildcardExpandClasspath(s);
+    if (s == NULL)
+        return;
     if (sizeof(format) - 2 + JLI_StrLen(s) < JLI_StrLen(s))
         // s is became corrupted after expanding wildcards
         return;
@@ -1372,6 +1381,8 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     if (mode == LM_SOURCE) {
+        // communicate the launcher mode to runtime
+        AddOption("-Dsun.java.launcher.mode=source", NULL);
         AddOption("--add-modules=ALL-DEFAULT", NULL);
         *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
         // adjust (argc, argv) so that the name of the source file
@@ -1494,6 +1505,7 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
 
     r = ifn->CreateJavaVM(pvm, (void **)penv, &args);
     JLI_MemFree(options);
+    options = NULL;
     return r == JNI_OK;
 }
 
@@ -2192,6 +2204,7 @@ FreeKnownVMs()
         knownVMs[i].name = NULL;
     }
     JLI_MemFree(knownVMs);
+    knownVMs = NULL;
 }
 
 /*
@@ -2265,8 +2278,9 @@ ShowSplashScreen()
     (void)UnsetEnv(SPLASH_JAR_ENV_ENTRY);
 
     JLI_MemFree(splash_jar_entry);
+    splash_jar_entry = NULL;
     JLI_MemFree(splash_file_entry);
-
+    splash_file_entry = NULL;
 }
 
 static const char* GetFullVersion()

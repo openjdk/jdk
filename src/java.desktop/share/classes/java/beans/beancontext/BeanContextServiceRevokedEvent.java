@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,11 +99,13 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
 
     /**
      * A {@code Class} reference to the service that is being revoked.
+     *
+     * @serial
      */
     protected Class<?> serviceClass;
 
     /**
-     * {@code true} if current service is being forcibly revoked.
+     * @serial {@code true} if current service is being forcibly revoked.
      */
     private boolean invalidateRefs;
 }

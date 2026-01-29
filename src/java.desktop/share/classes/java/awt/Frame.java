@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ public class Frame extends Window implements MenuContainer {
     boolean     mbManagement = false;   /* used only by the Motif impl. */
 
     /**
-     * The bitwise mask of frame state constants.
+     * @serial The bitwise mask of frame state constants.
      */
     // XXX: uwe: abuse old field for now
     // will need to take care of serialization
@@ -1123,8 +1123,6 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * Returns an array of all {@code Frame}s created by this application.
-     * If called from an applet, the array includes only the {@code Frame}s
-     * accessible by that applet.
      * <p>
      * <b>Warning:</b> this method may return system created frames, such
      * as a shared, hidden frame which is used by Swing. Applications

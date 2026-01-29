@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,15 @@
 #define IPV6_FLOWINFO_SEND      33
 #endif
 
+/* Perform platform specific initialization.
+ * Returns 0 on success, non-0 on failure */
+int
+NET_PlatformInit()
+{
+    // Not needed on unix
+    return 0;
+}
+
 void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                    const char *defaultDetail) {
@@ -59,16 +68,14 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
-    if (!msg) {
-        msg = "no further information";
-    }
     switch(errorNumber) {
     case EBADF:
-        jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
-        break;
-    case EINTR:
-        JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException", msg);
+        if (msg == NULL) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
+        }
         break;
     default:
         errno = errorNumber;
@@ -176,38 +183,63 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
 {
     int size;
     char *buf;
-    const char *format;
-    const char *sys_errno_string;
+    const char *sys_errno_string = NULL;
     const char *error_string = gai_strerror(gai_error);
     if (error_string == NULL) {
         error_string = "unknown error";
     }
     if (gai_error == EAI_SYSTEM) {
         // EAI_SYSTEM implies that the actual error is stored in the system errno.
-        // we thus additionally get the string representation for that system errno.
+        // Here we get the string representation of that errno.
         sys_errno_string = strerror(sys_errno);
-        format = "%s: %s: %s";
-        // 5 for the ":", " " (two pairs) followed by the null terminator
-        size = strlen(format) + strlen(hostname) + strlen(error_string) + strlen(sys_errno_string) + 5;
+    }
+    int enhancedExceptions = getEnhancedExceptionsAllowed(env);
+    if (enhancedExceptions == ENH_INIT_ERROR && (*env)->ExceptionCheck(env)) {
+        return;
+    }
+
+    if (enhancedExceptions == ENH_ENABLED) {
+        size = strlen(hostname);
     } else {
-        format = "%s: %s";
-        // 3 for the ":", " " and the null terminator
-        size = strlen(format) + strlen(hostname) + strlen(error_string) + 3;
+        size = 0;
+    }
+    if (sys_errno_string == NULL) {
+        // the 3 is for the additional 3 characters - colon, space and
+        // the NULL termination character, that we will include in the
+        // message of the Exception that we construct
+        size += strlen(error_string) + 3;
+    } else {
+        // the 5 is for the additional 5 characters - 2 colons, 2 spaces and
+        // the NULL termination character, that we will include in the
+        // message of the Exception that we construct
+        size += strlen(error_string) + strlen(sys_errno_string) + 5;
     }
     buf = (char *) malloc(size);
     if (buf) {
-        if (gai_error == EAI_SYSTEM) {
-            snprintf(buf, size, format, hostname, error_string, sys_errno_string);
+        jstring s;
+        int n;
+        if (enhancedExceptions == ENH_ENABLED) {
+            if (sys_errno_string == NULL) {
+                n = snprintf(buf, size, "%s: %s", hostname, error_string);
+            } else {
+                n = snprintf(buf, size, "%s: %s: %s", hostname, error_string, sys_errno_string);
+            }
         } else {
-            snprintf(buf, size, format, hostname, error_string);
+            if (sys_errno_string == NULL) {
+                n = snprintf(buf, size, " %s", error_string);
+            } else {
+                n = snprintf(buf, size, " %s: %s", error_string, sys_errno_string);
+            }
         }
-        jstring s = JNU_NewStringPlatform(env, buf);
-        if (s != NULL) {
-            jobject x = JNU_NewObjectByName(env,
+        if (n >= 0) {
+            s = JNU_NewStringPlatform(env, buf);
+            if (s != NULL) {
+                jobject x = JNU_NewObjectByName(env,
                                             "java/net/UnknownHostException",
                                             "(Ljava/lang/String;)V", s);
-            if (x != NULL)
-                (*env)->Throw(env, x);
+                if (x != NULL)
+                    (*env)->Throw(env, x);
+            }
         }
         free(buf);
     }
@@ -273,7 +305,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     } else {
         jint address;
         if (family != java_net_InetAddress_IPv4) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "IPv6 protocol family unavailable");
             return -1;
         }
         address = getInetAddress_addr(env, iaObj);
@@ -618,11 +650,11 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         pfd.fd = fd;
         pfd.events = 0;
         if (flags & NET_WAIT_READ)
-          pfd.events |= POLLIN;
+            pfd.events |= POLLIN;
         if (flags & NET_WAIT_WRITE)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
         if (flags & NET_WAIT_CONNECT)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
 
         errno = 0;
         read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
@@ -630,13 +662,13 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);
         if (nanoTimeout < NET_NSEC_PER_MSEC) {
-          return read_rv > 0 ? 0 : -1;
+            return read_rv > 0 ? 0 : -1;
         }
         prevNanoTime = newNanoTime;
 
         if (read_rv > 0) {
-          break;
+            break;
         }
-      } /* while */
+    } /* while */
     return (nanoTimeout / NET_NSEC_PER_MSEC);
 }

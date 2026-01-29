@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class ThreadClosure;
 class ZForwardingTable;
@@ -70,9 +71,9 @@ protected:
   ZRelocate             _relocate;
   ZRelocationSet        _relocation_set;
 
-  volatile size_t       _freed;
-  volatile size_t       _promoted;
-  volatile size_t       _compacted;
+  Atomic<size_t>        _freed;
+  Atomic<size_t>        _promoted;
+  Atomic<size_t>        _compacted;
 
   Phase                 _phase;
   uint32_t              _seqnum;
@@ -87,11 +88,10 @@ protected:
 
   void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
   void flip_age_pages(const ZRelocationSetSelector* selector);
-  void flip_age_pages(const ZArray<ZPage*>* pages);
 
   void mark_free();
 
-  void select_relocation_set(ZGenerationId generation, bool promote_all);
+  void select_relocation_set(bool promote_all);
   void reset_relocation_set();
 
   ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -99,8 +99,6 @@ protected:
   void log_phase_switch(Phase from, Phase to);
 
 public:
-  bool is_initialized() const;
-
   // GC phases
   void set_phase(Phase new_phase);
   bool is_phase_relocate() const;
@@ -161,7 +159,7 @@ public:
   void mark_object(zaddress addr);
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object_if_active(zaddress addr);
-  void mark_flush_and_free(Thread* thread);
+  void mark_flush(Thread* thread);
 
   // Relocation
   void synchronize_relocation();
@@ -193,6 +191,7 @@ class ZGenerationYoung : public ZGeneration {
   friend class VM_ZMarkStartYoung;
   friend class VM_ZMarkStartYoungAndOld;
   friend class VM_ZRelocateStartYoung;
+  friend class ZRemapYoungRootsTask;
   friend class ZYoungTypeSetter;
 
 private:
@@ -220,6 +219,8 @@ private:
   void concurrent_select_relocation_set();
   void pause_relocate_start();
   void concurrent_relocate();
+
+  ZRemembered* remembered();
 
 public:
   ZGenerationYoung(ZPageTable* page_table,
@@ -253,6 +254,9 @@ public:
 
   // Register old pages with remembered set
   void register_with_remset(ZPage* page);
+
+  // Remap the oops of the current remembered set
+  void remap_current_remset(ZRemsetTableIterator* iter);
 
   // Serviceability
   ZGenerationTracer* jfr_tracer();

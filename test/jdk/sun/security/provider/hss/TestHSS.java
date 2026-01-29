@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8298127
+ * @bug 8298127 8347596
  * @library /test/lib
  * @summary tests for HSS/LMS provider
  * @modules java.base/sun.security.util
@@ -40,6 +40,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HexFormat;
 
+import jdk.test.lib.Asserts;
 import sun.security.util.*;
 
 import jdk.test.lib.util.SerializationUtils;
@@ -61,9 +62,7 @@ public class TestHSS {
             i++;
         }
 
-        if (!serializeTest()) {
-            throw new RuntimeException("serializeTest failed");
-        }
+        serializeTest();
 
         System.out.println("All tests passed");
     }
@@ -88,7 +87,7 @@ public class TestHSS {
         }
     }
 
-    static boolean serializeTest() throws Exception {
+    static void serializeTest() throws Exception {
         final ObjectIdentifier oid;
         var pk = decode("""
                 00000002
@@ -106,7 +105,19 @@ public class TestHSS {
             throw new AssertionError(e);
         }
 
-        var keyBits = new DerOutputStream().putOctetString(pk).toByteArray();
+        // Encoding without inner OCTET STRING
+        var pk0 = makeKey(oid, pk);
+        // Encoding with inner OCTET STRING
+        var pk1 = makeKey(oid, new DerOutputStream().putOctetString(pk).toByteArray());
+        Asserts.assertEquals(pk0, pk1);
+
+        PublicKey pk2 = (PublicKey) SerializationUtils
+                .deserialize(SerializationUtils.serialize(pk1));
+        Asserts.assertEquals(pk1, pk2);
+    }
+
+    static PublicKey makeKey(ObjectIdentifier oid, byte[] keyBits)
+            throws Exception {
         var oidBytes = new DerOutputStream().write(DerValue.tag_Sequence,
                 new DerOutputStream().putOID(oid));
         var x509encoding = new DerOutputStream().write(DerValue.tag_Sequence,
@@ -115,11 +126,7 @@ public class TestHSS {
                 .toByteArray();
 
         var x509KeySpec = new X509EncodedKeySpec(x509encoding);
-        var pk1 = KeyFactory.getInstance(ALG).generatePublic(x509KeySpec);
-
-        PublicKey pk2 = (PublicKey) SerializationUtils
-                .deserialize(SerializationUtils.serialize(pk1));
-        return pk2.equals(pk1);
+        return KeyFactory.getInstance(ALG).generatePublic(x509KeySpec);
     }
 
     static boolean verify(byte[] pk, byte[] sig, byte[] msg) throws Exception {

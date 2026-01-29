@@ -25,24 +25,20 @@
 
 package java.lang.management;
 
-import java.io.FilePermission;
 import java.io.IOException;
 import javax.management.DynamicMBean;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
-import javax.management.MBeanServerPermission;
+import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationEmitter;
 import javax.management.ObjectName;
+import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MalformedObjectNameException;
 import javax.management.StandardEmitterMBean;
 import javax.management.StandardMBean;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -469,13 +465,6 @@ public class ManagementFactory {
      * @see javax.management.MBeanServerFactory#createMBeanServer
      */
     public static synchronized MBeanServer getPlatformMBeanServer() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Permission perm = new MBeanServerPermission("createMBeanServer");
-            sm.checkPermission(perm);
-        }
-
         if (platformMBeanServer == null) {
             platformMBeanServer = MBeanServerFactory.createMBeanServer();
             platformComponents()
@@ -594,10 +583,7 @@ public class ManagementFactory {
         // Only allow MXBean interfaces from the platform modules loaded by the
         // bootstrap or platform class loader
         final Class<?> cls = mxbeanInterface;
-        @SuppressWarnings("removal")
-        ClassLoader loader =
-            AccessController.doPrivileged(
-                (PrivilegedAction<ClassLoader>) () -> cls.getClassLoader());
+        ClassLoader loader = cls.getClassLoader();
         if (!jdk.internal.misc.VM.isSystemDomainLoader(loader)) {
             throw new IllegalArgumentException(mxbeanName +
                 " is not a platform MXBean");
@@ -882,29 +868,22 @@ public class ManagementFactory {
     private static final String NOTIF_EMITTER =
         "javax.management.NotificationEmitter";
 
-    @SuppressWarnings("removal")
     private static void addMXBean(final MBeanServer mbs, String name, final Object pmo)
     {
         try {
             ObjectName oname = ObjectName.getInstance(name);
             // Make DynamicMBean out of MXBean by wrapping it with a StandardMBean
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                final DynamicMBean dmbean;
-                if (pmo instanceof DynamicMBean) {
-                    dmbean = DynamicMBean.class.cast(pmo);
-                } else if (pmo instanceof NotificationEmitter) {
-                    dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
-                } else {
-                    dmbean = new StandardMBean(pmo, null, true);
-                }
-
-                mbs.registerMBean(dmbean, oname);
-                return null;
-            });
-        } catch (MalformedObjectNameException mone) {
-            throw new IllegalArgumentException(mone);
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException(e.getException());
+            final DynamicMBean dmbean;
+            if (pmo instanceof DynamicMBean) {
+                dmbean = DynamicMBean.class.cast(pmo);
+            } else if (pmo instanceof NotificationEmitter) {
+                dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
+            } else {
+                dmbean = new StandardMBean(pmo, null, true);
+            }
+            mbs.registerMBean(dmbean, oname);
+        } catch (MalformedObjectNameException | InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -918,19 +897,11 @@ public class ManagementFactory {
 
         static {
             // get all providers
-            @SuppressWarnings("removal")
-            List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    @Override
-                    public List<PlatformMBeanProvider> run() {
-                        List<PlatformMBeanProvider> all = new ArrayList<>();
-                        for (PlatformMBeanProvider provider : ServiceLoader.loadInstalled(PlatformMBeanProvider.class)) {
-                            all.add(provider);
-                        }
-                        all.add(new DefaultPlatformMBeanProvider());
-                        return all;
-                    }
-                }, null, new FilePermission("<<ALL FILES>>", "read"));
+            List<PlatformMBeanProvider> providers = new ArrayList<>();
+            for (PlatformMBeanProvider provider : ServiceLoader.loadInstalled(PlatformMBeanProvider.class)) {
+                providers.add(provider);
+            }
+            providers.add(new DefaultPlatformMBeanProvider());
 
             // load all platform components into a map
             var map = new HashMap<String, PlatformComponent<?>>();
@@ -1013,11 +984,8 @@ public class ManagementFactory {
         loadNativeLib();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void loadNativeLib() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            System.loadLibrary("management");
-            return null;
-        });
+        System.loadLibrary("management");
     }
 }

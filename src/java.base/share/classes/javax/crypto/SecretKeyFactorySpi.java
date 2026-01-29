@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@ import java.security.spec.*;
  * for the {@code SecretKeyFactory} class.
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
- * of a secret-key factory for a particular algorithm.
+ * of a secret key factory for a particular algorithm.
  *
  * <P> A provider should document all the key specifications supported by its
  * secret key factory.
- * For example, the DES secret-key factory supplied by the "SunJCE" provider
+ * For example, the DES secret key factory supplied by the "SunJCE" provider
  * supports {@code DESKeySpec} as a transparent representation of DES
- * keys, and that provider's secret-key factory for Triple DES keys supports
+ * keys, and that provider's secret key factory for Triple DES keys supports
  * {@code DESedeKeySpec} as a transparent representation of Triple DES
  * keys.
  *
@@ -67,7 +67,7 @@ public abstract class SecretKeyFactorySpi {
      * @return the secret key
      *
      * @exception InvalidKeySpecException if the given key specification
-     * is inappropriate for this secret-key factory to produce a secret key.
+     * is inappropriate for this secret key factory to produce a secret key.
      */
     protected abstract SecretKey engineGenerateSecret(KeySpec keySpec)
         throws InvalidKeySpecException;
@@ -91,7 +91,7 @@ public abstract class SecretKeyFactorySpi {
      * whereas {@code keySpec} is the specification of a software-based
      * key), or the given key cannot be dealt with
      * (e.g., the given key has an algorithm or format not supported by this
-     * secret-key factory).
+     * secret key factory).
      */
     protected abstract KeySpec engineGetKeySpec(SecretKey key, Class<?> keySpec)
         throws InvalidKeySpecException;
@@ -99,14 +99,14 @@ public abstract class SecretKeyFactorySpi {
     /**
      * Translates a key object, whose provider may be unknown or
      * potentially untrusted, into a corresponding key object of this
-     * secret-key factory.
+     * secret key factory.
      *
      * @param key the key whose provider is unknown or untrusted
      *
      * @return the translated key
      *
      * @exception InvalidKeyException if the given key cannot be processed
-     * by this secret-key factory.
+     * by this secret key factory.
      */
     protected abstract SecretKey engineTranslateKey(SecretKey key)
         throws InvalidKeyException;

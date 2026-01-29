@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug     6413690 6380018
  * @summary JavacProcessingEnvironment does not enter trees from preceding rounds
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler

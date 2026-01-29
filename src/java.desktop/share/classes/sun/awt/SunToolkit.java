@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,8 +267,7 @@ public abstract class SunToolkit extends Toolkit
 
     /*
      * Create a new AppContext, along with its EventQueue, for a
-     * new ThreadGroup.  Browser code, for example, would use this
-     * method to create an AppContext & EventQueue for an Applet.
+     * new ThreadGroup.
      */
     public static AppContext createNewAppContext() {
         ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
@@ -701,7 +700,6 @@ public abstract class SunToolkit extends Toolkit
 
     static Image getImageFromHash(Toolkit tk,
                                                String filename) {
-        checkPermissions(filename);
         synchronized (fileImgCache) {
             Image img = (Image)fileImgCache.get(filename);
             if (img == null) {
@@ -757,7 +755,6 @@ public abstract class SunToolkit extends Toolkit
 
     @Override
     public Image createImage(String filename) {
-        checkPermissions(filename);
         return createImage(new FileImageSource(filename));
     }
 
@@ -870,7 +867,6 @@ public abstract class SunToolkit extends Toolkit
 
     protected static boolean imageExists(String filename) {
         if (filename != null) {
-            checkPermissions(filename);
             return new File(filename).exists();
         }
         return false;
@@ -886,14 +882,6 @@ public abstract class SunToolkit extends Toolkit
             }
         }
         return false;
-    }
-
-    private static void checkPermissions(String filename) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(filename);
-        }
     }
 
     /**
@@ -1646,9 +1634,6 @@ public abstract class SunToolkit extends Toolkit
      * But GTK currently has an additional test based on locale which is
      * not applied by Metal. So mixing GTK in a few locales with Metal
      * would mean the last one wins.
-     * This could be stored per-app context which would work
-     * for different applets, but wouldn't help for a single application
-     * using GTK and some other L&F concurrently.
      * But it is expected this will be addressed within GTK and the font
      * system so is a temporary and somewhat unlikely harmless corner case.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,9 @@ public class CR6740048 {
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
             docBuilderFactory.setNamespaceAware(true);
 
-            if (xsd != null) {
-                docBuilderFactory.setValidating(true);
-                docBuilderFactory.setAttribute(SCHEMA_LANGUAGE_URL, XML_SCHEMA_URL);
-                docBuilderFactory.setAttribute(SCHEMA_SOURCE_URL, xsd);
-            }
+            docBuilderFactory.setValidating(true);
+            docBuilderFactory.setAttribute(SCHEMA_LANGUAGE_URL, XML_SCHEMA_URL);
+            docBuilderFactory.setAttribute(SCHEMA_SOURCE_URL, xsd);
 
             final DocumentBuilder documentBuilder = docBuilderFactory.newDocumentBuilder();
             documentBuilder.setErrorHandler(new ErrorHandler() {

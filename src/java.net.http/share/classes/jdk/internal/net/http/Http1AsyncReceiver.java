@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,8 +259,10 @@ class Http1AsyncReceiver {
             checkRequestMore();
 
         } catch (Throwable t) {
-            Throwable x = error;
-            if (x == null) error = t; // will be handled in the finally block
+            synchronized (this) {
+                Throwable x = error;
+                if (x == null) error = t; // will be handled in the finally block
+            }
             if (debug.on()) debug.log("Unexpected error caught in flush()", t);
         } finally {
             // Handles any pending error.
@@ -312,7 +314,7 @@ class Http1AsyncReceiver {
                 // close the upstream connection.
                 Http1Exchange<?> exchg = owner;
                 stop();
-                if (exchg != null) exchg.connection().close();
+                if (exchg != null) exchg.connection().close(x);
             }
         }
     }
@@ -346,7 +348,7 @@ class Http1AsyncReceiver {
         AbstractSubscription subscription = delegate.subscription();
         long demand = subscription.demand().get();
         if (debug.on())
-            debug.log("downstream subscription demand is %s", demand);
+            debug.log("downstream subscription demand is %s for %s", demand, delegate);
         return demand > 0;
     }
 
@@ -573,7 +575,7 @@ class Http1AsyncReceiver {
             if (canRequestMore.compareAndSet(true, false)) {
                 if (!completed && !dropped) {
                     if (debug.on())
-                        debug.log("Http1TubeSubscriber: requesting one more from upstream");
+                        debug.log("Http1TubeSubscriber: requesting one more from upstream: " + s);
                     s.request(1);
                     return;
                 }

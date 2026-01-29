@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1235,6 +1235,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             setText(text);
 
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
             return this;
         }
 
@@ -1630,6 +1632,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     setText(fileName+File.separator);
                 }
             }
+
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
 
             return this;
         }
@@ -2119,24 +2123,20 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             return false;
         }
 
-        try {
-            if (f instanceof ShellFolder) {
-                return f.canWrite();
-            } else {
-                if (usesShellFolder(getFileChooser())) {
-                    try {
-                        return ShellFolder.getShellFolder(f).canWrite();
-                    } catch (FileNotFoundException ex) {
-                        // File doesn't exist
-                        return false;
-                    }
-                } else {
-                    // Ordinary file
-                    return f.canWrite();
+        if (f instanceof ShellFolder) {
+            return f.canWrite();
+        } else {
+            if (usesShellFolder(getFileChooser())) {
+                try {
+                    return ShellFolder.getShellFolder(f).canWrite();
+                } catch (FileNotFoundException ex) {
+                    // File doesn't exist
+                    return false;
                 }
+            } else {
+                // Ordinary file
+                return f.canWrite();
             }
-        } catch (SecurityException e) {
-            return false;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/epsilon/epsilonInitLogger.hpp"
 #include "gc/epsilon/epsilonMemoryPool.hpp"
@@ -31,13 +30,13 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/ostream.hpp"
 
 jint EpsilonHeap::initialize() {
   size_t align = HeapAlignment;
@@ -53,7 +52,7 @@ jint EpsilonHeap::initialize() {
   initialize_reserved_region(heap_rs);
 
   _space = new ContiguousSpace();
-  _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
+  _space->initialize(committed_region, /* clear_space = */ true);
 
   // Precompute hot fields
   _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(EpsilonMaxTLABSize / HeapWordSize));
@@ -63,8 +62,6 @@ jint EpsilonHeap::initialize() {
 
   // Enable monitoring
   _monitoring_support = new EpsilonMonitoringSupport(this);
-  _last_counter_update = 0;
-  _last_heap_print = 0;
 
   // Install barrier set
   BarrierSet::set_barrier_set(new EpsilonBarrierSet());
@@ -78,6 +75,7 @@ jint EpsilonHeap::initialize() {
 void EpsilonHeap::initialize_serviceability() {
   _pool = new EpsilonMemoryPool(this);
   _memory_manager.add_pool(_pool);
+  _monitoring_support->mark_ready();
 }
 
 GrowableArray<GCMemoryManager*> EpsilonHeap::memory_managers() {
@@ -92,7 +90,7 @@ GrowableArray<MemoryPool*> EpsilonHeap::memory_pools() {
   return memory_pools;
 }
 
-size_t EpsilonHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t EpsilonHeap::unsafe_max_tlab_alloc() const {
   // Return max allocatable TLAB size, and let allocation path figure out
   // the actual allocation size. Note: result should be in bytes.
   return _max_tlab_size * HeapWordSize;
@@ -102,8 +100,8 @@ EpsilonHeap* EpsilonHeap::heap() {
   return named_heap<EpsilonHeap>(CollectedHeap::Epsilon);
 }
 
-HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
-  assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
+HeapWord* EpsilonHeap::allocate_work(size_t size) {
+  assert(is_object_aligned(size), "Allocation size should be aligned: %zu", size);
 
   HeapWord* res = nullptr;
   while (true) {
@@ -129,7 +127,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
       size_t unused_space = max_capacity() - used();
       size_t want_space = MAX2(size_in_bytes, EpsilonMinHeapExpand);
       assert(unused_space >= uncommitted_space,
-             "Unused (" SIZE_FORMAT ") >= uncommitted (" SIZE_FORMAT ")",
+             "Unused (%zu) >= uncommitted (%zu)",
              unused_space, uncommitted_space);
 
       if (want_space < uncommitted_space) {
@@ -152,19 +150,23 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
 
   size_t used = _space->used();
 
-  // Allocation successful, update counters
-  if (verbose) {
-    size_t last = _last_counter_update;
-    if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
+  // Allocation successful, update counters and print status.
+  // At this point, some diagnostic subsystems might not yet be initialized.
+  // We pretend the printout happened either way. This keeps allocation path
+  // from obsessively checking the subsystems' status on every allocation.
+  size_t last_counter = _last_counter_update.load_relaxed();
+  if ((used - last_counter >= _step_counter_update) &&
+      _last_counter_update.compare_set(last_counter, used)) {
+    if (_monitoring_support->is_ready()) {
       _monitoring_support->update_counters();
     }
   }
 
-  // ...and print the occupancy line, if needed
-  if (verbose) {
-    size_t last = _last_heap_print;
-    if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
-      print_heap_info(used);
+  size_t last_heap = _last_heap_print.load_relaxed();
+  if ((used - last_heap >= _step_heap_print) &&
+      _last_heap_print.compare_set(last_heap, used)) {
+    print_heap_info(used);
+    if (Metaspace::initialized()) {
       print_metaspace_info();
     }
   }
@@ -218,18 +220,18 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
 
   // Check that adjustments did not break local and global invariants
   assert(is_object_aligned(size),
-         "Size honors object alignment: " SIZE_FORMAT, size);
+         "Size honors object alignment: %zu", size);
   assert(min_size <= size,
-         "Size honors min size: "  SIZE_FORMAT " <= " SIZE_FORMAT, min_size, size);
+         "Size honors min size: %zu <= %zu", min_size, size);
   assert(size <= _max_tlab_size,
-         "Size honors max size: "  SIZE_FORMAT " <= " SIZE_FORMAT, size, _max_tlab_size);
+         "Size honors max size: %zu <= %zu", size, _max_tlab_size);
   assert(size <= CollectedHeap::max_tlab_size(),
-         "Size honors global max size: "  SIZE_FORMAT " <= " SIZE_FORMAT, size, CollectedHeap::max_tlab_size());
+         "Size honors global max size: %zu <= %zu", size, CollectedHeap::max_tlab_size());
 
   if (log_is_enabled(Trace, gc)) {
     ResourceMark rm;
-    log_trace(gc)("TLAB size for \"%s\" (Requested: " SIZE_FORMAT "K, Min: " SIZE_FORMAT
-                          "K, Max: " SIZE_FORMAT "K, Ergo: " SIZE_FORMAT "K) -> " SIZE_FORMAT "K",
+    log_trace(gc)("TLAB size for \"%s\" (Requested: %zuK, Min: %zu"
+                          "K, Max: %zuK, Ergo: %zuK) -> %zuK",
                   thread->name(),
                   requested_size * HeapWordSize / K,
                   min_size * HeapWordSize / K,
@@ -261,14 +263,12 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   return res;
 }
 
-HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
-  *gc_overhead_limit_was_exceeded = false;
+HeapWord* EpsilonHeap::mem_allocate(size_t size) {
   return allocate_work(size);
 }
 
 HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
-  // Cannot use verbose=true because Metaspace is not initialized
-  return allocate_work(size, /* verbose = */false);
+  return allocate_work(size);
 }
 
 void EpsilonHeap::collect(GCCause::Cause cause) {
@@ -298,17 +298,19 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
   _space->object_iterate(cl);
 }
 
-void EpsilonHeap::print_on(outputStream *st) const {
+void EpsilonHeap::print_heap_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
+
+  StreamIndentor si(st, 1);
 
   _virtual_space.print_on(st);
 
   if (_space != nullptr) {
     st->print_cr("Allocation space:");
-    _space->print_on(st);
-  }
 
-  MetaspaceUtils::print_on(st);
+    StreamIndentor si(st, 1);
+    _space->print_on(st, "");
+  }
 }
 
 bool EpsilonHeap::print_location(outputStream* st, void* addr) const {
@@ -325,8 +327,8 @@ void EpsilonHeap::print_heap_info(size_t used) const {
   size_t committed = capacity();
 
   if (reserved != 0) {
-    log_info(gc)("Heap: " SIZE_FORMAT "%s reserved, " SIZE_FORMAT "%s (%.2f%%) committed, "
-                 SIZE_FORMAT "%s (%.2f%%) used",
+    log_info(gc)("Heap: %zu%s reserved, %zu%s (%.2f%%) committed, "
+                 "%zu%s (%.2f%%) used",
             byte_size_in_proper_unit(reserved),  proper_unit_for_byte_size(reserved),
             byte_size_in_proper_unit(committed), proper_unit_for_byte_size(committed),
             committed * 100.0 / reserved,
@@ -344,8 +346,8 @@ void EpsilonHeap::print_metaspace_info() const {
   size_t used      = stats.used();
 
   if (reserved != 0) {
-    log_info(gc, metaspace)("Metaspace: " SIZE_FORMAT "%s reserved, " SIZE_FORMAT "%s (%.2f%%) committed, "
-                            SIZE_FORMAT "%s (%.2f%%) used",
+    log_info(gc, metaspace)("Metaspace: %zu%s reserved, %zu%s (%.2f%%) committed, "
+                            "%zu%s (%.2f%%) used",
             byte_size_in_proper_unit(reserved),  proper_unit_for_byte_size(reserved),
             byte_size_in_proper_unit(committed), proper_unit_for_byte_size(committed),
             committed * 100.0 / reserved,

@@ -26,7 +26,6 @@
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
  * @library /tools/lib /test/lib
- * @enablePreview
  * @run main LambdaTestStrictFPFlag
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,17 @@ public class JarInputStream extends ZipInputStream {
                 jv = new JarVerifier(e.getName(), bytes);
                 mev = new ManifestEntryVerifier(man, jv.manifestName);
             }
-            return (JarEntry)super.getNextEntry();
+            JarEntry nextEntry = (JarEntry)super.getNextEntry();
+            if (nextEntry != null &&
+                    JarFile.MANIFEST_NAME.equalsIgnoreCase(nextEntry.getName())) {
+                if (JarVerifier.debug != null) {
+                    JarVerifier.debug.println(JarVerifier.MULTIPLE_MANIFEST_WARNING);
+                }
+
+                jv = null;
+                mev = null;
+            }
+            return nextEntry;
         }
         return e;
     }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 // These are copied defines originally from fdlibm.h.
@@ -51,11 +50,9 @@ double SharedRuntime::fmod_winx64(double x, double y)
   hx ^= sx;                /* |x| */
   hy &= 0x7fffffff;       /* |y| */
 
-#pragma warning( disable : 4146 )
   /* purge off exception values */
   if ((hy | ly) == 0 || (hx >= 0x7ff00000) ||       /* y=0,or x not finite */
-    ((hy | ((ly | -ly) >> 31))>0x7ff00000))     /* or y is NaN */
-#pragma warning( default : 4146 )
+      ((hy | ((ly | -ly) >> 31))>0x7ff00000))       /* or y is NaN */
     return (x*y) / (x*y);
   if (hx <= hy) {
     if ((hx<hy) || (lx<ly)) return x;      /* |x|<|y| return x */

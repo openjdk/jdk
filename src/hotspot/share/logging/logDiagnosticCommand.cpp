@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDiagnosticCommand.hpp"
 #include "memory/resourceArea.hpp"
@@ -47,7 +46,7 @@ LogDiagnosticCommand::LogDiagnosticCommand(outputStream* output, bool heap_alloc
 
 void LogDiagnosticCommand::registerCommand() {
   uint32_t full_visibility = DCmd_Source_Internal | DCmd_Source_AttachAPI | DCmd_Source_MBean;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<LogDiagnosticCommand>(full_visibility, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<LogDiagnosticCommand>(full_visibility));
 }
 
 void LogDiagnosticCommand::execute(DCmdSource source, TRAPS) {

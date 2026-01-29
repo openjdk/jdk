@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 8008077 8029721 8042451 8043974
  * @summary Test population of reference info for lambda expressions
  *          javac crash for annotated parameter type of lambda in a field
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @ignore 8057687 emit correct byte code an attributes for type annotations
  * @compile -g Driver.java ReferenceInfoUtil.java Lambda.java
  * @run main Driver Lambda

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
+
 include CopyFiles.gmk
 include Execute.gmk
 include JavaCompilation.gmk
@@ -42,7 +41,7 @@ ifeq ($(call isTargetOs, macosx), true)
   PROJECT_FILE_NAME := hotspot.xcodeproj
 
   COMPILE_COMMAND_FILE := $(OUTPUTDIR)/compile_commands.json
-  LINKER_FLAGS_FILE := $(MAKESUPPORT_OUTPUTDIR)/compile-commands/jvm-ldflags.txt
+  LINKER_FLAGS_FILE := $(MAKESUPPORT_OUTPUTDIR)/compile-commands/LIBRARY_hotspot_variant-server_libjvm_libjvm-ldflags.txt
 
   $(eval $(call SetupJavaCompilation, BUILD_PROJECT_CREATOR, \
       TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
@@ -60,7 +59,7 @@ ifeq ($(call isTargetOs, macosx), true)
     XCODE_PROJ_DEBUG_OPTION := -d
   endif
 
-  XCODE_PROJ_VARDEPS := $(WORKSPACE_ROOT) $(IDE_OUTPUTDIR) \
+  XCODE_PROJ_VARDEPS := $(TOPDIR) $(IDE_OUTPUTDIR) \
       $(PROJECT_MAKER_DIR)/data $(COMPILE_COMMAND_FILE) $(LINKER_FLAGS_FILE)
   XCODE_PROJ_VARDEPS_FILE := $(call DependOnVariable, XCODE_PROJ_VARDEPS, \
     $(TOOLS_OUTPUTDIR)/xcodeproj.vardeps)
@@ -70,7 +69,7 @@ ifeq ($(call isTargetOs, macosx), true)
       DEPS := $(BUILD_PROJECT_CREATOR) $(COMPILE_COMMAND_FILE) \
           $(LINKER_FLAGS_FILE) $(XCODE_PROJ_VARDEPS_FILE), \
       OUTPUT_DIR := $(TOOLS_OUTPUTDIR), \
-      COMMAND := $(PROJECT_CREATOR_TOOL) $(WORKSPACE_ROOT) $(IDE_OUTPUTDIR) \
+      COMMAND := $(PROJECT_CREATOR_TOOL) $(TOPDIR) $(IDE_OUTPUTDIR) \
           $(PROJECT_MAKER_DIR)/data $(COMPILE_COMMAND_FILE) \
           $(LINKER_FLAGS_FILE) $(XCODE_PROJ_DEBUG_OPTION), \
   ))
@@ -100,8 +99,6 @@ ifeq ($(call isTargetOs, macosx), true)
   build: $(build_xcode_project) $(copy_xcode_project)
 
   open: $(open_xcode_project)
-
-  all: $(TARGETS)
 else
   build:
   open:
@@ -109,4 +106,8 @@ else
 	$(info Xcode projects are only supported on macOS)
 endif
 
-.PHONY: default all build open
+.PHONY: build open
+
+################################################################################
+
+include MakeFileEnd.gmk

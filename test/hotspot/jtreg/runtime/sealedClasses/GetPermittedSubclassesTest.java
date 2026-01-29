@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class GetPermittedSubclassesTest {
 
     final class Final4 {}
 
+    // Check if the given class has the expected permitted subclasses
     public static void testSealedInfo(Class<?> c, String[] expected, boolean isSealed) {
         var permitted = c.getPermittedSubclasses();
 
@@ -92,16 +93,16 @@ public class GetPermittedSubclassesTest {
 
     public static void testBadSealedClass(String className,
                                           Class<?> expectedException,
-                                          String expectedCFEMessage) throws Throwable {
+                                          String expectedMessage) throws Throwable {
         try {
             Class.forName(className);
-            throw new RuntimeException("Expected ClassFormatError exception not thrown for " + className);
+            throw new RuntimeException("Expected exception " + expectedException.getName() + " not thrown for " + className);
         } catch (ClassFormatError cfe) {
             if (ClassFormatError.class != expectedException) {
                 throw new RuntimeException(
                     "Class " + className + " got unexpected exception: " + cfe.getMessage());
             }
-            if (!cfe.getMessage().contains(expectedCFEMessage)) {
+            if (!cfe.getMessage().contains(expectedMessage)) {
                 throw new RuntimeException(
                     "Class " + className + " got unexpected ClassFormatError exception: " + cfe.getMessage());
             }
@@ -110,7 +111,7 @@ public class GetPermittedSubclassesTest {
                 throw new RuntimeException(
                     "Class " + className + " got unexpected exception: " + icce.getMessage());
             }
-            if (!icce.getMessage().contains(expectedCFEMessage)) {
+            if (!icce.getMessage().contains(expectedMessage)) {
                 throw new RuntimeException(
                     "Class " + className + " got unexpected IncompatibleClassChangeError exception: " + icce.getMessage());
             }
@@ -135,7 +136,7 @@ public class GetPermittedSubclassesTest {
 
         // Test that a class with an empty PermittedSubclasses attribute cannot be subclass-ed.
         testBadSealedClass("SubClass", IncompatibleClassChangeError.class,
-                           "SubClass cannot inherit from sealed class NoSubclasses");
+                           "Failed listed permitted subclass check: class SubClass is not a permitted subclass of NoSubclasses");
 
         // Test returning only names of existing classes.
         testSealedInfo(NoLoadSubclasses.class, new String[]{"ExistingClassFile" }, true);

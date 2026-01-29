@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6758050 8025633 8182765
+ * @bug      6758050 8025633 8182765 8345664
  * @summary  Test HTML output for nested generic types.
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -49,7 +49,6 @@ public class TestNestedGenerics extends JavadocTester {
 
         checkOutput("pkg/NestedGenerics.html", true,
             """
-                <div class="block">Contains <a href="#foo(java.util.Map)"><code>foo(java.util.Ma\
-                p&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>""");
+                    <div class="block">Contains <a href="#foo(java.util.Map)"><code>foo(Map)</code></a></div>""");
     }
 }

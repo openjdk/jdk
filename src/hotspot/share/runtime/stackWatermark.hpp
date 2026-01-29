@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,6 @@ protected:
   void yield_processing();
   static bool has_barrier(const frame& f);
   void ensure_safe(const frame& f);
-  void assert_is_frame_safe(const frame& f) NOT_DEBUG_RETURN;
   bool is_frame_safe(const frame& f);
 
   // API for consumers of the stack watermark barrier.
@@ -151,6 +150,8 @@ public:
   void on_safepoint();
   void start_processing();
   void finish_processing(void* context);
+
+  void assert_is_frame_safe(const frame& f) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_RUNTIME_STACKWATERMARK_HPP

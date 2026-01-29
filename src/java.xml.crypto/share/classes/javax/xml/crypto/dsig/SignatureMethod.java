@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,42 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
     String SHA3_512_RSA_MGF1 =
             "http://www.w3.org/2007/05/xmldsig-more#sha3-512-rsa-MGF1";
 
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-224">
+     * ECDSA-SHA3-224</a> signature method algorithm URI.
+     *
+     * @since 25
+     */
+    String ECDSA_SHA3_224 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-224";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-256">
+     * ECDSA-SHA3-256</a> signature method algorithm URI.
+     *
+     * @since 25
+     */
+    String ECDSA_SHA3_256 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-256";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-384">
+     * ECDSA-SHA3-384</a> signature method algorithm URI.
+     *
+     * @since 25
+     */
+    String ECDSA_SHA3_384 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-384";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-512">
+     * ECDSA-SHA3-512</a> signature method algorithm URI.
+     *
+     * @since 25
+     */
+    String ECDSA_SHA3_512 =
+            "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-512";
 
     /**
      * Returns the algorithm-specific input parameters of this

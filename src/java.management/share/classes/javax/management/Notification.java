@@ -31,10 +31,6 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.EventObject;
 
-import java.security.AccessController;
-
-import com.sun.jmx.mbeanserver.GetPropertyAction;
-
 /**
  * <p>The Notification class represents a notification emitted by an
  * MBean.  It contains a reference to the source MBean: if the

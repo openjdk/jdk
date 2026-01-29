@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,19 +295,18 @@ public class Cursor implements java.io.Serializable {
             loadSystemCustomCursorProperties();
 
             String prefix = CURSOR_DOT_PREFIX + name;
-            String key    = prefix + DOT_FILE_SUFFIX;
 
-            if (!systemCustomCursorProperties.containsKey(key)) {
+            String fileName =
+                systemCustomCursorProperties.getProperty(prefix + DOT_FILE_SUFFIX);
+
+            if (fileName == null) {
                 if (log.isLoggable(PlatformLogger.Level.FINER)) {
                     log.finer("Cursor.getSystemCustomCursor(" + name + ") returned null");
                 }
                 return null;
             }
 
-            final String fileName =
-                systemCustomCursorProperties.getProperty(key);
-
-            final String localized = systemCustomCursorProperties.getProperty(
+            String localized = systemCustomCursorProperties.getProperty(
                     prefix + DOT_NAME_SUFFIX, name);
 
             String hotspot = systemCustomCursorProperties.getProperty(prefix + DOT_HOTSPOT_SUFFIX);

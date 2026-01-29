@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import static jdk.internal.util.OperatingSystem.LINUX;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.PackageTest;
@@ -54,6 +56,9 @@ import jdk.jpackage.test.TKit;
  *
  * Mac:
  *
+ * For DMG license should be displayed on command line when "hdiutil attach"
+ * is called.
+ *
  * Windows
  *
  * Installer should display license text matching contents of the license file
@@ -66,7 +71,8 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile LicenseTest.java
+ * @compile -Xlint:all -Werror LicenseTest.java
+ * @requires (jpackage.test.SQETest != null)
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCommon
  */
@@ -77,19 +83,15 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile LicenseTest.java
- * @requires (os.family == "linux")
+ * @compile -Xlint:all -Werror LicenseTest.java
  * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=LicenseTest.testCustomDebianCopyright
- *  --jpt-run=LicenseTest.testCustomDebianCopyrightSubst
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree2
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree3
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree4
+ *  --jpt-run=LicenseTest
  */
 
 public class LicenseTest {
+
+    @Test
     public static void testCommon() {
         PackageTest test = new PackageTest().configureHelloApp()
         .addInitializer(cmd -> {
@@ -97,33 +99,67 @@ public class LicenseTest {
                     LICENSE_FILE));
         });
 
+        initMacDmgLicenseVerifier(test.forTypes(PackageType.MAC_DMG));
         initLinuxLicenseVerifier(test.forTypes(PackageType.LINUX));
 
         test.run();
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree() {
         testLinuxLicenseInUsrTree("/usr");
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree2() {
         testLinuxLicenseInUsrTree("/usr/local");
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree3() {
         testLinuxLicenseInUsrTree("/usr/foo");
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree4() {
         testLinuxLicenseInUsrTree("/usrbuz");
     }
 
+    @Test(ifOS = LINUX)
     public static void testCustomDebianCopyright() {
         new CustomDebianCopyrightTest().run();
     }
 
+    @Test(ifOS = LINUX)
     public static void testCustomDebianCopyrightSubst() {
         new CustomDebianCopyrightTest().withSubstitution(true).run();
+    }
+
+    private static PackageTest initMacDmgLicenseVerifier(PackageTest test) {
+        return test
+        .addBundleVerifier(cmd -> {
+            verifyLicenseFileInDMGPackage(cmd);
+        });
+    }
+
+    private static void verifyLicenseFileInDMGPackage(JPackageCommand cmd)
+            throws IOException {
+        // DMG should have license, so attach with "no", since we only need license.
+        // With "no" attach will be canceled.
+        final var attachExec = Executor.of("sh", "-c", String.join(" ",
+                "no",
+                "|",
+                "/usr/bin/hdiutil",
+                "attach",
+                JPackageCommand.escapeAndJoin(cmd.outputBundle().toString())
+        )).saveOutput().storeOutputInFiles();
+
+        // Expected exit code is 1, since we canceling license.
+        final var attachResult = attachExec.executeAndRepeatUntilExitCode(1, 10, 6);
+        TKit.assertStringListEquals(Files.readAllLines(LICENSE_FILE),
+                attachResult.stdout(), String.format(
+                "Check output of \"hdiutil attach\" has the same license as contents of source license file [%s]",
+                LICENSE_FILE));
     }
 
     private static PackageTest initLinuxLicenseVerifier(PackageTest test) {
@@ -203,7 +239,7 @@ public class LicenseTest {
     private static void verifyLicenseFileInLinuxPackage(JPackageCommand cmd,
             Path expectedLicensePath) {
         TKit.assertTrue(LinuxHelper.getPackageFiles(cmd).filter(path -> path.equals(
-                expectedLicensePath)).findFirst().orElse(null) != null,
+                expectedLicensePath)).findFirst().isPresent(),
                 String.format("Check license file [%s] is in %s package",
                         expectedLicensePath, LinuxHelper.getPackageName(cmd)));
     }
@@ -266,7 +302,7 @@ public class LicenseTest {
         }
 
         private List<String> licenseFileText(String copyright, String licenseText) {
-            List<String> lines = new ArrayList(List.of(
+            List<String> lines = new ArrayList<>(List.of(
                     String.format("Copyright=%s", copyright),
                     "Foo",
                     "Bar",

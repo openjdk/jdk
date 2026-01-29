@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -112,7 +113,7 @@ public final class Security {
 
         private static Path currentPath;
 
-        private static final Set<Path> activePaths = new HashSet<>();
+        private static final List<Path> activePaths = new ArrayList<>();
 
         static void loadAll() {
             // first load the master properties file to
@@ -262,30 +263,40 @@ public final class Security {
             }
         }
 
+        private static void checkCyclicInclude(Path path) {
+            for (Path activePath : activePaths) {
+                try {
+                    if (Files.isSameFile(path, activePath)) {
+                        throw new InternalError(
+                                "Cyclic include of '" + path + "'");
+                    }
+                } catch (IOException e) {
+                    if (sdebug != null) {
+                        sdebug.println("skipped exception when checking for " +
+                                "cyclic inclusion of " + path + ":");
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
         private static void loadFromPath(Path path, LoadingMode mode)
                 throws IOException {
-            boolean isRegularFile = Files.isRegularFile(path);
-            if (isRegularFile) {
-                path = path.toRealPath();
-            } else if (Files.isDirectory(path)) {
+            if (Files.isDirectory(path)) {
                 throw new IOException("Is a directory");
-            } else {
-                path = path.toAbsolutePath();
-            }
-            if (activePaths.contains(path)) {
-                throw new InternalError("Cyclic include of '" + path + "'");
             }
             try (InputStream is = Files.newInputStream(path)) {
+                checkCyclicInclude(path);
                 reset(mode);
                 Path previousPath = currentPath;
-                currentPath = isRegularFile ? path : null;
+                currentPath = Files.isRegularFile(path) ? path : null;
                 activePaths.add(path);
                 try {
                     debugLoad(true, path);
                     props.load(is);
                     debugLoad(false, path);
                 } finally {
-                    activePaths.remove(path);
+                    activePaths.removeLast();
                     currentPath = previousPath;
                 }
             }
@@ -312,14 +323,7 @@ public final class Security {
     }
 
     static {
-        // doPrivileged here because there are multiple
-        // things in initialize that might require privs.
-        // (the FileInputStream call and the File.exists call, etc)
-        @SuppressWarnings("removal")
-        var dummy = AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-            initialize();
-            return null;
-        });
+        initialize();
         // Set up JavaSecurityPropertiesAccess in SharedSecrets
         SharedSecrets.setJavaSecurityPropertiesAccess(new JavaSecurityPropertiesAccess() {
             @Override
@@ -475,15 +479,13 @@ public final class Security {
      */
     public static synchronized int insertProviderAt(Provider provider,
             int position) {
-        String providerName = provider.getName();
-        checkInsertProvider(providerName);
         ProviderList list = Providers.getFullProviderList();
         ProviderList newList = ProviderList.insertAt(list, provider, position - 1);
         if (list == newList) {
             return -1;
         }
         Providers.setProviderList(newList);
-        return newList.getIndex(providerName) + 1;
+        return newList.getIndex(provider.getName()) + 1;
     }
 
     /**
@@ -527,7 +529,6 @@ public final class Security {
      * @see #addProvider
      */
     public static synchronized void removeProvider(String name) {
-        check("removeProvider." + name);
         ProviderList list = Providers.getFullProviderList();
         ProviderList newList = ProviderList.remove(list, name);
         Providers.setProviderList(newList);
@@ -822,7 +823,6 @@ public final class Security {
      */
     public static String getProperty(String key) {
         SecPropLoader.checkReservedKey(key);
-        check("getProperty." + key);
         String name = props.getProperty(key);
         if (name != null)
             name = name.trim(); // could be a class name with trailing ws
@@ -845,7 +845,6 @@ public final class Security {
      */
     public static void setProperty(String key, String datum) {
         SecPropLoader.checkReservedKey(key);
-        check("setProperty." + key);
         props.put(key, datum);
 
         SecurityPropertyModificationEvent spe = new SecurityPropertyModificationEvent();
@@ -856,32 +855,6 @@ public final class Security {
 
         if (EventHelper.isLoggingSecurity()) {
             EventHelper.logSecurityPropertyEvent(key, datum);
-        }
-    }
-
-    private static void check(String directive) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSecurityAccess(directive);
-        }
-    }
-
-    private static void checkInsertProvider(String name) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            try {
-                security.checkSecurityAccess("insertProvider");
-            } catch (SecurityException se1) {
-                try {
-                    security.checkSecurityAccess("insertProvider." + name);
-                } catch (SecurityException se2) {
-                    // throw first exception, but add second to suppressed
-                    se1.addSuppressed(se2);
-                    throw se1;
-                }
-            }
         }
     }
 

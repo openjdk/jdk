@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,11 @@ import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
- * This class prepares, creates, and runs the "test" VM with verification of proper termination. The class also stores
- * information about the test VM which is later queried for IR matching. The communication between this driver VM
- * and the test VM is done over a dedicated socket.
+ * This class prepares, creates, and runs the Test VM with verification of proper termination. The class also stores
+ * information about the Test VM which is later queried for IR matching. The communication between this Driver VM
+ * and the Test VM is done over a dedicated socket.
  *
  * @see TestVM
  * @see TestFrameworkSocket
@@ -62,14 +61,15 @@ public class TestVMProcess {
     private String hotspotPidFileName;
     private String commandLine;
     private OutputAnalyzer oa;
-    private String irEncoding;
+    private String applicableIRRules;
 
     public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup,
-                         boolean testClassesOnBootClassPath) {
+                         boolean allowNotCompilable, boolean testClassesOnBootClassPath) {
         this.cmds = new ArrayList<>();
         TestFrameworkSocket socket = new TestFrameworkSocket();
         try (socket) {
-            prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup, testClassesOnBootClassPath);
+            prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup,
+                               allowNotCompilable, testClassesOnBootClassPath);
             start();
         }
         processSocketOutput(socket);
@@ -80,8 +80,8 @@ public class TestVMProcess {
         return commandLine;
     }
 
-    public String getIrEncoding() {
-        return irEncoding;
+    public String getApplicableIRRules() {
+        return applicableIRRules;
     }
 
     public String getHotspotPidFileName() {
@@ -93,10 +93,11 @@ public class TestVMProcess {
     }
 
     private void prepareTestVMFlags(List<String> additionalFlags, TestFrameworkSocket socket, Class<?> testClass,
-                                    Set<Class<?>> helperClasses, int defaultWarmup, boolean testClassesOnBootClassPath) {
+                                    Set<Class<?>> helperClasses, int defaultWarmup, boolean allowNotCompilable,
+                                    boolean testClassesOnBootClassPath) {
         // Set java.library.path so JNI tests which rely on jtreg nativepath setting work
         cmds.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
-        // Need White Box access in test VM.
+        // Need White Box access in Test VM.
         String bootClassPath = "-Xbootclasspath/a:.";
         if (testClassesOnBootClassPath) {
             // Add test classes themselves to boot classpath to make them privileged.
@@ -106,11 +107,12 @@ public class TestVMProcess {
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
         cmds.add("-XX:+WhiteBoxAPI");
         // Ignore CompileCommand flags which have an impact on the profiling information.
-        List<String> jtregVMFlags = Arrays.stream(Utils.getTestJavaOpts()).filter(s -> !s.contains("CompileThreshold")).collect(Collectors.toList());
+        List<String> jtregVMFlags = Arrays.stream(Utils.getTestJavaOpts()).filter(s -> !s.contains("CompileThreshold")).toList();
         if (!PREFER_COMMAND_LINE_FLAGS) {
             cmds.addAll(jtregVMFlags);
         }
-        // Add server property flag that enables test VM to print encoding for IR verification last and debug messages.
+        // Add server property flag that enables the Test VM to print the Applicable IR Rules for IR verification and
+        // debug messages.
         cmds.add(socket.getPortPropertyFlag());
         cmds.addAll(additionalFlags);
         cmds.addAll(Arrays.asList(getDefaultFlags()));
@@ -128,6 +130,10 @@ public class TestVMProcess {
             cmds.add("-DWarmup=" + defaultWarmup);
         }
 
+        if (allowNotCompilable) {
+            cmds.add("-DAllowNotCompilable=true");
+        }
+
         cmds.add(TestVM.class.getName());
         cmds.add(testClass.getName());
         if (helperClasses != null) {
@@ -136,7 +142,7 @@ public class TestVMProcess {
     }
 
     /**
-     * Default flags that are added used for the test VM.
+     * Default flags that are added used for the Test VM.
      */
     private static String[] getDefaultFlags() {
         return new String[] {"-XX:-BackgroundCompilation", "-XX:CompileCommand=quiet"};
@@ -163,7 +169,7 @@ public class TestVMProcess {
             throw new TestFrameworkException("Error while executing Test VM", e);
         }
 
-        process.command().add(1, "-DReproduce=true"); // Add after "/path/to/bin/java" in order to rerun the test VM directly
+        process.command().add(1, "-DReproduce=true"); // Add after "/path/to/bin/java" in order to rerun the Test VM directly
         commandLine = "Command Line:" + System.lineSeparator() + String.join(" ", process.command())
                       + System.lineSeparator();
         hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());
@@ -172,7 +178,7 @@ public class TestVMProcess {
 
     /**
      * Process the socket output: All prefixed lines are dumped to the standard output while the remaining lines
-     * represent the IR encoding used for IR matching later.
+     * represent the Applicable IR Rules used for IR matching later.
      */
     private void processSocketOutput(TestFrameworkSocket socket) {
         String output = socket.getOutput();
@@ -209,16 +215,16 @@ public class TestVMProcess {
                 System.out.println("---------------------");
                 System.out.println(messagesBuilder);
             }
-            irEncoding = nonStdOutBuilder.toString();
+            applicableIRRules = nonStdOutBuilder.toString();
         } else {
-            irEncoding = output;
+            applicableIRRules = output;
         }
     }
 
     private void checkTestVMExitCode() {
         final int exitCode = oa.getExitValue();
         if (EXCLUDE_RANDOM || REPORT_STDOUT || (VERBOSE && exitCode == 0)) {
-            System.out.println("--- OUTPUT TestFramework test VM ---");
+            System.out.println("--- OUTPUT TestFramework Test VM ---");
             System.out.println(oa.getOutput());
         }
 
@@ -228,7 +234,7 @@ public class TestVMProcess {
     }
 
     /**
-     * Exit code was non-zero of test VM. Check the stderr to determine what kind of exception that should be thrown to
+     * Exit code was non-zero of Test VM. Check the stderr to determine what kind of exception that should be thrown to
      * react accordingly later.
      */
     private void throwTestVMException() {
@@ -253,12 +259,14 @@ public class TestVMProcess {
         int exitCode = oa.getExitValue();
         String stdErr = oa.getStderr();
         String stdOut = "";
-        if (exitCode == 134) {
+        boolean osIsWindows = Platform.isWindows();
+        boolean JVMHadError = (!osIsWindows && exitCode == 134) || (osIsWindows && exitCode == -1);
+        if (JVMHadError) {
             // Also dump the stdout if we experience a JVM error (e.g. to show hit assertions etc.).
             stdOut = System.lineSeparator() + System.lineSeparator() + "Standard Output" + System.lineSeparator()
                      + "---------------" + System.lineSeparator() + oa.getOutput();
         }
-        return "TestFramework test VM exited with code " + exitCode + System.lineSeparator() + stdOut
+        return "TestFramework Test VM exited with code " + exitCode + System.lineSeparator() + stdOut
                + System.lineSeparator() + commandLine + System.lineSeparator() + System.lineSeparator()
                + "Error Output" + System.lineSeparator() + "------------" + System.lineSeparator() + stdErr
                + System.lineSeparator() + System.lineSeparator();

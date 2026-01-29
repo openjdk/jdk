@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,10 +396,7 @@ final class TextLine {
                                                  BufferedImage.TYPE_INT_ARGB);
 
             Graphics2D g2d = im.createGraphics();
-            g2d.setColor(Color.WHITE);
-            g2d.fillRect(0, 0, im.getWidth(), im.getHeight());
-
-            g2d.setColor(Color.BLACK);
+            g2d.setColor(Color.WHITE); // white over transparent black bg
             draw(g2d, rx + MARGIN - bounds.x, ry + MARGIN - bounds.y);
 
             result = computePixelBounds(im);
@@ -428,7 +425,7 @@ final class TextLine {
             loop: while (++t < h) {
                 im.getRGB(0, t, buf.length, 1, buf, 0, w); // w ignored
                 for (int i = 0; i < buf.length; i++) {
-                    if (buf[i] != -1) {
+                    if (buf[i] != 0) {
                         break loop;
                     }
                 }
@@ -441,7 +438,7 @@ final class TextLine {
             loop: while (--b > t) {
                 im.getRGB(0, b, buf.length, 1, buf, 0, w); // w ignored
                 for (int i = 0; i < buf.length; ++i) {
-                    if (buf[i] != -1) {
+                    if (buf[i] != 0) {
                         break loop;
                     }
                 }
@@ -454,7 +451,7 @@ final class TextLine {
             loop: while (++l < r) {
                 for (int i = t; i < b; ++i) {
                     int v = im.getRGB(l, i);
-                    if (v != -1) {
+                    if (v != 0) {
                         break loop;
                     }
                 }
@@ -466,7 +463,7 @@ final class TextLine {
             loop: while (--r > l) {
                 for (int i = t; i < b; ++i) {
                     int v = im.getRGB(r, i);
-                    if (v != -1) {
+                    if (v != 0) {
                         break loop;
                     }
                 }
@@ -836,13 +833,17 @@ final class TextLine {
         }
 
         if (result == null) {
-            result = new Rectangle2D.Float(Float.MAX_VALUE, Float.MAX_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
+            result = new Rectangle2D.Float(0, 0, 0, 0);
         }
 
         return result;
     }
 
     public Rectangle2D getItalicBounds() {
+
+        if (fComponents.length == 0) {
+            return new Rectangle2D.Float(0, 0, 0, 0);
+        }
 
         float left = Float.MAX_VALUE, right = -Float.MAX_VALUE;
         float top = Float.MAX_VALUE, bottom = -Float.MAX_VALUE;
@@ -927,7 +928,7 @@ final class TextLine {
         // dlf: get baseRot from font for now???
 
         if (!requiresBidi) {
-            requiresBidi = Bidi.requiresBidi(chars, 0, chars.length);
+            requiresBidi = Bidi.requiresBidi(chars, 0, characterCount);
         }
 
         if (requiresBidi) {
@@ -935,7 +936,7 @@ final class TextLine {
               ? Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT
               : values.getRunDirection();
 
-          bidi = new Bidi(chars, 0, embs, 0, chars.length, bidiflags);
+          bidi = new Bidi(chars, 0, embs, 0, characterCount, bidiflags);
           if (!bidi.isLeftToRight()) {
               levels = BidiUtils.getLevels(bidi);
               int[] charsVtoL = BidiUtils.createVisualToLogicalMap(levels);
@@ -945,13 +946,11 @@ final class TextLine {
         }
 
         Decoration decorator = Decoration.getDecoration(values);
-
         int layoutFlags = 0; // no extra info yet, bidi determines run and line direction
         TextLabelFactory factory = new TextLabelFactory(frc, chars, bidi, layoutFlags);
 
         TextLineComponent[] components = new TextLineComponent[1];
-
-        components = createComponentsOnRun(0, chars.length,
+        components = createComponentsOnRun(0, characterCount,
                                            chars,
                                            charsLtoV, levels,
                                            factory, font, lm,
@@ -972,7 +971,7 @@ final class TextLine {
         }
 
         return new TextLine(frc, components, lm.baselineOffsets,
-                            chars, 0, chars.length, charsLtoV, levels, isDirectionLTR);
+                            chars, 0, characterCount, charsLtoV, levels, isDirectionLTR);
     }
 
     private static TextLineComponent[] expandArray(TextLineComponent[] orig) {
@@ -1018,10 +1017,10 @@ final class TextLine {
                 }
 
                 TextLineComponent nextComponent =
-                    factory.createExtended(font, cm, decorator, startPos, startPos + lmCount);
+                    factory.createTextLabel(font, cm, decorator, startPos, startPos + lmCount);
 
                 ++numComponents;
-                if (numComponents >= components.length) {
+                if (numComponents > components.length) {
                     components = expandArray(components);
                 }
 
@@ -1076,7 +1075,7 @@ final class TextLine {
                     pos = chunkLimit;
 
                     ++numComponents;
-                    if (numComponents >= tempComponents.length) {
+                    if (numComponents > tempComponents.length) {
                         tempComponents = expandArray(tempComponents);
                     }
 

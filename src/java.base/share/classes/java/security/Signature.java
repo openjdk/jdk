@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,12 @@ import java.nio.ByteBuffer;
 
 import java.security.Provider.Service;
 
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.NoSuchPaddingException;
 import jdk.internal.access.JavaSecuritySignatureAccess;
 import jdk.internal.access.SharedSecrets;
 
 import sun.security.util.Debug;
+import sun.security.util.CryptoAlgorithmConstraints;
+
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.util.KnownOIDs;
@@ -100,12 +98,20 @@ import sun.security.util.KnownOIDs;
  * supply their own implementations of digital signature algorithms.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code Signature} algorithms:
+ * following standard {@code Signature} algorithms. For the "RSASSA-PSS"
+ * algorithm, implementations must support the parameters in parentheses. For
+ * the "SHA256withECDSA" and "SHA384withECDSA" algorithms, implementations must
+ * support the curves in parentheses.
  * <ul>
+ * <li>{@code RSASSA-PSS} (MGF1 mask generation function and SHA-256 or SHA-384
+ *      hash algorithms)</li>
  * <li>{@code SHA1withDSA}</li>
  * <li>{@code SHA256withDSA}</li>
+ * <li>{@code SHA256withECDSA} (secp256r1)</li>
+ * <li>{@code SHA384withECDSA} (secp384r1)</li>
  * <li>{@code SHA1withRSA}</li>
  * <li>{@code SHA256withRSA}</li>
+ * <li>{@code SHA384withRSA}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
@@ -114,6 +120,7 @@ import sun.security.util.KnownOIDs;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Benjamin Renaud
  * @since 1.1
  *
@@ -198,24 +205,11 @@ public abstract class Signature extends SignatureSpi {
      * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected Signature(String algorithm) {
         this.algorithm = algorithm;
     }
-
-    // name of the special signature alg
-    private static final String RSA_SIGNATURE = "NONEwithRSA";
-
-    // name of the equivalent cipher alg
-    private static final String RSA_CIPHER = "RSA/ECB/PKCS1Padding";
-
-    // all the services we need to lookup for compatibility with Cipher
-    private static final List<ServiceId> rsaIds = List.of(
-        new ServiceId("Signature", "NONEwithRSA"),
-        new ServiceId("Cipher", "RSA/ECB/PKCS1Padding"),
-        new ServiceId("Cipher", "RSA/ECB"),
-        new ServiceId("Cipher", "RSA//PKCS1Padding"),
-        new ServiceId("Cipher", "RSA"));
 
     /**
      * Returns a {@code Signature} object that implements the specified
@@ -231,12 +225,22 @@ public abstract class Signature extends SignatureSpi {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
+     * The JDK Reference Implementation additionally uses the following
+     * security properties:
+     * <ul>
+     * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
      * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * </li>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     * </li>
+     * </ul>
      *
      * @param algorithm the standard name of the algorithm requested.
      * See the Signature section in the <a href=
@@ -244,6 +248,7 @@ public abstract class Signature extends SignatureSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code Signature} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -257,12 +262,12 @@ public abstract class Signature extends SignatureSpi {
     public static Signature getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        Iterator<Service> t;
-        if (algorithm.equalsIgnoreCase(RSA_SIGNATURE)) {
-            t = GetInstance.getServices(rsaIds);
-        } else {
-            t = GetInstance.getServices("Signature", algorithm);
+
+        if (!CryptoAlgorithmConstraints.permits("Signature", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
+
+        Iterator<Service> t = GetInstance.getServices("Signature", algorithm);
         if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " Signature not available");
@@ -318,10 +323,6 @@ public abstract class Signature extends SignatureSpi {
     }
 
     private static boolean isSpi(Service s) {
-        if (s.getType().equals("Cipher")) {
-            // must be a CipherSpi, which we can wrap with the CipherAdapter
-            return true;
-        }
         String className = s.getClassName();
         Boolean result = signatureInfo.get(className);
         if (result == null) {
@@ -359,6 +360,14 @@ public abstract class Signature extends SignatureSpi {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
@@ -367,6 +376,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code Signature} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -386,18 +396,11 @@ public abstract class Signature extends SignatureSpi {
     public static Signature getInstance(String algorithm, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        if (algorithm.equalsIgnoreCase(RSA_SIGNATURE)) {
-            // exception compatibility with existing code
-            if (provider == null || provider.isEmpty()) {
-                throw new IllegalArgumentException("missing provider");
-            }
-            Provider p = Security.getProvider(provider);
-            if (p == null) {
-                throw new NoSuchProviderException
-                    ("no such provider: " + provider);
-            }
-            return getInstanceRSA(p);
+
+        if (!CryptoAlgorithmConstraints.permits("Signature", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
+
         Instance instance = GetInstance.getInstance
                 ("Signature", SignatureSpi.class, algorithm, provider);
         return getInstance(instance, algorithm);
@@ -412,6 +415,14 @@ public abstract class Signature extends SignatureSpi {
      * is returned.  Note that the specified provider does not
      * have to be registered in the provider list.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
@@ -420,6 +431,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code Signature} object
      *
      * @throws IllegalArgumentException if the provider is {@code null}
@@ -437,38 +449,14 @@ public abstract class Signature extends SignatureSpi {
     public static Signature getInstance(String algorithm, Provider provider)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        if (algorithm.equalsIgnoreCase(RSA_SIGNATURE)) {
-            // exception compatibility with existing code
-            if (provider == null) {
-                throw new IllegalArgumentException("missing provider");
-            }
-            return getInstanceRSA(provider);
+
+        if (!CryptoAlgorithmConstraints.permits("Signature", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
+
         Instance instance = GetInstance.getInstance
                 ("Signature", SignatureSpi.class, algorithm, provider);
         return getInstance(instance, algorithm);
-    }
-
-    // return an implementation for NONEwithRSA, which is a special case
-    // because of the Cipher.RSA/ECB/PKCS1Padding compatibility wrapper
-    private static Signature getInstanceRSA(Provider p)
-            throws NoSuchAlgorithmException {
-        // try Signature first
-        Service s = p.getService("Signature", RSA_SIGNATURE);
-        if (s != null) {
-            Instance instance = GetInstance.getInstance(s, SignatureSpi.class);
-            return getInstance(instance, RSA_SIGNATURE);
-        }
-        // check Cipher
-        try {
-            Cipher c = Cipher.getInstance(RSA_CIPHER, p);
-            return Delegate.of(new CipherAdapter(c), RSA_SIGNATURE);
-        } catch (GeneralSecurityException e) {
-            // throw Signature style exception message to avoid confusion,
-            // but append Cipher exception as cause
-            throw new NoSuchAlgorithmException("no such algorithm: "
-                + RSA_SIGNATURE + " for provider " + p.getName(), e);
-        }
     }
 
     /**
@@ -1166,22 +1154,12 @@ public abstract class Signature extends SignatureSpi {
 
         private static SignatureSpi newInstance(Service s)
                 throws NoSuchAlgorithmException {
-            if (s.getType().equals("Cipher")) {
-                // must be NONEwithRSA
-                try {
-                    Cipher c = Cipher.getInstance(RSA_CIPHER, s.getProvider());
-                    return new CipherAdapter(c);
-                } catch (NoSuchPaddingException e) {
-                    throw new NoSuchAlgorithmException(e);
-                }
-            } else {
-                Object o = s.newInstance(null);
-                if (!(o instanceof SignatureSpi)) {
-                    throw new NoSuchAlgorithmException
-                        ("Not a SignatureSpi: " + o.getClass().getName());
-                }
-                return (SignatureSpi)o;
+            Object o = s.newInstance(null);
+            if (!(o instanceof SignatureSpi)) {
+                throw new NoSuchAlgorithmException
+                    ("Not a SignatureSpi: " + o.getClass().getName());
             }
+            return (SignatureSpi)o;
         }
 
         // max number of debug warnings to print from chooseFirstProvider()
@@ -1458,92 +1436,4 @@ public abstract class Signature extends SignatureSpi {
             return sigSpi.engineGetParameters();
         }
     }
-
-    // adapter for RSA/ECB/PKCS1Padding ciphers
-    @SuppressWarnings("deprecation")
-    private static class CipherAdapter extends SignatureSpi {
-
-        private final Cipher cipher;
-
-        private ByteArrayOutputStream data;
-
-        CipherAdapter(Cipher cipher) {
-            this.cipher = cipher;
-        }
-
-        protected void engineInitVerify(PublicKey publicKey)
-                throws InvalidKeyException {
-            cipher.init(Cipher.DECRYPT_MODE, publicKey);
-            if (data == null) {
-                data = new ByteArrayOutputStream(128);
-            } else {
-                data.reset();
-            }
-        }
-
-        protected void engineInitSign(PrivateKey privateKey)
-                throws InvalidKeyException {
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-            data = null;
-        }
-
-        protected void engineInitSign(PrivateKey privateKey,
-                SecureRandom random) throws InvalidKeyException {
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey, random);
-            data = null;
-        }
-
-        protected void engineUpdate(byte b) throws SignatureException {
-            engineUpdate(new byte[] {b}, 0, 1);
-        }
-
-        protected void engineUpdate(byte[] b, int off, int len)
-                throws SignatureException {
-            if (data != null) {
-                data.write(b, off, len);
-                return;
-            }
-            byte[] out = cipher.update(b, off, len);
-            if ((out != null) && (out.length != 0)) {
-                throw new SignatureException
-                    ("Cipher unexpectedly returned data");
-            }
-        }
-
-        protected byte[] engineSign() throws SignatureException {
-            try {
-                return cipher.doFinal();
-            } catch (IllegalBlockSizeException | BadPaddingException e) {
-                throw new SignatureException("doFinal() failed", e);
-            }
-        }
-
-        protected boolean engineVerify(byte[] sigBytes)
-                throws SignatureException {
-            try {
-                byte[] out = cipher.doFinal(sigBytes);
-                byte[] dataBytes = data.toByteArray();
-                data.reset();
-                return MessageDigest.isEqual(out, dataBytes);
-            } catch (BadPaddingException e) {
-                // e.g. wrong public key used
-                // return false rather than throwing exception
-                return false;
-            } catch (IllegalBlockSizeException e) {
-                throw new SignatureException("doFinal() failed", e);
-            }
-        }
-
-        protected void engineSetParameter(String param, Object value)
-                throws InvalidParameterException {
-            throw new InvalidParameterException("Parameters not supported");
-        }
-
-        protected Object engineGetParameter(String param)
-                throws InvalidParameterException {
-            throw new InvalidParameterException("Parameters not supported");
-        }
-
-    }
-
 }

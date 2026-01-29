@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
@@ -48,18 +47,24 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   // Check if enough time has passed since the last GC.
   uintx time_since_last_gc = (uintx)g1h->time_since_last_collection().milliseconds();
   if ((time_since_last_gc < G1PeriodicGCInterval)) {
-    log_debug(gc, periodic)("Last GC occurred " UINTX_FORMAT "ms before which is below threshold " UINTX_FORMAT "ms. Skipping.",
+    log_debug(gc, periodic)("Last GC occurred %zums before which is below threshold %zums. Skipping.",
                             time_since_last_gc, G1PeriodicGCInterval);
     return false;
   }
 
   // Check if load is lower than max.
   double recent_load;
-  if ((G1PeriodicGCSystemLoadThreshold > 0.0f) &&
-      (os::loadavg(&recent_load, 1) == -1 || recent_load > G1PeriodicGCSystemLoadThreshold)) {
-    log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
-                            recent_load, G1PeriodicGCSystemLoadThreshold);
-    return false;
+  if (G1PeriodicGCSystemLoadThreshold > 0.0) {
+    if (os::loadavg(&recent_load, 1) == -1) {
+      G1PeriodicGCSystemLoadThreshold = 0.0;
+      log_warning(gc, periodic)("System loadavg() call failed, "
+                                "disabling G1PeriodicGCSystemLoadThreshold check.");
+      // Fall through and start the periodic GC.
+    } else if (recent_load > G1PeriodicGCSystemLoadThreshold) {
+      log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
+                              recent_load, G1PeriodicGCSystemLoadThreshold);
+      return false;
+    }
   }
 
   // Record counters with GC safepoints blocked, to get a consistent snapshot.
@@ -79,7 +84,7 @@ void G1PeriodicGCTask::check_for_periodic_gc() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1GCCounters counters;
   if (should_start_periodic_gc(g1h, &counters)) {
-    if (!g1h->try_collect(GCCause::_g1_periodic_collection, counters)) {
+    if (!g1h->try_collect(0 /* allocation_word_size */, GCCause::_g1_periodic_collection, counters)) {
       log_debug(gc, periodic)("GC request denied. Skipping.");
     }
   }

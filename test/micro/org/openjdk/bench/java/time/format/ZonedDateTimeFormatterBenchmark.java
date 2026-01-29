@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class ZonedDateTimeFormatterBenchmark {
     private static final DateTimeFormatter df = new DateTimeFormatterBuilder()
             .appendPattern("yyyy:MM:dd:HH:mm:v")
             .toFormatter();
-    private static final String TEXT = "2015:03:10:12:13:ECT";
+    private static final String TEXT = "2015:03:10:12:13:PST";
 
     @Setup
     public void setUp() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,15 @@ protected:
   virtual bool nmethod_entry_barrier(nmethod* nm);
 
 public:
+  uintptr_t color(nmethod* nm);
+
   virtual ByteSize thread_disarmed_guard_value_offset() const;
   virtual int* disarmed_guard_value_address() const;
+
+  virtual oop oop_load_no_keepalive(const nmethod* nm, int index);
+  virtual oop oop_load_phantom(const nmethod* nm, int index);
+
+  virtual void arm_all_nmethods() { ShouldNotCallThis(); }
 };
 
 #endif // SHARE_GC_Z_ZBARRIERSETNMETHOD_HPP

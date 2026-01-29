@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,8 @@ import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
+
+import static sun.font.FontUtilities.isIgnorableWhitespace;
 
 /**
  * A class which rasterizes a printer job.
@@ -816,10 +818,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                                            DocFlavor.SERVICE_FORMATTED.PAGEABLE,
                                            attributes, w);
         if (setOnTop) {
-            try {
-                pageDialog.setAlwaysOnTop(true);
-            } catch (SecurityException e) {
-            }
+            pageDialog.setAlwaysOnTop(true);
         }
 
         Rectangle dlgBounds = pageDialog.getBounds();
@@ -948,15 +947,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         }
 
-        /* A security check has already been performed in the
-         * java.awt.print.printerJob.getPrinterJob method.
-         * So by the time we get here, it is OK for the current thread
-         * to print either to a file (from a Dialog we control!) or
-         * to a chosen printer.
-         *
-         * We raise privilege when we put up the dialog, to avoid
-         * the "warning applet window" banner.
-         */
         GraphicsConfiguration grCfg = null;
         Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
         if (w != null) {
@@ -1311,11 +1301,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             (!fidelity && userName != null)) {
             userNameAttr = userName.getValue();
         } else {
-            try {
-                userNameAttr = getUserName();
-            } catch (SecurityException e) {
-                userNameAttr = "";
-            }
+            userNameAttr = getUserName();
         }
 
         /* OpenBook is used internally only when app uses Printable.
@@ -1654,11 +1640,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
         } catch (IOException ioe) {
             throw new PrinterException("Cannot write to file:"+
                                        dest);
-        } catch (SecurityException se) {
-            //There is already file read/write access so at this point
-            // only delete access is denied.  Just ignore it because in
-            // most cases the file created in createNewFile gets overwritten
-            // anyway.
         }
 
         File pFile = f.getParentFile();
@@ -1818,7 +1799,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
     /**
      * Get the name of the printing user.
-     * The caller must have security permission to read system properties.
      */
     public String getUserName() {
         return System.getProperty("user.name");
@@ -1831,11 +1811,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if  (userNameAttr != null) {
             return userNameAttr;
         } else {
-            try {
-                return  getUserName();
-            } catch (SecurityException e) {
-                return "";
-            }
+            return getUserName();
         }
     }
 
@@ -2494,13 +2470,16 @@ public abstract class RasterPrinterJob extends PrinterJob {
         g.setPaint(Color.black);
     }
 
-    /* On-screen drawString renders most control chars as the missing glyph
-     * and have the non-zero advance of that glyph.
-     * Exceptions are \t, \n and \r which are considered zero-width.
-     * This is a utility method used by subclasses to remove them so we
-     * don't have to worry about platform or font specific handling of them.
+    /**
+     * Removes ignorable whitespace from the specified text, so that there
+     * is no need for platform-specific or font-specific custom whitespace
+     * handling, and so that these characters are not treated like control
+     * characters which are printed as the missing glyph.
+     *
+     * @param s the text to process
+     * @return the input text, with ignorable whitespace (if any) removed
      */
-    protected String removeControlChars(String s) {
+    public static String removeControlChars(String s) {
         char[] in_chars = s.toCharArray();
         int len = in_chars.length;
         char[] out_chars = new char[len];
@@ -2508,7 +2487,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         for (int i = 0; i < len; i++) {
             char c = in_chars[i];
-            if (c > '\r' || c < '\t' || c == '\u000b' || c == '\u000c')  {
+            if (!isIgnorableWhitespace(c)) {
                out_chars[pos++] = c;
             }
         }

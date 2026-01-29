@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
   @test
   @key headful
   @bug 6359129
-  @summary REGRESSION: Popup menus dont respond to selections when extend outside Applet
+  @summary REGRESSION: Popup menus dont respond to selections when extend outside EmbeddedFrame
   @author oleg.sukhodolsky area=awt.grab
   @modules java.desktop/java.awt.peer
            java.desktop/sun.awt
@@ -38,7 +38,7 @@
 /**
  * EmbeddedFrameTest1.java
  *
- * summary: REGRESSION: Popup menus dont respond to selections when extend outside Applet
+ * summary: REGRESSION: Popup menus dont respond to selections when extend outside EmbeddedFrame
  */
 
 import java.awt.BorderLayout;

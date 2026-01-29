@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3904,6 +3904,8 @@ public final class AccessBridge {
             return 0;
         int code = keyStroke.getKeyCode();
         switch (code) {
+            case KeyEvent.VK_TAB:
+            case KeyEvent.VK_SPACE:
             case KeyEvent.VK_BACK_SPACE:
             case KeyEvent.VK_DELETE:
             case KeyEvent.VK_DOWN:
@@ -3946,15 +3948,10 @@ public final class AccessBridge {
             debugString("[INFO]:   Shortcut is control character: " + Integer.toHexString(keyCode));
             return (char)keyCode;
         }
-        String keyText = KeyEvent.getKeyText(keyStroke.getKeyCode());
-        debugString("[INFO]:   Shortcut is: " + keyText);
-        if (keyText != null || keyText.length() > 0) {
-            CharSequence seq = keyText.subSequence(0, 1);
-            if (seq != null || seq.length() > 0) {
-                return seq.charAt(0);
-            }
-        }
-        return 0;
+
+        keyCode = keyStroke.getKeyCode();
+        debugString("[INFO]:   Shortcut is: " + Integer.toHexString(keyCode));
+        return (char)keyCode;
     }
 
     /*
@@ -6534,7 +6531,7 @@ public final class AccessBridge {
          *
          * @return This component's locale. If this component does not have
          * a locale, the locale of its parent is returned.
-         * @exception IllegalComponentStateException
+         * @throws IllegalComponentStateException
          * If the Component does not have its own locale and has not yet
          * been added to a containment hierarchy such that the locale can be
          * determined from the containing parent.

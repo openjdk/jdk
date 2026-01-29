@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,11 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  */
 
 final class WDragSourceContextPeer extends SunDragSourceContextPeer {
+    @Override
     public void startSecondaryEventLoop(){
         WToolkit.startSecondaryEventLoop();
     }
+    @Override
     public void quitSecondaryEventLoop(){
         WToolkit.quitSecondaryEventLoop();
     }
@@ -168,6 +170,7 @@ final class WDragSourceContextPeer extends SunDragSourceContextPeer {
             int imgWidth, int imgHight,
             int offsetX, int offsetY);
 
+    @Override
     protected native void setNativeCursor(long nativeCtxt, Cursor c, int cType);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
  * Array. You also need to update MAX_CODE for error strings
  * and MAX_WARNING for warnings ( Needed for only information
  * purpose )
- * @LastModified: May 2022
+ * @LastModified: Dec 2024
  */
 public class XSLTErrorResources extends ListResourceBundle
 {
@@ -1197,7 +1197,10 @@ public class XSLTErrorResources extends ListResourceBundle
       "Cannot set the feature ''{0}'' on this TransformerFactory."},
 
     { ER_EXTENSION_ELEMENT_NOT_ALLOWED_IN_SECURE_PROCESSING,
-          "Use of the extension element ''{0}'' is not allowed when the secure processing feature is set to true."},
+        "Use of the extension function ''{0}'' is not allowed when extension "
+              + "functions are disabled by the secure processing feature or "
+              + "the property ''jdk.xml.enableExtensionFunctions''. "
+              + "To enable extension functions, set ''jdk.xml.enableExtensionFunctions'' to ''true''."},
 
     { ER_NAMESPACE_CONTEXT_NULL_NAMESPACE,
       "Cannot get the prefix for a null namespace uri."},

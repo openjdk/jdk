@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,11 +91,12 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      *
      * @param key the key material of the secret key. The contents of
      * the array are copied to protect against subsequent modification.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
-     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for information about standard algorithm names.
+     * See the SecretKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard secret key algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null or empty.
      *
@@ -112,16 +113,16 @@ public class SecretKeySpec implements KeySpec, SecretKey {
 
     /**
      * Constructs a secret key from the given byte array, using the first
-     * <code>len</code> bytes of <code>key</code>, starting at
-     * <code>offset</code> inclusive.
+     * {@code len} bytes of {@code key}, starting at
+     * {@code offset} inclusive.
      *
      * <p> The bytes that constitute the secret key are
-     * those between <code>key[offset]</code> and
-     * <code>key[offset+len-1]</code> inclusive.
+     * those between {@code key[offset]} and
+     * {@code key[offset+len-1]} inclusive.
      *
      * <p>This constructor does not check if the given bytes indeed specify a
      * secret key of the specified algorithm. For example, if the algorithm is
-     * DES, this constructor does not check if <code>key</code> is 8 bytes
+     * DES, this constructor does not check if {@code key} is 8 bytes
      * long, and also does not check for weak or semi-weak keys.
      * In order for those checks to be performed, an algorithm-specific key
      * specification class (in this case:
@@ -129,23 +130,23 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * must be used.
      *
      * @param key the key material of the secret key. The first
-     * <code>len</code> bytes of the array beginning at
-     * <code>offset</code> inclusive are copied to protect
+     * {@code len} bytes of the array beginning at
+     * {@code offset} inclusive are copied to protect
      * against subsequent modification.
-     * @param offset the offset in <code>key</code> where the key material
+     * @param offset the offset in {@code key} where the key material
      * starts.
      * @param len the length of the key material.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
-     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for information about standard algorithm names.
-     * @exception IllegalArgumentException if <code>algorithm</code>
-     * is null or <code>key</code> is null, empty, or too short,
+     * See the SecretKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard secret key algorithm names.
+     * @exception IllegalArgumentException if {@code algorithm}
+     * is {@code null} or {@code key} is {@code null}, empty, or too short,
      * i.e. {@code key.length-offset<len}.
-     * @exception ArrayIndexOutOfBoundsException is thrown if
-     * <code>offset</code> or <code>len</code> index bytes outside the
-     * <code>key</code>.
+     * @exception ArrayIndexOutOfBoundsException if
+     * {@code offset} or {@code len} are negative.
      *
      * @spec security/standard-names.html Java Security Standard Algorithm Names
      */

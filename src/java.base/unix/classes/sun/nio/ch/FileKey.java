@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,7 @@ public class FileKey {
 
     @Override
     public int hashCode() {
-        return (int)(st_dev ^ (st_dev >>> 32)) +
-               (int)(st_ino ^ (st_ino >>> 32));
+        return Long.hashCode(st_dev) + Long.hashCode(st_ino);
     }
 
     @Override

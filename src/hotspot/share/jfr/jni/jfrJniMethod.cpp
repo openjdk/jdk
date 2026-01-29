@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,24 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "jfr/instrumentation/jfrEventClassTransformer.hpp"
+#include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/jni/jfrJniMethodRegistration.hpp"
+#include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
-#include "jfr/recorder/jfrEventSetting.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/jfrEventSetting.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunk.hpp"
-#include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
+#include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
@@ -42,17 +47,13 @@
 #include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
-#include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/jni/jfrJniMethodRegistration.hpp"
-#include "jfr/instrumentation/jfrEventClassTransformer.hpp"
-#include "jfr/instrumentation/jfrJvmtiAgent.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
+#include "jfr/support/methodtracer/jfrMethodTracer.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
-#include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
@@ -65,10 +66,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#ifdef LINUX
-#include "osContainer_linux.hpp"
-#include "os_linux.hpp"
-#endif
 
 #define NO_TRANSITION(result_type, header) extern "C" { result_type JNICALL header {
 #define NO_TRANSITION_END } }
@@ -168,6 +165,17 @@ NO_TRANSITION(jboolean, jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_ty
   JfrEventThrottler::configure(static_cast<JfrEventId>(event_type_id), event_sample_size, period_ms);
   return JNI_TRUE;
 NO_TRANSITION_END
+
+JVM_ENTRY_NO_ENV(void, jfr_set_cpu_rate(JNIEnv* env, jclass jvm, jdouble rate))
+  JfrEventSetting::set_enabled(JfrCPUTimeSampleEvent, rate > 0);
+  JfrCPUTimeThreadSampling::set_rate(rate);
+JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_set_cpu_period(JNIEnv* env, jclass jvm, jlong period_nanos))
+  assert(period_nanos >= 0, "invariant");
+  JfrEventSetting::set_enabled(JfrCPUTimeSampleEvent, period_nanos > 0);
+  JfrCPUTimeThreadSampling::set_period(period_nanos);
+JVM_END
 
 NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong event_type_id, jlong value))
   JfrEventSetting::set_miscellaneous(event_type_id, value);
@@ -278,9 +286,9 @@ JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_period(JNIEnv* env, jclass jvm, j
   assert(EventExecutionSample::eventId == typed_event_id || EventNativeMethodSample::eventId == typed_event_id, "invariant");
   JfrEventSetting::set_enabled(typed_event_id, periodMillis > 0);
   if (EventExecutionSample::eventId == type) {
-    JfrThreadSampling::set_java_sample_period(periodMillis);
+    JfrThreadSampler::set_java_sample_period(periodMillis);
   } else {
-    JfrThreadSampling::set_native_sample_period(periodMillis);
+    JfrThreadSampler::set_native_sample_period(periodMillis);
   }
 JVM_END
 
@@ -301,13 +309,13 @@ JVM_ENTRY_NO_ENV(jobject, jfr_new_event_writer(JNIEnv* env, jclass jvm))
   return JfrJavaEventWriter::new_event_writer(thread);
 JVM_END
 
-NO_TRANSITION(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
-  JfrJavaEventWriter::flush(writer, used_size, requested_size, JavaThread::current());
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
+  JfrJavaEventWriter::flush(writer, used_size, requested_size, thread);
+JVM_END
 
-NO_TRANSITION(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
-  return JfrJavaEventWriter::commit(next_position);
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
+  return JfrJavaEventWriter::commit(next_position, thread);
+JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_flush(JNIEnv* env, jclass jvm))
   JfrRepository::flush(thread);
@@ -352,8 +360,7 @@ JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jb
 JVM_END
 
 NO_TRANSITION(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
-  JfrRecorderService service;
-  service.emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
+  JfrRecorderService::emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
 NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jclass jvm, jobject t))
@@ -389,30 +396,18 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_class_instrumented(JNIEnv* env, jclass jvm, jc
 JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  return OSContainer::is_containerized();
-#else
-  return false;
-#endif
+  return os::is_containerized();
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  // We want the host memory, not the container limit.
-  // os::physical_memory() would return the container limit.
-  return os::Linux::physical_memory();
-#else
-  return os::physical_memory();
-#endif
+  return static_cast<jlong>(os::Machine::physical_memory());
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  // We want the host swap memory, not the container value.
-  return os::Linux::host_swap();
-#else
-  return os::total_swap_space();
-#endif
+  physical_memory_size_type total_swap_space = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::Machine::total_swap_space(total_swap_space);
+  return static_cast<jlong>(total_swap_space);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes))
@@ -430,3 +425,19 @@ JVM_END
 NO_TRANSITION(jlong, jfr_nanos_now(JNIEnv* env, jclass jvm))
   return JfrChunk::nanos_now();
 NO_TRANSITION_END
+
+NO_TRANSITION(jboolean, jfr_is_product(JNIEnv* env, jclass jvm))
+#ifdef PRODUCT
+  return true;
+#else
+  return false;
+#endif
+NO_TRANSITION_END
+
+JVM_ENTRY_NO_ENV(jlongArray, jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modifications))
+  return JfrMethodTracer::set_filters(env, classes, methods, annotations, modifications, thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
+  return JfrMethodTracer::drain_stale_class_ids(thread);
+JVM_END

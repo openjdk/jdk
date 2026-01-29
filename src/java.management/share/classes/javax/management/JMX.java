@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import com.sun.jmx.mbeanserver.Introspector;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Static methods from the JMX API.  There are no instances of this class.
@@ -376,8 +375,7 @@ public class JMX {
     public static boolean isMXBeanInterface(Class<?> interfaceClass) {
         if (!interfaceClass.isInterface())
             return false;
-        if (!Modifier.isPublic(interfaceClass.getModifiers()) &&
-            !Introspector.ALLOW_NONPUBLIC_MBEAN) {
+        if (!Modifier.isPublic(interfaceClass.getModifiers())) {
             return false;
         }
         MXBean a = interfaceClass.getAnnotation(MXBean.class);

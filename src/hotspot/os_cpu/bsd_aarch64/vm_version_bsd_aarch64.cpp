@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -68,7 +67,8 @@ void VM_Version::get_os_cpu_info() {
   // 2) ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
   //    See the Arm ARM, section "ID_AA64PFR0_EL1, AArch64 Processor Feature
   //    Register 0".
-  _features = CPU_FP | CPU_ASIMD;
+  set_feature(CPU_FP);
+  set_feature(CPU_ASIMD);
 
   // All Apple-darwin Arm processors have AES, PMULL, SHA1 and SHA2.
   // See https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm/commpage/commpage.c#L412
@@ -76,22 +76,28 @@ void VM_Version::get_os_cpu_info() {
   // these four CPU features, e.g., "hw.optional.arm.FEAT_AES", but the
   // corresponding string names are not available before xnu-8019 version.
   // Hence, assertions are omitted considering backward compatibility.
-  _features |= CPU_AES | CPU_PMULL | CPU_SHA1 | CPU_SHA2;
+  set_feature(CPU_AES);
+  set_feature(CPU_PMULL);
+  set_feature(CPU_SHA1);
+  set_feature(CPU_SHA2);
 
   if (cpu_has("hw.optional.armv8_crc32")) {
-    _features |= CPU_CRC32;
+    set_feature(CPU_CRC32);
   }
   if (cpu_has("hw.optional.arm.FEAT_LSE") ||
       cpu_has("hw.optional.armv8_1_atomics")) {
-    _features |= CPU_LSE;
+    set_feature(CPU_LSE);
   }
   if (cpu_has("hw.optional.arm.FEAT_SHA512") ||
       cpu_has("hw.optional.armv8_2_sha512")) {
-    _features |= CPU_SHA512;
+    set_feature(CPU_SHA512);
   }
   if (cpu_has("hw.optional.arm.FEAT_SHA3") ||
       cpu_has("hw.optional.armv8_2_sha3")) {
-    _features |= CPU_SHA3;
+    set_feature(CPU_SHA3);
+  }
+  if (cpu_has("hw.optional.arm.FEAT_SB")) {
+    set_feature(CPU_SB);
   }
 
   int cache_line_size;

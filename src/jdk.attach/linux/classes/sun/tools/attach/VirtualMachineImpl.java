@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.util.Optional;
+
 import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import sun.jvmstat.monitor.MonitoredHost;
 
 /*
  * Linux implementation of HotSpotVirtualMachine
@@ -56,6 +60,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static final Path ROOT_TMP = Path.of("root/tmp");
 
     String socket_path;
+    private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
     /**
      * Attaches to the target VM
@@ -122,14 +127,18 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // bogus process
         checkPermissions(socket_path);
 
-        // Check that we can connect to the process
-        // - this ensures we throw the permission denied error now rather than
-        // later when we attempt to enqueue a command.
-        int s = socket();
-        try {
-            connect(s, socket_path);
-        } finally {
-            close(s);
+        if (isAPIv2Enabled()) {
+            props = getDefaultProps();
+        } else {
+            // Check that we can connect to the process
+            // - this ensures we throw the permission denied error now rather than
+            // later when we attempt to enqueue a command.
+            int s = socket();
+            try {
+                connect(s, socket_path);
+            } finally {
+                close(s);
+            }
         }
     }
 
@@ -144,14 +153,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
     }
 
-    // protocol version
-    private static final String PROTOCOL_VERSION = "1";
-
     /**
      * Execute the given command in the target VM.
      */
     InputStream execute(String cmd, Object ... args) throws AgentLoadException, IOException {
-        assert args.length <= 3;                // includes null
         checkNulls(args);
 
         // did we detach?
@@ -175,18 +180,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         IOException ioe = null;
 
         // connected - write request
-        // <ver> <cmd> <args...>
         try {
-            writeString(s, PROTOCOL_VERSION);
-            writeString(s, cmd);
-
-            for (int i = 0; i < 3; i++) {
-                if (i < args.length && args[i] != null) {
-                    writeString(s, (String)args[i]);
-                } else {
-                    writeString(s, "");
-                }
-            }
+            SocketOutputStream writer = new SocketOutputStream(s);
+            writeCommand(writer, props, cmd, args);
         } catch (IOException x) {
             ioe = x;
         }
@@ -200,6 +196,17 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         // Return the input stream so that the command output can be read
         return sis;
+    }
+
+    private static class SocketOutputStream implements AttachOutputStream {
+        private int fd;
+        public SocketOutputStream(int fd) {
+            this.fd = fd;
+        }
+        @Override
+        public void write(byte[] buffer, int offset, int length) throws IOException {
+            VirtualMachineImpl.write(fd, buffer, offset, length);
+        }
     }
 
     /*
@@ -223,7 +230,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // Return the socket file for the given process.
     private File findSocketFile(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        return new File(findTargetProcessTmpDirectory(pid, ns_pid), ".java_pid" + ns_pid);
+        return new File(findTargetProcessTmpDirectory(pid), ".java_pid" + ns_pid);
     }
 
     // On Linux a simple handshake is used to start the attach mechanism
@@ -238,14 +245,14 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Do not canonicalize the file path, or we will fail to attach to a VM in a container.
             f.createNewFile();
         } catch (IOException _) {
-            f = new File(findTargetProcessTmpDirectory(pid, ns_pid), fn.toString());
+            f = new File(findTargetProcessTmpDirectory(pid), fn.toString());
             f.createNewFile();
         }
         return f;
     }
 
-    private String findTargetProcessTmpDirectory(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
+    private String findTargetProcessTmpDirectory(long pid) throws AttachNotSupportedException {
+        final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
         /* We need to handle at least 4 different cases:
          * 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
@@ -256,35 +263,44 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
          * 4. Caller and target processes share neither PID namespace nor root filesystem (host to container)
          *
          * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared
-         * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
-         * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not,
-         * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
-         * as that of the intended target (in its * pid ns).
+         * with the target/attachee process, so we should check whether /tmp on both is same. This method would throw
+         * AttachNotSupportedException if they are different because we cannot make a connection with target VM.
          *
-         * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
-         *
-         * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
+         * In addition, we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
          * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to
          * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
-         *
-         * note that if pid == ns_pid we are in a shared pid ns with the target and may (potentially) share /tmp
          */
 
-        return (Files.isWritable(procPidRoot) ? procPidRoot : TMPDIR).toString();
-    }
-
-    /*
-     * Write/sends the given to the target VM. String is transmitted in
-     * UTF-8 encoding.
-     */
-    private void writeString(int fd, String s) throws IOException {
-        if (s.length() > 0) {
-            byte[] b = s.getBytes(UTF_8);
-            VirtualMachineImpl.write(fd, b, 0, b.length);
+        try {
+            if (Files.isWritable(tmpOnProcPidRoot)) {
+                return tmpOnProcPidRoot.toString();
+            } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
+                return TMPDIR.toString();
+            } else {
+                throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+            }
+        } catch (IOException ioe) {
+            try {
+                boolean found = MonitoredHost.getMonitoredHost("//localhost")
+                                             .activeVms()
+                                             .stream()
+                                             .anyMatch(i -> pid == i.intValue());
+                if (found) {
+                    // We can use /tmp because target process is on same host
+                    // even if we cannot access /proc/<PID>/root.
+                    // The process with capsh/setcap would fall this pattern.
+                    return TMPDIR.toString();
+                } else {
+                    throw new AttachNotSupportedException("Unable to access the filesystem of the target process", ioe);
+                }
+            } catch (AttachNotSupportedException e) {
+                // AttachNotSupportedException happened in above should go through
+                throw e;
+            } catch (Exception e) {
+                // Other exceptions would be wrapped with AttachNotSupportedException
+                throw new AttachNotSupportedException("Unable to access the filesystem of the target process", e);
+            }
         }
-        byte b[] = new byte[1];
-        b[0] = 0;
-        write(fd, b, 0, 1);
     }
 
     // Return the inner most namespaced PID if there is one,
@@ -369,7 +385,11 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         if (okToSendQuit) {
             sendQuitTo(pid);
         } else if (throwIfNotReady) {
-            final var cmdline = Files.lines(procPid.resolve("cmdline")).findFirst();
+            Optional<String> cmdline = Optional.empty();
+
+            try (final var clf = Files.lines(procPid.resolve("cmdline"))) {
+                cmdline = clf.findFirst();
+            }
 
             var cmd = "null"; // default
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -41,8 +41,8 @@ inline void inc_stat_counter(volatile julong* dest, julong add_value) {
 #ifdef _LP64
   *dest += add_value;
 #else
-  julong value = Atomic::load(dest);
-  Atomic::store(dest, value + add_value);
+  julong value = AtomicAccess::load(dest);
+  AtomicAccess::store(dest, value + add_value);
 #endif
 }
 #endif
@@ -58,7 +58,7 @@ template <class E>
 E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MemTag mem_tag) {
   size_t size = size_for(length);
 
-  char* addr = os::reserve_memory(size, !ExecMem, mem_tag);
+  char* addr = os::reserve_memory(size, mem_tag);
   if (addr == nullptr) {
     return nullptr;
   }
@@ -75,7 +75,7 @@ template <class E>
 E* MmapArrayAllocator<E>::allocate(size_t length, MemTag mem_tag) {
   size_t size = size_for(length);
 
-  char* addr = os::reserve_memory(size, !ExecMem, mem_tag);
+  char* addr = os::reserve_memory(size, mem_tag);
   if (addr == nullptr) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }

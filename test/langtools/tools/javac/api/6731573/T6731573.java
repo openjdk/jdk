@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,9 @@ public class T6731573 extends ToolTester {
         if (sourceLine.optValue != null)
             options.add(sourceLine.optValue);
         task = tool.getTask(pw, fm, null, options, null, compilationUnits);
-        task.call();
+        if (task.call()) {
+            throw new AssertionError("test compilation was expected to fail");
+        }
         checkErrorLine(pw.toString(),
                 diagType.shouldDisplaySource(sourceLine),
                 options);

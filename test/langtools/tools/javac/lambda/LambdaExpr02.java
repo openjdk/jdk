@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *  basic test for simple lambda expressions in multiple scopes
  * @author  Brian Goetz
  * @author  Maurizio Cimadamore
- * @run main LambdaExpr01
+ * @run main LambdaExpr02
  */
 
 public class LambdaExpr02 {

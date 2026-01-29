@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
  * @test
  * @summary Test passing of Homogeneous Float Aggregates.
  *
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHFA
+ * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestHFA
  */
 
 import java.lang.foreign.*;

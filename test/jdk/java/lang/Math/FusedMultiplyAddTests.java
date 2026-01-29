@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4851642 8253409
+ * @bug 4851642 8253409 8362207
  * @summary Tests for Math.fusedMac and StrictMath.fusedMac.
  * @build Tests
  * @build FusedMultiplyAddTests
@@ -352,8 +352,9 @@ public class FusedMultiplyAddTests {
             {1.0f+Math.ulp(1.0f), 1.0f+Math.ulp(1.0f), -1.0f-2.0f*Math.ulp(1.0f),
              Math.ulp(1.0f)*Math.ulp(1.0f)},
 
-            // Double-rounding if done in double precision
-            {0x1.fffffep23f, 0x1.000004p28f, 0x1.fep5f, 0x1.000002p52f}
+            // Double-rounding if done in double precision and/or double fma
+            {0x1.fffffep23f, 0x1.000004p28f, 0x1.fep5f, 0x1.000002p52f},
+            {0x1.001p0f,     0x1.001p0f,     0x1p-100f, 0x1.002002p0f},
         };
 
         for (float[] testCase: testCases)

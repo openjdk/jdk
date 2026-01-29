@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,7 +530,7 @@ class ThreadFlockTest {
     }
 
     /**
-     * Test awaitAll with interrupt status set, should interrupt thread.
+     * Test awaitAll with interrupted status set, should interrupt thread.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -550,17 +550,17 @@ class ThreadFlockTest {
             Thread thread = factory.newThread(awaitLatch);
             flock.start(thread);
 
-            // invoke awaitAll with interrupt status set.
+            // invoke awaitAll with interrupted status set.
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll();
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
-            // invoke awaitAll(Duration) with interrupt status set.
+            // invoke awaitAll(Duration) with interrupted status set.
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
@@ -568,7 +568,7 @@ class ThreadFlockTest {
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -609,7 +609,7 @@ class ThreadFlockTest {
                 flock.awaitAll();
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -620,7 +620,7 @@ class ThreadFlockTest {
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -751,51 +751,6 @@ class ThreadFlockTest {
     }
 
     /**
-     * Test wakeup is flock confined.
-     */
-    @ParameterizedTest
-    @MethodSource("factories")
-    void testWakeupConfined(ThreadFactory factory) throws Exception {
-        try (var flock = ThreadFlock.open(null)) {
-            // thread in flock
-            testWakeupConfined(flock, task -> {
-                Thread thread = factory.newThread(task);
-                return flock.start(thread);
-            });
-
-            // thread not in flock
-            testWakeupConfined(flock, task -> {
-                Thread thread = factory.newThread(task);
-                thread.start();
-                return thread;
-            });
-        }
-    }
-
-    /**
-     * Test that a thread created with the given factory cannot wakeup the
-     * given flock.
-     */
-    private void testWakeupConfined(ThreadFlock flock,
-                                    Function<Runnable, Thread> factory) throws Exception {
-        var exception = new AtomicReference<Exception>();
-        Thread thread = factory.apply(() -> {
-            try {
-                flock.wakeup();
-            } catch (Exception e) {
-                exception.set(e);
-            }
-        });
-        thread.join();
-        Throwable cause = exception.get();
-        if (flock.containsThread(thread)) {
-            assertNull(cause);
-        } else {
-            assertTrue(cause instanceof WrongThreadException);
-        }
-    }
-
-    /**
      * Test close with no threads running.
      */
     @Test
@@ -886,7 +841,7 @@ class ThreadFlockTest {
     }
 
     /**
-     * Test close with interrupt status set, should not interrupt threads.
+     * Test close with interrupted status set, should not interrupt threads.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -931,59 +886,6 @@ class ThreadFlockTest {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
         assertNull(exception.get());
-    }
-
-    /**
-     * Test shutdown is confined to threads in the flock.
-     */
-    @ParameterizedTest
-    @MethodSource("factories")
-    void testShutdownConfined(ThreadFactory factory) throws Exception {
-        try (var flock = ThreadFlock.open(null)) {
-            // thread in flock
-            testShutdownConfined(flock, task -> {
-                Thread thread = factory.newThread(task);
-                return flock.start(thread);
-            });
-
-            // thread in flock
-            try (var flock2 = ThreadFlock.open(null)) {
-                testShutdownConfined(flock, task -> {
-                    Thread thread = factory.newThread(task);
-                    return flock2.start(thread);
-                });
-            }
-
-            // thread not contained in flock
-            testShutdownConfined(flock, task -> {
-                Thread thread = factory.newThread(task);
-                thread.start();
-                return thread;
-            });
-        }
-    }
-
-    /**
-     * Test that a thread created with the given factory cannot shut down the
-     * given flock.
-     */
-    private void testShutdownConfined(ThreadFlock flock,
-                                      Function<Runnable, Thread> factory) throws Exception {
-        var exception = new AtomicReference<Exception>();
-        Thread thread = factory.apply(() -> {
-            try {
-                flock.shutdown();
-            } catch (Exception e) {
-                exception.set(e);
-            }
-        });
-        thread.join();
-        Throwable cause = exception.get();
-        if (flock.containsThread(thread)) {
-            assertNull(cause);
-        } else {
-            assertTrue(cause instanceof WrongThreadException);
-        }
     }
 
     /**

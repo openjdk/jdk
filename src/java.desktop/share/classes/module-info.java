@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ module java.desktop {
     requires transitive java.datatransfer;
     requires transitive java.xml;
 
-    exports java.applet;
     exports java.awt;
     exports java.awt.color;
     exports java.awt.desktop;
@@ -89,6 +88,7 @@ module java.desktop {
     exports javax.print.attribute;
     exports javax.print.attribute.standard;
     exports javax.print.event;
+    exports javax.sound;
     exports javax.sound.midi;
     exports javax.sound.midi.spi;
     exports javax.sound.sampled;

@@ -87,7 +87,7 @@ using OT::Layout::GPOS;
 bool
 hb_ot_layout_has_kerning (hb_face_t *face)
 {
-  return face->table.kern->has_data ();
+  return face->table.kern->table->has_data ();
 }
 
 /**
@@ -103,7 +103,7 @@ hb_ot_layout_has_kerning (hb_face_t *face)
 bool
 hb_ot_layout_has_machine_kerning (hb_face_t *face)
 {
-  return face->table.kern->has_state_machine ();
+  return face->table.kern->table->has_state_machine ();
 }
 
 /**
@@ -123,7 +123,7 @@ hb_ot_layout_has_machine_kerning (hb_face_t *face)
 bool
 hb_ot_layout_has_cross_kerning (hb_face_t *face)
 {
-  return face->table.kern->has_cross_stream ();
+  return face->table.kern->table->has_cross_stream ();
 }
 
 void
@@ -131,13 +131,15 @@ hb_ot_layout_kern (const hb_ot_shape_plan_t *plan,
                    hb_font_t *font,
                    hb_buffer_t  *buffer)
 {
-  hb_blob_t *blob = font->face->table.kern.get_blob ();
-  const AAT::kern& kern = *blob->as<AAT::kern> ();
+  auto &accel = *font->face->table.kern;
+  hb_blob_t *blob = accel.get_blob ();
 
   AAT::hb_aat_apply_context_t c (plan, font, buffer, blob);
 
   if (!buffer->message (font, "start table kern")) return;
-  kern.apply (&c);
+  c.buffer_glyph_set = accel.scratch.create_buffer_glyph_set ();
+  accel.apply (&c);
+  accel.scratch.destroy_buffer_glyph_set (c.buffer_glyph_set);
   (void) buffer->message (font, "end table kern");
 }
 #endif
@@ -246,6 +248,18 @@ OT::GDEF::is_blocklisted (hb_blob_t *blob,
     /* sha1sum: c26e41d567ed821bed997e937bc0c41435689e85  Padauk.ttf
      *  "Padauk Regular" "Version 2.5", see https://crbug.com/681813 */
     case HB_CODEPOINT_ENCODE3 (1004, 59092, 14836):
+    /* 88d2006ca084f04af2df1954ed714a8c71e8400f  Courier New.ttf from macOS 15 */
+    case HB_CODEPOINT_ENCODE3 (588, 5078, 14418):
+    /* 608e3ebb6dd1aee521cff08eb07d500a2c59df68  Courier New Bold.ttf from macOS 15 */
+    case HB_CODEPOINT_ENCODE3 (588, 5078, 14238):
+    /* d13221044ff054efd78f1cd8631b853c3ce85676  cour.ttf from Windows 10 */
+    case HB_CODEPOINT_ENCODE3 (894, 17162, 33960):
+    /* 68ed4a22d8067fcf1622ac6f6e2f4d3a2e3ec394  courbd.ttf from Windows 10 */
+    case HB_CODEPOINT_ENCODE3 (894, 17154, 34472):
+    /* 4cdb0259c96b7fd7c103821bb8f08f7cc6b211d7  cour.ttf from Windows 8.1 */
+    case HB_CODEPOINT_ENCODE3 (816, 7868, 17052):
+    /* 920483d8a8ed37f7f0afdabbe7f679aece7c75d8  courbd.ttf from Windows 8.1 */
+    case HB_CODEPOINT_ENCODE3 (816, 7868, 17138):
       return true;
   }
   return false;
@@ -1443,8 +1457,12 @@ hb_ot_layout_table_find_feature_variations (hb_face_t    *face,
                                             unsigned int *variations_index /* out */)
 {
   const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
+  const OT::GDEF &gdef = *face->table.GDEF->table;
 
-  return g.find_variations_index (coords, num_coords, variations_index);
+  auto instancer = OT::ItemVarStoreInstancer(&gdef.get_var_store(), nullptr,
+                                             hb_array (coords, num_coords));
+
+  return g.find_variations_index (coords, num_coords, variations_index, &instancer);
 }
 
 
@@ -1907,9 +1925,10 @@ apply_forward (OT::hb_ot_apply_context_t *c,
   while (buffer->idx < buffer->len && buffer->successful)
   {
     bool applied = false;
-    if (accel.digest.may_have (buffer->cur().codepoint) &&
-        (buffer->cur().mask & c->lookup_mask) &&
-        c->check_glyph_property (&buffer->cur(), c->lookup_props))
+    auto &cur = buffer->cur();
+    if (accel.digest.may_have (cur.codepoint) &&
+        (cur.mask & c->lookup_mask) &&
+        c->check_glyph_property (&cur, c->lookup_props))
      {
        applied = accel.apply (c, subtable_count, use_cache);
      }
@@ -1935,9 +1954,10 @@ apply_backward (OT::hb_ot_apply_context_t *c,
   hb_buffer_t *buffer = c->buffer;
   do
   {
-    if (accel.digest.may_have (buffer->cur().codepoint) &&
-        (buffer->cur().mask & c->lookup_mask) &&
-        c->check_glyph_property (&buffer->cur(), c->lookup_props))
+    auto &cur = buffer->cur();
+    if (accel.digest.may_have (cur.codepoint) &&
+        (cur.mask & c->lookup_mask) &&
+        c->check_glyph_property (&cur, c->lookup_props))
       ret |= accel.apply (c, subtable_count, false);
 
     /* The reverse lookup doesn't "advance" cursor (for good reason). */
@@ -1995,7 +2015,11 @@ inline void hb_ot_map_t::apply (const Proxy &proxy,
 {
   const unsigned int table_index = proxy.table_index;
   unsigned int i = 0;
-  OT::hb_ot_apply_context_t c (table_index, font, buffer, proxy.accel.get_blob ());
+
+  auto *font_data = font->data.ot.get ();
+  auto *var_store_cache = font_data == HB_SHAPER_DATA_SUCCEEDED ? nullptr : (OT::ItemVariationStore::cache_t *) font_data;
+
+  OT::hb_ot_apply_context_t c (table_index, font, buffer, proxy.accel.get_blob (), var_store_cache);
   c.set_recurse_func (Proxy::Lookup::template dispatch_recurse_func<OT::hb_ot_apply_context_t>);
 
   for (unsigned int stage_index = 0; stage_index < stages[table_index].length; stage_index++)
@@ -2017,7 +2041,7 @@ inline void hb_ot_map_t::apply (const Proxy &proxy,
        * (plus some past glyphs).
        *
        * Only try applying the lookup if there is any overlap. */
-      if (accel->digest.may_have (c.digest))
+      if (accel->digest.may_intersect (c.digest))
       {
         c.set_lookup_index (lookup_index);
         c.set_lookup_mask (lookup.mask, false);
@@ -2043,7 +2067,7 @@ inline void hb_ot_map_t::apply (const Proxy &proxy,
       if (stage->pause_func (plan, font, buffer))
       {
         /* Refresh working buffer digest since buffer changed. */
-        c.digest = buffer->digest ();
+        buffer->collect_codepoints (c.digest);
       }
     }
   }
@@ -2127,7 +2151,7 @@ hb_ot_layout_get_font_extents (hb_font_t         *font,
                                hb_tag_t           language_tag,
                                hb_font_extents_t *extents)
 {
-  hb_position_t min, max;
+  hb_position_t min = 0, max = 0;
   if (font->face->table.BASE->get_min_max (font, direction, script_tag, language_tag, HB_TAG_NONE,
                                            &min, &max))
   {
@@ -2608,7 +2632,8 @@ struct hb_get_glyph_alternates_dispatch_t :
  * @alternate_glyphs: (out caller-allocates) (array length=alternate_count): A glyphs buffer.
  *                    Alternate glyphs associated with the glyph id.
  *
- * Fetches alternates of a glyph from a given GSUB lookup index.
+ * Fetches alternates of a glyph from a given GSUB lookup index. Note that for one-to-one GSUB
+ * glyph substitutions, this function fetches the substituted glyph.
  *
  * Return value: Total number of alternates found in the specific lookup index for the given glyph id.
  *

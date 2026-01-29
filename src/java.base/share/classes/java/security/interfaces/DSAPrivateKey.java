@@ -52,7 +52,6 @@ public interface DSAPrivateKey extends DSAKey, java.security.PrivateKey {
     * ineffectual. Do not use; no replacement.
     */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
    long serialVersionUID = 7776497482533790279L;
 

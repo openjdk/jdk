@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import sun.awt.util.ThreadGroupUtils;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
-public class PrintServiceLookupProvider extends PrintServiceLookup
+public final class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
     /* Remind: the current implementation is static, as its assumed
@@ -209,13 +209,8 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * This isn't required by the API and there's a risk doing this will
      * lead people to assume its guaranteed.
      */
+    @Override
     public synchronized PrintService[] getPrintServices() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
-
         if (printServices == null || !pollServices) {
             refreshServices();
         }
@@ -547,13 +542,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
      * If service attributes are specified then there must be additional
      * filtering.
      */
+    @Override
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         PrintRequestAttributeSet requestSet = null;
         PrintServiceAttributeSet serviceSet = null;
 
@@ -610,25 +601,16 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     /*
      * return empty array as don't support multi docs
      */
+    @Override
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         return new MultiDocPrintService[0];
     }
 
 
+    @Override
     public synchronized PrintService getDefaultPrintService() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
-
         // clear defaultPrintService
         defaultPrintService = null;
         String psuri = null;
@@ -687,6 +669,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return defaultPrintService;
     }
 
+    @Override
     public synchronized void
         getServicesInbackground(BackgroundLookupListener listener) {
         if (printServices != null) {
@@ -717,6 +700,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
+    @Override
     public void run() {
         PrintService[] services = getPrintServices();
         synchronized (this) {
@@ -892,12 +876,16 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                     FileReader reader = new FileReader(f);
                     bufferedReader = new BufferedReader(reader);
                     String line;
+                    results = new ArrayList<>();
                     while ((line = bufferedReader.readLine())
                            != null) {
                         results.add(line);
                     }
                 }
-            } finally {
+            } catch (Exception e) {
+                // Print exception for tracking printer command errors
+                IPPPrintService.debug_println("Printer command error: " + e);
+           } finally {
                 f.delete();
                 // promptly close all streams.
                 if (bufferedReader != null) {
@@ -919,7 +907,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
-    private class PrinterChangeListener implements Runnable {
+    private final class PrinterChangeListener implements Runnable {
 
         @Override
         public void run() {

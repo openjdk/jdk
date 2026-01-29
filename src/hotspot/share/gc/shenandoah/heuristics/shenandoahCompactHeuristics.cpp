@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +23,9 @@
  *
  */
 
-#include "precompiled.hpp"
 
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
@@ -38,6 +37,7 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahUncommit);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahAlwaysClearSoftRefs);
+  SHENANDOAH_ERGO_ENABLE_FLAG(UseStringDeduplication);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahAllocationThreshold,  10);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold,   100);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUncommitDelay,        1000);
@@ -46,42 +46,43 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
 }
 
 bool ShenandoahCompactHeuristics::should_start_gc() {
-  size_t max_capacity = _space_info->max_capacity();
-  size_t capacity = _space_info->soft_max_capacity();
-  size_t available = _space_info->available();
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t available = _space_info->soft_mutator_available();
+  size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
 
-  // Make sure the code below treats available without the soft tail.
-  size_t soft_tail = max_capacity - capacity;
-  available = (available > soft_tail) ? (available - soft_tail) : 0;
+  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
+                "allocated_since_gc_start: "  PROPERFMT,
+                PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(bytes_allocated));
 
   size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < min_threshold) {
-    log_trigger("Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+    log_trigger("Free (Soft) (%zu%s) is below minimum threshold (%zu%s)",
                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    accept_trigger();
     return true;
   }
 
-  size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
   if (bytes_allocated > threshold_bytes_allocated) {
-    log_trigger("Allocated since last cycle (" SIZE_FORMAT "%s) is larger than allocation threshold (" SIZE_FORMAT "%s)",
+    log_trigger("Allocated since last cycle (%zu%s) is larger than allocation threshold (%zu%s)",
                 byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),
                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
+    accept_trigger();
     return true;
   }
 
   return ShenandoahHeuristics::should_start_gc();
 }
 
-void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                        RegionData* data, size_t size,
-                                                                        size_t actual_free) {
+size_t ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                          RegionData* data, size_t size,
+                                                                          size_t actual_free) {
   // Do not select too large CSet that would overflow the available free space
   size_t max_cset = actual_free * 3 / 4;
 
-  log_info(gc, ergo)("CSet Selection. Actual Free: " SIZE_FORMAT "%s, Max CSet: " SIZE_FORMAT "%s",
+  log_info(gc, ergo)("CSet Selection. Actual Free: %zu%s, Max CSet: %zu%s",
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
                      byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset));
 
@@ -96,4 +97,5 @@ void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(Shenando
       cset->add_region(r);
     }
   }
+  return 0;
 }

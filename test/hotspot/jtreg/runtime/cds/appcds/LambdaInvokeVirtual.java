@@ -61,13 +61,14 @@ public class LambdaInvokeVirtual {
             .setArchiveName(archiveName);
         CDSTestUtils.createArchiveAndCheck(opts);
 
-        // run with archive
+        // run with archive; make sure the lambda is loaded from the archive
         CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", appJar)
+            .addPrefix("-cp", appJar, "-Xlog:class+load")
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
+        output.shouldMatch("LambdaInvokeVirtualApp[$][$]Lambda/.*source: shared objects file");
         output.shouldHaveExitValue(0);
     }
 }

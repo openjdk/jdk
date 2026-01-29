@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 #ifndef SHARE_CLASSFILE_MODULEENTRY_HPP
 #define SHARE_CLASSFILE_MODULEENTRY_HPP
 
+#include "cds/aotGrowableArray.hpp"
 #include "jni.h"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -53,7 +55,7 @@ class ModuleClosure;
 // A ModuleEntry describes a module that has been defined by a call to JVM_DefineModule.
 // It contains:
 //   - Symbol* containing the module's name.
-//   - pointer to the java.lang.Module for this module.
+//   - pointer to the java.lang.Module: the representation of this module as a Java object
 //   - pointer to the java.security.ProtectionDomain shared by classes defined to this module.
 //   - ClassLoaderData*, class loader of this module.
 //   - a growable array containing other module entries that this module can read.
@@ -63,16 +65,13 @@ class ModuleClosure;
 // data structure.  This lock must be taken on all accesses to either table.
 class ModuleEntry : public CHeapObj<mtModule> {
 private:
-  OopHandle _module;                   // java.lang.Module
+  OopHandle _module_handle;            // java.lang.Module
   OopHandle _shared_pd;                // java.security.ProtectionDomain, cached
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
   ClassLoaderData* _loader_data;
+  AOTGrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
 
-  union {
-    GrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
-    Array<ModuleEntry*>* _archived_reads; // List of readable modules stored in the CDS archive
-  };
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
   CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
@@ -81,7 +80,6 @@ private:
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
-  DEBUG_ONLY(bool _reads_is_archived);
   CDS_JAVA_HEAP_ONLY(int _archived_module_index;)
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
@@ -96,9 +94,9 @@ public:
   ~ModuleEntry();
 
   Symbol*          name() const                        { return _name; }
-  oop              module() const;
-  OopHandle        module_handle() const               { return _module; }
-  void             set_module(OopHandle j)             { _module = j; }
+  oop              module_oop() const;
+  OopHandle        module_handle() const               { return _module_handle; }
+  void             set_module_handle(OopHandle j)      { _module_handle = j; }
 
   // The shared ProtectionDomain reference is set once the VM loads a shared class
   // originated from the current Module. The referenced ProtectionDomain object is
@@ -120,22 +118,18 @@ public:
 
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
-  GrowableArray<ModuleEntry*>* reads() const {
-    assert(!_reads_is_archived, "sanity");
+  AOTGrowableArray<ModuleEntry*>* reads() const {
     return _reads;
   }
-  void set_reads(GrowableArray<ModuleEntry*>* r) {
+  void set_reads(AOTGrowableArray<ModuleEntry*>* r) {
     _reads = r;
-    DEBUG_ONLY(_reads_is_archived = false);
   }
-  Array<ModuleEntry*>* archived_reads() const {
-    assert(_reads_is_archived, "sanity");
-    return _archived_reads;
+  void pack_reads() {
+    if (_reads != nullptr) {
+      _reads->shrink_to_fit();
+    }
   }
-  void set_archived_reads(Array<ModuleEntry*>* r) {
-    _archived_reads = r;
-    DEBUG_ONLY(_reads_is_archived = true);
-  }
+
   void             add_read(ModuleEntry* m);
   void             set_read_walk_required(ClassLoaderData* m_loader_data);
 
@@ -185,7 +179,18 @@ public:
   static ModuleEntry* create_boot_unnamed_module(ClassLoaderData* cld);
   static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
 
-  void print(outputStream* st = tty);
+  // Note caller requires ResourceMark
+  const char* name_as_C_string() const {
+    return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
+  }
+
+  // methods required by MetaspaceClosure
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(ModuleEntry)); }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::ModuleEntryType; }
+  static bool is_read_only_by_default() { return false; }
+
+  void print(outputStream* st = tty) const;
   void verify();
 
   CDS_ONLY(int shared_path_index() { return _shared_path_index;})
@@ -193,18 +198,12 @@ public:
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
 #if INCLUDE_CDS_JAVA_HEAP
-  void iterate_symbols(MetaspaceClosure* closure);
-  ModuleEntry* allocate_archived_entry() const;
-  void init_as_archived_entry();
-  static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
-  bool has_been_archived();
-  static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
-  static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
+  bool should_be_archived() const;
+  void remove_unshareable_info();
   void load_from_archive(ClassLoaderData* loader_data);
+  void preload_archived_oops();
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
-  void update_oops_in_archived_module(int root_oop_index);
-  static void verify_archived_module_entries() PRODUCT_RETURN;
 #endif
 };
 
@@ -229,7 +228,7 @@ class ModuleClosure: public StackObj {
 class ModuleEntryTable : public CHeapObj<mtModule> {
 private:
   static ModuleEntry* _javabase_module;
-  ResourceHashtable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
+  HashTable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
                     SymbolHandle::compute_hash> _table;
 
 public:
@@ -259,7 +258,7 @@ public:
   }
 
   static bool javabase_defined() { return ((_javabase_module != nullptr) &&
-                                           (_javabase_module->module() != nullptr)); }
+                                           (_javabase_module->module_oop() != nullptr)); }
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
   static void patch_javabase_entries(JavaThread* current, Handle module_handle);
 
@@ -270,9 +269,7 @@ public:
   void verify();
 
 #if INCLUDE_CDS_JAVA_HEAP
-  void iterate_symbols(MetaspaceClosure* closure);
-  Array<ModuleEntry*>* allocate_archived_entries();
-  void init_archived_entries(Array<ModuleEntry*>* archived_modules);
+  Array<ModuleEntry*>* build_aot_table(ClassLoaderData* loader_data, TRAPS);
   void load_archived_entries(ClassLoaderData* loader_data,
                              Array<ModuleEntry*>* archived_modules);
   void restore_archived_oops(ClassLoaderData* loader_data,

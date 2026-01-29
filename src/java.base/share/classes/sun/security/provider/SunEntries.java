@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.HashMap;
@@ -39,7 +37,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetBooleanAction;
 
 import static sun.security.util.SecurityProviderConstants.getAliases;
 
@@ -267,6 +264,10 @@ public final class SunEntries {
                 "sun.security.provider.SHA3$SHA384", attrs);
         addWithAlias(p, "MessageDigest", "SHA3-512",
                 "sun.security.provider.SHA3$SHA512", attrs);
+        addWithAlias(p, "MessageDigest", "SHAKE128-256",
+                "sun.security.provider.SHA3$SHAKE128Hash", attrs);
+        addWithAlias(p, "MessageDigest", "SHAKE256-512",
+                "sun.security.provider.SHA3$SHAKE256Hash", attrs);
 
         /*
          * Certificates
@@ -345,29 +346,24 @@ public final class SunEntries {
     private static final String PROP_RNDSOURCE = "securerandom.source";
 
     private static final boolean useLegacyDSA =
-        GetBooleanAction.privilegedGetProperty
-            ("jdk.security.legacyDSAKeyPairGenerator");
+        Boolean.getBoolean("jdk.security.legacyDSAKeyPairGenerator");
 
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";
 
-    @SuppressWarnings("removal")
-    private static final String seedSource = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
+    private static final String seedSource = getOverridableSeedSource();
 
-            @Override
-            public String run() {
-                String egdSource = System.getProperty(PROP_EGD, "");
-                if (egdSource.length() != 0) {
-                    return egdSource;
-                }
-                egdSource = Security.getProperty(PROP_RNDSOURCE);
-                if (egdSource == null) {
-                    return "";
-                }
-                return egdSource;
-            }
-        });
+    private static String getOverridableSeedSource() {
+        String egdSource = System.getProperty(PROP_EGD, "");
+        if (egdSource.length() != 0) {
+            return egdSource;
+        }
+        egdSource = Security.getProperty(PROP_RNDSOURCE);
+        if (egdSource == null) {
+            return "";
+        }
+        return egdSource;
+    }
 
     static {
         DEF_SECURE_RANDOM_ALGO  = (NativePRNG.isAvailable() &&
@@ -385,8 +381,6 @@ public final class SunEntries {
      * which is less strict on syntax. If we encounter a
      * URISyntaxException we make a best effort for backwards
      * compatibility. e.g. space character in deviceName string.
-     *
-     * Method called within PrivilegedExceptionAction block.
      *
      * Moved from SeedGenerator to avoid initialization problems with
      * signed providers.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.util.Arrays;
+
 import static sun.nio.cs.CharsetMapping.*;
 
 public class SingleByte
@@ -201,6 +201,16 @@ public class SingleByte
             return encode(c) != UNMAPPABLE_ENCODING;
         }
 
+        public boolean canEncode(CharSequence cs) {
+            int length = cs.length();
+            for (int i = 0; i < length; i++) {
+                if (!canEncode(cs.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public boolean isLegalReplacement(byte[] repl) {
             return ((repl.length == 1 && repl[0] == (byte)'?') ||
                     super.isLegalReplacement(repl));
@@ -217,7 +227,7 @@ public class SingleByte
             int len = Math.min(dl - dp, sl - sp);
 
             if (isASCIICompatible) {
-                int n = JLA.encodeASCII(sa, sp, da, dp, len);
+                int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, len);
                 sp += n;
                 dp += n;
                 len -= n;
@@ -290,32 +300,8 @@ public class SingleByte
             repl = newReplacement[0];
         }
 
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + Math.min(len, dst.length);
-            while (sp < sl) {
-                char c = src[sp++];
-                int b = encode(c);
-                if (b != UNMAPPABLE_ENCODING) {
-                    dst[dp++] = (byte)b;
-                    continue;
-                }
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                    Character.isLowSurrogate(src[sp])) {
-                    if (len > dst.length) {
-                        sl++;
-                        len--;
-                    }
-                    sp++;
-                }
-                dst[dp++] = repl;
-            }
-            return dp;
-        }
-
         @Override
-        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + Math.min(len, dst.length);
             while (sp < sl) {
                 char c = (char)(src[sp++] & 0xff);
@@ -330,8 +316,7 @@ public class SingleByte
         }
 
         @Override
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + Math.min(len, dst.length);
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);

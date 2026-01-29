@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -89,7 +88,6 @@ inline void GenericTaskQueueSet<T, MT>::print_and_reset_taskqueue_stats(const ch
     return;
   }
   Log(gc, task, stats) log;
-  ResourceMark rm;
   LogStream ls(log.trace());
 
   print_taskqueue_stats(&ls, label);
@@ -171,8 +169,7 @@ bool GenericTaskQueue<E, MT, N>::pop_local_slow(uint localBot, Age oldAge) {
   if (localBot == oldAge.top()) {
     // No competing pop_global has yet incremented "top"; we'll try to
     // install new_age, thus claiming the element.
-    Age tempAge = cmpxchg_age(oldAge, newAge);
-    if (tempAge == oldAge) {
+    if (par_set_age(oldAge, newAge)) {
       // We win.
       assert_not_underflow(localBot, age_top_relaxed());
       TASKQUEUE_STATS_ONLY(stats.record_pop_slow());
@@ -284,12 +281,12 @@ typename GenericTaskQueue<E, MT, N>::PopResult GenericTaskQueue<E, MT, N>::pop_g
   idx_t new_top = increment_index(oldAge.top());
   idx_t new_tag = oldAge.tag() + ((new_top == 0) ? 1 : 0);
   Age newAge(new_top, new_tag);
-  Age resAge = cmpxchg_age(oldAge, newAge);
+  bool result = par_set_age(oldAge, newAge);
 
   // Note that using "bottom" here might fail, since a pop_local might
   // have decremented it.
   assert_not_underflow(localBot, newAge.top());
-  return resAge == oldAge ? PopResult::Success : PopResult::Contended;
+  return result ? PopResult::Success : PopResult::Contended;
 }
 
 inline int randomParkAndMiller(int *seed0) {

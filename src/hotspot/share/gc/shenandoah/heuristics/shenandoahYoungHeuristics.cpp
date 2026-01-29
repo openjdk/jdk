@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +23,21 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
-        : ShenandoahGenerationalHeuristics(generation) {
+    : ShenandoahGenerationalHeuristics(generation) {
 }
 
 
-void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+size_t ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                       RegionData* data, size_t size,
                                                                       size_t actual_free) {
   // See comments in ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata():
@@ -50,6 +48,8 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
   // array before younger regions that typically contain more garbage. This is one reason why,
   // for example, we continue examining regions even after rejecting a region that has
   // more live data than we can evacuate.
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  bool need_to_finalize_mixed = heap->old_generation()->heuristics()->prime_collection_set(cset);
 
   // Better select garbage-first regions
   QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
@@ -58,7 +58,16 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
 
   choose_young_collection_set(cset, data, size, actual_free, cur_young_garbage);
 
-  log_cset_composition(cset);
+  // Especially when young-gen trigger is expedited in order to finish mixed evacuations, there may not be
+  // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
+  // young-gen reserve available following selection of the young-gen collection set, see if we can use
+  // this memory to expand the old-gen evacuation collection set.
+  size_t add_regions_to_old;
+  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(add_regions_to_old);
+  if (need_to_finalize_mixed) {
+    heap->old_generation()->heuristics()->finalize_mixed_evacs();
+  }
+  return add_regions_to_old;
 }
 
 void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollectionSet* cset,
@@ -66,23 +75,22 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
                                                             size_t size, size_t actual_free,
                                                             size_t cur_young_garbage) const {
 
-  auto heap = ShenandoahGenerationalHeap::heap();
+  const auto heap = ShenandoahGenerationalHeap::heap();
 
-  size_t capacity = heap->young_generation()->max_capacity();
-  size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
-  size_t ignore_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahIgnoreGarbageThreshold / 100;
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
+  const size_t capacity = heap->soft_max_capacity();
+  const size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
+  const size_t ignore_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahIgnoreGarbageThreshold / 100;
 
   // This is young-gen collection or a mixed evacuation.
   // If this is mixed evacuation, the old-gen candidate regions have already been added.
-  size_t max_cset = (size_t) (heap->young_generation()->get_evacuation_reserve() / ShenandoahEvacWaste);
   size_t cur_cset = 0;
-  size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
-  size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
+  const size_t max_cset = (size_t) (heap->young_generation()->get_evacuation_reserve() / ShenandoahEvacWaste);
+  const size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
+  const size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
 
   log_info(gc, ergo)(
-          "Adaptive CSet Selection for YOUNG. Max Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+          "Adaptive CSet Selection for YOUNG. Max Evacuation: %zu%s, Actual Free: %zu%s.",
           byte_size_in_proper_unit(max_cset), proper_unit_for_byte_size(max_cset),
           byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
@@ -91,11 +99,15 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
     if (cset->is_preselected(r->index())) {
       continue;
     }
-    if (r->age() < tenuring_threshold) {
-      size_t new_cset = cur_cset + r->get_live_data_bytes();
-      size_t region_garbage = r->garbage();
-      size_t new_garbage = cur_young_garbage + region_garbage;
-      bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
+
+    // Note that we do not add tenurable regions if they were not pre-selected.  They were not preselected
+    // because there is insufficient room in old-gen to hold their to-be-promoted live objects or because
+    // they are to be promoted in place.
+    if (!heap->is_tenurable(r)) {
+      const size_t new_cset = cur_cset + r->get_live_data_bytes();
+      const size_t region_garbage = r->garbage();
+      const size_t new_garbage = cur_young_garbage + region_garbage;
+      const bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
       assert(r->is_young(), "Only young candidates expected in the data array");
       if ((new_cset <= max_cset) && (add_regardless || (region_garbage > garbage_threshold))) {
         cur_cset = new_cset;
@@ -103,9 +115,6 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
         cset->add_region(r);
       }
     }
-    // Note that we do not add aged regions if they were not pre-selected.  The reason they were not preselected
-    // is because there is not sufficient room in old-gen to hold their to-be-promoted live objects or because
-    // they are to be promoted in place.
   }
 }
 
@@ -120,6 +129,9 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
+        // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
+        // to trigger at this time.
+        log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
         return false;
       }
     }
@@ -141,6 +153,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
     log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
+    accept_trigger();
     return true;
   }
 
@@ -150,10 +163,12 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // If concurrent weak root processing is in progress, it means the old cycle has chosen mixed collection
     // candidates, but has not completed. There is no point in trying to start the young cycle before the old
     // cycle completes.
-    log_trigger("Expedite mixed evacuation of " SIZE_FORMAT " regions", mixed_candidates);
+    log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
+    accept_trigger();
     return true;
   }
 
+  // Don't decline_trigger() here  That was done in ShenandoahAdaptiveHeuristics::should_start_gc()
   return false;
 }
 
@@ -221,4 +236,3 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   size_t evac_min_threshold = (anticipated_available > threshold)? anticipated_available - threshold: 0;
   return MIN3(evac_slack_spiking, evac_slack_avg, evac_min_threshold);
 }
-

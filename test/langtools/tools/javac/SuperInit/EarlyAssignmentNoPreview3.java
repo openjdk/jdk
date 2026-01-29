@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8334258
  * @summary Disallow early assignment if FLEXIBLE_CONSTRUCTORS preview feature is not enabled
- * @compile/fail/ref=EarlyAssignmentNoPreview3.out -XDrawDiagnostics EarlyAssignmentNoPreview3.java
+ * @compile/fail/ref=EarlyAssignmentNoPreview3.out --release 24 -XDrawDiagnostics EarlyAssignmentNoPreview3.java
  */
 public class EarlyAssignmentNoPreview3 {
 

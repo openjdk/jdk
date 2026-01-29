@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,7 @@
  * The class uses the ClassFile library to validate the contents of
  * the URLs and streams returned by the methods being tested.
  *
- * $ java \
- *      --enable-preview
- *      /path/to/CLTest.java
+ * $ java /path/to/CLTest.java
  */
 package p.q;
 
@@ -41,23 +39,42 @@ import java.net.*;
 import java.util.*;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
+import java.util.spi.ToolProvider;
 
 public class CLTest {
     public static void main(String... args) throws Exception {
         try {
-            new CLTest().run();
+            var test = new CLTest();
+            test.loadToolProviderByName(); // run first to create Tool.class
+            test.getGetResources();
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
         }
     }
 
-    void run() throws Exception {
+    void loadToolProviderByName() {
+        ServiceLoader.load(ToolProvider.class).stream()
+                .map(ServiceLoader.Provider::get)
+                .filter(toolProvider -> toolProvider.name().equals("Tool"))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    void getGetResources() throws Exception {
         String[] names = {
+            // scheme -> file:
+                "Tool.java",
+                "p/q/CLTest.java",
+                "META-INF/services/java.util.spi.ToolProvider",
+            // scheme -> sourcelauncher-memoryclassloaderNNN:
+                "Tool.class",
                 "p/q/CLTest.class",
                 "p/q/CLTest$Inner.class",
                 "p/q/CLTest2.class",
+            // scheme -> jrt:
                 "java/lang/Object.class",
+            // no scheme applicable
                 "UNKNOWN.class",
                 "UNKNOWN"
         };
@@ -102,6 +119,14 @@ public class CLTest {
             List<URL> list = new ArrayList<>();
             while (e.hasMoreElements()) {
                 list.add(e.nextElement());
+            }
+
+            if (name.contains("META-INF")) {
+                if (list.size() == 0) {
+                    error("resource not found: " + name);
+                }
+                // one or more resources found, as expected
+                return;
             }
 
             switch (list.size()) {
@@ -152,6 +177,9 @@ public class CLTest {
     }
 
     void checkClass(String name, InputStream in) throws Exception {
+        if (!name.endsWith(".class")) {
+            return; // ignore non-class resources
+        }
         ClassModel cf = ClassFile.of().parse(in.readAllBytes());
         System.err.println("    class " + cf.thisClass().asInternalName());
         if (!name.equals(cf.thisClass().asInternalName() + ".class")) {

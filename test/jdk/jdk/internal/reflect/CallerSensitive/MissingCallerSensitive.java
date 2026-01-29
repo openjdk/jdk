@@ -27,7 +27,6 @@
  * @bug 8010117
  * @summary Test CallerSensitiveFinder to find missing annotation
  * @modules java.base/jdk.internal.reflect
- * @enablePreview
  * @compile -XDignore.symbol.file MissingCallerSensitive.java
  * @build CallerSensitiveFinder
  * @run main MissingCallerSensitive

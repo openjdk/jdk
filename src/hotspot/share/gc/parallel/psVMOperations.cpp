@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -44,26 +43,22 @@ void VM_ParallelCollectForAllocation::doit() {
 
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->satisfy_failed_allocation(_word_size, _is_tlab);
-
-  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
 }
 
 static bool is_cause_full(GCCause::Cause cause) {
-  return (cause != GCCause::_gc_locker) && (cause != GCCause::_wb_young_gc)
+  return (cause != GCCause::_wb_young_gc)
          DEBUG_ONLY(&& (cause != GCCause::_scavenge_alot));
 }
 
 // Only used for System.gc() calls
 VM_ParallelGCCollect::VM_ParallelGCCollect(uint gc_count,
-                                             uint full_gc_count,
-                                             GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)) {}
+                                           uint full_gc_count,
+                                           GCCause::Cause gc_cause) :
+  VM_GC_Collect_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)) {}
 
 void VM_ParallelGCCollect::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
-  heap->try_collect_at_safepoint(_full);
+  heap->collect_at_safepoint(_full);
 }

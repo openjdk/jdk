@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
     public void doTest() {
         // initialize breakpoint
 
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeClassName());
         ReferenceType referenceType = debuggee.classByName(ClassUsingTestClass.class.getName());
 
         BreakpointRequest breakpointRequest = debuggee.makeBreakpoint(referenceType,
@@ -116,7 +117,8 @@ public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
             }
         }
 
-        ThreadReference threadReference = debuggee.threadByName(forceEarlyReturn002a.mainThreadName);
+        ThreadReference threadReference =
+            debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread", forceEarlyReturn002a.mainThreadName);
 
         try {
             if (testClassIsLoaded) {

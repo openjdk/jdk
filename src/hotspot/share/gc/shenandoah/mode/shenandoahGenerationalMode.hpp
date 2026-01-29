@@ -32,7 +32,7 @@ public:
   virtual void initialize_flags() const;
   virtual const char* name()     { return "Generational"; }
   virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return true; }
+  virtual bool is_experimental() { return false; }
   virtual bool is_generational() { return true; }
 };
 

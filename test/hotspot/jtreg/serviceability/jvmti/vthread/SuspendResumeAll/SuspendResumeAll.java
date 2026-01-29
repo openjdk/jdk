@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test id=default
  * @summary Test SuspendAllVirtualThreads/ResumeAllVirtualThreads
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @compile SuspendResumeAll.java
  * @run driver jdk.test.lib.FileInstaller . .
@@ -36,6 +37,7 @@
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @compile SuspendResumeAll.java
  * @run driver jdk.test.lib.FileInstaller . .
@@ -155,12 +157,12 @@ class TestedThread extends Thread {
         // run in a loop
         threadReady = true;
         int i = 0;
-        int n = 1000;
+        int n = 100;
         while (!shouldFinish) {
             breakpointCheck();
             if (n <= 0) {
-                n = 1000;
-                SuspendResumeAll.sleep(1);
+                n = 100;
+                SuspendResumeAll.sleep(50);
             }
             if (i > n) {
                 i = 0;

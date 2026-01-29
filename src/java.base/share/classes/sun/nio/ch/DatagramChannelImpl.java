@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1756,22 +1756,7 @@ class DatagramChannelImpl
                 registry.invalidateAll();
 
             if (!tryClose()) {
-                long reader = readerThread;
-                long writer = writerThread;
-                if (reader != 0 || writer != 0) {
-                    if (NativeThread.isVirtualThread(reader)
-                            || NativeThread.isVirtualThread(writer)) {
-                        Poller.stopPoll(fdVal);
-                    }
-                    if (NativeThread.isNativeThread(reader)
-                            || NativeThread.isNativeThread(writer)) {
-                        nd.preClose(fd);
-                        if (NativeThread.isNativeThread(reader))
-                            NativeThread.signal(reader);
-                        if (NativeThread.isNativeThread(writer))
-                            NativeThread.signal(writer);
-                    }
-                }
+                nd.preClose(fd, readerThread, writerThread);
             }
         }
     }

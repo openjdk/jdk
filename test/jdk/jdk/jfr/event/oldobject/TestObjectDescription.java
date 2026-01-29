@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,14 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires vm.gc != "Shenandoah"
  * @requires vm.flagless
  * @comment Marked as flagless until JDK-8344015 is fixed
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestObjectDescription
+ * @run main/othervm/timeout=960 -XX:TLABSize=2k jdk.jfr.event.oldobject.TestObjectDescription
  */
 public class TestObjectDescription {
 

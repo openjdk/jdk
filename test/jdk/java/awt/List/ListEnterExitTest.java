@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,23 @@ import java.awt.List;
 import java.awt.Point;
 import java.awt.Robot;
 
-import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 public class ListEnterExitTest {
     final List list = new List();
-    final MouseEnterExitListener mouseEnterExitListener = new MouseEnterExitListener();
     Frame frame;
     volatile Point p;
+
+    private static final int X_OFFSET = 30;
+    private static final int Y_OFFSET = 40;
+    private static final int LATCH_TIMEOUT = 3;
+
+    private final CountDownLatch mouseEnterLatch = new CountDownLatch(1);
+    private final CountDownLatch mouseExitLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
         ListEnterExitTest test = new ListEnterExitTest();
@@ -57,7 +65,11 @@ public class ListEnterExitTest {
                 frame = new Frame("ListEnterExitTest");
                 list.add("Item 1");
                 list.add("Item 2");
-                list.addMouseListener(mouseEnterExitListener);
+                list.add("Item 3");
+                list.add("Item 4");
+                list.add("Item 5");
+                list.add("Item 6");
+                list.addMouseListener(new MouseEnterExitListener());
                 frame.add(list);
                 frame.setLayout(new FlowLayout());
                 frame.setSize(300, 200);
@@ -66,25 +78,28 @@ public class ListEnterExitTest {
             });
 
             final Robot robot = new Robot();
-            robot.delay(1000);
+            robot.setAutoDelay(100);
             robot.waitForIdle();
+            robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 p = list.getLocationOnScreen();
             });
-            robot.mouseMove(p.x + 10, p.y + 10);
-            robot.delay(100);
+            robot.mouseMove(p.x + X_OFFSET, p.y + Y_OFFSET);
             robot.waitForIdle();
-            robot.mouseMove(p.x - 10, p.y - 10);
-            robot.delay(100);
+
+            robot.mouseMove(p.x - X_OFFSET, p.y + Y_OFFSET);
             robot.waitForIdle();
-            robot.mouseMove(p.x + 10, p.y + 10);
 
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseMove(p.x + X_OFFSET, p.y + Y_OFFSET);
+            robot.waitForIdle();
 
-            synchronized (mouseEnterExitListener) {
-                mouseEnterExitListener.wait(2000);
+            if (!mouseEnterLatch.await(LATCH_TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Mouse enter event timeout");
+            }
+
+            if (!mouseExitLatch.await(LATCH_TIMEOUT, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Mouse exit event timeout");
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -93,35 +108,19 @@ public class ListEnterExitTest {
                 }
             });
         }
-        if (!mouseEnterExitListener.isPassed()) {
-            throw new RuntimeException("Haven't receive mouse enter/exit events");
+    }
+
+    private class MouseEnterExitListener extends MouseAdapter {
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            System.out.println("Mouse Entered Event");
+            mouseEnterLatch.countDown();
         }
 
-    }
-
-}
-
-class MouseEnterExitListener extends MouseAdapter {
-
-    volatile boolean passed_1 = false;
-    volatile boolean passed_2 = false;
-
-    public void mouseEntered(MouseEvent e) {
-        passed_1 = true;
-    }
-
-    public void mouseExited(MouseEvent e) {
-        passed_2 = true;
-    }
-
-    public void mousePressed(MouseEvent e) {
-        synchronized (this) {
-            System.out.println("mouse pressed");
-            this.notifyAll();
+        @Override
+        public void mouseExited(MouseEvent e) {
+            System.out.println("Mouse Exited Event");
+            mouseExitLatch.countDown();
         }
-    }
-
-    public boolean isPassed() {
-        return passed_1 & passed_2;
     }
 }

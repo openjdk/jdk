@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/copy.hpp"
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_oop(oop* src, oop* dst, size_t length))
@@ -39,11 +38,11 @@ JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_narrow_oop(narrowOop* src, n
   ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length);
 JRT_END
 
-JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre(oopDesc * orig, JavaThread * thread))
-  assert(thread == JavaThread::current(), "pre-condition");
+JRT_LEAF(void, ShenandoahRuntime::write_barrier_pre(oopDesc* orig))
   assert(orig != nullptr, "should be optimized out");
   shenandoah_assert_correct(nullptr, orig);
   // Capture the original value that was in the field reference.
+  JavaThread* thread = JavaThread::current();
   assert(ShenandoahThreadLocalData::satb_mark_queue(thread).is_active(), "Shouldn't be here otherwise");
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
   ShenandoahBarrierSet::satb_mark_queue_set().enqueue_known_active(queue, orig);

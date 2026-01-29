@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,14 +132,14 @@ public class Util {
      * @param classFile
      */
     public static void printClassFile(byte[] classFile) {
-        int flags =  jdk.internal.org.objectweb.asm.ClassReader.SKIP_DEBUG;
+        int flags = org.objectweb.asm.ClassReader.SKIP_DEBUG;
 
         classFile = classFile.clone();
 
-        jdk.internal.org.objectweb.asm.ClassReader cr =
-                new  jdk.internal.org.objectweb.asm.ClassReader(classFile);
+        org.objectweb.asm.ClassReader cr =
+                new  org.objectweb.asm.ClassReader(classFile);
 
-        cr.accept(new  jdk.internal.org.objectweb.asm.util.TraceClassVisitor(new PrintWriter(System.out)), flags);
+        cr.accept(new  org.objectweb.asm.util.TraceClassVisitor(new PrintWriter(System.out)), flags);
     }
 
     /**
@@ -149,14 +149,14 @@ public class Util {
      * @param classFile
      */
     public static void asmifyClassFile(byte[] classFile) {
-        int flags =  jdk.internal.org.objectweb.asm.ClassReader.SKIP_DEBUG;
+        int flags =  org.objectweb.asm.ClassReader.SKIP_DEBUG;
 
-        jdk.internal.org.objectweb.asm.ClassReader cr =
-                new  jdk.internal.org.objectweb.asm.ClassReader(classFile);
+        org.objectweb.asm.ClassReader cr =
+                new  org.objectweb.asm.ClassReader(classFile);
 
         //cr.accept(new TraceClassVisitor(new PrintWriter(System.out)), flags);
-        cr.accept(new jdk.internal.org.objectweb.asm.util.TraceClassVisitor(null,
-                        new jdk.internal.org.objectweb.asm.util.ASMifier(),
+        cr.accept(new org.objectweb.asm.util.TraceClassVisitor(null,
+                        new org.objectweb.asm.util.ASMifier(),
                         new PrintWriter(System.out)), flags);
     }
 

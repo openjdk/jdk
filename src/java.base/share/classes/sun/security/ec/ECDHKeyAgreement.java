@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import sun.security.ec.point.Point;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
+import sun.security.util.KeyUtil;
 import sun.security.util.NamedCurve;
 import sun.security.util.math.IntegerFieldModuloP;
 import sun.security.util.math.IntegerMontgomeryFieldModuloP;
@@ -51,6 +52,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.EllipticCurve;
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -254,11 +256,16 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         if (algorithm == null) {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
-        if (!(algorithm.equals("TlsPremasterSecret"))) {
-            throw new NoSuchAlgorithmException
-                ("Only supported for algorithm TlsPremasterSecret");
+        if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm: " + algorithm);
         }
-        return new SecretKeySpec(engineGenerateSecret(), "TlsPremasterSecret");
+        byte[] bytes = engineGenerateSecret();
+        try {
+            return new SecretKeySpec(bytes, algorithm);
+        } finally {
+            Arrays.fill(bytes, (byte)0);
+        }
     }
 
     private static

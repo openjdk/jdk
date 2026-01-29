@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @test
  * @bug 8221507
  * @requires vm.hasJFR & vm.gc.Shenandoah
- * @key jfr
+ * @requires vm.flagless
  * @library /test/lib /test/jdk
  * @run main/othervm  -Xmx32m -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGarbageThreshold=1 jdk.jfr.event.gc.detailed.TestShenandoahHeapRegionInformationEvent
  */

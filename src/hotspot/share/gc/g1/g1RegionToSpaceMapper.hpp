@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
+class ReservedSpace;
 class WorkerThreads;
 
 class G1MappingChangedListener {
@@ -57,6 +58,8 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   G1RegionToSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MemTag mem_tag);
 
   void fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled);
+
+  bool should_distribute_across_numa_nodes() const;
  public:
   MemRegion reserved() { return _storage.reserved(); }
 

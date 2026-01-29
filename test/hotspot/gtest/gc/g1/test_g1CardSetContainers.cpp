@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1HeapRegionBounds.inline.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "unittest.hpp"
@@ -83,48 +83,48 @@ void G1CardSetContainersTest::cardset_inlineptr_test(uint bits_per_card) {
 
   G1AddCardResult res;
 
-  G1CardSet::ContainerPtr value = G1CardSetInlinePtr();
+  Atomic<G1CardSet::ContainerPtr> value{};
 
   for (uint i = 0; i < CardsPerSet; i++) {
     {
-      G1CardSetInlinePtr cards(&value, value);
+      G1CardSetInlinePtr cards(&value, value.load_relaxed());
       res = cards.add(i + 1, bits_per_card, CardsPerSet);
       ASSERT_TRUE(res == Added);
     }
     {
-      G1CardSetInlinePtr cards(&value, value);
+      G1CardSetInlinePtr cards(&value, value.load_relaxed());
       ASSERT_TRUE(cards.contains(i + 1, bits_per_card));
     }
   }
 
   for (uint i = 0; i < CardsPerSet; i++) {
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     ASSERT_TRUE(cards.contains(i + 1, bits_per_card));
   }
 
   // Try to add again, should all return that the card had been added.
   for (uint i = 0; i < CardsPerSet; i++) {
-    G1CardSetInlinePtr cards(&value, value);
+    G1CardSetInlinePtr cards(&value, value.load_relaxed());
     res = cards.add(i + 1, bits_per_card, CardsPerSet);
     ASSERT_TRUE(res == Found);
   }
 
   // Should be no more space in set.
   {
-    G1CardSetInlinePtr cards(&value, value);
+    G1CardSetInlinePtr cards(&value, value.load_relaxed());
     res = cards.add(CardsPerSet + 1, bits_per_card, CardsPerSet);
     ASSERT_TRUE(res == Overflow);
   }
 
   // Cards should still be in the set.
   for (uint i = 0; i < CardsPerSet; i++) {
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     ASSERT_TRUE(cards.contains(i + 1, bits_per_card));
   }
 
   // Boundary cards should not be in the set.
   {
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     ASSERT_TRUE(!cards.contains(0, bits_per_card));
     ASSERT_TRUE(!cards.contains(CardsPerSet + 1, bits_per_card));
   }
@@ -132,7 +132,7 @@ void G1CardSetContainersTest::cardset_inlineptr_test(uint bits_per_card) {
   // Verify iteration finds all cards too and only those.
   {
     G1FindCardsInRange found(1, CardsPerSet);
-    G1CardSetInlinePtr cards(value);
+    G1CardSetInlinePtr cards(value.load_relaxed());
     cards.iterate(found, bits_per_card);
     found.verify_all_found();
   }

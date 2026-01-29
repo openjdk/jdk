@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "memory/virtualspace.hpp"
+#include "logging/log.hpp"
+#include "memory/reservedSpace.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 
-// PSVirtualSpace
-
 PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
-  _alignment(alignment)
-{
-  set_reserved(rs);
-  set_committed(reserved_low_addr(), reserved_low_addr());
-  DEBUG_ONLY(verify());
-}
-
-// Deprecated.
-PSVirtualSpace::PSVirtualSpace():
-  _alignment(os::vm_page_size()),
-  _reserved_low_addr(nullptr),
-  _reserved_high_addr(nullptr),
-  _committed_low_addr(nullptr),
-  _committed_high_addr(nullptr),
-  _special(false) {
-}
-
-// Deprecated.
-void PSVirtualSpace::initialize(ReservedSpace rs) {
+  _alignment(alignment),
+  _page_size(rs.page_size()) {
   set_reserved(rs);
   set_committed(reserved_low_addr(), reserved_low_addr());
   DEBUG_ONLY(verify());
@@ -81,6 +62,8 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
          os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
   if (result) {
     _committed_high_addr += bytes;
+  } else {
+    log_warning(gc)("PSVirtualSpace::expand_by: to commit %zu bytes failed", bytes);
   }
 
   return result;
@@ -105,7 +88,8 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
 
 #ifndef PRODUCT
 void PSVirtualSpace::verify() const {
-  assert(is_aligned(_alignment, os::vm_page_size()), "bad alignment");
+  assert(is_aligned(_page_size, os::vm_page_size()), "bad alignment");
+  assert(is_aligned(_alignment, _page_size), "inv");
   assert(is_aligned(reserved_low_addr(), _alignment), "bad reserved_low_addr");
   assert(is_aligned(reserved_high_addr(), _alignment), "bad reserved_high_addr");
   assert(is_aligned(committed_low_addr(), _alignment), "bad committed_low_addr");
@@ -125,6 +109,6 @@ void PSVirtualSpace::verify() const {
 #endif // #ifndef PRODUCT
 
 void PSVirtualSpace::print_space_boundaries_on(outputStream* st) const {
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+  st->print_cr("[" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                p2i(low_boundary()), p2i(high()), p2i(high_boundary()));
 }

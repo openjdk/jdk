@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,7 @@ import java.util.Locale;
 /**
  * Base class for sort records containing application specific sort keys
  *
- * @LastModified: May 2019
+ * @LastModified: Jan 2025
  */
 public abstract class NodeSortRecord {
     public static final int COMPARE_STRING     = 0;
@@ -127,7 +127,7 @@ public abstract class NodeSortRecord {
      * element. The value is extracted from the DOM if it is not already in
      * our sort key vector.
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private final Comparable stringValue(int level) {
         // Get value from our array if possible
         if (_scanned <= level) {

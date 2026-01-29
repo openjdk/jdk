@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef SHARE_OOPS_MARKWORD_HPP
 #define SHARE_OOPS_MARKWORD_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
-
-#include <type_traits>
 
 // The markWord describes the header of an object.
 //
@@ -61,13 +60,6 @@
 //    [ptr             | 10]  monitor            inflated lock (header is swapped out, UseObjectMonitorTable == false)
 //    [header          | 10]  monitor            inflated lock (UseObjectMonitorTable == true)
 //    [ptr             | 11]  marked             used to mark an object
-//    [0 ............ 0| 00]  inflating          inflation in progress (stack-locking in use)
-//
-//    We assume that stack/thread pointers have the lowest two bits cleared.
-//
-//  - INFLATING() is a distinguished markword value of all zeros that is
-//    used when inflating an existing stack-lock into an ObjectMonitor.
-//    See below for is_being_inflated() and INFLATING().
 
 class BasicLock;
 class ObjectMonitor;
@@ -174,21 +166,8 @@ class markWord {
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }
 
-  // Special temporary state of the markWord while being inflated.
-  // Code that looks at mark outside a lock need to take this into account.
-  bool is_being_inflated() const { return (value() == 0); }
-
-  // Distinguished markword value - used when inflating over
-  // an existing stack-lock.  0 indicates the markword is "BUSY".
-  // Lockword mutators that use a LD...CAS idiom should always
-  // check for and avoid overwriting a 0 value installed by some
-  // other thread.  (They should spin or block instead.  The 0 value
-  // is transient and *should* be short-lived).
-  // Fast-locking does not use INFLATING.
-  static markWord INFLATING() { return zero(); }    // inflate-in-progress
-
   // Should this header be preserved during GC?
-  bool must_be_preserved(const oopDesc* obj) const {
+  bool must_be_preserved() const {
     return (!is_unlocked() || !has_no_hash());
   }
 
@@ -198,17 +177,8 @@ class markWord {
   markWord set_unlocked() const {
     return markWord(value() | unlocked_value);
   }
-  bool has_locker() const {
-    assert(LockingMode == LM_LEGACY, "should only be called with legacy stack locking");
-    return (value() & lock_mask_in_place) == locked_value;
-  }
-  BasicLock* locker() const {
-    assert(has_locker(), "check");
-    return (BasicLock*) value();
-  }
 
   bool is_fast_locked() const {
-    assert(LockingMode == LM_LIGHTWEIGHT, "should only be called with new lightweight locking");
     return (value() & lock_mask_in_place) == locked_value;
   }
   markWord set_fast_locked() const {
@@ -219,46 +189,28 @@ class markWord {
   bool has_monitor() const {
     return ((value() & lock_mask_in_place) == monitor_value);
   }
+  markWord set_has_monitor() const {
+    return markWord((value() & ~lock_mask_in_place) | monitor_value);
+  }
   ObjectMonitor* monitor() const {
     assert(has_monitor(), "check");
-    assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use markWord for monitors");
+    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
     // Use xor instead of &~ to provide one extra tag-bit check.
     return (ObjectMonitor*) (value() ^ monitor_value);
   }
-  bool has_displaced_mark_helper() const {
-    intptr_t lockbits = value() & lock_mask_in_place;
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      return !UseObjectMonitorTable && lockbits == monitor_value;
-    }
-    // monitor (0b10) | stack-locked (0b00)?
-    return (lockbits & unlocked_value) == 0;
-  }
-  markWord displaced_mark_helper() const;
-  void set_displaced_mark_helper(markWord m) const;
-  markWord copy_set_hash(intptr_t hash) const {
-    uintptr_t tmp = value() & (~hash_mask_in_place);
-    tmp |= ((hash & hash_mask) << hash_shift);
-    return markWord(tmp);
-  }
-  // it is only used to be stored into BasicLock as the
-  // indicator that the lock is using heavyweight monitor
-  static markWord unused_mark() {
-    return markWord(marked_value);
-  }
-  // the following two functions create the markWord to be
-  // stored into object header, it encodes monitor info
-  static markWord encode(BasicLock* lock) {
-    return from_pointer(lock);
-  }
+
   static markWord encode(ObjectMonitor* monitor) {
-    assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use markWord for monitors");
+    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
     uintptr_t tmp = (uintptr_t) monitor;
     return markWord(tmp | monitor_value);
   }
 
-  markWord set_has_monitor() const {
-    return markWord((value() & ~lock_mask_in_place) | monitor_value);
+  bool has_displaced_mark_helper() const {
+    intptr_t lockbits = value() & lock_mask_in_place;
+    return !UseObjectMonitorTable && lockbits == monitor_value;
   }
+  markWord displaced_mark_helper() const;
+  void set_displaced_mark_helper(markWord m) const;
 
   // used to encode pointers during GC
   markWord clear_lock_bits() const { return markWord(value() & ~lock_mask_in_place); }
@@ -283,6 +235,12 @@ class markWord {
     return hash() == no_hash;
   }
 
+  markWord copy_set_hash(intptr_t hash) const {
+    uintptr_t tmp = value() & (~hash_mask_in_place);
+    tmp |= ((hash & hash_mask) << hash_shift);
+    return markWord(tmp);
+  }
+
   inline Klass* klass() const;
   inline Klass* klass_or_null() const;
   inline Klass* klass_without_asserts() const;
@@ -304,17 +262,14 @@ class markWord {
   inline void* decode_pointer() const { return (void*)clear_lock_bits().value(); }
 
   inline bool is_self_forwarded() const {
-    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return mask_bits(value(), self_fwd_mask_in_place) != 0;
   }
 
   inline markWord set_self_forwarded() const {
-    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return markWord(value() | self_fwd_mask_in_place);
   }
 
   inline markWord unset_self_forwarded() const {
-    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
     return markWord(value() & ~self_fwd_mask_in_place);
   }
 

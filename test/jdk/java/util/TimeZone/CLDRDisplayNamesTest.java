@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
  /*
  * @test
  * @bug 8005471 8008577 8129881 8130845 8136518 8181157 8210490 8220037
- *      8234347 8236548 8317979
+ *      8234347 8236548 8317979 8354548
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
+ * @run main CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
  * if specified.
  */
@@ -47,34 +47,28 @@ public class CLDRDisplayNamesTest {
     static final String[][] CLDR_DATA = {
         {
             "ja-JP",
-            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u6a19\u6e96\u6642",
+            "米国太平洋標準時",
             "PST",
-            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593",
+            "米国太平洋夏時間",
             "PDT",
-            //"\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u6642\u9593",
-        //"PT"
         },
         {
             "zh-CN",
-            "\u5317\u7f8e\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4",
+            "北美太平洋标准时间",
             "PST",
-            "\u5317\u7f8e\u592a\u5e73\u6d0b\u590f\u4ee4\u65f6\u95f4",
+            "北美太平洋夏令时间",
             "PDT",
-            //"\u5317\u7f8e\u592a\u5e73\u6d0b\u65f6\u95f4",
-        //"PT",
         },
         {
             "de-DE",
-            "Nordamerikanische Westk\u00fcsten-Normalzeit",
+            "Nordamerikanische Westküsten-Normalzeit",
             "PST",
-            "Nordamerikanische Westk\u00fcsten-Sommerzeit",
+            "Nordamerikanische Westküsten-Sommerzeit",
             "PDT",
-            //"Nordamerikanische Westk\u00fcstenzeit",
-        //"PT",
         },
     };
 
-    private static final String NO_INHERITANCE_MARKER = "\u2205\u2205\u2205";
+    private static final String NO_INHERITANCE_MARKER = "∅∅∅";
 
     public static void main(String[] args) {
         // Make sure that localized time zone names of CLDR are used
@@ -130,7 +124,7 @@ public class CLDRDisplayNamesTest {
         String displayName = zi.getDisplayName(false, TimeZone.SHORT, Locale.US);
         Locale.setDefault(originalLocale);
         if (!displayName.equals("GMT+05:00")) {
-            System.err.printf("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
+            System.err.println("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
             errors++;
         }
 

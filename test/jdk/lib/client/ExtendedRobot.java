@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,6 @@ public class ExtendedRobot extends Robot {
     private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
 
     private final int syncDelay = DEFAULT_SYNC_DELAY;
-
-    //TODO: uncomment three lines below after moving functionality to java.awt.Robot
-    //{
-    //    syncDelay = AccessController.doPrivileged(new GetIntegerAction("java.awt.robotdelay", DEFAULT_SYNC_DELAY));
-    //}
 
     /**
      * Constructs an ExtendedRobot object in the coordinate system of the primary screen.

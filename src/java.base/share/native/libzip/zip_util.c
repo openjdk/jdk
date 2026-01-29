@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,9 @@ static void freeCEN(jzfile *);
 static jint INITIAL_META_COUNT = 2;   /* initial number of entries in meta name array */
 
 /*
- * Declare library specific JNI_Onload entry if static build
+ * Declare library specific JNI_Onload entry
  */
-#ifdef STATIC_BUILD
 DEF_STATIC_JNI_OnLoad
-#endif
 
 /*
  * The ZFILE_* functions exist to provide some platform-independence with
@@ -581,7 +579,9 @@ readCEN(jzfile *zip, jint knownTotal)
     jlong offset;
 #endif
     unsigned char endbuf[ENDHDR];
+#ifdef USE_MMAP
     jint endhdrlen = ENDHDR;
+#endif
     jzcell *entries;
     jint *table;
 
@@ -606,7 +606,9 @@ readCEN(jzfile *zip, jint knownTotal)
             cenoff = ZIP64_ENDOFF(end64buf);
             total = (jint)ZIP64_ENDTOT(end64buf);
             endpos = end64pos;
+#ifdef USE_MMAP
             endhdrlen = ZIP64_ENDHDR;
+#endif
         }
     }
 
@@ -1118,7 +1120,7 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
  * jzentry for each zip.  This optimizes a common access pattern.
  */
 
-void
+JNIEXPORT void
 ZIP_FreeEntry(jzfile *jz, jzentry *ze)
 {
     jzentry *last;

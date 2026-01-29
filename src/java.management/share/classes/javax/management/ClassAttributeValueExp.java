@@ -25,10 +25,6 @@
 
 package javax.management;
 
-import java.security.AccessController;
-
-import com.sun.jmx.mbeanserver.GetPropertyAction;
-
 /**
  * This class represents the name of the Java implementation class of
  * the MBean. It is used for performing queries based on the class of

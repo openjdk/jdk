@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,13 +23,12 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdint.h>
-
-#include "precompiled.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "immediate_aarch64.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <stdint.h>
 
 // there are at most 2^13 possible logical immediate encodings
 // however, some combinations of immr and imms are invalid

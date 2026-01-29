@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ import java.security.Security;
 public class SerializeProvider extends PKCS11Test {
 
     public void main(Provider p) throws Exception {
+
         if (Security.getProvider(p.getName()) != p) {
-            System.out.println("Provider not installed in Security, skipping");
-            return;
+            Security.addProvider(p);
         }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -57,7 +57,7 @@ public class SerializeProvider extends PKCS11Test {
         InputStream in = new ByteArrayInputStream(data);
         ObjectInputStream oin = new ObjectInputStream(in);
 
-        Provider p2 = (Provider)oin.readObject();
+        Provider p2 = (Provider) oin.readObject();
 
         System.out.println("Reconstituted: " + p2);
 

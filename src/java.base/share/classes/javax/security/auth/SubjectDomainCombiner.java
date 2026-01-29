@@ -112,21 +112,16 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      * In addition, caching of ProtectionDomains may be permitted.
      *
      * @param currentDomains the ProtectionDomains associated with the
-     *          current execution Thread, up to the most recent
-     *          privileged {@code ProtectionDomain}.
+     *          current execution Thread.
      *          The ProtectionDomains are listed in order of execution,
      *          with the most recently executing {@code ProtectionDomain}
      *          residing at the beginning of the array. This parameter may
      *          be {@code null} if the current execution Thread
      *          has no associated ProtectionDomains.
      *
-     * @param assignedDomains the ProtectionDomains inherited from the
-     *          parent Thread, or the ProtectionDomains from the
-     *          privileged {@code context}, if a call to
-     *          {@code AccessController.doPrivileged(..., context)}
-     *          had occurred  This parameter may be {@code null}
-     *          if there were no ProtectionDomains inherited from the
-     *          parent Thread, or from the privileged {@code context}.
+     * @param assignedDomains the inherited ProtectionDomains.
+     *          This parameter may be {@code null}
+     *          if there were no inherited ProtectionDomains.
      *
      * @return a new array consisting of the updated ProtectionDomains,
      *          or {@code null}.

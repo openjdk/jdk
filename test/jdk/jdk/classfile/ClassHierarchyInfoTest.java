@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  *          java.base/java.util:open
  * @comment Opens java.util so HashMap bytecode generation can access its nested

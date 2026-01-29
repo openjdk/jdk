@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -40,19 +39,21 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceIn
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahEvacReserveOverflow);
 }
 
-void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                           RegionData* data, size_t size,
-                                                                           size_t free) {
+size_t ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                             RegionData* data, size_t size,
+                                                                             size_t free) {
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
     if (r->garbage() > 0) {
       cset->add_region(r);
     }
   }
+  return 0;
 }
 
 bool ShenandoahAggressiveHeuristics::should_start_gc() {
   log_trigger("Start next cycle immediately");
+  accept_trigger();
   return true;
 }
 

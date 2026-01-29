@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@ class SwitchRange;
 
 //------------------------------InlineTree-------------------------------------
 class InlineTree : public AnyObj {
-  friend class VMStructs;
-
   Compile*    C;                  // cache
   JVMState*   _caller_jvms;       // state of caller
   ciMethod*   _method;            // method being called by the caller_jvms
@@ -75,7 +73,7 @@ protected:
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
-                            int caller_bci,
+                            JVMState* caller_jvms,
                             bool& should_delay,
                             ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
@@ -87,8 +85,7 @@ protected:
                              ciMethod* caller_method,
                              int caller_bci,
                              ciCallProfile& profile);
-  void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             ciMethod* caller_method, bool success) const;
+  void print_inlining(ciMethod* callee_method, JVMState* jvm, bool success) const;
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
@@ -445,7 +442,7 @@ class Parse : public GraphKit {
   SafePointNode* create_entry_map();
 
   // OSR helpers
-  Node *fetch_interpreter_state(int index, BasicType bt, Node *local_addrs, Node *local_addrs_base);
+  Node *fetch_interpreter_state(int index, BasicType bt, Node* local_addrs);
   Node* check_interpreter_type(Node* l, const Type* type, SafePointNode* &bad_type_exit);
   void  load_interpreter_state(Node* osr_buf);
 
@@ -530,8 +527,7 @@ class Parse : public GraphKit {
   void  do_instanceof();
 
   // Helper functions for shifting & arithmetic
-  void modf();
-  void modd();
+  Node* floating_point_mod(Node* a, Node* b, BasicType type);
   void l2f();
 
   // implementation of _get* and _put* bytecodes

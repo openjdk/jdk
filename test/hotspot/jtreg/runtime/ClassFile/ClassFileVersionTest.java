@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,24 @@
  *
  */
 
-/**
+/*
  * @test
  * @bug 8291360
  * @summary Test getting the class file version for java.lang.Class API
+ * @library /test/lib
  * @modules java.base/java.lang:open
  * @compile classFileVersions.jcod
- * @compile --enable-preview -source ${jdk.version} ClassFileVersionTest.java
  * @run main/othervm --enable-preview ClassFileVersionTest
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.*;
+
+import jdk.test.lib.ByteCodeLoader;
 
 public class ClassFileVersionTest {
     public static final int LOWER_16 = 0x0000_FFFF;
-    /*
-     * Include a use of a preview API so that the minor class file
-     * version of the class file for this class gets set during
-     * compilation. If a particular class becomes non-preview, any
-     * currently preview class can be substituted in.
-     */
-    private static final Class<?> PREVIEW_API = java.lang.ScopedValue.class;
     static Method m;
 
     public static void testIt(String className, int expectedResult) throws Exception {
@@ -69,8 +66,10 @@ public class ClassFileVersionTest {
         int latestMajor = ClassFileFormatVersion.latest().major();
 
         testIt(Object.class, latestMajor);
-        // ClassFileVersionTest use preview features so its minor version should be 0xFFFF
-        testIt(ClassFileVersionTest.class, (~LOWER_16) | latestMajor);
+
+        Class<?> previewClass = ByteCodeLoader.load("PreviewClass", ClassFile.of().build(ClassDesc.of("PreviewClass"),
+                clb -> clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION)));
+        testIt(previewClass, (~LOWER_16) | latestMajor);
         testIt("Version64", 64);
         testIt("Version59", 59);
         testIt("Version45_3", 0x0003_002D);  // 3:45

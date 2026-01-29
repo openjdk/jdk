@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
-                   const Type* value_type, BasicType bt);
-  Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
-                   Node* value, BasicType bt);
+  Node* make_load_raw(Node* ctl, Node* mem, Node* base, int offset,
+                      const Type* value_type, BasicType bt);
+  Node* make_store_raw(Node* ctl, Node* mem, Node* base, int offset,
+                       Node* value, BasicType bt);
 
   Node* make_leaf_call(Node* ctrl, Node* mem,
                        const TypeFunc* call_type, address call_addr,
@@ -82,9 +82,6 @@ public:
 private:
   // projections extracted from a call node
   CallProjections _callprojs;
-
-  // Additional data collected during macro expansion
-  bool _has_locks;
 
   void expand_allocate(AllocateNode *alloc);
   void expand_allocate_array(AllocateArrayNode *alloc);
@@ -111,7 +108,7 @@ private:
   void expand_unlock_node(UnlockNode *unlock);
 
   // More helper methods modeled after GraphKit for array copy
-  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = nullptr);
+  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, int alias_idx, Node* precedent = nullptr);
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
   Node* ConvI2L(Node* offset);
 
@@ -147,11 +144,10 @@ private:
                             Node* slice_idx,
                             Node* slice_len,
                             Node* dest_size);
-  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem, Node* io,
+  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                 const TypePtr* adr_type,
                                 BasicType basic_elem_type,
-                                AllocateNode* alloc,
-                                Node* src,  Node* src_offset,
+                                Node* src, Node* src_offset,
                                 Node* dest, Node* dest_offset,
                                 Node* dest_size, bool dest_uninitialized);
   MergeMemNode* generate_slow_arraycopy(ArrayCopyNode *ac,
@@ -171,7 +167,7 @@ private:
                                    Node* src,  Node* src_offset,
                                    Node* dest, Node* dest_offset,
                                    Node* copy_length, bool dest_uninitialized);
-  bool generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
+  void generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
                                     const TypePtr* adr_type,
                                     BasicType basic_elem_type,
                                     bool disjoint_bases,
@@ -185,7 +181,7 @@ private:
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);
-  Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path = false);
+  Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word);
   void copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call);
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,
                            const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1,
@@ -199,11 +195,14 @@ private:
   Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
-  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
+  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn) {
     _igvn.set_delay_transform(true);
   }
+
+  void refine_strip_mined_loop_macro_nodes();
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
+  void eliminate_opaque_looplimit_macro_nodes();
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
   static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);

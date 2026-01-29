@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 // key: compiler.misc.bad.class.file.header
 // key: compiler.err.cant.access
 // options: -processor CreateBadClassFile
-// run: exec --enable-preview
 
 /* The annotation processor will create an invalid classfile with a static
  * final field of type java.lang.Object having ConstantValue attribute with

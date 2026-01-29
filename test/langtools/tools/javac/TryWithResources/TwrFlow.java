@@ -1,7 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
  * @bug 6911256 6964740 7013420
- * @author Joseph D. Darcy
  * @summary Test exception analysis of try-with-resources blocks
  * @compile/fail/ref=TwrFlow.out -XDrawDiagnostics TwrFlow.java
  */

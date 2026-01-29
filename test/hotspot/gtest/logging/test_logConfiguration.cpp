@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "jvm.h"
 #include "logTestFixture.hpp"
@@ -215,6 +214,32 @@ TEST_VM_F(LogConfigurationTest, disable_output) {
   for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     EXPECT_FALSE(ts->is_level(LogLevel::Error));
   }
+}
+
+TEST_VM_F(LogConfigurationTest, disable_tags) {
+  set_log_config("stdout", "logging*=info");
+  set_log_config(TestLogFileName, "logging*=info");
+
+  EXPECT_TRUE(log_is_enabled(Info, logging, gc));
+  LogConfiguration::disable_tags(true, LOG_TAGS(logging, gc));
+  EXPECT_FALSE(log_is_enabled(Info, logging, gc));
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+
+  set_log_config("stdout", "logging*=info");
+  set_log_config(TestLogFileName, "logging*=info");
+
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+  LogConfiguration::disable_tags(true, LOG_TAGS(logging));
+  EXPECT_TRUE(log_is_enabled(Info, logging, gc));
+  EXPECT_FALSE(log_is_enabled(Info, logging));
+
+  set_log_config("stdout", "logging*=info");
+  set_log_config(TestLogFileName, "logging*=info");
+
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+  LogConfiguration::disable_tags(false, LOG_TAGS(logging));
+  EXPECT_FALSE(log_is_enabled(Info, logging, gc));
+  EXPECT_FALSE(log_is_enabled(Info, logging));
 }
 
 // Test reconfiguration of the selected decorators for an output

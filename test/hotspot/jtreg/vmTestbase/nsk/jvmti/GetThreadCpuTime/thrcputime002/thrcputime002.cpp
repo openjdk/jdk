@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ extern "C" {
 /* ============================================================================= */
 
 static jlong timeout = 0;
+static jrawMonitorID monitor; // a monitor to serialize event callbacks and checkCpuTime calls
 
 #define TESTED_THREAD_NAME      "thrcputime002Thread"
 
@@ -150,6 +151,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0(">>> Testcase #2: Check initial cpu time in agent thread\n");
     {
+        RawMonitorLocker rml(jvmti, jni, monitor);
         if (!checkCpuTime(jvmti, testAgentThread, &prevAgentThreadTime, nullptr, "agent thread")) {
             nsk_jvmti_setFailStatus();
         }
@@ -173,6 +175,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         NSK_DISPLAY0(">>> Testcase #5: Check middle cpu time from agent thread\n");
         {
+            RawMonitorLocker rml(jvmti, jni, monitor);
             julong time = 0;
             runIterations(iterations);
             if (!checkCpuTime(jvmti, testAgentThread, &time, &prevAgentThreadTime, "agent thread")) {
@@ -183,6 +186,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         if (testedThread != nullptr) {
             NSK_DISPLAY0(">>> Testcase #6: Check tested thread cpu time from agent thread\n");
             {
+                RawMonitorLocker rml(jvmti, jni, monitor);
                 julong time = 0;
                 runIterations(iterations);
                 if (!checkCpuTime(jvmti, testedThread, &time, &prevTestedThreadTime, "agent thread")) {
@@ -224,6 +228,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
  */
 JNIEXPORT void JNICALL
 callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
+    RawMonitorLocker rml(jvmti, jni, monitor);
 
     NSK_DISPLAY0(">>> Testcase #1: Check initial cpu time in VM_INIT callback\n");
     {
@@ -239,6 +244,8 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
  */
 JNIEXPORT void JNICALL
 callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
+    RawMonitorLocker rml(jvmti, jni, monitor);
+
     int success = NSK_TRUE;
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
@@ -261,6 +268,7 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
  */
 JNIEXPORT void JNICALL
 callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
+    RawMonitorLocker rml(jvmti, jni, monitor);
 
     jvmtiThreadInfo threadInfo;
     {
@@ -296,6 +304,7 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
  */
 JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
+    RawMonitorLocker rml(jvmti, jni, monitor);
 
     jvmtiThreadInfo threadInfo;
     {
@@ -389,6 +398,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, nullptr)) {
         NSK_DISPLAY0("  ... enabled\n");
     }
+    monitor = create_raw_monitor(jvmti, "Raw monitor for synchronization");
 
     return JNI_OK;
 }

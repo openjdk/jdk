@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary CDS support of old classes with major version < JDK_6 (50) for static archive.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @compile test-classes/Hello.java
  * @run build TestCommon JarBuilder
  * @run driver OldClassTest
@@ -40,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import java.nio.file.Files;
 
 import java.util.*;
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 public class OldClassTest implements Opcodes {
 
@@ -134,7 +134,7 @@ public class Hello {
 }
 EOF
 javac Hello.java
-java jdk.internal.org.objectweb.asm.util.ASMifier Hello.class
+java org.objectweb.asm.util.ASMifier Hello.class
 
  */
 

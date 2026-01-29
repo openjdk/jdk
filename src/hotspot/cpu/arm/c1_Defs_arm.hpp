@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,6 @@
 enum {
   pd_lo_word_offset_in_bytes = 0,
   pd_hi_word_offset_in_bytes = BytesPerWord
-};
-
-// explicit rounding operations are required to implement the strictFP mode
-enum {
-  pd_strict_fp_requires_explicit_rounding = false
 };
 
 #ifdef __SOFTFP__

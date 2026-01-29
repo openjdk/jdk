@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,21 @@ import java.util.Objects;
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
+ *
+ * <h2 id="decompressor-usage">Decompressor Usage</h2>
+ * An {@code InflaterInputStream} created without
+ * specifying a {@linkplain Inflater decompressor} will create a decompressor
+ * at construction time, and close the decompressor when the input stream
+ * is {@linkplain #close closed}.
+ * <p>
+ * If a decompressor is specified when creating a {@code InflaterInputStream}, it is the
+ * responsibility of the caller to {@linkplain Inflater#close close} the
+ * decompressor after closing the input stream.
+ *
+ * @apiNote
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
+ *
  * @see         Inflater
  * @author      David Connelly
  * @since 1.1
@@ -75,6 +90,11 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and
      * buffer size.
+     * <p>
+     * {@linkplain #close() Closing} this input stream
+     * {@linkplain ##decompressor-usage will not close} the given
+     * {@linkplain Inflater decompressor}.
+     *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
      * @param size the input buffer size
@@ -94,6 +114,11 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and a
      * default buffer size.
+     * <p>
+     * {@linkplain #close() Closing} this input stream
+     * {@linkplain ##decompressor-usage will not close} the given
+     * {@linkplain Inflater decompressor}.
+     *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
      */
@@ -104,7 +129,12 @@ public class InflaterInputStream extends FilterInputStream {
     boolean usesDefaultInflater = false;
 
     /**
-     * Creates a new input stream with a default decompressor and buffer size.
+     * Creates a new input stream and decompressor with a
+     * default buffer size.
+     * <p>
+     * The decompressor will be closed when this input stream
+     * is {@linkplain #close() closed}.
+     *
      * @param in the input stream
      */
     public InflaterInputStream(InputStream in) {
@@ -120,6 +150,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @return the byte read, or -1 if end of compressed input is reached
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public int read() throws IOException {
         ensureOpen();
         return read(singleByteBuf, 0, 1) == -1 ? -1 : Byte.toUnsignedInt(singleByteBuf[0]);
@@ -151,6 +182,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         ensureOpen();
         if (b == null) {
@@ -193,6 +225,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @throws     IOException  if an I/O error occurs.
      *
      */
+    @Override
     public int available() throws IOException {
         ensureOpen();
         if (reachEOF) {
@@ -220,6 +253,7 @@ public class InflaterInputStream extends FilterInputStream {
      *                     already closed
      * @throws    IllegalArgumentException if {@code n < 0}
      */
+    @Override
     public long skip(long n) throws IOException {
         if (n < 0) {
             throw new IllegalArgumentException("negative skip length");
@@ -246,8 +280,10 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Closes this input stream and releases any system resources associated
      * with the stream.
+     *
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public void close() throws IOException {
         if (!closed) {
             if (usesDefaultInflater)
@@ -287,6 +323,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
      */
+    @Override
     public boolean markSupported() {
         return false;
     }

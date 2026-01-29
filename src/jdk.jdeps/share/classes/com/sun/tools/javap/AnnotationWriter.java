@@ -225,11 +225,12 @@ public class AnnotationWriter extends BasicWriter {
     }
 
     public void write(AnnotationValue value, boolean resolveIndices) {
+        var tagChar = (char) value.tag();
         switch (value) {
             case AnnotationValue.OfConstant ev -> {
                 if (resolveIndices) {
                     var entry = ev.constant();
-                    switch (ev.tag()) {
+                    switch (tagChar) {
                         case 'B':
                             print("(byte) ");
                             print(constantWriter.stringValue(entry));
@@ -258,11 +259,11 @@ public class AnnotationWriter extends BasicWriter {
                             print("\"");
                             break;
                         default:
-                            print(ev.tag() + "#" + entry.index());
+                            print(tagChar + "#" + entry.index());
                             break;
                     }
                 } else {
-                    print(ev.tag() + "#" + ev.constant().index());
+                    print(tagChar + "#" + ev.constant().index());
                 }
             }
             case AnnotationValue.OfEnum ev -> {
@@ -271,7 +272,7 @@ public class AnnotationWriter extends BasicWriter {
                     print(".");
                     writeIndex(ev.constantName(), resolveIndices);
                 } else {
-                    print(ev.tag() + "#" + ev.className().index() + ".#"
+                    print(tagChar + "#" + ev.className().index() + ".#"
                             + ev.constantName().index());
                 }
             }
@@ -280,11 +281,11 @@ public class AnnotationWriter extends BasicWriter {
                     print("class ");
                     writeIndex(ev.className(), resolveIndices);
                 } else {
-                    print(ev.tag() + "#" + ev.className().index());
+                    print(tagChar + "#" + ev.className().index());
                 }
             }
             case AnnotationValue.OfAnnotation ev -> {
-                print(ev.tag());
+                print(tagChar);
                 AnnotationWriter.this.write(ev.annotation(), resolveIndices);
             }
             case AnnotationValue.OfArray ev -> {

@@ -51,7 +51,6 @@ import java.util.stream.Stream;
  * @bug 8010117
  * @summary Verify if CallerSensitive methods are annotated with
  *          CallerSensitive annotation
- * @enablePreview
  * @build CallerSensitiveFinder
  * @run main/othervm/timeout=900 CallerSensitiveFinder
  */

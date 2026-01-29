@@ -45,7 +45,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import sun.rmi.runtime.Log;
-import sun.rmi.runtime.NewThreadAction;
+import sun.rmi.runtime.RuntimeUtil;
 import sun.rmi.transport.Channel;
 import sun.rmi.transport.Endpoint;
 import sun.rmi.transport.Target;
@@ -752,7 +752,7 @@ public class TCPEndpoint implements Endpoint {
         private void getFQDN() {
 
             /* FQDN finder will run in RMI threadgroup. */
-            Thread t = new NewThreadAction(FQDN.this, "FQDN Finder", true).run();
+            Thread t = RuntimeUtil.newSystemThread(FQDN.this, "FQDN Finder", true);
             t.start();
         }
 

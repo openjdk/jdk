@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class constantPoolHandle;
 class SymbolClosure;
 
 class SymbolTable : public AllStatic {
-  friend class VMStructs;
   friend class Symbol;
   friend class ClassFileParser;
   friend class SymbolTableConfig;
@@ -161,7 +160,6 @@ private:
   static void copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
                                        CompactHashtableWriter* ch_table);
 public:
-  static size_t estimate_size_for_archive() NOT_CDS_RETURN_(0);
   static void write_to_archive(GrowableArray<Symbol*>* symbols) NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc,
                                             bool is_static_archive = true) NOT_CDS_RETURN;

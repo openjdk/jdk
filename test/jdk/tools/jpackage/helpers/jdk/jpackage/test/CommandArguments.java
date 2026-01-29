@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,19 @@ public class CommandArguments<T> {
     }
 
     public final T clearArguments() {
+        verifyMutable();
         args.clear();
-        return (T) this;
+        return thiz();
     }
 
     public final T addArgument(String v) {
-        args.add(v);
-        return (T) this;
+        return addArguments(v);
     }
 
     public final T addArguments(List<String> v) {
+        verifyMutable();
         args.addAll(v);
-        return (T) this;
+        return thiz();
     }
 
     public final T addArgument(Path v) {
@@ -75,6 +76,11 @@ public class CommandArguments<T> {
 
     protected boolean isMutable() {
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private T thiz() {
+        return (T) this;
     }
 
     protected List<String> args;

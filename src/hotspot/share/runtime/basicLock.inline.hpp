@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,36 +27,28 @@
 
 #include "runtime/basicLock.hpp"
 
-inline markWord BasicLock::displaced_header() const {
-  assert(LockingMode == LM_LEGACY, "must be");
-  return markWord(get_metadata());
-}
-
-inline void BasicLock::set_displaced_header(markWord header) {
-  assert(LockingMode == LM_LEGACY, "must be");
-  Atomic::store(&_metadata, header.value());
-}
+#include "runtime/objectMonitor.inline.hpp"
 
 inline ObjectMonitor* BasicLock::object_monitor_cache() const {
   assert(UseObjectMonitorTable, "must be");
 #if !defined(ZERO) && (defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390))
-  return reinterpret_cast<ObjectMonitor*>(get_metadata());
+  return reinterpret_cast<ObjectMonitor*>(get_monitor());
 #else
   // Other platforms do not make use of the cache yet,
   // and are not as careful with maintaining the invariant
-  // that the metadata either is nullptr or ObjectMonitor*.
+  // that the monitor either is nullptr or a valid ObjectMonitor*.
   return nullptr;
 #endif
 }
 
 inline void BasicLock::clear_object_monitor_cache() {
   assert(UseObjectMonitorTable, "must be");
-  set_metadata(0);
+  set_monitor(nullptr);
 }
 
 inline void BasicLock::set_object_monitor_cache(ObjectMonitor* mon) {
   assert(UseObjectMonitorTable, "must be");
-  set_metadata(reinterpret_cast<uintptr_t>(mon));
+  set_monitor(mon);
 }
 
 #endif // SHARE_RUNTIME_BASICLOCK_INLINE_HPP

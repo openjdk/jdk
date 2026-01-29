@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -37,35 +36,18 @@ STATIC_ASSERT(markWord::klass_shift == markWord::hash_bits + markWord::hash_shif
 
 markWord markWord::displaced_mark_helper() const {
   assert(has_displaced_mark_helper(), "check");
-  if (has_monitor()) {
-    // Has an inflated monitor. Must be checked before has_locker().
-    ObjectMonitor* monitor = this->monitor();
-    return monitor->header();
-  }
-  if (has_locker()) {  // has a stack lock
-    BasicLock* locker = this->locker();
-    return locker->displaced_header();
-  }
-  // This should never happen:
-  fatal("bad header=" INTPTR_FORMAT, value());
-  return markWord(value());
+  // Make sure we have an inflated monitor.
+  guarantee(has_monitor(), "bad header=" INTPTR_FORMAT, value());
+  ObjectMonitor* monitor = this->monitor();
+  return monitor->header();
 }
 
 void markWord::set_displaced_mark_helper(markWord m) const {
   assert(has_displaced_mark_helper(), "check");
-  if (has_monitor()) {
-    // Has an inflated monitor. Must be checked before has_locker().
-    ObjectMonitor* monitor = this->monitor();
-    monitor->set_header(m);
-    return;
-  }
-  if (has_locker()) {  // has a stack lock
-    BasicLock* locker = this->locker();
-    locker->set_displaced_header(m);
-    return;
-  }
-  // This should never happen:
-  fatal("bad header=" INTPTR_FORMAT, value());
+  // Make sure we have an inflated monitor.
+  guarantee(has_monitor(), "bad header=" INTPTR_FORMAT, value());
+  ObjectMonitor* monitor = this->monitor();
+  monitor->set_header(m);
 }
 
 void markWord::print_on(outputStream* st, bool print_monitor_info) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ public class MethodHandleHelper {
     private MethodHandleHelper() { }
 
     public static final Lookup IMPL_LOOKUP = Lookup.IMPL_LOOKUP;
-    public static final Class<?> MHN_CALL_SITE_CONTEXT_CLASS
-            = MethodHandleNatives.CallSiteContext.class;
+    public static final Class<?> JLI_CALL_SITE_CLASS
+            = java.lang.invoke.CallSite.class;
 
     public static void customize(MethodHandle mh) {
         mh.customize();

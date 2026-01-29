@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -658,10 +658,17 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
 
     /**
      * Returns a snapshot of the subgroups as an array, used by JVMTI.
+     * WARNING: Make sure this method does not trigger any class loading,
+     * because a ClassPrepare event can deadlock the debugger and debug agent.
      */
     private ThreadGroup[] subgroupsAsArray() {
         List<ThreadGroup> groups = synchronizedSubgroups();
-        return groups.toArray(new ThreadGroup[0]);
+        int count = groups.size();
+        var array = new ThreadGroup[count];
+        for (int i = 0; i < count; i++) {
+            array[i] = groups.get(i);
+        }
+        return array;
     }
 
     /**

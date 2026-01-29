@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,28 +32,41 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
+import jdk.jfr.SettingControl;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.ValueParser;
+import jdk.jfr.internal.util.Utils;
+
 import static jdk.jfr.internal.util.ValueParser.MISSING;
 
 @MetadataDefinition
 @Label("Period")
 @Description("Record event at interval")
 @Name(Type.SETTINGS_PREFIX + "Period")
-public final class PeriodSetting extends JDKSettingControl {
+public final class PeriodSetting extends SettingControl {
     private static final long typeId = Type.getTypeId(PeriodSetting.class);
-
     public static final String EVERY_CHUNK = "everyChunk";
     public static final String BEGIN_CHUNK = "beginChunk";
     public static final String END_CHUNK = "endChunk";
     public static final String DEFAULT_VALUE = EVERY_CHUNK;
     public static final String NAME = "period";
     private final PlatformEventType eventType;
-    private String value = EVERY_CHUNK;
+    private final String defaultValue;
+    private String value;
 
-    public PeriodSetting(PlatformEventType eventType) {
+    public PeriodSetting(PlatformEventType eventType, String defaultValue) {
         this.eventType = Objects.requireNonNull(eventType);
+        this.defaultValue = validPeriod(defaultValue);
+        this.value = defaultValue;
+    }
+
+    private String validPeriod(String userDefault) {
+        return switch (userDefault) {
+            case BEGIN_CHUNK -> BEGIN_CHUNK;
+            case END_CHUNK -> END_CHUNK;
+            default -> Utils.validTimespanInfinity(eventType, "Period", userDefault, DEFAULT_VALUE);
+        };
     }
 
     @Override
@@ -94,7 +107,7 @@ public final class PeriodSetting extends JDKSettingControl {
         if (!beginChunk && endChunk) {
             return END_CHUNK;
         }
-        return DEFAULT_VALUE; // "everyChunk" is default
+        return defaultValue;
     }
 
     @Override

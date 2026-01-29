@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zContinuation.inline.hpp"
 #include "gc/z/zStackChunkGCData.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 static zpointer materialize_zpointer(stackChunkOop chunk, void* addr) {
   volatile uintptr_t* const value_addr = (volatile uintptr_t*)addr;
@@ -47,7 +46,7 @@ static zpointer materialize_zpointer(stackChunkOop chunk, void* addr) {
   // load the oop once and perform all checks on that loaded copy.
 
   // Load once
-  const uintptr_t value = Atomic::load(value_addr);
+  const uintptr_t value = AtomicAccess::load(value_addr);
 
   if ((value & ~ZPointerAllMetadataMask) == 0) {
     // Must be null of some sort - either zaddress or zpointer

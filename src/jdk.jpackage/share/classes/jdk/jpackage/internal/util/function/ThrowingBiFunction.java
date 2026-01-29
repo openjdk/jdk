@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,17 +27,17 @@ package jdk.jpackage.internal.util.function;
 import java.util.function.BiFunction;
 
 @FunctionalInterface
-public interface ThrowingBiFunction<T, U, R> {
+public interface ThrowingBiFunction<T, U, R, E extends Exception> {
 
-    R apply(T t, U u) throws Throwable;
+    R apply(T t, U u) throws E;
 
     public static <T, U, R> BiFunction<T, U, R> toBiFunction(
-            ThrowingBiFunction<T, U, R> v) {
+            ThrowingBiFunction<T, U, R, ? extends Exception> v) {
         return (t, u) -> {
             try {
                 return v.apply(t, u);
-            } catch (Throwable ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+            } catch (Exception ex) {
+                throw ExceptionBox.toUnchecked(ex);
             }
         };
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,12 @@ import jdk.internal.access.SharedSecrets;
  * <i>http://www.ietf.org/rfc/rfc2965.txt</i></a>
  * </blockquote>
  *
- * <p> HttpCookie class can accept all these 3 forms of syntax.
+ * <p> HttpCookie class can accept all these 3 forms of syntax. This class also provides
+ * partial support for RFC 6265.
  *
  * @spec https://www.rfc-editor.org/info/rfc2109 RFC 2109: HTTP State Management Mechanism
  * @spec https://www.rfc-editor.org/info/rfc2965 RFC 2965: HTTP State Management Mechanism
+ * @spec https://www.rfc-editor.org/info/rfc6265 RFC 6265: HTTP State Management Mechanism
  * @author Edward Wang
  * @since 1.6
  */
@@ -185,14 +187,14 @@ public final class HttpCookie implements Cloneable {
      *          if the header string is {@code null}
      */
     public static List<HttpCookie> parse(String header) {
-        return parse(header, false);
+        return parse(header, false, -1L);
     }
 
     // Private version of parse() that will store the original header used to
     // create the cookie, in the cookie itself. This can be useful for filtering
     // Set-Cookie[2] headers, using the internal parsing logic defined in this
-    // class.
-    private static List<HttpCookie> parse(String header, boolean retainHeader) {
+    // class. Also, allows for testing by specifying the creation time.
+    static List<HttpCookie> parse(String header, boolean retainHeader, long currentTimeMillis) {
 
         int version = guessCookieVersion(header);
 
@@ -209,7 +211,7 @@ public final class HttpCookie implements Cloneable {
         // so the parse logic is slightly different
         if (version == 0) {
             // Netscape draft cookie
-            HttpCookie cookie = parseInternal(header, retainHeader);
+            HttpCookie cookie = parseInternal(header, retainHeader, currentTimeMillis);
             cookie.setVersion(0);
             cookies.add(cookie);
         } else {
@@ -218,7 +220,7 @@ public final class HttpCookie implements Cloneable {
             // it'll separate them with comma
             List<String> cookieStrings = splitMultiCookies(header);
             for (String cookieStr : cookieStrings) {
-                HttpCookie cookie = parseInternal(cookieStr, retainHeader);
+                HttpCookie cookie = parseInternal(cookieStr, retainHeader, currentTimeMillis);
                 cookie.setVersion(1);
                 cookies.add(cookie);
             }
@@ -230,12 +232,19 @@ public final class HttpCookie implements Cloneable {
     // ---------------- Public operations --------------
 
     /**
-     * Reports whether this HTTP cookie has expired or not.
+     * Reports whether this HTTP cookie has expired or not. This is
+     * based on whether {@link #getMaxAge()} seconds have elapsed since
+     * this object was created.
      *
      * @return  {@code true} to indicate this HTTP cookie has expired;
      *          otherwise, {@code false}
      */
     public boolean hasExpired() {
+        return hasExpired(System.currentTimeMillis());
+    }
+
+    // PP for testing
+    boolean hasExpired(long currentTimeMillis) {
         if (maxAge == 0) return true;
 
         // if not specify max-age, this cookie should be
@@ -243,7 +252,7 @@ public final class HttpCookie implements Cloneable {
         // it is not expired.
         if (maxAge < 0) return false;
 
-        long deltaSecond = (System.currentTimeMillis() - whenCreated) / 1000;
+        long deltaSecond = (currentTimeMillis - whenCreated) / 1000;
         if (deltaSecond > maxAge)
             return true;
         else
@@ -411,8 +420,19 @@ public final class HttpCookie implements Cloneable {
     }
 
     /**
-     * Returns the maximum age of the cookie, specified in seconds. By default,
-     * {@code -1} indicating the cookie will persist until browser shutdown.
+     * Returns the maximum age of the cookie, specified in seconds from the time
+     * the object was created. By default, {@code -1} indicating the cookie will
+     * persist until browser shutdown.
+     *
+     * The value of this attribute is determined by the following steps, in line
+     * with RFC 6265:
+     *
+     * <ol><li>If {@link #setMaxAge(long)} was called, return the value set.</li>
+     * <li>If previous step failed, and a {@code Max-Age} attribute was parsed
+     * then return that value.</li>
+     * <li>If previous step failed, and an {@code Expires} attribute was parsed
+     * then the maxAge calculated at parsing time from that date, is returned</li>
+     * <li>If previous step failed, then return {@code -1}.</li></ol>
      *
      * @return  an integer specifying the maximum age of the cookie in seconds
      *
@@ -810,10 +830,13 @@ public final class HttpCookie implements Cloneable {
      *          if header string violates the cookie specification
      */
     private static HttpCookie parseInternal(String header,
-                                            boolean retainHeader)
+                                            boolean retainHeader,
+                                            long currentTimeMillis)
     {
         HttpCookie cookie = null;
         String namevaluePair = null;
+        if (currentTimeMillis == -1L)
+            currentTimeMillis = System.currentTimeMillis();
 
         StringTokenizer tokenizer = new StringTokenizer(header, ";");
 
@@ -828,10 +851,11 @@ public final class HttpCookie implements Cloneable {
                 if (retainHeader)
                     cookie = new HttpCookie(name,
                                             stripOffSurroundingQuote(value),
-                                            header);
+                                            header, currentTimeMillis);
                 else
                     cookie = new HttpCookie(name,
-                                            stripOffSurroundingQuote(value));
+                                            stripOffSurroundingQuote(value),
+                                            null, currentTimeMillis);
             } else {
                 // no "=" in name-value pair; it's an error
                 throw new IllegalArgumentException("Invalid cookie name-value pair");
@@ -839,6 +863,10 @@ public final class HttpCookie implements Cloneable {
         } catch (NoSuchElementException ignored) {
             throw new IllegalArgumentException("Empty cookie header string");
         }
+
+        // Attributes that require special handling
+        String expiresValue = null;
+        String maxAgeValue = null;
 
         // remaining name-value pairs are cookie's attributes
         while (tokenizer.hasMoreTokens()) {
@@ -852,10 +880,19 @@ public final class HttpCookie implements Cloneable {
                 name = namevaluePair.trim();
                 value = null;
             }
+            if (name.equalsIgnoreCase("max-age") && maxAgeValue == null) {
+                maxAgeValue = value;
+                continue;
+            }
+            if (name.equalsIgnoreCase("expires") && expiresValue == null) {
+                expiresValue = value;
+                continue;
+            }
 
             // assign attribute to cookie
             assignAttribute(cookie, name, value);
         }
+        assignMaxAgeAttribute(cookie, expiresValue, maxAgeValue);
 
         return cookie;
     }
@@ -903,20 +940,6 @@ public final class HttpCookie implements Cloneable {
                         cookie.setDomain(attrValue);
                 }
             });
-        assignors.put("max-age", new CookieAttributeAssignor(){
-                public void assign(HttpCookie cookie,
-                                   String attrName,
-                                   String attrValue) {
-                    try {
-                        long maxage = Long.parseLong(attrValue);
-                        if (cookie.getMaxAge() == MAX_AGE_UNSPECIFIED)
-                            cookie.setMaxAge(maxage);
-                    } catch (NumberFormatException ignored) {
-                        throw new IllegalArgumentException(
-                                "Illegal cookie max-age attribute");
-                    }
-                }
-            });
         assignors.put("path", new CookieAttributeAssignor(){
                 public void assign(HttpCookie cookie,
                                    String attrName,
@@ -959,17 +982,37 @@ public final class HttpCookie implements Cloneable {
                     }
                 }
             });
-        assignors.put("expires", new CookieAttributeAssignor(){ // Netscape only
-                public void assign(HttpCookie cookie,
-                                   String attrName,
-                                   String attrValue) {
-                    if (cookie.getMaxAge() == MAX_AGE_UNSPECIFIED) {
-                        long delta = cookie.expiryDate2DeltaSeconds(attrValue);
-                        cookie.setMaxAge(delta > 0 ? delta : 0);
-                    }
-                }
-            });
     }
+
+    private static void assignMaxAgeAttribute(HttpCookie cookie,
+                                               String expiresValue,
+                                               String maxAgeValue)
+    {
+        if (cookie.getMaxAge() != MAX_AGE_UNSPECIFIED)
+            return;
+        if (expiresValue == null && maxAgeValue == null)
+            return;
+
+        // strip off the surrounding "-sign if there's any
+        expiresValue = stripOffSurroundingQuote(expiresValue);
+        maxAgeValue = stripOffSurroundingQuote(maxAgeValue);
+
+        try {
+            if (maxAgeValue != null) {
+                long maxAge = Long.parseLong(maxAgeValue);
+                cookie.maxAge = maxAge;
+                return;
+            }
+        } catch (NumberFormatException ignored) {}
+
+        try {
+            if (expiresValue != null) {
+                long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
+                cookie.maxAge = (delta > 0 ? delta : 0);
+            }
+        } catch (NumberFormatException ignored) {}
+    }
+
     private static void assignAttribute(HttpCookie cookie,
                                         String attrName,
                                         String attrValue)
@@ -989,7 +1032,7 @@ public final class HttpCookie implements Cloneable {
         SharedSecrets.setJavaNetHttpCookieAccess(
             new JavaNetHttpCookieAccess() {
                 public List<HttpCookie> parse(String header) {
-                    return HttpCookie.parse(header, true);
+                    return HttpCookie.parse(header, true, -1L);
                 }
 
                 public String header(HttpCookie cookie) {

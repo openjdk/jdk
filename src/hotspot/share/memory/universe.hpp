@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_UNIVERSE_HPP
 
 #include "gc/shared/verifyOption.hpp"
+#include "memory/reservedSpace.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
@@ -42,7 +43,6 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
-class ReservedHeapSpace;
 class SerializeClosure;
 
 class Universe: AllStatic {
@@ -51,11 +51,10 @@ class Universe: AllStatic {
   friend class oopDesc;
   friend class ClassLoader;
   friend class SystemDictionary;
-  friend class ReservedHeapSpace;
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
-  friend class MetaspaceShared;
+  friend class AOTMetaspace;
   friend class vmClasses;
 
   friend jint  universe_init();
@@ -118,8 +117,8 @@ class Universe: AllStatic {
   static intptr_t _non_oop_bits;
 
   // array of dummy objects used with +FullGCAlot
-  debug_only(static OopHandle   _fullgc_alot_dummy_array;)
-  debug_only(static int         _fullgc_alot_dummy_next;)
+  DEBUG_ONLY(static OopHandle   _fullgc_alot_dummy_array;)
+  DEBUG_ONLY(static int         _fullgc_alot_dummy_next;)
 
   // Compiler/dispatch support
   static int  _base_vtable_size;                      // Java vtbl size of klass Object (in words)
@@ -186,15 +185,24 @@ class Universe: AllStatic {
   static TypeArrayKlass* floatArrayKlass()       { return typeArrayKlass(T_FLOAT); }
   static TypeArrayKlass* doubleArrayKlass()      { return typeArrayKlass(T_DOUBLE); }
 
-  static ObjArrayKlass* objectArrayKlass()       { return _objectArrayKlass; }
+  static ObjArrayKlass* objectArrayKlass() {
+    ObjArrayKlass* k = _objectArrayKlass;
+    assert(k != nullptr, "Object array klass should be initialized; too early?");
+    return k;
+  }
 
-  static Klass* fillerArrayKlass()               { return _fillerArrayKlass; }
+  static Klass* fillerArrayKlass() {
+    Klass* k = _fillerArrayKlass;
+    assert(k != nullptr, "Filler array class should be initialized; too early?");
+    return k;
+  }
 
   static TypeArrayKlass* typeArrayKlass(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
-    assert(_typeArrayKlasses[t] != nullptr, "domain check");
-    return _typeArrayKlasses[t];
+    TypeArrayKlass* k = _typeArrayKlasses[t];
+    assert(k != nullptr, "Type array class should be initialized; too early?");
+    return k;
   }
 
   // Known objects in the VM
@@ -233,6 +241,7 @@ class Universe: AllStatic {
   static oop          array_index_out_of_bounds_exception_instance();
   static oop          array_store_exception_instance();
   static oop          class_cast_exception_instance();
+  static oop          preempted_exception_instance();
   static oop          vm_exception()                  { return internal_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
@@ -297,12 +306,14 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
+  static void before_exit();
+
   DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
-  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
+  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size = 0);
 
   // Global OopStorages
   static OopStorage* vm_weak();
@@ -358,7 +369,7 @@ class Universe: AllStatic {
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.
-  debug_only(static bool release_fullgc_alot_dummy();)
+  DEBUG_ONLY(static bool release_fullgc_alot_dummy();)
   // The non-oop pattern (see compiledIC.hpp, etc)
   static void*         non_oop_word();
   static bool contains_non_oop_word(void* p);

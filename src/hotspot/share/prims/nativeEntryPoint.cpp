@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/vmreg.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/typeArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
-#include "prims/foreignGlobals.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/downcallLinker.hpp"
+#include "prims/foreignGlobals.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 
 JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,

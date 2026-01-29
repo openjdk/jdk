@@ -125,15 +125,15 @@ public class MVJarSigningTest {
     private static void compile (String jarContent_path) throws Throwable {
         Path classes = Paths.get(USR_DIR, "classes", "base");
         Path source = Paths.get(TEST_SRC, jarContent_path, "base", "version");
-        CompilerUtils.compile(source, classes);
+        CompilerUtils.compile(source, classes, "--release", "8");
 
         classes = Paths.get(USR_DIR, "classes", "v9");
         source = Paths.get(TEST_SRC, jarContent_path , "v9", "version");
-        CompilerUtils.compile(source, classes);
+        CompilerUtils.compile(source, classes, "--release", "9");
 
         classes = Paths.get(USR_DIR, "classes", "v10");
         source = Paths.get(TEST_SRC, jarContent_path, "v10", "version");
-        CompilerUtils.compile(source, classes);
+        CompilerUtils.compile(source, classes, "--release", "10");
     }
 
     private static OutputAnalyzer jar(String...args) throws Throwable {

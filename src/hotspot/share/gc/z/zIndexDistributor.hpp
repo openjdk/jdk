@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP
 #define SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 class ZIndexDistributor {
 private:
   void* _strategy;
@@ -39,6 +41,10 @@ public:
 
   template <typename Function>
   void do_indices(Function function);
+
+  // Returns a count that is max_count or larger and upholds the requirements
+  // for using the ZIndexDistributor strategy specfied by ZIndexDistributorStrategy
+  static size_t get_count(size_t max_count);
 };
 
 #endif // SHARE_GC_Z_ZINDEXDISTRIBUTOR_HPP

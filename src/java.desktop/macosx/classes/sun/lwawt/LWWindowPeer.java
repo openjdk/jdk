@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -825,7 +825,7 @@ public class LWWindowPeer
                     topmostPlatformWindow != null ? topmostPlatformWindow.getPeer() : null;
 
             // topmostWindowPeer == null condition is added for the backward
-            // compatibility with applets. It can be removed when the
+            // compatibility. It can be removed when the
             // getTopmostPlatformWindowUnderMouse() method will be properly
             // implemented in CPlatformEmbeddedFrame class
             if (topmostWindowPeer == this || topmostWindowPeer == null) {

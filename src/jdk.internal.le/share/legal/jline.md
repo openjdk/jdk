@@ -1,4 +1,4 @@
-## JLine v3.26.1
+## JLine v3.29.0
 
 ### JLine License
 <pre>

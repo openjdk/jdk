@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ import java.util.regex.Pattern;
 /*
  * @test
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
- * @summary Test IR matcher with different default IR node regexes. Use -DPrintIREncoding.
+ * @summary Test IR matcher with different default IR node regexes. Use -DPrintApplicableIRRules.
  *          Normally, the framework should be called with driver.
  * @library /test/lib /testlibrary_tests /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=240 -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                               -XX:+WhiteBoxAPI -DPrintIREncoding=true  ir_framework.tests.TestIRMatching
+ *                               -XX:+WhiteBoxAPI -DPrintApplicableIRRules=true  ir_framework.tests.TestIRMatching
  */
 
 public class TestIRMatching {
@@ -75,7 +75,6 @@ public class TestIRMatching {
         runCheck(new String[] {"-XX:TLABRefillWasteFraction=50", "-XX:+UsePerfData", "-XX:+UseTLAB"}, BadFailOnConstraint.create(AndOr1.class, "test1(int)", 1, "CallStaticJava"));
         runCheck(new String[] {"-XX:TLABRefillWasteFraction=50", "-XX:-UsePerfData", "-XX:+UseTLAB"}, BadFailOnConstraint.create(AndOr1.class, "test2()", 1, "CallStaticJava"));
 
-        String[] allocMatches = { "MyClass", "wrapper for: C2 Runtime new_instance" };
         runCheck(BadFailOnConstraint.create(MultipleFailOnBad.class, "fail1()", 1, 1, "Store"),
                  BadFailOnConstraint.create(MultipleFailOnBad.class, "fail1()", 1,  3, "Store"),
                  GoodFailOnRegexConstraint.create(MultipleFailOnBad.class, "fail1()", 1,  2, 4),
@@ -88,12 +87,12 @@ public class TestIRMatching {
                  BadFailOnConstraint.create(MultipleFailOnBad.class, "fail5()", 1,  1, "Store"),
                  GoodFailOnRegexConstraint.create(MultipleFailOnBad.class, "fail5()", 1,  2, 3),
                  GoodFailOnRegexConstraint.create(MultipleFailOnBad.class, "fail6()", 1,  1),
-                 BadFailOnConstraint.create(MultipleFailOnBad.class, "fail6()", 1,  2, allocMatches),
+                 BadFailOnConstraint.create(MultipleFailOnBad.class, "fail6()", 1,  2, "MyClass"),
                  BadFailOnConstraint.create(MultipleFailOnBad.class, "fail6()", 1,  3, "CallStaticJava"),
                  GoodFailOnRegexConstraint.create(MultipleFailOnBad.class, "fail7()", 1,  1),
-                 BadFailOnConstraint.create(MultipleFailOnBad.class, "fail7()", 1,  2, allocMatches),
+                 BadFailOnConstraint.create(MultipleFailOnBad.class, "fail7()", 1,  2, "MyClass"),
                  GoodFailOnRegexConstraint.create(MultipleFailOnBad.class, "fail8()", 1,  1),
-                 BadFailOnConstraint.create(MultipleFailOnBad.class, "fail8()", 1,  2, allocMatches),
+                 BadFailOnConstraint.create(MultipleFailOnBad.class, "fail8()", 1,  2, "MyClass"),
                  BadFailOnConstraint.create(MultipleFailOnBad.class, "fail9()", 1,  1, "Store"),
                  BadFailOnConstraint.create(MultipleFailOnBad.class, "fail9()", 1,  2, "CallStaticJava"),
                  BadFailOnConstraint.create(MultipleFailOnBad.class, "fail10()", 1,  1, "Store", "iFld"),
@@ -114,12 +113,46 @@ public class TestIRMatching {
                  GoodRuleConstraint.create(Calls.class, "calls()", 3)
         );
 
-        String[] allocArrayMatches = { "MyClass", "wrapper for: C2 Runtime new_array"};
-        runCheck(BadFailOnConstraint.create(AllocArray.class, "allocArray()", 1, allocArrayMatches),
-                 BadFailOnConstraint.create(AllocArray.class, "allocArray()", 2,  allocArrayMatches),
+        runCheck(BadFailOnConstraint.create(AllocInstance.class, "allocInstance()", 1),
+                BadFailOnConstraint.create(AllocInstance.class, "allocInstance()", 2),
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 3),
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 4),
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 5),
+                BadFailOnConstraint.create(AllocInstance.class, "allocInstance()", 6),
+                BadFailOnConstraint.create(AllocInstance.class, "allocInstance()", 7),
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 8),
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 9),
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 10)
+        );
+
+        runCheck(
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 1),
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 2),
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 3)
+        );
+
+        runCheck(BadFailOnConstraint.create(AllocArray.class, "allocArray()", 1),
+                 BadFailOnConstraint.create(AllocArray.class, "allocArray()", 2),
                  GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 3),
                  GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 4),
-                 BadFailOnConstraint.create(AllocArray.class, "allocArray()", 5,  allocArrayMatches)
+                 GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 5),
+                 BadFailOnConstraint.create(AllocArray.class, "allocArray()", 6),
+                 BadFailOnConstraint.create(AllocArray.class, "allocArray()", 7),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 8),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 9),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 10)
+        );
+
+        runCheck(BadFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 1),
+                 BadFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 2),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 3),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 4),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 5),
+                 BadFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 6),
+                 BadFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 7),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 8),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 9),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 10)
         );
 
         runCheck(GoodRuleConstraint.create(RunTests.class, "good1()", 1),
@@ -222,9 +255,9 @@ public class TestIRMatching {
         } else {
             cmp = "cmp";
         }
-        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 1, cmp, "precise"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 1,cmp, "precise", "MyClass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 2,cmp, "precise", "ir_framework/tests/MyClass"),
+        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 1, cmp, "Constant"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 1,cmp, "Constant", "MyClass"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 2,cmp, "Constant", "ir_framework/tests/MyClass"),
                  GoodFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 3),
                  Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
                      GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1)
@@ -266,8 +299,9 @@ public class TestIRMatching {
                     failures.append("- Could not find all ideal() methods, expected 7 but found ").append(count)
                             .append(System.lineSeparator());
                 }
-                pattern = Pattern.compile(compilationPrefix() + ".*opto\\d.*\\R> Phase \"PrintOptoAssembly\":(?:(?!"
-                                          + compilationPrefix()  + ")[\\S\\s])+");
+                pattern = Pattern.compile(compilationPrefix() + ".*macro\\d.*\\R> Phase \""
+                        + CompilePhase.BEFORE_MACRO_EXPANSION.getName()
+                        + "\":(?:(?!" + compilationPrefix() + ")[\\S\\s])+");
                 matcher = pattern.matcher(output);
                 count = 0;
                 while (matcher.find()) {
@@ -278,7 +312,7 @@ public class TestIRMatching {
                     count++;
                 }
                 if (count != 7) {
-                    failures.append("- Could not find all opto() methods, expected 7 but found ").append(count).append(System.lineSeparator());
+                    failures.append("- Could not find all macro() methods, expected 7 but found ").append(count).append(System.lineSeparator());
                 }
                 if (!failures.isEmpty()) {
                     addException(new RuntimeException(failures.toString()));
@@ -406,7 +440,8 @@ public class TestIRMatching {
             }
         }
         if (!output.contains(builder.toString())) {
-            addException(new RuntimeException("Could not find encoding: \"" + builder + System.lineSeparator()));
+            addException(new RuntimeException("Could not find line in Applicable IR Rules: \"" + builder +
+                                                      System.lineSeparator()));
         }
     }
 }
@@ -918,17 +953,64 @@ class Calls {
     public void forceInline() {}
 }
 
+class AllocInstance {
+    MyClass myClass;
+
+    @Test
+    @IR(failOn = {IRNode.ALLOC})
+    @IR(failOn = {IRNode.ALLOC_OF, "MyClass"})
+    @IR(failOn = {IRNode.ALLOC_OF, "Class"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_OF, "MyClasss"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_OF, "ir_framework/tests/MySubClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_OF, "ir_framework/tests/MyClass"})
+    @IR(failOn = {IRNode.ALLOC_OF, "tests/MyClass"})
+    @IR(failOn = {IRNode.ALLOC_OF, "ests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_OF, "Atests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_OF, "tests"}) // Does not fail
+    public void allocInstance() {
+        myClass = new MyClass();
+    }
+
+    static class Nested {}
+    @Test
+    @IR(failOn = {IRNode.ALLOC_OF, "Nested"})
+    @IR(failOn = {IRNode.ALLOC_OF, "AllocInstance\\$Nested"})
+    @IR(failOn = {IRNode.ALLOC_OF, "AllocInst\\w+\\$Nested"})
+    public Nested allocNested() { return new Nested(); }
+}
+
 class AllocArray {
     MyClass[] myClassArray;
+    MyClass[][] myClassMultiArray;
 
     @Test
     @IR(failOn = {IRNode.ALLOC_ARRAY})
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "MyClass"})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "Class"}) // Does not fail
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "MyClasss"}) // Does not fail
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ir_framework/tests/MySubClass"}) // Does not fail
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ir_framework/tests/MyClass"})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests/MyClass"})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "Atests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests"}) // Does not fail
     public void allocArray() {
         myClassArray = new MyClass[2];
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ALLOC_ARRAY})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "MyClass"})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "Class"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "MyClasss"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ir_framework/tests/MySubClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ir_framework/tests/MyClass"})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests/MyClass"})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "Atests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests"}) // Does not fail
+    public void allocMultiArray() {
+        myClassMultiArray = new MyClass[2][3];
     }
 }
 
@@ -1392,21 +1474,21 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(failOn = IRNode.ALLOC)
-    public void opto1() {
+    public void macro1() {
         obj = new Object();
     }
 
     @Test
     @IR(failOn = IRNode.ALLOC)
     @IR(failOn = IRNode.STORE_F) // not fail
-    public void opto2() {
+    public void macro2() {
         obj = new Object();
     }
 
     @Test
     @IR(failOn = IRNode.ALLOC)
-    @IR(counts = {IRNode.COUNTED_LOOP, "1"}) // not fail
-    public void opto3() {
+    @IR(counts = {IRNode.COUNTED_LOOP, ">1"}) // not fail
+    public void macro3() {
         for (int i = 0; i < 100; i++) {
             obj = new Object();
         }
@@ -1414,28 +1496,28 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(counts = {IRNode.ALLOC, "0"})
-    public void opto4() {
+    public void macro4() {
         obj = new Object();
     }
 
     @Test
     @IR(failOn = IRNode.STORE_F) // not fail
     @IR(counts = {IRNode.ALLOC, "0"})
-    public void opto5() {
+    public void macro5() {
         obj = new Object();
     }
 
     @Test
     @IR(counts = {IRNode.STORE_F, "0"}) // not fail
     @IR(counts = {IRNode.ALLOC, "0"})
-    public void opto6() {
+    public void macro6() {
         obj = new Object();
     }
 
     @Test
     @IR(counts = {IRNode.ALLOC, "10"})
     @IR(counts = {IRNode.ALLOC, "0"})
-    public void opto7() {
+    public void macro7() {
         obj = new Object();
     }
 

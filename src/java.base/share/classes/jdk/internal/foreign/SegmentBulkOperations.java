@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.internal.foreign;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -50,12 +49,12 @@ public final class SegmentBulkOperations {
     private SegmentBulkOperations() {}
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+    private static final long LONG_MASK = ~7L; // The last three bits are zero
+    private static final long BYTE_REPLICATOR = 0x0101010101010101L;
 
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
-
-    // Update the FILL value for Aarch64 once 8338975 is fixed.
-    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", Architecture.isAARCH64() ? 10 : 5);
+    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
@@ -70,26 +69,26 @@ public final class SegmentBulkOperations {
 
             // Handle smaller segments directly without transitioning to native code
             final long u = Byte.toUnsignedLong(value);
-            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
+            final long longValue = BYTE_REPLICATOR * u;
 
             int offset = 0;
             // 0...0X...X000
             final int limit = (int) (dst.length & (NATIVE_THRESHOLD_FILL - 8));
-            for (; offset < limit; offset += 8) {
+            for (; offset < limit; offset += Long.BYTES) {
                 SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, longValue, !Architecture.isLittleEndian());
             }
             int remaining = (int) dst.length - limit;
             // 0...0X00
-            if (remaining >= 4) {
+            if (remaining >= Integer.BYTES) {
                 SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (int) longValue, !Architecture.isLittleEndian());
-                offset += 4;
-                remaining -= 4;
+                offset += Integer.BYTES;
+                remaining -= Integer.BYTES;
             }
             // 0...00X0
-            if (remaining >= 2) {
+            if (remaining >= Short.BYTES) {
                 SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (short) longValue, !Architecture.isLittleEndian());
-                offset += 2;
-                remaining -= 2;
+                offset += Short.BYTES;
+                remaining -= Short.BYTES;
             }
             // 0...000X
             if (remaining == 1) {
@@ -123,26 +122,26 @@ public final class SegmentBulkOperations {
             // is an overlap, we could tolerate one particular direction of overlap (but not the other).
 
             // 0...0X...X000
-            final int limit = (int) (size & (NATIVE_THRESHOLD_COPY - 8));
+            final int limit = (int) (size & (NATIVE_THRESHOLD_COPY - Long.BYTES));
             int offset = 0;
-            for (; offset < limit; offset += 8) {
+            for (; offset < limit; offset += Long.BYTES) {
                 final long v = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset, !Architecture.isLittleEndian());
                 SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v, !Architecture.isLittleEndian());
             }
             int remaining = (int) size - offset;
             // 0...0X00
-            if (remaining >= 4) {
+            if (remaining >= Integer.BYTES) {
                 final int v = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(),src.unsafeGetOffset() + srcOffset + offset, !Architecture.isLittleEndian());
                 SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v, !Architecture.isLittleEndian());
-                offset += 4;
-                remaining -= 4;
+                offset += Integer.BYTES;
+                remaining -= Integer.BYTES;
             }
             // 0...00X0
-            if (remaining >= 2) {
+            if (remaining >= Short.BYTES) {
                 final short v = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset, !Architecture.isLittleEndian());
                 SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v, !Architecture.isLittleEndian());
-                offset += 2;
-                remaining -=2;
+                offset += Short.BYTES;
+                remaining -= Short.BYTES;
             }
             // 0...000X
             if (remaining == 1) {
@@ -195,16 +194,16 @@ public final class SegmentBulkOperations {
     @ForceInline
     public static int contentHash(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
-        segment.checkBounds(fromOffset, length);
+        segment.checkSliceBounds(fromOffset, length);
         if (length == 0) {
             // The state has to be checked explicitly for zero-length segments
             segment.scope.checkValidState();
             return 1;
         }
         int result = 1;
-        final long longBytes = length & ((1L << 62) - 8);
+        final long longBytes = length & LONG_MASK;
         final long limit = fromOffset + longBytes;
-        for (; fromOffset < limit; fromOffset += 8) {
+        for (; fromOffset < limit; fromOffset += Long.BYTES) {
             long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
             result = result * POWERS_OF_31[7]
                     + ((byte) (val >>> 56)) * POWERS_OF_31[6]
@@ -218,24 +217,24 @@ public final class SegmentBulkOperations {
         }
         int remaining = (int) (length - longBytes);
         // 0...0X00
-        if (remaining >= 4) {
+        if (remaining >= Integer.BYTES) {
             int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
             result = result * POWERS_OF_31[3]
                     + ((byte) (val >>> 24)) * POWERS_OF_31[2]
                     + ((byte) (val >>> 16)) * POWERS_OF_31[1]
                     + ((byte) (val >>> 8)) * POWERS_OF_31[0]
                     + ((byte) val);
-            fromOffset += 4;
-            remaining -= 4;
+            fromOffset += Integer.BYTES;
+            remaining -= Integer.BYTES;
         }
         // 0...00X0
-        if (remaining >= 2) {
+        if (remaining >= Short.BYTES) {
             short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
             result = result * POWERS_OF_31[1]
                     + ((byte) (val >>> 8)) * POWERS_OF_31[0]
                     + ((byte) val);
-            fromOffset += 2;
-            remaining -= 2;
+            fromOffset += Short.BYTES;
+            remaining -= Short.BYTES;
         }
         // 0...000X
         if (remaining == 1) {
@@ -288,7 +287,7 @@ public final class SegmentBulkOperations {
                                  long start, int length, boolean srcAndDstBytesDiffer) {
         int offset = 0;
         final int limit = length & (NATIVE_THRESHOLD_MISMATCH - 8);
-        for (; offset < limit; offset += 8) {
+        for (; offset < limit; offset += Long.BYTES) {
             final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
@@ -298,24 +297,24 @@ public final class SegmentBulkOperations {
         int remaining = length - offset;
 
         // 0...0X00
-        if (remaining >= 4) {
+        if (remaining >= Integer.BYTES) {
             final int s = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final int d = SCOPED_MEMORY_ACCESS.getIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
-            offset += 4;
-            remaining -= 4;
+            offset += Integer.BYTES;
+            remaining -= Integer.BYTES;
         }
         // 0...00X0
-        if (remaining >= 2) {
+        if (remaining >= Short.BYTES) {
             final short s = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final short d = SCOPED_MEMORY_ACCESS.getShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
-            offset += 2;
-            remaining -= 2;
+            offset += Short.BYTES;
+            remaining -= Short.BYTES;
         }
         // 0...000X
         if (remaining == 1) {

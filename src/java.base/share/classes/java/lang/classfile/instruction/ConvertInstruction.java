@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -36,10 +37,27 @@ import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a primitive conversion instruction in the {@code code} array of a
- * {@code Code} attribute, such as {@code i2l}.  Corresponding opcodes will have
- * a {@code kind} of {@link Opcode.Kind#CONVERT}.  Delivered as a {@link
- * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * {@code Code} attribute, such as {@link Opcode#I2L i2l}.  Corresponding opcodes
+ * have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#CONVERT}.
+ * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * A primitive conversion instruction is composite:
+ * {@snippet lang=text :
+ * // @link substring="ConvertInstruction" target="#of(TypeKind, TypeKind)" :
+ * ConvertInstruction(
+ *     TypeKind fromType, // @link substring="fromType" target="#fromType"
+ *     TypeKind toType // @link substring="toType" target="#toType"
+ * )
+ * }
+ * where these conversions are valid:
+ * <ul>
+ * <li>Between {@code int}, {@code long}, {@code float}, and {@code double}, where
+ * {@code fromType != toType};
+ * <li>From {@code int} to {@code byte}, {@code char}, and {@code short}.
+ * </ul>
  *
+ * @see Opcode.Kind#CONVERT
+ * @see CodeBuilder#conversion CodeBuilder::conversion
  * @since 24
  */
 public sealed interface ConvertInstruction extends Instruction
@@ -55,10 +73,16 @@ public sealed interface ConvertInstruction extends Instruction
     TypeKind toType();
 
     /**
-     * {@return A conversion instruction}
+     * {@return a conversion instruction}  Valid conversions are:
+     * <ul>
+     * <li>Between {@code int}, {@code long}, {@code float}, and {@code double},
+     * where {@code fromType != toType};
+     * <li>From {@code int} to {@code byte}, {@code char}, and {@code short}.
+     * </ul>
      *
      * @param fromType the type to convert from
      * @param toType the type to convert to
+     * @throws IllegalArgumentException if this is not a valid conversion
      */
     static ConvertInstruction of(TypeKind fromType, TypeKind toType) {
         return of(BytecodeHelpers.convertOpcode(fromType, toType));

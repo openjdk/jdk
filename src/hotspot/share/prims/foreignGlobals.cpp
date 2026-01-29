@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "foreignGlobals.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 StubLocations::StubLocations() {
   for (uint32_t i = 0; i < LOCATION_LIMIT; i++) {
@@ -202,7 +200,7 @@ class ArgumentShuffle::ComputeMoveOrder: public StackObj {
     return a.type() == b.type() && a.index_or_offset() == b.index_or_offset();
   }
 
-  using KillerTable = ResourceHashtable<
+  using KillerTable = HashTable<
     VMStorage, MoveOperation*,
     32, // doesn't need to be big. don't have that many argument registers (in known ABIs)
     AnyObj::RESOURCE_AREA,

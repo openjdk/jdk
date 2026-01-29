@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,8 +182,6 @@ public class TestNewSizeFlags {
         private static final GCTypes.YoungGCType YOUNG_GC_TYPE = GCTypes.YoungGCType.getYoungGCType();
         private static final long HEAP_SPACE_ALIGNMENT = WB.getHeapSpaceAlignment();
         private static final long HEAP_ALIGNMENT = WB.getHeapAlignment();
-        private static final long PS_VIRTUAL_SPACE_ALIGNMENT =
-                (YOUNG_GC_TYPE == GCTypes.YoungGCType.PSNew) ? WB.psVirtualSpaceAlignment() : 0;
 
         public static final int ARRAY_LENGTH = 100;
         public static final int CHUNK_SIZE = 1024;
@@ -288,6 +286,20 @@ public class TestNewSizeFlags {
             if (YOUNG_GC_TYPE == GCTypes.YoungGCType.G1) {
                 return new MemoryUsage(edenUsageInit + survivorUsageInit, 0,
                         edenUsageCommited + survivorUsageCommited, Long.MAX_VALUE);
+            } else if (YOUNG_GC_TYPE == GCTypes.YoungGCType.DefNew) {
+                // Eden might grow to be almost the entire young generation,
+                // so it is approximated as the size for the entire young
+                // generation.
+                long youngGenUsageMax = edenUsage.getMax();
+
+                long combinedSurvivorUsageMax = 2 * survivorUsage.getMax();
+                if (combinedSurvivorUsageMax > youngGenUsageMax) {
+                  throw new RuntimeException("Unexpectedly large survivorUsage combined maximum value: " + combinedSurvivorUsageMax);
+                }
+
+                return new MemoryUsage(edenUsageInit + survivorUsageInit * 2, 0,
+                        edenUsageCommited + survivorUsageCommited * 2,
+                        youngGenUsageMax);
             } else {
                 return new MemoryUsage(edenUsageInit + survivorUsageInit * 2, 0,
                         edenUsageCommited + survivorUsageCommited * 2,
@@ -303,9 +315,7 @@ public class TestNewSizeFlags {
                 case DefNew:
                     return HeapRegionUsageTool.alignDown(value, HEAP_SPACE_ALIGNMENT);
                 case PSNew:
-                    return HeapRegionUsageTool.alignUp(HeapRegionUsageTool.alignDown(value,
-                            HEAP_SPACE_ALIGNMENT),
-                            PS_VIRTUAL_SPACE_ALIGNMENT);
+                    return HeapRegionUsageTool.alignDown(value, HEAP_SPACE_ALIGNMENT);
                 case G1:
                     return HeapRegionUsageTool.alignUp(value, WB.g1RegionSize());
                 default:

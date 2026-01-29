@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8345248
  * @summary tests for "requires transitive"
  * @library /tools/lib
  * @modules
@@ -34,6 +35,8 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -254,6 +257,106 @@ public class RequiresTransitiveTest extends ModuleTestBase {
         for (String e: expect) {
             if (!log.contains(e))
                 throw new Exception("expected output not found: " + e);
+        }
+    }
+
+    @Test //JDK-8345248:
+    public void testTransitiveModuleName(Path base) throws Exception {
+        Path lib = base.resolve("lib");
+        Path libSrc = lib.resolve("src");
+        Path transitive = libSrc.resolve("transitive");
+        tb.writeJavaFiles(transitive,
+                """
+                module transitive {
+                }
+                """
+        );
+        Path transitiveA = libSrc.resolve("transitive.a");
+        tb.writeJavaFiles(transitiveA,
+                """
+                module transitive.a {
+                }
+                """
+        );
+
+        Path libClasses = lib.resolve("classes");
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-source-path", libSrc.toString())
+                .files(findJavaFiles(libSrc))
+                .outdir(libClasses)
+                .run()
+                .writeAll();
+
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        tb.writeJavaFiles(src,
+                """
+                module m {
+                    requires transitive;
+                    requires transitive.a;
+                }
+                """
+        );
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-path", libClasses.toString())
+                .sourcepath(src)
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run()
+                .writeAll();
+
+        tb.writeJavaFiles(src,
+                """
+                module m {
+                    requires transitive transitive;
+                    requires transitive transitive.a;
+                }
+                """
+        );
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-path", libClasses.toString())
+                .sourcepath(src)
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run()
+                .writeAll();
+
+        tb.writeJavaFiles(src,
+                """
+                module m {
+                    requires transitive transitive transitive;
+                    requires transitive transitive transitive.a;
+                }
+                """
+        );
+
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-path", libClasses.toString(),
+                         "-XDrawDiagnostics")
+                .sourcepath(src)
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+
+        List<String> expected = List.of(
+                "module-info.java:2:25: compiler.err.repeated.modifier",
+                "module-info.java:3:25: compiler.err.repeated.modifier",
+                "2 errors"
+        );
+
+        if (!Objects.equals(expected, log)) {
+            throw new Exception("expected: " + expected +
+                                ", but got: " + log);
         }
     }
 }

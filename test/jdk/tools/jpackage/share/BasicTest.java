@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,75 @@
  */
 
 
+import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE;
+import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.JavaTool;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.ConfigurationTarget;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
 /*
  * @test
  * @summary jpackage basic testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile BasicTest.java
- * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * @compile -Xlint:all -Werror BasicTest.java
+ * @run main/othervm/timeout=2880 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=BasicTest
  */
 
 public final class BasicTest {
+
+    public static Collection<?> addModulesParams() {
+        List<Object[][]> params = new ArrayList<>();
+        params.add(new Object[][] { new String[] { "--add-modules", "ALL-DEFAULT"  } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop,jdk.jartool" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop", "--add-modules", "jdk.jartool" } });
+        if (isAllModulePathCapable()) {
+            final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+            params.add(new Object[][] { new String[] { "--add-modules", "ALL-MODULE-PATH",
+                                                       // Since JDK-8345259 ALL-MODULE-PATH requires --module-path arg
+                                                       "--module-path", jmods.toString() } });
+        }
+        return Collections.unmodifiableList(params);
+    }
+
+    private static boolean isAllModulePathCapable() {
+        Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+        boolean noJmods = Files.notExists(jmods);
+        if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
+           TKit.trace("ALL-MODULE-PATH test skipped for linkable run-time image");
+           return false;
+        }
+        return true;
+    }
+
     @Test
     public void testNoArgs() {
         List<String> output =
@@ -78,12 +114,11 @@ public final class BasicTest {
                 .ignoreFakeRuntime();
 
         cmd.executeAndAssertImageCreated();
-        Path launcherPath = cmd.appLauncherPath();
 
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
 
-        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output.stream());
-        TKit.assertTextStream("jpackage.app-path=").apply(output.stream());
+        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output);
+        TKit.assertTextStream("jpackage.app-path=").apply(output);
     }
 
     @Test
@@ -137,65 +172,106 @@ public final class BasicTest {
         };
 
         TKit.trace("Check parameters in help text");
-        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)),
+        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)).longValue(),
                 "Check help text contains platform specific parameters");
-        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes),
+        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes).longValue(),
                 "Check help text doesn't contain unexpected parameters");
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testVerbose() {
-        JPackageCommand cmd = JPackageCommand.helloAppImage()
-                // Disable default logic adding `--verbose` option
-                // to jpackage command line.
-                .ignoreDefaultVerbose(true)
-                .saveConsoleOutput(true)
-                .setFakeRuntime().executePrerequisiteActions();
+    @Parameter("false")
+    @Parameter("true")
+    public void testQuiet(boolean appImage) {
 
-        List<String> expectedVerboseOutputStrings = new ArrayList<>();
-        expectedVerboseOutputStrings.add("Creating app package:");
-        if (TKit.isWindows()) {
-            expectedVerboseOutputStrings.add(
-                    "Succeeded in building Windows Application Image package");
-        } else if (TKit.isLinux()) {
-            expectedVerboseOutputStrings.add(
-                    "Succeeded in building Linux Application Image package");
-        } else if (TKit.isOSX()) {
-            expectedVerboseOutputStrings.add("Preparing Info.plist:");
-            expectedVerboseOutputStrings.add(
-                    "Succeeded in building Mac Application Image package");
+        ConfigurationTarget target;
+        if (appImage) {
+            target = new ConfigurationTarget(JPackageCommand.helloAppImage());
         } else {
-            TKit.throwUnknownPlatformError();
+            target = new ConfigurationTarget(new PackageTest().configureHelloApp());
         }
 
-        TKit.deleteDirectoryContentsRecursive(cmd.outputDir());
-        List<String> nonVerboseOutput = cmd.execute().getOutput();
-        List<String>[] verboseOutput = (List<String>[])new List<?>[1];
+        target.addInitializer(cmd -> {
+            // Disable the default logic adding `--verbose` option to jpackage command line.
+            cmd.ignoreDefaultVerbose(true)
+            .useToolProvider(true)
+            .saveConsoleOutput(true)
+            .setFakeRuntime();
+        });
 
-        // Directory clean up is not 100% reliable on Windows because of
-        // antivirus software that can lock .exe files. Setup
-        // different output directory instead of cleaning the default one for
-        // verbose jpackage run.
-        TKit.withTempDirectory("verbose-output", tempDir -> {
-            cmd.setArgumentValue("--dest", tempDir);
+        Consumer<Executor.Result> asserter = result -> {
+            TKit.assertStringListEquals(List.of(), result.getOutput(), "Check output is empty");
+        };
+
+        target.cmd().map(JPackageCommand::execute).ifPresent(asserter);
+        target.test().ifPresent(test -> {
+            test.addBundleVerifier((_, result) -> {
+                asserter.accept(result);
+            }).run(CREATE);
+        });
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testVerbose(boolean appImage) {
+
+        ConfigurationTarget target;
+        if (appImage) {
+            target = new ConfigurationTarget(JPackageCommand.helloAppImage());
+        } else {
+            target = new ConfigurationTarget(new PackageTest().configureHelloApp());
+        }
+
+        target.addInitializer(cmd -> {
+            // Disable the default logic adding `--verbose` option to jpackage command line.
+            cmd.ignoreDefaultVerbose(true)
+                    .useToolProvider(true)
+                    .addArgument("--verbose")
+                    .saveConsoleOutput(true)
+                    .setFakeRuntime();
+
+            List<CannedFormattedString> verboseContent;
+            if (appImage) {
+                verboseContent = List.of(
+                        JPackageStringBundle.MAIN.cannedFormattedString("message.create-app-image"),
+                        JPackageStringBundle.MAIN.cannedFormattedString("message.app-image-created"));
+            } else {
+                verboseContent = List.of(
+                        JPackageStringBundle.MAIN.cannedFormattedString("message.create-package"),
+                        JPackageStringBundle.MAIN.cannedFormattedString("message.package-created"));
+            }
+
+            cmd.validateOutput(verboseContent.toArray(CannedFormattedString[]::new));
+        });
+
+        target.cmd().ifPresent(JPackageCommand::execute);
+        target.test().ifPresent(test -> {
+            test.run(CREATE);
+        });
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testErrorsAlwaysPrinted(boolean verbose) {
+        final var cmd = JPackageCommand.helloAppImage()
+                .ignoreDefaultVerbose(true)
+                .useToolProvider(false)
+                .discardStdout(true)
+                .removeArgumentWithValue("--main-class");
+
+        if (verbose) {
             cmd.addArgument("--verbose");
-            verboseOutput[0] = cmd.execute().getOutput();
-        });
+        }
 
-        TKit.assertTrue(nonVerboseOutput.size() < verboseOutput[0].size(),
-                "Check verbose output is longer than regular");
+        cmd.validateOutput(Stream.of(
+                List.of("error.no-main-class-with-main-jar", "hello.jar"),
+                List.of("error.no-main-class-with-main-jar.advice", "hello.jar")
+        ).map(args -> {
+            return JPackageStringBundle.MAIN.cannedFormattedString(args.getFirst(), args.subList(1, args.size()).toArray());
+        }).toArray(CannedFormattedString[]::new));
 
-        expectedVerboseOutputStrings.forEach(str -> {
-            TKit.assertTextStream(str).label("regular output")
-                    .predicate(String::contains).negate()
-                    .apply(nonVerboseOutput.stream());
-        });
-
-        expectedVerboseOutputStrings.forEach(str -> {
-            TKit.assertTextStream(str).label("verbose output")
-                    .apply(verboseOutput[0].stream());
-        });
+        cmd.execute(1);
     }
 
     @Test
@@ -251,12 +327,12 @@ public final class BasicTest {
     @Test
     @Parameter("true")
     @Parameter("false")
-    public void testNoOutputDir(boolean appImage) throws Throwable {
+    public void testNoOutputDir(boolean appImage) throws IOException {
         var cmd = JPackageCommand.helloAppImage();
 
         final var execDir = cmd.outputDir();
 
-        final ThrowingConsumer<JPackageCommand> initializer = cmdNoOutputDir -> {
+        final ThrowingConsumer<JPackageCommand, IOException> initializer = cmdNoOutputDir -> {
             cmd.executePrerequisiteActions();
 
             final var pkgType = cmdNoOutputDir.packageType();
@@ -283,7 +359,7 @@ public final class BasicTest {
 
             // JPackageCommand.execute() will not do the cleanup if `--dest` parameter
             // is not specified, do it manually.
-            TKit.createDirectories(execDir);
+            Files.createDirectories(execDir);
             TKit.deleteDirectoryContentsRecursive(execDir);
         };
 
@@ -306,17 +382,12 @@ public final class BasicTest {
     }
 
     @Test
-    @Parameter("ALL-MODULE-PATH")
-    @Parameter("ALL-DEFAULT")
-    @Parameter("java.desktop")
-    @Parameter("java.desktop,jdk.jartool")
-    @Parameter({ "java.desktop", "jdk.jartool" })
-    public void testAddModules(String... addModulesArg) {
+    @ParameterSupplier("addModulesParams")
+    public void testAddModules(String[] addModulesArg) {
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage("goodbye.jar:com.other/com.other.Hello")
                 .ignoreDefaultRuntime(true); // because of --add-modules
-        Stream.of(addModulesArg).map(v -> Stream.of("--add-modules", v)).flatMap(
-                s -> s).forEachOrdered(cmd::addArgument);
+        Stream.of(addModulesArg).forEachOrdered(cmd::addArgument);
         cmd.executeAndAssertHelloAppImageCreated();
     }
 
@@ -357,7 +428,10 @@ public final class BasicTest {
         );
 
         if (TestTempType.TEMPDIR_NOT_EMPTY.equals(type)) {
-            pkgTest.setExpectedExitCode(1).addBundleVerifier(cmd -> {
+            pkgTest.setExpectedExitCode(1).addInitializer(cmd -> {
+                cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                        "error.parameter-not-empty-directory", cmd.getArgumentValue("--temp"), "--temp"));
+            }).addBundleVerifier(cmd -> {
                 // Check jpackage didn't use the supplied directory.
                 Path tempDir = Path.of(cmd.getArgumentValue("--temp"));
                 TKit.assertDirectoryContent(tempDir).match(Path.of("foo.txt"));

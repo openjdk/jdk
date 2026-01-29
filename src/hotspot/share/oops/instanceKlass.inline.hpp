@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/fieldInfo.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -64,19 +64,11 @@ inline InstanceKlass* volatile* InstanceKlass::adr_implementor() const {
 }
 
 inline ObjArrayKlass* InstanceKlass::array_klasses_acquire() const {
-  return Atomic::load_acquire(&_array_klasses);
+  return AtomicAccess::load_acquire(&_array_klasses);
 }
 
 inline void InstanceKlass::release_set_array_klasses(ObjArrayKlass* k) {
-  Atomic::release_store(&_array_klasses, k);
-}
-
-inline jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
-  return Atomic::load_acquire(&_methods_jmethod_ids);
-}
-
-inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
-  Atomic::release_store(&_methods_jmethod_ids, jmeths);
+  AtomicAccess::release_store(&_array_klasses, k);
 }
 
 // The iteration over the oops in objects is a hot path in the GC code.

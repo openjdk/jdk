@@ -24,9 +24,7 @@
 /**
  * @test 8200301 8201194
  * @summary deduplicate lambda methods with the same body, target type, and captured state
- * @enablePreview
  * @modules
- *     java.base/jdk.internal.classfile.impl
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.code jdk.compiler/com.sun.tools.javac.comp
  *     jdk.compiler/com.sun.tools.javac.file jdk.compiler/com.sun.tools.javac.main
@@ -66,7 +64,6 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
-import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -156,7 +153,7 @@ public class DeduplicationTest {
             }
             BootstrapMethodsAttribute bsm = cm.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             for (BootstrapMethodEntry b : bsm.bootstrapMethods()) {
-                if (((BootstrapMethodEntryImpl) b).bootstrapMethod().asSymbol().methodName().equals("metafactory")) {
+                if (b.bootstrapMethod().asSymbol().methodName().equals("metafactory")) {
                     bootstrapMethodNames.add(
                             ((MethodHandleEntry) b.arguments().get(1))
                                     .reference()

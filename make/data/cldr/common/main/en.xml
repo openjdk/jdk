@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -100,6 +100,7 @@ annotations.
 			<language type="bo">Tibetan</language>
 			<language type="bpy">Bishnupriya</language>
 			<language type="bqi">Bakhtiari</language>
+			<language type="bqi" alt="variant">Luri Bakhtiari</language>
 			<language type="br">Breton</language>
 			<language type="bra">Braj</language>
 			<language type="brh">Brahui</language>
@@ -132,6 +133,8 @@ annotations.
 			<language type="chy">Cheyenne</language>
 			<language type="cic">Chickasaw</language>
 			<language type="ckb">Central Kurdish</language>
+			<language type="ckb" menu="core">Kurdish</language>
+			<language type="ckb" menu="extension">Central</language>
 			<language type="ckb" alt="menu">Kurdish, Central</language>
 			<language type="ckb" alt="variant">Kurdish, Sorani</language>
 			<language type="clc">Chilcotin</language>
@@ -139,6 +142,7 @@ annotations.
 			<language type="cop">Coptic</language>
 			<language type="cps">Capiznon</language>
 			<language type="cr">Cree</language>
+			<language type="cr" alt="long">Woods Cree</language>
 			<language type="crg">Michif</language>
 			<language type="crh">Crimean Tatar</language>
 			<language type="crj">Southern East Cree</language>
@@ -152,7 +156,6 @@ annotations.
 			<language type="csw">Swampy Cree</language>
 			<language type="cu">Church Slavic</language>
 			<language type="cv">Chuvash</language>
-			<language type="cwd">Woods Cree</language>
 			<language type="cy">Welsh</language>
 			<language type="da">Danish</language>
 			<language type="dak">Dakota</language>
@@ -256,7 +259,6 @@ annotations.
 			<language type="hak">Hakka Chinese</language>
 			<language type="haw">Hawaiian</language>
 			<language type="hax">Southern Haida</language>
-			<language type="hdn">Northern Haida</language>
 			<language type="he">Hebrew</language>
 			<language type="hi">Hindi</language>
 			<language type="hi_Latn">Hindi (Latin)</language>
@@ -284,7 +286,6 @@ annotations.
 			<language type="ig">Igbo</language>
 			<language type="ii">Sichuan Yi</language>
 			<language type="ik">Inupiaq</language>
-			<language type="ike">Eastern Canadian Inuktitut</language>
 			<language type="ikt">Western Canadian Inuktitut</language>
 			<language type="ilo">Iloko</language>
 			<language type="inh">Ingush</language>
@@ -314,6 +315,7 @@ annotations.
 			<language type="kcg">Tyap</language>
 			<language type="kde">Makonde</language>
 			<language type="kea">Kabuverdianu</language>
+			<language type="kek">Qʼeqchiʼ</language>
 			<language type="ken">Kenyang</language>
 			<language type="kfo">Koro</language>
 			<language type="kg">Kongo</language>
@@ -348,6 +350,8 @@ annotations.
 			<language type="ksf">Bafia</language>
 			<language type="ksh">Colognian</language>
 			<language type="ku">Kurdish</language>
+			<language type="ku" menu="core">Kurdish</language>
+			<language type="ku" menu="extension">Kurmanji</language>
 			<language type="kum">Kumyk</language>
 			<language type="kut">Kutenai</language>
 			<language type="kv">Komi</language>
@@ -473,10 +477,10 @@ annotations.
 			<language type="oj">Ojibwa</language>
 			<language type="ojb">Northwestern Ojibwa</language>
 			<language type="ojc">Central Ojibwa</language>
-			<language type="ojg">Eastern Ojibwa</language>
 			<language type="ojs">Oji-Cree</language>
 			<language type="ojw">Western Ojibwa</language>
 			<language type="oka">Okanagan</language>
+			<language type="oka" alt="variant">Colville Salish</language>
 			<language type="om">Oromo</language>
 			<language type="or">Odia</language>
 			<language type="os">Ossetic</language>
@@ -496,6 +500,7 @@ annotations.
 			<language type="pfl">Palatine German</language>
 			<language type="phn">Phoenician</language>
 			<language type="pi">Pali</language>
+			<language type="pi" alt="variant">Pāli</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Polish</language>
 			<language type="pms">Piedmontese</language>
@@ -547,6 +552,8 @@ annotations.
 			<language type="sd">Sindhi</language>
 			<language type="sdc">Sassarese Sardinian</language>
 			<language type="sdh">Southern Kurdish</language>
+			<language type="sdh" menu="core">Kurdish</language>
+			<language type="sdh" menu="extension">Southern</language>
 			<language type="se">Northern Sami</language>
 			<language type="se" alt="menu">Sami, Northern</language>
 			<language type="see">Seneca</language>
@@ -618,7 +625,7 @@ annotations.
 			<language type="tig">Tigre</language>
 			<language type="tiv">Tiv</language>
 			<language type="tk">Turkmen</language>
-			<language type="tkl">Tokelau</language>
+			<language type="tkl">Tokelauan</language>
 			<language type="tkr">Tsakhur</language>
 			<language type="tl">Tagalog</language>
 			<language type="tlh">Klingon</language>
@@ -724,6 +731,7 @@ annotations.
 			<script type="Bass">Bassa Vah</script>
 			<script type="Batk">Batak</script>
 			<script type="Beng">Bangla</script>
+			<script type="Berf">Beria Erfe</script>
 			<script type="Bhks">Bhaiksuki</script>
 			<script type="Blis">Blissymbols</script>
 			<script type="Bopo">Bopomofo</script>
@@ -872,6 +880,7 @@ annotations.
 			<script type="Shaw">Shavian</script>
 			<script type="Shrd">Sharada</script>
 			<script type="Sidd">Siddham</script>
+			<script type="Sidt">Sidetic</script>
 			<script type="Sind">Khudawadi</script>
 			<script type="Sinh">Sinhala</script>
 			<script type="Sogd">Sogdian</script>
@@ -892,6 +901,7 @@ annotations.
 			<script type="Taml">Tamil</script>
 			<script type="Tang">Tangut</script>
 			<script type="Tavt">Tai Viet</script>
+			<script type="Tayo">Tai Yo</script>
 			<script type="Telu">Telugu</script>
 			<script type="Teng">Tengwar</script>
 			<script type="Tfng">Tifinagh</script>
@@ -902,6 +912,7 @@ annotations.
 			<script type="Tirh">Tirhuta</script>
 			<script type="Tnsa">Tangsa</script>
 			<script type="Todr">Todhri</script>
+			<script type="Tols">Tolong Siki</script>
 			<script type="Toto">Toto</script>
 			<script type="Tutg">Tulu-Tigalari</script>
 			<script type="Ugar">Ugaritic</script>
@@ -998,6 +1009,7 @@ annotations.
 			<territory type="BZ">Belize</territory>
 			<territory type="CA">Canada</territory>
 			<territory type="CC">Cocos (Keeling) Islands</territory>
+			<territory type="CC" alt="short">Cocos Islands</territory>
 			<territory type="CD">Congo - Kinshasa</territory>
 			<territory type="CD" alt="variant">Congo (DRC)</territory>
 			<territory type="CF">Central African Republic</territory>
@@ -1159,6 +1171,7 @@ annotations.
 			<territory type="PL">Poland</territory>
 			<territory type="PM">St. Pierre &amp; Miquelon</territory>
 			<territory type="PN">Pitcairn Islands</territory>
+			<territory type="PN" alt="short">Pitcairn</territory>
 			<territory type="PR">Puerto Rico</territory>
 			<territory type="PS">Palestinian Territories</territory>
 			<territory type="PS" alt="short">Palestine</territory>
@@ -1285,7 +1298,7 @@ annotations.
 			<variant type="OSOJS">Oseacco/Osojane dialect</variant>
 			<variant type="OXENDICT">Oxford English Dictionary spelling</variant>
 			<variant type="PAMAKA">Pamaka dialect</variant>
-			<variant type="PINYIN">Pinyin Romanization</variant>
+			<variant type="PINYIN">Pinyin romanization</variant>
 			<variant type="POLYTON">Polytonic</variant>
 			<variant type="POSIX">Computer</variant>
 			<variant type="REVISED">Revised Orthography</variant>
@@ -1301,7 +1314,7 @@ annotations.
 			<variant type="UCRCOR">Unified Revised Orthography</variant>
 			<variant type="UNIFON">Unifon phonetic alphabet</variant>
 			<variant type="VALENCIA">Valencian</variant>
-			<variant type="WADEGILE">Wade-Giles Romanization</variant>
+			<variant type="WADEGILE">Wade-Giles romanization</variant>
 		</variants>
 		<keys>
 			<key type="calendar">Calendar</key>
@@ -1318,15 +1331,15 @@ annotations.
 			<key type="currency">Currency</key>
 			<key type="d0">Transform Destination</key>
 			<key type="dx">Dictionary Break Exclusions</key>
-			<key type="em">Emoji Presentation Style</key>
+			<key type="em">Emoji Presentation</key>
 			<key type="fw">First day of week</key>
 			<key type="h0">Mixed-in</key>
 			<key type="hc">Hour Cycle (12 vs 24)</key>
 			<key type="i0">Input Method</key>
 			<key type="k0">Keyboard</key>
 			<key type="kv">Highest Ignored</key>
-			<key type="lb">Line Break Style</key>
-			<key type="lw">Line Breaks In Words Setting</key>
+			<key type="lb">CJK Line Break</key>
+			<key type="lw">Line Breaks within Words</key>
 			<key type="m0">Transform Rules</key>
 			<key type="ms">Measurement System</key>
 			<key type="mu">Measurement Unit</key>
@@ -1334,7 +1347,7 @@ annotations.
 			<key type="rg">Region For Supplemental Data</key>
 			<key type="s0">Transform Source</key>
 			<key type="sd">Region Subdivision</key>
-			<key type="ss">Sentence Break Suppressions Type</key>
+			<key type="ss">Sentence Break After Abbr.</key>
 			<key type="t">Transform</key>
 			<key type="t0">Machine Translated</key>
 			<key type="timezone">Time Zone</key>
@@ -1344,25 +1357,47 @@ annotations.
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Buddhist Calendar</type>
+			<type key="calendar" type="buddhist" scope="core">Buddhist</type>
 			<type key="calendar" type="chinese">Chinese Calendar</type>
+			<type key="calendar" type="chinese" scope="core">Chinese</type>
 			<type key="calendar" type="coptic">Coptic Calendar</type>
+			<type key="calendar" type="coptic" scope="core">Coptic</type>
 			<type key="calendar" type="dangi">Dangi Calendar</type>
+			<type key="calendar" type="dangi" scope="core">Dangi</type>
 			<type key="calendar" type="ethiopic">Ethiopic Calendar</type>
+			<type key="calendar" type="ethiopic" scope="core">Ethiopic</type>
 			<type key="calendar" type="ethiopic-amete-alem">Ethiopic Amete Alem Calendar</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Ethiopic Amete Alem</type>
 			<type key="calendar" type="gregorian">Gregorian Calendar</type>
+			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
 			<type key="calendar" type="hebrew">Hebrew Calendar</type>
+			<type key="calendar" type="hebrew" scope="core">Hebrew</type>
 			<type key="calendar" type="indian">Indian National Calendar</type>
+			<type key="calendar" type="indian" scope="core">Indian National</type>
 			<type key="calendar" type="islamic">Hijri Calendar</type>
+			<type key="calendar" type="islamic" scope="core">Hijri</type>
 			<type key="calendar" type="islamic-civil">Hijri Calendar (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-rgsa">Hijri Calendar (Saudi Arabia, sighting)</type>
+			<!-- Added values for English -->
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, Saudi Arabia sighting</type>
 			<type key="calendar" type="islamic-tbla">Hijri Calendar (tabular, astronomical epoch)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (tabular, astronomical epoch)</type>
 			<type key="calendar" type="islamic-umalqura">Hijri Calendar (Umm al-Qura)</type>
-			<type key="calendar" type="iso8601">ISO-8601 Calendar</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
+			<type key="calendar" type="iso8601">Gregorian Calendar (ISO 8601 Weeks)</type>
+			<type key="calendar" type="iso8601" alt="variant">ISO 8601 Weeks</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
 			<type key="calendar" type="japanese">Japanese Calendar</type>
+			<type key="calendar" type="japanese" scope="core">Japanese</type>
 			<type key="calendar" type="persian">Persian Calendar</type>
+			<type key="calendar" type="persian" scope="core">Persian</type>
 			<type key="calendar" type="roc">Minguo Calendar</type>
+			<type key="calendar" type="roc" scope="core">Minguo</type>
 			<type key="cf" type="account">Accounting Currency Format</type>
+			<type key="cf" type="account" scope="core">Accounting</type>
 			<type key="cf" type="standard">Standard Currency Format</type>
+			<type key="cf" type="standard" scope="core">Standard</type>
 			<type key="colAlternate" type="non-ignorable">Sort Symbols</type>
 			<type key="colAlternate" type="shifted">Sort Ignoring Symbols</type>
 			<type key="colBackwards" type="no">Sort Accents Normally</type>
@@ -1372,23 +1407,36 @@ annotations.
 			<type key="colCaseFirst" type="upper">Sort Uppercase First</type>
 			<type key="colCaseLevel" type="no">Sort Case Insensitive</type>
 			<type key="colCaseLevel" type="yes">Sort Case Sensitive</type>
-			<type key="collation" type="big5han">Traditional Chinese Sort Order - Big5</type>
 			<type key="collation" type="compat">Previous Sort Order, for compatibility</type>
+			<type key="collation" type="compat" scope="core">Compatibility</type>
 			<type key="collation" type="dictionary">Dictionary Sort Order</type>
+			<type key="collation" type="dictionary" scope="core">Dictionary</type>
 			<type key="collation" type="ducet">Default Unicode Sort Order</type>
+			<type key="collation" type="ducet" scope="core">Default Unicode</type>
 			<type key="collation" type="emoji">Emoji Sort Order</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">European Ordering Rules</type>
-			<type key="collation" type="gb2312han">Simplified Chinese Sort Order - GB2312</type>
+			<type key="collation" type="eor" scope="core">European rules</type>
 			<type key="collation" type="phonebook">Phonebook Sort Order</type>
+			<type key="collation" type="phonebook" scope="core">Phonebook</type>
 			<type key="collation" type="phonetic">Phonetic Sort Order</type>
+			<type key="collation" type="phonetic" scope="core">Phonetic</type>
 			<type key="collation" type="pinyin">Pinyin Sort Order</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">General-Purpose Search</type>
+			<type key="collation" type="search" scope="core">Search</type>
 			<type key="collation" type="searchjl">Search By Hangul Initial Consonant</type>
+			<type key="collation" type="searchjl" scope="core">Korean initial consonant</type>
 			<type key="collation" type="standard">Standard Sort Order</type>
+			<type key="collation" type="standard" scope="core">Standard</type>
 			<type key="collation" type="stroke">Stroke Sort Order</type>
+			<type key="collation" type="stroke" scope="core">Stroke</type>
 			<type key="collation" type="traditional">Traditional Sort Order</type>
+			<type key="collation" type="traditional" scope="core">Traditional</type>
 			<type key="collation" type="unihan">Radical-Stroke Sort Order</type>
+			<type key="collation" type="unihan" scope="core">Radical-Stroke</type>
 			<type key="collation" type="zhuyin">Zhuyin Sort Order</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no">Sort Without Normalization</type>
 			<type key="colNormalization" type="yes">Sort Unicode Normalized</type>
 			<type key="colNumeric" type="no">Sort Digits Individually</type>
@@ -1426,21 +1474,28 @@ annotations.
 			<type key="d0" type="title">To Titlecase</type>
 			<type key="d0" type="upper">To Uppercase</type>
 			<type key="d0" type="zawgyi">To Zawgyi Myanmar Encoding</type>
-			<type key="em" type="default">Use Default Presentation For Emoji Characters</type>
-			<type key="em" type="emoji">Prefer Emoji Presentation For Emoji Characters</type>
-			<type key="em" type="text">Prefer Text Presentation For Emoji Characters</type>
-			<type key="fw" type="fri">First Day of Week Is Friday</type>
-			<type key="fw" type="mon">First Day of Week Is Monday</type>
-			<type key="fw" type="sat">First Day of Week Is Saturday</type>
-			<type key="fw" type="sun">First Day of Week Is Sunday</type>
-			<type key="fw" type="thu">First Day of Week Is Thursday</type>
-			<type key="fw" type="tue">First Day of Week Is Tuesday</type>
-			<type key="fw" type="wed">First Day of Week Is Wednesday</type>
+			<type key="em" type="default">Default Presentation For Emoji</type>
+			<type key="em" type="default" scope="core">Default</type>
+			<type key="em" type="emoji">Emoji Presentation For Emoji</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text">Text Presentation For Emoji</type>
+			<type key="em" type="text" scope="core">Text</type>
+			<type key="fw" type="fri">First day of week: Friday</type>
+			<type key="fw" type="mon">First day of week: Monday</type>
+			<type key="fw" type="sat">First day of week: Saturday</type>
+			<type key="fw" type="sun">First day of week: Sunday</type>
+			<type key="fw" type="thu">First day of week: Thursday</type>
+			<type key="fw" type="tue">First day of week: Tuesday</type>
+			<type key="fw" type="wed">First day of week: Wednesday</type>
 			<type key="h0" type="hybrid">Hybrid</type>
 			<type key="hc" type="h11">12 Hour System (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 Hour System (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 Hour System (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 Hour System (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="i0" type="handwrit">Handwriting Input Method</type>
 			<type key="i0" type="pinyin">Pinyin Input Method</type>
 			<type key="i0" type="und">Unspecified Input Method</type>
@@ -1475,16 +1530,42 @@ annotations.
 			<type key="k0" type="viqr">Vietnamese VIQR Keyboard</type>
 			<type key="k0" type="windows">Windows Keyboard</type>
 			<type key="kv" type="currency">Ignore Symbols affects spaces, punctuation, all symbols</type>
+			<!-- <type key="ka" type="noignore" scope="core">Punctuation… not ignored</type>
+				 <type key="ka" type="shifted" scope="core">Punctuation… ignored</type>
+				 <type key="kf" type="lower" scope="core">Lowercase &lt; uppercase</type>
+				 <type key="kf" type="upper" scope="core">Uppercase &lt; lowercase</type>
+				 <type key="kr" type="currency" scope="core">Currency reordering code</type>
+				 <type key="kr" type="digit" scope="core">Digit (number) reordering code</type>
+				 <type key="kr" type="punct" scope="core">Punctuation reordering code</type>
+				 <type key="kr" type="space" scope="core">Whitespace reordering code</type>
+				 <type key="kr" type="symbol" scope="core">Symbol reordering code (other than currency)</type>
+				 <type key="ks" type="identic" scope="core">The identical level</type>
+				 <type key="ks" type="level1" scope="core">The primary level</type>
+				 <type key="ks" type="level2" scope="core">The secondary level</type>
+				 <type key="ks" type="level3" scope="core">The tertiary level</type>
+				 <type key="ks" type="level4" scope="core">The quaternary level</type>
+			-->
+			<type key="kv" type="currency" scope="core">Shift Spaces, punctuation, all symbols</type>
 			<type key="kv" type="punct">Ignore Symbols affects spaces and punctuation only</type>
+			<type key="kv" type="punct" scope="core">Shift spaces, punctuation</type>
 			<type key="kv" type="space">Ignore Symbols affects spaces only</type>
+			<type key="kv" type="space" scope="core">Shift spaces, punctuation</type>
 			<type key="kv" type="symbol">Ignore Symbols affects spaces, punctuation, non-currency symbols</type>
+			<type key="kv" type="symbol" scope="core">Shift spaces, punctuation, non-currency symbols</type>
 			<type key="lb" type="loose">Loose Line Break Style</type>
+			<type key="lb" type="loose" scope="core">Loose</type>
 			<type key="lb" type="normal">Normal Line Break Style</type>
+			<type key="lb" type="normal" scope="core">Normal</type>
 			<type key="lb" type="strict">Strict Line Break Style</type>
+			<type key="lb" type="strict" scope="core">Strict</type>
 			<type key="lw" type="breakall">Allow Line Breaks In All Words</type>
+			<type key="lw" type="breakall" scope="core">Break all</type>
 			<type key="lw" type="keepall">Prevent Line Breaks In All Words</type>
+			<type key="lw" type="keepall" scope="core">Keep all</type>
 			<type key="lw" type="normal">Normal Line Breaks For Words</type>
+			<type key="lw" type="normal" scope="core">Normal</type>
 			<type key="lw" type="phrase">Prevent Line Breaks In Phrases</type>
+			<type key="lw" type="phrase" scope="core">Keep in phrases</type>
 			<type key="m0" type="aethiopi">Encylopedia Aethiopica Transliteration</type>
 			<type key="m0" type="alaloc">US ALA-LOC Transliteration</type>
 			<type key="m0" type="betamets">Beta Maṣāḥǝft Transliteration</type>
@@ -1518,8 +1599,11 @@ annotations.
 			<type key="m0" type="xml">Hex transform using XML syntax</type>
 			<type key="m0" type="xml10">Hex transform using XML decimal syntax</type>
 			<type key="ms" type="metric">Metric System</type>
+			<type key="ms" type="metric" scope="core">Metric</type>
 			<type key="ms" type="uksystem">Imperial Measurement System</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
 			<type key="ms" type="ussystem">US Measurement System</type>
+			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="mu" type="celsius">Celsius</type>
 			<type key="mu" type="fahrenhe">Fahrenheit</type>
 			<type key="mu" type="kelvin">Kelvin</type>
@@ -1528,8 +1612,10 @@ annotations.
 			<type key="numbers" type="arab">Arabic-Indic Digits</type>
 			<type key="numbers" type="arabext">Extended Arabic-Indic Digits</type>
 			<type key="numbers" type="arabext" alt="short">X Arabic-Indic Digits</type>
+			<type key="numbers" type="arabext" scope="core">Extended Arabic-Indic</type>
 			<type key="numbers" type="armn">Armenian Numerals</type>
 			<type key="numbers" type="armnlow">Armenian Lowercase Numerals</type>
+			<type key="numbers" type="armnlow" scope="core">Armenian lowercase</type>
 			<type key="numbers" type="bali">Balinese Digits</type>
 			<type key="numbers" type="beng">Bangla Digits</type>
 			<type key="numbers" type="bhks">Bhaiksuki Digits</type>
@@ -1541,29 +1627,38 @@ annotations.
 			<type key="numbers" type="diak">Dives Akuru Digits</type>
 			<type key="numbers" type="ethi">Ethiopic Numerals</type>
 			<type key="numbers" type="finance">Financial Numerals</type>
+			<type key="numbers" type="finance" scope="core">Financial</type>
 			<type key="numbers" type="fullwide">Full-Width Digits</type>
+			<type key="numbers" type="fullwide" scope="core">Full-width</type>
 			<type key="numbers" type="gara">Garay Digits</type>
 			<type key="numbers" type="geor">Georgian Numerals</type>
 			<type key="numbers" type="gong">Gunjala Gondi digits</type>
 			<type key="numbers" type="gonm">Masaram Gondi digits</type>
 			<type key="numbers" type="grek">Greek Numerals</type>
 			<type key="numbers" type="greklow">Greek Lowercase Numerals</type>
+			<type key="numbers" type="greklow" scope="core">Greek lowercase</type>
 			<type key="numbers" type="gujr">Gujarati Digits</type>
 			<type key="numbers" type="gukh">Gurung Khema Digits</type>
 			<type key="numbers" type="guru">Gurmukhi Digits</type>
 			<type key="numbers" type="hanidays">Chinese Calendar Day-of-Month Numerals</type>
+			<type key="numbers" type="hanidays" scope="core">Han-character day-of-month numbering for traditional calendars</type>
 			<type key="numbers" type="hanidec">Chinese Decimal Numerals</type>
+			<type key="numbers" type="hanidec" scope="core">Positional decimal system using Chinese number ideographs as digits</type>
 			<type key="numbers" type="hans">Simplified Chinese Numerals</type>
 			<type key="numbers" type="hansfin">Simplified Chinese Financial Numerals</type>
+			<type key="numbers" type="hansfin" scope="core">Simplified Chinese financial</type>
 			<type key="numbers" type="hant">Traditional Chinese Numerals</type>
 			<type key="numbers" type="hantfin">Traditional Chinese Financial Numerals</type>
+			<type key="numbers" type="hantfin" scope="core">Traditional Chinese financial</type>
 			<type key="numbers" type="hebr">Hebrew Numerals</type>
 			<type key="numbers" type="hmng">Pahawh Hmong Digits</type>
 			<type key="numbers" type="hmnp">Nyiakeng Puachue Hmong Digits</type>
 			<type key="numbers" type="java">Javanese Digits</type>
 			<type key="numbers" type="jpan">Japanese Numerals</type>
 			<type key="numbers" type="jpanfin">Japanese Financial Numerals</type>
+			<type key="numbers" type="jpanfin" scope="core">Japanese financial</type>
 			<type key="numbers" type="jpanyear">Japanese Calendar Gannen Year Numerals</type>
+			<type key="numbers" type="jpanyear" scope="core">Japanese first-year Gannen numbering</type>
 			<type key="numbers" type="kali">Kayah Li Digits</type>
 			<type key="numbers" type="kawi">Kawi Digits</type>
 			<type key="numbers" type="khmr">Khmer Digits</type>
@@ -1571,15 +1666,21 @@ annotations.
 			<type key="numbers" type="krai">Kirat Rai Digits</type>
 			<type key="numbers" type="lana">Tai Tham Hora Digits</type>
 			<type key="numbers" type="lanatham">Tai Tham Tham Digits</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (ecclesiastical)</type>
 			<type key="numbers" type="laoo">Lao Digits</type>
 			<type key="numbers" type="latn">Western Digits</type>
 			<type key="numbers" type="lepc">Lepcha Digits</type>
 			<type key="numbers" type="limb">Limbu Digits</type>
 			<type key="numbers" type="mathbold">Mathematical Bold Digits</type>
+			<type key="numbers" type="mathbold" scope="core">Mathematical bold</type>
 			<type key="numbers" type="mathdbl">Mathematical Double-Struck Digits</type>
+			<type key="numbers" type="mathdbl" scope="core">Mathematical double-struck</type>
 			<type key="numbers" type="mathmono">Mathematical Monospace Digits</type>
+			<type key="numbers" type="mathmono" scope="core">Mathematical monospace</type>
 			<type key="numbers" type="mathsanb">Mathematical Sans-Serif Bold Digits</type>
+			<type key="numbers" type="mathsanb" scope="core">Mathematical sans-serif bold</type>
 			<type key="numbers" type="mathsans">Mathematical Sans-Serif Digits</type>
+			<type key="numbers" type="mathsans" scope="core">Mathematical sans-serif</type>
 			<type key="numbers" type="mlym">Malayalam Digits</type>
 			<type key="numbers" type="modi">Modi Digits</type>
 			<type key="numbers" type="mong">Mongolian Digits</type>
@@ -1587,11 +1688,16 @@ annotations.
 			<type key="numbers" type="mtei">Meetei Mayek Digits</type>
 			<type key="numbers" type="mymr">Myanmar Digits</type>
 			<type key="numbers" type="mymrepka">Myanmar Eastern Pwo Karen Digits</type>
+			<type key="numbers" type="mymrepka" scope="core">Myanmar Eastern Pwo Karen</type>
 			<type key="numbers" type="mymrpao">Myanmar Pao Digits</type>
+			<type key="numbers" type="mymrpao" scope="core">Myanmar Pao</type>
 			<type key="numbers" type="mymrshan">Myanmar Shan Digits</type>
+			<type key="numbers" type="mymrshan" scope="core">Myanmar Shan</type>
 			<type key="numbers" type="mymrtlng">Myanmar Tai Laing Digits</type>
+			<type key="numbers" type="mymrtlng" scope="core">Myanmar Tai Laing</type>
 			<type key="numbers" type="nagm">Nag Mundari Digits</type>
 			<type key="numbers" type="native">Native Digits</type>
+			<type key="numbers" type="native" scope="core">Native digits</type>
 			<type key="numbers" type="newa">Newa Digits</type>
 			<type key="numbers" type="nkoo">N’Ko Digits</type>
 			<type key="numbers" type="olck">Ol Chiki Digits</type>
@@ -1599,11 +1705,15 @@ annotations.
 			<type key="numbers" type="orya">Odia Digits</type>
 			<type key="numbers" type="osma">Osmanya Digits</type>
 			<type key="numbers" type="outlined">Outlined Digits</type>
+			<type key="numbers" type="outlined" scope="core">Outlined</type>
 			<type key="numbers" type="rohg">Hanifi Rohingya digits</type>
 			<type key="numbers" type="roman">Roman Numerals</type>
+			<type key="numbers" type="roman" scope="core">Roman uppercase</type>
 			<type key="numbers" type="romanlow">Roman Lowercase Numerals</type>
+			<type key="numbers" type="romanlow" scope="core">Roman lowercase</type>
 			<type key="numbers" type="saur">Saurashtra Digits</type>
 			<type key="numbers" type="segment">Segmented Digits</type>
+			<type key="numbers" type="segment" scope="core">Segmented</type>
 			<type key="numbers" type="shrd">Sharada Digits</type>
 			<type key="numbers" type="sind">Khudawadi Digits</type>
 			<type key="numbers" type="sinh">Sinhala Lith Digits</type>
@@ -1614,12 +1724,15 @@ annotations.
 			<type key="numbers" type="talu">New Tai Lue Digits</type>
 			<type key="numbers" type="taml">Traditional Tamil Numerals</type>
 			<type key="numbers" type="tamldec">Tamil Digits</type>
+			<type key="numbers" type="tamldec" scope="core">Modern Tamil</type>
 			<type key="numbers" type="telu">Telugu Digits</type>
 			<type key="numbers" type="thai">Thai Digits</type>
 			<type key="numbers" type="tibt">Tibetan Digits</type>
 			<type key="numbers" type="tirh">Tirhuta Digits</type>
 			<type key="numbers" type="tnsa">Tangsa Digits</type>
+			<type key="numbers" type="tols">Tolong Siki Digits</type>
 			<type key="numbers" type="traditional">Traditional Numerals</type>
+			<type key="numbers" type="traditional" scope="core">Traditional numerals</type>
 			<type key="numbers" type="vaii">Vai Digits</type>
 			<type key="numbers" type="wara">Warang Citi Digits</type>
 			<type key="numbers" type="wcho">Wancho Digits</type>
@@ -1631,9 +1744,12 @@ annotations.
 			<type key="s0" type="publish">From Publishing Punctuation To ASCII</type>
 			<type key="s0" type="zawgyi">From Zawgyi Myanmar Encoding</type>
 			<type key="ss" type="none">Sentence Breaks Without Abbreviation Handling</type>
+			<type key="ss" type="none" scope="core">Off</type>
 			<type key="ss" type="standard">Suppress Sentence Breaks After Standard Abbreviations</type>
+			<type key="ss" type="standard" scope="core">On</type>
 			<type key="t0" type="und">Unspecified Machine Translation</type>
 			<type key="va" type="posix">POSIX Compliant Locale</type>
+			<type key="va" type="posix" scope="core">POSIX variant</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metric</measurementSystemName>
@@ -1672,8 +1788,9 @@ annotations.
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[áàăâåäãā æ ç éèĕêëē íìĭîïī ñ óòŏôöøō œ úùŭûüū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-person">[\- ‐‑ , . /]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1821,12 +1938,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1846,9 +1969,12 @@ annotations.
 						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBh">E h B</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Eh">E h a</dateFormatItem>
+						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1871,6 +1997,9 @@ annotations.
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hms" alt="ascii">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hv">h a v</dateFormatItem>
+						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -2003,6 +2132,16 @@ annotations.
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="coptic">
+				<eras>
+					<eraNames>
+						<era type="1">Anno Martyrum</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="1">AM</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -2025,7 +2164,7 @@ annotations.
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/y GGGGG</pattern>
+							<pattern>M/d/y G</pattern>
 							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -2038,12 +2177,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2054,12 +2199,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2069,9 +2220,12 @@ annotations.
 						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBh">E h B</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Eh">E h a</dateFormatItem>
+						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2079,7 +2233,9 @@ annotations.
 						<dateFormatItem id="Ehms" alt="ascii">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2092,6 +2248,9 @@ annotations.
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hms" alt="ascii">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hv">h a v</dateFormatItem>
+						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -2102,9 +2261,9 @@ annotations.
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2144,21 +2303,21 @@ annotations.
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="G">M/d/y G – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="G">E, M/d/y G – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
@@ -2235,18 +2394,18 @@ annotations.
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
@@ -2632,12 +2791,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2648,12 +2813,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2663,9 +2834,12 @@ annotations.
 						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBh">E h B</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Eh">E h a</dateFormatItem>
+						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2673,7 +2847,9 @@ annotations.
 						<dateFormatItem id="Ehms" alt="ascii">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2692,6 +2868,9 @@ annotations.
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="hmv" alt="ascii">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
+						<dateFormatItem id="hv">h a v</dateFormatItem>
+						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -3158,8 +3337,13 @@ annotations.
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">Anno Hegirae</era>
+						<era type="1">Before Hijrah</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">AH</era>
+						<era type="1">BH</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -3180,7 +3364,7 @@ annotations.
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/y GGGGG</pattern>
+							<pattern>M/d/y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -3190,7 +3374,9 @@ annotations.
 						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -3203,9 +3389,9 @@ annotations.
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -3242,6 +3428,89 @@ annotations.
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="EEEEd">EEEE d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">EEEE, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="MEEEEd">EEEE, M/d</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEEEEd">EEEE, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEEEEd">EEEE, MMMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">EEEE, MMMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="roc">
 				<eras>
@@ -3912,20 +4181,64 @@ annotations.
 			<regionFormat type="daylight">{0} Daylight Time</regionFormat>
 			<regionFormat type="standard">{0} Standard Time</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Coordinated Universal Time</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Unknown City</exemplarCity>
+				<exemplarCity>Unknown Location</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>Rothera Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>Palmer Land</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>Troll Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>Showa Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>Mawson Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>Vostok Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>Casey Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>Dumont d’Urville Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>McMurdo Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>Macquarie Island</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity>Lord Howe Island</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity>Cocos Islands</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>Easter Island</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity>Christmas Island</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>Galápagos Islands</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>Canaries</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>Faroes</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
 				<long>
@@ -3937,8 +4250,50 @@ annotations.
 					<daylight>Irish Standard Time</daylight>
 				</long>
 			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>Chagos Archipelago</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity>Canton Island</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>Comoros</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Aktau</exemplarCity>
+			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Kyzylorda</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>Kwajalein Atoll</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Mexico City</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>Norfolk Island</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>Chatham Islands</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>Marquesas Islands</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>Pitcairn Islands</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>Kerguelen Islands</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>Midway Atoll</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>Wake Island</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh City</exemplarCity>
@@ -3972,9 +4327,7 @@ annotations.
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>West Africa Time</generic>
-					<standard>West Africa Standard Time</standard>
-					<daylight>West Africa Summer Time</daylight>
+					<standard>West Africa Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4060,9 +4413,9 @@ annotations.
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Apia Time</generic>
-					<standard>Apia Standard Time</standard>
-					<daylight>Apia Daylight Time</daylight>
+					<generic>Samoa Time</generic>
+					<standard>Samoa Standard Time</standard>
+					<daylight>Samoa Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtau">
@@ -4121,7 +4474,7 @@ annotations.
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>Central Australia Time</generic>
+					<generic>Australian Central Time</generic>
 					<standard>Australian Central Standard Time</standard>
 					<daylight>Australian Central Daylight Time</daylight>
 				</long>
@@ -4135,14 +4488,14 @@ annotations.
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>Eastern Australia Time</generic>
+					<generic>Australian Eastern Time</generic>
 					<standard>Australian Eastern Standard Time</standard>
 					<daylight>Australian Eastern Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>Western Australia Time</generic>
+					<generic>Australian Western Time</generic>
 					<standard>Australian Western Standard Time</standard>
 					<daylight>Australian Western Daylight Time</daylight>
 				</long>
@@ -4187,7 +4540,7 @@ annotations.
 			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>Brunei Darussalam Time</standard>
+					<standard>Brunei Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
@@ -4249,7 +4602,7 @@ annotations.
 				<long>
 					<generic>Cook Islands Time</generic>
 					<standard>Cook Islands Standard Time</standard>
-					<daylight>Cook Islands Half Summer Time</daylight>
+					<daylight>Cook Islands Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
@@ -4266,12 +4619,12 @@ annotations.
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>Dumont-d’Urville Time</standard>
+					<standard>Dumont d’Urville Time</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
 				<long>
-					<standard>East Timor Time</standard>
+					<standard>Timor-Leste Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
@@ -4402,6 +4755,14 @@ annotations.
 					<standard>Guyana Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hawaii-Aleutian Standard Time</standard>
+				</long>
+				<short>
+					<standard>HST</standard>
+				</short>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Hawaii-Aleutian Time</generic>
@@ -4423,9 +4784,9 @@ annotations.
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic>Hovd Time</generic>
-					<standard>Hovd Standard Time</standard>
-					<daylight>Hovd Summer Time</daylight>
+					<generic>Khovd Time</generic>
+					<standard>Khovd Standard Time</standard>
+					<daylight>Khovd Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -4488,9 +4849,9 @@ annotations.
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Petropavlovsk-Kamchatski Time</generic>
-					<standard>Petropavlovsk-Kamchatski Standard Time</standard>
-					<daylight>Petropavlovsk-Kamchatski Summer Time</daylight>
+					<generic>Kamchatka Time</generic>
+					<standard>Kamchatka Standard Time</standard>
+					<daylight>Kamchatka Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4673,7 +5034,7 @@ annotations.
 			</metazone>
 			<metazone type="North_Mariana">
 				<long>
-					<standard>North Mariana Islands Time</standard>
+					<standard>Northern Mariana Islands Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
@@ -4747,19 +5108,19 @@ annotations.
 			</metazone>
 			<metazone type="Ponape">
 				<long>
-					<standard>Ponape Time</standard>
+					<standard>Pohnpei Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard>Pyongyang Time</standard>
+					<standard>North Korea Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
-					<generic>Qyzylorda Time</generic>
-					<standard>Qyzylorda Standard Time</standard>
-					<daylight>Qyzylorda Summer Time</daylight>
+					<generic>Kyzylorda Time</generic>
+					<standard>Kyzylorda Standard Time</standard>
+					<daylight>Kyzylorda Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -4788,9 +5149,9 @@ annotations.
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa Time</generic>
-					<standard>Samoa Standard Time</standard>
-					<daylight>Samoa Daylight Time</daylight>
+					<generic>American Samoa Time</generic>
+					<standard>American Samoa Standard Time</standard>
+					<daylight>American Samoa Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4830,9 +5191,9 @@ annotations.
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>Taipei Time</generic>
-					<standard>Taipei Standard Time</standard>
-					<daylight>Taipei Daylight Time</daylight>
+					<generic>Taiwan Time</generic>
+					<standard>Taiwan Standard Time</standard>
+					<daylight>Taiwan Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -4855,6 +5216,13 @@ annotations.
 			<metazone type="Truk">
 				<long>
 					<standard>Chuuk Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Time</generic>
+					<standard>Türkiye Standard Time</standard>
+					<daylight>Türkiye Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
@@ -5022,6 +5390,12 @@ annotations.
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<rationalFormats numberSystem="latn">
+			<rationalPattern>{0}⁄{1}</rationalPattern>
+			<integerAndRationalPattern>{0} {1}</integerAndRationalPattern>
+			<integerAndRationalPattern alt="superSub">{0}⁠{1}</integerAndRationalPattern>
+			<rationalUsage>sometimes</rationalUsage>
+		</rationalFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -5114,6 +5488,7 @@ annotations.
 				<displayName>United Arab Emirates Dirham</displayName>
 				<displayName count="one">UAE dirham</displayName>
 				<displayName count="other">UAE dirhams</displayName>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>Afghan Afghani (1927–2002)</displayName>
@@ -5124,6 +5499,7 @@ annotations.
 				<displayName>Afghan Afghani</displayName>
 				<displayName count="one">Afghan Afghani</displayName>
 				<displayName count="other">Afghan Afghanis</displayName>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName>Albanian Lek (1946–1965)</displayName>
@@ -5134,21 +5510,25 @@ annotations.
 				<displayName>Albanian Lek</displayName>
 				<displayName count="one">Albanian lek</displayName>
 				<displayName count="other">Albanian lekë</displayName>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>Armenian Dram</displayName>
 				<displayName count="one">Armenian dram</displayName>
 				<displayName count="other">Armenian drams</displayName>
+				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>Netherlands Antillean Guilder</displayName>
 				<displayName count="one">Netherlands Antillean guilder</displayName>
 				<displayName count="other">Netherlands Antillean guilders</displayName>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>Angolan Kwanza</displayName>
 				<displayName count="one">Angolan kwanza</displayName>
 				<displayName count="other">Angolan kwanzas</displayName>
+				<symbol>AOA</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>Angolan Kwanza (1977–1991)</displayName>
@@ -5189,6 +5569,7 @@ annotations.
 				<displayName>Argentine Peso</displayName>
 				<displayName count="one">Argentine peso</displayName>
 				<displayName count="other">Argentine pesos</displayName>
+				<symbol>ARS</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>Austrian Schilling</displayName>
@@ -5199,11 +5580,13 @@ annotations.
 				<displayName>Australian Dollar</displayName>
 				<displayName count="one">Australian dollar</displayName>
 				<displayName count="other">Australian dollars</displayName>
+				<symbol>A$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>Aruban Florin</displayName>
 				<displayName count="one">Aruban florin</displayName>
 				<displayName count="other">Aruban florin</displayName>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>Azerbaijani Manat (1993–2006)</displayName>
@@ -5214,6 +5597,7 @@ annotations.
 				<displayName>Azerbaijani Manat</displayName>
 				<displayName count="one">Azerbaijani manat</displayName>
 				<displayName count="other">Azerbaijani manats</displayName>
+				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>Bosnia-Herzegovina Dinar (1992–1994)</displayName>
@@ -5224,6 +5608,7 @@ annotations.
 				<displayName>Bosnia-Herzegovina Convertible Mark</displayName>
 				<displayName count="one">Bosnia-Herzegovina convertible mark</displayName>
 				<displayName count="other">Bosnia-Herzegovina convertible marks</displayName>
+				<symbol>BAM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName>Bosnia-Herzegovina New Dinar (1994–1997)</displayName>
@@ -5234,11 +5619,13 @@ annotations.
 				<displayName>Barbadian Dollar</displayName>
 				<displayName count="one">Barbadian dollar</displayName>
 				<displayName count="other">Barbadian dollars</displayName>
+				<symbol>BBD</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>Bangladeshi Taka</displayName>
 				<displayName count="one">Bangladeshi taka</displayName>
 				<displayName count="other">Bangladeshi takas</displayName>
+				<symbol>BDT</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>Belgian Franc (convertible)</displayName>
@@ -5269,6 +5656,7 @@ annotations.
 				<displayName>Bulgarian Lev</displayName>
 				<displayName count="one">Bulgarian lev</displayName>
 				<displayName count="other">Bulgarian leva</displayName>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName>Bulgarian Lev (1879–1952)</displayName>
@@ -5279,26 +5667,31 @@ annotations.
 				<displayName>Bahraini Dinar</displayName>
 				<displayName count="one">Bahraini dinar</displayName>
 				<displayName count="other">Bahraini dinars</displayName>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>Burundian Franc</displayName>
 				<displayName count="one">Burundian franc</displayName>
 				<displayName count="other">Burundian francs</displayName>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>Bermudan Dollar</displayName>
 				<displayName count="one">Bermudan dollar</displayName>
 				<displayName count="other">Bermudan dollars</displayName>
+				<symbol>BMD</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Brunei Dollar</displayName>
 				<displayName count="one">Brunei dollar</displayName>
 				<displayName count="other">Brunei dollars</displayName>
+				<symbol>BND</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>Bolivian Boliviano</displayName>
 				<displayName count="one">Bolivian boliviano</displayName>
 				<displayName count="other">Bolivian bolivianos</displayName>
+				<symbol>BOB</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>Bolivian Boliviano (1863–1963)</displayName>
@@ -5334,6 +5727,7 @@ annotations.
 				<displayName>Brazilian Real</displayName>
 				<displayName count="one">Brazilian real</displayName>
 				<displayName count="other">Brazilian reals</displayName>
+				<symbol>R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>Brazilian New Cruzado (1989–1990)</displayName>
@@ -5354,11 +5748,13 @@ annotations.
 				<displayName>Bahamian Dollar</displayName>
 				<displayName count="one">Bahamian dollar</displayName>
 				<displayName count="other">Bahamian dollars</displayName>
+				<symbol>BSD</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>Bhutanese Ngultrum</displayName>
 				<displayName count="one">Bhutanese ngultrum</displayName>
 				<displayName count="other">Bhutanese ngultrums</displayName>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>Burmese Kyat</displayName>
@@ -5369,6 +5765,7 @@ annotations.
 				<displayName>Botswanan Pula</displayName>
 				<displayName count="one">Botswanan pula</displayName>
 				<displayName count="other">Botswanan pulas</displayName>
+				<symbol>BWP</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>Belarusian Ruble (1994–1999)</displayName>
@@ -5379,6 +5776,7 @@ annotations.
 				<displayName>Belarusian Ruble</displayName>
 				<displayName count="one">Belarusian ruble</displayName>
 				<displayName count="other">Belarusian rubles</displayName>
+				<symbol>BYN</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>Belarusian Ruble (2000–2016)</displayName>
@@ -5389,16 +5787,19 @@ annotations.
 				<displayName>Belize Dollar</displayName>
 				<displayName count="one">Belize dollar</displayName>
 				<displayName count="other">Belize dollars</displayName>
+				<symbol>BZD</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>Canadian Dollar</displayName>
 				<displayName count="one">Canadian dollar</displayName>
 				<displayName count="other">Canadian dollars</displayName>
+				<symbol>CA$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>Congolese Franc</displayName>
 				<displayName count="one">Congolese franc</displayName>
 				<displayName count="other">Congolese francs</displayName>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>WIR Euro</displayName>
@@ -5409,6 +5810,7 @@ annotations.
 				<displayName>Swiss Franc</displayName>
 				<displayName count="one">Swiss franc</displayName>
 				<displayName count="other">Swiss francs</displayName>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>WIR Franc</displayName>
@@ -5429,11 +5831,13 @@ annotations.
 				<displayName>Chilean Peso</displayName>
 				<displayName count="one">Chilean peso</displayName>
 				<displayName count="other">Chilean pesos</displayName>
+				<symbol>CLP</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>Chinese Yuan (offshore)</displayName>
 				<displayName count="one">Chinese yuan (offshore)</displayName>
 				<displayName count="other">Chinese yuan (offshore)</displayName>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName>Chinese People’s Bank Dollar</displayName>
@@ -5444,11 +5848,13 @@ annotations.
 				<displayName>Chinese Yuan</displayName>
 				<displayName count="one">Chinese yuan</displayName>
 				<displayName count="other">Chinese yuan</displayName>
+				<symbol>CN¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>Colombian Peso</displayName>
 				<displayName count="one">Colombian peso</displayName>
 				<displayName count="other">Colombian pesos</displayName>
+				<symbol>COP</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>Colombian Real Value Unit</displayName>
@@ -5459,6 +5865,7 @@ annotations.
 				<displayName>Costa Rican Colón</displayName>
 				<displayName count="one">Costa Rican colón</displayName>
 				<displayName count="other">Costa Rican colóns</displayName>
+				<symbol>CRC</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>Serbian Dinar (2002–2006)</displayName>
@@ -5474,16 +5881,19 @@ annotations.
 				<displayName>Cuban Convertible Peso</displayName>
 				<displayName count="one">Cuban convertible peso</displayName>
 				<displayName count="other">Cuban convertible pesos</displayName>
+				<symbol>CUC</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Cuban Peso</displayName>
 				<displayName count="one">Cuban peso</displayName>
 				<displayName count="other">Cuban pesos</displayName>
+				<symbol>CUP</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Cape Verdean Escudo</displayName>
 				<displayName count="one">Cape Verdean escudo</displayName>
 				<displayName count="other">Cape Verdean escudos</displayName>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>Cypriot Pound</displayName>
@@ -5494,6 +5904,7 @@ annotations.
 				<displayName>Czech Koruna</displayName>
 				<displayName count="one">Czech koruna</displayName>
 				<displayName count="other">Czech korunas</displayName>
+				<symbol>CZK</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>East German Mark</displayName>
@@ -5509,21 +5920,25 @@ annotations.
 				<displayName>Djiboutian Franc</displayName>
 				<displayName count="one">Djiboutian franc</displayName>
 				<displayName count="other">Djiboutian francs</displayName>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>Danish Krone</displayName>
 				<displayName count="one">Danish krone</displayName>
 				<displayName count="other">Danish kroner</displayName>
+				<symbol>DKK</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>Dominican Peso</displayName>
 				<displayName count="one">Dominican peso</displayName>
 				<displayName count="other">Dominican pesos</displayName>
+				<symbol>DOP</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>Algerian Dinar</displayName>
 				<displayName count="one">Algerian dinar</displayName>
 				<displayName count="other">Algerian dinars</displayName>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>Ecuadorian Sucre</displayName>
@@ -5544,11 +5959,13 @@ annotations.
 				<displayName>Egyptian Pound</displayName>
 				<displayName count="one">Egyptian pound</displayName>
 				<displayName count="other">Egyptian pounds</displayName>
+				<symbol>EGP</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>Eritrean Nakfa</displayName>
 				<displayName count="one">Eritrean nakfa</displayName>
 				<displayName count="other">Eritrean nakfas</displayName>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>Spanish Peseta (A account)</displayName>
@@ -5569,11 +5986,13 @@ annotations.
 				<displayName>Ethiopian Birr</displayName>
 				<displayName count="one">Ethiopian birr</displayName>
 				<displayName count="other">Ethiopian birrs</displayName>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
 				<displayName count="one">euro</displayName>
 				<displayName count="other">euros</displayName>
+				<symbol>€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>Finnish Markka</displayName>
@@ -5584,11 +6003,13 @@ annotations.
 				<displayName>Fijian Dollar</displayName>
 				<displayName count="one">Fijian dollar</displayName>
 				<displayName count="other">Fijian dollars</displayName>
+				<symbol>FJD</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>Falkland Islands Pound</displayName>
 				<displayName count="one">Falkland Islands pound</displayName>
 				<displayName count="other">Falkland Islands pounds</displayName>
+				<symbol>FKP</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>French Franc</displayName>
@@ -5599,6 +6020,7 @@ annotations.
 				<displayName>British Pound</displayName>
 				<displayName count="one">British pound</displayName>
 				<displayName count="other">British pounds</displayName>
+				<symbol>£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>Georgian Kupon Larit</displayName>
@@ -5609,6 +6031,7 @@ annotations.
 				<displayName>Georgian Lari</displayName>
 				<displayName count="one">Georgian lari</displayName>
 				<displayName count="other">Georgian laris</displayName>
+				<symbol>GEL</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ghanaian Cedi (1979–2007)</displayName>
@@ -5619,21 +6042,25 @@ annotations.
 				<displayName>Ghanaian Cedi</displayName>
 				<displayName count="one">Ghanaian cedi</displayName>
 				<displayName count="other">Ghanaian cedis</displayName>
+				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Gibraltar Pound</displayName>
 				<displayName count="one">Gibraltar pound</displayName>
 				<displayName count="other">Gibraltar pounds</displayName>
+				<symbol>GIP</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>Gambian Dalasi</displayName>
 				<displayName count="one">Gambian dalasi</displayName>
 				<displayName count="other">Gambian dalasis</displayName>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>Guinean Franc</displayName>
 				<displayName count="one">Guinean franc</displayName>
 				<displayName count="other">Guinean francs</displayName>
+				<symbol>GNF</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>Guinean Syli</displayName>
@@ -5654,6 +6081,7 @@ annotations.
 				<displayName>Guatemalan Quetzal</displayName>
 				<displayName count="one">Guatemalan quetzal</displayName>
 				<displayName count="other">Guatemalan quetzals</displayName>
+				<symbol>GTQ</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>Portuguese Guinea Escudo</displayName>
@@ -5669,16 +6097,19 @@ annotations.
 				<displayName>Guyanaese Dollar</displayName>
 				<displayName count="one">Guyanaese dollar</displayName>
 				<displayName count="other">Guyanaese dollars</displayName>
+				<symbol>GYD</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Hong Kong Dollar</displayName>
 				<displayName count="one">Hong Kong dollar</displayName>
 				<displayName count="other">Hong Kong dollars</displayName>
+				<symbol>HK$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>Honduran Lempira</displayName>
 				<displayName count="one">Honduran lempira</displayName>
 				<displayName count="other">Honduran lempiras</displayName>
+				<symbol>HNL</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>Croatian Dinar</displayName>
@@ -5689,21 +6120,25 @@ annotations.
 				<displayName>Croatian Kuna</displayName>
 				<displayName count="one">Croatian kuna</displayName>
 				<displayName count="other">Croatian kunas</displayName>
+				<symbol>HRK</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>Haitian Gourde</displayName>
 				<displayName count="one">Haitian gourde</displayName>
 				<displayName count="other">Haitian gourdes</displayName>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>Hungarian Forint</displayName>
 				<displayName count="one">Hungarian forint</displayName>
 				<displayName count="other">Hungarian forints</displayName>
+				<symbol>HUF</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Indonesian Rupiah</displayName>
 				<displayName count="one">Indonesian rupiah</displayName>
 				<displayName count="other">Indonesian rupiahs</displayName>
+				<symbol>IDR</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>Irish Pound</displayName>
@@ -5724,21 +6159,25 @@ annotations.
 				<displayName>Israeli New Shekel</displayName>
 				<displayName count="one">Israeli new shekel</displayName>
 				<displayName count="other">Israeli new shekels</displayName>
+				<symbol>₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Indian Rupee</displayName>
 				<displayName count="one">Indian rupee</displayName>
 				<displayName count="other">Indian rupees</displayName>
+				<symbol>₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>Iraqi Dinar</displayName>
 				<displayName count="one">Iraqi dinar</displayName>
 				<displayName count="other">Iraqi dinars</displayName>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>Iranian Rial</displayName>
 				<displayName count="one">Iranian rial</displayName>
 				<displayName count="other">Iranian rials</displayName>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISJ">
 				<displayName>Icelandic Króna (1918–1981)</displayName>
@@ -5749,6 +6188,7 @@ annotations.
 				<displayName>Icelandic Króna</displayName>
 				<displayName count="one">Icelandic króna</displayName>
 				<displayName count="other">Icelandic krónur</displayName>
+				<symbol>ISK</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>Italian Lira</displayName>
@@ -5759,11 +6199,13 @@ annotations.
 				<displayName>Jamaican Dollar</displayName>
 				<displayName count="one">Jamaican dollar</displayName>
 				<displayName count="other">Jamaican dollars</displayName>
+				<symbol>JMD</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>Jordanian Dinar</displayName>
 				<displayName count="one">Jordanian dinar</displayName>
 				<displayName count="other">Jordanian dinars</displayName>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Japanese Yen</displayName>
@@ -5775,26 +6217,31 @@ annotations.
 				<displayName>Kenyan Shilling</displayName>
 				<displayName count="one">Kenyan shilling</displayName>
 				<displayName count="other">Kenyan shillings</displayName>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
-				<displayName>Kyrgystani Som</displayName>
-				<displayName count="one">Kyrgystani som</displayName>
-				<displayName count="other">Kyrgystani soms</displayName>
+				<displayName>Kyrgyz Som</displayName>
+				<displayName count="one">Kyrgyz som</displayName>
+				<displayName count="other">Kyrgyz soms</displayName>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>Cambodian Riel</displayName>
 				<displayName count="one">Cambodian riel</displayName>
 				<displayName count="other">Cambodian riels</displayName>
+				<symbol>KHR</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>Comorian Franc</displayName>
 				<displayName count="one">Comorian franc</displayName>
 				<displayName count="other">Comorian francs</displayName>
+				<symbol>KMF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>North Korean Won</displayName>
 				<displayName count="one">North Korean won</displayName>
 				<displayName count="other">North Korean won</displayName>
+				<symbol>KPW</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName>South Korean Hwan (1953–1962)</displayName>
@@ -5810,46 +6257,55 @@ annotations.
 				<displayName>South Korean Won</displayName>
 				<displayName count="one">South Korean won</displayName>
 				<displayName count="other">South Korean won</displayName>
+				<symbol>₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>Kuwaiti Dinar</displayName>
 				<displayName count="one">Kuwaiti dinar</displayName>
 				<displayName count="other">Kuwaiti dinars</displayName>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>Cayman Islands Dollar</displayName>
 				<displayName count="one">Cayman Islands dollar</displayName>
 				<displayName count="other">Cayman Islands dollars</displayName>
+				<symbol>KYD</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>Kazakhstani Tenge</displayName>
 				<displayName count="one">Kazakhstani tenge</displayName>
 				<displayName count="other">Kazakhstani tenges</displayName>
+				<symbol>KZT</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>Laotian Kip</displayName>
 				<displayName count="one">Laotian kip</displayName>
 				<displayName count="other">Laotian kips</displayName>
+				<symbol>LAK</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>Lebanese Pound</displayName>
 				<displayName count="one">Lebanese pound</displayName>
 				<displayName count="other">Lebanese pounds</displayName>
+				<symbol>LBP</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Sri Lankan Rupee</displayName>
 				<displayName count="one">Sri Lankan rupee</displayName>
 				<displayName count="other">Sri Lankan rupees</displayName>
+				<symbol>LKR</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Liberian Dollar</displayName>
 				<displayName count="one">Liberian dollar</displayName>
 				<displayName count="other">Liberian dollars</displayName>
+				<symbol>LRD</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>Lesotho Loti</displayName>
 				<displayName count="one">Lesotho loti</displayName>
 				<displayName count="other">Lesotho lotis</displayName>
+				<symbol>LSL</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>Lithuanian Litas</displayName>
@@ -5890,11 +6346,13 @@ annotations.
 				<displayName>Libyan Dinar</displayName>
 				<displayName count="one">Libyan dinar</displayName>
 				<displayName count="other">Libyan dinars</displayName>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>Moroccan Dirham</displayName>
 				<displayName count="one">Moroccan dirham</displayName>
 				<displayName count="other">Moroccan dirhams</displayName>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>Moroccan Franc</displayName>
@@ -5915,11 +6373,13 @@ annotations.
 				<displayName>Moldovan Leu</displayName>
 				<displayName count="one">Moldovan leu</displayName>
 				<displayName count="other">Moldovan lei</displayName>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>Malagasy Ariary</displayName>
 				<displayName count="one">Malagasy ariary</displayName>
 				<displayName count="other">Malagasy ariaries</displayName>
+				<symbol>MGA</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>Malagasy Franc</displayName>
@@ -5930,6 +6390,7 @@ annotations.
 				<displayName>Macedonian Denar</displayName>
 				<displayName count="one">Macedonian denar</displayName>
 				<displayName count="other">Macedonian denari</displayName>
+				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName>Macedonian Denar (1992–1993)</displayName>
@@ -5945,16 +6406,19 @@ annotations.
 				<displayName>Myanmar Kyat</displayName>
 				<displayName count="one">Myanmar kyat</displayName>
 				<displayName count="other">Myanmar kyats</displayName>
+				<symbol>MMK</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Mongolian Tugrik</displayName>
 				<displayName count="one">Mongolian tugrik</displayName>
 				<displayName count="other">Mongolian tugriks</displayName>
+				<symbol>MNT</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>Macanese Pataca</displayName>
 				<displayName count="one">Macanese pataca</displayName>
 				<displayName count="other">Macanese patacas</displayName>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>Mauritanian Ouguiya (1973–2017)</displayName>
@@ -5965,6 +6429,7 @@ annotations.
 				<displayName>Mauritanian Ouguiya</displayName>
 				<displayName count="one">Mauritanian ouguiya</displayName>
 				<displayName count="other">Mauritanian ouguiyas</displayName>
+				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Maltese Lira</displayName>
@@ -5980,6 +6445,7 @@ annotations.
 				<displayName>Mauritian Rupee</displayName>
 				<displayName count="one">Mauritian rupee</displayName>
 				<displayName count="other">Mauritian rupees</displayName>
+				<symbol>MUR</symbol>
 			</currency>
 			<currency type="MVP">
 				<displayName>Maldivian Rupee (1947–1981)</displayName>
@@ -5990,16 +6456,19 @@ annotations.
 				<displayName>Maldivian Rufiyaa</displayName>
 				<displayName count="one">Maldivian rufiyaa</displayName>
 				<displayName count="other">Maldivian rufiyaas</displayName>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>Malawian Kwacha</displayName>
 				<displayName count="one">Malawian kwacha</displayName>
 				<displayName count="other">Malawian kwachas</displayName>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>Mexican Peso</displayName>
 				<displayName count="one">Mexican peso</displayName>
 				<displayName count="other">Mexican pesos</displayName>
+				<symbol>MX$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>Mexican Silver Peso (1861–1992)</displayName>
@@ -6015,6 +6484,7 @@ annotations.
 				<displayName>Malaysian Ringgit</displayName>
 				<displayName count="one">Malaysian ringgit</displayName>
 				<displayName count="other">Malaysian ringgits</displayName>
+				<symbol>MYR</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>Mozambican Escudo</displayName>
@@ -6030,16 +6500,19 @@ annotations.
 				<displayName>Mozambican Metical</displayName>
 				<displayName count="one">Mozambican metical</displayName>
 				<displayName count="other">Mozambican meticals</displayName>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>Namibian Dollar</displayName>
 				<displayName count="one">Namibian dollar</displayName>
 				<displayName count="other">Namibian dollars</displayName>
+				<symbol>NAD</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Nigerian Naira</displayName>
 				<displayName count="one">Nigerian naira</displayName>
 				<displayName count="other">Nigerian nairas</displayName>
+				<symbol>NGN</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>Nicaraguan Córdoba (1988–1991)</displayName>
@@ -6050,6 +6523,7 @@ annotations.
 				<displayName>Nicaraguan Córdoba</displayName>
 				<displayName count="one">Nicaraguan córdoba</displayName>
 				<displayName count="other">Nicaraguan córdobas</displayName>
+				<symbol>NIO</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>Dutch Guilder</displayName>
@@ -6060,26 +6534,31 @@ annotations.
 				<displayName>Norwegian Krone</displayName>
 				<displayName count="one">Norwegian krone</displayName>
 				<displayName count="other">Norwegian kroner</displayName>
+				<symbol>NOK</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Nepalese Rupee</displayName>
 				<displayName count="one">Nepalese rupee</displayName>
 				<displayName count="other">Nepalese rupees</displayName>
+				<symbol>NPR</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>New Zealand Dollar</displayName>
 				<displayName count="one">New Zealand dollar</displayName>
 				<displayName count="other">New Zealand dollars</displayName>
+				<symbol>NZ$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>Omani Rial</displayName>
 				<displayName count="one">Omani rial</displayName>
 				<displayName count="other">Omani rials</displayName>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>Panamanian Balboa</displayName>
 				<displayName count="one">Panamanian balboa</displayName>
 				<displayName count="other">Panamanian balboas</displayName>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>Peruvian Inti</displayName>
@@ -6090,6 +6569,7 @@ annotations.
 				<displayName>Peruvian Sol</displayName>
 				<displayName count="one">Peruvian sol</displayName>
 				<displayName count="other">Peruvian soles</displayName>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>Peruvian Sol (1863–1965)</displayName>
@@ -6100,21 +6580,25 @@ annotations.
 				<displayName>Papua New Guinean Kina</displayName>
 				<displayName count="one">Papua New Guinean kina</displayName>
 				<displayName count="other">Papua New Guinean kina</displayName>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>Philippine Peso</displayName>
 				<displayName count="one">Philippine peso</displayName>
 				<displayName count="other">Philippine pesos</displayName>
+				<symbol>₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>Pakistani Rupee</displayName>
 				<displayName count="one">Pakistani rupee</displayName>
 				<displayName count="other">Pakistani rupees</displayName>
+				<symbol>PKR</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>Polish Zloty</displayName>
 				<displayName count="one">Polish zloty</displayName>
 				<displayName count="other">Polish zlotys</displayName>
+				<symbol>PLN</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>Polish Zloty (1950–1995)</displayName>
@@ -6130,11 +6614,13 @@ annotations.
 				<displayName>Paraguayan Guarani</displayName>
 				<displayName count="one">Paraguayan guarani</displayName>
 				<displayName count="other">Paraguayan guaranis</displayName>
+				<symbol>PYG</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Qatari Riyal</displayName>
 				<displayName count="one">Qatari riyal</displayName>
 				<displayName count="other">Qatari riyals</displayName>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>Rhodesian Dollar</displayName>
@@ -6150,16 +6636,19 @@ annotations.
 				<displayName>Romanian Leu</displayName>
 				<displayName count="one">Romanian leu</displayName>
 				<displayName count="other">Romanian lei</displayName>
+				<symbol>RON</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Serbian Dinar</displayName>
 				<displayName count="one">Serbian dinar</displayName>
 				<displayName count="other">Serbian dinars</displayName>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Russian Ruble</displayName>
 				<displayName count="one">Russian ruble</displayName>
 				<displayName count="other">Russian rubles</displayName>
+				<symbol>RUB</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>Russian Ruble (1991–1998)</displayName>
@@ -6170,21 +6659,25 @@ annotations.
 				<displayName>Rwandan Franc</displayName>
 				<displayName count="one">Rwandan franc</displayName>
 				<displayName count="other">Rwandan francs</displayName>
+				<symbol>RWF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Saudi Riyal</displayName>
 				<displayName count="one">Saudi riyal</displayName>
 				<displayName count="other">Saudi riyals</displayName>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>Solomon Islands Dollar</displayName>
 				<displayName count="one">Solomon Islands dollar</displayName>
 				<displayName count="other">Solomon Islands dollars</displayName>
+				<symbol>SBD</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>Seychellois Rupee</displayName>
 				<displayName count="one">Seychellois rupee</displayName>
 				<displayName count="other">Seychellois rupees</displayName>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>Sudanese Dinar (1992–2007)</displayName>
@@ -6195,6 +6688,7 @@ annotations.
 				<displayName>Sudanese Pound</displayName>
 				<displayName count="one">Sudanese pound</displayName>
 				<displayName count="other">Sudanese pounds</displayName>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>Sudanese Pound (1957–1998)</displayName>
@@ -6205,16 +6699,19 @@ annotations.
 				<displayName>Swedish Krona</displayName>
 				<displayName count="one">Swedish krona</displayName>
 				<displayName count="other">Swedish kronor</displayName>
+				<symbol>SEK</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Singapore Dollar</displayName>
 				<displayName count="one">Singapore dollar</displayName>
 				<displayName count="other">Singapore dollars</displayName>
+				<symbol>SGD</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>St. Helena Pound</displayName>
 				<displayName count="one">St. Helena pound</displayName>
 				<displayName count="other">St. Helena pounds</displayName>
+				<symbol>SHP</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>Slovenian Tolar</displayName>
@@ -6230,21 +6727,25 @@ annotations.
 				<displayName>Sierra Leonean Leone</displayName>
 				<displayName count="one">Sierra Leonean leone</displayName>
 				<displayName count="other">Sierra Leonean leones</displayName>
+				<symbol>SLE</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>Sierra Leonean Leone (1964—2022)</displayName>
 				<displayName count="one">Sierra Leonean leone (1964—2022)</displayName>
 				<displayName count="other">Sierra Leonean leones (1964—2022)</displayName>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali Shilling</displayName>
 				<displayName count="one">Somali shilling</displayName>
 				<displayName count="other">Somali shillings</displayName>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>Surinamese Dollar</displayName>
 				<displayName count="one">Surinamese dollar</displayName>
 				<displayName count="other">Surinamese dollars</displayName>
+				<symbol>SRD</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>Surinamese Guilder</displayName>
@@ -6255,6 +6756,7 @@ annotations.
 				<displayName>South Sudanese Pound</displayName>
 				<displayName count="one">South Sudanese pound</displayName>
 				<displayName count="other">South Sudanese pounds</displayName>
+				<symbol>SSP</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>São Tomé &amp; Príncipe Dobra (1977–2017)</displayName>
@@ -6265,6 +6767,7 @@ annotations.
 				<displayName>São Tomé &amp; Príncipe Dobra</displayName>
 				<displayName count="one">São Tomé &amp; Príncipe dobra</displayName>
 				<displayName count="other">São Tomé &amp; Príncipe dobras</displayName>
+				<symbol>STN</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>Soviet Rouble</displayName>
@@ -6280,16 +6783,19 @@ annotations.
 				<displayName>Syrian Pound</displayName>
 				<displayName count="one">Syrian pound</displayName>
 				<displayName count="other">Syrian pounds</displayName>
+				<symbol>SYP</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>Swazi Lilangeni</displayName>
 				<displayName count="one">Swazi lilangeni</displayName>
 				<displayName count="other">Swazi emalangeni</displayName>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>Thai Baht</displayName>
 				<displayName count="one">Thai baht</displayName>
 				<displayName count="other">Thai baht</displayName>
+				<symbol>THB</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>Tajikistani Ruble</displayName>
@@ -6300,6 +6806,7 @@ annotations.
 				<displayName>Tajikistani Somoni</displayName>
 				<displayName count="one">Tajikistani somoni</displayName>
 				<displayName count="other">Tajikistani somonis</displayName>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>Turkmenistani Manat (1993–2009)</displayName>
@@ -6310,16 +6817,19 @@ annotations.
 				<displayName>Turkmenistani Manat</displayName>
 				<displayName count="one">Turkmenistani manat</displayName>
 				<displayName count="other">Turkmenistani manat</displayName>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>Tunisian Dinar</displayName>
 				<displayName count="one">Tunisian dinar</displayName>
 				<displayName count="other">Tunisian dinars</displayName>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Tongan Paʻanga</displayName>
 				<displayName count="one">Tongan paʻanga</displayName>
 				<displayName count="other">Tongan paʻanga</displayName>
+				<symbol>TOP</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Timorese Escudo</displayName>
@@ -6335,26 +6845,31 @@ annotations.
 				<displayName>Turkish Lira</displayName>
 				<displayName count="one">Turkish lira</displayName>
 				<displayName count="other">Turkish Lira</displayName>
+				<symbol>TRY</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>Trinidad &amp; Tobago Dollar</displayName>
 				<displayName count="one">Trinidad &amp; Tobago dollar</displayName>
 				<displayName count="other">Trinidad &amp; Tobago dollars</displayName>
+				<symbol>TTD</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>New Taiwan Dollar</displayName>
 				<displayName count="one">New Taiwan dollar</displayName>
 				<displayName count="other">New Taiwan dollars</displayName>
+				<symbol>NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>Tanzanian Shilling</displayName>
 				<displayName count="one">Tanzanian shilling</displayName>
 				<displayName count="other">Tanzanian shillings</displayName>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>Ukrainian Hryvnia</displayName>
 				<displayName count="one">Ukrainian hryvnia</displayName>
 				<displayName count="other">Ukrainian hryvnias</displayName>
+				<symbol>UAH</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>Ukrainian Karbovanets</displayName>
@@ -6370,6 +6885,7 @@ annotations.
 				<displayName>Ugandan Shilling</displayName>
 				<displayName count="one">Ugandan shilling</displayName>
 				<displayName count="other">Ugandan shillings</displayName>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>US Dollar</displayName>
@@ -6401,6 +6917,7 @@ annotations.
 				<displayName>Uruguayan Peso</displayName>
 				<displayName count="one">Uruguayan peso</displayName>
 				<displayName count="other">Uruguayan pesos</displayName>
+				<symbol>UYU</symbol>
 			</currency>
 			<currency type="UYW">
 				<displayName>Uruguayan Nominal Wage Index Unit</displayName>
@@ -6411,6 +6928,7 @@ annotations.
 				<displayName>Uzbekistani Som</displayName>
 				<displayName count="one">Uzbekistani som</displayName>
 				<displayName count="other">Uzbekistani som</displayName>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>Venezuelan Bolívar (1871–2008)</displayName>
@@ -6431,11 +6949,13 @@ annotations.
 				<displayName>Venezuelan Bolívar</displayName>
 				<displayName count="one">Venezuelan bolívar</displayName>
 				<displayName count="other">Venezuelan bolívars</displayName>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Vietnamese Dong</displayName>
 				<displayName count="one">Vietnamese dong</displayName>
 				<displayName count="other">Vietnamese dong</displayName>
+				<symbol>₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName>Vietnamese Dong (1978–1985)</displayName>
@@ -6446,16 +6966,19 @@ annotations.
 				<displayName>Vanuatu Vatu</displayName>
 				<displayName count="one">Vanuatu vatu</displayName>
 				<displayName count="other">Vanuatu vatus</displayName>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>Samoan Tala</displayName>
 				<displayName count="one">Samoan tala</displayName>
 				<displayName count="other">Samoan tala</displayName>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Central African CFA Franc</displayName>
 				<displayName count="one">Central African CFA franc</displayName>
 				<displayName count="other">Central African CFA francs</displayName>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>Silver</displayName>
@@ -6491,6 +7014,7 @@ annotations.
 				<displayName>East Caribbean Dollar</displayName>
 				<displayName count="one">East Caribbean dollar</displayName>
 				<displayName count="other">East Caribbean dollars</displayName>
+				<symbol>EC$</symbol>
 			</currency>
 			<currency type="XCG">
 				<displayName>Caribbean guilder</displayName>
@@ -6521,6 +7045,7 @@ annotations.
 				<displayName>West African CFA Franc</displayName>
 				<displayName count="one">West African CFA franc</displayName>
 				<displayName count="other">West African CFA francs</displayName>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>Palladium</displayName>
@@ -6531,6 +7056,7 @@ annotations.
 				<displayName>CFP Franc</displayName>
 				<displayName count="one">CFP franc</displayName>
 				<displayName count="other">CFP francs</displayName>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>Platinum</displayName>
@@ -6571,6 +7097,7 @@ annotations.
 				<displayName>Yemeni Rial</displayName>
 				<displayName count="one">Yemeni rial</displayName>
 				<displayName count="other">Yemeni rials</displayName>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>Yugoslavian Hard Dinar (1966–1990)</displayName>
@@ -6601,6 +7128,7 @@ annotations.
 				<displayName>South African Rand</displayName>
 				<displayName count="one">South African rand</displayName>
 				<displayName count="other">South African rand</displayName>
+				<symbol>ZAR</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Zambian Kwacha (1968–2012)</displayName>
@@ -6611,6 +7139,7 @@ annotations.
 				<displayName>Zambian Kwacha</displayName>
 				<displayName count="one">Zambian kwacha</displayName>
 				<displayName count="other">Zambian kwachas</displayName>
+				<symbol>ZMW</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>Zairean New Zaire (1993–1998)</displayName>
@@ -6631,6 +7160,7 @@ annotations.
 				<displayName>Zimbabwean Gold</displayName>
 				<displayName count="one">Zimbabwean gold</displayName>
 				<displayName count="other">Zimbabwean gold</displayName>
+				<symbol>ZWG</symbol>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Zimbabwean Dollar (2009–2024)</displayName>
@@ -6647,12 +7177,12 @@ annotations.
 			<pattern type="atLeast">{0}+</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">{0} day</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">{0} days</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="few">Take the {0}rd right.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="one">Take the {0}st right.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">Take the {0}th right.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="two">Take the {0}nd right.</ordinalMinimalPairs>
+			<pluralMinimalPairs count="one">{0} day</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} days</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">Take the {0}rd right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Take the {0}st right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Take the {0}th right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">Take the {0}nd right.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -6879,7 +7409,12 @@ annotations.
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>parts</displayName>
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} parts</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>parts per million</displayName>
 				<unitPattern count="one">{0} part per million</unitPattern>
 				<unitPattern count="other">{0} parts per million</unitPattern>
@@ -6903,6 +7438,11 @@ annotations.
 				<displayName>moles</displayName>
 				<unitPattern count="one">{0} mole</unitPattern>
 				<unitPattern count="other">{0} moles</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>of glucose</displayName>
+				<unitPattern count="one">{0} of glucose</unitPattern>
+				<unitPattern count="other">{0} of glucose</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liters per kilometer</displayName>
@@ -7441,6 +7981,11 @@ annotations.
 				<unitPattern count="one">{0} millimeter of mercury</unitPattern>
 				<unitPattern count="other">{0} millimeters of mercury</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>of mercury</displayName>
+				<unitPattern count="one">{0} of mercury</unitPattern>
+				<unitPattern count="other">{0} of mercury</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pounds-force per square inch</displayName>
 				<unitPattern count="one">{0} pound-force per square inch</unitPattern>
@@ -7619,6 +8164,11 @@ annotations.
 				<unitPattern count="one">{0} metric cup</unitPattern>
 				<unitPattern count="other">{0} metric cups</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>metric fluid ounces</displayName>
+				<unitPattern count="one">{0} metric fluid ounce</unitPattern>
+				<unitPattern count="other">{0} metric fluid ounces</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre-feet</displayName>
 				<unitPattern count="one">{0} acre-foot</unitPattern>
@@ -7651,10 +8201,20 @@ annotations.
 				<unitPattern count="one">{0} pint</unitPattern>
 				<unitPattern count="other">{0} pints</unitPattern>
 			</unit>
+			<unit type="volume-pint-imperial">
+				<displayName>pints Imperial</displayName>
+				<unitPattern count="one">{0} pint Imperial</unitPattern>
+				<unitPattern count="other">{0} pints Imperial</unitPattern>
+			</unit>
 			<unit type="volume-cup">
 				<displayName>cups</displayName>
 				<unitPattern count="one">{0} cup</unitPattern>
 				<unitPattern count="other">{0} cups</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cups Imperial</displayName>
+				<unitPattern count="one">{0} cup Imperial</unitPattern>
+				<unitPattern count="other">{0} cups Imperial</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fluid ounces</displayName>
@@ -7716,17 +8276,202 @@ annotations.
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
 				<unitPattern count="other">{0} Imp. quarts</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>steradians</displayName>
+				<unitPattern count="one">{0} steradian</unitPattern>
+				<unitPattern count="other">{0} steradians</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>katals</displayName>
+				<unitPattern count="one">{0} katal</unitPattern>
+				<unitPattern count="other">{0} katals</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>coulombs</displayName>
+				<unitPattern count="one">{0} coulomb</unitPattern>
+				<unitPattern count="other">{0} coulombs</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>farads</displayName>
+				<unitPattern count="one">{0} farad</unitPattern>
+				<unitPattern count="other">{0} farads</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>henrys</displayName>
+				<unitPattern count="one">{0} henry</unitPattern>
+				<unitPattern count="other">{0} henrys</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>siemens</displayName>
+				<unitPattern count="one">{0} siemens</unitPattern>
+				<unitPattern count="other">{0} siemens</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>calories [IT]</displayName>
+				<unitPattern count="one">{0} calorie [IT]</unitPattern>
+				<unitPattern count="other">{0} calories [IT]</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit-it">
+				<displayName>British thermal units [IT]</displayName>
+				<unitPattern count="one">{0} British thermal unit [IT]</unitPattern>
+				<unitPattern count="other">{0} British thermal units [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>becquerels</displayName>
+				<unitPattern count="one">{0} becquerel</unitPattern>
+				<unitPattern count="other">{0} becquerels</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>sieverts</displayName>
+				<unitPattern count="one">{0} sievert</unitPattern>
+				<unitPattern count="other">{0} sieverts</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>grays</displayName>
+				<unitPattern count="one">{0} gray</unitPattern>
+				<unitPattern count="other">{0} grays</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kilograms-force</displayName>
+				<unitPattern count="one">{0} kilogram-force</unitPattern>
+				<unitPattern count="other">{0} kilograms-force</unitPattern>
+			</unit>
+			<unit type="length-rod">
+				<displayName>rods</displayName>
+				<unitPattern count="one">{0} rod</unitPattern>
+				<unitPattern count="other">{0} rods</unitPattern>
+			</unit>
+			<unit type="length-chain">
+				<displayName>chains</displayName>
+				<unitPattern count="one">{0} chain</unitPattern>
+				<unitPattern count="other">{0} chains</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>teslas</displayName>
+				<unitPattern count="one">{0} tesla</unitPattern>
+				<unitPattern count="other">{0} teslas</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>webers</displayName>
+				<unitPattern count="one">{0} weber</unitPattern>
+				<unitPattern count="other">{0} webers</unitPattern>
+			</unit>
+			<unit type="temperature-rankine">
+				<displayName>rankines</displayName>
+				<unitPattern count="one">{0} rankine</unitPattern>
+				<unitPattern count="other">{0} rankines</unitPattern>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>fortnights</displayName>
+				<unitPattern count="one">{0} fortnight</unitPattern>
+				<unitPattern count="other">{0} fortnights</unitPattern>
+			</unit>
+			<unit type="mass-slug">
+				<displayName>slugs</displayName>
+				<unitPattern count="one">{0} slug</unitPattern>
+				<unitPattern count="other">{0} slugs</unitPattern>
+			</unit>
 			<unit type="pressure-gasoline-energy-density">
 				<displayName>of gasoline equivalent</displayName>
 				<unitPattern count="one">{0} of gasoline equivalent</unitPattern>
 				<unitPattern count="other">{0} of gasoline equivalent</unitPattern>
+			</unit>
+			<unit type="length-rin">
+				<displayName>rin [JP]</displayName>
+				<unitPattern count="one">{0} rin [JP]</unitPattern>
+				<unitPattern count="other">{0} rin [JP]</unitPattern>
+			</unit>
+			<unit type="length-sun">
+				<displayName>sun [JP]</displayName>
+				<unitPattern count="one">{0} sun [JP]</unitPattern>
+				<unitPattern count="other">{0} sun [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-length">
+				<displayName>shaku [JP]</displayName>
+				<unitPattern count="one">{0} shaku [JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-cloth">
+				<displayName>shaku [cloth, JP]</displayName>
+				<unitPattern count="one">{0} shaku [cloth, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [cloth, JP]</unitPattern>
+			</unit>
+			<unit type="length-ken">
+				<displayName>ken [JP]</displayName>
+				<unitPattern count="one">{0} ken [JP]</unitPattern>
+				<unitPattern count="other">{0} ken [JP]</unitPattern>
+			</unit>
+			<unit type="length-jo-jp">
+				<displayName>jo [JP]</displayName>
+				<unitPattern count="one">{0} jo [JP]</unitPattern>
+				<unitPattern count="other">{0} jo [JP]</unitPattern>
+			</unit>
+			<unit type="length-ri-jp">
+				<displayName>ri [JP]</displayName>
+				<unitPattern count="one">{0} ri [JP]</unitPattern>
+				<unitPattern count="other">{0} ri [JP]</unitPattern>
+			</unit>
+			<unit type="area-bu-jp">
+				<displayName>bu [JP]</displayName>
+				<unitPattern count="one">{0} bu [JP]</unitPattern>
+				<unitPattern count="other">{0} bu [JP]</unitPattern>
+			</unit>
+			<unit type="area-se-jp">
+				<displayName>se [JP]</displayName>
+				<unitPattern count="one">{0} se [JP]</unitPattern>
+				<unitPattern count="other">{0} se [JP]</unitPattern>
+			</unit>
+			<unit type="area-cho">
+				<displayName>cho [JP]</displayName>
+				<unitPattern count="one">{0} cho [JP]</unitPattern>
+				<unitPattern count="other">{0} cho [JP]</unitPattern>
+			</unit>
+			<unit type="volume-kosaji">
+				<displayName>kosaji [JP]</displayName>
+				<unitPattern count="one">{0} kosaji [JP]</unitPattern>
+				<unitPattern count="other">{0} kosaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-osaji">
+				<displayName>osaji [JP]</displayName>
+				<unitPattern count="one">{0} osaji [JP]</unitPattern>
+				<unitPattern count="other">{0} osaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-cup-jp">
+				<displayName>cup [JP]</displayName>
+				<unitPattern count="one">{0} cup [JP]</unitPattern>
+				<unitPattern count="other">{0} cup [JP]</unitPattern>
+			</unit>
+			<unit type="volume-shaku">
+				<displayName>shaku [volume, JP]</displayName>
+				<unitPattern count="one">{0} shaku [volume, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [volume, JP]</unitPattern>
+			</unit>
+			<unit type="volume-sai">
+				<displayName>sai [JP]</displayName>
+				<unitPattern count="one">{0} sai [JP]</unitPattern>
+				<unitPattern count="other">{0} sai [JP]</unitPattern>
+			</unit>
+			<unit type="volume-to-jp">
+				<displayName>to [JP]</displayName>
+				<unitPattern count="one">{0} to [JP]</unitPattern>
+				<unitPattern count="other">{0} to [JP]</unitPattern>
+			</unit>
+			<unit type="volume-koku">
+				<displayName>koku [JP]</displayName>
+				<unitPattern count="one">{0} koku [JP]</unitPattern>
+				<unitPattern count="other">{0} koku [JP]</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>light</displayName>
 				<unitPattern count="one">{0} light</unitPattern>
 				<unitPattern count="other">{0} light</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="mass-fun">
+				<displayName>fun [JP]</displayName>
+				<unitPattern count="one">{0} fun [JP]</unitPattern>
+				<unitPattern count="other">{0} fun [JP]</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>parts per billion</displayName>
 				<unitPattern count="one">{0} part per billion</unitPattern>
 				<unitPattern count="other">{0} parts per billion</unitPattern>
@@ -7968,7 +8713,12 @@ annotations.
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>part</displayName>
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} part</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>parts/million</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -7992,6 +8742,11 @@ annotations.
 				<displayName>mole</displayName>
 				<unitPattern count="one">{0} mol</unitPattern>
 				<unitPattern count="other">{0} mol</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liters/km</displayName>
@@ -8530,6 +9285,11 @@ annotations.
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>of Hg</displayName>
+				<unitPattern count="one">{0} of Hg</unitPattern>
+				<unitPattern count="other">{0} of Hg</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
@@ -8708,6 +9468,11 @@ annotations.
 				<unitPattern count="one">{0} mc</unitPattern>
 				<unitPattern count="other">{0} mc</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>fl oz m.</displayName>
+				<unitPattern count="one">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} fl oz m.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre ft</displayName>
 				<unitPattern count="one">{0} ac ft</unitPattern>
@@ -8739,10 +9504,20 @@ annotations.
 				<unitPattern count="one">{0} pt</unitPattern>
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="volume-pint-imperial">
+				<displayName>pt Imp.</displayName>
+				<unitPattern count="one">{0} pt Imp.</unitPattern>
+				<unitPattern count="other">{0} pt Imp.</unitPattern>
+			</unit>
 			<unit type="volume-cup">
 				<displayName>cups</displayName>
 				<unitPattern count="one">{0} c</unitPattern>
 				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cup Imp</displayName>
+				<unitPattern count="one">{0} cup Imp.</unitPattern>
+				<unitPattern count="other">{0} cup Imp.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
@@ -8804,17 +9579,202 @@ annotations.
 				<unitPattern count="one">{0} qt-Imp.</unitPattern>
 				<unitPattern count="other">{0} qt-Imp.</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>sr</displayName>
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>kat</displayName>
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>C</displayName>
+				<unitPattern count="one">{0} C</unitPattern>
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>F</displayName>
+				<unitPattern count="one">{0} F</unitPattern>
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>H</displayName>
+				<unitPattern count="one">{0} H</unitPattern>
+				<unitPattern count="other">{0} H</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>S</displayName>
+				<unitPattern count="one">{0} S</unitPattern>
+				<unitPattern count="other">{0} S</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+				<unitPattern count="one">{0} cal-IT</unitPattern>
+				<unitPattern count="other">{0} cal-IT</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit-it">
+				<displayName>BTU-IT</displayName>
+				<unitPattern count="one">{0} BTU-IT</unitPattern>
+				<unitPattern count="other">{0} BT-IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>Bq</displayName>
+				<unitPattern count="one">{0} Bq</unitPattern>
+				<unitPattern count="other">{0} Bq</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>Sv</displayName>
+				<unitPattern count="one">{0} Sv</unitPattern>
+				<unitPattern count="other">{0} Sv</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>Gy</displayName>
+				<unitPattern count="one">{0} Gy</unitPattern>
+				<unitPattern count="other">{0} Gy</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kgf</displayName>
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="length-rod">
+				<displayName>rd</displayName>
+				<unitPattern count="one">{0} rd</unitPattern>
+				<unitPattern count="other">{0} rd</unitPattern>
+			</unit>
+			<unit type="length-chain">
+				<displayName>ch</displayName>
+				<unitPattern count="one">{0} ch</unitPattern>
+				<unitPattern count="other">{0} ch</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>T</displayName>
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>Wb</displayName>
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
+			<unit type="temperature-rankine">
+				<displayName>°R</displayName>
+				<unitPattern count="one">{0} °R</unitPattern>
+				<unitPattern count="other">{0} °R</unitPattern>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>fw</displayName>
+				<unitPattern count="one">{0} fw</unitPattern>
+				<unitPattern count="other">{0} fw</unitPattern>
+			</unit>
+			<unit type="mass-slug">
+				<displayName>slug</displayName>
+				<unitPattern count="one">{0} slug</unitPattern>
+				<unitPattern count="other">{0} slug</unitPattern>
+			</unit>
 			<unit type="pressure-gasoline-energy-density">
 				<displayName>gas-equiv</displayName>
 				<unitPattern count="one">{0} gas-equiv</unitPattern>
 				<unitPattern count="other">{0} gas-equiv</unitPattern>
+			</unit>
+			<unit type="length-rin">
+				<displayName>rin [JP]</displayName>
+				<unitPattern count="one">{0} rin [JP]</unitPattern>
+				<unitPattern count="other">{0} rin [JP]</unitPattern>
+			</unit>
+			<unit type="length-sun">
+				<displayName>sun [JP]</displayName>
+				<unitPattern count="one">{0} sun [JP]</unitPattern>
+				<unitPattern count="other">{0} sun [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-length">
+				<displayName>shaku [JP]</displayName>
+				<unitPattern count="one">{0} shaku [JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-cloth">
+				<displayName>shaku [cloth, JP]</displayName>
+				<unitPattern count="one">{0} shaku [cloth, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [cloth, JP]</unitPattern>
+			</unit>
+			<unit type="length-ken">
+				<displayName>ken [JP]</displayName>
+				<unitPattern count="one">{0} ken [JP]</unitPattern>
+				<unitPattern count="other">{0} ken [JP]</unitPattern>
+			</unit>
+			<unit type="length-jo-jp">
+				<displayName>jo [JP]</displayName>
+				<unitPattern count="one">{0} jo [JP]</unitPattern>
+				<unitPattern count="other">{0} jo [JP]</unitPattern>
+			</unit>
+			<unit type="length-ri-jp">
+				<displayName>ri [JP]</displayName>
+				<unitPattern count="one">{0} ri [JP]</unitPattern>
+				<unitPattern count="other">{0} ri [JP]</unitPattern>
+			</unit>
+			<unit type="area-bu-jp">
+				<displayName>bu [JP]</displayName>
+				<unitPattern count="one">{0} bu [JP]</unitPattern>
+				<unitPattern count="other">{0} bu [JP]</unitPattern>
+			</unit>
+			<unit type="area-se-jp">
+				<displayName>se [JP]</displayName>
+				<unitPattern count="one">{0} se [JP]</unitPattern>
+				<unitPattern count="other">{0} se [JP]</unitPattern>
+			</unit>
+			<unit type="area-cho">
+				<displayName>cho [JP]</displayName>
+				<unitPattern count="one">{0} cho [JP]</unitPattern>
+				<unitPattern count="other">{0} cho [JP]</unitPattern>
+			</unit>
+			<unit type="volume-kosaji">
+				<displayName>kosaji [JP]</displayName>
+				<unitPattern count="one">{0} kosaji [JP]</unitPattern>
+				<unitPattern count="other">{0} kosaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-osaji">
+				<displayName>osaji [JP]</displayName>
+				<unitPattern count="one">{0} osaji [JP]</unitPattern>
+				<unitPattern count="other">{0} osaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-cup-jp">
+				<displayName>cup [JP]</displayName>
+				<unitPattern count="one">{0} cup [JP]</unitPattern>
+				<unitPattern count="other">{0} cup [JP]</unitPattern>
+			</unit>
+			<unit type="volume-shaku">
+				<displayName>shaku [vol, JP]</displayName>
+				<unitPattern count="one">{0} shaku [vol, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [vol, JP]</unitPattern>
+			</unit>
+			<unit type="volume-sai">
+				<displayName>sai [JP]</displayName>
+				<unitPattern count="one">{0} sai [JP]</unitPattern>
+				<unitPattern count="other">{0} sai [JP]</unitPattern>
+			</unit>
+			<unit type="volume-to-jp">
+				<displayName>to [JP]</displayName>
+				<unitPattern count="one">{0} to [JP]</unitPattern>
+				<unitPattern count="other">{0} to [JP]</unitPattern>
+			</unit>
+			<unit type="volume-koku">
+				<displayName>koku [JP]</displayName>
+				<unitPattern count="one">{0} koku [JP]</unitPattern>
+				<unitPattern count="other">{0} koku [JP]</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>light</displayName>
 				<unitPattern count="one">{0} light</unitPattern>
 				<unitPattern count="other">{0} light</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="mass-fun">
+				<displayName>fun [JP]</displayName>
+				<unitPattern count="one">{0} fun [JP]</unitPattern>
+				<unitPattern count="other">{0} fun [JP]</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>parts/billion</displayName>
 				<unitPattern count="one">{0} ppb</unitPattern>
 				<unitPattern count="other">{0} ppb</unitPattern>
@@ -9054,7 +10014,12 @@ annotations.
 				<unitPattern count="one">{0}item</unitPattern>
 				<unitPattern count="other">{0}items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>part</displayName>
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} part</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -9078,6 +10043,11 @@ annotations.
 				<displayName>mol</displayName>
 				<unitPattern count="one">{0}mol</unitPattern>
 				<unitPattern count="other">{0}mol</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -9616,6 +10586,11 @@ annotations.
 				<unitPattern count="one">{0}mmHg</unitPattern>
 				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>of Hg</displayName>
+				<unitPattern count="one">{0} of Hg</unitPattern>
+				<unitPattern count="other">{0} of Hg</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0}psi</unitPattern>
@@ -9794,6 +10769,11 @@ annotations.
 				<unitPattern count="one">{0}mc</unitPattern>
 				<unitPattern count="other">{0}mc</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>fl oz m.</displayName>
+				<unitPattern count="one">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} fl oz m.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre ft</displayName>
 				<unitPattern count="one">{0}ac ft</unitPattern>
@@ -9812,8 +10792,8 @@ annotations.
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>Imp gal</displayName>
-				<unitPattern count="one">{0}galIm</unitPattern>
-				<unitPattern count="other">{0}galIm</unitPattern>
+				<unitPattern count="one">{0}gal-Im</unitPattern>
+				<unitPattern count="other">{0}gal-Im</unitPattern>
 				<perUnitPattern>{0}/galIm</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
@@ -9826,10 +10806,20 @@ annotations.
 				<unitPattern count="one">{0}pt</unitPattern>
 				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
+			<unit type="volume-pint-imperial">
+				<displayName>pt Imp.</displayName>
+				<unitPattern count="one">{0} pt Imp.</unitPattern>
+				<unitPattern count="other">{0} pt Imp.</unitPattern>
+			</unit>
 			<unit type="volume-cup">
 				<displayName>cup</displayName>
 				<unitPattern count="one">{0}c</unitPattern>
 				<unitPattern count="other">{0}c</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cup Imp</displayName>
+				<unitPattern count="one">{0} cup Imp.</unitPattern>
+				<unitPattern count="other">{0} cup Imp.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
@@ -9891,17 +10881,202 @@ annotations.
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>sr</displayName>
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>kat</displayName>
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>C</displayName>
+				<unitPattern count="one">{0} C</unitPattern>
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>F</displayName>
+				<unitPattern count="one">{0} F</unitPattern>
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>H</displayName>
+				<unitPattern count="one">{0} H</unitPattern>
+				<unitPattern count="other">{0} H</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>S</displayName>
+				<unitPattern count="one">{0} S</unitPattern>
+				<unitPattern count="other">{0} S</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+				<unitPattern count="one">{0} cal-IT</unitPattern>
+				<unitPattern count="other">{0} cal-IT</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit-it">
+				<displayName>BTU-IT</displayName>
+				<unitPattern count="one">{0} BTU-IT</unitPattern>
+				<unitPattern count="other">{0} BT-IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>Bq</displayName>
+				<unitPattern count="one">{0} Bq</unitPattern>
+				<unitPattern count="other">{0} Bq</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>Sv</displayName>
+				<unitPattern count="one">{0} Sv</unitPattern>
+				<unitPattern count="other">{0} Sv</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>Gy</displayName>
+				<unitPattern count="one">{0} Gy</unitPattern>
+				<unitPattern count="other">{0} Gy</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kgf</displayName>
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="length-rod">
+				<displayName>rd</displayName>
+				<unitPattern count="one">{0} rd</unitPattern>
+				<unitPattern count="other">{0} rd</unitPattern>
+			</unit>
+			<unit type="length-chain">
+				<displayName>ch</displayName>
+				<unitPattern count="one">{0} ch</unitPattern>
+				<unitPattern count="other">{0} ch</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>T</displayName>
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>Wb</displayName>
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
+			<unit type="temperature-rankine">
+				<displayName>°R</displayName>
+				<unitPattern count="one">{0} °R</unitPattern>
+				<unitPattern count="other">{0} °R</unitPattern>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>fw</displayName>
+				<unitPattern count="one">{0} fw</unitPattern>
+				<unitPattern count="other">{0} fw</unitPattern>
+			</unit>
+			<unit type="mass-slug">
+				<displayName>slug</displayName>
+				<unitPattern count="one">{0} slug</unitPattern>
+				<unitPattern count="other">{0} slug</unitPattern>
+			</unit>
 			<unit type="pressure-gasoline-energy-density">
 				<displayName>gas-equiv</displayName>
 				<unitPattern count="one">{0}gas-equiv</unitPattern>
 				<unitPattern count="other">{0}gas-equiv</unitPattern>
+			</unit>
+			<unit type="length-rin">
+				<displayName>rin [JP]</displayName>
+				<unitPattern count="one">{0} rin [JP]</unitPattern>
+				<unitPattern count="other">{0} rin [JP]</unitPattern>
+			</unit>
+			<unit type="length-sun">
+				<displayName>sun [JP]</displayName>
+				<unitPattern count="one">{0} sun [JP]</unitPattern>
+				<unitPattern count="other">{0} sun [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-length">
+				<displayName>shaku [JP]</displayName>
+				<unitPattern count="one">{0} shaku [JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-cloth">
+				<displayName>shaku [cloth, JP]</displayName>
+				<unitPattern count="one">{0} shaku [cloth, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [cloth, JP]</unitPattern>
+			</unit>
+			<unit type="length-ken">
+				<displayName>ken [JP]</displayName>
+				<unitPattern count="one">{0} ken [JP]</unitPattern>
+				<unitPattern count="other">{0} ken [JP]</unitPattern>
+			</unit>
+			<unit type="length-jo-jp">
+				<displayName>jo [JP]</displayName>
+				<unitPattern count="one">{0} jo [JP]</unitPattern>
+				<unitPattern count="other">{0} jo [JP]</unitPattern>
+			</unit>
+			<unit type="length-ri-jp">
+				<displayName>ri [JP]</displayName>
+				<unitPattern count="one">{0} ri [JP]</unitPattern>
+				<unitPattern count="other">{0} ri [JP]</unitPattern>
+			</unit>
+			<unit type="area-bu-jp">
+				<displayName>bu [JP]</displayName>
+				<unitPattern count="one">{0} bu [JP]</unitPattern>
+				<unitPattern count="other">{0} bu [JP]</unitPattern>
+			</unit>
+			<unit type="area-se-jp">
+				<displayName>se [JP]</displayName>
+				<unitPattern count="one">{0} se [JP]</unitPattern>
+				<unitPattern count="other">{0} se [JP]</unitPattern>
+			</unit>
+			<unit type="area-cho">
+				<displayName>cho [JP]</displayName>
+				<unitPattern count="one">{0} cho [JP]</unitPattern>
+				<unitPattern count="other">{0} cho [JP]</unitPattern>
+			</unit>
+			<unit type="volume-kosaji">
+				<displayName>kosaji [JP]</displayName>
+				<unitPattern count="one">{0} kosaji [JP]</unitPattern>
+				<unitPattern count="other">{0} kosaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-osaji">
+				<displayName>osaji [JP]</displayName>
+				<unitPattern count="one">{0} osaji [JP]</unitPattern>
+				<unitPattern count="other">{0} osaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-cup-jp">
+				<displayName>cup [JP]</displayName>
+				<unitPattern count="one">{0} cup [JP]</unitPattern>
+				<unitPattern count="other">{0} cup [JP]</unitPattern>
+			</unit>
+			<unit type="volume-shaku">
+				<displayName>shaku [vol, JP]</displayName>
+				<unitPattern count="one">{0} shaku [vol, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [vol, JP]</unitPattern>
+			</unit>
+			<unit type="volume-sai">
+				<displayName>sai [JP]</displayName>
+				<unitPattern count="one">{0} sai [JP]</unitPattern>
+				<unitPattern count="other">{0} sai [JP]</unitPattern>
+			</unit>
+			<unit type="volume-to-jp">
+				<displayName>to [JP]</displayName>
+				<unitPattern count="one">{0} to [JP]</unitPattern>
+				<unitPattern count="other">{0} to [JP]</unitPattern>
+			</unit>
+			<unit type="volume-koku">
+				<displayName>koku [JP]</displayName>
+				<unitPattern count="one">{0} koku [JP]</unitPattern>
+				<unitPattern count="other">{0} koku [JP]</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>light</displayName>
 				<unitPattern count="one">{0}light</unitPattern>
 				<unitPattern count="other">{0}light</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="mass-fun">
+				<displayName>fun [JP]</displayName>
+				<unitPattern count="one">{0} fun [JP]</unitPattern>
+				<unitPattern count="other">{0} fun [JP]</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>ppb</displayName>
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
@@ -10159,6 +11334,7 @@ annotations.
 		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
 		<parameterDefault parameter="formality">informal</parameterDefault>
 		<parameterDefault parameter="length">medium</parameterDefault>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0}{1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">

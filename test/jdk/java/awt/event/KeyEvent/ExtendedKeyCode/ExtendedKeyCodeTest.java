@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ import java.awt.event.KeyAdapter;
  * @test
  * @key headful
  * @bug 8007156 8025126
- * @summary Extended key code is not set for a key event
- * @author Alexandr Scherbatiy
+ * @summary Tests that ExtendedKeyCode is set for key events
  * @library /lib/client
  * @build ExtendedRobot
  * @run main ExtendedKeyCodeTest
@@ -75,7 +74,8 @@ public class ExtendedKeyCodeTest {
         frame.dispose();
 
         if (eventsCount != 2 || !setExtendedKeyCode) {
-            throw new RuntimeException("Wrong extended key code");
+            throw new RuntimeException("Wrong extended key code\n" +
+                    "eventsCount: " + eventsCount);
         }
 
         frame = new Frame();

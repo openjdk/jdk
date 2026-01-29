@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "jfr/leakprofiler/checkpoint/eventEmitter.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/startOperation.hpp"
 #include "jfr/leakprofiler/stopOperation.hpp"
-#include "jfr/leakprofiler/checkpoint/eventEmitter.hpp"
-#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import sun.net.httpserver.UnmodifiableHeaders;
+import sun.net.httpserver.Utils;
 
 /**
  * HTTP request and response headers are represented by this class which
@@ -62,9 +63,9 @@ import sun.net.httpserver.UnmodifiableHeaders;
  * <ul>
  *     <li>{@link #getFirst(String)} returns a single valued header or the first
  *     value of a multi-valued header.
- *     <li>{@link #add(String,String)} adds the given header value to the list
+ *     <li>{@link #add(String, String)} adds the given header value to the list
  *     for the given key.
- *     <li>{@link #set(String,String)} sets the given header field to the single
+ *     <li>{@link #set(String, String)} sets the given header field to the single
  *     value given overwriting any existing values in the value list.
  * </ul>
  *
@@ -80,9 +81,9 @@ import sun.net.httpserver.UnmodifiableHeaders;
  * {@code null} keys will never be present in HTTP request or response headers.
  * @since 1.6
  */
-public class Headers implements Map<String,List<String>> {
+public class Headers implements Map<String, List<String>> {
 
-    HashMap<String,List<String>> map;
+    HashMap<String, List<String>> map;
 
     /**
      * Creates an empty instance of {@code Headers}.
@@ -99,7 +100,7 @@ public class Headers implements Map<String,List<String>> {
      *                              null.
      * @since 18
      */
-    public Headers(Map<String,List<String>> headers) {
+    public Headers(Map<String, List<String>> headers) {
         Objects.requireNonNull(headers);
         var h = headers.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(
@@ -109,29 +110,69 @@ public class Headers implements Map<String,List<String>> {
     }
 
     /**
-     * Normalize the key by converting to following form.
-     * First {@code char} upper case, rest lower case.
-     * key is presumed to be {@code ASCII}.
+     * {@return the normalized header name of the following form: the first
+     * character in upper-case, the rest in lower-case}
+     * The input header name is assumed to be encoded in ASCII.
+     *
+     * @implSpec
+     * This method is performance-sensitive; update with care.
+     *
+     * @param key an ASCII-encoded header name
+     * @throws NullPointerException on null {@code key}
+     * @throws IllegalArgumentException if {@code key} contains {@code \r} or {@code \n}
      */
-    private String normalize(String key) {
+    private static String normalize(String key) {
+
+        // Fast path for the empty key
         Objects.requireNonNull(key);
-        int len = key.length();
-        if (len == 0) {
+        int l = key.length();
+        if (l == 0) {
             return key;
         }
-        char[] b = key.toCharArray();
-        if (b[0] >= 'a' && b[0] <= 'z') {
-            b[0] = (char)(b[0] - ('a' - 'A'));
-        } else if (b[0] == '\r' || b[0] == '\n')
-            throw new IllegalArgumentException("illegal character in key");
 
-        for (int i=1; i<len; i++) {
-            if (b[i] >= 'A' && b[i] <= 'Z') {
-                b[i] = (char) (b[i] + ('a' - 'A'));
-            } else if (b[i] == '\r' || b[i] == '\n')
-                throw new IllegalArgumentException("illegal character in key");
+        // Find the first non-normalized `char`
+        int i = 0;
+        char c = key.charAt(i);
+        if (!(c == '\r' || c == '\n' || (c >= 'a' && c <= 'z'))) {
+            i++;
+            for (; i < l; i++) {
+                c = key.charAt(i);
+                if (c == '\r' || c == '\n' || (c >= 'A' && c <= 'Z')) {
+                    break;
+                }
+            }
         }
-        return new String(b);
+
+        // Fast path for the already normalized key
+        if (i == l) {
+            return key;
+        }
+
+        // Upper-case the first `char`
+        char[] cs = key.toCharArray();
+        int o = 'a' - 'A';
+        if (i == 0) {
+            if (c == '\r' || c == '\n') {
+                throw new IllegalArgumentException("illegal character in key at index " + i);
+            }
+            if (c >= 'a' && c <= 'z') {
+                cs[0] = (char) (c - o);
+            }
+            i++;
+        }
+
+        // Lower-case the secondary `char`s
+        for (; i < l; i++) {
+            c = cs[i];
+            if (c >= 'A' && c <= 'Z') {
+                cs[i] = (char) (c + o);
+            } else if (c == '\r' || c == '\n') {
+                throw new IllegalArgumentException("illegal character in key at index " + i);
+            }
+        }
+
+        return new String(cs);
+
     }
 
     @Override
@@ -176,8 +217,13 @@ public class Headers implements Map<String,List<String>> {
 
     @Override
     public List<String> put(String key, List<String> value) {
+        // checkHeader is called in this class to fail fast
+        // It also must be called in sendResponseHeaders because
+        // Headers instances internal state can be modified
+        // external to these methods.
+        Utils.checkHeader(key, false);
         for (String v : value)
-            checkValue(v);
+            Utils.checkHeader(v, true);
         return map.put(normalize(key), value);
     }
 
@@ -189,38 +235,15 @@ public class Headers implements Map<String,List<String>> {
      * @param value the value to add to the header
      */
     public void add(String key, String value) {
-        checkValue(value);
+        Utils.checkHeader(key, false);
+        Utils.checkHeader(value, true);
         String k = normalize(key);
         List<String> l = map.get(k);
         if (l == null) {
             l = new LinkedList<>();
-            map.put(k,l);
+            map.put(k, l);
         }
         l.add(value);
-    }
-
-    private static void checkValue(String value) {
-        int len = value.length();
-        for (int i=0; i<len; i++) {
-            char c = value.charAt(i);
-            if (c == '\r') {
-                // is allowed if it is followed by \n and a whitespace char
-                if (i >= len - 2) {
-                    throw new IllegalArgumentException("Illegal CR found in header");
-                }
-                char c1 = value.charAt(i+1);
-                char c2 = value.charAt(i+2);
-                if (c1 != '\n') {
-                    throw new IllegalArgumentException("Illegal char found after CR in header");
-                }
-                if (c2 != ' ' && c2 != '\t') {
-                    throw new IllegalArgumentException("No whitespace found after CRLF in header");
-                }
-                i+=2;
-            } else if (c == '\n') {
-                throw new IllegalArgumentException("Illegal LF found in header");
-            }
-        }
     }
 
     /**
@@ -264,7 +287,7 @@ public class Headers implements Map<String,List<String>> {
     public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
         var f = function.andThen(values -> {
             Objects.requireNonNull(values);
-            values.forEach(Headers::checkValue);
+            values.forEach(value -> Utils.checkHeader(value, true));
             return values;
         });
         Map.super.replaceAll(f);
@@ -332,7 +355,7 @@ public class Headers implements Map<String,List<String>> {
      *                              null.
      * @since 18
      */
-    public static Headers of(Map<String,List<String>> headers) {
+    public static Headers of(Map<String, List<String>> headers) {
         return new UnmodifiableHeaders(new Headers(headers));
     }
 }

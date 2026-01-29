@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package sun.security.ec;
 
-import java.security.AccessController;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.ProviderException;
 import java.util.HashMap;
@@ -180,15 +178,9 @@ public final class SunEC extends Provider {
         }
     }
 
-    @SuppressWarnings("removal")
     public SunEC() {
         super("SunEC", PROVIDER_VER, "Sun Elliptic Curve provider");
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                putEntries();
-                return null;
-            }
-        });
+        putEntries();
     }
 
     void putEntries() {

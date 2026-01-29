@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,6 @@ import com.sun.jmx.interceptor.MBeanServerInterceptor;
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
 
 import java.io.ObjectInputStream;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Set;
 import java.lang.System.Logger.Level;
@@ -48,11 +44,9 @@ import javax.management.InvalidAttributeValueException;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
-import javax.management.MBeanPermission;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
-import javax.management.MBeanServerPermission;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
@@ -232,13 +226,7 @@ public final class JmxMBeanServer
 
         final MBeanInstantiator fInstantiator = instantiator;
         this.secureClr = new
-            SecureClassLoaderRepository(AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public ClassLoaderRepository run() {
-                    return fInstantiator.getClassLoaderRepository();
-                }
-            })
-        );
+            SecureClassLoaderRepository(fInstantiator.getClassLoaderRepository());
         if (delegate == null)
             delegate = new MBeanServerDelegateImpl();
         if (outer == null)
@@ -947,9 +935,6 @@ public final class JmxMBeanServer
     public Object instantiate(String className)
         throws ReflectionException, MBeanException {
 
-        /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
-
         return instantiator.instantiate(className);
     }
 
@@ -983,9 +968,6 @@ public final class JmxMBeanServer
     public Object instantiate(String className, ObjectName loaderName)
         throws ReflectionException, MBeanException,
                InstanceNotFoundException {
-
-        /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className, loaderName, myLoader);
@@ -1021,9 +1003,6 @@ public final class JmxMBeanServer
     public Object instantiate(String className, Object params[],
                               String signature[])
         throws ReflectionException, MBeanException {
-
-        /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className, params, signature,
@@ -1064,9 +1043,6 @@ public final class JmxMBeanServer
                               Object params[], String signature[])
         throws ReflectionException, MBeanException,
                InstanceNotFoundException {
-
-        /* Permission check */
-        checkMBeanPermission(className, null, null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className,loaderName,params,signature,
@@ -1112,8 +1088,6 @@ public final class JmxMBeanServer
     public ObjectInputStream deserialize(ObjectName name, byte[] data)
         throws InstanceNotFoundException, OperationsException {
 
-        /* Permission check */
-        // This call requires MBeanPermission 'getClassLoaderFor'
         final ClassLoader loader = getClassLoaderFor(name);
 
         return instantiator.deserialize(loader, data);
@@ -1145,8 +1119,6 @@ public final class JmxMBeanServer
                                         "Null className passed in parameter");
         }
 
-        /* Permission check */
-        // This call requires MBeanPermission 'getClassLoaderRepository'
         final ClassLoaderRepository clr = getClassLoaderRepository();
 
         Class<?> theClass;
@@ -1197,16 +1169,6 @@ public final class JmxMBeanServer
         //
         loaderName = cloneObjectName(loaderName);
 
-        /* Permission check */
-        // Make this call just to force the 'getClassLoader'
-        // permission check
-        try {
-            getClassLoader(loaderName);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-        }
-
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.deserialize(className, loaderName, data, myLoader);
     }
@@ -1222,14 +1184,7 @@ public final class JmxMBeanServer
 
         // Registers the MBeanServer identification MBean
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                public Object run() throws Exception {
-                    mbsInterceptor.registerMBean(
-                            mBeanServerDelegateObject,
-                            MBeanServerDelegate.DELEGATE_NAME);
-                    return null;
-                }
-            });
+            mbsInterceptor.registerMBean(mBeanServerDelegateObject, MBeanServerDelegate.DELEGATE_NAME);
         } catch (SecurityException e) {
             if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
                 MBEANSERVER_LOGGER.log(Level.DEBUG,
@@ -1251,13 +1206,7 @@ public final class JmxMBeanServer
            class loader.  The ClassLoaderRepository knows how
            to handle that case.  */
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
-        final ModifiableClassLoaderRepository loaders = AccessController.doPrivileged(new PrivilegedAction<>() {
-
-            @Override
-            public ModifiableClassLoaderRepository run() {
-                return instantiator.getClassLoaderRepository();
-            }
-        });
+        final ModifiableClassLoaderRepository loaders = instantiator.getClassLoaderRepository();
 
         if (loaders != null) {
             loaders.addClassLoader(myLoader);
@@ -1266,17 +1215,8 @@ public final class JmxMBeanServer
                loaded by the bootstrap class loader we can still load
                MBeans from the classpath using
                createMBean(className, objectName).
+             */
 
-               If this class (JmxMBeanServer) was not loaded by the
-               system class loader or a parent of it, then the caller
-               must have RuntimePermission("getClassLoader") for the
-               getSystemClassLoader() call to succeed.  If the caller
-               does not have that permission, any call to
-               Class.getClassLoader() will fail.  Since there are lots
-               of those in JMX, we better throw the exception now.
-
-               This permission question is irrelevant when JMX is part
-               of J2SE (as of 1.5). */
             ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
             if (systemLoader != myLoader)
                 loaders.addClassLoader(systemLoader);
@@ -1341,8 +1281,6 @@ public final class JmxMBeanServer
      * @return The ClassLoaderRepository for that MBeanServer.
      **/
     public ClassLoaderRepository getClassLoaderRepository() {
-        /* Permission check */
-        checkMBeanPermission(null, null, null, "getClassLoaderRepository");
         return secureClr;
     }
 
@@ -1425,8 +1363,6 @@ public final class JmxMBeanServer
         // Default is true.
         final boolean fairLock = DEFAULT_FAIR_LOCK_POLICY;
 
-        checkNewMBeanServerPermission();
-
         // This constructor happens to disregard the value of the interceptors
         // flag - that is, it always uses the default value - false.
         // This is admittedly a bug, but we chose not to fix it for now
@@ -1492,33 +1428,5 @@ public final class JmxMBeanServer
             }
         }
         return list;
-    }
-
-    // SECURITY CHECKS
-    //----------------
-
-    private static void checkMBeanPermission(String classname,
-                                             String member,
-                                             ObjectName objectName,
-                                             String actions)
-        throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Permission perm = new MBeanPermission(classname,
-                                                  member,
-                                                  objectName,
-                                                  actions);
-            sm.checkPermission(perm);
-        }
-    }
-
-    private static void checkNewMBeanServerPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Permission perm = new MBeanServerPermission("newMBeanServer");
-            sm.checkPermission(perm);
-        }
     }
 }

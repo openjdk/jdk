@@ -192,6 +192,17 @@ public class TestRegionSizeArgs {
             output.shouldHaveExitValue(0);
         }
 
+        // This used to assert that _conservative_max_heap_alignment is not a power-of-2.
+        {
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
+                    "-XX:+UseShenandoahGC",
+                    "-Xms100m",
+                    "-Xmx1g",
+                    "-XX:ShenandoahMaxRegionSize=33m",
+                    "-version");
+            output.shouldHaveExitValue(0);
+        }
+
     }
 
     private static void testMaxRegionSize() throws Exception {

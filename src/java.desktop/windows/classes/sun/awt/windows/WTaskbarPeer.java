@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import sun.awt.AWTAccessor;
-import sun.awt.OSInfo;
 import sun.awt.shell.ShellFolder;
 
 final class WTaskbarPeer implements TaskbarPeer {
@@ -44,9 +43,7 @@ final class WTaskbarPeer implements TaskbarPeer {
 
     private static synchronized void init() {
         if (!initExecuted) {
-            supported = OSInfo.getWindowsVersion()
-                    .compareTo(OSInfo.WINDOWS_7) >= 0
-                    && ShellFolder.invoke(() -> nativeInit());
+            supported = ShellFolder.invoke(() -> nativeInit());
         }
         initExecuted = true;
     }

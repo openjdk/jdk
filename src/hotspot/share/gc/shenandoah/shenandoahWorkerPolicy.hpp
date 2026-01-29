@@ -64,6 +64,9 @@ public:
 
   // Calculate workers for concurrent reset
   static uint calc_workers_for_conc_reset();
+
+  // Calculate workers for concurrent cleanup
+  static uint calc_workers_for_conc_cleanup();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP

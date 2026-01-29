@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,29 +101,21 @@ static struct {
     { WSA_OPERATION_ABORTED,    0,      "Overlapped operation aborted" },
 };
 
-/*
- * Initialize Windows Sockets API support
- */
-BOOL WINAPI
-DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+static void at_exit_callback(void)
+{
+    WSACleanup();
+}
+
+/* Perform platform specific initialization.
+ * Returns 0 on success, non-0 on failure */
+int
+NET_PlatformInit()
 {
     WSADATA wsadata;
 
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            if (WSAStartup(MAKEWORD(2,2), &wsadata) != 0) {
-                return FALSE;
-            }
-            break;
+    atexit(at_exit_callback);
 
-        case DLL_PROCESS_DETACH:
-            WSACleanup();
-            break;
-
-        default:
-            break;
-    }
-    return TRUE;
+    return WSAStartup(MAKEWORD(2,2), &wsadata);
 }
 
 /*
@@ -148,13 +140,6 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
     }
 
     /*
-     * Default message text if not provided
-     */
-    if (!msg) {
-        msg = "no further information";
-    }
-
-    /*
      * Check table for known winsock errors
      */
     i=0;
@@ -171,13 +156,22 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
      */
     if (i < table_size) {
         excP = (char *)winsock_errors[i].exc;
-        jio_snprintf(fullMsg, sizeof(fullMsg), "%s: %s",
-                     (char *)winsock_errors[i].errString, msg);
+        if (msg == NULL) {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "%s",
+                         (char *)winsock_errors[i].errString);
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "%s: %s",
+                         (char *)winsock_errors[i].errString, msg);
+        }
     } else {
-        jio_snprintf(fullMsg, sizeof(fullMsg),
-                     "Unrecognized Windows Sockets error: %d: %s",
-                     errorNum, msg);
-
+        if (msg == NULL) {
+            jio_snprintf(fullMsg, sizeof(fullMsg),
+                         "Unrecognized Windows Sockets error: %d", errorNum);
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg),
+                         "Unrecognized Windows Sockets error: %d: %s",
+                         errorNum, msg);
+        }
     }
 
     /*
@@ -521,7 +515,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     } else {
         jint address;
         if (family != java_net_InetAddress_IPv4) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "IPv6 protocol family unavailable");
             return -1;
         }
         address = getInetAddress_addr(env, iaObj);

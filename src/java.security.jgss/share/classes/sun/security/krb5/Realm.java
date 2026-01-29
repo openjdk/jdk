@@ -47,9 +47,6 @@ import sun.security.krb5.internal.util.KerberosString;
  */
 public class Realm implements Cloneable {
 
-    public static final boolean AUTODEDUCEREALM =
-            Boolean.getBoolean("sun.security.krb5.autodeducerealm");
-
     private final String realm; // not null nor empty
 
     public Realm(String name) throws RealmException {

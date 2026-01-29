@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 package jdk.jfr.internal.periodic;
 
 /**
- * Lookup key that can safely be used in a {@code Map}.
- * <p>
- * {@code Runnable} objects can't be used with {@code LinkedHashMap} as it
- * invokes {@code hashCode} and {@code equals}, for example when resizing the
- * {@code Map}, possibly in a non-secure context.
+ * Lookup key that can be used in a {@code Map} in
+ * case hashCode and equals are incorrectly overridden.
  * <p>
  * {@code IdentityHashMap} can't be used as it will not preserve order.
  */

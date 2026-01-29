@@ -1,7 +1,7 @@
-/*! jQuery UI - v1.13.2 - 2023-02-27
-* http://jqueryui.com
+/*! jQuery UI - v1.14.1 - 2025-01-13
+* https://jqueryui.com
 * Includes: core.css, autocomplete.css, menu.css
-* Copyright jQuery Foundation and other contributors; Licensed MIT */
+* Copyright OpenJS Foundation and other contributors; Licensed MIT */
 
 /* Layout helpers
 ----------------------------------*/
@@ -44,7 +44,6 @@
 	left: 0;
 	position: absolute;
 	opacity: 0;
-	-ms-filter: "alpha(opacity=0)"; /* support: IE8 */
 }
 
 .ui-front {
@@ -108,8 +107,6 @@
 .ui-menu .ui-menu-item {
 	margin: 0;
 	cursor: pointer;
-	/* support: IE10, see #8844 */
-	list-style-image: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
 }
 .ui-menu .ui-menu-item-wrapper {
 	position: relative;

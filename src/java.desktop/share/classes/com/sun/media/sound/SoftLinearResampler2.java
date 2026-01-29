@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,10 @@ public final class SoftLinearResampler2 extends SoftAbstractResampler {
         int p_ix = (int) (ix * (1 << 15));
         int p_ix_end = (int) (ix_end * (1 << 15));
         int p_pitch = (int) (pitch * (1 << 15));
+        if (p_pitch == 0) {
+            // If pitch falls below the minimum assume minimum pitch
+            p_pitch = 1;
+        }
         // Pitch needs to recalculated
         // to ensure no drift between p_ix and ix.
         pitch = p_pitch * (1f / (1 << 15));

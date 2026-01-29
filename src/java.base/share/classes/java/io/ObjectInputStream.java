@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ByteArray;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * An ObjectInputStream deserializes primitive data and objects previously
@@ -256,14 +255,6 @@ public class ObjectInputStream
     private static final Object unsharedMarker = new Object();
 
     private static class Caches {
-        /** cache of subclass security audit results */
-        static final ClassValue<Boolean> subclassAudits =
-            new ClassValue<>() {
-                @Override
-                protected Boolean computeValue(Class<?> type) {
-                    return auditSubclass(type);
-                }
-            };
 
         /**
          * Property to permit setting a filter after objects
@@ -1546,31 +1537,6 @@ public class ObjectInputStream
     }
 
     /**
-     * Performs reflective checks on given subclass to verify that it doesn't
-     * override security-sensitive non-final methods.  Returns TRUE if subclass
-     * is "safe", FALSE otherwise.
-     */
-    private static Boolean auditSubclass(Class<?> subcl) {
-        for (Class<?> cl = subcl;
-             cl != ObjectInputStream.class;
-             cl = cl.getSuperclass())
-        {
-            try {
-                cl.getDeclaredMethod(
-                    "readUnshared", (Class[]) null);
-                return Boolean.FALSE;
-            } catch (NoSuchMethodException ex) {
-            }
-            try {
-                cl.getDeclaredMethod("readFields", (Class[]) null);
-                return Boolean.FALSE;
-            } catch (NoSuchMethodException ex) {
-            }
-        }
-        return Boolean.TRUE;
-    }
-
-    /**
      * Clears internal data structures.
      */
     private void clear() {
@@ -1828,12 +1794,6 @@ public class ObjectInputStream
         };
     }
 
-    private boolean isCustomSubclass() {
-        // Return true if this class is a custom subclass of ObjectInputStream
-        return getClass().getClassLoader()
-                    != ObjectInputStream.class.getClassLoader();
-    }
-
     /**
      * Reads in and returns class descriptor for a dynamic proxy class.  Sets
      * passHandle to proxy class descriptor's assigned handle.  If proxy class
@@ -1879,12 +1839,6 @@ public class ObjectInputStream
             } else if (!Proxy.isProxyClass(cl)) {
                 throw new InvalidClassException("Not a proxy");
             } else {
-                // ReflectUtil.checkProxyPackageAccess makes a test
-                // equivalent to isCustomSubclass so there's no need
-                // to condition this call to isCustomSubclass == true here.
-                ReflectUtil.checkProxyPackageAccess(
-                        getClass().getClassLoader(),
-                        cl.getInterfaces());
                 // Filter the interfaces
                 for (Class<?> clazz : cl.getInterfaces()) {
                     filterCheck(clazz, -1);
@@ -1954,12 +1908,9 @@ public class ObjectInputStream
         Class<?> cl = null;
         ClassNotFoundException resolveEx = null;
         bin.setBlockDataMode(true);
-        final boolean checksRequired = isCustomSubclass();
         try {
             if ((cl = resolveClass(readDesc)) == null) {
                 resolveEx = new ClassNotFoundException("null class");
-            } else if (checksRequired) {
-                ReflectUtil.checkPackageAccess(cl);
             }
         } catch (ClassNotFoundException ex) {
             resolveEx = ex;

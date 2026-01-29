@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -28,23 +30,55 @@ public class ExceptionBox extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public static RuntimeException rethrowUnchecked(Throwable throwable) {
-        if (throwable instanceof RuntimeException err) {
-            throw err;
+    public static RuntimeException toUnchecked(Exception ex) {
+        switch (ex) {
+            case RuntimeException rex -> {
+                return rex;
+            }
+            case InvocationTargetException itex -> {
+                var t = itex.getCause();
+                if (t instanceof Exception cause) {
+                    return toUnchecked(cause);
+                } else {
+                    throw (Error)t;
+                }
+            }
+            case InterruptedException _ -> {
+                Thread.currentThread().interrupt();
+                return new ExceptionBox(ex);
+            }
+            default -> {
+                return new ExceptionBox(ex);
+            }
         }
-
-        if (throwable instanceof Error err) {
-            throw err;
-        }
-
-        if (throwable instanceof InvocationTargetException err) {
-            throw rethrowUnchecked(err.getCause());
-        }
-
-        throw new ExceptionBox(throwable);
     }
 
-    private ExceptionBox(Throwable throwable) {
-        super(throwable);
+    public static Exception unbox(Throwable t) {
+        switch (t) {
+            case ExceptionBox ex -> {
+                return unbox(ex.getCause());
+            }
+            case InvocationTargetException ex -> {
+                return unbox(ex.getCause());
+            }
+            case Exception ex -> {
+                return ex;
+            }
+            case Error err -> {
+                throw err;
+            }
+            default -> {
+                // Unreachable
+                throw reachedUnreachable();
+            }
+        }
+    }
+
+    public static Error reachedUnreachable() {
+        return new AssertionError("Reached unreachable!");
+    }
+
+    private ExceptionBox(Exception ex) {
+        super(ex);
     }
 }

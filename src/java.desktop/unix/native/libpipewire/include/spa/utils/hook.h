@@ -12,6 +12,14 @@ extern "C" {
 #include <spa/utils/defs.h>
 #include <spa/utils/list.h>
 
+#ifndef SPA_API_HOOK
+ #ifdef SPA_API_IMPL
+  #define SPA_API_HOOK SPA_API_IMPL
+ #else
+  #define SPA_API_HOOK static inline
+ #endif
+#endif
+
 /** \defgroup spa_interfaces Interfaces
  *
  * \brief Generic implementation of implementation-independent interfaces
@@ -158,9 +166,17 @@ struct spa_interface {
     const type *_f = (const type *) (callbacks)->funcs;            \
     bool _res = SPA_CALLBACK_CHECK(_f,method,vers);                \
     if (SPA_LIKELY(_res))                            \
-        _f->method((callbacks)->data, ## __VA_ARGS__);            \
+        (_f->method)((callbacks)->data, ## __VA_ARGS__);        \
     _res;                                    \
 })
+
+#define spa_callbacks_call_fast(callbacks,type,method,vers,...)            \
+({                                        \
+    const type *_f = (const type *) (callbacks)->funcs;            \
+    (_f->method)((callbacks)->data, ## __VA_ARGS__);            \
+    true;                                    \
+})
+
 
 /**
  * True if the \a callbacks are of version \a vers, false otherwise
@@ -191,8 +207,13 @@ struct spa_interface {
 ({                                        \
     const type *_f = (const type *) (callbacks)->funcs;            \
     if (SPA_LIKELY(SPA_CALLBACK_CHECK(_f,method,vers)))            \
-        res = _f->method((callbacks)->data, ## __VA_ARGS__);        \
+        res = (_f->method)((callbacks)->data, ## __VA_ARGS__);        \
     res;                                    \
+})
+#define spa_callbacks_call_fast_res(callbacks,type,res,method,vers,...)        \
+({                                        \
+    const type *_f = (const type *) (callbacks)->funcs;            \
+    res = (_f->method)((callbacks)->data, ## __VA_ARGS__);            \
 })
 
 /**
@@ -216,6 +237,9 @@ struct spa_interface {
 #define spa_interface_call(iface,method_type,method,vers,...)            \
     spa_callbacks_call(&(iface)->cb,method_type,method,vers,##__VA_ARGS__)
 
+#define spa_interface_call_fast(iface,method_type,method,vers,...)        \
+    spa_callbacks_call_fast(&(iface)->cb,method_type,method,vers,##__VA_ARGS__)
+
 /**
  * Invoke method named \a method in the callbacks on the given interface object.
  * The \a method_type defines the type of the method struct, not the interface
@@ -225,6 +249,76 @@ struct spa_interface {
  */
 #define spa_interface_call_res(iface,method_type,res,method,vers,...)            \
     spa_callbacks_call_res(&(iface)->cb,method_type,res,method,vers,##__VA_ARGS__)
+
+#define spa_interface_call_fast_res(iface,method_type,res,method,vers,...)        \
+    spa_callbacks_call_fast_res(&(iface)->cb,method_type,res,method,vers,##__VA_ARGS__)
+
+
+#define spa_api_func_v(o,method,version,...)                \
+({                                    \
+    if (SPA_LIKELY(SPA_CALLBACK_CHECK(o,method,version)))        \
+        ((o)->method)(o, ##__VA_ARGS__);            \
+})
+#define spa_api_func_r(rtype,def,o,method,version,...)            \
+({                                    \
+    rtype _res = def;                        \
+    if (SPA_LIKELY(SPA_CALLBACK_CHECK(o,method,version)))        \
+        _res = ((o)->method)(o, ##__VA_ARGS__);            \
+    _res;                                \
+})
+#define spa_api_func_fast(o,method,...)                    \
+({                                    \
+    ((o)->method)(o, ##__VA_ARGS__);                \
+})
+
+#define spa_api_method_v(type,o,method,version,...)            \
+({                                    \
+    struct spa_interface *_i = o;            \
+    spa_interface_call(_i, struct type ##_methods,            \
+            method, version, ##__VA_ARGS__);        \
+})
+#define spa_api_method_r(rtype,def,type,o,method,version,...)        \
+({                                    \
+    rtype _res = def;                        \
+    struct spa_interface *_i = o;            \
+    spa_interface_call_res(_i, struct type ##_methods,        \
+            _res, method, version, ##__VA_ARGS__);        \
+    _res;                                \
+})
+#define spa_api_method_null_v(type,co,o,method,version,...)        \
+({                                    \
+    struct type *_co = co;                        \
+    if (SPA_LIKELY(_co != NULL)) {                    \
+        struct spa_interface *_i = o;                \
+        spa_interface_call(_i, struct type ##_methods,        \
+            method, version, ##__VA_ARGS__);        \
+    }                                \
+})
+#define spa_api_method_null_r(rtype,def,type,co,o,method,version,...)    \
+({                                    \
+    rtype _res = def;                        \
+    struct type *_co = co;                        \
+    if (SPA_LIKELY(_co != NULL)) {                    \
+        struct spa_interface *_i = o;                \
+        spa_interface_call_res(_i, struct type ##_methods,    \
+                _res, method, version, ##__VA_ARGS__);    \
+    }                                \
+    _res;                                \
+})
+#define spa_api_method_fast_v(type,o,method,version,...)        \
+({                                    \
+    struct spa_interface *_i = o;                    \
+    spa_interface_call_fast(_i, struct type ##_methods,        \
+            method, version, ##__VA_ARGS__);        \
+})
+#define spa_api_method_fast_r(rtype,def,type,o,method,version,...)    \
+({                                    \
+    rtype _res = def;                        \
+    struct spa_interface *_i = o;                    \
+    spa_interface_call_fast_res(_i, struct type ##_methods,        \
+            _res, method, version, ##__VA_ARGS__);        \
+    _res;                                \
+})
 
 /**
  * \}
@@ -329,18 +423,18 @@ struct spa_hook {
 };
 
 /** Initialize a hook list to the empty list*/
-static inline void spa_hook_list_init(struct spa_hook_list *list)
+SPA_API_HOOK void spa_hook_list_init(struct spa_hook_list *list)
 {
     spa_list_init(&list->list);
 }
 
-static inline bool spa_hook_list_is_empty(struct spa_hook_list *list)
+SPA_API_HOOK bool spa_hook_list_is_empty(struct spa_hook_list *list)
 {
     return spa_list_is_empty(&list->list);
 }
 
 /** Append a hook. */
-static inline void spa_hook_list_append(struct spa_hook_list *list,
+SPA_API_HOOK void spa_hook_list_append(struct spa_hook_list *list,
                     struct spa_hook *hook,
                     const void *funcs, void *data)
 {
@@ -350,7 +444,7 @@ static inline void spa_hook_list_append(struct spa_hook_list *list,
 }
 
 /** Prepend a hook */
-static inline void spa_hook_list_prepend(struct spa_hook_list *list,
+SPA_API_HOOK void spa_hook_list_prepend(struct spa_hook_list *list,
                      struct spa_hook *hook,
                      const void *funcs, void *data)
 {
@@ -360,7 +454,7 @@ static inline void spa_hook_list_prepend(struct spa_hook_list *list,
 }
 
 /** Remove a hook */
-static inline void spa_hook_remove(struct spa_hook *hook)
+SPA_API_HOOK void spa_hook_remove(struct spa_hook *hook)
 {
     if (spa_list_is_initialized(&hook->link))
         spa_list_remove(&hook->link);
@@ -369,14 +463,14 @@ static inline void spa_hook_remove(struct spa_hook *hook)
 }
 
 /** Remove all hooks from the list */
-static inline void spa_hook_list_clean(struct spa_hook_list *list)
+SPA_API_HOOK void spa_hook_list_clean(struct spa_hook_list *list)
 {
     struct spa_hook *h;
     spa_list_consume(h, &list->list, link)
         spa_hook_remove(h);
 }
 
-static inline void
+SPA_API_HOOK void
 spa_hook_list_isolate(struct spa_hook_list *list,
         struct spa_hook_list *save,
         struct spa_hook *hook,
@@ -390,7 +484,7 @@ spa_hook_list_isolate(struct spa_hook_list *list,
     spa_hook_list_append(list, hook, funcs, data);
 }
 
-static inline void
+SPA_API_HOOK void
 spa_hook_list_join(struct spa_hook_list *list,
         struct spa_hook_list *save)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          key sizes, with and without entries in jdk.jar.disabledAlgorithms,
  *          jdk.certpath.disabledAlgorithms
  * @library /test/lib
- * @run main/othervm RestrictedAlgo RESTRICT
- * @run main/othervm RestrictedAlgo NO_RESTRICT
+ * @run main/othervm/timeout=480 RestrictedAlgo RESTRICT
+ * @run main/othervm/timeout=480 RestrictedAlgo NO_RESTRICT
  */
 
 public class RestrictedAlgo {

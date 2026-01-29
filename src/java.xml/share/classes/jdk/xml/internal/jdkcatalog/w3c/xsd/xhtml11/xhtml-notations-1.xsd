@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+      Notations module
+      This is the XML Schema module for data type notations for XHTML
+      $Id: xhtml-notations-1.xsd,v 1.5 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      Notations module
+      Defines the XHTML notations, many of these imported from 
+      other specifications and standards. When an existing FPI is
+      known, it is incorporated here.            
+    </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstraction.html#s_common_attrtypes"/>
+    </xs:annotation>
+    <!-- W3C XML 1.0 Recommendation -->
+    <xs:notation name="w3c-xml" public="ISO 8879//NOTATION Extensible Markup Language (XML) 1.0//EN"/>
+    <!-- XML 1.0 CDATA -->
+    <xs:notation name="cdata" public="-//W3C//NOTATION XML 1.0: CDATA//EN"/>
+    <!-- SGML Formal Public Identifiers -->
+    <xs:notation name="fpi" public="ISO 8879:1986//NOTATION Formal Public Identifier//EN"/>
+    <!-- XHTML Notations ... -->
+    <!-- Length defined for cellpadding/cellspacing -->
+    <!-- nn for pixels or nn% for percentage length -->
+    <!-- a single character, as per section 2.2 of [XML] -->
+    <xs:notation name="character" public="-//W3C//NOTATION XHTML Datatype: Character//EN"/>
+    <!-- a character encoding, as per [RFC2045] -->
+    <xs:notation name="charset" public="-//W3C//NOTATION XHTML Datatype: Charset//EN"/>
+    <!-- a space separated list of character encodings, as per [RFC2045] -->
+    <xs:notation name="charsets" public="-//W3C//NOTATION XHTML Datatype: Charsets//EN"/>
+    <!-- media type, as per [RFC2045] -->
+    <xs:notation name="contentType" public="-//W3C//NOTATION XHTML Datatype: ContentType//EN"/>
+    <!-- comma-separated list of media types, as per [RFC2045] -->
+    <xs:notation name="contentTypes" public="-//W3C//NOTATION XHTML Datatype: ContentTypes//EN"/>
+    <!-- date and time information. ISO date format -->
+    <xs:notation name="datetime" public="-//W3C//NOTATION XHTML Datatype: Datetime//EN"/>
+    <!-- a language code, as per [RFC3066] -->
+    <xs:notation name="languageCode" public="-//W3C//NOTATION XHTML Datatype: LanguageCode//EN"/>
+    <!-- nn for pixels or nn% for percentage length -->
+    <xs:notation name="length" public="-//W3C//NOTATION XHTML Datatype: Length//EN"/>
+    <!-- space-separated list of link types -->
+    <xs:notation name="linkTypes" public="-//W3C//NOTATION XHTML Datatype: LinkTypes//EN"/>
+    <!-- single or comma-separated list of media descriptors -->
+    <xs:notation name="mediaDesc" public="-//W3C//NOTATION XHTML Datatype: MediaDesc//EN"/>
+    <!-- pixel, percentage, or relative -->
+    <xs:notation name="multiLength" public="-//W3C//NOTATION XHTML Datatype: MultiLength//EN"/>
+    <!-- one or more digits (NUMBER) -->
+    <xs:notation name="number" public="-//W3C//NOTATION XHTML Datatype: Number//EN"/>
+    <!-- one or more digits (NUMBER) -->
+    <xs:notation name="pixels" public="-//W3C//NOTATION XHTML Datatype: Pixels//EN"/>
+    <!-- script expression -->
+    <xs:notation name="script" public="-//W3C//NOTATION XHTML Datatype: Script//EN"/>
+    <!-- textual content -->
+    <xs:notation name="text" public="-//W3C//NOTATION XHTML Datatype: Text//EN"/>
+    <!-- a Uniform Resource Identifier, see [URI] -->
+    <xs:notation name="uri" public="-//W3C//NOTATION XHTML Datatype: URI//EN"/>
+    <!-- a space-separated list of Uniform Resource Identifiers, see [URI] -->
+    <xs:notation name="uris" public="-//W3C//NOTATION XHTML Datatype: URIs//EN"/>
+</xs:schema>

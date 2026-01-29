@@ -12,6 +12,14 @@ extern "C" {
 #include <spa/utils/defs.h>
 #include <spa/pod/pod.h>
 
+#ifndef SPA_API_META
+ #ifdef SPA_API_IMPL
+  #define SPA_API_META SPA_API_IMPL
+ #else
+  #define SPA_API_META static inline
+ #endif
+#endif
+
 /**
  * \addtogroup spa_buffer
  * \{
@@ -28,6 +36,7 @@ enum spa_meta_type {
                       *  associated with the data */
     SPA_META_Busy,            /**< don't write to buffer when count > 0 */
     SPA_META_VideoTransform,    /**< struct spa_meta_transform */
+    SPA_META_SyncTimeline,        /**< struct spa_meta_sync_timeline */
 
     _SPA_META_LAST,            /**< not part of ABI/API */
 };
@@ -45,14 +54,13 @@ struct spa_meta {
     void *data;        /**< pointer to metadata */
 };
 
-static inline void *spa_meta_first(const struct spa_meta *m) {
+SPA_API_META void *spa_meta_first(const struct spa_meta *m) {
     return m->data;
 }
-#define spa_meta_first spa_meta_first
-static inline void *spa_meta_end(const struct spa_meta *m) {
+
+SPA_API_META void *spa_meta_end(const struct spa_meta *m) {
     return SPA_PTROFF(m->data,m->size,void);
 }
-#define spa_meta_end spa_meta_end
 #define spa_meta_check(p,m)    (SPA_PTROFF(p,sizeof(*(p)),void) <= spa_meta_end(m))
 
 /**
@@ -79,18 +87,15 @@ struct spa_meta_region {
     struct spa_region region;
 };
 
-static inline bool spa_meta_region_is_valid(const struct spa_meta_region *m) {
+SPA_API_META bool spa_meta_region_is_valid(const struct spa_meta_region *m) {
     return m->region.size.width != 0 && m->region.size.height != 0;
 }
-#define spa_meta_region_is_valid spa_meta_region_is_valid
 
 /** iterate all the items in a metadata */
 #define spa_meta_for_each(pos,meta)                    \
-    for ((pos) = (__typeof(pos))spa_meta_first(meta);            \
+    for ((pos) = (__typeof(pos))spa_meta_first(meta);        \
         spa_meta_check(pos, meta);                    \
             (pos)++)
-
-#define spa_meta_bitmap_is_valid(m)    ((m)->format != 0)
 
 /**
  * Bitmap information
@@ -111,7 +116,9 @@ struct spa_meta_bitmap {
                       *  info. */
 };
 
-#define spa_meta_cursor_is_valid(m)    ((m)->id != 0)
+SPA_API_META bool spa_meta_bitmap_is_valid(const struct spa_meta_bitmap *m) {
+    return m->format != 0;
+}
 
 /**
  * Cursor information
@@ -131,6 +138,10 @@ struct spa_meta_cursor {
                       *  struct spa_meta_bitmap at the offset. */
 };
 
+SPA_API_META bool spa_meta_cursor_is_valid(const struct spa_meta_cursor *m) {
+    return m->id != 0;
+}
+
 /** a timed set of events associated with the buffer */
 struct spa_meta_control {
     struct spa_pod_sequence sequence;
@@ -149,7 +160,7 @@ enum spa_meta_videotransform_value {
     SPA_META_TRANSFORMATION_270,        /**< 270 degree counter-clockwise */
     SPA_META_TRANSFORMATION_Flipped,    /**< 180 degree flipped around the vertical axis. Equivalent
                           * to a reflexion through the vertical line splitting the
-                          * bufffer in two equal sized parts */
+                          * buffer in two equal sized parts */
     SPA_META_TRANSFORMATION_Flipped90,    /**< flip then rotate around 90 degree counter-clockwise */
     SPA_META_TRANSFORMATION_Flipped180,    /**< flip then rotate around 180 degree counter-clockwise */
     SPA_META_TRANSFORMATION_Flipped270,    /**< flip then rotate around 270 degree counter-clockwise */
@@ -159,6 +170,26 @@ enum spa_meta_videotransform_value {
 struct spa_meta_videotransform {
     uint32_t transform;            /**< orientation transformation that was applied to the buffer,
                           *  one of enum spa_meta_videotransform_value */
+};
+
+/**
+ * A timeline point for explicit sync
+ *
+ * Metadata to describe the time on the timeline when the buffer
+ * can be acquired and when it can be reused.
+ *
+ * This metadata will require negotiation of 2 extra fds for the acquire
+ * and release timelines respectively.  One way to achieve this is to place
+ * this metadata as SPA_PARAM_BUFFERS_metaType when negotiating a buffer
+ * layout with 2 extra fds.
+ */
+struct spa_meta_sync_timeline {
+    uint32_t flags;
+    uint32_t padding;
+    uint64_t acquire_point;            /**< the timeline acquire point, this is when the data
+                          *  can be accessed. */
+    uint64_t release_point;            /**< the timeline release point, this timeline point should
+                          *  be signaled when the data is no longer accessed. */
 };
 
 /**

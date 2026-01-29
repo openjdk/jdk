@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -87,9 +86,7 @@ BarrierSet::BarrierSet(BarrierSetAssembler* barrier_set_assembler,
 
 void BarrierSet::on_thread_attach(Thread* thread) {
   BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
-  }
+  thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 }
 
 // Called from init.cpp

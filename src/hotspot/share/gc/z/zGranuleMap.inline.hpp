@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -57,7 +57,7 @@ inline size_t ZGranuleMap<T>::index_for_offset(zoffset offset) const {
 template <typename T>
 inline T ZGranuleMap<T>::at(size_t index) const {
   assert(index < _size, "Invalid index");
-  return Atomic::load(_map + index);
+  return AtomicAccess::load(_map + index);
 }
 
 template <typename T>
@@ -69,7 +69,7 @@ inline T ZGranuleMap<T>::get(zoffset offset) const {
 template <typename T>
 inline void ZGranuleMap<T>::put(zoffset offset, T value) {
   const size_t index = index_for_offset(offset);
-  Atomic::store(_map + index, value);
+  AtomicAccess::store(_map + index, value);
 }
 
 template <typename T>
@@ -79,26 +79,37 @@ inline void ZGranuleMap<T>::put(zoffset offset, size_t size, T value) {
   const size_t start_index = index_for_offset(offset);
   const size_t end_index = start_index + (size >> ZGranuleSizeShift);
   for (size_t index = start_index; index < end_index; index++) {
-    Atomic::store(_map + index, value);
+    AtomicAccess::store(_map + index, value);
   }
 }
 
 template <typename T>
 inline T ZGranuleMap<T>::get_acquire(zoffset offset) const {
   const size_t index = index_for_offset(offset);
-  return Atomic::load_acquire(_map + index);
+  return AtomicAccess::load_acquire(_map + index);
 }
 
 template <typename T>
 inline void ZGranuleMap<T>::release_put(zoffset offset, T value) {
   const size_t index = index_for_offset(offset);
-  Atomic::release_store(_map + index, value);
+  AtomicAccess::release_store(_map + index, value);
 }
 
 template <typename T>
 inline void ZGranuleMap<T>::release_put(zoffset offset, size_t size, T value) {
   OrderAccess::release();
   put(offset, size, value);
+}
+
+template <typename T>
+inline const T* ZGranuleMap<T>::addr(zoffset offset) const {
+  const size_t index = index_for_offset(offset);
+  return _map + index;
+}
+
+template <typename T>
+inline T* ZGranuleMap<T>::addr(zoffset offset) {
+  return const_cast<T*>(const_cast<const ZGranuleMap<T>*>(this)->addr(offset));
 }
 
 template <typename T, bool Parallel>

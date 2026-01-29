@@ -22,11 +22,12 @@
  */
 
 #include <jni.h>
+#include <stdint.h>
 
 typedef void (*upcall_func)(void);
 
 JNIEXPORT void JNICALL
 Java_LingeredAppWithFFMUpcall_callJNI(JNIEnv *env, jclass cls, jlong upcallAddr) {
-  upcall_func upcall = (upcall_func)upcallAddr;
+  upcall_func upcall = (upcall_func)(uintptr_t)upcallAddr;
   upcall();
 }

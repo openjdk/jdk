@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException If an I/O error has occurred.
      */
     public GZIPOutputStream(OutputStream out) throws IOException {
-        this(out, 512, false);
+        this(out, DeflaterOutputStream.DEFAULT_BUF_SIZE, false);
     }
 
     /**
@@ -135,7 +135,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     public GZIPOutputStream(OutputStream out, boolean syncFlush)
         throws IOException
     {
-        this(out, 512, syncFlush);
+        this(out, DeflaterOutputStream.DEFAULT_BUF_SIZE, syncFlush);
     }
 
     /**

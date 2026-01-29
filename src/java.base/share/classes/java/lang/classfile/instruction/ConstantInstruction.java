@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -38,12 +39,22 @@ import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a constant-load instruction in the {@code code} array of a {@code
- * Code} attribute, including "intrinsic constant" instructions (e.g., {@code
- * iconst_0}), "argument constant" instructions (e.g., {@code bipush}), and "load
- * constant" instructions (e.g., {@code LDC}).  Corresponding opcodes will have
- * a {@code kind} of {@link Opcode.Kind#CONSTANT}.  Delivered as a {@link
- * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * Code} attribute, including {@linkplain IntrinsicConstantInstruction
+ * "intrinsic"}, {@linkplain ArgumentConstantInstruction "argument"}, and
+ * {@linkplain LoadConstantInstruction "load"} constant instructions.
+ * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of {@link
+ * Opcode.Kind#CONSTANT}.  Delivered as a {@link CodeElement} when traversing
+ * the elements of a {@link CodeModel}.
+ * <p>
+ * The loaded constant value is symbolically represented as a {@link ConstantDesc}:
+ * {@snippet lang=text :
+ * // @link substring="ConstantInstruction" target="CodeBuilder#loadConstant(ConstantDesc)" :
+ * ConstantInstruction(ConstantDesc constantValue) // @link substring="constantValue" target="#constantValue()"
+ * }
  *
+ * @see Opcode.Kind#CONSTANT
+ * @see CodeBuilder#loadConstant(ConstantDesc) CodeBuilder::loadConstant
+ * @sealedGraph
  * @since 24
  */
 public sealed interface ConstantInstruction extends Instruction {
@@ -54,22 +65,36 @@ public sealed interface ConstantInstruction extends Instruction {
     ConstantDesc constantValue();
 
     /**
-     * {@return the type of the constant}
+     * {@return the {@linkplain TypeKind##computational-type computational type} of the constant}
+     * This is derived from the {@link #constantValue() constantValue}.
      */
     TypeKind typeKind();
 
     /**
-     * Models an "intrinsic constant" instruction (e.g., {@code
-     * iconst_0}).
+     * Models an "intrinsic constant" instruction, which encodes
+     * the constant value in its opcode. Examples include {@link
+     * Opcode#ACONST_NULL aconst_null} and {@link
+     * Opcode#ICONST_0 iconst_0}.
+     * <p>
+     * An intrinsic constant instruction is composite:
+     * {@snippet lang=text :
+     * // @link substring="IntrinsicConstantInstruction" target="#ofIntrinsic" :
+     * IntrinsicConstantInstruction(Opcode opcode) // @link substring="opcode" target="#opcode()"
+     * }
+     * where:
+     * <dl>
+     * <dt>{@link #opcode() opcode}</dt>
+     * <dd>Must be of the constant kind and have a {@linkplain
+     * Opcode#sizeIfFixed() fixed size} of 1.</dd>
+     * </dl>
      *
+     * @see Opcode.Kind#CONSTANT
+     * @see ConstantInstruction#ofIntrinsic ConstantInstruction::ofIntrinsic
      * @since 24
      */
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.UnboundIntrinsicConstantInstruction {
 
-        /**
-         * {@return the type of the constant}
-         */
         @Override
         default TypeKind typeKind() {
             return BytecodeHelpers.intrinsicConstantType(opcode());
@@ -77,9 +102,31 @@ public sealed interface ConstantInstruction extends Instruction {
     }
 
     /**
-     * Models an "argument constant" instruction (e.g., {@code
-     * bipush}).
+     * Models an "argument constant" instruction, which encodes the
+     * constant value in the instruction directly. Includes {@link
+     * Opcode#BIPUSH bipush} and {@link Opcode#SIPUSH sipush} instructions.
+     * <p>
+     * An argument constant instruction is composite:
+     * {@snippet lang=text :
+     * // @link substring="ArgumentConstantInstruction" target="#ofArgument" :
+     * ArgumentConstantInstruction(
+     *     Opcode opcode, // @link substring="opcode" target="#opcode()"
+     *     int constantValue // @link substring="constantValue" target="#constantValue()"
+     * )
+     * }
+     * where:
+     * <ul>
+     * <li>{@code opcode} must be one of {@code bipush} or {@code sipush}.
+     * <li>{@code constantValue} must be in the range of {@code byte}, {@code
+     * [-128, 127]}, for {@code bipush},  and in the range of {@code short},
+     * {@code [-32768, 32767]}, for {@code sipush}.
+     * </ul>
      *
+     * @see Opcode.Kind#CONSTANT
+     * @see ConstantInstruction#ofArgument ConstantInstruction::ofArgument
+     * @see CodeBuilder#loadConstant(int) CodeBuilder::loadConstant(int)
+     * @see CodeBuilder#bipush CodeBuilder::bipush
+     * @see CodeBuilder#sipush CodeBuilder::sipush
      * @since 24
      */
     sealed interface ArgumentConstantInstruction extends ConstantInstruction
@@ -89,9 +136,6 @@ public sealed interface ConstantInstruction extends Instruction {
         @Override
         Integer constantValue();
 
-        /**
-         * {@return the type of the constant}
-         */
         @Override
         default TypeKind typeKind() {
             return TypeKind.INT;
@@ -99,9 +143,24 @@ public sealed interface ConstantInstruction extends Instruction {
     }
 
     /**
-     * Models a "load constant" instruction (e.g., {@code
-     * ldc}).
+     * Models a "load constant" instruction, which encodes the constant value
+     * in the constant pool.  Includes {@link Opcode#LDC ldc} and {@link
+     * Opcode#LDC_W ldc_w}, and {@link Opcode#LDC2_W ldc2_w} instructions.
+     * <p>
+     * A load constant instruction is composite:
+     * {@snippet lang=text :
+     * // @link substring="LoadConstantInstruction" target="CodeBuilder#ldc(LoadableConstantEntry)" :
+     * LoadConstantInstruction(LoadableConstantEntry constantEntry) // @link substring="constantEntry" target="#constantEntry()"
+     * }
+     * <p>
+     * A "load constant" instruction can load any constant value supported by
+     * other constant-load instructions.  However, other instructions are
+     * usually more optimized, avoiding extra constant pool entries and being
+     * smaller.
      *
+     * @see Opcode.Kind#CONSTANT
+     * @see ConstantInstruction#ofLoad ConstantInstruction::ofLoad
+     * @see CodeBuilder#ldc CodeBuilder::ldc
      * @since 24
      */
     sealed interface LoadConstantInstruction extends ConstantInstruction
@@ -113,9 +172,6 @@ public sealed interface ConstantInstruction extends Instruction {
          */
         LoadableConstantEntry constantEntry();
 
-        /**
-         * {@return the type of the constant}
-         */
         @Override
         default TypeKind typeKind() {
             return constantEntry().typeKind();
@@ -139,6 +195,10 @@ public sealed interface ConstantInstruction extends Instruction {
 
     /**
      * {@return an argument constant instruction}
+     * <p>
+     * {@code value} must be in the range of {@code byte}, {@code [-128, 127]},
+     * for {@link Opcode#BIPUSH}, and in the range of {@code short}, {@code
+     * [-32768, 32767]}, for {@link Opcode#SIPUSH}.
      *
      * @param op the opcode for the specific type of argument constant instruction,
      *           which must be {@link Opcode#BIPUSH} or {@link Opcode#SIPUSH}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
    @bug 6990651
-   @summary Regression: NPE when refreshing applet since 6u22-b01
+   @summary Regression: NPE when refreshing embedded window since 6u22-b01
    @author Pavel Porvatov
    @modules java.desktop/sun.awt
 */

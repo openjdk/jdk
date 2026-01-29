@@ -23,114 +23,98 @@
 
 package transform;
 
-import java.io.InputStream;
 import java.io.StringWriter;
-
 import javax.xml.XMLConstants;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
+import static jaxp.library.JAXPTestUtilities.SRC_DIR;
+import static jaxp.library.JAXPTestUtilities.assertDoesNotThrow;
+import static jaxp.library.JAXPTestUtilities.getSystemId;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static transform.XSLTFunctionsTest.SP_ENABLE_EXTENSION_FUNCTION_SPEC;
 
 /*
  * @test
+ * @bug 8343001 8343001
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm transform.SecureProcessingTest
- * @summary Test XSLT shall report TransformerException for unsafe xsl when FEATURE_SECURE_PROCESSING is true.
+ * @summary Verifies that XSLT reports TransformerException as it processes xsl
+ * using extension functions while FEATURE_SECURE_PROCESSING is set to true.
  */
 public class SecureProcessingTest {
-    @Test
-    public void testSecureProcessing() {
-        boolean _isSecureMode = System.getSecurityManager() != null;
-        // SECURE_PROCESSING == false
+    /**
+     * Test state
+     */
+    public static enum TestState {
+        DEFAULT,  // the default state
+        SETFSP,   // set FEATURE_SECURE_PROCESSING
+        SETPROPERTY; // set the enalbeExtensionFunctions property
+    }
 
-        // the style sheet
-        InputStream xslStream = this.getClass().getResourceAsStream("SecureProcessingTest.xsl");
-        StreamSource xslSource = new StreamSource(xslStream);
+    @DataProvider(name = "extFunc")
+    public Object[][] getExtFuncSettings() throws Exception {
+        return new Object[][] {
+            // by default, Extension Functions are disallowed
+            { TestState.DEFAULT, true, null, false, TransformerException.class},
+            // set FSP=true, Extension Functions are disallowed
+            { TestState.SETFSP, true, null, false, TransformerException.class},
+            // turning off FSP does not enable Extension Functions
+            { TestState.SETFSP, false, null, false, TransformerException.class},
+            // between FSP and the Extension Functions property (jdk.xml.enableExtensionFunctions),
+            // the later takes precedence
+            { TestState.SETPROPERTY, true, SP_ENABLE_EXTENSION_FUNCTION_SPEC, false, TransformerException.class},
+            { TestState.SETPROPERTY, true, SP_ENABLE_EXTENSION_FUNCTION_SPEC, true, null},
+        };
+    }
+    /**
+     * Verifies the effect of FEATURE_SECURE_PROCESSING (FSP) and the precedence
+     * between FSP and the Extension Functions property.
+     *
+     * @param testState the state of the test
+     * @param fspValue the FSP value to be set
+     * @param property the Extension Functions property
+     * @param propertyValue the property value
+     * @param expectedThrow the expected throw if the specified DTD can not be
+     *                      resolved.
+     * @throws Exception if the test fails
+     */
+    @Test(dataProvider = "extFunc")
+    public void testFSP(TestState testState, boolean fspValue, String property,
+            boolean propertyValue, Class<Throwable> expectedThrow)
+            throws Exception {
+        final TransformerFactory tf = TransformerFactory.newInstance();
+        switch (testState) {
+            case DEFAULT:
+                break;
+            case SETFSP:
+                tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, fspValue);
+                break;
+            case SETPROPERTY:
+                tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, fspValue);
+                tf.setFeature(property, propertyValue);
+                break;
+        }
+        if (expectedThrow == null) {
+            assertDoesNotThrow(() -> runTransform(tf), "Unexpected exception.");
+        } else {
+            Assert.assertThrows(expectedThrow, () -> runTransform(tf));
+        }
+    }
 
-        // the xml source
-        InputStream xmlStream = this.getClass().getResourceAsStream("SecureProcessingTest.xml");
-        StreamSource xmlSource = new StreamSource(xmlStream);
+    private void runTransform(TransformerFactory tf)
+            throws Exception {
+        StreamSource xslSource = new StreamSource(getSystemId(SRC_DIR + "/SecureProcessingTest.xsl"));
+        StreamSource xmlSource = new StreamSource(getSystemId(SRC_DIR + "/SecureProcessingTest.xml"));
 
         // the xml result
         StringWriter xmlResultString = new StringWriter();
         StreamResult xmlResultStream = new StreamResult(xmlResultString);
-
-        // the transformer
-        TransformerFactory transformerFactory = null;
-        Transformer transformer = null;
-
-        // transform with a non-secure Transformer
-        // expect success
-        String xmlResult;
-        if (!_isSecureMode) { // jaxp secure feature can not be turned off when
-                              // security manager is present
-            try {
-                transformerFactory = TransformerFactory.newInstance();
-                transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
-                transformer = transformerFactory.newTransformer(xslSource);
-                transformer.transform(xmlSource, xmlResultStream);
-            } catch (TransformerConfigurationException ex) {
-                ex.printStackTrace();
-                Assert.fail(ex.toString());
-            } catch (TransformerException ex) {
-                ex.printStackTrace();
-                Assert.fail(ex.toString());
-            }
-
-            // expected success
-            // and the result is ...
-            xmlResult = xmlResultString.toString();
-            System.out.println("Transformation result (SECURE_PROCESSING == false) = \"" + xmlResult + "\"");
-        }
-
-        // now do same transformation but with SECURE_PROCESSING == true
-        // expect Exception
-        boolean exceptionCaught = false;
-
-        // the style sheet
-        xslStream = this.getClass().getResourceAsStream("SecureProcessingTest.xsl");
-        xslSource = new StreamSource(xslStream);
-
-        // the xml source
-        xmlStream = this.getClass().getResourceAsStream("SecureProcessingTest.xml");
-        xmlSource = new StreamSource(xmlStream);
-
-        // the xml result
-        xmlResultString = new StringWriter();
-        xmlResultStream = new StreamResult(xmlResultString);
-
-        // the transformer
-        transformerFactory = null;
-        transformer = null;
-
-        // transform with a secure Transformer
-        try {
-            transformerFactory = TransformerFactory.newInstance();
-            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            transformer = transformerFactory.newTransformer(xslSource);
-            transformer.transform(xmlSource, xmlResultStream);
-        } catch (TransformerConfigurationException ex) {
-            ex.printStackTrace();
-            Assert.fail(ex.toString());
-        } catch (TransformerException ex) {
-            // expected failure
-            System.out.println("expected failure: " + ex.toString());
-            ex.printStackTrace(System.out);
-            exceptionCaught = true;
-        }
-
-        // unexpected success?
-        if (!exceptionCaught) {
-            // and the result is ...
-            xmlResult = xmlResultString.toString();
-            System.err.println("Transformation result (SECURE_PROCESSING == true) = \"" + xmlResult + "\"");
-            Assert.fail("SECURITY_PROCESSING == true, expected failure but got result: \"" + xmlResult + "\"");
-        }
+        Transformer transformer = tf.newTransformer(xslSource);
+        transformer.transform(xmlSource, xmlResultStream);
     }
 }

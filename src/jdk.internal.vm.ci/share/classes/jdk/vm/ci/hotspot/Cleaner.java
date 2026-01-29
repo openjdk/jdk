@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.vm.ci.hotspot;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
@@ -36,12 +35,12 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * referenced by this might be referenced by {@link ResolvedJavaType} which is kept alive by a
  * {@link WeakReference} so we need equivalent reference strength.
  */
-abstract class Cleaner extends WeakReference<Object> {
+public abstract class Cleaner extends WeakReference<Object> {
 
     /**
      * Head of linked list of cleaners.
      */
-    @NativeImageReinitialize private static Cleaner first;
+    private static Cleaner first;
 
     /**
      * Linked list pointers.
@@ -107,7 +106,7 @@ abstract class Cleaner extends WeakReference<Object> {
     /**
      * Remove the cleaners whose referents have become weakly reachable.
      */
-    static void clean() {
+    public static void clean() {
         Cleaner c = (Cleaner) queue.poll();
         boolean oopHandleCleared = false;
         while (c != null) {

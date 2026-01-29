@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,11 @@ import static jdk.test.lib.Asserts.*;
 public class GetField {
     public static void main(String args[]) throws Exception {
         Unsafe unsafe = Unsafe.getUnsafe();
-        // Unsafe.INVALID_FIELD_OFFSET is a static final int field,
+        // Unsafe.INVALID_FIELD_OFFSET is a static final long field,
         // make sure getField returns the correct field
         Field field = Unsafe.class.getField("INVALID_FIELD_OFFSET");
         assertNotEquals(field.getModifiers() & Modifier.FINAL, 0);
         assertNotEquals(field.getModifiers() & Modifier.STATIC, 0);
-        assertEquals(field.getType(), int.class);
+        assertEquals(field.getType(), long.class);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -41,12 +40,34 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register addr, Register count, int callee_saved_regs) {
+
+  if (is_oop) {
+    gen_write_ref_array_pre_barrier(masm, decorators, addr, count, callee_saved_regs);
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register addr, Register count, Register tmp) {
+  if (is_oop) {
+    gen_write_ref_array_post_barrier(masm, decorators, addr, count, tmp);
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
+  if (type == T_OBJECT || type == T_ARRAY) {
+    oop_store_at(masm, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
+  }
+}
+
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
   BLOCK_COMMENT("CardTablePostBarrier");
-  BarrierSet* bs = BarrierSet::barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   Label L_cardtable_loop, L_done;
 
@@ -60,7 +81,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ sub(count, count, addr); // nb of cards
 
   // warning: Rthread has not been preserved
-  __ mov_address(tmp, (address) ct->byte_map_base());
+  __ mov_address(tmp, (address)ctbs->card_table_base_const());
   __ add(addr,tmp, addr);
 
   Register zero = __ zero_register(tmp);
@@ -99,8 +120,7 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
   assert(bs->kind() == BarrierSet::CardTableBarrierSet,
          "Wrong barrier set kind");
 
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   // Load card table base address.
 
@@ -117,7 +137,7 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
      Possible cause is a cache miss (card table base address resides in a
      rarely accessed area of thread descriptor).
   */
-  __ mov_address(card_table_base, (address)ct->byte_map_base());
+  __ mov_address(card_table_base, (address)ctbs->card_table_base_const());
 }
 
 // The 2nd part of the store check.
@@ -147,8 +167,8 @@ void CardTableBarrierSetAssembler::store_check_part2(MacroAssembler* masm, Regis
 
 void CardTableBarrierSetAssembler::set_card(MacroAssembler* masm, Register card_table_base, Address card_table_addr, Register tmp) {
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
-  if ((((uintptr_t)ct->byte_map_base() & 0xff) == 0)) {
+
+  if ((((uintptr_t)ctbs->card_table_base_const() & 0xff) == 0)) {
     // Card table is aligned so the lowest byte of the table address base is zero.
     // This works only if the code is not saved for later use, possibly
     // in a context where the base would no longer be aligned.

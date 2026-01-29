@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,33 +26,33 @@ package jdk.internal.math;
 import java.math.BigDecimal;
 import java.util.Random;
 
-import static java.lang.Double.*;
+import static java.lang.Double.doubleToRawLongBits;
+import static java.lang.Double.longBitsToDouble;
 import static java.lang.Long.numberOfTrailingZeros;
-import static java.lang.StrictMath.scalb;
-import static jdk.internal.math.MathUtils.flog10pow2;
 
-public class DoubleToDecimalChecker extends ToDecimalChecker {
+public final class DoubleToDecimalChecker extends ToDecimalChecker {
 
-    private static final int P =
-            numberOfTrailingZeros(doubleToRawLongBits(3)) + 2;
-    private static final int W = (SIZE - 1) - (P - 1);
-    private static final int Q_MIN = (-1 << (W - 1)) - P + 3;
-    private static final int Q_MAX = (1 << (W - 1)) - P;
-    private static final long C_MIN = 1L << (P - 1);
-    private static final long C_MAX = (1L << P) - 1;
+    private static final int P = numberOfTrailingZeros(doubleToRawLongBits(3)) + 2;
+    private static final int W = w(P);
 
-    private static final int K_MIN = flog10pow2(Q_MIN);
-    private static final int K_MAX = flog10pow2(Q_MAX);
-    private static final int H = flog10pow2(P) + 2;
+    private static final int Q_MIN = q_min(P);
+    private static final int Q_MAX = q_max(P);
+    private static final long C_MIN = c_min(P);
+    private static final long C_MAX = c_max(P);
 
-    private static final double MIN_VALUE = scalb(1.0, Q_MIN);
-    private static final double MIN_NORMAL = scalb((double) C_MIN, Q_MIN);
-    private static final double MAX_VALUE = scalb((double) C_MAX, Q_MAX);
+    private static final int E_MIN = e_min(P);
+    private static final int E_MAX = e_max(P);
+    private static final int E_THR_Z = e_thr_z(P);
+    private static final int E_THR_I = e_thr_i(P);
+    private static final int K_MIN = k_min(P);
+    private static final int K_MAX = k_max(P);
 
-    private static final int E_MIN = e(MIN_VALUE);
-    private static final int E_MAX = e(MAX_VALUE);
+    private static final int C_TINY = c_tiny(P);
+    private static final int H = h(P);
 
-    private static final long C_TINY = cTiny(Q_MIN, K_MIN);
+    private static final BigDecimal MIN_VALUE = min_value(P);
+    private static final BigDecimal MIN_NORMAL = min_normal(P);
+    private static final BigDecimal MAX_VALUE = max_value(P);
 
     private static final int Z = 1_024;
 
@@ -60,8 +60,17 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
 
     private DoubleToDecimalChecker(double v) {
         super(DoubleToDecimal.toString(v));
-//        super(Double.toString(v));
         this.v = v;
+    }
+
+    @Override
+    int eMin() {
+        return E_MIN;
+    }
+
+    @Override
+    int eMax() {
+        return E_MAX;
     }
 
     @Override
@@ -86,32 +95,22 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
 
     @Override
     boolean recovers(String s) {
-        return parseDouble(s) == v;
+        return Double.parseDouble(s) == v;
     }
 
     @Override
     String hexString() {
-        return toHexString(v) + "D";
-    }
-
-    @Override
-    int minExp() {
-        return E_MIN;
-    }
-
-    @Override
-    int maxExp() {
-        return E_MAX;
+        return Double.toHexString(v) + "D";
     }
 
     @Override
     boolean isNegativeInfinity() {
-        return v == NEGATIVE_INFINITY;
+        return v == Double.NEGATIVE_INFINITY;
     }
 
     @Override
     boolean isPositiveInfinity() {
-        return v == POSITIVE_INFINITY;
+        return v == Double.POSITIVE_INFINITY;
     }
 
     @Override
@@ -149,17 +148,17 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
     }
 
     private static void testExtremeValues() {
-        testDec(NEGATIVE_INFINITY);
-        testAround(-MAX_VALUE, Z);
-        testAround(-MIN_NORMAL, Z);
-        testAround(-MIN_VALUE, Z);
+        testDec(Double.NEGATIVE_INFINITY);
+        testAround(-Double.MAX_VALUE, Z);
+        testAround(-Double.MIN_NORMAL, Z);
+        testAround(-Double.MIN_VALUE, Z);
         testDec(-0.0);
         testDec(0.0);
-        testAround(MIN_VALUE, Z);
-        testAround(MIN_NORMAL, Z);
-        testAround(MAX_VALUE, Z);
-        testDec(POSITIVE_INFINITY);
-        testDec(NaN);
+        testAround(Double.MIN_VALUE, Z);
+        testAround(Double.MIN_NORMAL, Z);
+        testAround(Double.MAX_VALUE, Z);
+        testDec(Double.POSITIVE_INFINITY);
+        testDec(Double.NaN);
 
         /*
          * Quiet NaNs have the most significant bit of the mantissa as 1,
@@ -176,7 +175,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
          * All values treated specially by Schubfach
          */
         for (int c = 1; c < C_TINY; ++c) {
-            testDec(c * MIN_VALUE);
+            testDec(c * Double.MIN_VALUE);
         }
     }
 
@@ -186,7 +185,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
      */
     private static void testPowersOf10() {
         for (int e = E_MIN; e <= E_MAX; ++e) {
-            testAround(parseDouble("1e" + e), Z);
+            testAround(Double.parseDouble("1e" + e), Z);
         }
     }
 
@@ -195,7 +194,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
      * The rendering is either too long or it is not the closest decimal.
      */
     private static void testPowersOf2() {
-        for (double v = MIN_VALUE; v <= MAX_VALUE; v *= 2) {
+        for (double v = Double.MIN_VALUE; v <= Double.MAX_VALUE; v *= 2) {
             testAround(v, Z);
         }
     }
@@ -224,7 +223,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
 
     private static void testSomeAnomalies() {
         for (String dec : Anomalies) {
-            testDec(parseDouble(dec));
+            testDec(Double.parseDouble(dec));
         }
     }
 
@@ -331,7 +330,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
 
     private static void testPaxson() {
         for (int i = 0; i < PaxsonSignificands.length; ++i) {
-            testDec(scalb(PaxsonSignificands[i], PaxsonExponents[i]));
+            testDec(StrictMath.scalb(PaxsonSignificands[i], PaxsonExponents[i]));
         }
     }
 
@@ -441,28 +440,34 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
         int e = r.nextInt(E_MAX - E_MIN + 1) + E_MIN;
         for (int pow10 = 1; pow10 < 10_000; pow10 *= 10) {
             /* randomly generate an int in [pow10, 10 pow10) */
-            testAround(parseDouble((r.nextInt(9 * pow10) + pow10) + "e" + e), Z);
+            testAround(Double.parseDouble((r.nextInt(9 * pow10) + pow10) + "e" + e), Z);
         }
     }
 
     private static void testConstants() {
         addOnFail(P == DoubleToDecimal.P, "P");
-        addOnFail((long) (double) C_MIN == C_MIN, "C_MIN");
-        addOnFail((long) (double) C_MAX == C_MAX, "C_MAX");
-        addOnFail(MIN_VALUE == Double.MIN_VALUE, "MIN_VALUE");
-        addOnFail(MIN_NORMAL == Double.MIN_NORMAL, "MIN_NORMAL");
-        addOnFail(MAX_VALUE == Double.MAX_VALUE, "MAX_VALUE");
+        addOnFail(W == DoubleToDecimal.W, "W");
 
         addOnFail(Q_MIN == DoubleToDecimal.Q_MIN, "Q_MIN");
         addOnFail(Q_MAX == DoubleToDecimal.Q_MAX, "Q_MAX");
-
-        addOnFail(K_MIN == DoubleToDecimal.K_MIN, "K_MIN");
-        addOnFail(K_MAX == DoubleToDecimal.K_MAX, "K_MAX");
-        addOnFail(H == DoubleToDecimal.H, "H");
+        addOnFail(C_MIN == DoubleToDecimal.C_MIN, "C_MIN");
+        addOnFail(C_MAX == DoubleToDecimal.C_MAX, "C_MAX");
+        addOnFail((long) (double) C_MIN == C_MIN, "C_MIN");
+        addOnFail((long) (double) C_MAX == C_MAX, "C_MAX");
 
         addOnFail(E_MIN == DoubleToDecimal.E_MIN, "E_MIN");
         addOnFail(E_MAX == DoubleToDecimal.E_MAX, "E_MAX");
+        addOnFail(E_THR_Z == DoubleToDecimal.E_THR_Z, "E_THR_Z");
+        addOnFail(E_THR_I == DoubleToDecimal.E_THR_I, "E_THR_I");
+        addOnFail(K_MIN == DoubleToDecimal.K_MIN, "K_MIN");
+        addOnFail(K_MAX == DoubleToDecimal.K_MAX, "K_MAX");
+
         addOnFail(C_TINY == DoubleToDecimal.C_TINY, "C_TINY");
+        addOnFail(H == DoubleToDecimal.H, "H");
+
+        addOnFail(MIN_VALUE.compareTo(new BigDecimal(Double.MIN_VALUE)) == 0, "MIN_VALUE");
+        addOnFail(MIN_NORMAL.compareTo(new BigDecimal(Double.MIN_NORMAL)) == 0, "MIN_NORMAL");
+        addOnFail(MAX_VALUE.compareTo(new BigDecimal(Double.MAX_VALUE)) == 0, "MAX_VALUE");
     }
 
     public static void test(int randomCount, Random r) {

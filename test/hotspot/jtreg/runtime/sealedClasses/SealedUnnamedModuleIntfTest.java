@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8225056
  * @compile Pkg/SealedInterface.jcod Pkg/NotPermitted.jcod
  * @compile Pkg/Permitted.java otherPkg/WrongPackage.java otherPkg/WrongPackageNotPublic.java
- * @run main SealedUnnamedModuleIntfTest
+ * @run main/othervm SealedUnnamedModuleIntfTest
  */
 
 public class SealedUnnamedModuleIntfTest {
@@ -51,7 +51,8 @@ public class SealedUnnamedModuleIntfTest {
             Class notPermitted = Class.forName("Pkg.NotPermitted");
             throw new RuntimeException("Expected IncompatibleClassChangeError exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().contains("cannot implement sealed interface")) {
+            if (!e.getMessage().equals("Failed listed permitted subclass check: class Pkg.NotPermitted " +
+                                       "is not a permitted subclass of Pkg.SealedInterface")) {
                 throw new RuntimeException("Wrong IncompatibleClassChangeError exception thrown: " + e.getMessage());
             }
         }
@@ -62,7 +63,9 @@ public class SealedUnnamedModuleIntfTest {
             Class notPermitted = Class.forName("otherPkg.WrongPackageNotPublic");
             throw new RuntimeException("Expected IncompatibleClassChangeError exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().contains("cannot implement sealed interface")) {
+            if (!e.getMessage().equals("Failed same package check: non-public subclass otherPkg.WrongPackageNotPublic " +
+                                       "is in package 'otherPkg' with classloader 'app', and sealed class Pkg.SealedInterface " +
+                                       "is in package 'Pkg' with classloader 'app'")) {
                 throw new RuntimeException("Wrong IncompatibleClassChangeError exception thrown: " + e.getMessage());
             }
         }

@@ -342,8 +342,6 @@ public final class LazyLoggers {
             // no need to lock: it doesn't matter if we call
             // getLoggerFinder() twice - since LoggerFinder already caches
             // the result.
-            // This is just an optimization to avoid the cost of calling
-            // doPrivileged every time.
             prov = LoggerFinder.getLoggerFinder();
             if (prov instanceof TemporaryLoggerFinder) return prov;
             provider = prov;

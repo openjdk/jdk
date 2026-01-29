@@ -99,10 +99,6 @@ public abstract class FocusManager extends DefaultKeyboardFocusManager {
      * @see java.awt.DefaultKeyboardFocusManager
      */
     public static void setCurrentManager(FocusManager aFocusManager) {
-        // Note: This method is not backward-compatible with 1.3 and earlier
-        // releases. It now throws a SecurityException in an applet, whereas
-        // in previous releases, it did not. This issue was discussed at
-        // length, and ultimately approved by Hans.
         KeyboardFocusManager toSet =
             (aFocusManager instanceof DelegatingDefaultFocusManager)
                 ? ((DelegatingDefaultFocusManager)aFocusManager).getDelegate()

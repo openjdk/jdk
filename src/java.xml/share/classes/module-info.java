@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,11 +417,97 @@
  * </ul>
  *
  * <h2 id="JDKCATALOG">JDK built-in Catalog</h2>
- * The JDK has a built-in catalog that hosts the following DTDs defined by the Java Platform:
- * <ul>
- * <li>DTD for {@link java.util.prefs.Preferences java.util.prefs.Preferences}, preferences.dtd</li>
- * <li>DTD for {@link java.util.Properties java.util.Properties}, properties.dtd</li>
- * </ul>
+ * The JDK has a built-in catalog that hosts DTDs and XSDs list in the following table.
+ * <table class="plain" id="JDKCatalog">
+ * <caption>DTDs and XSDs in JDK built-in Catalog</caption>
+ * <thead>
+ * <tr>
+ * <th scope="col">Source</th>
+ * <th scope="col">Files</th>
+ * </tr>
+ * </thead>
+ *
+ * <tbody>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="util_preferences">
+ * {@link java.util.prefs.Preferences java.util.prefs.Preferences}</th>
+ * <td style="text-align:center">
+ * preferences.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="util_properties">
+ * {@link java.util.Properties java.util.Properties}</th>
+ * <td style="text-align:center">
+ * properties.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XMLSchema">
+ * XML Schema Part 1: Structures Second Edition<br>
+ * XML Schema Part 2: Datatypes Second Edition
+ * </th>
+ * <td style="text-align:center">
+ * XMLSchema.dtd<br>
+ * datatypes.dtd<br>
+ * XMLSchema.xsd<br>
+ * datatypes.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML10">
+ * XHTML&trade; 1.0 The Extensible HyperText Markup Language
+ * </th>
+ * <td style="text-align:center">
+ * xhtml1-frameset.dtd<br>
+ * xhtml1-strict.dtd<br>
+ * xhtml1-transitional.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML10Schema">
+ * XHTML&trade; 1.0 in XML Schema
+ * </th>
+ * <td style="text-align:center">
+ * xhtml1-frameset.xsd<br>
+ * xhtml1-strict.xsd<br>
+ * xhtml1-transitional.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML11">
+ * XHTML&trade; 1.1 - Module-based XHTML - Second Edition
+ * </th>
+ * <td style="text-align:center">
+ * xhtml11.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML11Schema">
+ * XHTML 1.1 XML Schema Definition
+ * </th>
+ * <td style="text-align:center">
+ * xhtml11.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XMLSPEC">
+ * XML DTD for W3C specifications
+ * </th>
+ * <td style="text-align:center">
+ * xmlspec.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="Namespace">
+ * The "xml:" Namespace
+ * </th>
+ * <td style="text-align:center">
+ * xml.xsd
+ * </td>
+ * </tr>
+ * </tbody>
+ * </table>
  * <p>
  * The catalog is loaded once when the first JAXP processor factory is created.
  *
@@ -782,19 +868,19 @@
  * </tr>
  * <tr>
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
- * <td>Determines if XSLT and XPath extension functions are to be allowed.
+ * <td>Determines whether extension functions in the Transform API are to be allowed.
+ * The extension functions in the XPath API are not affected by this property.
  * </td>
  * <td style="text-align:center" rowspan="5">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
  * <td>
  * true or false. True indicates that extension functions are allowed; False otherwise.
  * </td>
- * <td style="text-align:center">true</td>
+ * <td style="text-align:center">false</td>
  * <td style="text-align:center">false</td>
  * <td style="text-align:center">Yes</td>
  * <td style="text-align:center">
  *     <a href="#Transform">Transform</a><br>
- *     <a href="#XPATH">XPath</a>
  * </td>
  * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">8</td>

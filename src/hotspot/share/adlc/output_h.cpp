@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,9 @@ void ArchDesc::buildMachRegisterNumbers(FILE *fp_hpp) {
   }
 
   fprintf(fp_hpp, "\n// Size of register-mask in ints\n");
-  fprintf(fp_hpp, "#define RM_SIZE %d\n", RegisterForm::RegMask_Size());
+  fprintf(fp_hpp, "#define RM_SIZE_IN_INTS %d\n", RegisterForm::RegMask_Size());
+  fprintf(fp_hpp, "// Minimum size of register-mask in ints\n");
+  fprintf(fp_hpp, "#define RM_SIZE_IN_INTS_MIN %d\n", RegisterForm::words_for_regs());
   fprintf(fp_hpp, "// Unroll factor for loops over the data in a RegMask\n");
   fprintf(fp_hpp, "#define FORALL_BODY ");
   int len = RegisterForm::RegMask_Size();
@@ -233,6 +235,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  jfloat         _c%d;\n", i);
     }
+    else if (!strcmp(type, "ConH")) {
+      if (i > 0) fprintf(fp,", ");
+      fprintf(fp,"  jshort        _c%d;\n", i);
+    }
     else if (!strcmp(type, "ConD")) {
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  jdouble        _c%d;\n", i);
@@ -267,6 +273,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       }
       else if (!strcmp(comp->base_type(globals), "ConL")) {
         fprintf(fp,"  jlong            _c%d;\n", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConH")) {
+        fprintf(fp,"  jshort            _c%d;\n", i);
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConF")) {
@@ -314,6 +324,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
     case Form::idealNKlass : { fprintf(fp,"const TypeNarrowKlass *c%d", i); break; }
     case Form::idealP :      { fprintf(fp,"const TypePtr *c%d", i); break; }
     case Form::idealL :      { fprintf(fp,"jlong c%d", i);   break;        }
+    case Form::idealH :      { fprintf(fp,"jshort c%d", i);   break;        }
     case Form::idealF :      { fprintf(fp,"jfloat c%d", i);  break;        }
     case Form::idealD :      { fprintf(fp,"jdouble c%d", i); break;        }
     default:
@@ -399,6 +410,11 @@ static void defineCCodeDump(OperandForm* oper, FILE *fp, int i) {
 // Output code that dumps constant values, increment "i" if type is constant
 static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, OperandForm* oper) {
   if (!strcmp(ideal_type, "ConI")) {
+    fprintf(fp,"   st->print(\"#%%d\", _c%d);\n", i);
+    fprintf(fp,"   st->print(\"/0x%%08x\", _c%d);\n", i);
+    ++i;
+  }
+  else if (!strcmp(ideal_type, "ConH")) {
     fprintf(fp,"   st->print(\"#%%d\", _c%d);\n", i);
     fprintf(fp,"   st->print(\"/0x%%08x\", _c%d);\n", i);
     ++i;
@@ -743,20 +759,15 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
 
   if (_pipeline->_maxcycleused <= 32) {
     fprintf(fp_hpp, "protected:\n");
-    fprintf(fp_hpp, "  %s _mask;\n\n", _pipeline->_maxcycleused <= 32 ? "uint" : "uint64_t" );
+    fprintf(fp_hpp, "  uint32_t _mask;\n\n");
     fprintf(fp_hpp, "public:\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask() : _mask(0) {}\n\n");
-    if (_pipeline->_maxcycleused <= 32)
-      fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint mask) : _mask(mask) {}\n\n");
-    else {
-      fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint mask1, uint mask2) : _mask((((uint64_t)mask1) << 32) | mask2) {}\n\n");
-      fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint64_t mask) : _mask(mask) {}\n\n");
-    }
+    fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint32_t mask) : _mask(mask) {}\n\n");
     fprintf(fp_hpp, "  bool overlaps(const Pipeline_Use_Cycle_Mask &in2) const {\n");
     fprintf(fp_hpp, "    return ((_mask & in2._mask) != 0);\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask& operator<<=(int n) {\n");
-    fprintf(fp_hpp, "    _mask <<= n;\n");
+    fprintf(fp_hpp, "    _mask <<= (n < 32) ? n : 31;\n");
     fprintf(fp_hpp, "    return *this;\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  void Or(const Pipeline_Use_Cycle_Mask &in2) {\n");
@@ -769,7 +780,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     fprintf(fp_hpp, "protected:\n");
     uint masklen = (_pipeline->_maxcycleused + 31) >> 5;
     uint l;
-    fprintf(fp_hpp, "  uint ");
+    fprintf(fp_hpp, "  uint32_t ");
     for (l = 1; l <= masklen; l++)
       fprintf(fp_hpp, "_mask%d%s", l, l < masklen ? ", " : ";\n\n");
     fprintf(fp_hpp, "public:\n");
@@ -778,7 +789,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
       fprintf(fp_hpp, "_mask%d(0)%s", l, l < masklen ? ", " : " {}\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(");
     for (l = 1; l <= masklen; l++)
-      fprintf(fp_hpp, "uint mask%d%s", l, l < masklen ? ", " : ") : ");
+      fprintf(fp_hpp, "uint32_t mask%d%s", l, l < masklen ? ", " : ") : ");
     for (l = 1; l <= masklen; l++)
       fprintf(fp_hpp, "_mask%d(mask%d)%s", l, l, l < masklen ? ", " : " {}\n\n");
 
@@ -789,10 +800,10 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     fprintf(fp_hpp, "    return out;\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  bool overlaps(const Pipeline_Use_Cycle_Mask &in2) const {\n");
-    fprintf(fp_hpp, "    return (");
+    fprintf(fp_hpp, "    return ");
     for (l = 1; l <= masklen; l++)
       fprintf(fp_hpp, "((_mask%d & in2._mask%d) != 0)%s", l, l, l < masklen ? " || " : "");
-    fprintf(fp_hpp, ") ? true : false;\n");
+    fprintf(fp_hpp, ";\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask& operator<<=(int n) {\n");
     fprintf(fp_hpp, "    if (n >= 32)\n");
@@ -803,10 +814,10 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     fprintf(fp_hpp, "      } while ((n -= 32) >= 32);\n\n");
     fprintf(fp_hpp, "    if (n > 0) {\n");
     fprintf(fp_hpp, "      uint m = 32 - n;\n");
-    fprintf(fp_hpp, "      uint mask = (1 << n) - 1;\n");
-    fprintf(fp_hpp, "      uint temp%d = mask & (_mask%d >> m); _mask%d <<= n;\n", 2, 1, 1);
+    fprintf(fp_hpp, "      uint32_t mask = (1 << n) - 1;\n");
+    fprintf(fp_hpp, "      uint32_t temp%d = mask & (_mask%d >> m); _mask%d <<= n;\n", 2, 1, 1);
     for (l = 2; l < masklen; l++) {
-      fprintf(fp_hpp, "      uint temp%d = mask & (_mask%d >> m); _mask%d <<= n; _mask%d |= temp%d;\n", l+1, l, l, l, l);
+      fprintf(fp_hpp, "      uint32_t temp%d = mask & (_mask%d >> m); _mask%d <<= n; _mask%d |= temp%d;\n", l+1, l, l, l, l);
     }
     fprintf(fp_hpp, "      _mask%d <<= n; _mask%d |= temp%d;\n", masklen, masklen, masklen);
     fprintf(fp_hpp, "    }\n");
@@ -920,8 +931,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     _pipeline->_variableSizeInstrs ? 1 : 0);
   fprintf(fp_hpp, "    _fixed_size_instructions = %d,\n",
     _pipeline->_variableSizeInstrs ? 0 : 1);
-  fprintf(fp_hpp, "    _branch_has_delay_slot = %d,\n",
-    _pipeline->_branchHasDelaySlot ? 1 : 0);
   fprintf(fp_hpp, "    _max_instrs_per_bundle = %d,\n",
     _pipeline->_maxInstrsPerBundle);
   fprintf(fp_hpp, "    _max_bundles_per_cycle = %d,\n",
@@ -968,7 +977,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  const unsigned char                   _fixed_latency;\n");
   fprintf(fp_hpp, "  const unsigned char                   _instruction_count;\n");
   fprintf(fp_hpp, "  const bool                            _has_fixed_latency;\n");
-  fprintf(fp_hpp, "  const bool                            _has_branch_delay;\n");
   fprintf(fp_hpp, "  const bool                            _has_multiple_bundles;\n");
   fprintf(fp_hpp, "  const bool                            _force_serialization;\n");
   fprintf(fp_hpp, "  const bool                            _may_have_no_code;\n");
@@ -983,7 +991,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "           bool                            has_fixed_latency,\n");
   fprintf(fp_hpp, "           uint                            fixed_latency,\n");
   fprintf(fp_hpp, "           uint                            instruction_count,\n");
-  fprintf(fp_hpp, "           bool                            has_branch_delay,\n");
   fprintf(fp_hpp, "           bool                            has_multiple_bundles,\n");
   fprintf(fp_hpp, "           bool                            force_serialization,\n");
   fprintf(fp_hpp, "           bool                            may_have_no_code,\n");
@@ -996,7 +1003,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  , _fixed_latency(fixed_latency)\n");
   fprintf(fp_hpp, "  , _instruction_count(instruction_count)\n");
   fprintf(fp_hpp, "  , _has_fixed_latency(has_fixed_latency)\n");
-  fprintf(fp_hpp, "  , _has_branch_delay(has_branch_delay)\n");
   fprintf(fp_hpp, "  , _has_multiple_bundles(has_multiple_bundles)\n");
   fprintf(fp_hpp, "  , _force_serialization(force_serialization)\n");
   fprintf(fp_hpp, "  , _may_have_no_code(may_have_no_code)\n");
@@ -1031,8 +1037,6 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "    return (_resource_use._count); }\n\n");
   fprintf(fp_hpp, "  uint instructionCount() const {\n");
   fprintf(fp_hpp, "    return (_instruction_count); }\n\n");
-  fprintf(fp_hpp, "  bool hasBranchDelay() const {\n");
-  fprintf(fp_hpp, "    return (_has_branch_delay); }\n\n");
   fprintf(fp_hpp, "  bool hasMultipleBundles() const {\n");
   fprintf(fp_hpp, "    return (_has_multiple_bundles); }\n\n");
   fprintf(fp_hpp, "  bool forceSerialization() const {\n");
@@ -1056,56 +1060,19 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   uint rshift = rescount;
 
   fprintf(fp_hpp, "protected:\n");
-  fprintf(fp_hpp, "  enum {\n");
-  fprintf(fp_hpp, "    _unused_delay                   = 0x%x,\n", 0);
-  fprintf(fp_hpp, "    _use_nop_delay                  = 0x%x,\n", 1);
-  fprintf(fp_hpp, "    _use_unconditional_delay        = 0x%x,\n", 2);
-  fprintf(fp_hpp, "    _use_conditional_delay          = 0x%x,\n", 3);
-  fprintf(fp_hpp, "    _used_in_conditional_delay      = 0x%x,\n", 4);
-  fprintf(fp_hpp, "    _used_in_unconditional_delay    = 0x%x,\n", 5);
-  fprintf(fp_hpp, "    _used_in_all_conditional_delays = 0x%x,\n", 6);
-  fprintf(fp_hpp, "\n");
-  fprintf(fp_hpp, "    _use_delay                      = 0x%x,\n", 3);
-  fprintf(fp_hpp, "    _used_in_delay                  = 0x%x\n",  4);
-  fprintf(fp_hpp, "  };\n\n");
-  fprintf(fp_hpp, "  uint _flags          : 3,\n");
-  fprintf(fp_hpp, "       _starts_bundle  : 1,\n");
+  fprintf(fp_hpp, "  uint _starts_bundle  : 1,\n");
   fprintf(fp_hpp, "       _instr_count    : %d,\n",   mshift);
   fprintf(fp_hpp, "       _resources_used : %d;\n",   rshift);
   fprintf(fp_hpp, "public:\n");
-  fprintf(fp_hpp, "  Bundle() : _flags(_unused_delay), _starts_bundle(0), _instr_count(0), _resources_used(0) {}\n\n");
+  fprintf(fp_hpp, "  Bundle() : _starts_bundle(0), _instr_count(0), _resources_used(0) {}\n\n");
   fprintf(fp_hpp, "  void set_instr_count(uint i) { _instr_count  = i; }\n");
   fprintf(fp_hpp, "  void set_resources_used(uint i) { _resources_used   = i; }\n");
-  fprintf(fp_hpp, "  void clear_usage() { _flags = _unused_delay; }\n");
   fprintf(fp_hpp, "  void set_starts_bundle() { _starts_bundle = true; }\n");
 
-  fprintf(fp_hpp, "  uint flags() const { return (_flags); }\n");
   fprintf(fp_hpp, "  uint instr_count() const { return (_instr_count); }\n");
   fprintf(fp_hpp, "  uint resources_used() const { return (_resources_used); }\n");
   fprintf(fp_hpp, "  bool starts_bundle() const { return (_starts_bundle != 0); }\n");
 
-  fprintf(fp_hpp, "  void set_use_nop_delay() { _flags = _use_nop_delay; }\n");
-  fprintf(fp_hpp, "  void set_use_unconditional_delay() { _flags = _use_unconditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_use_conditional_delay() { _flags = _use_conditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_unconditional_delay() { _flags = _used_in_unconditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_conditional_delay() { _flags = _used_in_conditional_delay; }\n");
-  fprintf(fp_hpp, "  void set_used_in_all_conditional_delays() { _flags = _used_in_all_conditional_delays; }\n");
-
-  fprintf(fp_hpp, "  bool use_nop_delay() { return (_flags == _use_nop_delay); }\n");
-  fprintf(fp_hpp, "  bool use_unconditional_delay() { return (_flags == _use_unconditional_delay); }\n");
-  fprintf(fp_hpp, "  bool use_conditional_delay() { return (_flags == _use_conditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_unconditional_delay() { return (_flags == _used_in_unconditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_conditional_delay() { return (_flags == _used_in_conditional_delay); }\n");
-  fprintf(fp_hpp, "  bool used_in_all_conditional_delays() { return (_flags == _used_in_all_conditional_delays); }\n");
-  fprintf(fp_hpp, "  bool use_delay() { return ((_flags & _use_delay) != 0); }\n");
-  fprintf(fp_hpp, "  bool used_in_delay() { return ((_flags & _used_in_delay) != 0); }\n\n");
-
-  fprintf(fp_hpp, "  enum {\n");
-  fprintf(fp_hpp, "    _nop_count = %d\n",
-    _pipeline->_nopcnt);
-  fprintf(fp_hpp, "  };\n\n");
-  fprintf(fp_hpp, "  static void initialize_nops(MachNode *nop_list[%d]);\n\n",
-    _pipeline->_nopcnt);
   fprintf(fp_hpp, "#ifndef PRODUCT\n");
   fprintf(fp_hpp, "  void dump(outputStream *st = tty) const;\n");
   fprintf(fp_hpp, "#endif\n");
@@ -1281,6 +1248,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         case Form::idealF: type = "Type::FLOAT";    break;
         case Form::idealD: type = "Type::DOUBLE";   break;
         case Form::idealL: type = "TypeLong::LONG"; break;
+        case Form::idealH: type = "Type::HALF_FLOAT"; break;
         case Form::none: // fall through
         default:
           assert( false, "No support for this type of stackSlot");
@@ -1423,6 +1391,14 @@ void ArchDesc::declareClasses(FILE *fp) {
           fprintf(fp, " }\n");
           fprintf(fp,"  virtual jlong          constantL() const {");
           fprintf(fp,   " return _c0;");
+          fprintf(fp, " }\n");
+        }
+        else if (!strcmp(oper->ideal_type(_globalNames), "ConH")) {
+          fprintf(fp,"  virtual intptr_t       constant() const {");
+          fprintf(fp,   " ShouldNotReachHere(); return 0; ");
+          fprintf(fp, " }\n");
+          fprintf(fp,"  virtual jshort         constantH() const {");
+          fprintf(fp,   " return (jshort)_c0;");
           fprintf(fp, " }\n");
         }
         else if (!strcmp(oper->ideal_type(_globalNames), "ConF")) {
@@ -1602,6 +1578,8 @@ void ArchDesc::declareClasses(FILE *fp) {
     while (attr != nullptr) {
       if (strcmp (attr->_ident, "ins_is_TrapBasedCheckNode") == 0) {
         fprintf(fp, "  virtual bool           is_TrapBasedCheckNode() const { return %s; }\n", attr->_val);
+      } else if (strcmp (attr->_ident, "ins_is_late_expanded_null_check_candidate") == 0) {
+        fprintf(fp, "  virtual bool           is_late_expanded_null_check_candidate() const { return %s; }\n", attr->_val);
       } else if (strcmp (attr->_ident, "ins_cost") != 0 &&
           strncmp(attr->_ident, "ins_field_", 10) != 0 &&
           // Must match function in node.hpp: return type bool, no prefix "ins_".
@@ -1897,6 +1875,9 @@ void ArchDesc::declareClasses(FILE *fp) {
       case Form::idealD:
         fprintf(fp,"    return  TypeD::make(opnd_array(1)->constantD());\n");
         break;
+      case Form::idealH:
+        fprintf(fp,"    return  TypeH::make(opnd_array(1)->constantH());\n");
+        break;
       case Form::idealF:
         fprintf(fp,"    return  TypeF::make(opnd_array(1)->constantF());\n");
         break;
@@ -1935,7 +1916,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     else if( instr->is_ideal_box() ) {
       // BoxNode provides the address of a stack slot.
       // Define its bottom type to be TypeRawPtr::BOTTOM instead of TypePtr::BOTTOM
-      // This prevent s insert_anti_dependencies from complaining. It will
+      // This prevents raise_above_anti_dependences from complaining. It will
       // complain if it sees that the pointer base is TypePtr::BOTTOM since
       // it doesn't understand what that might alias.
       fprintf(fp,"  const Type            *bottom_type() const { return TypeRawPtr::BOTTOM; } // Box?\n");

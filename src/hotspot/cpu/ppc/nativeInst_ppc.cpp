@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
@@ -40,23 +39,11 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-// We use an illtrap for marking a method as not_entrant
-// Work around a C++ compiler bug which changes 'this'
-bool NativeInstruction::is_sigill_not_entrant_at(address addr) {
-  if (!Assembler::is_illtrap(addr)) return false;
-  CodeBlob* cb = CodeCache::find_blob(addr);
-  if (cb == nullptr || !cb->is_nmethod()) return false;
-  nmethod *nm = (nmethod *)cb;
-  // This method is not_entrant iff the illtrap instruction is
-  // located at the verified entry point.
-  return nm->verified_entry_point() == addr;
-}
-
 #ifdef ASSERT
 void NativeInstruction::verify() {
   // Make sure code pattern is actually an instruction address.
   address addr = addr_at(0);
-  if (addr == 0 || ((intptr_t)addr & 3) != 0) {
+  if (addr == nullptr || ((intptr_t)addr & 3) != 0) {
     fatal("not an instruction address");
   }
 }
@@ -115,7 +102,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
     // does not provide this information. The branch will be patched
     // later during a final fixup, when all necessary information is
     // available.
-    if (trampoline_stub_addr == 0)
+    if (trampoline_stub_addr == nullptr)
       return;
 
     // Patch the constant in the call's trampoline stub.
@@ -332,25 +319,6 @@ void NativeMovConstReg::verify() {
 }
 #endif // ASSERT
 
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  ResourceMark rm;
-  int code_size = 1 * BytesPerInstWord;
-  CodeBuffer cb(verified_entry, code_size + 1);
-  MacroAssembler* a = new MacroAssembler(&cb);
-#ifdef COMPILER2
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-#endif
-  // Patch this nmethod atomically. Always use illtrap/trap in debug build.
-  if (DEBUG_ONLY(false &&) a->is_within_range_of_b(dest, a->pc())) {
-    a->b(dest);
-  } else {
-    // The signal handler will continue at dest=OptoRuntime::handle_wrong_method_stub().
-    // We use an illtrap for marking a method as not_entrant.
-    a->illtrap();
-  }
-  ICache::ppc64_flush_icache_bytes(verified_entry, code_size);
-}
-
 #ifdef ASSERT
 void NativeJump::verify() {
   address addr = addr_at(0);
@@ -379,7 +347,7 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   // Finally patch out the jump.
   volatile juint *jump_addr = (volatile juint*)instr_addr;
   // Release not needed because caller uses invalidate_range after copying the remaining bytes.
-  //Atomic::release_store(jump_addr, *((juint*)code_buffer));
+  //AtomicAccess::release_store(jump_addr, *((juint*)code_buffer));
   *jump_addr = *((juint*)code_buffer); // atomically store code over branch instruction
   ICache::ppc64_flush_icache_bytes(instr_addr, NativeGeneralJump::instruction_size);
 }
@@ -434,7 +402,7 @@ void NativePostCallNop::make_deopt() {
 bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   int32_t i2, i1;
   assert(is_aligned(cb_offset, 4), "cb offset alignment does not match instruction alignment");
-  assert(!decode(i1, i2), "already patched");
+  assert(!decode(i1, i2) || NMethodRelocation, "already patched");
 
   cb_offset = cb_offset >> 2;
   if (((oopmap_slot & ppc_oopmap_slot_mask) != oopmap_slot) || ((cb_offset & ppc_cb_offset_mask) != cb_offset)) {
@@ -463,9 +431,7 @@ bool NativeDeoptInstruction::is_deopt_at(address code_pos) {
   if (!Assembler::is_illtrap(code_pos)) return false;
   CodeBlob* cb = CodeCache::find_blob(code_pos);
   if (cb == nullptr || !cb->is_nmethod()) return false;
-  nmethod *nm = (nmethod *)cb;
-  // see NativeInstruction::is_sigill_not_entrant_at()
-  return nm->verified_entry_point() != code_pos;
+  return true;
 }
 
 // Inserts an instruction which is specified to cause a SIGILL at a given pc

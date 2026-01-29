@@ -1,7 +1,7 @@
 		// Configure cpptools IntelliSense
 		"C_Cpp.intelliSenseCachePath": "{{OUTPUTDIR}}/.vscode",
 		"C_Cpp.default.compileCommands": "{{OUTPUTDIR}}/compile_commands.json",
-		"C_Cpp.default.cppStandard": "c++14",
+		"C_Cpp.default.cppStandard": "c++17",
 		"C_Cpp.default.compilerPath": "{{COMPILER}}",
 
 		// Configure clangd
@@ -11,7 +11,7 @@
 		],
 
 		// Disable conflicting features from cpptools
-		"C_Cpp.autocomplete": "Disabled",
-		"C_Cpp.errorSquiggles": "Disabled",
-		"C_Cpp.formatting": "Disabled",
-		"C_Cpp.intelliSenseEngine": "Disabled",
+		"C_Cpp.autocomplete": "disabled",
+		"C_Cpp.errorSquiggles": "disabled",
+		"C_Cpp.formatting": "disabled",
+		"C_Cpp.intelliSenseEngine": "disabled",

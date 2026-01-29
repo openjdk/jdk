@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,6 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 
-import sun.awt.AppContext;
-
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
@@ -58,7 +56,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  *
  * @author Jeff Dinkins
  */
-public class WindowsButtonUI extends BasicButtonUI
+public final class WindowsButtonUI extends BasicButtonUI
 {
     protected int dashedRectGapX;
     protected int dashedRectGapY;
@@ -69,26 +67,20 @@ public class WindowsButtonUI extends BasicButtonUI
 
     private boolean defaults_initialized = false;
 
-    private static final Object WINDOWS_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new WindowsButtonUI();
 
     // ********************************
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        WindowsButtonUI windowsButtonUI =
-                (WindowsButtonUI) appContext.get(WINDOWS_BUTTON_UI_KEY);
-        if (windowsButtonUI == null) {
-            windowsButtonUI = new WindowsButtonUI();
-            appContext.put(WINDOWS_BUTTON_UI_KEY, windowsButtonUI);
-        }
-        return windowsButtonUI;
+        return UI;
     }
 
 
     // ********************************
     //            Defaults
     // ********************************
+    @Override
     protected void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -108,6 +100,7 @@ public class WindowsButtonUI extends BasicButtonUI
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -124,10 +117,12 @@ public class WindowsButtonUI extends BasicButtonUI
     /**
      * Overridden method to render the text without the mnemonic
      */
+    @Override
     protected void paintText(Graphics g, AbstractButton b, Rectangle textRect, String text) {
         WindowsGraphicsUtils.paintText(g, b, textRect, text, getTextShiftOffset());
     }
 
+    @Override
     protected void paintFocus(Graphics g, AbstractButton b, Rectangle viewRect, Rectangle textRect, Rectangle iconRect){
 
         // focus painted same color as text on Basic??
@@ -138,6 +133,7 @@ public class WindowsButtonUI extends BasicButtonUI
                                           width - dashedRectGapWidth, height - dashedRectGapHeight);
     }
 
+    @Override
     protected void paintButtonPressed(Graphics g, AbstractButton b){
         setTextShiftOffset();
     }
@@ -145,6 +141,7 @@ public class WindowsButtonUI extends BasicButtonUI
     // ********************************
     //          Layout Methods
     // ********************************
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension d = super.getPreferredSize(c);
 
@@ -167,6 +164,7 @@ public class WindowsButtonUI extends BasicButtonUI
      */
     private Rectangle viewRect = new Rectangle();
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {
             WindowsButtonUI.paintXPButtonBackground(g, c);
