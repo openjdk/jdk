@@ -231,9 +231,7 @@ public class X509Factory extends CertificateFactorySpi {
      * Get the X509CertImpl or X509CRLImpl from the cache.
      */
     private static <V> V getFromCache(Cache<Object, V> cache, byte[] encoding) {
-        synchronized (cache) {
-            return cache.get(new Cache.EqualByteArray(encoding));
-        }
+        return cache.get(new Cache.EqualByteArray(encoding));
     }
 
     /**
