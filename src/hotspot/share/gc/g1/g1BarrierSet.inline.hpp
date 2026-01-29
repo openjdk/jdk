@@ -70,7 +70,11 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
 
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_post(T* field) {
-  volatile CardValue* byte = _card_table->byte_for(field);
+  // Make sure that the card table reference is read only once. Otherwise the compiler
+  // might reload that value in the two accesses below, that could cause writes to
+  // the wrong card table.
+  CardTable* card_table = AtomicAccess::load(&_card_table);
+  CardValue* byte = card_table->byte_for(field);
   if (*byte == G1CardTable::clean_card_val()) {
     *byte = G1CardTable::dirty_card_val();
   }

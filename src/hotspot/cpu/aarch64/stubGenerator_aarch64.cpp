@@ -6081,14 +6081,18 @@ class StubGenerator: public StubCodeGenerator {
   // static int implKyber12To16(
   //         byte[] condensed, int index, short[] parsed, int parsedLength) {}
   //
-  // (parsedLength or (parsedLength - 48) must be divisible by 64.)
+  // we assume that parsed and condensed are allocated such that for
+  // n = (parsedLength + 63) / 64
+  // n blocks of 96 bytes of input can be processed, i.e.
+  // index + n * 96 <= condensed.length and
+  // n * 64 <= parsed.length
   //
   // condensed (byte[]) = c_rarg0
   // condensedIndex = c_rarg1
-  // parsed (short[112 or 256]) = c_rarg2
-  // parsedLength (112 or 256) = c_rarg3
+  // parsed (short[]) = c_rarg2
+  // parsedLength = c_rarg3
   address generate_kyber12To16() {
-    Label L_F00, L_loop, L_end;
+    Label L_F00, L_loop;
 
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyber12To16_id;
@@ -6209,75 +6213,8 @@ class StubGenerator: public StubCodeGenerator {
     vs_st2_post(vs_front(vb), __ T8H, parsed);
 
     __ sub(parsedLength, parsedLength, 64);
-    __ cmp(parsedLength, (u1)64);
-    __ br(Assembler::GE, L_loop);
-    __ cbz(parsedLength, L_end);
-
-    // if anything is left it should be a final 72 bytes of input
-    // i.e. a final 48 12-bit values. so we handle this by loading
-    // 48 bytes into all 16B lanes of front(vin) and only 24
-    // bytes into the lower 8B lane of back(vin)
-    vs_ld3_post(vs_front(vin), __ T16B, condensed);
-    vs_ld3(vs_back(vin), __ T8B, condensed);
-
-    // Expand vin[0] into va[0:1], and vin[1] into va[2:3] and va[4:5]
-    // n.b. target elements 2 and 3 of va duplicate elements 4 and
-    // 5 and target element 2 of vb duplicates element 4.
-    __ ushll(va[0], __ T8H, vin[0], __ T8B, 0);
-    __ ushll2(va[1], __ T8H, vin[0], __ T16B, 0);
-    __ ushll(va[2], __ T8H, vin[1], __ T8B, 0);
-    __ ushll2(va[3], __ T8H, vin[1], __ T16B, 0);
-    __ ushll(va[4], __ T8H, vin[1], __ T8B, 0);
-    __ ushll2(va[5], __ T8H, vin[1], __ T16B, 0);
-
-    // This time expand just the lower 8 lanes
-    __ ushll(vb[0], __ T8H, vin[3], __ T8B, 0);
-    __ ushll(vb[2], __ T8H, vin[4], __ T8B, 0);
-    __ ushll(vb[4], __ T8H, vin[4], __ T8B, 0);
-
-    // shift lo byte of copy 1 of the middle stripe into the high byte
-    __ shl(va[2], __ T8H, va[2], 8);
-    __ shl(va[3], __ T8H, va[3], 8);
-    __ shl(vb[2], __ T8H, vb[2], 8);
-
-    // expand vin[2] into va[6:7] and lower 8 lanes of vin[5] into
-    // vb[6] pre-shifted by 4 to ensure top bits of the input 12-bit
-    // int are in bit positions [4..11].
-    __ ushll(va[6], __ T8H, vin[2], __ T8B, 4);
-    __ ushll2(va[7], __ T8H, vin[2], __ T16B, 4);
-    __ ushll(vb[6], __ T8H, vin[5], __ T8B, 4);
-
-    // mask hi 4 bits of each 1st 12-bit int in pair from copy1 and
-    // shift lo 4 bits of each 2nd 12-bit int in pair to bottom of
-    // copy2
-    __ andr(va[2], __ T16B, va[2], v31);
-    __ andr(va[3], __ T16B, va[3], v31);
-    __ ushr(va[4], __ T8H, va[4], 4);
-    __ ushr(va[5], __ T8H, va[5], 4);
-    __ andr(vb[2], __ T16B, vb[2], v31);
-    __ ushr(vb[4], __ T8H, vb[4], 4);
-
-
-
-    // sum hi 4 bits and lo 8 bits of each 1st 12-bit int in pair and
-    // hi 8 bits plus lo 4 bits of each 2nd 12-bit int in pair
-
-    // n.b. ordering ensures: i) inputs are consumed before they are
-    // overwritten ii) order of 16-bit results across succsessive
-    // pairs of vectors in va and then lower half of vb reflects order
-    // of corresponding 12-bit inputs
-    __ addv(va[0], __ T8H, va[0], va[2]);
-    __ addv(va[2], __ T8H, va[1], va[3]);
-    __ addv(va[1], __ T8H, va[4], va[6]);
-    __ addv(va[3], __ T8H, va[5], va[7]);
-    __ addv(vb[0], __ T8H, vb[0], vb[2]);
-    __ addv(vb[1], __ T8H, vb[4], vb[6]);
-
-    // store 48 results interleaved as shorts
-    vs_st2_post(vs_front(va), __ T8H, parsed);
-    vs_st2_post(vs_front(vs_front(vb)), __ T8H, parsed);
-
-    __ BIND(L_end);
+    __ cmp(parsedLength, (u1)0);
+    __ br(Assembler::GT, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0

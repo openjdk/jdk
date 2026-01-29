@@ -277,7 +277,8 @@ public final class Operations {
         ops.add(Expression.make(LONGS, "Math.multiplyHigh(", LONGS, ",", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Math.unsignedMultiplyHigh(", LONGS, ",", LONGS, ")"));
 
-        // TODO: rest of Math and other classes.
+        // TODO: Rest of Math and other classes.
+        // Note: Math.copySign is non-deterministic because of NaN having encoding with sign bit set and unset.
 
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
@@ -298,7 +299,8 @@ public final class Operations {
         ops.add(Expression.make(INTS, "Float16.compare(", FLOAT16, ",", FLOAT16, ")"));
         addComparisonOperations(ops, "Float16.compare", FLOAT16);
         ops.add(Expression.make(INTS, "(", FLOAT16, ").compareTo(",  FLOAT16, ")"));
-        ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")"));
+        // Note: There are NaN encodings with bit set or unset.
+        ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")", WITH_NONDETERMINISTIC_RESULT));
         ops.add(Expression.make(FLOAT16, "Float16.divide(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(BOOLEANS, "", FLOAT16, ".equals(", FLOAT16, ")"));
         // Note: there are multiple NaN values with different bit representations.

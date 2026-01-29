@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.naming.ldap.LdapName;
@@ -1132,6 +1133,18 @@ public final class MacSign {
             return certMap;
         }
 
+        public Function<CertificateRequest, X509Certificate> asCertificateResolver() {
+            return certRequest -> {
+                if (!spec.certificateRequests().contains(certRequest)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Certificate request %s not found in [%s] keychain",
+                            certRequest, name()));
+                } else {
+                    return Objects.requireNonNull(mapCertificateRequests().get(certRequest));
+                }
+            };
+        }
+
         private final KeychainWithCertsSpec spec;
         private volatile Map<CertificateRequest, X509Certificate> certMap;
     }
@@ -1172,7 +1185,7 @@ public final class MacSign {
                     "-c", certFile.normalize().toString(),
                     "-k", keychain.name(),
                     "-p", resolvedCertificateRequest.installed().type().verifyPolicy()).saveOutput(!quite).executeWithoutExitCodeCheck();
-            if (result.exitCode() == 0) {
+            if (result.getExitCode() == 0) {
                 return VerifyStatus.VERIFY_OK;
             }
         }

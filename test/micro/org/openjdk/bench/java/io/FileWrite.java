@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package org.openjdk.bench.java.io;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -81,4 +82,29 @@ public class FileWrite {
         }
     }
 
+    @State(Scope.Benchmark)
+    @Warmup(iterations = 3, time = 2)
+    @Measurement(iterations = 5, time = 5)
+    @BenchmarkMode(Mode.SampleTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @Threads(1)
+    @Fork(value = 10)
+    public static class OpenFileForWritingBench {
+        final byte[] payload = "something".getBytes();
+        final String path = System.getProperty("os.name", "unknown").toLowerCase().contains("win") ? "NUL" : "/dev/null";
+
+        @Benchmark
+        public void testFileOutputStream() throws IOException {
+            try (FileOutputStream f = new FileOutputStream(path)) {
+                f.write(payload);
+            }
+        }
+
+        @Benchmark
+        public void testRandomAccessFile() throws IOException {
+            try (RandomAccessFile f = new RandomAccessFile(path, "rw")) {
+                f.write(payload);
+            }
+        }
+    }
 }
