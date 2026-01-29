@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,13 +214,13 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                 var decapsulator = kem.newDecapsulator(localPrivateKey);
                 sharedSecret = decapsulator.decapsulate(
                         keyshare, 0, decapsulator.secretSize(),
-                        "TlsPremasterSecret");
+                        "Generic");
             } else {
                 // Using traditional DH-style Key Agreement
                 KeyAgreement ka = KeyAgreement.getInstance(algorithmName);
                 ka.init(localPrivateKey);
                 ka.doPhase(peerPublicKey, true);
-                sharedSecret = ka.generateSecret("TlsPremasterSecret");
+                sharedSecret = ka.generateSecret("Generic");
             }
 
             return deriveHandshakeSecret(type, sharedSecret);
