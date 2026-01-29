@@ -70,9 +70,6 @@ final class SSLConfiguration implements Cloneable {
     Map<String, Function<byte[], byte[]>> certDeflaters;
     Map<String, Function<byte[], byte[]>> certInflaters;
 
-    // the maximum protocol version of enabled protocols
-    ProtocolVersion             maximumProtocolVersion;
-
     // Configurations per SSLSocket or SSLEngine instance.
     boolean                     isClientMode;
     boolean                     enableSessionCreation;

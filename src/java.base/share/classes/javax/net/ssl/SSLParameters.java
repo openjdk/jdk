@@ -95,8 +95,8 @@ public class SSLParameters {
      * constraints, endpoint identification algorithm, signature schemes,
      * server names and server name matchers are set to {@code null};
      * useCipherSuitesOrder, wantClientAuth and needClientAuth are set
-     * to {@code false}; enableRetransmissions is set to {@code true};
-     * maximum network packet size is set to {@code 0}.
+     * to {@code false}; enableRetransmissions and enableCertificateCompression
+     * are set to {@code true}; maximum network packet size is set to {@code 0}.
      */
     public SSLParameters() {
         // empty
