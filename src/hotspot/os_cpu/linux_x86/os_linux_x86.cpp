@@ -445,28 +445,12 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", R15=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R15]);
   st->cr();
   // Dump APX EGPRs (R16-R31)
-  apx_state* apx = get_apx_state(uc);
-  if (UseAPX && apx != nullptr) {
-    st->print(  "R16=" INTPTR_FORMAT, (intptr_t)apx->regs[0]);
-    st->print(", R17=" INTPTR_FORMAT, (intptr_t)apx->regs[1]);
-    st->print(", R18=" INTPTR_FORMAT, (intptr_t)apx->regs[2]);
-    st->print(", R19=" INTPTR_FORMAT, (intptr_t)apx->regs[3]);
-    st->cr();
-    st->print(  "R20=" INTPTR_FORMAT, (intptr_t)apx->regs[4]);
-    st->print(", R21=" INTPTR_FORMAT, (intptr_t)apx->regs[5]);
-    st->print(", R22=" INTPTR_FORMAT, (intptr_t)apx->regs[6]);
-    st->print(", R23=" INTPTR_FORMAT, (intptr_t)apx->regs[7]);
-    st->cr();
-    st->print(  "R24=" INTPTR_FORMAT, (intptr_t)apx->regs[8]);
-    st->print(", R25=" INTPTR_FORMAT, (intptr_t)apx->regs[9]);
-    st->print(", R26=" INTPTR_FORMAT, (intptr_t)apx->regs[10]);
-    st->print(", R27=" INTPTR_FORMAT, (intptr_t)apx->regs[11]);
-    st->cr();
-    st->print(  "R28=" INTPTR_FORMAT, (intptr_t)apx->regs[12]);
-    st->print(", R29=" INTPTR_FORMAT, (intptr_t)apx->regs[13]);
-    st->print(", R30=" INTPTR_FORMAT, (intptr_t)apx->regs[14]);
-    st->print(", R31=" INTPTR_FORMAT, (intptr_t)apx->regs[15]);
-    st->cr();
+  apx_state* apx = UseAPX ? get_apx_state(uc) : nullptr;
+  if (apx != nullptr) {
+    for (int i = 0; i < 16; i++) {
+      st->print("%sR%d=" INTPTR_FORMAT, (i % 4 == 0) ? "" : ", ", 16 + i, (intptr_t)apx->regs[i]);
+      if (i % 4 == 3) st->cr();
+    }
   }
   st->print(  "RIP=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RIP]);
   st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_EFL]);
@@ -535,26 +519,8 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 # undef CASE_PRINT_REG
     } else {
       // APX extended general purpose registers (R16-R31)
-# define CASE_PRINT_REG_APX(n, str, idx) case n: st->print(str); print_location(st, apx->regs[idx]);
-      switch (n) {
-        CASE_PRINT_REG_APX(16, "R16=", 0); break;
-        CASE_PRINT_REG_APX(17, "R17=", 1); break;
-        CASE_PRINT_REG_APX(18, "R18=", 2); break;
-        CASE_PRINT_REG_APX(19, "R19=", 3); break;
-        CASE_PRINT_REG_APX(20, "R20=", 4); break;
-        CASE_PRINT_REG_APX(21, "R21=", 5); break;
-        CASE_PRINT_REG_APX(22, "R22=", 6); break;
-        CASE_PRINT_REG_APX(23, "R23=", 7); break;
-        CASE_PRINT_REG_APX(24, "R24=", 8); break;
-        CASE_PRINT_REG_APX(25, "R25=", 9); break;
-        CASE_PRINT_REG_APX(26, "R26=", 10); break;
-        CASE_PRINT_REG_APX(27, "R27=", 11); break;
-        CASE_PRINT_REG_APX(28, "R28=", 12); break;
-        CASE_PRINT_REG_APX(29, "R29=", 13); break;
-        CASE_PRINT_REG_APX(30, "R30=", 14); break;
-        CASE_PRINT_REG_APX(31, "R31=", 15); break;
-      }
-# undef CASE_PRINT_REG_APX
+      st->print("R%d=", n);
+      print_location(st, apx->regs[n - 16]);
     }
     ++n;
   }
