@@ -175,6 +175,10 @@ Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType el
   assert(check_vbox(vbox_type), "");
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, v, merged_memory()));
+  if (gvn().type(unbox)->isa_vect() == nullptr) {
+    assert(gvn().type(unbox) == Type::TOP, "sanity");
+    return nullptr; // not a vector
+  }
   return unbox;
 }
 
