@@ -22,6 +22,8 @@
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.security.SecurityUtils.countSubstringOccurrences;
+import static jdk.test.lib.security.SecurityUtils.runAndGetLog;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
@@ -35,7 +37,7 @@ import javax.net.ssl.SSLServerSocket;
  * @run main/othervm CompressedCertMsg
  */
 
-public class CompressedCertMsg extends CompressedCertMsgBase {
+public class CompressedCertMsg extends SSLSocketTemplate {
 
     // Server sends CertificateRequest and gets a certificate
     // from the client as well as the client from the server.

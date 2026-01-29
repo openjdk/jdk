@@ -30,12 +30,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.zip.CRC32C;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.util.Cache;
+import sun.security.util.Cache.EqualByteArray;
 import sun.security.util.HexDumpEncoder;
 
 /**
@@ -141,16 +140,13 @@ final class CompressedCertificate {
     private static final
     class CompressedCertProducer implements HandshakeProducer {
 
+        private record CompCertCacheKey(EqualByteArray eba, int algId) {}
+
         // Only local certificates are compressed, so it makes sense to store
         // the deflated certificate data in a memory cache statically and avoid
         // compressing local certificates repeatedly for every handshake.
-        private static final Map<Long, byte[]> CACHE =
-                new ConcurrentHashMap<>();
-
-        // Limit the size of the cache in case certificate_request_context is
-        // randomized (should only happen during post-handshake authentication
-        // and only on the client side). Allow 4 cache mappings per algorithm.
-        private static final int CACHE_SIZE_PER_ALG = 4;
+        private static final Cache<CompCertCacheKey, byte[]> CACHE =
+                Cache.newSoftMemoryCache(12);
 
         // Prevent instantiation of this class.
         private CompressedCertProducer() {
@@ -171,24 +167,23 @@ final class CompressedCertificate {
             message.send(hos);
             byte[] certMsg = hos.toByteArray();
 
-            int algId = hc.certDeflater.getKey();
-            long key = getCacheKey(certMsg, algId);
+            CompCertCacheKey key = new CompCertCacheKey(
+                    new EqualByteArray(certMsg), hc.certDeflater.getKey());
             byte[] compressedCertMsg = CACHE.get(key);
 
             if (compressedCertMsg == null) {
                 compressedCertMsg = hc.certDeflater.getValue().apply(certMsg);
 
-                if (isUnderCacheLimit(algId)) {
+                // Don't cache when in PostHandshakeContext because
+                // certificate_request_context can be randomized (should only
+                // happen during post-handshake authentication and only on the
+                // client side).
+                if (!(hc instanceof PostHandshakeContext)) {
                     if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Caching CompressedCertificate message");
                     }
 
                     CACHE.put(key, compressedCertMsg);
-                } else {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning("CompressedCertificate message cache"
-                                + " size limit reached");
-                    }
                 }
             }
 
@@ -212,25 +207,6 @@ final class CompressedCertificate {
 
             // The handshake message has been delivered.
             return null;
-        }
-
-        // Generate cache key from the CertificateMessage and algorithm id.
-        private static long getCacheKey(byte[] input, int algId) {
-            CRC32C crc32c = new CRC32C();
-            crc32c.update(input);
-            // Upper 32 bits of the 64 bit long returned by CRC32C are not used
-            // and set to zero, put algorithm id and input's length there.
-            return crc32c.getValue()              // 32 bits
-                    | (long) algId << 32          // 8 bits
-                    | (long) input.length << 40;  // 24 bits
-        }
-
-        // Returns true if the compression algorithm didn't reach cache limit.
-        private static boolean isUnderCacheLimit(int algId) {
-            return CACHE.keySet()
-                    .stream()
-                    .filter(k -> (k >> 32 & 0xFFL) == algId)
-                    .count() < CACHE_SIZE_PER_ALG;
         }
     }
 

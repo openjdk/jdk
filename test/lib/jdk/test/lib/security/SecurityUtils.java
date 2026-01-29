@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 package jdk.test.lib.security;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
 import java.security.Security;
@@ -217,6 +219,41 @@ public final class SecurityUtils {
 
     public static int getInt16(ByteBuffer m) throws IOException {
         return ((m.get() & 0xFF) << 8) | (m.get() & 0xFF);
+    }
+
+    // Helper method to run and get log.
+    public static String runAndGetLog(Runnable runnable) {
+        System.setProperty("javax.net.debug", "ssl");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream err = new PrintStream(baos);
+        PrintStream origErr = System.err;
+        System.setErr(err);
+
+        runnable.run();
+        err.close();
+
+        // Save the log output and then print it as usual.
+        String log = baos.toString();
+        System.setErr(origErr);
+        System.err.print(log);
+        return log;
+    }
+
+    // Helper method to find log messages.
+    public static int countSubstringOccurrences(String str, String sub) {
+        if (str == null || sub == null || sub.isEmpty()) {
+            return 0;
+        }
+
+        int count = 0;
+        int lastIndex = 0;
+
+        while ((lastIndex = str.indexOf(sub, lastIndex)) != -1) {
+            count++;
+            lastIndex += sub.length();
+        }
+
+        return count;
     }
 
     private SecurityUtils() {}

@@ -22,26 +22,67 @@
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.security.SecurityUtils.countSubstringOccurrences;
+import static jdk.test.lib.security.SecurityUtils.runAndGetLog;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import jdk.test.lib.security.CertificateBuilder;
 
 /*
  * @test
  * @bug 8372526
- * @summary Make sure the same CompressedCertificate message is cached
- *          only once.
+ * @summary Check CompressedCertificate message cache.
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm CompressedCertMsgCache
  */
 
-public class CompressedCertMsgCache extends CompressedCertMsgBase {
+public class CompressedCertMsgCache extends SSLSocketTemplate {
+
+    private final String protocol;
+    private final String keyAlg;
+    private final String certSigAlg;
+    private X509Certificate trustedCert;
+    private X509Certificate serverCert;
+    private X509Certificate clientCert;
+    private KeyPair serverKeys;
+    private KeyPair clientKeys;
+
+    protected CompressedCertMsgCache(
+            String protocol, String keyAlg,
+            String certSigAlg) throws Exception {
+        super();
+        this.protocol = protocol;
+        this.keyAlg = keyAlg;
+        this.certSigAlg = certSigAlg;
+        setupCertificates();
+    }
 
     public static void main(String[] args) throws Exception {
 
         // Complete 2 handshakes with the same certificate.
         String log = runAndGetLog(() -> {
             try {
-                new CompressedCertMsgCache().run();
-                new CompressedCertMsgCache().run();
+                new SSLSocketTemplate().run();
+                new SSLSocketTemplate().run();
             } catch (Exception _) {
             }
         });
@@ -49,5 +90,130 @@ public class CompressedCertMsgCache extends CompressedCertMsgBase {
         // Make sure the same CompressedCertificate message is cached only once
         assertEquals(1, countSubstringOccurrences(log,
                 "Caching CompressedCertificate message"));
+
+        // Complete 12 handshakes, all with different certificates.
+        log = runAndGetLog(() -> {
+            try {
+                for (int i = 0; i < 12; i++) {
+                    new CompressedCertMsgCache(
+                            "TLSv1.3", "EC", "SHA256withECDSA").run();
+                }
+            } catch (Exception _) {
+            }
+        });
+
+        // Make sure all 12 CompressedCertificate messages are cached.
+        assertEquals(12, countSubstringOccurrences(log,
+                "Caching CompressedCertificate message"));
+
+        // Complete 1 handshake with the same certificate as the very first one.
+        log = runAndGetLog(() -> {
+            try {
+                new SSLSocketTemplate().run();
+            } catch (Exception _) {
+            }
+        });
+
+        // Make sure the same CompressedCertificate message is cached again
+        // because it was removed from cache due to LRU policy.
+        assertEquals(1, countSubstringOccurrences(log,
+                "Caching CompressedCertificate message"));
+
+    }
+
+    @Override
+    public SSLContext createServerSSLContext() throws Exception {
+        return getSSLContext(
+                trustedCert, serverCert, serverKeys.getPrivate(), protocol);
+    }
+
+    @Override
+    public SSLContext createClientSSLContext() throws Exception {
+        return getSSLContext(
+                trustedCert, clientCert, clientKeys.getPrivate(), protocol);
+    }
+
+    private static SSLContext getSSLContext(
+            X509Certificate trustedCertificate, X509Certificate keyCertificate,
+            PrivateKey privateKey, String protocol)
+            throws Exception {
+
+        // create a key store
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(null, null);
+
+        // import the trusted cert
+        ks.setCertificateEntry("TLS Signer", trustedCertificate);
+
+        // generate certificate chain
+        Certificate[] chain = new Certificate[2];
+        chain[0] = keyCertificate;
+        chain[1] = trustedCertificate;
+
+        // import the key entry.
+        final char[] passphrase = "passphrase".toCharArray();
+        ks.setKeyEntry("Whatever", privateKey, passphrase, chain);
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+        tmf.init(ks);
+
+        // create SSL context
+        SSLContext ctx = SSLContext.getInstance(protocol);
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+        return ctx;
+    }
+
+    // Certificate-building helper methods.
+
+    private void setupCertificates() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlg);
+        KeyPair caKeys = kpg.generateKeyPair();
+        this.serverKeys = kpg.generateKeyPair();
+        this.clientKeys = kpg.generateKeyPair();
+
+        this.trustedCert = createTrustedCert(caKeys, certSigAlg);
+
+        this.serverCert = customCertificateBuilder(
+                "O=Some-Org, L=Some-City, ST=Some-State, C=US",
+                serverKeys.getPublic(), caKeys.getPublic())
+                .addBasicConstraintsExt(false, false, -1)
+                .build(trustedCert, caKeys.getPrivate(), certSigAlg);
+
+        this.clientCert = customCertificateBuilder(
+                "CN=localhost, OU=SSL-Client, ST=Some-State, C=US",
+                clientKeys.getPublic(), caKeys.getPublic())
+                .addBasicConstraintsExt(false, false, -1)
+                .build(trustedCert, caKeys.getPrivate(), certSigAlg);
+    }
+
+    private static X509Certificate createTrustedCert(
+            KeyPair caKeys, String certSigAlg) throws Exception {
+        return customCertificateBuilder(
+                "O=CA-Org, L=Some-City, ST=Some-State, C=US",
+                caKeys.getPublic(), caKeys.getPublic())
+                .addBasicConstraintsExt(true, true, 1)
+                .build(null, caKeys.getPrivate(), certSigAlg);
+    }
+
+    private static CertificateBuilder customCertificateBuilder(
+            String subjectName, PublicKey publicKey, PublicKey caKey)
+            throws CertificateException, IOException {
+        return new CertificateBuilder()
+                .setSubjectName(subjectName)
+                .setPublicKey(publicKey)
+                .setNotBefore(
+                        Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
+                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .setSerialNumber(BigInteger.valueOf(
+                        new SecureRandom().nextLong(1000000) + 1))
+                .addSubjectKeyIdExt(publicKey)
+                .addAuthorityKeyIdExt(caKey)
+                .addKeyUsageExt(new boolean[]{
+                        true, true, true, true, true, true, true});
     }
 }
