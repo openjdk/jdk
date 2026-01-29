@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,9 +620,6 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
-
-  // Either verifying both local and remote classes or just remote classes.
-  assert(BytecodeVerificationRemote, "Should not be here");
 
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
