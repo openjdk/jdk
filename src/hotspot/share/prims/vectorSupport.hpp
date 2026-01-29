@@ -137,7 +137,7 @@ class VectorSupport : AllStatic {
     NUM_VEC_SIZES = 5
   };
 
-  enum {
+  enum LaneType {
     LT_FLOAT     = 6,
     LT_DOUBLE    = 7,
     LT_BYTE      = 8,
