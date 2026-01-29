@@ -1747,6 +1747,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return localConnIdManager.connectionIds();
     }
 
+    @Override
+    public List<byte[]> activeResetTokens() {
+        return peerConnIdManager.activeResetTokens();
+    }
+
     LocalConnIdManager localConnectionIdManager() {
         return localConnIdManager;
     }
