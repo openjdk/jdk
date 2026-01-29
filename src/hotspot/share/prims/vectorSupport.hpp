@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,11 +138,21 @@ class VectorSupport : AllStatic {
   };
 
   enum {
+    LT_FLOAT     = 6,
+    LT_DOUBLE    = 7,
+    LT_BYTE      = 8,
+    LT_SHORT     = 9,
+    LT_INT       = 10,
+    LT_LONG      = 11
+  };
+
+  enum {
     MODE_BROADCAST = 0,
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
 
-  static int vop2ideal(jint vop, BasicType bt);
+  static int vop2ideal(jint vop, int lt);
+  static const char* lanetype2name(int lane_type);
   static bool has_scalar_op(jint id);
   static bool is_unsigned_op(jint id);
 

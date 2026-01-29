@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,9 +199,9 @@ abstract class AbstractVector<E> extends Vector<E> {
     /*package-private*/
     @ForceInline
     final <F> VectorShuffle<F> bitsToShuffleTemplate(AbstractSpecies<F> dsp) {
-        Class<?> etype = vspecies().elementType();
+        int etype = vspecies().laneBasicType();
         Class<?> dvtype = dsp.shuffleType();
-        Class<?> dtype = dsp.asIntegral().elementType();
+        int dtype = dsp.asIntegral().laneBasicType();
         int dlength = dsp.dummyVector().length();
         return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
                                      getClass(), etype, length(),
@@ -722,10 +722,10 @@ abstract class AbstractVector<E> extends Vector<E> {
     AbstractVector<F> convert0(char kind, AbstractSpecies<F> rsp) {
         // Derive some JIT-time constants:
         Class<?> vtype;
-        Class<?> etype;   // fill in after switch (constant)
+        int etype;        // fill in after switch (constant)
         int vlength;      // fill in after switch (mark type profile?)
         Class<?> rvtype;  // fill in after switch (mark type profile)
-        Class<?> rtype;
+        int rtype;
         int rlength;
         switch (kind) {
         case 'Z':  // lane-wise size change, maybe with sign clip
@@ -733,9 +733,9 @@ abstract class AbstractVector<E> extends Vector<E> {
             AbstractSpecies<?> vsp = this.vspecies();
             AbstractSpecies<?> vspi = vsp.asIntegral();
             AbstractVector<?> biti = vspi == vsp ? this : this.convert0('X', vspi);
-            rtype = rspi.elementType();
+            rtype = rspi.laneBasicType();
             rlength = rspi.laneCount();
-            etype = vspi.elementType();
+            etype = vspi.laneBasicType();
             vlength = vspi.laneCount();
             rvtype = rspi.dummyVector().getClass();
             vtype = vspi.dummyVector().getClass();
@@ -747,9 +747,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     AbstractVector::defaultUCast);
             return (rspi == rsp ? bitv.check0(rsp) : bitv.convert0('X', rsp));
         case 'C':  // lane-wise cast (but not identity)
-            rtype = rsp.elementType();
+            rtype = rsp.laneBasicType();
             rlength = rsp.laneCount();
-            etype = this.elementType(); // (profile)
+            etype = this.vspecies().laneBasicType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();
@@ -759,9 +759,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     this, rsp,
                     AbstractVector::defaultCast);
         case 'X':  // reinterpret cast, not lane-wise if lane sizes differ
-            rtype = rsp.elementType();
+            rtype = rsp.laneBasicType();
             rlength = rsp.laneCount();
-            etype = this.elementType(); // (profile)
+            etype = this.vspecies().laneBasicType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();

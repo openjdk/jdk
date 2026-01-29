@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,7 +516,7 @@ final class Long64Vector extends LongVector {
     @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, LT_LONG, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     long[] vecarr = vec.vec();
@@ -536,7 +536,7 @@ final class Long64Vector extends LongVector {
     @ForceInline
     public Long64Vector withLaneHelper(int i, long e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, LT_LONG, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     long[] res = v.vec().clone();
@@ -640,8 +640,8 @@ final class Long64Vector extends LongVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), ETYPE, VLENGTH,
-                species.maskType(), species.elementType(), VLENGTH,
+                this.getClass(), LT_LONG, VLENGTH,
+                species.maskType(), species.laneBasicType(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -651,7 +651,7 @@ final class Long64Vector extends LongVector {
         /*package-private*/
         Long64Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Long64Mask) VectorSupport.indexPartiallyInUpperRange(
-                Long64Mask.class, long.class, VLENGTH, offset, limit,
+                Long64Mask.class, LT_LONG, VLENGTH, offset, limit,
                 (o, l) -> (Long64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -667,7 +667,7 @@ final class Long64Vector extends LongVector {
         @ForceInline
         public Long64Mask compress() {
             return (Long64Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Long64Vector.class, Long64Mask.class, ETYPE, VLENGTH, null, this,
+                Long64Vector.class, Long64Mask.class, LT_LONG, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -679,7 +679,7 @@ final class Long64Vector extends LongVector {
         public Long64Mask and(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             Long64Mask m = (Long64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Long64Mask.class, null, long.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Long64Mask.class, null, LT_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -689,7 +689,7 @@ final class Long64Vector extends LongVector {
         public Long64Mask or(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             Long64Mask m = (Long64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Long64Mask.class, null, long.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Long64Mask.class, null, LT_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -699,7 +699,7 @@ final class Long64Vector extends LongVector {
         public Long64Mask xor(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             Long64Mask m = (Long64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Long64Mask.class, null, long.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Long64Mask.class, null, LT_LONG, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -709,21 +709,21 @@ final class Long64Vector extends LongVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Long64Mask.class, long.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Long64Mask.class, LT_LONG, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Long64Mask.class, long.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Long64Mask.class, LT_LONG, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Long64Mask.class, long.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Long64Mask.class, LT_LONG, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -733,7 +733,7 @@ final class Long64Vector extends LongVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Long64Mask.class, long.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Long64Mask.class, LT_LONG, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -743,7 +743,7 @@ final class Long64Vector extends LongVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Long64Mask.class, long.class, VLENGTH,
+            return VectorSupport.extract(Long64Mask.class, LT_LONG, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -752,7 +752,7 @@ final class Long64Vector extends LongVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Long64Mask.class, long.class, VLENGTH,
+            return VectorSupport.test(BT_ne, Long64Mask.class, LT_LONG, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((Long64Mask)m).getBits()));
         }
@@ -760,7 +760,7 @@ final class Long64Vector extends LongVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Long64Mask.class, long.class, VLENGTH,
+            return VectorSupport.test(BT_overflow, Long64Mask.class, LT_LONG, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((Long64Mask)m).getBits()));
         }
@@ -768,7 +768,7 @@ final class Long64Vector extends LongVector {
         @ForceInline
         /*package-private*/
         static Long64Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Long64Mask.class, long.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Long64Mask.class, LT_LONG, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
