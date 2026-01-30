@@ -44,7 +44,7 @@ import java.util.stream.Stream;
  */
 public final class LibProvidersLookup {
     static boolean supported() {
-        return (new ToolValidator(TOOL_LDD).validate() == null);
+        return (new ToolValidator(TOOL_LDD).setCommandLine("--version").validate() == null);
     }
 
     LibProvidersLookup setPackageLookup(PackageLookup v) {
