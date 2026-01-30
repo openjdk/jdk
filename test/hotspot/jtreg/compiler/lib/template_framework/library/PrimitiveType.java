@@ -142,6 +142,35 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     }
 
     /**
+     * Provides the field descriptor for primitive types as per JVMS§4.3.2.
+     *
+     * @return the field descriptor of the type.
+     */
+    public String fieldDesc() {
+        return switch (kind) {
+            case LONG    -> "J";
+            case BOOLEAN -> "Z";
+            default      -> boxedTypeName().substring(0, 1);
+        };
+    }
+
+    /**
+     * Provides the one-letter abbreviation of the type as it would be used for node classes in
+     * the IR-Framework. Note the the abbreviations for boolean and char are used inconsistently.
+     * This method maps boolean to "UB", even though it might sometimes be mapped under "B" since
+     * it is loaded as a byte, and char to "C", even though it might sometimes be mapped to "US"
+     * for "unsigned short".
+     *
+     * @return the one-letter abbreviation of the type.
+     */
+    public String abbrev() {
+        return switch (kind) {
+            case BOOLEAN -> "UB";
+            default      -> boxedTypeName().substring(0, 1);
+        };
+    }
+
+    /**
      * Indicates if the type is a floating point type.
      *
      * @return true iff the type is a floating point type.
