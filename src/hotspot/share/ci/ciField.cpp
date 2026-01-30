@@ -213,7 +213,7 @@ ciField::ciField(fieldDescriptor *fd) :
          "bootstrap classes must not create & cache unshared fields");
 }
 
-static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
+static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
   if (holder == nullptr)
     return false;
   if (holder->trust_final_fields()) {
@@ -259,7 +259,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // An instance field can be constant if it's a final static field or if
       // it's a final non-static field of a trusted class (classes in
       // java.lang.invoke and sun.invoke packages and subpackages).
-      _is_constant = is_stable_field || trust_final_non_static_fields(_holder);
+      _is_constant = is_stable_field || trust_final_nonstatic_fields(_holder);
     }
   } else {
     // For CallSite objects treat the target field as a compile time constant.
