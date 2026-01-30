@@ -245,7 +245,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
-        return getArgumentValue("--app-version", () -> "1.0");
+        return PropertyFinder.findAppProperty(this,
+                PropertyFinder.cmdlineOptionWithValue("--app-version"),
+                PropertyFinder.appImageFile(appImageFile -> {
+                    return appImageFile.version();
+                })
+        ).orElse("1.0");
     }
 
     public String name() {
