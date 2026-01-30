@@ -611,6 +611,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler *masm, DecoratorSet 
                                   val,
                                   tmp1, tmp2, tmp3,
                                   preservation_level);
+    return;
   }
 
   bool storing_non_null = (val != noreg);
