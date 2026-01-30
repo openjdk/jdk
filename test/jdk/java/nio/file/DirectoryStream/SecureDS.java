@@ -316,7 +316,13 @@ public class SecureDS {
                 try {
                     sds.move(file, null, file);
                 } catch (AtomicMoveNotSupportedException e) {
-                    throw new SkippedException("java.nio.file.AtomicMoveNotSupportedException");
+                    if (Files.getFileStore(cwd).equals(Files.getFileStore(dir))) {
+                        // re-throw if same FileStore
+                        throw e;
+                    } else {
+                        throw new SkippedException(
+                            "java.nio.file.AtomicMoveNotSupportedException");
+                    }
                 }
                 if (!TEXT.equals(Files.readString(result)))
                     throw new RuntimeException(result + " content incorrect");
