@@ -674,14 +674,17 @@ void C2_MacroAssembler::cmovF(int cc, VectorSRegister dst, VectorSRegister op1, 
 
   switch(cmp) {
   case Assembler::Condition::equal:
+    // Use false_result if "unordered".
     xscmpeqdp(tmp, op1, op2);
     break;
+  case Assembler::Condition::greater:
+    // Use false_result if "unordered".
+    xscmpgtdp(tmp, op1, op2);
+    break;
   case Assembler::Condition::less:
+    // Use true_result if "unordered".
     xscmpgedp(tmp, op1, op2);
     invert_cond = !invert_cond;
-    break;
-  case Assembler::Condition::greater:
-    xscmpgtdp(tmp, op1, op2);
     break;
   default:
     assert(false, "unsupported compare condition: %d", cc);
