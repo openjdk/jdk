@@ -111,24 +111,24 @@ public final class JdkConsoleImpl implements JdkConsole {
     // it should call this method to obtain a JdkConsoleImpl. This ensures only one Console
     // instance exists in the Java runtime.
     private static final LazyConstant<Optional<JdkConsoleImpl>> PASSWORD_CONSOLE = LazyConstant.of(
-            new Supplier<Optional<JdkConsoleImpl>>() {
-                @Override
-                public Optional<JdkConsoleImpl> get() {
-                    if (System.console() != null) {
-                        throw new IllegalStateException("Can’t create a dedicated password " +
-                                "console since a real console already exists");
-                    }
-
-                    // If stdin is NOT redirected, return an Optional containing a JdkConsoleImpl
-                    // instance, otherwise an empty Optional.
-                    return SharedSecrets.getJavaIOAccess().isStdinTty() ?
-                            Optional.of(
-                                    new JdkConsoleImpl(
-                                            Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
-                                            Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
-                            Optional.empty();
+        new Supplier<Optional<JdkConsoleImpl>>() {
+            @Override
+            public Optional<JdkConsoleImpl> get() {
+                if (System.console() != null) {
+                    throw new IllegalStateException("Can’t create a dedicated password " +
+                            "console since a real console already exists");
                 }
+
+                // If stdin is NOT redirected, return an Optional containing a JdkConsoleImpl
+                // instance, otherwise an empty Optional.
+                return SharedSecrets.getJavaIOAccess().isStdinTty() ?
+                        Optional.of(
+                                new JdkConsoleImpl(
+                                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
+                        Optional.empty();
             }
+        }
     );
 
     public static Optional<JdkConsoleImpl> passwordConsole() {
@@ -144,51 +144,52 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     private char[] readPassword0(boolean noNewLine, Locale locale, String format, Object ... args) {
         char[] passwd = null;
-            installShutdownHook();
+
+        installShutdownHook();
+        try {
+            synchronized(restoreEchoLock) {
+                restoreEcho = echo(false);
+            }
+        } catch (IOException x) {
+            throw new IOError(x);
+        }
+        IOError ioe = null;
+        try {
+            if (!format.isEmpty())
+                pw.format(locale, format, args);
+            passwd = readline(true);
+        } catch (IOException x) {
+            ioe = new IOError(x);
+        } finally {
             try {
                 synchronized(restoreEchoLock) {
-                    restoreEcho = echo(false);
+                    if (restoreEcho) {
+                        restoreEcho = echo(true);
+                    }
                 }
             } catch (IOException x) {
-                throw new IOError(x);
+                if (ioe == null)
+                    ioe = new IOError(x);
+                else
+                    ioe.addSuppressed(x);
             }
-            IOError ioe = null;
-            try {
-                if (!format.isEmpty())
-                    pw.format(locale, format, args);
-                passwd = readline(true);
-            } catch (IOException x) {
-                ioe = new IOError(x);
-            } finally {
+            if (ioe != null) {
+                if (passwd != null) {
+                    Arrays.fill(passwd, ' ');
+                }
                 try {
-                    synchronized(restoreEchoLock) {
-                        if (restoreEcho) {
-                            restoreEcho = echo(true);
-                        }
+                    if (reader instanceof LineReader lr) {
+                        lr.zeroOut();
                     }
-                } catch (IOException x) {
-                    if (ioe == null)
-                        ioe = new IOError(x);
-                    else
-                        ioe.addSuppressed(x);
+                } catch (IOException _) {
+                    // ignore
                 }
-                if (ioe != null) {
-                    if (passwd != null) {
-                        Arrays.fill(passwd, ' ');
-                    }
-                    try {
-                        if (reader instanceof LineReader lr) {
-                            lr.zeroOut();
-                        }
-                    } catch (IOException _) {
-                        // ignore
-                    }
-                    throw ioe;
-                }
+                throw ioe;
             }
-            if (!noNewLine) {
-                pw.println();
-            }
+        }
+        if (!noNewLine) {
+            pw.println();
+        }
         return passwd;
     }
 
