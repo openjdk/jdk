@@ -44,7 +44,7 @@ public class ReadWriteBlockingTest {
 
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
-    public void testReadWriteBlocking() throws Throwable {
+    public void testReadWriteBlocking() throws Exception {
         // check "expect" command availability
         var expect = Paths.get("/usr/bin/expect");
         if (!Files.exists(expect) || !Files.isExecutable(expect)) {
@@ -66,7 +66,7 @@ public class ReadWriteBlockingTest {
         output.shouldHaveExitValue(0);
     }
 
-    public static void main(String... args) throws Throwable {
+    public static void main(String... args) {
         var con = System.console();
         Thread.ofVirtual().start(() -> {
             try {
