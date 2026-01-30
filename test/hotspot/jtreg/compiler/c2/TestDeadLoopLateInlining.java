@@ -25,6 +25,7 @@
  * @test
  * @bug 8375694
  * @summary C2: Dead loop constructed with CastPP in late inlining
+ * @requires vm.debug
  * @run main TestDeadLoopLateInlining
  * @run main/othervm -XX:+AlwaysIncrementalInline -XX:CompileOnly=TestDeadLoopLateInlining::test1 -Xcomp TestDeadLoopLateInlining
  */
