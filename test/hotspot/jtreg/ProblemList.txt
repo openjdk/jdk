@@ -77,6 +77,8 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
+compiler/longcountedloops/TestLoopNestTooManyTraps.java 8376591 generic-all
+
 #############################################################################
 
 # :hotspot_gc
