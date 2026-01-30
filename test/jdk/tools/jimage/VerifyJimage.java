@@ -147,8 +147,9 @@ public abstract class VerifyJimage implements Runnable {
                     }
                 }
                 pool.shutdown();
-                if (!pool.awaitTermination(Utils.adjustTimeout(20), TimeUnit.SECONDS)) {
-                    failed.add("Directory verification timed out");
+                long timeout = Utils.adjustTimeout(20);
+                if (!pool.awaitTermination(timeout, TimeUnit.SECONDS)) {
+                    failed.add("Directory verification timed out in " + timeout + " seconds");
                 }
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
