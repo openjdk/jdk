@@ -55,7 +55,6 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histograms.hpp"
 
 inline ShenandoahHeap* ShenandoahHeap::heap() {
   return named_heap<ShenandoahHeap>(CollectedHeap::Shenandoah);
@@ -292,7 +291,6 @@ inline void ShenandoahHeap::reset_cancellation_time() {
 }
 
 inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size) {
-  HISTOGRAM_TIME_BLOCK;
   assert(UseTLAB, "TLABs should be enabled");
 
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);

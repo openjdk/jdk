@@ -249,6 +249,7 @@ inline void ShenandoahHeapRegion::save_top_before_promote() {
 inline void ShenandoahHeapRegion::restore_top_before_promote() {
   _top = _top_before_promoted;
   _top_before_promoted = nullptr;
+  // TODO: We shouldn't need this anymore
   _top_at_evac_start = _top;
  }
 

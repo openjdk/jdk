@@ -603,6 +603,7 @@ public:
   // as address.
   void register_object_without_lock(HeapWord* address);
 
+  // Dirty cards and register objects for the given range in memory.
   void update_card_table(HeapWord* start, HeapWord* end);
 
   // During the reference updates phase of GC, we walk through each old-gen memory region that was

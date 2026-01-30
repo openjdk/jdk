@@ -97,7 +97,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/histograms.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -844,7 +843,6 @@ void ShenandoahHeap::handle_force_counters_update() {
 }
 
 HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) {
-  HISTOGRAM_TIME_BLOCK
   // New object should fit the GCLAB size
   size_t min_size = MAX2(size, PLAB::min_size());
 
@@ -869,10 +867,7 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 
   // Retire current GCLAB, and allocate a new one.
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-  {
-    HISTOGRAM_TIME_DESCRIBED_BLOCK("retire_gclab");
-    gclab->retire();
-  }
+  gclab->retire();
 
   size_t actual_size = 0;
   HeapWord* gclab_buf = allocate_new_gclab(min_size, new_size, &actual_size);
@@ -913,7 +908,6 @@ HeapWord* ShenandoahHeap::allocate_new_tlab(size_t min_size,
 HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
                                              size_t word_size,
                                              size_t* actual_size) {
-  HISTOGRAM_TIME_BLOCK
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_gclab(min_size, word_size);
   HeapWord* res = allocate_memory(req);
   if (res != nullptr) {
@@ -1289,7 +1283,6 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
-  HISTOGRAM_TIME_BLOCK;
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
   if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
     // This thread went through the OOM during evac protocol. It is safe to return
@@ -1310,7 +1303,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
                                                ShenandoahAffiliation target_gen) {
   assert(target_gen == YOUNG_GENERATION, "Only expect evacuations to young in this mode");
   assert(from_region->is_young(), "Only expect evacuations from young in this mode");
-  HISTOGRAM_TIME_BLOCK;
   bool alloc_from_lab = true;
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
@@ -1326,7 +1318,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     }
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      HISTOGRAM_TIME_DESCRIBED_BLOCK("allocate_shared");
       ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
       copy = allocate_memory(req);
       alloc_from_lab = false;
@@ -1348,10 +1339,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Copy the object:
-  {
-    HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_object");
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
-  }
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);

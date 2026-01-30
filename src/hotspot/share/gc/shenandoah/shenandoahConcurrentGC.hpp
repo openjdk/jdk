@@ -59,10 +59,6 @@ public:
   bool collect(GCCause::Cause cause) override;
   ShenandoahDegenPoint degen_point() const;
 
-  void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
-
-  void entry_update_card_table();
-
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
 
@@ -97,6 +93,8 @@ protected:
   void entry_cleanup_early();
   void entry_evacuate();
   void entry_update_thread_roots();
+  void entry_update_card_table();
+  void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
   void entry_update_refs();
   void entry_cleanup_complete();
 

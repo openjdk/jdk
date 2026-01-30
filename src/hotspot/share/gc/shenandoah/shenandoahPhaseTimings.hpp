@@ -255,7 +255,7 @@ public:
   void flush_cycle_to_global();
 
   static const char* phase_name(Phase phase) {
-    assert(phase >= 0 && phase < _num_phases, "Out of bound: %d", phase);
+    assert(phase >= 0 && phase < _num_phases, "Out of bounds: %d", phase);
     return _phase_names[phase];
   }
 

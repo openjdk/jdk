@@ -1033,9 +1033,6 @@ const int ObjectAlignmentInBytes = 8;
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  product(ccstr, HistogramFile, "/tmp/perf.histograms", "File to save "     \
-          "performance histogram data")                                     \
-                                                                            \
   product(bool, ExtensiveErrorReports,                                      \
           PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
           "Error reports are more extensive.")                              \

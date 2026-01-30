@@ -142,10 +142,6 @@ public:
   HeapWord* top() const {
     return _top;
   }
-
-  HeapWord* bottom() const {
-    return _bottom;
-  }
 };
 
 // PLAB book-keeping.

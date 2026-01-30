@@ -33,7 +33,6 @@
 
 // A closure that takes an oop in the old generation and, if it's pointing
 // into the young generation, dirties the corresponding remembered set entry.
-// This is only used to rebuild the remembered set after a full GC.
 class ShenandoahDirtyRememberedSetClosure : public BasicOopIterateClosure {
 protected:
   ShenandoahGenerationalHeap* const _heap;
@@ -200,7 +199,6 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
 }
 
 void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
-  HISTOGRAM_TIME_BLOCK
   HeapWord* address = start;
   HeapWord* previous_address = nullptr;
   size_t previous_offset = 0;
@@ -209,8 +207,7 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
   uint8_t offset_in_card = -1;
 
   log_debug(gc, remset)("Update remembered set from " PTR_FORMAT ", to " PTR_FORMAT, p2i(start), p2i(end));
-  {
-    HISTOGRAM_TIME_DESCRIBED_BLOCK("register_objects");
+
     ShenandoahDirtyRememberedSetClosure make_cards_dirty;
     while (address < end) {
 
@@ -241,7 +238,7 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
 
     // Register the last object seen in this range.
     set_last_start(current_card_index, offset_in_card);
-  }
+  
 }
 
 void ShenandoahCardCluster::coalesce_objects(HeapWord* address, size_t length_in_words) {

@@ -31,7 +31,6 @@
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
-#include "utilities/histograms.hpp"
 
 ShenandoahRegulatorThread::ShenandoahRegulatorThread(ShenandoahGenerationalControlThread* control_thread) :
   _heap(ShenandoahHeap::heap()),
@@ -126,7 +125,6 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   }
 
   SuspendibleThreadSetLeaver leaver;
-  HistogramTimer::print_all();
   os::naked_short_sleep(_sleep);
   if (LogTarget(Debug, gc, thread)::is_enabled()) {
     double elapsed = os::elapsedTime() - current;

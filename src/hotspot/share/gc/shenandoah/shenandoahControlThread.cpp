@@ -39,7 +39,6 @@
 #include "logging/log.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
-#include "utilities/histograms.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
@@ -231,7 +230,6 @@ void ShenandoahControlThread::run_service() {
       last_sleep_adjust_time = current;
     }
 
-    HistogramTimer::print_all();
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
     ml.wait(sleep);
   }

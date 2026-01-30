@@ -208,7 +208,7 @@ public:
   void mark_card_as_dirty(void* location);
 
   template<typename T>
-class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
+  class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
     T _region_lambda;
   public:
     explicit ShenandoahHeapRegionLambda(T region_lambda) : _region_lambda(region_lambda) {}
@@ -240,6 +240,8 @@ class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
   void set_concurrent_mark_in_progress(bool in_progress) override;
   bool is_concurrent_mark_in_progress() override;
 
+  // For old regions, objects between top at evac start and top represent promoted objects.
+  // These objects will need to have their cards dirtied and their offsets within the cards registered.
   void record_tops_at_evac_start();
 
   bool entry_coalesce_and_fill();
