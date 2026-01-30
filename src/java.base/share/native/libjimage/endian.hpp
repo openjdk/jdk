@@ -74,9 +74,6 @@ public:
     // Select an appropriate endian handler.
     static Endian* get_handler(bool big_endian);
 
-    // Return the native endian handler.
-    static Endian* get_native_handler();
-
     // get platform u2 from Java Big endian
     static u2 get_java(u1* x);
     // set platform u2 to Java Big endian

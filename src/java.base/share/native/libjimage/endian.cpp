@@ -104,6 +104,3 @@ void Endian::set_java(u1* p, u2 x) {
     p[1] = x & 0xff;
 }
 
-Endian* Endian::get_native_handler() {
-    return NativeEndian::get_native();
-}
