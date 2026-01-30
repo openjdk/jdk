@@ -178,6 +178,7 @@ public:
   void handle_failed_promotion(Thread* thread, size_t size);
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
+  // Iterate over recently promoted objects to update card table and object registrations
   void update_card_table();
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
