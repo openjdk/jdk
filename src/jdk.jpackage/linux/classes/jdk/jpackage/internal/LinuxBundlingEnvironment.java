@@ -30,6 +30,7 @@ import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_DEB;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_RPM;
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import java.util.Map;
 import java.util.Optional;
