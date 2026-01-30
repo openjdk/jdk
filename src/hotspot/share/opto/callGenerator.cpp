@@ -159,6 +159,9 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     call->set_override_symbolic_info(true);
   }
   _call_node = call;  // Save the call node in case we need it later
+  if (is_late_inline()) {
+    _call_node->set_late_inlined_call(true);
+  }
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
     // Since we share a map with the caller, his JVMS gets adjusted.
@@ -341,11 +344,8 @@ class LateInlineCallGenerator : public DirectCallGenerator {
     // Emit the CallStaticJava and request separate projections so
     // that the late inlining logic can distinguish between fall
     // through and exceptional uses of the memory and io projections
-    // as is done for allocations and macro expansion. Also, mark
-    // the call as late inlined for later use in verification.
-    JVMState* new_jvms = DirectCallGenerator::generate(jvms);
-    call_node()->set_late_inlined_call(true);
-    return new_jvms;
+    // as is done for allocations and macro expansion.
+    return DirectCallGenerator::generate(jvms);
   }
 
   virtual void set_unique_id(jlong id) {
