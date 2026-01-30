@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 
-import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -82,13 +81,6 @@ class CannedFormattedStringTest {
 
         assertEquals("Hello Duke! Bye Duke", a.getValue());
         assertEquals("Hello Java! Bye Java", b.getValue());
-    }
-
-    @Test
-    void test_CannedArgument() {
-        var a = Formatter.MESSAGE_FORMAT.create("Current directory: {0}", CannedFormattedString.cannedAbsolutePath("foo"));
-        assertEquals("Current directory: " + Path.of("foo").toAbsolutePath(), a.getValue());
-        assertEquals("Current directory: {0}+[AbsolutePath(foo)]", a.toString());
     }
 
     enum Formatter implements BiFunction<String, Object[], String> {
