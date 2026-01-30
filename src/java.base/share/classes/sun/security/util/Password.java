@@ -55,7 +55,8 @@ public class Password {
             case null -> true; // Default true now
             case "true" -> true;
             case "false" -> false;
-            default -> throw new IllegalArgumentException("Invalid value: " + value);
+            default -> throw new IllegalArgumentException(
+                    "Invalid jdk.security.password.allowSystemIn value: " + value);
         };
     }
 
