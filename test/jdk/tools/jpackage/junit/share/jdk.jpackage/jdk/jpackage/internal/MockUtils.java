@@ -23,6 +23,7 @@
 
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.PrintWriter;
@@ -212,7 +213,7 @@ public final class MockUtils {
         Objects.requireNonNull(os);
         Objects.requireNonNull(of);
 
-        var impl = new Main.Provider(DefaultBundlingEnvironment.runOnce(() -> {
+        var impl = new Main.Provider(runOnce(() -> {
             return createBundlingEnvironment(os);
         }));
 
