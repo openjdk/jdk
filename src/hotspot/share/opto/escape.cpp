@@ -4410,7 +4410,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                                          GrowableArray<MergeMemNode*> &mergemem_worklist,
                                          Unique_Node_List &reducible_merges) {
   DEBUG_ONLY(Unique_Node_List reduced_merges;)
-  GrowableArray<Node *>  memnode_worklist;
+  Unique_Node_List memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
   PhaseIterGVN  *igvn = _igvn;
   uint new_index_start = (uint) _compile->num_alias_types();
@@ -4566,7 +4566,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             }
             alloc_worklist.append_if_missing(use);
           } else if (use->is_MemBar()) {
-            memnode_worklist.append_if_missing(use);
+            memnode_worklist.push(use);
           }
         }
       }
@@ -4663,10 +4663,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       Node *use = n->fast_out(i);
       if(use->is_Mem() && use->in(MemNode::Address) == n) {
         // Load/store to instance's field
-        memnode_worklist.append_if_missing(use);
+        memnode_worklist.push(use);
       } else if (use->is_MemBar()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else if (use->is_AddP() && use->outcnt() > 0) { // No dead nodes
         Node* addp2 = find_second_addp(use, n);
@@ -4695,14 +4695,14 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if (use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
           // EncodeISOArray overwrites destination array
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else {
         uint op = use->Opcode();
         if ((op == Op_StrCompressedCopy || op == Op_StrInflatedCopy) &&
             (use->in(MemNode::Memory) == n)) {
           // They overwrite memory edge corresponding to destination array,
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
               op == Op_CastP2X ||
               op == Op_FastLock || op == Op_AryEq ||
@@ -4786,9 +4786,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
   //            compute new values for Memory inputs  (the Memory inputs are not
   //            actually updated until phase 4.)
-  if (memnode_worklist.length() == 0)
+  if (memnode_worklist.size() == 0)
     return;  // nothing to do
-  while (memnode_worklist.length() != 0) {
+  while (memnode_worklist.size() != 0) {
     Node *n = memnode_worklist.pop();
     if (visited.test_set(n->_idx)) {
       continue;
@@ -4856,17 +4856,17 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node *use = n->fast_out(i);
       if (use->is_Phi() || use->is_ClearArray()) {
-        memnode_worklist.append_if_missing(use);
+        memnode_worklist.push(use);
       } else if (use->is_Mem() && use->in(MemNode::Memory) == n) {
-        memnode_worklist.append_if_missing(use);
+        memnode_worklist.push(use);
       } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else if (use->is_Proj()) {
         assert(n->is_Initialize(), "We only push projections of Initialize");
         if (use->as_Proj()->_con == TypeFunc::Memory) { // Ignore precedent edge
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
 #ifdef ASSERT
       } else if(use->is_Mem()) {
@@ -4876,14 +4876,14 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if (use->Opcode() == Op_EncodeISOArray) {
         if (use->in(MemNode::Memory) == n || use->in(3) == n) {
           // EncodeISOArray overwrites destination array
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         }
       } else {
         uint op = use->Opcode();
         if ((use->in(MemNode::Memory) == n) &&
             (op == Op_StrCompressedCopy || op == Op_StrInflatedCopy)) {
           // They overwrite memory edge corresponding to destination array,
-          memnode_worklist.append_if_missing(use);
+          memnode_worklist.push(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
               op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
