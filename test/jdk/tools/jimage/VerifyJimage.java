@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import jdk.internal.jimage.BasicImageReader;
 import jtreg.SkippedException;
+import jdk.test.lib.Utils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -146,7 +147,7 @@ public abstract class VerifyJimage implements Runnable {
                     }
                 }
                 pool.shutdown();
-                if (!pool.awaitTermination(20, TimeUnit.SECONDS)) {
+                if (!pool.awaitTermination(Utils.adjustTimeout(20), TimeUnit.SECONDS)) {
                     failed.add("Directory verification timed out");
                 }
             } catch (IOException ex) {
