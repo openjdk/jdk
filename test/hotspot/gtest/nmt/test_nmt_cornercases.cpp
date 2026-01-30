@@ -158,4 +158,3 @@ TEST_VM(NMT, HeaderKeepsIntegrityAfterRevival) {
   check_expected_malloc_header(p, mtTest, some_size);
 }
 #endif // !INCLUDE_ASAN
-

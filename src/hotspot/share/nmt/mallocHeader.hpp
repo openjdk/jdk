@@ -174,5 +174,4 @@ public:
 // This needs to be true on both 64-bit and 32-bit platforms
 STATIC_ASSERT(sizeof(MallocHeader) == (sizeof(uint64_t) * 2));
 
-
 #endif // SHARE_NMT_MALLOCHEADER_HPP
