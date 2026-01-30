@@ -2973,6 +2973,10 @@ bool Node::is_dead_loop_safe() const {
     if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
       return false;
     }
+    // Late inline calls can die and leave dead loops behind them
+    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_late_inlined_call()) {
+      return false;
+    }
     return true;
   }
   return false;
