@@ -330,8 +330,6 @@ public class SecureDS {
             // clean-up
             delete(dir1);
             delete(dir2);
-            stream1.close();
-            stream2.close();
         }
     }
 
