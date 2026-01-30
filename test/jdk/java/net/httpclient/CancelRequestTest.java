@@ -287,6 +287,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         if (uri.contains("h3")) {
             builder.version(HTTP_3);
         }
+        builder.setHeader("X-expect-exception", "true");
         return builder;
     }
 
@@ -793,6 +794,9 @@ public class CancelRequestTest implements HttpServerAdapters {
                         out.printf(now() + " ...latch released%n");
                     }
                 }
+            } catch (IOException io) {
+                out.println(now() + "HTTPSlowHandler: IOexception is not unexpected: " + io);
+                throw io;
             } catch (Throwable e) {
                 out.println(now() + "HTTPSlowHandler: unexpected exception: " + e);
                 e.printStackTrace();
