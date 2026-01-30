@@ -232,7 +232,6 @@ class OptoRuntime : public AllStatic {
 public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
   static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
-  static const TypeFunc* _clone_type_Type;
 
 private:
 

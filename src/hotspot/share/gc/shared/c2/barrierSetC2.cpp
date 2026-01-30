@@ -813,7 +813,10 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   return old_tlab_top;
 }
 
-const TypeFunc* make_clone_type() {
+const TypeFunc* BarrierSetC2::_clone_type_Type = nullptr;
+
+void BarrierSetC2::make_clone_type() {
+  assert(BarrierSetC2::_clone_type_Type == nullptr, "should be");
   // Create input type (domain)
   int argcnt = NOT_LP64(3) LP64_ONLY(4);
   const Type** const domain_fields = TypeTuple::fields(argcnt);
@@ -829,12 +832,12 @@ const TypeFunc* make_clone_type() {
   const Type** const range_fields = TypeTuple::fields(0);
   const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
 
-  return TypeFunc::make(domain, range);
+  BarrierSetC2::_clone_type_Type = TypeFunc::make(domain, range);
 }
 
-static inline const TypeFunc* clone_type() {
-  assert(OptoRuntime::_clone_type_Type != nullptr, "should be initialized");
-  return OptoRuntime::_clone_type_Type;
+inline const TypeFunc* BarrierSetC2::clone_type() {
+  assert(BarrierSetC2::_clone_type_Type != nullptr, "should be initialized");
+  return BarrierSetC2::_clone_type_Type;
 }
 
 #define XTOP LP64_ONLY(COMMA phase->top())

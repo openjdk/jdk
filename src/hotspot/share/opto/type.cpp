@@ -739,6 +739,7 @@ void Type::Initialize_shared(Compile* current) {
   ShenandoahBarrierSetC2::make_load_reference_barrier_Type();
 #endif //INCLUDE_SHENANDOAHGC
 
+  BarrierSetC2::make_clone_type();
   LockNode::initialize_lock_Type();
   ArrayCopyNode::initialize_arraycopy_Type();
   OptoRuntime::initialize_types();
