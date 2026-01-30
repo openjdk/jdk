@@ -93,7 +93,7 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
     static final Random RANDOM = RandomFactory.getRandom();
 
     ExecutorService readerService;
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 6 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c   )
@@ -412,9 +412,6 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
     @BeforeTest
     public void setup() throws Exception {
         out.println("\n**** Setup ****\n");
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
         readerService = Executors.newCachedThreadPool();
 
         httpTestServer = HttpTestServer.create(HTTP_1_1);

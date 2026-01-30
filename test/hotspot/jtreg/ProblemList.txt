@@ -77,7 +77,7 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
-serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150 generic-all
+compiler/longcountedloops/TestLoopNestTooManyTraps.java 8376591 generic-all
 
 #############################################################################
 
@@ -115,7 +115,6 @@ runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
-containers/docker/TestMemoryAwareness.java 8303470 linux-all
 containers/docker/TestJFREvents.java 8327723 linux-x64
 containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -929,6 +929,11 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
     rv = (*ckpFunctions->C_DeriveKey)(ckSessionHandle, ckpMechanism, ckBaseKeyHandle,
                  ckpAttributes, ckAttributesLength, phKey);
 
+    /* If derivation failed, do not attempt copy-back */
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        goto cleanup;
+    }
+
     jKeyHandle = ckLongToJLong(ckKeyHandle);
 
     switch (ckpMechanism->mechanism) {
@@ -956,8 +961,9 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
         // empty
         break;
     }
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
-        jKeyHandle =0L;
+    /* Do not continue if any copy-back operation raised an exception */
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
     }
 
 cleanup:
