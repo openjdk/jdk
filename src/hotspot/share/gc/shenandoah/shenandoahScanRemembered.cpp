@@ -202,9 +202,11 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
 void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
   HISTOGRAM_TIME_BLOCK
   HeapWord* address = start;
+  HeapWord* previous_address = nullptr;
+  size_t previous_offset = 0;
   HeapWord* object_end_address = start;
   size_t current_card_index = -1;
-  HeapWord* card_end_address = nullptr;
+  uint8_t offset_in_card = -1;
 
   log_debug(gc, remset)("Update remembered set from " PTR_FORMAT ", to " PTR_FORMAT, p2i(start), p2i(end));
   {
@@ -217,21 +219,28 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
 
       const size_t object_card_index = _rs->card_index_for_addr(address);
       const HeapWord* card_start_address = _rs->addr_for_card_index(object_card_index);
-      const uint8_t offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
+      offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
 
       if (object_card_index != current_card_index) {
+        if (previous_address != nullptr) {
+          // Register the previous object on the previous card, we are starting a new card here
+          set_last_start(current_card_index, previous_offset);
+        }
+
         current_card_index = object_card_index;
-        card_end_address = _rs->addr_for_card_index(object_card_index + 1);
-        set_first_start(object_card_index, offset_in_card);
+        if (!starts_object(object_card_index)) {
+          // The previous cycle may have recorded an earlier start in this card. Do not overwrite it.
+          set_first_start(object_card_index, offset_in_card);
+        }
       }
 
-      assert(card_end_address != nullptr, "Card end address cannot be null here");
-      if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::min_dummy_object_size()) {
-        set_last_start(object_card_index, offset_in_card);
-      }
-
+      previous_offset = offset_in_card;
+      previous_address = address;
       address = object_end_address;
     }
+
+    // Register the last object seen in this range.
+    set_last_start(current_card_index, offset_in_card);
   }
 }
 
