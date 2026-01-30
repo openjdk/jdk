@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 package sun.reflect.generics.repository;
 
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.Signature;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.Type;
+import java.util.List;
+
 import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.ClassSignature;
-import sun.reflect.generics.tree.TypeTree;
 import sun.reflect.generics.visitor.Reifier;
-import sun.reflect.generics.parser.SignatureParser;
 
 
 /**
@@ -54,7 +56,11 @@ public class ClassRepository extends GenericDeclRepository<ClassSignature> {
     }
 
     protected ClassSignature parse(String s) {
-        return SignatureParser.make().parseClassSig(s);
+        try {
+            return ClassSignature.parseFrom(s);
+        } catch (IllegalArgumentException ex) {
+            throw (Error) new GenericSignatureFormatError(ex.getMessage()).initCause(ex);
+        }
     }
 
     /**
@@ -101,22 +107,19 @@ public class ClassRepository extends GenericDeclRepository<ClassSignature> {
     private Type computeSuperclass() {
         Reifier r = getReifier(); // obtain visitor
         // Extract superclass subtree from AST and reify
-        getTree().getSuperclass().accept(r);
-        return r.getResult();
+        return r.reify(getTree().superclassSignature());
     }
 
     private Type[] computeSuperInterfaces() {
         // first, extract super interface subtree(s) from AST
-        TypeTree[] ts = getTree().getSuperInterfaces();
+        List<? extends Signature> ts = getTree().superinterfaceSignatures();
         // create array to store reified subtree(s)
-        int length = ts.length;
+        int length = ts.size();
         Type[] superInterfaces = new Type[length];
         // reify all subtrees
         for (int i = 0; i < length; i++) {
             Reifier r = getReifier(); // obtain visitor
-            ts[i].accept(r);// reify subtree
-            // extract result from visitor and store it
-            superInterfaces[i] = r.getResult();
+            superInterfaces[i] = r.reify(ts.get(i));
         }
         return superInterfaces;
     }

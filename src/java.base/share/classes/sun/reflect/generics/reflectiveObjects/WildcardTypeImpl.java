@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package sun.reflect.generics.reflectiveObjects;
 
 
+import java.lang.classfile.Signature;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.FieldTypeSignature;
 import java.util.Arrays;
 import java.util.StringJoiner;
 
@@ -53,8 +53,8 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
     private volatile Object[] lowerBounds;
 
     // constructor is private to enforce access through static factory
-    private WildcardTypeImpl(FieldTypeSignature[] ubs,
-                             FieldTypeSignature[] lbs,
+    private WildcardTypeImpl(Signature[] ubs,
+                             Signature[] lbs,
                              GenericsFactory f) {
         super(f);
         upperBounds = ubs;
@@ -71,8 +71,8 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      * objects that represent the bounds of this wildcard type
      * @return a wild card type with the requested bounds and factory
      */
-    public static WildcardTypeImpl make(FieldTypeSignature[] ubs,
-                                        FieldTypeSignature[] lbs,
+    public static WildcardTypeImpl make(Signature[] ubs,
+                                        Signature[] lbs,
                                         GenericsFactory f) {
         return new WildcardTypeImpl(ubs, lbs, f);
     }
@@ -100,7 +100,7 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      */
     public Type[] getUpperBounds() {
         Object[] value = upperBounds;
-        if (value instanceof FieldTypeSignature[] sigs) {
+        if (value instanceof Signature[] sigs) {
             value = reifyBounds(sigs);
             upperBounds = value;
         }
@@ -131,7 +131,7 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      */
     public Type[] getLowerBounds() {
         Object[] value = lowerBounds;
-        if (value instanceof FieldTypeSignature[] sigs) {
+        if (value instanceof Signature[] sigs) {
             value = reifyBounds(sigs);
             lowerBounds = value;
         }

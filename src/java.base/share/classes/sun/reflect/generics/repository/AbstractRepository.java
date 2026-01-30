@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.reflect.generics.repository;
 
 import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.Tree;
 import sun.reflect.generics.visitor.Reifier;
 
 
@@ -36,7 +35,7 @@ import sun.reflect.generics.visitor.Reifier;
  * The code is not dependent on a particular reflective implementation.
  * It is designed to be used unchanged by at least core reflection and JDI.
  */
-public abstract class AbstractRepository<T extends Tree> {
+public abstract class AbstractRepository<T> {
 
     // A factory used to produce reflective objects. Provided when the
     //repository is created. Will vary across implementations.

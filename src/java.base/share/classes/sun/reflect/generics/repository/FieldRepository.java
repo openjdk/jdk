@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package sun.reflect.generics.repository;
 
 
+import java.lang.classfile.Signature;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.Type;
 import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.TypeSignature;
-import sun.reflect.generics.parser.SignatureParser;
 import sun.reflect.generics.visitor.Reifier;
 
 
@@ -39,7 +39,7 @@ import sun.reflect.generics.visitor.Reifier;
  * The code is not dependent on a particular reflective implementation.
  * It is designed to be used unchanged by at least core reflection and JDI.
  */
-public class FieldRepository extends AbstractRepository<TypeSignature> {
+public class FieldRepository extends AbstractRepository<Signature> {
 
     /** The generic type info.  Lazily initialized. */
     private volatile Type genericType;
@@ -49,8 +49,16 @@ public class FieldRepository extends AbstractRepository<TypeSignature> {
       super(rawSig, f);
     }
 
-    protected TypeSignature parse(String s) {
-        return SignatureParser.make().parseTypeSig(s);
+    protected Signature parse(String s) {
+        if ("V".equals(s)) {
+            // ClassFile permits V as Signature
+            throw new GenericSignatureFormatError("Expected Field Type Signature, got V");
+        }
+        try {
+            return Signature.parseFrom(s);
+        } catch (IllegalArgumentException ex) {
+            throw (Error) new GenericSignatureFormatError(ex.getMessage()).initCause(ex);
+        }
     }
 
     /**
@@ -87,7 +95,6 @@ public class FieldRepository extends AbstractRepository<TypeSignature> {
 
     private Type computeGenericType() {
         Reifier r = getReifier();       // obtain visitor
-        getTree().accept(r);            // reify subtree
-        return r.getResult();           // extract result from visitor
+        return r.reify(getTree());
     }
 }

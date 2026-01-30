@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.reflect.generics.reflectiveObjects;
 
 import java.lang.annotation.*;
+import java.lang.classfile.Signature;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
@@ -41,7 +42,6 @@ import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.AnnotationType;
 import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.FieldTypeSignature;
 
 /**
  * Implementation of {@code java.lang.reflect.TypeVariable} interface
@@ -61,7 +61,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     private volatile Object[] bounds;
 
     // constructor is private to enforce access through static factory
-    private TypeVariableImpl(D decl, String n, FieldTypeSignature[] bs,
+    private TypeVariableImpl(D decl, String n, Signature[] bs,
                              GenericsFactory f) {
         super(f);
         genericDeclaration = decl;
@@ -83,7 +83,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      */
     public static <T extends GenericDeclaration>
                              TypeVariableImpl<T> make(T decl, String name,
-                                                      FieldTypeSignature[] bs,
+                                                      Signature[] bs,
                                                       GenericsFactory f) {
 
         if (!((decl instanceof Class) ||
@@ -119,7 +119,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      */
     public Type[] getBounds() {
         Object[] value = bounds;
-        if (value instanceof FieldTypeSignature[] sigs) {
+        if (value instanceof Signature[] sigs) {
             value = reifyBounds(sigs);
             bounds = value;
         }

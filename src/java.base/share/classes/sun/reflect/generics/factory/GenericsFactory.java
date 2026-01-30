@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package sun.reflect.generics.factory;
 
+import java.lang.classfile.Signature;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import sun.reflect.generics.tree.FieldTypeSignature;
 
 /**
  * A factory interface for reflective objects representing generic types.
@@ -58,7 +58,7 @@ public interface GenericsFactory {
      * or any of the elements of {@code bounds} are {@code null}.
      */
     TypeVariable<?> makeTypeVariable(String name,
-                                     FieldTypeSignature[] bounds);
+                                     Signature[] bounds);
     /**
      * Returns an instance of the {@code ParameterizedType} interface
      * that corresponds to a generic type instantiation of the
@@ -115,8 +115,8 @@ public interface GenericsFactory {
      * or any of the elements of {@code ubs} or {@code lbs} are
      * {@code null}
      */
-    WildcardType makeWildcard(FieldTypeSignature[] ubs,
-                              FieldTypeSignature[] lbs);
+    WildcardType makeWildcard(Signature[] ubs,
+                              Signature[] lbs);
 
     Type makeNamedType(String name);
 
@@ -133,58 +133,4 @@ public interface GenericsFactory {
      * are {@code null}
      */
     Type makeArrayType(Type componentType);
-
-    /**
-     * Returns the reflective representation of type {@code byte}.
-     * @return the reflective representation of type {@code byte}.
-     */
-    Type makeByte();
-
-    /**
-     * Returns the reflective representation of type {@code boolean}.
-     * @return the reflective representation of type {@code boolean}.
-     */
-    Type makeBool();
-
-    /**
-     * Returns the reflective representation of type {@code short}.
-     * @return the reflective representation of type {@code short}.
-     */
-    Type makeShort();
-
-    /**
-     * Returns the reflective representation of type {@code char}.
-     * @return the reflective representation of type {@code char}.
-     */
-    Type makeChar();
-
-    /**
-     * Returns the reflective representation of type {@code int}.
-     * @return the reflective representation of type {@code int}.
-     */
-    Type makeInt();
-
-    /**
-     * Returns the reflective representation of type {@code long}.
-     * @return the reflective representation of type {@code long}.
-     */
-    Type makeLong();
-
-    /**
-     * Returns the reflective representation of type {@code float}.
-     * @return the reflective representation of type {@code float}.
-     */
-    Type makeFloat();
-
-    /**
-     * Returns the reflective representation of type {@code double}.
-     * @return the reflective representation of type {@code double}.
-     */
-    Type makeDouble();
-
-    /**
-     * Returns the reflective representation of {@code void}.
-     * @return the reflective representation of {@code void}.
-     */
-    Type makeVoid();
 }
