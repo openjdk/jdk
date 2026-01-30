@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ enum JFR_Msg {
   MSG_SHUTDOWN,
   MSG_VM_ERROR,
   MSG_FLUSHPOINT,
+  MSG_EMIT_LEAKP_REFCHAINS,
   MSG_NO_OF_MSGS
 };
 
@@ -51,23 +52,25 @@ enum JFR_Msg {
  *
  *  Synchronous messages (posting thread waits for message completion):
  *
- *  MSG_CLONE_IN_MEMORY (0) ; MSGBIT(MSG_CLONE_IN_MEMORY) == (1 << 0) == 0x1
- *  MSG_START(1)            ; MSGBIT(MSG_START) == (1 << 0x1) == 0x2
- *  MSG_STOP (2)            ; MSGBIT(MSG_STOP) == (1 << 0x2) == 0x4
- *  MSG_ROTATE (3)          ; MSGBIT(MSG_ROTATE) == (1 << 0x3) == 0x8
- *  MSG_VM_ERROR (8)        ; MSGBIT(MSG_VM_ERROR) == (1 << 0x8) == 0x100
- *  MSG_FLUSHPOINT (9)     ; MSGBIT(MSG_FLUSHPOINT) == (1 << 0x9) == 0x200
+ *  MSG_CLONE_IN_MEMORY (0)      ; MSGBIT(MSG_CLONE_IN_MEMORY) == (1 << 0) == 0x1
+ *  MSG_START(1)                 ; MSGBIT(MSG_START) == (1 << 0x1) == 0x2
+ *  MSG_STOP (2)                 ; MSGBIT(MSG_STOP) == (1 << 0x2) == 0x4
+ *  MSG_ROTATE (3)               ; MSGBIT(MSG_ROTATE) == (1 << 0x3) == 0x8
+ *  MSG_VM_ERROR (8)             ; MSGBIT(MSG_VM_ERROR) == (1 << 0x8) == 0x100
+ *  MSG_FLUSHPOINT (9)           ; MSGBIT(MSG_FLUSHPOINT) == (1 << 0x9) == 0x200
+ *  MSG_EMIT_LEAKP_REFCHAINS (10); MSGBIT(MSG_EMIT_LEAKP_REFCHAINS) == (1 << 0xa) == 0x400
  *
  *  Asynchronous messages (posting thread returns immediately upon deposit):
  *
- *  MSG_FULLBUFFER (4)      ; MSGBIT(MSG_FULLBUFFER) == (1 << 0x4) == 0x10
- *  MSG_CHECKPOINT (5)      ; MSGBIT(CHECKPOINT) == (1 << 0x5) == 0x20
- *  MSG_WAKEUP (6)          ; MSGBIT(WAKEUP) == (1 << 0x6) == 0x40
- *  MSG_SHUTDOWN (7)        ; MSGBIT(MSG_SHUTDOWN) == (1 << 0x7) == 0x80
+ *  MSG_FULLBUFFER (4)           ; MSGBIT(MSG_FULLBUFFER) == (1 << 0x4) == 0x10
+ *  MSG_CHECKPOINT (5)           ; MSGBIT(CHECKPOINT) == (1 << 0x5) == 0x20
+ *  MSG_WAKEUP (6)               ; MSGBIT(WAKEUP) == (1 << 0x6) == 0x40
+ *  MSG_SHUTDOWN (7)             ; MSGBIT(MSG_SHUTDOWN) == (1 << 0x7) == 0x80
  */
 
 class JfrPostBox : public JfrCHeapObj {
   friend class JfrRecorder;
+  friend class JfrRecorderService;
  public:
   void post(JFR_Msg msg);
 

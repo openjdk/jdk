@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/threadSMR.hpp"
 
@@ -128,7 +129,8 @@ bool MountUnmountDisabler::is_start_transition_disabled(JavaThread* thread, oop 
   int base_disable_count = notify_jvmti_events() ? 1 : 0;
   return java_lang_Thread::vthread_transition_disable_count(vthread) > 0
          || global_vthread_transition_disable_count() > base_disable_count
-         JVMTI_ONLY(|| (JvmtiVTSuspender::is_vthread_suspended(java_lang_Thread::thread_id(vthread)) || thread->is_suspended()));
+         JVMTI_ONLY(|| (!thread->is_vthread_transition_disabler() &&
+                        (JvmtiVTSuspender::is_vthread_suspended(java_lang_Thread::thread_id(vthread)) || thread->is_suspended())));
 }
 
 void MountUnmountDisabler::start_transition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_end) {
@@ -191,6 +193,13 @@ void MountUnmountDisabler::end_transition(JavaThread* current, oop vthread, bool
     MonitorLocker ml(VThreadTransition_lock);
     ml.notify_all();
   }
+}
+
+// disable transitions for one virtual thread
+// disable transitions for all threads if thread is nullptr or a platform thread
+MountUnmountDisabler::MountUnmountDisabler(jthread thread)
+  : MountUnmountDisabler(JNIHandles::resolve_external_guard(thread))
+{
 }
 
 // disable transitions for one virtual thread
@@ -286,7 +295,7 @@ MountUnmountDisabler::disable_transition_for_one() {
   // carrierThread to float up.
   // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
-  DEBUG_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(true);)
+  JVMTI_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(true);)
 }
 
 // disable transitions for all virtual threads
@@ -327,7 +336,7 @@ MountUnmountDisabler::disable_transition_for_all() {
   // carrierThread to float up.
   // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
-  DEBUG_ONLY(thread->set_is_vthread_transition_disabler(true);)
+  JVMTI_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(true);)
   DEBUG_ONLY(thread->set_is_disabler_at_start(false);)
 }
 
@@ -350,14 +359,12 @@ MountUnmountDisabler::enable_transition_for_one() {
   if (java_lang_Thread::vthread_transition_disable_count(_vthread()) == 0) {
     ml.notify_all();
   }
-  DEBUG_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(false);)
+  JVMTI_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(false);)
 }
 
 // enable transitions for all virtual threads
 void
 MountUnmountDisabler::enable_transition_for_all() {
-  JavaThread* thread = JavaThread::current();
-
   // End of the critical section. If some target was unmounted, we need a
   // release barrier before decrementing _global_vthread_transition_disable_count
   // to make sure any memory operations executed by the disabler are visible to
@@ -376,7 +383,7 @@ MountUnmountDisabler::enable_transition_for_all() {
   if (global_vthread_transition_disable_count() == base_disable_count || _is_exclusive) {
     ml.notify_all();
   }
-  DEBUG_ONLY(thread->set_is_vthread_transition_disabler(false);)
+  JVMTI_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(false);)
 }
 
 int MountUnmountDisabler::global_vthread_transition_disable_count() {
