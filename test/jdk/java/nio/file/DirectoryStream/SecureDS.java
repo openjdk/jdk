@@ -317,7 +317,7 @@ public class SecureDS {
                     sds.move(file, null, file);
                 } catch (AtomicMoveNotSupportedException e) {
                     if (Files.getFileStore(cwd).equals(Files.getFileStore(dir))) {
-                        // re-throw if same FileStore
+                        // re-throw if move between same volume
                         throw e;
                     } else {
                         throw new SkippedException(
