@@ -146,7 +146,7 @@ final class CompressedCertificate {
         // the deflated certificate data in a memory cache statically and avoid
         // compressing local certificates repeatedly for every handshake.
         private static final Cache<CompCertCacheKey, byte[]> CACHE =
-                Cache.newSoftMemoryCache(12);
+                Cache.newSoftMemoryCache(92);
 
         // Prevent instantiation of this class.
         private CompressedCertProducer() {

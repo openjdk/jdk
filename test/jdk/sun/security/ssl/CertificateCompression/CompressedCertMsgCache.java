@@ -91,10 +91,10 @@ public class CompressedCertMsgCache extends SSLSocketTemplate {
         assertEquals(1, countSubstringOccurrences(log,
                 "Caching CompressedCertificate message"));
 
-        // Complete 12 handshakes, all with different certificates.
+        // Complete 92 handshakes, all with different certificates.
         log = runAndGetLog(() -> {
             try {
-                for (int i = 0; i < 12; i++) {
+                for (int i = 0; i < 92; i++) {
                     new CompressedCertMsgCache(
                             "TLSv1.3", "EC", "SHA256withECDSA").run();
                 }
@@ -102,8 +102,8 @@ public class CompressedCertMsgCache extends SSLSocketTemplate {
             }
         });
 
-        // Make sure all 12 CompressedCertificate messages are cached.
-        assertEquals(12, countSubstringOccurrences(log,
+        // Make sure all 92 CompressedCertificate messages are cached.
+        assertEquals(92, countSubstringOccurrences(log,
                 "Caching CompressedCertificate message"));
 
         // Complete 1 handshake with the same certificate as the very first one.
