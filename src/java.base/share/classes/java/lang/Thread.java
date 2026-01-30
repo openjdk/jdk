@@ -2214,8 +2214,8 @@ public class Thread implements Runnable {
             if (!isAlive()) {
                 return EMPTY_STACK_TRACE;
             }
-            Object trace = getStackTrace0();
-            if (trace instanceof StackTraceElement[] stackTrace) {
+            StackTraceElement[] stackTrace = getStackTrace0();
+            if (stackTrace != null) {
                 return StackTraceElement.finishInit(stackTrace);
             }
             return EMPTY_STACK_TRACE;
@@ -2224,7 +2224,7 @@ public class Thread implements Runnable {
         }
     }
 
-    private native Object getStackTrace0();
+    private native StackTraceElement[] getStackTrace0();
 
     /**
      * Returns a map of stack traces for all live platform threads. The map

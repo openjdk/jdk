@@ -60,7 +60,7 @@ class ThreadSnapshot {
      * @return the snapshot or {@code null} if the thread is not alive
      */
     static ThreadSnapshot of(Thread thread) {
-        ThreadSnapshot snapshot = create(thread);
+        ThreadSnapshot snapshot = thread.isAlive() ? create(thread) : null;
         if (snapshot == null) {
             return null; // thread not alive
         }
