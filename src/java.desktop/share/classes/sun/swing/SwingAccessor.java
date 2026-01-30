@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,33 @@ public final class SwingAccessor {
     public interface KeyStrokeAccessor {
 
         KeyStroke create();
+    }
+
+    /**
+     * An accessor for the LAFState class state.
+     */
+    public interface LAFStateAccessor {
+        boolean lafStateIsInitialized();
+    }
+
+    private static LAFStateAccessor lafStateAccessor;
+    /**
+     * Set an accessor object for the LAFState class.
+     */
+    public static void setLAFStateAccessor(LAFStateAccessor accessor) {
+        lafStateAccessor = accessor;
+    }
+
+    /**
+     * Retrieve the accessor object for the LAFState class.
+     */
+    public static LAFStateAccessor getLAFStateAccessor() {
+        var access = lafStateAccessor;
+        if (access == null) {
+            ensureClassInitialized(UIManager.class);
+            access = lafStateAccessor;
+        }
+        return access;
     }
 
     /**
