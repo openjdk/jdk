@@ -37,7 +37,8 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @bug 8373591
- * @summary Verify that StringLatin1::inflate and StringUTF16::compress are scheduled properly
+ * @summary Verify that StringLatin1::inflate, StringUTF16::compress, and
+ *          StringCoding::implEncodeAsciiArray are scheduled properly
  * @library /test/lib /
  * @modules java.base/java.lang:+open
  * @run driver ${test.main.class}
@@ -45,6 +46,7 @@ import jdk.test.lib.Asserts;
 public class TestAntiDependency {
     static final MethodHandle COMPRESS_HANDLE;
     static final MethodHandle INFLATE_HANDLE;
+    static final MethodHandle ENCODE_ISO_HANDLE;
     static {
         try {
             var lookup = MethodHandles.privateLookupIn(String.class, MethodHandles.lookup());
@@ -54,6 +56,9 @@ public class TestAntiDependency {
             Class<?> stringLatin1Class = lookup.findClass("java.lang.StringLatin1");
             INFLATE_HANDLE = lookup.findStatic(stringLatin1Class, "inflate",
                     MethodType.methodType(void.class, byte[].class, int.class, char[].class, int.class, int.class));
+            Class<?> stringCodingClass = lookup.findClass("java.lang.StringCoding");
+            ENCODE_ISO_HANDLE = lookup.findStatic(stringCodingClass, "implEncodeAsciiArray",
+                    MethodType.methodType(int.class, char[].class, int.class, byte[].class, int.class, int.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -94,9 +99,24 @@ public class TestAntiDependency {
         return dst[0];
     }
 
-    @Run(test = {"testStringCompress", "testStringInflate"})
+    @Test
+    static int testEncodeISO() throws Throwable {
+        byte[] dst = new byte[4];
+        char[] src = new char[4];
+        consume(dst, src);
+
+        // The compiler must not schedule this after the store to src, either by having
+        // EncodeISOArrayNode kill the whole memory, or by taking into consideration the
+        // anti-dependency between 2 nodes
+        int _ = (int) ENCODE_ISO_HANDLE.invokeExact(src, 0, dst, 0, 4);
+        src[0] = 1;
+        return dst[0];
+    }
+
+    @Run(test = {"testStringCompress", "testStringInflate", "testEncodeISO"})
     public void run() throws Throwable {
         Asserts.assertEQ(0, testStringCompress());
         Asserts.assertEQ(0, testStringInflate());
+        Asserts.assertEQ(0, testEncodeISO());
     }
 }
