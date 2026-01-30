@@ -2104,7 +2104,7 @@ public final class String
     }
 
     /**
-     * {@return the length in bytes of the given String encoded with the given {@link Charset}}
+     * {@return the length in bytes of this {@code String} encoded with the given {@link Charset}}
      *
      * <p>The returned length accounts for the replacement of malformed-input and unmappable-character
      * sequences with the charset's default replacement byte array. The result will be the same value
