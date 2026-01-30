@@ -29,6 +29,9 @@
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 
 class ShenandoahGeneration;
+class ShenandoahHeap;
+class ShenandoahCollectionSet;
+class RegionData;
 
 /*
  * This class serves as the base class for heuristics used to trigger and
