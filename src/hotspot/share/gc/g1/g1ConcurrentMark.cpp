@@ -637,8 +637,7 @@ void G1ConcurrentMark::reset_marking_for_restart() {
   _finger = _heap.start();
 
   for (uint i = 0; i < _max_num_tasks; ++i) {
-    G1CMTaskQueue* queue = _task_queues->queue(i);
-    queue->set_empty();
+    _tasks[i]->reset_for_restart();
   }
 }
 
@@ -1941,11 +1940,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
     return false;
   }
 
-  // Empty mark stack
   reset_marking_for_restart();
-  for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->clear_region_fields();
-  }
 
   abort_marking_threads();
 
@@ -2114,6 +2109,13 @@ void G1CMTask::reset(G1CMBitMap* mark_bitmap) {
   _termination_time_ms           = 0.0;
 
   _mark_stats_cache.reset();
+}
+
+void G1CMTask::reset_for_restart() {
+  clear_region_fields();
+  _task_queue->set_empty();
+  TASKQUEUE_STATS_ONLY(_partial_array_splitter.stats()->reset());
+  TASKQUEUE_STATS_ONLY(_task_queue->stats.reset());
 }
 
 void G1CMTask::register_partial_array_splitter() {
