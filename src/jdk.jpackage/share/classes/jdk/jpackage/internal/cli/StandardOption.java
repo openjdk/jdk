@@ -441,6 +441,12 @@ public final class StandardOption {
     public static final OptionValue<BundlingOperationDescriptor> BUNDLING_OPERATION_DESCRIPTOR = OptionValue.create();
 
     /**
+     * Debug option telling bundler to exit after the configuration phase is over,
+     * without running the packaging phase.
+     */
+    public static final OptionValue<Boolean> EXIT_AFTER_CONFIGURATION_PHASE = OptionValue.<Boolean>build().defaultValue(false).create();
+
+    /**
      * Returns options configuring a launcher.
      *
      * @return the options configuring a launcher

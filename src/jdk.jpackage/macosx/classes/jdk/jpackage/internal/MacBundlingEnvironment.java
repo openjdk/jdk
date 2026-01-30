@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_APP
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_DMG;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
+import static jdk.jpackage.internal.cli.StandardOption.EXIT_AFTER_CONFIGURATION_PHASE;
 
 import java.util.Optional;
 import jdk.jpackage.internal.cli.Options;
@@ -82,6 +83,10 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
                 PathUtils.normalizedAbsolutePath(env.appImageDir()));
 
         OptionUtils.finalizeAndPrintSummary(options, pkg);
+
+        if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
+            return;
+        }
 
         buildPipeline(pkg).create().execute(env, pkg, env.appImageDir());
     }
