@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -79,18 +80,19 @@ final class LazySetTest {
 
     }
 
-    private static final Value KEY = Value.FORTY_TWO;
-    private static final Predicate<Value> MAPPER = v -> v.equals(KEY) ;
+    private static final Value ELEMENT = Value.FORTY_TWO;
+    private static final Set<Value> SET = Set.of(Value.THIRTEEN, ELEMENT);
+    private static final Predicate<Value> PREDICATE = SET::contains; ;
 
     @ParameterizedTest
     @MethodSource("allSets")
     void factoryInvariants(Set<Value> set) {
         assertThrows(NullPointerException.class, () -> Set.ofLazy(set, null), set.getClass().getSimpleName());
-        assertThrows(NullPointerException.class, () -> Set.ofLazy(null, MAPPER));
+        assertThrows(NullPointerException.class, () -> Set.ofLazy(null, PREDICATE));
         Set<Value> setWithNull = new HashSet<>();
-        setWithNull.add(KEY);
+        setWithNull.add(ELEMENT);
         setWithNull.add(null);
-        assertThrows(NullPointerException.class, () -> Set.ofLazy(setWithNull, MAPPER));
+        assertThrows(NullPointerException.class, () -> Set.ofLazy(setWithNull, PREDICATE));
     }
 
     @ParameterizedTest
@@ -114,9 +116,9 @@ final class LazySetTest {
             throw new UnsupportedOperationException();
         });
         var lazy = Map.ofLazy(set, cif);
-        assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
+        assertThrows(UnsupportedOperationException.class, () -> lazy.get(ELEMENT));
         assertEquals(1, cif.cnt());
-        assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
+        assertThrows(UnsupportedOperationException.class, () -> lazy.get(ELEMENT));
         assertEquals(2, cif.cnt());
         assertThrows(UnsupportedOperationException.class, lazy::toString);
         assertEquals(3, cif.cnt());
@@ -185,79 +187,43 @@ final class LazySetTest {
         assertEquals(lazy, regular);
         assertNotEquals("A", lazy);
     }
-/*
-    @ParameterizedTest
-    @MethodSource("nonEmptySets")
-    void circular(Set<Value> set) {
-        final AtomicReference<Map<?, ?>> ref = new AtomicReference<>();
-        Map<Value, Map<?, ?>> lazy = Map.ofLazy(set, _ -> ref.get());
-        ref.set(lazy);
-        lazy.get(KEY);
-        var toString = lazy.toString();
-        assertTrue(toString.contains("FORTY_TWO=(this Map)"), toString);
-        assertDoesNotThrow((() -> lazy.equals(lazy)));
-    }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void recursiveCall(Set<Value> set) {
         final AtomicReference<Set<Value>> ref = new AtomicReference<>();
         @SuppressWarnings("unchecked")
-        Set<Set<Value>> lazy = Set.ofLazy(set, k -> (Set<Value>) ref.get().test(k));
+        Set<Value> lazy = Set.ofLazy(set, k -> ref.get().contains(k));
         ref.set(lazy);
-        var x = assertThrows(IllegalStateException.class, () -> lazy.get(KEY));
+        var x = assertThrows(IllegalStateException.class, () -> lazy.contains(ELEMENT));
         assertEquals("Recursive initialization of a lazy collection is illegal", x.getMessage());
     }
-*/
 
-/*
     @ParameterizedTest
     @MethodSource("allSets")
     void iteratorNext(Set<Value> set) {
         Set<Value> encountered = new HashSet<>();
-        var iterator = newLazyMap(set).entrySet().iterator();
+        var expected = newRegularSet(set);
+        var iterator = newLazySet(set).iterator();
         while (iterator.hasNext()) {
             var entry = iterator.next();
-            assertEquals(MAPPER.apply(entry.getKey()), entry.getValue());
-            encountered.add(entry.getKey());
+            encountered.add(entry);
         }
-        assertEquals(set, encountered);
+        assertEquals(expected, encountered);
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
     void iteratorForEachRemaining(Set<Value> set) {
         Set<Value> encountered = new HashSet<>();
+        var expected = newRegularSet(set);
         var iterator = newLazySet(set).iterator();
-        var entry = iterator.next();
-        assertEquals(MAPPER.apply(entry.getKey()), entry.getValue());
-        encountered.add(entry.getKey());
-        iterator.forEachRemaining(e -> {
-            assertEquals(MAPPER.apply(e.getKey()), e.getValue());
-            encountered.add(e.getKey());
-        });
-        assertEquals(set, encountered);
+        var value = iterator.next();
+        encountered.add(value);
+        iterator.forEachRemaining(encountered::add);
+        assertEquals(expected, encountered);
     }
 
-    @ParameterizedTest
-    @MethodSource("nonEmptySets")
-    void lazyEntry(Set<Value> set) {
-        var lazy = newLazySet(set);
-        var entry = lazy.entrySet().stream()
-                .filter(e -> e.getKey().equals(KEY))
-                .findAny()
-                .orElseThrow();
-
-        assertEquals(lazy.size(), functionCounter(lazy));
-        var otherDifferent = Map.entry(Value.ZERO, -1);
-        assertNotEquals(entry, otherDifferent);
-        assertEquals(lazy.size(), functionCounter(lazy));
-        var otherEqual = Map.entry(entry.getKey(), entry.getValue());
-        assertEquals(entry, otherEqual);
-        assertEquals(lazy.size() - 1, functionCounter(lazy));
-        assertEquals(entry.hashCode(), otherEqual.hashCode());
-    }
-*/
     // Immutability
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
@@ -289,84 +255,11 @@ final class LazySetTest {
         assertFalse(lazy instanceof Serializable);
     }
 
-/*
-    @ParameterizedTest
-    @MethodSource("allSets")
-    void functionHolder(Set<Value> set) {
-        LazyConstantTestUtil.CountingPredicate<Value> cif = new LazyConstantTestUtil.CountingPredicate<>(MAPPER);
-        Set<Value> lazy = Set.ofLazy(set, cif);
-
-        Object holder = LazyConstantTestUtil.functionHolder(lazy);
-
-        int i = 0;
-        for (Value key : set) {
-            assertEquals(set.size() - i, LazyConstantTestUtil.functionHolderCounter(holder));
-            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
-            int v = lazy.get(key);
-            int v2 = lazy.get(key);
-            i++;
-        }
-        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
-        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
-    }
-
-    @ParameterizedTest
-    @MethodSource("allSets")
-    void functionHolderViaEntrySet(Set<Value> set) {
-        LazyConstantTestUtil.CountingPredicate<Value> cif = new LazyConstantTestUtil.CountingPredicate<>(MAPPER);
-        Set<Value> lazy = Set.ofLazy(set, cif);
-
-        Object holder = LazyConstantTestUtil.functionHolder(lazy);
-
-        int i = 0;
-        for (Map.Entry<Value, Integer> e : lazy.entrySet()) {
-            assertEquals(set.size() - i, LazyConstantTestUtil.functionHolderCounter(holder));
-            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
-            int v = e.getValue();
-            int v2 = e.getValue();
-            i++;
-        }
-        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
-        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
-    }
-
-    @ParameterizedTest
-    @MethodSource("allSets")
-    void underlyingRefViaEntrySetForEach(Set<Value> set) {
-        LazyConstantTestUtil.CountingPredicate<Value> cif = new LazyConstantTestUtil.CountingPredicate<>(MAPPER);
-        Set<Value> lazy = Set.ofLazy(set, cif);
-
-        Object holder = LazyConstantTestUtil.functionHolder(lazy);
-
-        final AtomicInteger i = new AtomicInteger();
-        lazy.entrySet().forEach(e -> {
-            assertEquals(set.size() - i.get(), LazyConstantTestUtil.functionHolderCounter(holder));
-            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
-            Integer val = e.getValue();
-            Integer val2 = e.getValue();
-            i.incrementAndGet();
-        });
-        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
-        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
-    }
-*/
-
-
     @Test
     void overriddenEnum() {
         final var overridden = Value.THIRTEEN;
-        Set<Value> enumMap = Set.ofLazy(EnumSet.of(overridden), MAPPER);
-        assertEquals(MAPPER.test(overridden), enumMap.contains(overridden), enumMap.toString());
-    }
-
-    @Test
-    void enumAliasing() {
-        enum MyEnum {FOO, BAR}
-        enum MySecondEnum{BAZ, QUX}
-        Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
-        assertEquals(MyEnum.BAR.ordinal(), mapEnum.get(MyEnum.BAR));
-        // Make sure class is checked, not just `ordinal()`
-        assertNull(mapEnum.get(MySecondEnum.QUX));
+        Set<Value> enumMap = Set.ofLazy(EnumSet.of(overridden), PREDICATE);
+        assertEquals(PREDICATE.test(overridden), enumMap.contains(overridden), enumMap.toString());
     }
 
     // Support constructs
@@ -389,31 +282,31 @@ final class LazySetTest {
     static Stream<Operation> unsupportedOperations() {
         return Stream.of(
             new Operation("clear",               Set::clear),
-            new Operation("add",      m -> m.add(KEY)),
-            new Operation("addAll",   m -> m.addAll(Set.of(KEY))),
-            new Operation("remove",   m -> m.remove(KEY)),
-            new Operation("removeAll",m -> m.removeAll(Set.of(KEY))),
-            new Operation("retainAll",m -> m.retainAll(Set.of(KEY))),
+            new Operation("add",      m -> m.add(ELEMENT)),
+            new Operation("addAll",   m -> m.addAll(Set.of(ELEMENT))),
+            new Operation("remove",   m -> m.remove(ELEMENT)),
+            new Operation("removeAll",m -> m.removeAll(Set.of(ELEMENT))),
+            new Operation("retainAll",m -> m.retainAll(Set.of(ELEMENT))),
             new Operation("iter.rm",  m -> m.iterator().remove())
         );
     }
 
     static Set<Value> newLazySet(Set<Value> set) {
-        return Set.ofLazy(set, MAPPER);
+        return Set.ofLazy(set, PREDICATE);
     }
 
     static Set<Value> newRegularSet(Set<Value> set) {
         return set.stream()
-                .filter(MAPPER)
+                .filter(PREDICATE)
                 .collect(Collectors.toSet());
     }
 
     private static Stream<Set<Value>> nonEmptySets() {
         return Stream.of(
-                Set.of(KEY, Value.THIRTEEN),
-                linkedHashSet(Value.THIRTEEN, KEY),
-                treeSet(KEY, Value.THIRTEEN),
-                EnumSet.of(KEY, Value.THIRTEEN)
+                Set.of(ELEMENT, Value.THIRTEEN),
+                linkedHashSet(Value.THIRTEEN, ELEMENT),
+                treeSet(ELEMENT, Value.THIRTEEN),
+                EnumSet.of(ELEMENT, Value.THIRTEEN)
         );
     }
 
