@@ -1931,6 +1931,34 @@ static size_t get_alternate_signal_stack_size() {
   return stacksize;
 }
 
+static void describe_stack_t(outputStream* st, const stack_t* ss) {
+  if (ss->ss_flags == SS_DISABLE) {
+    st->print("SS_DISABLE");
+  } else {
+    st->print(RANGEFMT, RANGEFMTARGS(ss->ss_sp, ss->ss_size));
+  }
+}
+
+static bool sigaltstack_and_log(const stack_t* ss, stack_t* oss) {
+  const int rc = ::sigaltstack(ss, oss);
+  if (rc == 0) {
+    assert(oss->ss_flags != SS_ONSTACK, "invariant"); // should have been an error
+    LogTarget(Debug, os, thread) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print("Thread " PTR_FORMAT ": alternate signal stack %s (",
+          p2i(Thread::current_or_null_safe()),
+          (ss->ss_flags == SS_DISABLE) ? "disabled" : "enabled");
+      describe_stack_t(&ls, ss);
+      ls.print_raw(", was: ");
+      describe_stack_t(&ls, oss);
+      ls.print_raw(")");
+    }
+    return true;
+  }
+  return false;
+}
+
 void PosixSignals::enable_alternate_signal_stack_for_current_thread() {
   assert(UseAltSigStacks, "invariant");
 
@@ -1943,53 +1971,53 @@ void PosixSignals::enable_alternate_signal_stack_for_current_thread() {
   // have been already saved to disk.
   const size_t plus_guard = stacksize + os::vm_page_size();
 
+  int step = 0;
   bool success = false;
   char* p = os::reserve_memory(plus_guard, mtInternal);
   if (p != nullptr) {
+    step ++;
     success = os::commit_memory(p, plus_guard, false);
   }
-  DEBUG_ONLY(memset(p, 0, plus_guard));
+
   if (success) {
+    step ++;
+    DEBUG_ONLY(memset(p, 0, plus_guard));
  //   success = os::protect_memory(p, os::vm_page_size(), os::MEM_PROT_NONE, true);
   }
   if (success) {
+    step ++;
     stack_t ss;
     ss.ss_flags = 0;
     ss.ss_sp = p;
     ss.ss_size = plus_guard;
     stack_t oss;
-    const int rc = ::sigaltstack(&ss, &oss);
-    if (rc == 0) {
-      assert(oss.ss_flags == SS_DISABLE, "odd prior setting");
-      log_info(os)("Thread " PTR_FORMAT ": alternate signal stack (" RANGEFMT ") enabled",
-          p2i(Thread::current_or_null_safe()), RANGEFMTARGS((address)(ss.ss_sp), ss.ss_size));
-    } else {
-      log_info(os)("Failed to set alternative signal stack");
-    }
+    success = sigaltstack_and_log(&ss, &oss);
+  }
+  if (!success) {
+    log_info(os)("Failed to set alternative signal stack (step %d, errno %d)", step, errno);
   }
 }
 
 void PosixSignals::disable_alternate_signal_stack_for_current_thread() {
   assert(UseAltSigStacks, "invariant");
 
+  int step = 0;
+  bool success = false;
+
+  step ++;
   stack_t ss;
   ss.ss_flags = SS_DISABLE;
+  ss.ss_sp = nullptr;
+  ss.ss_size = 0;
   stack_t oss;
-  oss.ss_flags = 0;
-  oss.ss_size = 0;
-  oss.ss_sp = nullptr;
-  const int rc = ::sigaltstack(&ss, &oss);
-  if (rc == 0) {
-    log_info(os)("Thread " PTR_FORMAT ": alternate signal stack (" RANGEFMT ") disabled",
-        p2i(Thread::current_or_null_safe()), RANGEFMTARGS((address)(ss.ss_sp), ss.ss_size));
-  } else {
-    log_info(os)("Failed to unset alternative signal stack");
+  success = sigaltstack_and_log(&ss, &oss);
+
+  if (success && oss.ss_flags != SS_DISABLE) {
+    step ++;
+    success = os::release_memory((char*)oss.ss_sp, oss.ss_size);
   }
 
-  if (oss.ss_flags != SS_DISABLE) {
-    char* p = (char*)oss.ss_sp;
-    size_t s = oss.ss_size;
-    assert(p != nullptr && s > 0, "invariant");
-    os::release_memory(p, s);
+  if (!success) {
+    log_info(os)("Failed to unsed alternative signal stack (step %d, errno %d)", step, errno);
   }
 }

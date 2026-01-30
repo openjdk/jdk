@@ -24,11 +24,14 @@
 
 #include "runtime/os.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 #include "unittest.hpp"
+
 
 
 TEST_VM(StackOverflow, basics) {
@@ -88,3 +91,46 @@ TEST_VM(StackOverflow, basics) {
     ASSERT_TRUE(so.in_stack_reserved_zone(so.stack_reserved_zone_base() - 1));
   }
 }
+
+// Test UseAltSigStacks
+#ifndef WINDOWS
+static void cause_native_stack_overflow() {
+  tty->print_cr("Will trigger a deliberate stack overflow. "
+                "Please ignore the following stack overflow messages.");
+  VMError::controlled_crash(19);
+}
+
+// Test that we get hs-err files for non-Java threads that have no java
+// guard pages enabled. To work reliably, this requires the platform libc
+// to have guard pages installed, too, but that should be the typical case.
+// Without libc guard pages, the process will also crash but may run amok
+// through adjacent memory areas beforehand, which could muddy the waters.
+struct NonJavaTestThread : public NamedThread {
+  void run() override { cause_native_stack_overflow(); }
+  NonJavaTestThread() {
+    set_name("Test Thread for native stack overflow gtest");
+    if (os::create_thread(this, os::vm_thread)) {
+      os::start_thread(this);
+    }
+  }
+}; // NativeHeapTrimmer
+
+TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread, "SIGSEGV") {
+  new NonJavaTestThread();
+  // Wait some time for the thread to come up and crash the process
+  int wait_ms = 5000;
+  while (wait_ms > 0) {
+    os::naked_short_sleep(100);
+    wait_ms -= 100;
+  }
+  ASSERT_FALSE(false); // We should have died by this point
+}
+
+// Test that we get hs-err files for stack overflows in JVM-hosted JavaThreads. There
+// is a companion jtreg test (runtime/ErrorHandling/NativeStackoverflowTest) which
+// tests the same thing, but for custom JNI code invoked from java.
+TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInJavaThread, "SIGSEGV") {
+  // Gtests get invoked on the "main" java thread, so its a java thread.
+  cause_native_stack_overflow();
+}
+#endif // WINDOWS

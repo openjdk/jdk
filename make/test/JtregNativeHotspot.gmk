@@ -91,6 +91,19 @@ else
   HOTSPOT_JTREG_EXCLUDE += libNativeException.c exeGetProcessorInfo.c
 endif
 
+ifeq ($(call isTargetOs, windows), true)
+  HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
+  HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libnativeStack := java.base:libjvm
+
+  HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c \
+      libCompleteExit.c libMonitorWithDeadObjectTest.c libTestPsig.c \
+      exeGetCreatedJavaVMs.c libTestUnloadedClass.cpp libNativeStackOverflow.c
+else
+  HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
+
+  HOTSPOT_JTREG_EXCLUDE += libNativeException.c exeGetProcessorInfo.c
+endif
+
 ################################################################################
 # Global setup
 

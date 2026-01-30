@@ -1627,6 +1627,12 @@ int VMError::prepare_log_file(const char* pattern, const char* default_pattern, 
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo,
                              const void* context, const char* detail_fmt, ...)
 {
+  if (ExecutingUnitTests) {
+    // See TEST_VM_CRASH_SIGNAL gtest macro
+    char tmp[64];
+    fprintf(stderr, "signaled: %s", os::exception_name(sig, tmp, sizeof(tmp)));
+  }
+
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   report_and_die(sig, nullptr, detail_fmt, detail_args, thread, pc, siginfo, context, nullptr, 0, 0);
@@ -1643,12 +1649,6 @@ void VMError::report_and_die(Thread* thread, const void* context, const char* fi
 
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo, const void* context)
 {
-  if (ExecutingUnitTests) {
-    // See TEST_VM_CRASH_SIGNAL gtest macro
-    char tmp[64];
-    fprintf(stderr, "signaled: %s", os::exception_name(sig, tmp, sizeof(tmp)));
-  }
-
   report_and_die(thread, sig, pc, siginfo, context, "%s", "");
 }
 
@@ -2220,8 +2220,6 @@ void VMError::controlled_crash(int how) {
       os::free(p);
     }
     case 19: {
-printf("Thread " PTR_FORMAT " tid %zd", p2i(Thread::current_or_null_safe()), os::current_thread_id() );
-fflush(stdout);
       // Trigger a native stack overflow
       int i = MAX2(os::random(), 1000 * 1000);
       crash_with_stack_overflow(i);

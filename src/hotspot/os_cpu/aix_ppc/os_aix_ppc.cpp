@@ -182,7 +182,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV && thread->is_in_full_stack(addr)) {
       // stack overflow
-      if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+      if (os::Posix::handle_stack_overflow(thread, addr, pc, info, uc, &stub)) {
         return true; // continue
       } else if (stub != nullptr) {
         goto run_stub;

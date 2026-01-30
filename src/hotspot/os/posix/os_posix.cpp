@@ -1270,7 +1270,7 @@ static bool get_frame_at_stack_banging_point(JavaThread* thread, address pc, con
 
 // This return true if the signal handler should just continue, ie. return after calling this
 bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address pc,
-                                      const void* ucVoid, address* stub) {
+                                      const siginfo_t* info, const void* ucVoid, address* stub) {
   // stack overflow
   StackOverflow* overflow_state = thread->stack_overflow_state();
 
@@ -1321,6 +1321,9 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     // it as a hint.
     tty->print_raw_cr("Please check if any of your loaded .so files has "
                       "enabled executable stack (see man page execstack(8))");
+
+    // There is no point in continuing.
+    VMError::report_and_die(thread, info->si_signo, pc, info, ucVoid, "irrecoverable stack overflow");
 
   } else {
 #ifdef LINUX

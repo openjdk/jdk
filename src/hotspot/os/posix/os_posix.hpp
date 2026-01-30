@@ -100,7 +100,7 @@ public:
   static int clock_tics_per_second();
 
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
-                                    const void* ucVoid,
+                                    const siginfo_t* info, const void* ucVoid,
                                     address* stub);
 };
 
