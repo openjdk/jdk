@@ -27,17 +27,32 @@ package java.io;
 
 import java.nio.charset.Charset;
 import java.util.Locale;
+import java.util.function.Supplier;
 
+import jdk.internal.ValueBased;
 import jdk.internal.io.JdkConsole;
 
 /**
  * Console implementation for internal use. Custom Console delegate may be
  * provided with jdk.internal.io.JdkConsoleProvider.
  */
+@ValueBased
 final class ProxyingConsole extends Console {
     private final JdkConsole delegate;
-    private final LazyConstant<Reader> reader = LazyConstant.of(this::initReader);
-    private final LazyConstant<PrintWriter> printWriter = LazyConstant.of(this::initPrintWriter);
+    private final LazyConstant<Reader> reader =
+        LazyConstant.of(new Supplier<>(){
+            @Override
+            public Reader get() {
+                return new WrappingReader(delegate.reader());
+            }
+        });
+    private final LazyConstant<PrintWriter> printWriter =
+        LazyConstant.of(new Supplier<>() {
+            @Override
+            public PrintWriter get() {
+                return new WrappingWriter(delegate.writer());
+            }
+        });
 
     ProxyingConsole(JdkConsole delegate) {
         this.delegate = delegate;
@@ -185,13 +200,5 @@ final class ProxyingConsole extends Console {
         public void close() {
             // no-op, per Console's spec
         }
-    }
-
-    // Lazily init reader/printWriter
-    private Reader initReader() {
-        return new WrappingReader(delegate.reader());
-    }
-    private PrintWriter initPrintWriter() {
-        return new WrappingWriter(delegate.writer());
     }
 }
