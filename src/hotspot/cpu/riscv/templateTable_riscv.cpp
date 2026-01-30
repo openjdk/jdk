@@ -1461,9 +1461,9 @@ void TemplateTable::iinc() {
   transition(vtos, vtos);
   __ load_signed_byte(x11, at_bcp(2)); // get constant
   locals_index(x12);
-  __ ld(x10, iaddress(x12, x10, _masm));
+  __ lw(x10, iaddress(x12, x10, _masm));
   __ addw(x10, x10, x11);
-  __ sd(x10, iaddress(x12, t0, _masm));
+  __ sw(x10, iaddress(x12, t0, _masm));
 }
 
 void TemplateTable::wide_iinc() {
@@ -1476,9 +1476,9 @@ void TemplateTable::wide_iinc() {
   __ orr(x11, x11, t1);
 
   locals_index_wide(x12);
-  __ ld(x10, iaddress(x12, t0, _masm));
+  __ lw(x10, iaddress(x12, t0, _masm));
   __ addw(x10, x10, x11);
-  __ sd(x10, iaddress(x12, t0, _masm));
+  __ sw(x10, iaddress(x12, t0, _masm));
 }
 
 void TemplateTable::convert() {
