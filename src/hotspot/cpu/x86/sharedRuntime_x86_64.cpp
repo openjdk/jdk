@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1043,26 +1043,24 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   // Class initialization barrier for static methods
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
-    Register method = rbx;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
+  Register method = rbx;
 
-    { // Bypass the barrier for non-static methods
-      Register flags = rscratch1;
-      __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
-      __ testl(flags, JVM_ACC_STATIC);
-      __ jcc(Assembler::zero, L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  Register flags = rscratch1;
+  __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
+  __ testl(flags, JVM_ACC_STATIC);
+  __ jcc(Assembler::zero, L_skip_barrier); // non-static
 
-    Register klass = rscratch1;
-    __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
+  Register klass = rscratch1;
+  __ load_method_holder(klass, method);
+  __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
-    __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+  __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
-    __ bind(L_skip_barrier);
-    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm);
@@ -1904,7 +1902,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   int vep_offset = ((intptr_t)__ pc()) - start;
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = r10;
     __ mov_metadata(klass, method->method_holder()); // InstanceKlass*
@@ -3602,4 +3601,3 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 }
 
 #endif // INCLUDE_JFR
-
