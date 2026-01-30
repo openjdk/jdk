@@ -202,43 +202,40 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
   HeapWord* address = start;
   HeapWord* previous_address = nullptr;
   size_t previous_offset = 0;
-  HeapWord* object_end_address = start;
   size_t current_card_index = -1;
-  uint8_t offset_in_card = -1;
+  ShenandoahDirtyRememberedSetClosure make_cards_dirty;
 
   log_debug(gc, remset)("Update remembered set from " PTR_FORMAT ", to " PTR_FORMAT, p2i(start), p2i(end));
 
-    ShenandoahDirtyRememberedSetClosure make_cards_dirty;
-    while (address < end) {
+  while (address < end) {
 
-      const oop obj = cast_to_oop(address);
-      object_end_address = address + obj->oop_iterate_size(&make_cards_dirty);
+    // Compute card and offset in card for this object
+    const size_t object_card_index = _rs->card_index_for_addr(address);
+    const HeapWord* card_start_address = _rs->addr_for_card_index(object_card_index);
+    const uint8_t offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
 
-      const size_t object_card_index = _rs->card_index_for_addr(address);
-      const HeapWord* card_start_address = _rs->addr_for_card_index(object_card_index);
-      offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
-
-      if (object_card_index != current_card_index) {
-        if (previous_address != nullptr) {
-          // Register the previous object on the previous card, we are starting a new card here
-          set_last_start(current_card_index, previous_offset);
-        }
-
-        current_card_index = object_card_index;
-        if (!starts_object(object_card_index)) {
-          // The previous cycle may have recorded an earlier start in this card. Do not overwrite it.
-          set_first_start(object_card_index, offset_in_card);
-        }
+    if (object_card_index != current_card_index) {
+      if (previous_address != nullptr) {
+        // Register the previous object on the previous card, we are starting a new card here
+        set_last_start(current_card_index, previous_offset);
       }
 
-      previous_offset = offset_in_card;
-      previous_address = address;
-      address = object_end_address;
+      current_card_index = object_card_index;
+      if (!starts_object(object_card_index)) {
+        // The previous cycle may have recorded an earlier start in this card. Do not overwrite it.
+        set_first_start(object_card_index, offset_in_card);
+      }
     }
 
-    // Register the last object seen in this range.
-    set_last_start(current_card_index, offset_in_card);
-  
+    previous_offset = offset_in_card;
+    previous_address = address;
+
+    const oop obj = cast_to_oop(address);
+    address += obj->oop_iterate_size(&make_cards_dirty);
+  }
+
+  // Register the last object seen in this range.
+  set_last_start(current_card_index, previous_offset);
 }
 
 void ShenandoahCardCluster::coalesce_objects(HeapWord* address, size_t length_in_words) {
