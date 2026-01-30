@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2346,12 +2346,18 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
       /* Repeat compilation without installing code for profiling purposes */
       int repeat_compilation_count = directive->RepeatCompilationOption;
-      while (repeat_compilation_count > 0) {
-        ResourceMark rm(thread);
-        task->print_ul("NO CODE INSTALLED");
-        thread->timeout()->reset();
-        comp->compile_method(&ci_env, target, osr_bci, false, directive);
-        repeat_compilation_count--;
+      if (repeat_compilation_count > 0) {
+        CHeapStringHolder failure_reason;
+        failure_reason.set(ci_env._failure_reason.get());
+        while (repeat_compilation_count > 0) {
+          ResourceMark rm(thread);
+          task->print_ul("NO CODE INSTALLED");
+          thread->timeout()->reset();
+          ci_env._failure_reason.clear();
+          comp->compile_method(&ci_env, target, osr_bci, false, directive);
+          repeat_compilation_count--;
+        }
+        ci_env._failure_reason.set(failure_reason.get());
       }
     }
 

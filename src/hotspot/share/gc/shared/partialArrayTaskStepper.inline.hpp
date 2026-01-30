@@ -28,7 +28,6 @@
 #include "gc/shared/partialArrayTaskStepper.hpp"
 
 #include "gc/shared/partialArrayState.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -921,8 +921,9 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
-    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF ||
-      _model == 0xCC || _model == 0xDD)) {
+    (supports_hybrid() ||
+     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ ||
+     _model == 0xDD /* Xeon 6+ E-cores (Clearwater Forest) */ )) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
