@@ -93,8 +93,11 @@ public class compmethunload001 {
         hotCls = null;
         c = null;
 
-        boolean clsUnloaded = clsUnLoader.unloadClass();
-        clsUnLoader = null;
+        // BackgroundCompilation is on by default so wait for compiler threads
+        // to drop references to the to-be-unload class.
+        if (!clsUnLoader.unloadClassAndWait(10_000)) {
+            throw new Failure("Class should have been unloaded");
+        }
     }
 
     private int runThis(String argv[], PrintStream out) throws Exception {
@@ -114,7 +117,7 @@ public class compmethunload001 {
             num = unloaded();
             iter++;
             if (iter > MAX_ITERATIONS) {
-                throw new Failure("PRODUCT BUG: class was not unloaded in " + MAX_ITERATIONS);
+                throw new Failure("PRODUCT BUG: no classunloading callback in " + MAX_ITERATIONS);
             }
         }
         System.out.println("Number of unloaded events " + num + " number of iterations " + iter);

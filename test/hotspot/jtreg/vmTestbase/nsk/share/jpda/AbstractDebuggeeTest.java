@@ -153,7 +153,18 @@ public class AbstractDebuggeeTest {
         ClassUnloader classUnloader = loadedClasses.get(className);
 
         if (classUnloader != null) {
-            boolean wasUnloaded = classUnloader.unloadClass();
+            boolean wasUnloaded;
+            if (expectedUnloadingResult) {
+                // We expect unloading to succeed. Retry multiple times because
+                // JDWP internally creates global references (NewGlobalRef)
+                // when emitting ClassPrepare events. These global references
+                // are released only by the agent thread, whose scheduling can
+                // be delayed, causing class unloading to occur later than
+                // expected.
+                wasUnloaded = classUnloader.unloadClassAndWait(10_000);
+            } else {
+                wasUnloaded = classUnloader.unloadClass();;
+            }
 
             if (wasUnloaded)
                 loadedClasses.remove(className);
