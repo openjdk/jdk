@@ -242,7 +242,7 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
 
     @Override
     protected Key engineTranslateKey(Key key) throws InvalidKeyException {
-        // The base toNamedKey only make sure key is translated into a NamedKey.
+        // The base toNamedKey only makes sure key is translated into a NamedKey.
         // the key material is still the same as the input.
         return toNamedKey(key);
     }

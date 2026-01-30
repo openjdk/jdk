@@ -26,15 +26,22 @@
  * @bug 8347938
  * @library /test/lib
  * @modules java.base/com.sun.crypto.provider
+ *          java.base/sun.security.pkcs
  *          java.base/sun.security.provider
  *          java.base/sun.security.util
+ *          java.base/sun.security.x509
  * @summary check key reading compatibility
  * @run main/othervm SeedOrExpanded
  */
 
+import com.sun.crypto.provider.ML_KEM_Impls;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.security.DerUtils;
 import jdk.test.lib.security.FixedSecureRandom;
 import jdk.test.lib.security.SeededSecureRandom;
+import sun.security.pkcs.NamedPKCS8Key;
+import sun.security.provider.ML_DSA_Impls;
+import sun.security.util.DerValue;
 
 import javax.crypto.KEM;
 import java.security.InvalidKeyException;
@@ -66,19 +73,52 @@ public class SeedOrExpanded {
         var pk = kp.getPublic();
         var kDefault = kp.getPrivate();
 
-        System.setProperty("jdk." + type + ".pkcs8.encoding", "seed");
+        // Property value is case-insensitive
+        System.setProperty("jdk." + type + ".pkcs8.encoding", "SEED");
         g.initialize(-1, new FixedSecureRandom(seed));
         var kSeed = g.generateKeyPair().getPrivate();
         System.setProperty("jdk." + type + ".pkcs8.encoding", "expandedkey");
         g.initialize(-1, new FixedSecureRandom(seed));
         var kExpanded = g.generateKeyPair().getPrivate();
-        System.setProperty("jdk." + type + ".pkcs8.encoding", "both");
+        System.setProperty("jdk." + type + ".pkcs8.encoding", "boTH");
         g.initialize(-1, new FixedSecureRandom(seed));
         var kBoth = g.generateKeyPair().getPrivate();
 
-        Asserts.assertTrue(kExpanded.getEncoded().length > kSeed.getEncoded().length);
-        Asserts.assertTrue(kBoth.getEncoded().length > kExpanded.getEncoded().length);
-        Asserts.assertEqualsByteArray(kSeed.getEncoded(), kDefault.getEncoded());
+        // Invalid property value
+        System.setProperty("jdk." + type + ".pkcs8.encoding", "bogus");
+        g.initialize(-1, new FixedSecureRandom(seed));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> g.generateKeyPair().getPrivate());
+
+        byte[] kExpandedEncoded = kExpanded.getEncoded();
+        byte[] kSeedEncoded = kSeed.getEncoded();
+        byte[] kBothEncoded = kBoth.getEncoded();
+
+        // Ensure tags match the CHOICE definition
+        Asserts.assertEquals((byte) 0x80, DerUtils.innerDerValue(kSeedEncoded, "2c").tag);
+        Asserts.assertEquals((byte) 0x04, DerUtils.innerDerValue(kExpandedEncoded, "2c").tag);
+        Asserts.assertEquals((byte) 0x30, DerUtils.innerDerValue(kBothEncoded, "2c").tag);
+
+        byte[] seedData = DerUtils.innerDerValue(kSeedEncoded, "2c")
+                .withTag(DerValue.tag_OctetString).getOctetString();
+        byte[] expandedData = DerUtils.innerDerValue(kExpandedEncoded, "2c").getOctetString();
+
+        Asserts.assertEqualsByteArray(seed, seedData);
+        Asserts.assertEqualsByteArray(
+                seedData,
+                DerUtils.innerDerValue(kBothEncoded, "2c0").getOctetString());
+        Asserts.assertEqualsByteArray(
+                expandedData,
+                DerUtils.innerDerValue(kBothEncoded, "2c1").getOctetString());
+
+        // Ensure seedToExpanded correctly called
+        if (alg.contains("ML-KEM")) {
+            Asserts.assertEqualsByteArray(expandedData,
+                    ML_KEM_Impls.seedToExpanded(alg, seedData));
+        } else {
+            Asserts.assertEqualsByteArray(expandedData,
+                    ML_DSA_Impls.seedToExpanded(alg, seedData));
+        }
 
         test(alg, pk, kSeed);
         test(alg, pk, kExpanded);
@@ -89,24 +129,24 @@ public class SeedOrExpanded {
         System.setProperty("jdk." + type + ".pkcs8.encoding", "seed");
         Asserts.assertEqualsByteArray(
                 test(alg, pk, kf.translateKey(kBoth)).getEncoded(),
-                kSeed.getEncoded());
+                kSeedEncoded);
         Asserts.assertTrue(kf.translateKey(kSeed) == kSeed);
         Asserts.assertThrows(InvalidKeyException.class, () -> kf.translateKey(kExpanded));
 
         System.setProperty("jdk." + type + ".pkcs8.encoding", "expandedkey");
         Asserts.assertEqualsByteArray(
                 test(alg, pk, kf.translateKey(kBoth)).getEncoded(),
-                kExpanded.getEncoded());
+                kExpandedEncoded);
         Asserts.assertEqualsByteArray(
                 test(alg, pk, kf.translateKey(kSeed)).getEncoded(),
-                kExpanded.getEncoded());
+                kExpandedEncoded);
         Asserts.assertTrue(kf.translateKey(kExpanded) == kExpanded);
 
         System.setProperty("jdk." + type + ".pkcs8.encoding", "both");
         Asserts.assertTrue(kf.translateKey(kBoth) == kBoth);
         Asserts.assertEqualsByteArray(
                 test(alg, pk, kf.translateKey(kSeed)).getEncoded(),
-                kBoth.getEncoded());
+                kBothEncoded);
         Asserts.assertThrows(InvalidKeyException.class, () -> kf.translateKey(kExpanded));
 
         // The following makes sure key is not mistakenly cleaned during
@@ -114,7 +154,7 @@ public class SeedOrExpanded {
         var xk = new PrivateKey() {
             public String getAlgorithm() { return alg; }
             public String getFormat() { return "PKCS#8"; }
-            public byte[] getEncoded() { return kBoth.getEncoded(); }
+            public byte[] getEncoded() { return kBothEncoded.clone(); }
         };
         test(alg, pk, xk);
         var xk2 = (PrivateKey) kf.translateKey(xk);
@@ -130,6 +170,10 @@ public class SeedOrExpanded {
             var enc = e.encapsulate();
             var k1 = kem.newDecapsulator(sk).decapsulate(enc.encapsulation());
             Asserts.assertEqualsByteArray(k1.getEncoded(), enc.key().getEncoded());
+            if (k instanceof NamedPKCS8Key npk) {
+                Asserts.assertEqualsByteArray(
+                        ML_KEM_Impls.privKeyToPubKey(npk).getEncoded(), pk.getEncoded());
+            }
         } else {
             var s = Signature.getInstance("ML-DSA");
             var rnd = RAND.nBytes(32); // randomness for signature generation
@@ -140,6 +184,10 @@ public class SeedOrExpanded {
             s.initVerify(pk);
             s.update(msg);
             Asserts.assertTrue(s.verify(sig1));
+            if (k instanceof NamedPKCS8Key npk) {
+                Asserts.assertEqualsByteArray(
+                        ML_DSA_Impls.privKeyToPubKey(npk).getEncoded(), pk.getEncoded());
+            }
         }
         return sk;
     }

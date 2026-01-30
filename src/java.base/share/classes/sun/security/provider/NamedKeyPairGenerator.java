@@ -91,8 +91,8 @@ import java.security.spec.NamedParameterSpec;
 ///
 /// The private key, represented as a byte array when used in `NamedKEM` or
 /// `NamedSignature`, is referred to as its expanded format. For some
-/// algorithms, this format may differ from the encoding format used in a
-/// PKCS #8 file (i.e. the [NamedPKCS8Key#key] field). For example,
+/// algorithms, this format may differ from the
+/// [key material][NamedPKCS8Key#getRawBytes()] inside a PKCS #8 file. For example,
 /// [FIPS 204](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf)
 /// Table 2 defines the ML-DSA-65 private key as a 4032-byte array, which is
 /// used in the ML-DSA.Sign function in Algorithm 2, representing the
