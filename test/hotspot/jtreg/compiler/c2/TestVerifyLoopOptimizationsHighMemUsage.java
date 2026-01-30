@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 IBM Corporation. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @run main/othervm -XX:CompileCommand=compileonly,${test.main.class}::* -XX:-TieredCompilation -Xbatch
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations
- *                   -XX:CompileCommand=memlimit,${test.main.class}::*,100M~crash
+ *                   -XX:CompileCommand=memlimit,${test.main.class}::*,600M~crash
  *                   -XX:StressSeed=3106998670 ${test.main.class}
  * @run main ${test.main.class}
  */
@@ -37,53 +37,90 @@
 package compiler.c2;
 
 public class TestVerifyLoopOptimizationsHighMemUsage {
+    public static final int N = 400;
+    public static long instanceCount = -13L;
+    public static volatile short sFld = -16143;
+    public static int iFld = -159;
+    public static float fArrFld[] = new float[N];
 
-    static int b = 400;
-    static long c;
-    static boolean d;
-
-    static long lMeth(int e) {
-        int f, g, h, k[] = new int[b];
-        long l[] = new long[b];
-        boolean m[] = new boolean[b];
-        for (f = 5; f < 330; ++f)
-        for (g = 1; g < 5; ++g)
-            for (h = 2; h > 1; h -= 3)
-            switch (f * 5 + 54) {
-            case 156:
-            case 354:
-            case 98:
-            case 173:
-            case 120:
-            case 374:
-            case 140:
-            case 57:
-            case 106:
-            case 306:
-            case 87:
-            case 399:
-                k[1] = (int)c;
-            case 51:
-            case 287:
-            case 148:
-            case 70:
-            case 74:
-            case 59:
-                m[h] = d;
+    public static long lMeth(int i1) {
+        int i2 = 11, i3 = 37085, i4 = 177, i5 = 190, i6 = -234, i7 = 13060,
+                iArr[] = new int[N];
+        float f = 1.179F;
+        double d = 2.9685;
+        long lArr[] = new long[N];
+        for (i2 = 15; i2 < 330; ++i2)
+            for (i4 = 1; i4 < 5; ++i4) {
+                fArrFld[i4 + 1] = (++i1);
+                for (i6 = 2; i6 > 1; i6 -= 3)
+                    switch ((i2 * 5) + 54) {
+                        case 156:
+                            if (i4 != 0)
+                                ;
+                        case 168:
+                        case 342:
+                        case 283:
+                        case 281:
+                        case 328:
+                        case 322:
+                        case 228:
+                        case 114:
+                        case 207:
+                        case 209:
+                        case 354:
+                        case 108:
+                            i1 <<= i1;
+                        case 398:
+                        case 144:
+                        case 218:
+                        case 116:
+                        case 296:
+                        case 198:
+                        case 173:
+                        case 105:
+                        case 120:
+                        case 248:
+                        case 140:
+                        case 352:
+                            try {
+                            } catch (ArithmeticException a_e) {
+                            }
+                        case 404:
+                            i5 += (i6 ^ instanceCount);
+                        case 370:
+                        case 211:
+                        case 231:
+                            try {
+                            } catch (ArithmeticException a_e) {
+                            }
+                        case 251:
+                        case 179:
+                            f += (((i6 * sFld) + i4) -
+                                    iFld);
+                    }
             }
-        long n = p(l);
-        return n;
+        long meth_res = i1 + i2 + i3 + i4 + i5 + i6 + i7 + Float.floatToIntBits(f) +
+                Double.doubleToLongBits(d) + +checkSum(iArr) +
+                checkSum(lArr);
+        return meth_res;
     }
 
-    public static long p(long[] a) {
-        long o = 0;
+    public static long checkSum(int[] a) {
+        long sum = 0;
         for (int j = 0; j < a.length; j++)
-        o += j;
-        return o;
+            sum += (a[j] / (j + 1) + a[j] % (j + 1));
+        return sum;
     }
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 10; i++)
-        lMeth(9);
+    public static long checkSum(long[] a) {
+        long sum = 0;
+        for (int j = 0; j < a.length; j++)
+            sum += (a[j] / (j + 1) + a[j] % (j + 1));
+        return sum;
     }
+
+  public static void main(String[] strArr) {
+    for (int i = 0; i < 10; i++)
+      lMeth(-159);
+  }
 }
