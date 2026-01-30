@@ -306,7 +306,7 @@ public class SecureDS {
 
         // Test: move to cwd
         final String TEXT = "Sous le pont Mirabeau coule la Seine";
-        Path file = Path.of("file-temp");
+        Path file = Path.of("file");
         Path filepath = dir.resolve(file);
         Path cwd = Path.of(System.getProperty("user.dir"));
         Path result = cwd.resolve(file);
