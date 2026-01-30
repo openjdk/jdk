@@ -79,8 +79,8 @@ class G1FullCollector : StackObj {
   bool                      _has_humongous;
   G1FullGCMarker**          _markers;
   G1FullGCCompactionPoint** _compaction_points;
-  OopQueueSet               _oop_queue_set;
-  ObjArrayTaskQueueSet      _array_queue_set;
+  G1MarkTasksQueueSet       _marking_task_queues;
+  PartialArrayStateManager* _partial_array_state_manager;
   PreservedMarksSet         _preserved_marks_set;
   G1FullGCCompactionPoint   _serial_compaction_point;
   G1FullGCCompactionPoint   _humongous_compaction_point;
@@ -96,7 +96,7 @@ class G1FullCollector : StackObj {
 
   G1FullGCHeapRegionAttr _region_attr_table;
 
-  HeapWord* volatile* _compaction_tops;
+  Atomic<HeapWord*>* _compaction_tops;
 
 public:
   G1FullCollector(G1CollectedHeap* heap,
@@ -113,8 +113,7 @@ public:
   uint                     workers() { return _num_workers; }
   G1FullGCMarker*          marker(uint id) { return _markers[id]; }
   G1FullGCCompactionPoint* compaction_point(uint id) { return _compaction_points[id]; }
-  OopQueueSet*             oop_queue_set() { return &_oop_queue_set; }
-  ObjArrayTaskQueueSet*    array_queue_set() { return &_array_queue_set; }
+  G1MarkTasksQueueSet*     marking_task_queues() { return &_marking_task_queues; }
   PreservedMarksSet*       preserved_mark_set() { return &_preserved_marks_set; }
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1FullGCCompactionPoint* humongous_compaction_point() { return &_humongous_compaction_point; }
@@ -124,6 +123,8 @@ public:
     assert(region_index < _heap->max_num_regions(), "sanity");
     return _live_stats[region_index].live_words();
   }
+
+  PartialArrayStateManager* partial_array_state_manager() const;
 
   void before_marking_update_attribute_table(G1HeapRegion* hr);
 
