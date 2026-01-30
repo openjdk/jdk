@@ -26,14 +26,14 @@
  * @summary Unit test for java.nio.file.SecureDirectoryStream
  * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @library .. /test/lib
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jtreg.SkippedException
  * @run main SecureDS
  */
 
 /* @test id=cwd
  * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @library .. /test/lib
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jtreg.SkippedException
  * @run main SecureDS cwd
  */
 
