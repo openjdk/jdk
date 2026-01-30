@@ -25,6 +25,11 @@
 
 package java.util;
 
+import jdk.internal.javac.PreviewFeature;
+
+import java.io.Serializable;
+import java.util.function.Predicate;
+
 /**
  * A collection that contains no duplicate elements.  More formally, sets
  * contain no pair of elements {@code e1} and {@code e2} such that
@@ -734,4 +739,62 @@ public interface Set<E> extends Collection<E> {
             return (Set<E>)Set.of(new HashSet<>(coll).toArray());
         }
     }
+
+    /**
+     * {@return a new lazily computed set with the provided {@code elementCandidates}}
+     * <p>
+     * The returned set is an {@linkplain Collection##unmodifiable unmodifiable} set whose
+     * element candidates are known at construction. The set's element containment status
+     * are lazily computed via the provided {@code computingFunction} when they are first
+     * accessed (e.g., via {@linkplain Set#contains(Object) Set::contains}).
+     * <p>
+     * The provided computing function is guaranteed to be successfully invoked
+     * at most once per element candicate, even in a multi-threaded environment. Competing
+     * threads accessing an element candidate already under containment status computation
+     * will block until the containment status of the element candidate is computed or the
+     * computing function completes abnormally.
+     * <p>
+     * If invoking the provided computing function throws an exception, it
+     * is rethrown to the initial caller and no containment status associated with the
+     * provided element candidate is recorded.
+     * <p>
+     * If the provided computing function recursively calls itself via
+     * the returned lazy set for the same element candidate, an
+     * {@linkplain IllegalStateException} will be thrown.
+     * <p>
+     * The returned set's {@linkplain Object Object methods};
+     * {@linkplain Object#equals(Object) equals()},
+     * {@linkplain Object#hashCode() hashCode()}, and
+     * {@linkplain Object#toString() toString()} methods may trigger initialization of
+     * one or more lazy elements.
+     * <p>
+     * The returned lazy set strongly references its underlying
+     * computing function used to compute containment status at least as long as there are
+     * uncomputed element candidates.
+     * <p>
+     * The returned Set is <em>not</em> {@linkplain Serializable}.
+     *
+     * @implNote  after all element candidate statuses have been initialized successfully,
+     *            the computing function is no longer strongly referenced and becomes
+     *            eligible for garbage collection.
+     *
+     * @param elementCandidates the (non-null) element candidates to be evaluated
+     * @param computingFunction to invoke whenever the containment status of an element
+     *                          candidate is first computed
+     * @param <E>               the type of elements maintained by the returned set
+     * @throws NullPointerException if the provided set of {@code elementCandidated} is
+     *                             {@code null} or if the set of {@code elementCandidated}
+     *                             contains a {@code null} element.
+     *
+     * @see LazyConstant
+     * @since 27
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
+    static <E> Set<E> ofLazy(Set<? extends E> elementCandidates,
+                             Predicate<? super E> computingFunction) {
+        Objects.requireNonNull(elementCandidates);
+        Objects.requireNonNull(computingFunction);
+        return LazyCollections.ofLazySet(elementCandidates, computingFunction);
+    }
+
 }

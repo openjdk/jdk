@@ -31,14 +31,9 @@ import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.LazyConstant;
 import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 /**
  * Container class for lazy collections implementations. Not part of the public API.
@@ -416,6 +411,128 @@ final class LazyCollections {
 
     }
 
+    static final class LazySet<E>
+            extends ImmutableCollections.AbstractImmutableSet<E>
+            implements Set<E> {
+
+        @Stable
+        private final Map<E, Boolean> map;
+
+        // -1 is used as a sentinel value for zero so we can get
+        // stable access for all `size` values.
+        @Stable
+        private int size;
+
+        @Stable
+        private int hash;
+
+        public LazySet(Set<? extends E> elementCandidates,
+                       Predicate<? super E> computingFunction) {
+            this.map = Map.ofLazy(elementCandidates, e -> computingFunction.test(e));
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return map.getOrDefault(o, Boolean.FALSE).booleanValue();
+        }
+
+        @Override
+        public int hashCode() {
+            // Racy computation
+            int h = hash;
+            if (h == 0) {
+                hash = h = hashCode0();
+            }
+            return h;
+        }
+
+        public int hashCode0() {
+            int hash = 0;
+            for (var e: map.entrySet()) {
+                if (e.getValue()) {
+                    hash += e.getKey().hashCode();
+                }
+            }
+            return hash;
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return new LazySetIterator<>(map.entrySet().iterator());
+        }
+
+        static final class LazySetIterator<E> implements Iterator<E> {
+
+            @Stable
+            private final Iterator<Map.Entry<E, Boolean>> iterator;
+
+            E current;
+
+            public LazySetIterator(Iterator<Map.Entry<E, Boolean>> iterator) {
+                this.iterator = iterator;
+            }
+
+            @Override
+            public boolean hasNext() {
+                if (current != null) {
+                    return true;
+                }
+                while (iterator.hasNext()) {
+                    Map.Entry<E, Boolean> e = iterator.next();
+                    if (e.getValue()) {
+                        current = e.getKey();
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public E next() {
+                E e = current;
+                if (e != null) {
+                    return consumeCurrent(e);
+                }
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return consumeCurrent(current);
+            }
+
+            private E consumeCurrent(E e) {
+                current = null;
+                return e;
+            }
+
+        }
+
+        @Override
+        public int size() {
+            // Racy computation
+            int s = size;
+            if (s == 0) {
+                s = size0();
+                if (s == 0) {
+                    s = -1;
+                }
+                size = s;
+            }
+            return s == -1 ? 0 : s;
+        }
+
+        private int size0() {
+            int size = 0;
+            for (var e: map.entrySet()) {
+                if (e.getValue()) {
+                    size++;
+                }
+            }
+            return size;
+        }
+
+    }
+
+
     static final class Mutexes {
 
         private static final Object TOMB_STONE = new Object();
@@ -474,6 +591,11 @@ final class LazyCollections {
     public static <K, V> Map<K, V> ofLazyMap(Set<K> keys,
                                              Function<? super K, ? extends V> computingFunction) {
         return new LazyMap<>(keys, computingFunction);
+    }
+
+    public static <E> Set<E> ofLazySet(Set<? extends E> elementCandidates,
+                                       Predicate<? super E> computingFunction) {
+        return new LazySet<>(elementCandidates, computingFunction);
     }
 
     @SuppressWarnings("unchecked")
