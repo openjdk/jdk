@@ -301,27 +301,16 @@ final class Http3ServerStreamImpl {
         ByteBuffer current;
 
         ByteBuffer current() throws IOException {
-            Object reason = closeReason.get();
-            if (reason != null) {
-                if (reason == Boolean.TRUE) {
-                    throw new IOException("Stream is closed");
-                } else {
-                    throw new IOException((IOException)reason);
-                }
-            }
             while (true) {
-                if (current != null && current.hasRemaining()) {
-                    return current;
-                }
-                if (current == QuicStreamReader.EOF) {
-                    reason = closeReason.get();
-                    if (reason != null) {
-                        if (reason == Boolean.TRUE) {
-                            throw new IOException("Stream is closed");
-                        } else {
-                            throw new IOException((IOException)reason);
-                        }
+                Object reason = closeReason.get();
+                if (reason != null) {
+                    if (reason == Boolean.TRUE) {
+                        throw new IOException("Stream is closed");
+                    } else {
+                        throw new IOException((IOException)reason);
                     }
+                }
+                if (current != null && (current.hasRemaining() || current == QuicStreamReader.EOF)) {
                     return current;
                 }
                 try {
