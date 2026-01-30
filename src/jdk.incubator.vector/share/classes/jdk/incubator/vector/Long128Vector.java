@@ -56,6 +56,8 @@ final class Long128Vector extends LongVector {
 
     static final Class<Long> ETYPE = long.class; // used by the JVM
 
+    static final int LANE_TYPE_ORDINAL = LT_LONG;
+
     Long128Vector(long[] v) {
         super(v);
     }
@@ -117,6 +119,13 @@ final class Long128Vector extends LongVector {
     final @Override
     long[] vec() {
         return (long[])getPayload();
+    }
+
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
     }
 
     // Virtualized constructors
@@ -517,7 +526,7 @@ final class Long128Vector extends LongVector {
     @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
-                                VCLASS, LT_LONG, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     long[] vecarr = vec.vec();
@@ -538,7 +547,7 @@ final class Long128Vector extends LongVector {
     @ForceInline
     public Long128Vector withLaneHelper(int i, long e) {
         return VectorSupport.insert(
-                                VCLASS, LT_LONG, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     long[] res = v.vec().clone();
@@ -642,8 +651,8 @@ final class Long128Vector extends LongVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_LONG, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -653,7 +662,7 @@ final class Long128Vector extends LongVector {
         /*package-private*/
         Long128Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Long128Mask) VectorSupport.indexPartiallyInUpperRange(
-                Long128Mask.class, LT_LONG, VLENGTH, offset, limit,
+                Long128Mask.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (Long128Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -669,7 +678,7 @@ final class Long128Vector extends LongVector {
         @ForceInline
         public Long128Mask compress() {
             return (Long128Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Long128Vector.class, Long128Mask.class, LT_LONG, VLENGTH, null, this,
+                Long128Vector.class, Long128Mask.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -745,7 +754,7 @@ final class Long128Vector extends LongVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Long128Mask.class, LT_LONG, VLENGTH,
+            return VectorSupport.extract(Long128Mask.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 

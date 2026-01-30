@@ -56,6 +56,8 @@ final class Byte256Vector extends ByteVector {
 
     static final Class<Byte> ETYPE = byte.class; // used by the JVM
 
+    static final int LANE_TYPE_ORDINAL = LT_BYTE;
+
     Byte256Vector(byte[] v) {
         super(v);
     }
@@ -117,6 +119,13 @@ final class Byte256Vector extends ByteVector {
     final @Override
     byte[] vec() {
         return (byte[])getPayload();
+    }
+
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
     }
 
     // Virtualized constructors
@@ -557,7 +566,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     public byte laneHelper(int i) {
         return (byte) VectorSupport.extract(
-                                VCLASS, LT_BYTE, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     byte[] vecarr = vec.vec();
@@ -608,7 +617,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     public Byte256Vector withLaneHelper(int i, byte e) {
         return VectorSupport.insert(
-                                VCLASS, LT_BYTE, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     byte[] res = v.vec().clone();
@@ -712,8 +721,8 @@ final class Byte256Vector extends ByteVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_BYTE, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -723,7 +732,7 @@ final class Byte256Vector extends ByteVector {
         /*package-private*/
         Byte256Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Byte256Mask) VectorSupport.indexPartiallyInUpperRange(
-                Byte256Mask.class, LT_BYTE, VLENGTH, offset, limit,
+                Byte256Mask.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (Byte256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -739,7 +748,7 @@ final class Byte256Vector extends ByteVector {
         @ForceInline
         public Byte256Mask compress() {
             return (Byte256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Byte256Vector.class, Byte256Mask.class, LT_BYTE, VLENGTH, null, this,
+                Byte256Vector.class, Byte256Mask.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -815,7 +824,7 @@ final class Byte256Vector extends ByteVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Byte256Mask.class, LT_BYTE, VLENGTH,
+            return VectorSupport.extract(Byte256Mask.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 

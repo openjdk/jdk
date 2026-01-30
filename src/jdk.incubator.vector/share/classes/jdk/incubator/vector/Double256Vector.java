@@ -56,6 +56,8 @@ final class Double256Vector extends DoubleVector {
 
     static final Class<Double> ETYPE = double.class; // used by the JVM
 
+    static final int LANE_TYPE_ORDINAL = LT_DOUBLE;
+
     Double256Vector(double[] v) {
         super(v);
     }
@@ -117,6 +119,13 @@ final class Double256Vector extends DoubleVector {
     final @Override
     double[] vec() {
         return (double[])getPayload();
+    }
+
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
     }
 
     // Virtualized constructors
@@ -518,7 +527,7 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
-                     VCLASS, LT_DOUBLE, VLENGTH,
+                     VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      double[] vecarr = vec.vec();
@@ -541,7 +550,7 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     public Double256Vector withLaneHelper(int i, double e) {
         return VectorSupport.insert(
-                                VCLASS, LT_DOUBLE, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)Double.doubleToRawLongBits(e),
                                 (v, ix, bits) -> {
                                     double[] res = v.vec().clone();
@@ -645,8 +654,8 @@ final class Double256Vector extends DoubleVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_DOUBLE, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -656,7 +665,7 @@ final class Double256Vector extends DoubleVector {
         /*package-private*/
         Double256Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Double256Mask) VectorSupport.indexPartiallyInUpperRange(
-                Double256Mask.class, LT_DOUBLE, VLENGTH, offset, limit,
+                Double256Mask.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (Double256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -672,7 +681,7 @@ final class Double256Vector extends DoubleVector {
         @ForceInline
         public Double256Mask compress() {
             return (Double256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Double256Vector.class, Double256Mask.class, LT_DOUBLE, VLENGTH, null, this,
+                Double256Vector.class, Double256Mask.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -748,7 +757,7 @@ final class Double256Vector extends DoubleVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Double256Mask.class, LT_DOUBLE, VLENGTH,
+            return VectorSupport.extract(Double256Mask.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 

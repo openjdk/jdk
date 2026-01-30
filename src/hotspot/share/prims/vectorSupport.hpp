@@ -138,12 +138,12 @@ class VectorSupport : AllStatic {
   };
 
   enum LaneType {
-    LT_FLOAT     = 6,
-    LT_DOUBLE    = 7,
-    LT_BYTE      = 8,
-    LT_SHORT     = 9,
-    LT_INT       = 10,
-    LT_LONG      = 11
+    LT_FLOAT     = 0,
+    LT_DOUBLE    = 1,
+    LT_BYTE      = 2,
+    LT_SHORT     = 3,
+    LT_INT       = 4,
+    LT_LONG      = 5
   };
 
   enum {

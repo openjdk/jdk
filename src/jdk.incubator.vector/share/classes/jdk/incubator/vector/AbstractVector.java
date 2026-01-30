@@ -84,6 +84,9 @@ abstract class AbstractVector<E> extends Vector<E> {
     /*package-private*/
     abstract AbstractSpecies<E> vspecies();
 
+    /*package-private*/
+    abstract int laneTypeOrdinal();
+
     @Override
     @ForceInline
     public final VectorSpecies<E> species() {
@@ -199,9 +202,9 @@ abstract class AbstractVector<E> extends Vector<E> {
     /*package-private*/
     @ForceInline
     final <F> VectorShuffle<F> bitsToShuffleTemplate(AbstractSpecies<F> dsp) {
-        int etype = vspecies().laneBasicType();
+        int etype = vspecies().laneTypeOrdinal();
         Class<?> dvtype = dsp.shuffleType();
-        int dtype = dsp.asIntegral().laneBasicType();
+        int dtype = dsp.asIntegral().laneTypeOrdinal();
         int dlength = dsp.dummyVector().length();
         return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
                                      getClass(), etype, length(),
@@ -733,9 +736,9 @@ abstract class AbstractVector<E> extends Vector<E> {
             AbstractSpecies<?> vsp = this.vspecies();
             AbstractSpecies<?> vspi = vsp.asIntegral();
             AbstractVector<?> biti = vspi == vsp ? this : this.convert0('X', vspi);
-            rtype = rspi.laneBasicType();
+            rtype = rspi.laneTypeOrdinal();
             rlength = rspi.laneCount();
-            etype = vspi.laneBasicType();
+            etype = vspi.laneTypeOrdinal();
             vlength = vspi.laneCount();
             rvtype = rspi.dummyVector().getClass();
             vtype = vspi.dummyVector().getClass();
@@ -747,9 +750,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     AbstractVector::defaultUCast);
             return (rspi == rsp ? bitv.check0(rsp) : bitv.convert0('X', rsp));
         case 'C':  // lane-wise cast (but not identity)
-            rtype = rsp.laneBasicType();
+            rtype = rsp.laneTypeOrdinal();
             rlength = rsp.laneCount();
-            etype = this.vspecies().laneBasicType(); // (profile)
+            etype = this.vspecies().laneTypeOrdinal(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();
@@ -759,9 +762,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     this, rsp,
                     AbstractVector::defaultCast);
         case 'X':  // reinterpret cast, not lane-wise if lane sizes differ
-            rtype = rsp.laneBasicType();
+            rtype = rsp.laneTypeOrdinal();
             rlength = rsp.laneCount();
-            etype = this.vspecies().laneBasicType(); // (profile)
+            etype = this.vspecies().laneTypeOrdinal(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();

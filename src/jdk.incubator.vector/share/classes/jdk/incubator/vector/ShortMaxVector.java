@@ -56,6 +56,8 @@ final class ShortMaxVector extends ShortVector {
 
     static final Class<Short> ETYPE = short.class; // used by the JVM
 
+    static final int LANE_TYPE_ORDINAL = LT_SHORT;
+
     ShortMaxVector(short[] v) {
         super(v);
     }
@@ -117,6 +119,13 @@ final class ShortMaxVector extends ShortVector {
     final @Override
     short[] vec() {
         return (short[])getPayload();
+    }
+
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
     }
 
     // Virtualized constructors
@@ -526,7 +535,7 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     public short laneHelper(int i) {
         return (short) VectorSupport.extract(
-                                VCLASS, LT_SHORT, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     short[] vecarr = vec.vec();
@@ -546,7 +555,7 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     public ShortMaxVector withLaneHelper(int i, short e) {
         return VectorSupport.insert(
-                                VCLASS, LT_SHORT, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     short[] res = v.vec().clone();
@@ -650,8 +659,8 @@ final class ShortMaxVector extends ShortVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_SHORT, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -661,7 +670,7 @@ final class ShortMaxVector extends ShortVector {
         /*package-private*/
         ShortMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (ShortMaxMask) VectorSupport.indexPartiallyInUpperRange(
-                ShortMaxMask.class, LT_SHORT, VLENGTH, offset, limit,
+                ShortMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (ShortMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -677,7 +686,7 @@ final class ShortMaxVector extends ShortVector {
         @ForceInline
         public ShortMaxMask compress() {
             return (ShortMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                ShortMaxVector.class, ShortMaxMask.class, LT_SHORT, VLENGTH, null, this,
+                ShortMaxVector.class, ShortMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -753,7 +762,7 @@ final class ShortMaxVector extends ShortVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(ShortMaxMask.class, LT_SHORT, VLENGTH,
+            return VectorSupport.extract(ShortMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 

@@ -56,6 +56,8 @@ final class FloatMaxVector extends FloatVector {
 
     static final Class<Float> ETYPE = float.class; // used by the JVM
 
+    static final int LANE_TYPE_ORDINAL = LT_FLOAT;
+
     FloatMaxVector(float[] v) {
         super(v);
     }
@@ -117,6 +119,13 @@ final class FloatMaxVector extends FloatVector {
     final @Override
     float[] vec() {
         return (float[])getPayload();
+    }
+
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
     }
 
     // Virtualized constructors
@@ -514,7 +523,7 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                     VCLASS, LT_FLOAT, VLENGTH,
+                     VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
@@ -534,7 +543,7 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     public FloatMaxVector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
-                                VCLASS, LT_FLOAT, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
@@ -638,8 +647,8 @@ final class FloatMaxVector extends FloatVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_FLOAT, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -649,7 +658,7 @@ final class FloatMaxVector extends FloatVector {
         /*package-private*/
         FloatMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (FloatMaxMask) VectorSupport.indexPartiallyInUpperRange(
-                FloatMaxMask.class, LT_FLOAT, VLENGTH, offset, limit,
+                FloatMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (FloatMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -665,7 +674,7 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public FloatMaxMask compress() {
             return (FloatMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                FloatMaxVector.class, FloatMaxMask.class, LT_FLOAT, VLENGTH, null, this,
+                FloatMaxVector.class, FloatMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -741,7 +750,7 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(FloatMaxMask.class, LT_FLOAT, VLENGTH,
+            return VectorSupport.extract(FloatMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 

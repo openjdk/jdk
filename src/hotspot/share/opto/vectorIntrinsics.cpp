@@ -299,7 +299,15 @@ static bool is_primitive_lane_type(VectorSupport::LaneType laneType) {
 
 static BasicType get_vector_primitive_lane_type(VectorSupport::LaneType lane_type) {
   assert(is_primitive_lane_type(lane_type), "");
-  return static_cast<BasicType>(lane_type);
+  switch (lane_type) {
+    case VectorSupport::LaneType::LT_FLOAT: return T_FLOAT;
+    case VectorSupport::LaneType::LT_DOUBLE: return T_DOUBLE;
+    case VectorSupport::LaneType::LT_LONG: return T_LONG;
+    case VectorSupport::LaneType::LT_INT: return T_INT;
+    case VectorSupport::LaneType::LT_SHORT: return T_SHORT;
+    case VectorSupport::LaneType::LT_BYTE: return T_BYTE;
+  }
+  return T_ILLEGAL;
 }
 
 //
