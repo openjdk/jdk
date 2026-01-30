@@ -891,7 +891,7 @@ inline Node* LibraryCallKit::generate_fair_guard(Node* test, RegionNode* region)
 }
 
 inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* region,
-                                                     Node* *pos_index, bool is_opaque) {
+                                                     Node** pos_index, bool is_opaque) {
   if (stopped())
     return nullptr;                // already stopped
   if (_gvn.type(index)->higher_equal(TypeInt::POS)) // [0,maxint]
