@@ -28,7 +28,7 @@ int zero = 0;
 int result = 0;
 int limit = 20;
 
-// Explicitly don't inline: foo is large enough that GCC won't inline it, but Clang might.
+// Explicitly don't inline. foo needs complexity so GCC/Clang don't optimize it away.
 #if !defined(_MSC_VER)
 __attribute__((noinline))
 #endif
