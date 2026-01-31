@@ -2057,6 +2057,25 @@ public abstract sealed class $Type$Buffer
      */
     public abstract CharBuffer subSequence(int start, int end);
 
+    /**
+     * {@return the number of Unicode code points in this character sequence}
+     * Isolated surrogate code units count as one code point each.
+     *
+     * @since 27
+     */
+    public final int codePointCount() {
+        // Refer to the definition of length() (the above) and remaining() (Buffer.java)
+        int lim = limit();
+        int count = l;
+        for (int i = position(); i < lim;) {
+            if (Character.isHighSurrogate(get(i++)) && Character.isLowSurrogate(get(i))) {
+                l--;
+                i++;
+            }
+        }
+        return count;
+    }
+
 
     // --- Methods to support Appendable ---
 
