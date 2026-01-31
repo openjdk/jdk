@@ -25,7 +25,6 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
-import jdk.test.lib.Utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,8 +32,6 @@ import java.io.Writer;
 import java.lang.ProcessHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -47,7 +44,6 @@ import java.util.stream.Collectors;
  * @bug 8289643 8291760 8291986
  * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
  * @summary File descriptor leak detection with ProcessBuilder.startPipeline
- * @library /test/lib
  * @run junit/othervm PipelineLeaksFD
  */
 
@@ -81,7 +77,7 @@ public class PipelineLeaksFD {
     // Check if lsof is available
     private static boolean checkForLSOF() {
         try {
-            lsofForAll(new ArrayList<>());
+            lsofForAll();
             return true;
         } catch (IOException ioe) {
             System.err.println("Skipping: " + ioe);
@@ -94,7 +90,7 @@ public class PipelineLeaksFD {
     @MethodSource("builders")
     void checkForLeaks(List<ProcessBuilder> builders) throws IOException {
 
-        List<String> lsofLines = lsofForAll(new ArrayList<>());
+        List<String> lsofLines = lsofForAll();
         Set<PipeRecord> pipesBefore = pipesFromLSOF(lsofLines, MY_PID);
         if (pipesBefore.size() < 3) {
             // Dump all lsof output to aid debugging
@@ -113,9 +109,6 @@ public class PipelineLeaksFD {
             out.write(text);
         }
 
-        ArrayList<Long> pids = new ArrayList<>();
-        processes.forEach(p -> pids.add(p.pid()));
-
         // Read, check, and close all streams
         for (int i = 0; i < processes.size(); i++) {
             final Process p = processes.get(i);
@@ -133,7 +126,7 @@ public class PipelineLeaksFD {
 
         processes.forEach(PipelineLeaksFD::waitForQuiet);
 
-        lsofLines = lsofForAll(pids);
+        lsofLines = lsofForAll();
         Set<PipeRecord> pipesAfter = pipesFromLSOF(lsofLines, MY_PID);
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
@@ -166,9 +159,7 @@ public class PipelineLeaksFD {
                 .redirectErrorStream(redirectError)
                 .start()) {
             System.err.printf("Parent PID; %d, Child Pid: %d\n", MY_PID, p.pid());
-            ArrayList<Long> pids = new ArrayList<>();
-            pids.add(p.pid());
-            List<String> lsofLines = lsofForAll(pids);
+            List<String> lsofLines = lsofForAll();
             final Set<PipeRecord> pipes = pipesFromLSOF(lsofLines, p.pid());
             printPipes(pipes, "Parent and waiting child pipes");
             int uniquePipes = redirectError ? 8 : 9;
@@ -211,7 +202,7 @@ public class PipelineLeaksFD {
      * @return A set of PipeRecords, possibly empty
      */
     private static Set<PipeRecord> pipesForPid(long pid) throws IOException {
-        var lines = lsofForAll(new ArrayList<>());
+        var lines = lsofForAll();
         return pipesFromLSOF(lines, pid);
     }
 
@@ -235,32 +226,20 @@ public class PipelineLeaksFD {
      * Files are used for `lsof` input and output to avoid creating pipes.
      * @return a List of lines output from `lsof`.
      */
-    private static List<String> lsofForAll(List<Long> pids) throws IOException {
+    private static List<String> lsofForAll() throws IOException {
         Path tmpDir = Path.of(".");
         String tmpPrefix = "lsof-";
         Path lsofEmptyInput = Files.createTempFile(tmpDir, tmpPrefix, ".empty");
         Path lsofOutput = Files.createTempFile(tmpDir, tmpPrefix, ".tmp");
-        StringBuilder command = new StringBuilder("lsof -p " + MY_PID);
-        pids.forEach(pid -> command.append(",").append(pid));
-        System.out.println("Running lsof command: " + command);
-        try (Process p = new ProcessBuilder(command.toString().split(" "))
+        try (Process p = new ProcessBuilder("lsof")
                 .redirectOutput(lsofOutput.toFile())
                 .redirectInput(lsofEmptyInput.toFile()) // empty input
                 .redirectError(ProcessBuilder.Redirect.DISCARD) // ignored output
                 .start()) {
-            boolean status = p.waitFor(Utils.adjustTimeout(60), TimeUnit.SECONDS);
-            if (!status) {
-                p.destroyForcibly();
-                Thread.sleep(100);
-                if (p.isAlive()) {
-                    p.destroyForcibly();
-                }
-            }
-            assertTrue(status, "Process 'lsof' failed");
-            List<String> lines = Files.readAllLines(lsofOutput);
-            lsofEmptyInput.toFile().delete();
-            lsofOutput.toFile().delete();
-            return lines;
+            int status = p.waitFor();
+            assertEquals(0, status, "Process 'lsof' failed");
+
+            return Files.readAllLines(lsofOutput);
         } catch (InterruptedException ie) {
             throw new IOException("Waiting for lsof exit interrupted", ie);
         }
