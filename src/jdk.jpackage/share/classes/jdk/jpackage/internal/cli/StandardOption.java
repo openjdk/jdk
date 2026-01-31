@@ -697,9 +697,8 @@ public final class StandardOption {
 
     private static UnaryOperator<Set<OptionScope>> nativeBundling() {
         return scope -> {
-            return new SetBuilder<OptionScope>()
-                    .set(scope)
-                    .remove(new SetBuilder<OptionScope>().set(StandardBundlingOperation.values()).remove(CREATE_NATIVE).create())
+            return SetBuilder.build(scope)
+                    .remove(SetBuilder.<OptionScope>build(StandardBundlingOperation.values()).remove(CREATE_NATIVE).create())
                     .create();
         };
     }
