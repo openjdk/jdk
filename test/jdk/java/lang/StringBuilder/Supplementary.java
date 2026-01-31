@@ -261,7 +261,7 @@ public class Supplementary {
 
             int result = sb.codePointCount();
             int expected = Character.codePointCount(sb, 0, sb.length());
-            check(result != expected, "codePointCount()", result, expected)
+            check(result != expected, "codePointCount()", result, expected);
         }
     }
 
