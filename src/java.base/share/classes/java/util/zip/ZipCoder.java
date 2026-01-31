@@ -92,6 +92,10 @@ class ZipCoder {
         return hsh;
     }
 
+    String toString(byte[] ba) {
+        return toString(ba, 0, ba.length);
+    }
+
     String toString(byte[] ba, int off, int length) {
         try {
             return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
@@ -99,11 +103,7 @@ class ZipCoder {
             throw new IllegalArgumentException(x);
         }
     }
-
-    String toString(byte[] ba) {
-        return toString(ba, 0, ba.length);
-    }
-
+    
     byte[] getBytes(String s) {
         try {
             ByteBuffer bb = encoder().encode(CharBuffer.wrap(s));
