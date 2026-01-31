@@ -90,10 +90,6 @@ class ZipCoder {
         }
     }
 
-    String toString(byte[] ba, int length) {
-        return toString(ba, 0, length);
-    }
-
     String toString(byte[] ba) {
         return toString(ba, 0, ba.length);
     }
