@@ -103,7 +103,7 @@ class ZipCoder {
             throw new IllegalArgumentException(x);
         }
     }
-    
+
     byte[] getBytes(String s) {
         try {
             ByteBuffer bb = encoder().encode(CharBuffer.wrap(s));
@@ -154,14 +154,14 @@ class ZipCoder {
     }
 
     private final Charset cs;
-    protected CharsetDecoder dec;
+    private CharsetDecoder dec;
     private CharsetEncoder enc;
 
     private ZipCoder(Charset cs) {
         this.cs = cs;
     }
 
-    protected CharsetDecoder decoder() {
+    private CharsetDecoder decoder() {
         if (dec == null) {
             dec = cs.newDecoder()
               .onMalformedInput(CodingErrorAction.REPORT)
