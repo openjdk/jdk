@@ -297,7 +297,7 @@ public class SATestUtils {
         try(var arena = Arena.ofConfined()){
             var info = arena.allocate(structDLInfo);
             int result = (int)dladdr.invoke(ptrStrlen, info);
-            if(result == 0){
+            if (result == 0) {
                 throw new RuntimeException("dladdr() returns zero");
             }
 
