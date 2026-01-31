@@ -82,6 +82,16 @@ class ZipCoder {
          */
         NO_MATCH = 2;
 
+    // Hash function equivalent of checkedHash for String inputs
+    static int hash(String name) {
+        int hsh = name.hashCode();
+        int len = name.length();
+        if (len > 0 && name.charAt(len - 1) != '/') {
+            hsh = hsh * 31 + '/';
+        }
+        return hsh;
+    }
+
     String toString(byte[] ba, int off, int length) {
         try {
             return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
@@ -141,16 +151,6 @@ class ZipCoder {
             h = 31 * h + '/';
         }
         return h;
-    }
-
-    // Hash function equivalent of checkedHash for String inputs
-    static int hash(String name) {
-        int hsh = name.hashCode();
-        int len = name.length();
-        if (len > 0 && name.charAt(len - 1) != '/') {
-            hsh = hsh * 31 + '/';
-        }
-        return hsh;
     }
 
     private final Charset cs;
