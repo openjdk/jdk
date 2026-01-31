@@ -35,6 +35,7 @@
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/resizableHashTable.hpp"
@@ -330,16 +331,13 @@ public:
   }
 
   inline static u4 to_offset_u4(uintx offset_bytes) {
-    guarantee(is_aligned(offset_bytes, (size_t)1 << ArchiveUtils::OFFSET_SHIFT),
+    guarantee(is_aligned(offset_bytes, (size_t)1 << ArchiveUtils::MetadataOffsetShift),
               "offset not aligned for scaled encoding");
-    uintx offset_units = offset_bytes >> ArchiveUtils::OFFSET_SHIFT;
-    guarantee(offset_units <= 0xFFFFFFFF, "offset units must fit in u4");
-    return (u4)offset_units;
+    uintx offset_units = offset_bytes >> ArchiveUtils::MetadataOffsetShift;
+    return checked_cast<u4>(offset_units);
   }
 
 public:
-  static constexpr uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;
-
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
   uintx buffer_to_offset(address p) const;

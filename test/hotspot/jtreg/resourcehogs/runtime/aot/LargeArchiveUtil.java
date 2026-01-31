@@ -30,7 +30,7 @@ import java.nio.file.Paths;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-class LargeCDSUtil {
+class LargeArchiveUtil {
     static final long TWO_G = 2L * 1024 * 1024 * 1024;
 
     static void deleteIfExists(String... files) throws IOException {

@@ -175,10 +175,10 @@ ArchiveBuilder::ArchiveBuilder() :
   _mapped_static_archive_bottom(nullptr),
   _mapped_static_archive_top(nullptr),
   _buffer_to_requested_delta(0),
-  _pz_region("pz", MAX_SHARED_DELTA), // protection zone -- used only during dumping; does NOT exist in cds archive.
-  _rw_region("rw", MAX_SHARED_DELTA),
-  _ro_region("ro", MAX_SHARED_DELTA),
-  _ac_region("ac", MAX_SHARED_DELTA),
+  _pz_region("pz", ArchiveUtils::MaxMetadataOffsetBytes), // protection zone -- used only during dumping; does NOT exist in cds archive.
+  _rw_region("rw", ArchiveUtils::MaxMetadataOffsetBytes),
+  _ro_region("ro", ArchiveUtils::MaxMetadataOffsetBytes),
+  _ac_region("ac", ArchiveUtils::MaxMetadataOffsetBytes),
   _ptrmap(mtClassShared),
   _rw_ptrmap(mtClassShared),
   _ro_ptrmap(mtClassShared),
@@ -322,7 +322,7 @@ void ArchiveBuilder::sort_klasses() {
 address ArchiveBuilder::reserve_buffer() {
   // On 64-bit: reserve address space for archives up to the 32GB limit.
   // On 32-bit: use 256MB + AOT code size due to limited virtual address space.
-  size_t buffer_size = LP64_ONLY(MAX_SHARED_DELTA)
+  size_t buffer_size = LP64_ONLY(ArchiveUtils::MaxMetadataOffsetBytes)
                        NOT_LP64(256 * M + AOTCodeCache::max_aot_code_size());
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              AOTMetaspace::core_region_alignment(),
@@ -1011,7 +1011,7 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
 }
 
 address ArchiveBuilder::offset_to_buffered_address(u4 offset_units) const {
-  uintx offset_bytes = ((uintx)offset_units) << ArchiveUtils::OFFSET_SHIFT;
+  uintx offset_bytes = ((uintx)offset_units) << ArchiveUtils::MetadataOffsetShift;
   address requested_addr = _requested_static_archive_bottom + offset_bytes;
   address buffered_addr = requested_addr - _buffer_to_requested_delta;
   assert(is_in_buffer_space(buffered_addr), "bad offset");

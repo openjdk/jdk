@@ -21,16 +21,16 @@
  * questions.
  */
 
-public class LargeCDSApp {
+public class LargeArchiveApp {
     public static void main(String[] args) throws Exception {
         int simple = Integer.parseInt(args[0]);
         int mega = Integer.parseInt(args[1]);
 
         for (int i = 0; i < simple; i++) {
-            Class.forName("gen.C" + LargeCDSUtil.toFixedWidth(i, 6));
+            Class.forName("gen.C" + LargeArchiveUtil.toFixedWidth(i, 6));
         }
         for (int i = 0; i < mega; i++) {
-            Class.forName("gen.M" + LargeCDSUtil.toFixedWidth(i, 6));
+            Class.forName("gen.M" + LargeArchiveUtil.toFixedWidth(i, 6));
         }
         System.out.println("DONE");
     }

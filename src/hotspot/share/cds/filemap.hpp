@@ -158,8 +158,6 @@ private:
   bool    _type_profile_casts;
   int     _spec_trap_limit_extra_entries;
 
-  int     _offset_shift;
-
   template <typename T> T from_mapped_offset(size_t offset) const {
     return (T)(mapped_base_address() + offset);
   }
@@ -209,7 +207,6 @@ public:
   bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
-  int offset_shift()                       const { return _offset_shift; }
 
   // Heap archiving
   const ArchiveMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }

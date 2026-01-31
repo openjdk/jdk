@@ -376,7 +376,7 @@ public:
 
 template <typename V>
 inline V read_value_from_compact_hashtable(address base_address, u4 offset_units) {
-  uintx offset_bytes = ((uintx)offset_units) << ArchiveUtils::OFFSET_SHIFT;
+  uintx offset_bytes = ((uintx)offset_units) << ArchiveUtils::MetadataOffsetShift;
   return (V)(base_address + offset_bytes);
 }
 
