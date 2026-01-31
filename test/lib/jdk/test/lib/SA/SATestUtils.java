@@ -351,7 +351,7 @@ public class SATestUtils {
     }
 
     /**
-     * This method would work on Linux only.
+     * This method will work on Linux only.
      * Both "readelf" and "nm" have to be available.
      * @return true if given symbol is available on given lib.
      */
