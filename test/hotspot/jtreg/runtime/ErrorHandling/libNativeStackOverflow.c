@@ -23,10 +23,17 @@
 
 #include <jni.h>
 
-
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
+#if defined(__clang_major__)
+  #pragma clang optimize off
+  #pragma GCC diagnostic ignored "-Winfinite-recursion"
+#elif defined(__GNUC__)
+  #pragma GCC optimize ("O0")
+  #if (__GNUC__ >= 12)
+    #pragma GCC diagnostic ignored "-Winfinite-recursion"
+  #endif
+#elif defined (__xlC__)
+  #pragma option_override(function_name, "opt(level, 0)")
+#endif
 
 /*
  * Class:     NativeStackOverflowTest_Crasher
@@ -37,5 +44,3 @@ JNIEXPORT void JNICALL Java_NativeStackOverflowTest_00024Crasher_crash
   (JNIEnv* env, jclass cls) {
   Java_NativeStackOverflowTest_00024Crasher_crash(env, cls);
 }
-
-#pragma GCC pop_options

@@ -93,7 +93,13 @@ TEST_VM(StackOverflow, basics) {
 }
 
 // Test UseAltSigStacks
+
+// (relies on VMError::controlled_crash which is only available in debug builds)
+#ifdef ASSERT
+
+// Not available on Windows
 #ifndef WINDOWS
+
 static void cause_native_stack_overflow() {
   tty->print_cr("Will trigger a deliberate stack overflow. "
                 "Please ignore the following stack overflow messages.");
@@ -101,10 +107,9 @@ static void cause_native_stack_overflow() {
 }
 
 // Test that we get hs-err files for non-Java threads that have no java
-// guard pages enabled. To work reliably, this requires the platform libc
-// to have guard pages installed, too, but that should be the typical case.
-// Without libc guard pages, the process will also crash but may run amok
-// through adjacent memory areas beforehand, which could muddy the waters.
+// guard pages enabled. To work reliably, this requires platform libc or kernel
+// to have its guard pages installed at the bottom of a pthread stack. But that
+// should typically be the case.
 struct NonJavaTestThread : public NamedThread {
   void run() override { cause_native_stack_overflow(); }
   NonJavaTestThread() {
@@ -115,7 +120,15 @@ struct NonJavaTestThread : public NamedThread {
   }
 }; // NativeHeapTrimmer
 
-TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread, "SIGSEGV") {
+// Note: on MacOS, running into the native guard page at the end of a stack generates
+// a SIGBUS, not a SIGSEGV
+#ifdef __APPLE__
+#define EXPECTED_SIGNAL "SIGBUS"
+#else
+#define EXPECTED_SIGNAL "SIGSEGV"
+#endif
+
+TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread, EXPECTED_SIGNAL) {
   new NonJavaTestThread();
   // Wait some time for the thread to come up and crash the process
   int wait_ms = 5000;
@@ -125,6 +138,7 @@ TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread, "SIGSEGV
   }
   ASSERT_FALSE(false); // We should have died by this point
 }
+#undef EXPECTED_SIGNAL
 
 // Test that we get hs-err files for stack overflows in JVM-hosted JavaThreads. There
 // is a companion jtreg test (runtime/ErrorHandling/NativeStackoverflowTest) which
@@ -134,3 +148,4 @@ TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInJavaThread, "SIGSEGV") 
   cause_native_stack_overflow();
 }
 #endif // WINDOWS
+#endif // ASSERT
