@@ -385,7 +385,7 @@ public class SuppressionWarningTest extends TestRunner {
 
         case PROCESSING -> null;    // skip for now
 
-        case RAW -> new SuppressTest(category,
+        case RAWTYPES -> new SuppressTest(category,
             "compiler.warn.raw.class.use",
             null,
             """

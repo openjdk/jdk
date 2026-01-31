@@ -943,6 +943,7 @@ public:
     _java_lang_Deprecated_for_removal,
     _jdk_internal_vm_annotation_AOTSafeClassInitializer,
     _method_AOTRuntimeSetup,
+    _jdk_internal_vm_annotation_TrustFinalFields,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1878,6 +1879,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _field_Stable;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_TrustFinalFields_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_TrustFinalFields;
+    }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
       if (_location != _in_field && _location != _in_class) {
         break;  // only allow for fields and classes
@@ -1991,6 +1997,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   }
   if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
     ik->set_has_aot_safe_initializer();
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_TrustFinalFields)) {
+    ik->set_trust_final_fields(true);
   }
 }
 

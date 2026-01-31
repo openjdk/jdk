@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "runtime/atomic.hpp"
 
 class G1CollectedHeap;
 class G1ConcurrentMark;
@@ -41,7 +42,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
   G1ConcurrentMark* _cm;
   G1HeapRegionClaimer _hrclaimer;
 
-  uint volatile _total_selected_for_rebuild;
+  Atomic<uint> _total_selected_for_rebuild;
 
   // Reclaimed empty regions
   G1FreeRegionList _cleanup_list;
@@ -57,7 +58,9 @@ public:
 
   void work(uint worker_id) override;
 
-  uint total_selected_for_rebuild() const { return _total_selected_for_rebuild; }
+  uint total_selected_for_rebuild() const {
+    return _total_selected_for_rebuild.load_relaxed();
+  }
 
   static uint desired_num_workers(uint num_regions);
 };

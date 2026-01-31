@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,18 +192,20 @@ void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, 
 }
 #endif
 
-void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
+void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered) {
   BytecodePrinter method_printer(flags);
   BytecodeStream s(method);
   s.set_interval(from, to);
 
-  // Keep output to st coherent: collect all lines and print at once.
   ResourceMark rm;
   stringStream ss;
+  outputStream* out = buffered ? &ss : st;
   while (s.next() >= 0) {
-    method_printer.trace(method, s.bcp(), &ss);
+    method_printer.trace(method, s.bcp(), out);
   }
-  st->print("%s", ss.as_string());
+  if (buffered) {
+    st->print("%s", ss.as_string());
+  }
 }
 
 void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
