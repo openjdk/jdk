@@ -353,7 +353,7 @@ public class SATestUtils {
     /**
      * This method will work on Linux only.
      * Both "readelf" and "nm" have to be available.
-     * @return true if given symbol is available on given lib.
+     * @return true if given symbol is available in given lib.
      */
     public static boolean isSymbolAvailable(String lib, String symbol) {
         try {
