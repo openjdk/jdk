@@ -215,13 +215,13 @@ public class Supplementary {
     }
 
     /**
-     * Test codePointCount(int, int) & codePointCount()
+     * Test codePointCount(int, int)
      *
      * This test case assumes that
      * Character.codePointCount(CharSequence, int, int) works
      * correctly.
      */
-    static void test5() {
+    static void testCodePointCountTwoArgs() {
         for (int i = 0; i < input.length; i++) {
             String s = input[i];
             StringBuilder sb = new StringBuilder(s);
@@ -239,16 +239,29 @@ public class Supplementary {
                       result, expected);
             }
 
-
-            int result = sb.codePointCount();
-            int expected = Character.codePointCount(sb, 0, sb.length());
-            check(result != expected, "codePointCount()", result, expected);
-
             // test exceptions
             testCodePointCount(null, 0, 0, NullPointerException.class);
             testCodePointCount(sb, -1, length, IndexOutOfBoundsException.class);
             testCodePointCount(sb, 0, length+1, IndexOutOfBoundsException.class);
             testCodePointCount(sb, length, length-1, IndexOutOfBoundsException.class);
+        }
+    }
+
+    /**
+     * Test codePointCount()
+     *
+     * This test case assumes that
+     * Character.codePointCount(CharSequence) works
+     * correctly.
+     */
+    static void testCodePointCountNoArg() {
+        for (int i = 0; i < input.length; i++) {
+            String s = input[i];
+            StringBuilder sb = new StringBuilder(s);
+
+            int result = sb.codePointCount();
+            int expected = Character.codePointCount(sb, 0, sb.length());
+            check(result != expected, "codePointCount()", result, expected)
         }
     }
 
