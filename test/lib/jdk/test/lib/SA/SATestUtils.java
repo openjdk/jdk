@@ -311,8 +311,8 @@ public class SATestUtils {
     }
 
     /**
-     * Find debuginfo file from the library.
-     * This method would work on Linux only.
+     * Find debuginfo file for the library.
+     * This method will work on Linux only.
      * "readelf" has to be available.
      * @return null if debuginfo is not available.
      */
