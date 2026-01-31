@@ -553,8 +553,8 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
 bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
                                       PhaseTransform* phase) {
-  // Trivial case: Non-overlapping values, be careful, we can cast a raw pointer to an oop so
-  // joining the types only works if both are oops
+  // Trivial case: Non-overlapping values, be careful, we can cast a raw pointer to an oop (e.g. in
+  // the allocation pattern) so joining the types only works if both are oops
   const Type* p1_type = p1->bottom_type();
   const Type* p2_type = p2->bottom_type();
   const Type* join = p1_type->join(p2_type);
@@ -705,7 +705,7 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     // This means the access is dead
     return phase->C->top();
   } else if (adr_type->base() == TypePtr::AnyPtr) {
-    // Give up on a very wide access
+    // Give up on a very wide access, this will upset Compile::get_alias_index
     return nullptr;
   }
 
@@ -738,9 +738,10 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       }
 
       // If the bases are the same and the offsets are the same, it seems that this is the exact
-      // store we are looking for, the caller will check if the type of the store matches
+      // store we are looking for, the caller will check if the type of the store matches using
+      // MemNode::can_see_stored_value
       if (st_base == base && st_offset == offset) {
-        return mem;
+        return mem; // (b) found the store that this access observes
       }
 
       // If it is provable that the memory accessed by mem does not overlap the memory accessed by
@@ -769,7 +770,7 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
           // in the same sequence of RawMem effects.  We sometimes initialize
           // a whole 'tile' of array elements with a single jint or jlong.)
           mem = mem->in(MemNode::Memory);
-          continue;
+          continue; // (a) advance through the independent store
         }
       }
 
@@ -781,14 +782,12 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       // Try to prove that 2 different base nodes at compile time are different values at runtime
       bool known_independent = false;
       if (detect_ptr_independence(base, alloc, st_base, AllocateNode::Ideal_allocation(st_base), phase)) {
-        // detect_ptr_independence == true means that it can prove that base and st_base cannot
-        // have the same runtime value
         known_independent = true;
       }
 
       if (known_independent) {
         mem = mem->in(MemNode::Memory);
-        continue;
+        continue; // (a) advance through the independent store
       }
     } else if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
       InitializeNode* st_init = mem->in(0)->as_Initialize();
@@ -1233,7 +1232,10 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       }
       // LoadVector/StoreVector needs additional check to ensure the types match.
       if (st->is_StoreVector()) {
-        // Some kind of masked access or gather/scatter
+        // Some kind of masked access or gather/scatter. For gather/scatter, we need to make sure
+        // that the indices match. On the other hand, a masked load cannot match a masked store
+        // because even when the masks are the same, the inactive elements are 0. For these cases
+        // we give up for now.
         if ((Opcode() != Op_LoadVector && Opcode() != Op_StoreVector) || st->Opcode() != Op_StoreVector) {
           return nullptr;
         }
@@ -3566,7 +3568,9 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       result = mem;
     } else if (Opcode() == Op_StoreVector && val->Opcode() == Op_LoadVector &&
                as_StoreVector()->vect_type() == val->as_LoadVector()->vect_type()) {
-      // Ensure vector type is the same
+      // Ensure vector type is the same. For a masked access or a gather/scatter, we need to check
+      // for the equivalence of the mask or the indices vector, respectively. We give up on those
+      // cases for now.
       result = mem;
     }
   }
