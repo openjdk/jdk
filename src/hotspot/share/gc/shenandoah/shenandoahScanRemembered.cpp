@@ -201,7 +201,7 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
 void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
   HeapWord* address = start;
   HeapWord* previous_address = nullptr;
-  size_t previous_offset = 0;
+  uint8_t previous_offset = 0;
   size_t current_card_index = -1;
   ShenandoahDirtyRememberedSetClosure make_cards_dirty;
 
