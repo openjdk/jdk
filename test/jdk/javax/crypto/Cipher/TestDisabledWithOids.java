@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,25 @@
 
 /**
  * @test
- * @build test/* m1/* m2/* m3/* Unnamed
- * @run junit/othervm test/p.PrivateLookupInTests
- * @summary Unit tests for MethodHandles.privateLookupIn
+ * @bug 8375549
+ * @summary Test JCE layer algorithm restriction using algorithms w/ oids
+ * @library /test/lib
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms=Cipher.DES,Cipher.RSA/ECB/PKCS1Padding TestDisabledWithOids
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding,Cipher.DES TestDisabledWithOids
  */
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.Cipher;
+import jdk.test.lib.Utils;
+
+public class TestDisabledWithOids {
+    public static void main(String[] args) throws Exception {
+        String algo1 = "RSA/ECB/PKCS1Padding";
+        String algo2 = "DES";
+
+        Utils.runAndCheckException(() -> Cipher.getInstance(algo1),
+                            NoSuchAlgorithmException.class);
+        Utils.runAndCheckException(() -> Cipher.getInstance(algo2),
+                            NoSuchAlgorithmException.class);
+        System.out.println("Done");
+    }
+}

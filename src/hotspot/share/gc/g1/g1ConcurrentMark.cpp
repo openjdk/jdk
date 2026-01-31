@@ -291,9 +291,9 @@ void G1CMMarkStack::expand() {
   _chunk_allocator.try_expand();
 }
 
-void G1CMMarkStack::add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem) {
-  elem->next = *list;
-  *list = elem;
+void G1CMMarkStack::add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem) {
+  elem->next = list->load_relaxed();
+  list->store_relaxed(elem);
 }
 
 void G1CMMarkStack::add_chunk_to_chunk_list(TaskQueueEntryChunk* elem) {
@@ -307,10 +307,10 @@ void G1CMMarkStack::add_chunk_to_free_list(TaskQueueEntryChunk* elem) {
   add_chunk_to_list(&_free_list, elem);
 }
 
-G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_list(TaskQueueEntryChunk* volatile* list) {
-  TaskQueueEntryChunk* result = *list;
+G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_list(Atomic<TaskQueueEntryChunk*>* list) {
+  TaskQueueEntryChunk* result = list->load_relaxed();
   if (result != nullptr) {
-    *list = (*list)->next;
+    list->store_relaxed(list->load_relaxed()->next);
   }
   return result;
 }
@@ -364,8 +364,8 @@ bool G1CMMarkStack::par_pop_chunk(G1TaskQueueEntry* ptr_arr) {
 
 void G1CMMarkStack::set_empty() {
   _chunks_in_chunk_list = 0;
-  _chunk_list = nullptr;
-  _free_list = nullptr;
+  _chunk_list.store_relaxed(nullptr);
+  _free_list.store_relaxed(nullptr);
   _chunk_allocator.reset();
 }
 
