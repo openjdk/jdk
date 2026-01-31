@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -515,11 +515,10 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         readFully(b, 0, len);
         // Force to use UTF-8 if the USE_UTF8 bit is ON
+        ZipCoder zc = ((flag & USE_UTF8) != 0) ? ZipCoder.UTF8 : this.zc;
         String entryName;
         try {
-            entryName = ((flag & USE_UTF8) != 0) ?
-                    ZipCoder.toStringUTF8(b, len)
-                    : zc.toString(b, len);
+            entryName = zc.toString(b, len);
         } catch (Exception ex) {
             throw (ZipException) new ZipException(
                     "invalid LOC header (bad entry name)").initCause(ex);

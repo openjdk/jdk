@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,10 +112,6 @@ class ZipCoder {
         } catch (CharacterCodingException x) {
             throw new IllegalArgumentException(x);
         }
-    }
-
-    static String toStringUTF8(byte[] ba, int len) {
-        return UTF8.toString(ba, 0, len);
     }
 
     boolean isUTF8() {
