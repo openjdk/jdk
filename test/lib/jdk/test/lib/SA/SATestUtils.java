@@ -268,8 +268,8 @@ public class SATestUtils {
     }
 
     /**
-     * Find library file what provides address of strlen(3), then returns it as libc.
-     * This method would work on Linux only.
+     * Find library file that provides strlen(3), then returns it as libc.
+     * This method works on Linux only.
      * @return path to libc
      */
     @SuppressWarnings("restricted")
