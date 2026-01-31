@@ -2058,7 +2058,8 @@ public abstract sealed class $Type$Buffer
     public abstract CharBuffer subSequence(int start, int end);
 
     /**
-     * {@return the number of Unicode code points in this character sequence}
+     * {@return the number of Unicode code points in this character sequence
+     * between {@link #position()} (inclusive) and {@link #limit()} (exclusive)}
      * Isolated surrogate code units count as one code point each.
      *
      * @since 27

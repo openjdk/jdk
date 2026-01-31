@@ -1881,9 +1881,6 @@ public final class String
     }
 
     /**
-     * {@return the number of Unicode code points in this String}
-     * Isolated surrogate code units count as one code point each.
-     *
      * @since 27
      */
     public int codePointCount() {
