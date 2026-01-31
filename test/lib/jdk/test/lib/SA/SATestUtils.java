@@ -318,11 +318,11 @@ public class SATestUtils {
      */
     public static String getDebugInfo(String lib) {
         try {
-            // Attempt to find symbol from debuginfo in /usr/lib/debug
+            // Attempt to find debuginfo in /usr/lib/debug
             Path debuginfoPath = Path.of("/usr/lib/debug", lib + ".debug");
             boolean exists = Files.exists(debuginfoPath);
             if (!exists) {
-                // Attempt to find symbol from build ID
+                // Attempt to find debuginfo with build ID
                 var proc = (new ProcessBuilder("readelf", "-n", lib)).start();
                 try (var reader = proc.inputReader()) {
                     var buildID =  reader.lines()
