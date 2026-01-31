@@ -202,7 +202,7 @@ public class ZipFile implements ZipConstants, Closeable {
         long t0 = System.nanoTime();
 
         this.zipCoder = ZipCoder.get(charset);
-        this.res = new CleanableResource(this, zipCoder, file, mode);
+        this.res = new CleanableResource(this, zipCoder, charset, file, mode);
 
         PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
         PerfCounter.getZipFileCount().increment();
@@ -698,12 +698,12 @@ public class ZipFile implements ZipConstants, Closeable {
 
         Source zsrc;
 
-        CleanableResource(ZipFile zf, ZipCoder zipCoder, File file, int mode) throws IOException {
+        CleanableResource(ZipFile zf, ZipCoder zipCoder, Charset charset, File file, int mode) throws IOException {
             assert zipCoder != null : "null ZipCoder";
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
             this.inflaterCache = new ArrayDeque<>();
-            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zipCoder);
+            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zipCoder, charset);
         }
 
         void clean() {
@@ -1501,12 +1501,12 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final java.nio.file.FileSystem builtInFS =
                 DefaultFileSystemProvider.theFileSystem();
 
-        static Source get(File file, boolean toDelete, ZipCoder zipCoder) throws IOException {
+        static Source get(File file, boolean toDelete, ZipCoder zipCoder, Charset charset) throws IOException {
             final Key key;
             try {
                 key = new Key(file,
                         Files.readAttributes(builtInFS.getPath(file.getPath()),
-                                BasicFileAttributes.class), zipCoder.charset());
+                                BasicFileAttributes.class), charset);
             } catch (InvalidPathException ipe) {
                 throw new IOException(ipe);
             }
