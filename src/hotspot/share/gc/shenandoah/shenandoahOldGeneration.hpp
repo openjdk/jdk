@@ -181,9 +181,6 @@ public:
   // Iterate over recently promoted objects to update card table and object registrations
   void update_card_table();
 
-  // A successful evacuation re-dirties the cards and registers the object with the remembered set
-  void handle_evacuation(HeapWord* obj, size_t words) const;
-
   // Clear the flag after it is consumed by the control thread
   bool clear_failed_evacuation() {
     return _failed_evacuation.try_unset();

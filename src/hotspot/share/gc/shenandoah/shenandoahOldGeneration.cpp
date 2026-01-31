@@ -640,17 +640,6 @@ void ShenandoahOldGeneration::update_card_table() {
   });
 }
 
-void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words) const {
-  // Only register the copy of the object that won the evacuation race.
-  _card_scan->register_object_without_lock(obj);
-
-  // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
-  // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
-  // do this in batch, in a background GC thread than to try to carefully dirty only cards
-  // that hold interesting pointers right now.
-  _card_scan->mark_range_as_dirty(obj, words);
-}
-
 bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {
   return _old_heuristics->unprocessed_old_collection_candidates() > 0;
 }
