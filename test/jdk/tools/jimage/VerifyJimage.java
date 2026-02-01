@@ -23,7 +23,6 @@
 
 import jdk.internal.jimage.BasicImageReader;
 import jtreg.SkippedException;
-import jdk.test.lib.Utils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
