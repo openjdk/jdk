@@ -56,8 +56,6 @@ final class Short64Vector extends ShortVector {
 
     static final Class<Short> ETYPE = short.class; // used by the JVM
 
-    static final int LANE_TYPE_ORDINAL = LT_SHORT;
-
     Short64Vector(short[] v) {
         super(v);
     }
@@ -704,7 +702,7 @@ final class Short64Vector extends ShortVector {
         public Short64Mask and(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short64Mask m = (Short64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Short64Mask.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Short64Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -714,7 +712,7 @@ final class Short64Vector extends ShortVector {
         public Short64Mask or(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short64Mask m = (Short64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Short64Mask.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Short64Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -724,7 +722,7 @@ final class Short64Vector extends ShortVector {
         public Short64Mask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short64Mask m = (Short64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Short64Mask.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Short64Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -734,21 +732,21 @@ final class Short64Vector extends ShortVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Short64Mask.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Short64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Short64Mask.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Short64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Short64Mask.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Short64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -758,7 +756,7 @@ final class Short64Vector extends ShortVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Short64Mask.class, LT_SHORT, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Short64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -777,7 +775,7 @@ final class Short64Vector extends ShortVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Short64Mask.class, LT_SHORT, VLENGTH,
+            return VectorSupport.test(BT_ne, Short64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((Short64Mask)m).getBits()));
         }
@@ -785,7 +783,7 @@ final class Short64Vector extends ShortVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Short64Mask.class, LT_SHORT, VLENGTH,
+            return VectorSupport.test(BT_overflow, Short64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((Short64Mask)m).getBits()));
         }
@@ -793,7 +791,7 @@ final class Short64Vector extends ShortVector {
         @ForceInline
         /*package-private*/
         static Short64Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Short64Mask.class, LT_SHORT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Short64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

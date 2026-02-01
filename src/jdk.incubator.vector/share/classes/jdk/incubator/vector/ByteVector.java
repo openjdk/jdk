@@ -59,6 +59,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     static final ValueLayout.OfByte ELEMENT_LAYOUT = ValueLayout.JAVA_BYTE.withByteAlignment(1);
 
+    static final int LANE_TYPE_ORDINAL = LT_BYTE;
+
+    static final int LANEBITS_TYPE_ORDINAL = LT_BYTE;
+
     @ForceInline
     static int opCode(Operator op) {
         return VectorOperators.opCode(op, VO_OPCODE_VALID, FORBID_OPCODE_KIND);

@@ -59,6 +59,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withByteAlignment(1);
 
+    static final int LANE_TYPE_ORDINAL = LT_INT;
+
+    static final int LANEBITS_TYPE_ORDINAL = LT_INT;
+
     @ForceInline
     static int opCode(Operator op) {
         return VectorOperators.opCode(op, VO_OPCODE_VALID, FORBID_OPCODE_KIND);

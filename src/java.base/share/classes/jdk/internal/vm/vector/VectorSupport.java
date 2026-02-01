@@ -149,7 +149,7 @@ public class VectorSupport {
     public static final int MODE_BROADCAST = 0;
     public static final int MODE_BITS_COERCED_LONG_TO_MASK = 1;
 
-    // Lane type codes for vector:
+    // Values correspond to jdk.incubator.vector.LaneType ordinals
     public static final int
         LT_FLOAT     = 0,
         LT_DOUBLE    = 1,

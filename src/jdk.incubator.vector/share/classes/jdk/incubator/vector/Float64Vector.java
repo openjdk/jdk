@@ -56,8 +56,6 @@ final class Float64Vector extends FloatVector {
 
     static final Class<Float> ETYPE = float.class; // used by the JVM
 
-    static final int LANE_TYPE_ORDINAL = LT_FLOAT;
-
     Float64Vector(float[] v) {
         super(v);
     }
@@ -689,7 +687,7 @@ final class Float64Vector extends FloatVector {
         public Float64Mask and(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Float64Mask.class, null, LT_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Float64Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -699,7 +697,7 @@ final class Float64Vector extends FloatVector {
         public Float64Mask or(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Float64Mask.class, null, LT_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Float64Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -709,7 +707,7 @@ final class Float64Vector extends FloatVector {
         public Float64Mask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float64Mask.class, null, LT_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float64Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -719,21 +717,21 @@ final class Float64Vector extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float64Mask.class, LT_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float64Mask.class, LT_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float64Mask.class, LT_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -743,7 +741,7 @@ final class Float64Vector extends FloatVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float64Mask.class, LT_INT, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -762,7 +760,7 @@ final class Float64Vector extends FloatVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Float64Mask.class, LT_INT, VLENGTH,
+            return VectorSupport.test(BT_ne, Float64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((Float64Mask)m).getBits()));
         }
@@ -770,7 +768,7 @@ final class Float64Vector extends FloatVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Float64Mask.class, LT_INT, VLENGTH,
+            return VectorSupport.test(BT_overflow, Float64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((Float64Mask)m).getBits()));
         }
@@ -778,7 +776,7 @@ final class Float64Vector extends FloatVector {
         @ForceInline
         /*package-private*/
         static Float64Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Float64Mask.class, LT_INT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Float64Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

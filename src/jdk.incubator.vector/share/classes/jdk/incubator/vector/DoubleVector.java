@@ -59,6 +59,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
     static final ValueLayout.OfDouble ELEMENT_LAYOUT = ValueLayout.JAVA_DOUBLE.withByteAlignment(1);
 
+    static final int LANE_TYPE_ORDINAL = LT_DOUBLE;
+
+    static final int LANEBITS_TYPE_ORDINAL = LT_LONG;
+
     @ForceInline
     static int opCode(Operator op) {
         return VectorOperators.opCode(op, VO_OPCODE_VALID, FORBID_OPCODE_KIND);

@@ -56,8 +56,6 @@ final class Double256Vector extends DoubleVector {
 
     static final Class<Double> ETYPE = double.class; // used by the JVM
 
-    static final int LANE_TYPE_ORDINAL = LT_DOUBLE;
-
     Double256Vector(double[] v) {
         super(v);
     }
@@ -693,7 +691,7 @@ final class Double256Vector extends DoubleVector {
         public Double256Mask and(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double256Mask m = (Double256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Double256Mask.class, null, LT_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Double256Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -703,7 +701,7 @@ final class Double256Vector extends DoubleVector {
         public Double256Mask or(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double256Mask m = (Double256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Double256Mask.class, null, LT_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Double256Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -713,7 +711,7 @@ final class Double256Vector extends DoubleVector {
         public Double256Mask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double256Mask m = (Double256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Double256Mask.class, null, LT_LONG, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Double256Mask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -723,21 +721,21 @@ final class Double256Vector extends DoubleVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double256Mask.class, LT_LONG, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double256Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double256Mask.class, LT_LONG, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double256Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double256Mask.class, LT_LONG, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double256Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -747,7 +745,7 @@ final class Double256Vector extends DoubleVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Double256Mask.class, LT_LONG, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Double256Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -766,7 +764,7 @@ final class Double256Vector extends DoubleVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Double256Mask.class, LT_LONG, VLENGTH,
+            return VectorSupport.test(BT_ne, Double256Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((Double256Mask)m).getBits()));
         }
@@ -774,7 +772,7 @@ final class Double256Vector extends DoubleVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Double256Mask.class, LT_LONG, VLENGTH,
+            return VectorSupport.test(BT_overflow, Double256Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((Double256Mask)m).getBits()));
         }
@@ -782,7 +780,7 @@ final class Double256Vector extends DoubleVector {
         @ForceInline
         /*package-private*/
         static Double256Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Double256Mask.class, LT_LONG, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Double256Mask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

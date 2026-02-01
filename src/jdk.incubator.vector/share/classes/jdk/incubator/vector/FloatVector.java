@@ -59,6 +59,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     static final ValueLayout.OfFloat ELEMENT_LAYOUT = ValueLayout.JAVA_FLOAT.withByteAlignment(1);
 
+    static final int LANE_TYPE_ORDINAL = LT_FLOAT;
+
+    static final int LANEBITS_TYPE_ORDINAL = LT_INT;
+
     @ForceInline
     static int opCode(Operator op) {
         return VectorOperators.opCode(op, VO_OPCODE_VALID, FORBID_OPCODE_KIND);

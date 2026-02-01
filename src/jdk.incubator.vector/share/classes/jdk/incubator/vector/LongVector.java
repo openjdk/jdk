@@ -59,6 +59,10 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     static final ValueLayout.OfLong ELEMENT_LAYOUT = ValueLayout.JAVA_LONG.withByteAlignment(1);
 
+    static final int LANE_TYPE_ORDINAL = LT_LONG;
+
+    static final int LANEBITS_TYPE_ORDINAL = LT_LONG;
+
     @ForceInline
     static int opCode(Operator op) {
         return VectorOperators.opCode(op, VO_OPCODE_VALID, FORBID_OPCODE_KIND);
