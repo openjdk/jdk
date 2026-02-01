@@ -146,16 +146,9 @@ public abstract class VerifyJimage implements Runnable {
                         pool.execute(new ModuleResourceComparator(rootDir, modName, jimage));
                     }
                 }
-                pool.shutdown();
-                long timeout = Utils.adjustTimeout(20);
-                if (!pool.awaitTermination(timeout, TimeUnit.SECONDS)) {
-                    failed.add("Directory verification timed out in " + timeout + " seconds");
-                }
+                pool.close();
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
-            } catch (InterruptedException e) {
-                failed.add("Directory verification was interrupted");
-                Thread.currentThread().interrupt();
             }
         }
 
