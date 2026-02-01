@@ -546,8 +546,6 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         Op_StrIndexOf,
         { { 2, ShenandoahLoad },                  { 4, ShenandoahLoad } },
         Op_StrComp,
-        { { 2, ShenandoahLoad },                  { 4, ShenandoahLoad } },
-        Op_StrEquals,
         { { 2, ShenandoahLoad },                  { 3, ShenandoahLoad } },
         Op_VectorizedHashCode,
         { { 2, ShenandoahLoad },                  { -1, ShenandoahNone } },

@@ -228,7 +228,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_compareToU:
     case vmIntrinsics::_compareToLU:
     case vmIntrinsics::_compareToUL:
-    case vmIntrinsics::_equalsL:
     case vmIntrinsics::_equalsC:
     case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_getCharStringU:
@@ -566,9 +565,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_indexOfU_char:
   case vmIntrinsics::_indexOfL_char:
     if (!SpecialStringIndexOf) return true;
-    break;
-  case vmIntrinsics::_equalsL:
-    if (!SpecialStringEquals) return true;
     break;
   case vmIntrinsics::_vectorizedHashCode:
     if (!UseVectorizedHashCodeIntrinsic) return true;

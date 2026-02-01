@@ -85,19 +85,6 @@ final class StringLatin1 {
     }
 
     @IntrinsicCandidate
-    static boolean equals(byte[] value, byte[] other) {
-        if (value.length == other.length) {
-            for (int i = 0; i < value.length; i++) {
-                if (value[i] != other[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @IntrinsicCandidate
     static int compareTo(byte[] value, byte[] other) {
         int len1 = value.length;
         int len2 = other.length;

@@ -1382,67 +1382,6 @@ encode %{
     __ bind(Ldone);
   %}
 
-  enc_class enc_String_Equals(R0RegP str1, R1RegP str2, R2RegI cnt, iRegI result, iRegI tmp1, iRegI tmp2) %{
-    Label Lchar, Lchar_loop, Ldone, Lequal;
-
-    Register   str1_reg = $str1$$Register;
-    Register   str2_reg = $str2$$Register;
-    Register    cnt_reg = $cnt$$Register; // int
-    Register   tmp1_reg = $tmp1$$Register;
-    Register   tmp2_reg = $tmp2$$Register;
-    Register result_reg = $result$$Register;
-
-    assert_different_registers(str1_reg, str2_reg, cnt_reg, tmp1_reg, tmp2_reg, result_reg);
-
-    __ cmp(str1_reg, str2_reg); //same char[] ?
-    __ b(Lequal, eq);
-
-    __ cbz_32(cnt_reg, Lequal); // count == 0
-
-    //rename registers
-    Register limit_reg = cnt_reg;
-    Register  chr1_reg = tmp1_reg;
-    Register  chr2_reg = tmp2_reg;
-
-    __ logical_shift_left(limit_reg, limit_reg, exact_log2(sizeof(jchar)));
-
-    //check for alignment and position the pointers to the ends
-    __ orr(chr1_reg, str1_reg, str2_reg);
-    __ tst(chr1_reg, 0x3);
-
-    // notZero means at least one not 4-byte aligned.
-    // We could optimize the case when both arrays are not aligned
-    // but it is not frequent case and it requires additional checks.
-    __ b(Lchar, ne);
-
-    // Compare char[] arrays aligned to 4 bytes.
-    __ char_arrays_equals(str1_reg, str2_reg, limit_reg, result_reg,
-                          chr1_reg, chr2_reg, Ldone);
-
-    __ b(Lequal); // equal
-
-    // char by char compare
-    __ bind(Lchar);
-    __ mov(result_reg, 0);
-    __ add(str1_reg, limit_reg, str1_reg);
-    __ add(str2_reg, limit_reg, str2_reg);
-    __ neg(limit_reg, limit_reg); //negate count
-
-    // Lchar_loop
-    __ bind(Lchar_loop);
-    __ ldrh(chr1_reg, Address(str1_reg, limit_reg));
-    __ ldrh(chr2_reg, Address(str2_reg, limit_reg));
-    __ cmp(chr1_reg, chr2_reg);
-    __ b(Ldone, ne);
-    __ adds(limit_reg, limit_reg, sizeof(jchar));
-    __ b(Lchar_loop, ne);
-
-    __ bind(Lequal);
-    __ mov(result_reg, 1);  //equal
-
-    __ bind(Ldone);
-  %}
-
   enc_class enc_Array_Equals(R0RegP ary1, R1RegP ary2, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI result) %{
     Label Ldone, Lloop, Lequal;
 
@@ -9025,19 +8964,6 @@ instruct string_compare(R0RegP str1, R1RegP str2, R2RegI cnt1, R3RegI cnt2, iReg
   format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   // TEMP $tmp1, $tmp2" %}
   ins_encode( enc_String_Compare(str1, str2, cnt1, cnt2, result, tmp1, tmp2) );
 
-  ins_pipe(long_memory_op);
-%}
-
-// FIXME: Why R0/R1/R2?
-instruct string_equals(R0RegP str1, R1RegP str2, R2RegI cnt, iRegI result, iRegI tmp1, iRegI tmp2,
-                       flagsReg ccr) %{
-  predicate(!CompactStrings);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP tmp1, TEMP tmp2, TEMP result, KILL ccr);
-
-  ins_cost(300);
-  format %{ "String Equals $str1,$str2,$cnt -> $result   // TEMP $tmp1, $tmp2" %}
-  ins_encode( enc_String_Equals(str1, str2, cnt, result, tmp1, tmp2) );
   ins_pipe(long_memory_op);
 %}
 

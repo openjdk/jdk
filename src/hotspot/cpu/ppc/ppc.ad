@@ -11749,21 +11749,6 @@ instruct string_compareUL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4R
   ins_pipe(pipe_class_default);
 %}
 
-instruct string_equalsL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt, iRegIdst result,
-                        iRegIdst tmp, regCTR ctr, flagsRegCR0 cr0) %{
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP_DEF result, USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP tmp, KILL ctr, KILL cr0);
-  ins_cost(300);
-  format %{ "String Equals byte[] $str1,$str2,$cnt -> $result \t// KILL $tmp" %}
-  ins_encode %{
-    __ array_equals(false, $str1$$Register, $str2$$Register,
-                    $cnt$$Register, $tmp$$Register,
-                    $result$$Register, true /* byte */);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct array_equalsB(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
                        iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR1 cr1) %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);

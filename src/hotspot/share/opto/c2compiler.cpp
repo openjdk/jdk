@@ -249,9 +249,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_compareToUL:
     if (!Matcher::match_rule_supported(Op_StrComp)) return false;
     break;
-  case vmIntrinsics::_equalsL:
-    if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
-    break;
   case vmIntrinsics::_vectorizedHashCode:
     if (!Matcher::match_rule_supported(Op_VectorizedHashCode)) return false;
     break;

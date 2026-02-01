@@ -982,7 +982,6 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
   if (nidx == Compile::AliasIdxBot && midx == Compile::AliasIdxTop) {
     switch (n->Opcode()) {
     case Op_StrComp:
-    case Op_StrEquals:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
@@ -2168,7 +2167,6 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
       mstack.push(n->in(0), Pre_Visit);     // Visit Control input
       return true;                             // while (mstack.is_nonempty())
     case Op_StrComp:
-    case Op_StrEquals:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
@@ -2323,7 +2321,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
-    case Op_StrEquals:
     case Op_StrIndexOfChar: {
       Node* pair1 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair1);

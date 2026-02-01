@@ -101,9 +101,6 @@
   void arrays_hashcode_elload_v(VectorRegister vdst, VectorRegister vtmp,
                                 Register src, BasicType eltype);
 
-  void string_equals(Register r1, Register r2,
-                     Register result, Register cnt1);
-
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
   static const int unsigned_branch_mask = 1 << bool_test_bits;
@@ -210,9 +207,6 @@
 
   void float16_to_float_v(VectorRegister dst, VectorRegister src, uint vector_length);
   void float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp, Register tmp, uint vector_length);
-
-  void string_equals_v(Register r1, Register r2,
-                       Register result, Register cnt1);
 
   void arrays_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,

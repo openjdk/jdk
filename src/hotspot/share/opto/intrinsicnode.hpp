@@ -93,16 +93,6 @@ class StrCompNode: public StrIntrinsicNode {
   virtual const Type* bottom_type() const { return TypeInt::INT; }
 };
 
-//------------------------------StrEquals-------------------------------------
-class StrEqualsNode: public StrIntrinsicNode {
- public:
-  StrEqualsNode(Node* control, Node* char_array_mem,
-                Node* s1, Node* s2, Node* c, ArgEncoding encoding):
-  StrIntrinsicNode(control, char_array_mem, s1, s2, c, encoding) {};
-  virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
-};
-
 //------------------------------StrIndexOf-------------------------------------
 class StrIndexOfNode: public StrIntrinsicNode {
  public:
