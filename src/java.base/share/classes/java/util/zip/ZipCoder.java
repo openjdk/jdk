@@ -45,13 +45,19 @@ import sun.nio.cs.UTF_8;
  * for other charsets require external synchronization.
  */
 class ZipCoder {
-
+    // Used for efficient UTF-8 string operations
     private static final jdk.internal.access.JavaLangAccess JLA =
         jdk.internal.access.SharedSecrets.getJavaLangAccess();
 
     // Encoding/decoding is stateless, so make it singleton.
     static final UTF8ZipCoder UTF8 = new UTF8ZipCoder(UTF_8.INSTANCE);
 
+    /**
+     * Return a ZipCoder supporting operations using the provided charset
+     *
+     * @param charset the charset to use by the ZipCoder
+     * @return a ZipCoder using the provided charset
+     */
     public static ZipCoder get(Charset charset) {
         if (charset == UTF_8.INSTANCE) {
             return UTF8;
@@ -107,10 +113,26 @@ class ZipCoder {
         return hsh;
     }
 
+    /**
+     * Constructs a new String by decoding the given byte
+     * array using the charset of this ZipCoder
+     *
+     * @param bytes the byte array to decode
+     * @return the decoded String
+     */
     String toString(byte[] bytes) {
         return toString(bytes, 0, bytes.length);
     }
 
+    /**
+     * Constructs a new String by decoding the given byte
+     * array subrange using the charset of this ZipCoder
+     *
+     * @param bytes byte array holding the encoded string
+     * @param off index of the first byte to decode
+     * @param len the number of bytes to decode
+     * @return the decoded String
+     */
     String toString(byte[] bytes, int off, int length) {
         try {
             return decoder().decode(ByteBuffer.wrap(bytes, off, length)).toString();
@@ -119,6 +141,13 @@ class ZipCoder {
         }
     }
 
+    /**
+     * Encodes the given string into a sequence of bytes
+     * using the charset of this ZipCoder
+     *
+     * @param s the string to encode
+     * @return the resultant byte array
+     */
     byte[] getBytes(String s) {
         try {
             ByteBuffer bb = encoder().encode(CharBuffer.wrap(s));
@@ -135,6 +164,11 @@ class ZipCoder {
         }
     }
 
+    /**
+     * Returns {@code true} if this ZipCoder uses UTF-8 for its operations
+     *
+     * @return true if this ZipCoder uses UTF-8
+     */
     boolean isUTF8() {
         return false;
     }
@@ -150,6 +184,10 @@ class ZipCoder {
      * On an error, this function will throw CharacterCodingException while the
      * UTF8ZipCoder override will throw IllegalArgumentException, so we declare
      * throws Exception to keep things simple.
+     *
+     * @param bytes byte array holding the encoded name
+     * @param off index of the first byte of the encoded name
+     * @param len length of encoded name in bytes
      */
     int checkedHash(byte[] bytes, int off, int len) throws Exception {
         if (len == 0) {
