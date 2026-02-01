@@ -191,6 +191,11 @@ struct CodeHeapInfo {
   bool enabled;
 };
 
+struct HeapShrinkSpec {
+  CodeHeapInfo* heap;
+  size_t min_allowed; // already aligned
+};
+
 static void set_size_of_unset_code_heap(CodeHeapInfo* heap, size_t available_size, size_t used_size, size_t min_size) {
   assert(!heap->set, "sanity");
   heap->size = (available_size > (used_size + min_size)) ? (available_size - used_size) : min_size;
@@ -248,13 +253,55 @@ void CodeCache::initialize_heaps() {
     set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size, non_nmethod_min_size);
   }
 
-  size_t total = non_nmethod.size + profiled.size + non_profiled.size;
-  if (total != cache_size && !cache_size_set) {
+  // Note: if large page support is enabled, min_size is at least the large
+  // page size. This ensures that the code cache is covered by large pages.
+  non_nmethod.size = align_up(non_nmethod.size, min_size);
+  profiled.size = align_up(profiled.size, min_size);
+  non_profiled.size = align_up(non_profiled.size, min_size);
+
+  size_t aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
+  if (aligned_total != cache_size && !cache_size_set) {
     log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
                         "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
-                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, total/K);
+                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, aligned_total/K);
     // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
-    cache_size = total;
+    cache_size = aligned_total;
+  } else {
+    check_min_size("reserved code cache", cache_size, min_cache_size);
+    // ReservedCodeCacheSize was set explicitly, so treat it as a hard cap.
+    // If alignment causes the total to exceed the cap, shrink unset heaps
+    // in min_size steps, never below their minimum sizes.
+    //
+    // A total smaller than cache_size typically happens when all segment sizes
+    // are explicitly set. In that case there is nothing to adjust, so we
+    // only validate the sizes.
+    if (aligned_total > cache_size) {
+      size_t delta = (aligned_total - cache_size) / min_size;
+      const size_t nn_min_size = align_up(non_nmethod_min_size, min_size);
+      HeapShrinkSpec specs[] = {
+        {&non_profiled, min_size},
+        {&profiled, min_size},
+        {&non_nmethod, nn_min_size}
+      };
+      const size_t specs_len = ARRAY_SIZE(specs);
+      while (delta > 0) {
+        bool shrunk = false;
+        // Spread the shrink across eligible segments (unset, enabled, above minimum)
+        // to avoid concentrating the entire reduction in a single segment.
+        for (size_t i = 0; i < specs_len && delta > 0; i++) {
+          HeapShrinkSpec& spec = specs[i];
+          if (spec.heap->enabled && !spec.heap->set && spec.heap->size > spec.min_allowed) {
+            spec.heap->size -= min_size;
+            delta--;
+            shrunk = true;
+          }
+        }
+        if (!shrunk) {
+          break;
+        }
+      }
+      aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
+    }
   }
 
   log_debug(codecache)("Initializing code heaps ReservedCodeCache %zuK NonNMethod %zuK"
@@ -270,12 +317,9 @@ void CodeCache::initialize_heaps() {
   if (non_profiled.enabled) { // non_profiled.enabled is always ON for segmented code heap, leave it checked for clarity
     check_min_size("non-profiled code heap", non_profiled.size, min_size);
   }
-  if (cache_size_set) {
-    check_min_size("reserved code cache", cache_size, min_cache_size);
-  }
 
   // ReservedCodeCacheSize was set explicitly, so report an error and abort if it doesn't match the segment sizes
-  if (total != cache_size && cache_size_set) {
+  if (aligned_total != cache_size && cache_size_set) {
     err_msg message("NonNMethodCodeHeapSize (%zuK)", non_nmethod.size/K);
     if (profiled.enabled) {
       message.append(" + ProfiledCodeHeapSize (%zuK)", profiled.size/K);
@@ -283,29 +327,13 @@ void CodeCache::initialize_heaps() {
     if (non_profiled.enabled) {
       message.append(" + NonProfiledCodeHeapSize (%zuK)", non_profiled.size/K);
     }
-    message.append(" = %zuK", total/K);
-    message.append((total > cache_size) ? " is greater than " : " is less than ");
+    message.append(" = %zuK", aligned_total/K);
+    message.append((aligned_total > cache_size) ? " is greater than " : " is less than ");
     message.append("ReservedCodeCacheSize (%zuK).", cache_size/K);
 
     vm_exit_during_initialization("Invalid code heap sizes", message);
   }
 
-  // Compatibility. Print warning if using large pages but not able to use the size given
-  if (UseLargePages) {
-    const size_t lg_ps = page_size(false, 1);
-    if (ps < lg_ps) {
-      log_warning(codecache)("Code cache size too small for " PROPERFMT " pages. "
-                             "Reverting to smaller page size (" PROPERFMT ").",
-                             PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
-    }
-  }
-
-  // Note: if large page support is enabled, min_size is at least the large
-  // page size. This ensures that the code cache is covered by large pages.
-  non_nmethod.size = align_up(non_nmethod.size, min_size);
-  profiled.size = align_up(profiled.size, min_size);
-  non_profiled.size = align_up(non_profiled.size, min_size);
-  cache_size = non_nmethod.size + profiled.size + non_profiled.size;
 #ifdef X86
   const size_t max_reachable = (size_t)max_jint;
   if (cache_size > max_reachable) {
@@ -317,6 +345,16 @@ void CodeCache::initialize_heaps() {
     vm_exit_during_initialization("Invalid code cache sizes", message);
   }
 #endif
+
+  // Compatibility. Print warning if using large pages but not able to use the size given
+  if (UseLargePages) {
+    const size_t lg_ps = page_size(false, 1);
+    if (ps < lg_ps) {
+      log_warning(codecache)("Code cache size too small for " PROPERFMT " pages. "
+                             "Reverting to smaller page size (" PROPERFMT ").",
+                             PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
+    }
+  }
 
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);
