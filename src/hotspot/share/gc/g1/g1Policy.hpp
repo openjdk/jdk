@@ -35,7 +35,7 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/pair.hpp"
 #include "utilities/ticks.hpp"
 
@@ -81,12 +81,9 @@ class G1Policy: public CHeapObj<mtGC> {
 
   // Desired young gen length without taking actually available free regions into
   // account.
-  volatile uint _young_list_desired_length;
+  Atomic<uint> _young_list_desired_length;
   // Actual target length given available free memory.
-  volatile uint _young_list_target_length;
-  // The max number of regions we can extend the eden by while the GC
-  // locker is active. This should be >= _young_list_target_length;
-  volatile uint _young_list_max_length;
+  Atomic<uint> _young_list_target_length;
 
   // The survivor rate groups below must be initialized after the predictor because they
   // indirectly use it through the "this" object passed to their constructor.
@@ -362,8 +359,8 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  uint young_list_desired_length() const { return AtomicAccess::load(&_young_list_desired_length); }
-  uint young_list_target_length() const { return AtomicAccess::load(&_young_list_target_length); }
+  uint young_list_desired_length() const { return _young_list_desired_length.load_relaxed(); }
+  uint young_list_target_length() const { return _young_list_target_length.load_relaxed(); }
 
   bool should_allocate_mutator_region() const;
   bool should_expand_on_mutator_allocation() const;

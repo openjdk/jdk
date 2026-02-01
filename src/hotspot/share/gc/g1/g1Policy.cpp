@@ -32,7 +32,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -203,8 +203,8 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_l
   // allocation.
   // That is "fine" - at most this will schedule a GC (hopefully only a little) too
   // early or too late.
-  AtomicAccess::store(&_young_list_desired_length, new_young_list_desired_length);
-  AtomicAccess::store(&_young_list_target_length, new_young_list_target_length);
+  _young_list_desired_length.store_relaxed(new_young_list_desired_length);
+  _young_list_target_length.store_relaxed(new_young_list_target_length);
 }
 
 // Calculates desired young gen length. It is calculated from:
