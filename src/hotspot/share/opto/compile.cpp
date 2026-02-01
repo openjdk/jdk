@@ -74,6 +74,7 @@
 #include "opto/output.hpp"
 #include "opto/parse.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
@@ -396,6 +397,9 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->is_expensive()) {
     remove_expensive_node(dead);
   }
+  if (dead->is_ReachabilityFence()) {
+    remove_reachability_fence(dead->as_ReachabilityFence());
+  }
   if (dead->is_OpaqueTemplateAssertionPredicate()) {
     remove_template_assertion_predicate_opaque(dead->as_OpaqueTemplateAssertionPredicate());
   }
@@ -459,6 +463,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   // Remove useless Template Assertion Predicate opaque nodes
   remove_useless_nodes(_template_assertion_predicate_opaques, useful);
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
+  remove_useless_nodes(_reachability_fences, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_merge_stores_igvn, useful); // remove useless node recorded for merge stores IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
@@ -665,6 +670,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _parse_predicates(comp_arena(), 8, 0, nullptr),
       _template_assertion_predicate_opaques(comp_arena(), 8, 0, nullptr),
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
+      _reachability_fences(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
@@ -934,6 +940,7 @@ Compile::Compile(ciEnv* ci_env,
       _directive(directive),
       _log(ci_env->log()),
       _first_failure_details(nullptr),
+      _reachability_fences(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
@@ -2520,11 +2527,20 @@ void Compile::Optimize() {
     return;
   }
 
-  if (failing())  return;
-
   C->clear_major_progress(); // ensure that major progress is now clear
 
   process_for_post_loop_opts_igvn(igvn);
+
+  // Once loop optimizations are over, it is safe to get rid of all reachability fence nodes and
+  // migrate reachability edges to safepoints.
+  if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
+    TracePhase tp1(_t_idealLoop);
+    TracePhase tp2(_t_reachability);
+    PhaseIdealLoop::optimize(igvn, PostLoopOptsExpandReachabilityFences);
+    print_method(PHASE_EXPAND_REACHABILITY_FENCES, 2);
+    if (failing())  return;
+    assert(_reachability_fences.length() == 0 || PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
+  }
 
   process_for_merge_stores_igvn(igvn);
 
@@ -3978,10 +3994,28 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
     }
   }
 
+  expand_reachability_fences(sfpt);
+
   // Skip next transformation if compressed oops are not used.
   if ((UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks()) ||
       (!UseCompressedOops && !UseCompressedClassPointers))
     return;
+
+  // Go over ReachabilityFence nodes to skip DecodeN nodes for referents.
+  // The sole purpose of RF node is to keep the referent oop alive and
+  // decoding the oop for that is not needed.
+  for (int i = 0; i < C->reachability_fences_count(); i++) {
+    ReachabilityFenceNode* rf = C->reachability_fence(i);
+    DecodeNNode* dn = rf->in(1)->isa_DecodeN();
+    if (dn != nullptr) {
+      if (!dn->has_non_debug_uses() || Matcher::narrow_oop_use_complex_address()) {
+        rf->set_req(1, dn->in(1));
+        if (dn->outcnt() == 0) {
+          dn->disconnect_inputs(this);
+        }
+      }
+    }
+  }
 
   // Go over safepoints nodes to skip DecodeN/DecodeNKlass nodes for debug edges.
   // It could be done for an uncommon traps or any safepoints/calls
@@ -3996,21 +4030,8 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
                         n->as_CallStaticJava()->uncommon_trap_request() != 0);
     for (int j = start; j < end; j++) {
       Node* in = n->in(j);
-      if (in->is_DecodeNarrowPtr()) {
-        bool safe_to_skip = true;
-        if (!is_uncommon ) {
-          // Is it safe to skip?
-          for (uint i = 0; i < in->outcnt(); i++) {
-            Node* u = in->raw_out(i);
-            if (!u->is_SafePoint() ||
-                (u->is_Call() && u->as_Call()->has_non_debug_use(n))) {
-              safe_to_skip = false;
-            }
-          }
-        }
-        if (safe_to_skip) {
-          n->set_req(j, in->in(1));
-        }
+      if (in->is_DecodeNarrowPtr() && (is_uncommon || !in->has_non_debug_uses())) {
+        n->set_req(j, in->in(1));
         if (in->outcnt() == 0) {
           in->disconnect_inputs(this);
         }

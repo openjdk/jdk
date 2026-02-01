@@ -1271,23 +1271,34 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
     nsr_merge_pointer = _igvn->transform(ConstraintCastNode::make_cast_for_type(cast->in(0), cast->in(1), new_t, ConstraintCastNode::DependencyType::FloatingNarrowing, nullptr));
   }
 
+  GrowableArray<Node*> non_debug_edges_worklist;
   for (uint spi = 0; spi < safepoints.size(); spi++) {
     SafePointNode* sfpt = safepoints.at(spi)->as_SafePoint();
-    JVMState *jvms      = sfpt->jvms();
-    uint merge_idx      = (sfpt->req() - jvms->scloff());
-    int debug_start     = jvms->debug_start();
+
+    // All sfpt inputs are implicitly included into debug info during the scalarization process below.
+    // Keep non-debug inputs separately, so they stay non-debug.
+    sfpt->remove_non_debug_edges(non_debug_edges_worklist);
+
+    JVMState* jvms  = sfpt->jvms();
+    uint merge_idx  = (sfpt->req() - jvms->scloff());
+    int debug_start = jvms->debug_start();
 
     SafePointScalarMergeNode* smerge = new SafePointScalarMergeNode(merge_t, merge_idx);
     smerge->init_req(0, _compile->root());
     _igvn->register_new_node_with_optimizer(smerge);
 
+    assert(sfpt->jvms()->endoff() == sfpt->req(), "no extra edges past debug info allowed");
+
     // The next two inputs are:
     //  (1) A copy of the original pointer to NSR objects.
     //  (2) A selector, used to decide if we need to rematerialize an object
     //      or use the pointer to a NSR object.
-    // See more details of these fields in the declaration of SafePointScalarMergeNode
+    // See more details of these fields in the declaration of SafePointScalarMergeNode.
+    // It is safe to include them into debug info straight away since create_scalarized_object_description()
+    // will include all newly added inputs into debug info anyway.
     sfpt->add_req(nsr_merge_pointer);
     sfpt->add_req(selector);
+    sfpt->jvms()->set_endoff(sfpt->req());
 
     for (uint i = 1; i < ophi->req(); i++) {
       Node* base = ophi->in(i);
@@ -1302,13 +1313,14 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
       SafePointScalarObjectNode* sobj = mexp.create_scalarized_object_description(alloc, sfpt);
       if (sobj == nullptr) {
-        return false;
+        return false; // non-recoverable failure; recompile
       }
 
       // Now make a pass over the debug information replacing any references
       // to the allocated object with "sobj"
       Node* ccpp = alloc->result_cast();
       sfpt->replace_edges_in_range(ccpp, sobj, debug_start, jvms->debug_end(), _igvn);
+      non_debug_edges_worklist.remove_if_existing(ccpp); // drop scalarized input from non-debug info
 
       // Register the scalarized object as a candidate for reallocation
       smerge->add_req(sobj);
@@ -1316,11 +1328,15 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
 
     // Replaces debug information references to "original_sfpt_parent" in "sfpt" with references to "smerge"
     sfpt->replace_edges_in_range(original_sfpt_parent, smerge, debug_start, jvms->debug_end(), _igvn);
+    non_debug_edges_worklist.remove_if_existing(original_sfpt_parent); // drop scalarized input from non-debug info
 
     // The call to 'replace_edges_in_range' above might have removed the
     // reference to ophi that we need at _merge_pointer_idx. The line below make
     // sure the reference is maintained.
     sfpt->set_req(smerge->merge_pointer_idx(jvms), nsr_merge_pointer);
+
+    sfpt->restore_non_debug_edges(non_debug_edges_worklist);
+
     _igvn->_worklist.push(sfpt);
   }
 
@@ -4712,6 +4728,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
               op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
               op == Op_ReinterpretS2HF ||
+              op == Op_ReachabilityFence ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
           use->dump();

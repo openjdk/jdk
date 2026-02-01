@@ -152,9 +152,13 @@ bool PhaseCFG::is_CFG(Node* n) {
 }
 
 bool PhaseCFG::is_control_proj_or_safepoint(Node* n) const {
-  bool result = (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) || (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
-  assert(!result || (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint)
-          || (n->is_Proj() && n->as_Proj()->_con == 0), "If control projection, it must be projection 0");
+  bool result = n->is_ReachabilityFence() ||
+                (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) ||
+                (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
+  assert(!result ||
+         (n->is_ReachabilityFence()) ||
+         (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) ||
+         (n->is_Proj() && n->as_Proj()->_con == 0), "If control projection, it must be projection 0");
   return result;
 }
 

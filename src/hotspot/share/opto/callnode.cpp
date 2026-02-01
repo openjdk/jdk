@@ -893,7 +893,7 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
 }
 
 // Does this call have a direct reference to n other than debug information?
-bool CallNode::has_non_debug_use(Node *n) {
+bool CallNode::has_non_debug_use(const Node *n) {
   const TypeTuple * d = tf()->domain();
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
     Node *arg = in(i);
@@ -960,11 +960,12 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
           for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
             cpn = cn->fast_out(k)->as_Proj();
             assert(cpn->is_CatchProj(), "must be a CatchProjNode");
-            if (cpn->_con == CatchProjNode::fall_through_index)
-              projs->fallthrough_catchproj = cpn;
-            else {
-              assert(cpn->_con == CatchProjNode::catch_all_index, "must be correct index.");
-              projs->catchall_catchproj = cpn;
+            switch (cpn->_con) {
+              case CatchProjNode::fall_through_index: projs->fallthrough_catchproj = cpn; break;
+              case CatchProjNode::catch_all_index:    projs->catchall_catchproj    = cpn; break;
+              default: {
+                assert(cpn->_con > 1, "not an exception table projection"); // exception table; rethrow case
+              }
             }
           }
         }
@@ -978,8 +979,12 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
       for (DUIterator j = pn->outs(); pn->has_out(j); j++) {
         Node* e = pn->out(j);
         if (e->Opcode() == Op_CreateEx && e->in(0)->is_CatchProj() && e->outcnt() > 0) {
-          assert(projs->exobj == nullptr, "only one");
-          projs->exobj = e;
+          if (e->in(0)->as_CatchProj()->_con == CatchProjNode::catch_all_index) {
+            assert(projs->exobj == nullptr, "only one");
+            projs->exobj = e;
+          } else  {
+            assert(e->in(0)->as_CatchProj()->_con > 1, "not an exception table projection"); // exception table for rethrow case
+          }
         }
       }
       break;
@@ -1583,6 +1588,25 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   if (nb != -1) {
     igvn->delete_precedence_of(igvn->C->root(), nb);
   }
+}
+
+void SafePointNode::remove_non_debug_edges(GrowableArray<Node*>& non_debug_edges) {
+  assert(non_debug_edges.is_empty(), "edges not processed");
+  while (req() > jvms()->endoff()) {
+    uint last = req() - 1;
+    non_debug_edges.push(in(last));
+    del_req(last);
+  }
+  assert(jvms()->endoff() == req(), "no extra edges past debug info allowed");
+}
+
+void SafePointNode::restore_non_debug_edges(GrowableArray<Node*>& non_debug_edges) {
+  assert(jvms()->endoff() == req(), "no extra edges past debug info allowed");
+  while (non_debug_edges.is_nonempty()) {
+    Node* non_debug_edge = non_debug_edges.pop();
+    add_req(non_debug_edge);
+  }
+  assert(non_debug_edges.is_empty(), "edges not processed");
 }
 
 //==============  SafePointScalarObjectNode  ==============

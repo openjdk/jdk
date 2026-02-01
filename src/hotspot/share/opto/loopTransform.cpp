@@ -61,6 +61,24 @@ Node *IdealLoopTree::is_loop_exit(Node *iff) const {
   return nullptr;
 }
 
+//------------------------------unique_loop_exit_or_null----------------------
+// Return the loop-exit projection if it is unique.
+IfFalseNode* IdealLoopTree::unique_loop_exit_or_null() {
+  if (is_loop()) {
+    if (head()->is_BaseCountedLoop()) {
+      ProjNode* loop_exit = head()->as_BaseCountedLoop()->loopexit()->proj_out_or_null(0 /* false */);
+      if (loop_exit != nullptr) {
+        return loop_exit->as_IfFalse();
+      }
+    } else if (head()->is_OuterStripMinedLoop()) {
+      return head()->as_OuterStripMinedLoop()->outer_loop_exit();
+    } else {
+      // For now, conservatively report multiple loop exits exist.
+    }
+  }
+  return nullptr; // not found or multiple loop exists exist
+}
+
 
 //=============================================================================
 
