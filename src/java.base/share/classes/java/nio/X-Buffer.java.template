@@ -2059,10 +2059,11 @@ public abstract sealed class $Type$Buffer
 
     /**
      * {@return the number of Unicode code points in this character buffer}
+     *
      * <p>The number of Unicode code points in this character buffer is
      * the number of Unicode code points between the position (inclusive)
      * and the limit (exclusive).
-     * Isolated surrogate code units count as one code point each.</p>
+     * Isolated surrogate code units count as one code point each.
      *
      * @since 27
      */
