@@ -266,6 +266,8 @@ public interface CharSequence {
 
         // i < lastIndex works properly even for an empty sequence
         // thank to the fact that the length/index type in Java is signed
+        // All we have to do here is to count the number of surrogate pairs.
+        // The first code unit of a surrogate pair is in [0, lastIndex).
         for (int i = 0; i < lastIndex;) {
             if (Character.isHighSurrogate(charAt(i++)) && Character.isLowSurrogate(charAt(i))) {
                 n--;
