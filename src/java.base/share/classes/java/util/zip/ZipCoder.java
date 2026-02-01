@@ -82,7 +82,22 @@ class ZipCoder {
          */
         NO_MATCH = 2;
 
-    // Hash function equivalent of checkedHash for String inputs
+    /**
+     * Returns a hash code for use in ZipFile entry name lookups.
+     *
+     * If the name ends with a trailing '/', we generate the hash code
+     * as-if calling String.hashCode().
+     *
+     * If the name has no trailing '/', we generate the hash code
+     * as-if first appending '/' to the name, then calling String.hashCode()
+     * on the result.
+     *
+     * This "slash-normalization" ensures that "directory" and "directory/" produce
+     * identical hash codes and allows us to simplify and speed up lookups.
+     *
+     * @param name the ZIP entry name to generate a hash code for
+     * @return the slash-normalized hash code of the name
+     */
     static int hash(String name) {
         int hsh = name.hashCode();
         int len = name.length();
@@ -124,15 +139,18 @@ class ZipCoder {
         return false;
     }
 
-    // Hash code functions for ZipFile entry names. We generate the hash as-if
-    // we first decoded the byte sequence to a String, then appended '/' if no
-    // trailing slash was found, then called String.hashCode(). This
-    // normalization ensures we can simplify and speed up lookups.
-    //
-    // Does encoding error checking and hashing in a single pass for efficiency.
-    // On an error, this function will throw CharacterCodingException while the
-    // UTF8ZipCoder override will throw IllegalArgumentException, so we declare
-    // throws Exception to keep things simple.
+    /**
+     * Returns a hash code for an encoded ZIP entry name, equivalent to
+     * that produced by {@link #hash(String)}
+     *
+     * We generate the hash code as-if we first decoded the byte sequence to
+     * a String, then generated the hash code using {@link #hash(String)}.
+     *
+     * Does encoding error checking and hashing in a single pass for efficiency.
+     * On an error, this function will throw CharacterCodingException while the
+     * UTF8ZipCoder override will throw IllegalArgumentException, so we declare
+     * throws Exception to keep things simple.
+     */
     int checkedHash(byte[] a, int off, int len) throws Exception {
         if (len == 0) {
             return 0;
