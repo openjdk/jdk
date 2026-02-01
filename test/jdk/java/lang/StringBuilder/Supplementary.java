@@ -35,7 +35,8 @@ public class Supplementary {
         test2();        // Test for codePointBefore(int index)
         test3();        // Test for reverse()
         test4();        // Test for appendCodePoint(int codePoint)
-        test5();        // Test for codePointCount(int beginIndex, int endIndex)
+        testCodePointCountTwoArgs(); // Test for codePointCount(int beginIndex, int endIndex)
+        testCodePointCountNoArg(); // Test for codePointCount()
         test6();        // Test for offsetByCodePoints(int index, int offset)
         testDontReadOutOfBoundsTrailingSurrogate();
     }
