@@ -2072,9 +2072,12 @@ public abstract sealed class $Type$Buffer
         int lim = limit();
         int i = position();
         int count = lim - i;
-        for (; i < lim;) {
-            if (Character.isHighSurrogate(get(i++)) && i < lim && Character.isLowSurrogate(get(i))) {
-                lim--;
+        int lastIndex = lim - 1;
+        // All we have to do here is to count the number of surrogate pairs.
+        // The first code unit of a surrogate pair is in [0, lastIndex).
+        for (; i < lastIndex;) {
+            if (Character.isHighSurrogate(get(i++)) && Character.isLowSurrogate(get(i))) {
+                count--;
                 i++;
             }
         }
