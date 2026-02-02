@@ -22,6 +22,7 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/atomic.hpp"
