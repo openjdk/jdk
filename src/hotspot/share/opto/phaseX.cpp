@@ -1208,7 +1208,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
       assert(false, "Missed Value optimization opportunity in PhaseIterGVN for %s",n->Name());
       break;
     case PhaseValuesType::ccp:
-      assert(false, "PhaseCCP not at fixpoint: analysisresult may be unsound for %s", n->Name());
+      assert(false, "PhaseCCP not at fixpoint: analysis result may be unsound for %s", n->Name());
       break;
     default:
       assert(false, "Unexpected phase");
