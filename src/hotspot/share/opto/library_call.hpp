@@ -159,11 +159,11 @@ class LibraryCallKit : public GraphKit {
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
                                 Node** pos_index = nullptr,
-                                bool is_opaque = false);
+                                bool with_opaque = false);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
                              RegionNode* region,
-                             bool is_opaque = false);
+                             bool with_opaque = false);
   void  generate_string_range_check(Node* array, Node* offset,
                                     Node* length, bool char_count,
                                     bool halt_on_oob = false);

@@ -891,14 +891,14 @@ inline Node* LibraryCallKit::generate_fair_guard(Node* test, RegionNode* region)
 }
 
 inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* region,
-                                                     Node** pos_index, bool is_opaque) {
+                                                     Node** pos_index, bool with_opaque) {
   if (stopped())
     return nullptr;                // already stopped
   if (_gvn.type(index)->higher_equal(TypeInt::POS)) // [0,maxint]
     return nullptr;                // index is already adequately typed
   Node* cmp_lt = _gvn.transform(new CmpINode(index, intcon(0)));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
-  if (is_opaque) {
+  if (with_opaque) {
     bol_lt = _gvn.transform(new OpaqueConstantBoolNode(C, bol_lt, false));
   }
   Node* is_neg = generate_guard(bol_lt, region, PROB_MIN);
@@ -928,7 +928,7 @@ inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
                                                   Node* subseq_length,
                                                   Node* array_length,
                                                   RegionNode* region,
-                                                  bool is_opaque) {
+                                                  bool with_opaque) {
   if (stopped())
     return nullptr;                // already stopped
   bool zero_offset = _gvn.type(offset) == TypeInt::ZERO;
@@ -939,7 +939,7 @@ inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
     last = _gvn.transform(new AddINode(last, offset));
   Node* cmp_lt = _gvn.transform(new CmpUNode(array_length, last));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
-  if (is_opaque) {
+  if (with_opaque) {
     bol_lt = _gvn.transform(new OpaqueConstantBoolNode(C, bol_lt, false));
   }
   Node* is_over = generate_guard(bol_lt, region, PROB_MIN);
