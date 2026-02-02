@@ -51,7 +51,7 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 3, time = 1)
-@Fork(value = 5, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl*::*"})
+@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl*::*"})
 public class VectorAlgorithms {
     @Param({"640000"})
     public int SIZE;
@@ -241,10 +241,17 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
-    public Object filterI_VectorAPI() {
+    public Object filterI_VectorAPI_v1() {
         d.eI_idx = (d.eI_idx + 1) & 0xffff;
         int e = d.eI[d.eI_idx];
-        return VectorAlgorithmsImpl.filterI_VectorAPI(d.aI, d.rI1, e);
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v1(d.aI, d.rI1, e);
+    }
+
+    @Benchmark
+    public Object filterI_VectorAPI_v2() {
+        d.eI_idx = (d.eI_idx + 1) & 0xffff;
+        int e = d.eI[d.eI_idx];
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2(d.aI, d.rI1, e);
     }
 
     @Benchmark
