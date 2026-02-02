@@ -260,12 +260,14 @@ void CodeCache::initialize_heaps() {
   non_profiled.size = align_up(non_profiled.size, min_size);
 
   size_t aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
-  if (aligned_total != cache_size && !cache_size_set) {
-    log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
-                        "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
-                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, aligned_total/K);
-    // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
-    cache_size = aligned_total;
+  if (!cache_size_set) {
+    if (aligned_total != cache_size) {
+      log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
+                          "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
+                          cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, aligned_total/K);
+      // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
+      cache_size = aligned_total;
+    }
   } else {
     check_min_size("reserved code cache", cache_size, min_cache_size);
     // ReservedCodeCacheSize was set explicitly, so treat it as a hard cap.
