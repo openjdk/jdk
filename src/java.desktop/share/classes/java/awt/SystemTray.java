@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.beans.PropertyChangeSupport;
 import java.util.Vector;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.SunToolkit;
 
@@ -213,6 +212,8 @@ public class SystemTray {
         }
     }
 
+    private Vector<TrayIcon> icons;
+
     /**
      * Adds a {@code TrayIcon} to the {@code SystemTray}.
      * The tray icon becomes visible in the system tray once it is
@@ -240,15 +241,10 @@ public class SystemTray {
         }
         TrayIcon[] oldArray;
         TrayIcon[] newArray;
-        Vector<TrayIcon> icons;
         synchronized (this) {
             oldArray = systemTray.getTrayIcons();
-            @SuppressWarnings("unchecked")
-            Vector<TrayIcon> tmp = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
-            icons = tmp;
             if (icons == null) {
                 icons = new Vector<>(3);
-                AppContext.getAppContext().put(TrayIcon.class, icons);
 
             } else if (icons.contains(trayIcon)) {
                 throw new IllegalArgumentException("adding TrayIcon that is already added");
@@ -291,8 +287,6 @@ public class SystemTray {
         TrayIcon[] newArray;
         synchronized (this) {
             oldArray = systemTray.getTrayIcons();
-            @SuppressWarnings("unchecked")
-            Vector<TrayIcon> icons = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
             // TrayIcon with no peer is not contained in the array.
             if (icons == null || !icons.remove(trayIcon)) {
                 return;
@@ -320,8 +314,6 @@ public class SystemTray {
      * @see TrayIcon
      */
     public TrayIcon[] getTrayIcons() {
-        @SuppressWarnings("unchecked")
-        Vector<TrayIcon> icons = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
         if (icons != null) {
             return icons.toArray(EMPTY_TRAY_ARRAY);
         }
@@ -461,6 +453,8 @@ public class SystemTray {
         getCurrentChangeSupport().firePropertyChange(propertyName, oldValue, newValue);
     }
 
+    private PropertyChangeSupport changeSupport;
+
     /**
      * Returns the current PropertyChangeSupport instance for the
      * calling thread's context.
@@ -468,12 +462,8 @@ public class SystemTray {
      * @return this thread's context's PropertyChangeSupport
      */
     private synchronized PropertyChangeSupport getCurrentChangeSupport() {
-        PropertyChangeSupport changeSupport =
-            (PropertyChangeSupport)AppContext.getAppContext().get(SystemTray.class);
-
         if (changeSupport == null) {
             changeSupport = new PropertyChangeSupport(this);
-            AppContext.getAppContext().put(SystemTray.class, changeSupport);
         }
         return changeSupport;
     }
