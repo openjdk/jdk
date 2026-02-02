@@ -36,6 +36,7 @@ public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
     private static final VectorSpecies<Integer> SPECIES_I256 = IntVector.SPECIES_256;
+    private static final VectorSpecies<Integer> SPECIES_I128 = IntVector.SPECIES_128;
     private static final VectorSpecies<Integer> SPECIES_I64  = IntVector.SPECIES_64;
     private static final VectorSpecies<Byte> SPECIES_B       = ByteVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Byte> SPECIES_B64     = ByteVector.SPECIES_64;
@@ -680,7 +681,7 @@ public class VectorAlgorithmsImpl {
     // Idea: on platforms that do not support the "v1" solution with "compress" and
     //       masked stores, we struggle to deal with the loop-carried dependency of j.
     //       But we can still use dynamic uniformity to enable some vectorized performance.
-    public static Object filterI_VectorAPI_v2(int[] a, int[] r, int threshold) {
+    public static Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
         var thresholds = IntVector.broadcast(SPECIES_I64, threshold);
         int j = 0;
         int i = 0;
@@ -695,6 +696,82 @@ public class VectorAlgorithmsImpl {
                 int v1 = v.lane(1);
                 if (v0 >= threshold) { r[j++] = v0; }
                 if (v1 >= threshold) { r[j++] = v1; }
+            } else {
+                // nothing
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    public static Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
+        var thresholds = IntVector.broadcast(SPECIES_I128, threshold);
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I128.loopBound(a.length); i += SPECIES_I128.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I128, a, i);
+            var mask = v.compare(VectorOperators.GE, thresholds);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 4;
+            } else if (mask.anyTrue()) {
+                int v0 = v.lane(0);
+                int v1 = v.lane(1);
+                int v2 = v.lane(2);
+                int v3 = v.lane(3);
+                if (v0 >= threshold) { r[j++] = v0; }
+                if (v1 >= threshold) { r[j++] = v1; }
+                if (v2 >= threshold) { r[j++] = v2; }
+                if (v3 >= threshold) { r[j++] = v3; }
+            } else {
+                // nothing
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    public static Object filterI_VectorAPI_v2_l8(int[] a, int[] r, int threshold) {
+        var thresholds = IntVector.broadcast(SPECIES_I256, threshold);
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I256.loopBound(a.length); i += SPECIES_I256.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I256, a, i);
+            var mask = v.compare(VectorOperators.GE, thresholds);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 8;
+            } else if (mask.anyTrue()) {
+                int v0 = v.lane(0);
+                int v1 = v.lane(1);
+                int v2 = v.lane(2);
+                int v3 = v.lane(3);
+                int v4 = v.lane(4);
+                int v5 = v.lane(5);
+                int v6 = v.lane(6);
+                int v7 = v.lane(7);
+                if (v0 >= threshold) { r[j++] = v0; }
+                if (v1 >= threshold) { r[j++] = v1; }
+                if (v2 >= threshold) { r[j++] = v2; }
+                if (v3 >= threshold) { r[j++] = v3; }
+                if (v4 >= threshold) { r[j++] = v4; }
+                if (v5 >= threshold) { r[j++] = v5; }
+                if (v6 >= threshold) { r[j++] = v6; }
+                if (v7 >= threshold) { r[j++] = v7; }
             } else {
                 // nothing
             }

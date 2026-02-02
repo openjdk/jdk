@@ -248,10 +248,24 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
-    public Object filterI_VectorAPI_v2() {
+    public Object filterI_VectorAPI_v2_l2() {
         d.eI_idx = (d.eI_idx + 1) & 0xffff;
         int e = d.eI[d.eI_idx];
-        return VectorAlgorithmsImpl.filterI_VectorAPI_v2(d.aI, d.rI1, e);
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(d.aI, d.rI1, e);
+    }
+
+    @Benchmark
+    public Object filterI_VectorAPI_v2_l4() {
+        d.eI_idx = (d.eI_idx + 1) & 0xffff;
+        int e = d.eI[d.eI_idx];
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(d.aI, d.rI1, e);
+    }
+
+    @Benchmark
+    public Object filterI_VectorAPI_v2_l8() {
+        d.eI_idx = (d.eI_idx + 1) & 0xffff;
+        int e = d.eI[d.eI_idx];
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l8(d.aI, d.rI1, e);
     }
 
     @Benchmark
