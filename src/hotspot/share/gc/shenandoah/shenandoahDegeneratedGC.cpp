@@ -146,7 +146,6 @@ void ShenandoahDegenGC::op_degenerated() {
         // Clean the read table before swapping it. The end goal here is to have a clean
         // write table, and to have the read table updated with the previous write table.
         heap->old_generation()->card_scan()->mark_read_table_as_clean();
-        heap->old_generation()->record_tops_at_evac_start();
 
         if (_generation->is_young()) {
           // Swap remembered sets for young
