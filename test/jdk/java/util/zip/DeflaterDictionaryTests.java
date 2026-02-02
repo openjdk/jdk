@@ -21,9 +21,6 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -31,14 +28,21 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertThrows;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * @test
  * @bug 8252739
  * @summary Verify Deflater.setDictionary(dictionary, offset, length) uses the offset
- * @run testng/othervm DeflaterDictionaryTests
+ * @run junit/othervm DeflaterDictionaryTests
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DeflaterDictionaryTests {
     // Output buffer size
     private static final int RESULT_SIZE = 1024;
@@ -54,7 +58,6 @@ public class DeflaterDictionaryTests {
      *
      * @return valid offset values
      */
-    @DataProvider(name = "validDictionaryOffsets")
     protected Object[][] validDictionaryOffsets() {
         return new Object[][]{
                 {0},
@@ -68,7 +71,6 @@ public class DeflaterDictionaryTests {
      *
      * @return invalid offset values
      */
-    @DataProvider(name = "invalidDictionaryOffsets")
     protected Object[][] invalidDictionaryOffsets() {
         return new Object[][]{
                 {-1},
@@ -83,7 +85,8 @@ public class DeflaterDictionaryTests {
      * @param dictionary_offset offset value to be used
      * @throws Exception if an error occurs
      */
-    @Test(dataProvider = "validDictionaryOffsets")
+    @ParameterizedTest
+    @MethodSource("validDictionaryOffsets")
     public void testByteArray(int dictionary_offset) throws Exception {
         byte[] input = SRC_DATA.getBytes(UTF_8);
         byte[] output = new byte[RESULT_SIZE];
@@ -115,8 +118,8 @@ public class DeflaterDictionaryTests {
             System.out.printf("Inflater::getAdler:%d, length: %d%n",
                     inflater.getAdler(), resultLength);
 
-            Assert.assertEquals(SRC_DATA.length(), resultLength);
-            Assert.assertEquals(input, Arrays.copyOf(result, resultLength));
+            Assertions.assertEquals(resultLength, SRC_DATA.length());
+            Assertions.assertArrayEquals(Arrays.copyOf(result, resultLength), input);
         } finally {
             // Release Resources
             deflater.end();
@@ -163,8 +166,8 @@ public class DeflaterDictionaryTests {
             System.out.printf("Inflater::getAdler:%d, length: %d%n",
                     inflater.getAdler(), resultLength);
 
-            Assert.assertEquals(SRC_DATA.length(), resultLength);
-            Assert.assertEquals(input, Arrays.copyOf(result, resultLength));
+            Assertions.assertEquals(resultLength, SRC_DATA.length());
+            Assertions.assertArrayEquals(Arrays.copyOf(result, resultLength), input);
         } finally {
             // Release Resources
             deflater.end();
@@ -217,8 +220,8 @@ public class DeflaterDictionaryTests {
             System.out.printf("Inflater::getAdler:%d, length: %d%n",
                     inflater.getAdler(), resultLength);
 
-            Assert.assertEquals(SRC_DATA.length(), resultLength);
-            Assert.assertEquals(input, Arrays.copyOf(result, resultLength));
+            Assertions.assertEquals(resultLength, SRC_DATA.length());
+            Assertions.assertArrayEquals(Arrays.copyOf(result, resultLength), input);
         } finally {
             // Release Resources
             deflater.end();
@@ -232,7 +235,8 @@ public class DeflaterDictionaryTests {
      *
      * @param dictionary_offset offset value to be used
      */
-    @Test(dataProvider = "invalidDictionaryOffsets")
+    @ParameterizedTest
+    @MethodSource("invalidDictionaryOffsets")
     public void testInvalidOffsets(int dictionary_offset) {
         byte[] dictionary = DICTIONARY.getBytes(UTF_8);
 

@@ -22,9 +22,6 @@
  *
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,15 +36,20 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * @test
  * @bug 8231451
  * @summary Basic tests for ZipFileInputStream::skip
  * @modules jdk.zipfs
- * @run testng/othervm ZipFileInputStreamSkipTest
+ * @run junit/othervm ZipFileInputStreamSkipTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ZipFileInputStreamSkipTest {
 
     // Stored and Deflated Zip File paths used by the tests
@@ -63,7 +65,7 @@ public class ZipFileInputStreamSkipTest {
      *
      * @throws IOException If an error occurs creating the Zip Files
      */
-    @BeforeClass
+    @BeforeAll
     private void createZip() throws IOException {
         Entry e0 = Entry.of("Entry-0", ZipEntry.STORED, "Tennis Pro");
         Entry e1 = Entry.of("Entry-1", ZipEntry.STORED,
@@ -92,7 +94,7 @@ public class ZipFileInputStreamSkipTest {
      *
      * @throws IOException If an error occurs during cleanup
      */
-    @AfterClass
+    @AfterAll
     private void cleanUp() throws IOException {
         Files.deleteIfExists(STORED_ZIPFILE);
         Files.deleteIfExists(DEFLATED_ZIPFILE);
@@ -119,28 +121,28 @@ public class ZipFileInputStreamSkipTest {
 
                     // Check that if we specify 0, that we return the correct
                     // skip value value
-                    assertEquals(in.skip(0), 0);
+                    assertEquals(0, in.skip(0));
 
                     // Try to skip past EOF and should return remaining bytes
-                    assertEquals(in.skip(entrySize + 100), entrySize);
+                    assertEquals(entrySize, in.skip(entrySize + 100));
 
                     // Return to BOF and then specify a value which would
                     // overflow the projected skip value and return the
                     // number of bytes moved to reach EOF
-                    assertEquals(in.skip(-entrySize), -entrySize);
-                    assertEquals(in.skip(Long.MAX_VALUE), entrySize);
+                    assertEquals(-entrySize, in.skip(-entrySize));
+                    assertEquals(entrySize, in.skip(Long.MAX_VALUE));
 
                     // From midpoint, try to skip past EOF and then skip back
                     // to BOF
-                    assertEquals(in.skip(-entrySize), -entrySize);
-                    assertEquals(in.skip(midpoint), midpoint);
-                    assertEquals(in.skip(1000), entrySize - midpoint);
-                    assertEquals(in.skip(-entrySize), -entrySize);
+                    assertEquals(-entrySize, in.skip(-entrySize));
+                    assertEquals(midpoint, in.skip(midpoint));
+                    assertEquals(entrySize - midpoint, in.skip(1000));
+                    assertEquals(-entrySize, in.skip(-entrySize));
 
                     // Read remaining bytes and validate against expected bytes
                     byte[] bytes = in.readAllBytes();
-                    assertEquals(bytes, expected.bytes);
-                    assertEquals(bytes.length, expected.bytes.length);
+                    assertArrayEquals(expected.bytes, bytes);
+                    assertEquals(expected.bytes.length, bytes.length);
                 }
             }
         }
@@ -167,25 +169,25 @@ public class ZipFileInputStreamSkipTest {
 
                     // Check that if you try to move past BOF
                     // that we return the correct value
-                    assertEquals(in.skip(-1), 0);
-                    assertEquals(in.skip(-100), 0);
-                    assertEquals(in.skip(Long.MIN_VALUE), 0);
+                    assertEquals(0, in.skip(-1));
+                    assertEquals(0, in.skip(-100));
+                    assertEquals(0, in.skip(Long.MIN_VALUE));
 
                     // Go to midpoint in file; then specify a value before
                     // BOF which should result in the number of
                     // bytes to BOF returned
-                    assertEquals(in.skip(midpoint), midpoint);
-                    assertEquals(in.skip(-(midpoint + 10)), -midpoint);
+                    assertEquals(midpoint, in.skip(midpoint));
+                    assertEquals(-midpoint, in.skip(-(midpoint + 10)));
 
                     // From midpoint, move back a couple of bytes
-                    assertEquals(in.skip(midpoint), midpoint);
-                    assertEquals(in.skip(-2), -2);
+                    assertEquals(midpoint, in.skip(midpoint));
+                    assertEquals(-2, in.skip(-2));
 
                     // Read the remaining bytes and compare to the expected bytes
                     byte[] bytes = in.readAllBytes();
-                    assertEquals(bytes, Arrays.copyOfRange(expected.bytes,
-                            (int)midpoint - 2, (int) entrySize));
-                    assertEquals(bytes.length, entrySize - midpoint + 2);
+                    assertArrayEquals(Arrays.copyOfRange(expected.bytes,
+                            (int)midpoint - 2, (int) entrySize), bytes);
+                    assertEquals(entrySize - midpoint + 2, bytes.length);
                 }
             }
         }
@@ -207,12 +209,12 @@ public class ZipFileInputStreamSkipTest {
                 Entry expected = DEFLATED_ZIP_ENTRIES.get(entry.getName());
                 assertNotNull(expected);
                 try (InputStream in = zf.getInputStream(entry)) {
-                    assertEquals(in.skip(toSkip), toSkip);
+                    assertEquals(toSkip, in.skip(toSkip));
                     byte[] bytes = in.readAllBytes();
                     var ebytes = Arrays.copyOfRange(expected.bytes,
                             toSkip, expected.bytes.length);
-                    assertEquals(bytes, ebytes);
-                    assertEquals(bytes.length, expected.bytes.length - toSkip);
+                    assertArrayEquals(ebytes, bytes);
+                    assertEquals(expected.bytes.length - toSkip, bytes.length);
                 }
             }
         }

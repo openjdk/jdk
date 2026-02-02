@@ -27,20 +27,21 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * @test
  * @bug 8277087
  * @summary Verifies various use cases when the zip comment should be empty
- * @run testng EmptyComment
+ * @run junit EmptyComment
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public final class EmptyComment {
 
-    @DataProvider()
     Object[][] longLengths() {
         return new Object[][]{{0xFFFF + 1}, {0xFFFF + 2}, {0xFFFF * 2}};
     }
@@ -48,7 +49,8 @@ public final class EmptyComment {
     /**
      * Overflow, the text is too long to be stored as a comment.
      */
-    @Test(dataProvider = "longLengths")
+    @ParameterizedTest
+    @MethodSource("longLengths")
     void testOverflow(int length) throws Exception {
         test(zos -> assertThrows(IllegalArgumentException.class, () -> {
             zos.setComment("X".repeat(length));

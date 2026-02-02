@@ -22,9 +22,6 @@
  *
  */
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,15 +32,20 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * @test
  * @bug 8280404
  * @summary Validate that Zip/JarFile will throw a ZipException when the CEN
  * comment length field contains an incorrect value
- * @run testng/othervm InvalidCommentLengthTest
+ * @run junit/othervm InvalidCommentLengthTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class InvalidCommentLengthTest {
 
     // Name used to create a JAR with an invalid comment length
@@ -264,7 +266,7 @@ public class InvalidCommentLengthTest {
      *
      * @throws IOException If an error occurs
      */
-    @BeforeTest
+    @BeforeAll
     public void setup() throws IOException {
         Files.deleteIfExists(VALID_CEN_COMMENT_LENGTH_JAR);
         Files.deleteIfExists(INVALID_CEN_COMMENT_LENGTH_JAR);
@@ -285,7 +287,7 @@ public class InvalidCommentLengthTest {
      *
      * @throws IOException If an error occurs
      */
-    @AfterTest
+    @AfterAll
     public static void cleanup() throws IOException {
         Files.deleteIfExists(VALID_CEN_COMMENT_LENGTH_JAR);
         Files.deleteIfExists(INVALID_CEN_COMMENT_LENGTH_JAR);
@@ -297,11 +299,11 @@ public class InvalidCommentLengthTest {
      * @throws IOException If an error occurs
      */
     @Test
-    public static void ZipFileValidCommentLengthTest() throws IOException {
+    public void ZipFileValidCommentLengthTest() throws IOException {
         try (ZipFile jf = new ZipFile(VALID_CEN_COMMENT_LENGTH_JAR.toFile())) {
             ZipEntry ze = jf.getEntry(META_INF_MANIFEST_MF);
             assertNotNull(ze);
-            assertEquals(ze.getName(), META_INF_MANIFEST_MF);
+            assertEquals(META_INF_MANIFEST_MF, ze.getName());
         }
     }
 
@@ -311,11 +313,11 @@ public class InvalidCommentLengthTest {
      * @throws IOException If an error occurs
      */
     @Test
-    public static void JarFileValidCommentLengthTest() throws IOException {
+    public void JarFileValidCommentLengthTest() throws IOException {
         try (JarFile jf = new JarFile(VALID_CEN_COMMENT_LENGTH_JAR.toFile())) {
             ZipEntry ze = jf.getEntry(META_INF_MANIFEST_MF);
             assertNotNull(ze);
-            assertEquals(ze.getName(), META_INF_MANIFEST_MF);
+            assertEquals(META_INF_MANIFEST_MF, ze.getName());
         }
     }
 
@@ -325,10 +327,10 @@ public class InvalidCommentLengthTest {
      * the Jar file is opened by {@code ZipFile}
      */
     @Test
-    public static void ZipFileInValidCommentLengthTest() {
-        var ex= expectThrows(ZipException.class,
+    public void ZipFileInValidCommentLengthTest() {
+        var ex= assertThrows(ZipException.class,
                 () -> new ZipFile(INVALID_CEN_COMMENT_LENGTH_JAR.toFile()));
-        assertEquals(ex.getMessage(), INVALID_CEN_HEADER_BAD_ENTRY_NAME_OR_COMMENT);
+        assertEquals(INVALID_CEN_HEADER_BAD_ENTRY_NAME_OR_COMMENT, ex.getMessage());
     }
 
     /**
@@ -337,9 +339,9 @@ public class InvalidCommentLengthTest {
      * the Jar file is opened by  {@code JarFile}
      */
     @Test
-    public static void JarFileInValidCommentLengthTest()  {
-        var ex= expectThrows(ZipException.class,
+    public void JarFileInValidCommentLengthTest()  {
+        var ex= assertThrows(ZipException.class,
                 () -> new JarFile(INVALID_CEN_COMMENT_LENGTH_JAR.toFile()));
-        assertEquals(ex.getMessage(), INVALID_CEN_HEADER_BAD_ENTRY_NAME_OR_COMMENT);
+        assertEquals(INVALID_CEN_HEADER_BAD_ENTRY_NAME_OR_COMMENT, ex.getMessage());
     }
 }
