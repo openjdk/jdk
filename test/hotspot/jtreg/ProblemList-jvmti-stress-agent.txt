@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -96,3 +96,16 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorThreadTest.java           
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorTwoAgentsTest.java                        0000000 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id0                     0000000 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id1                     0000000 generic-all
+
+#############################################################################
+
+# Preview project specific failures go here at the end of the file.
+#
+# These are NOT failures that occur with the '--enable-preview' option
+# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# These are failures that occur WITHOUT the '--enable-preview' option
+# specified AND occur because of some issue with preview project code,
+# in either implementation or test code.
+
+#############################################################################
+
