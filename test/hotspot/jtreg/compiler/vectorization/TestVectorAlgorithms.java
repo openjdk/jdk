@@ -144,8 +144,8 @@ public class TestVectorAlgorithms {
         testGroups.get("filterI").put("filterI_loop",            i -> { return filterI_loop(d.aI, d.rI1, d.eI[i]); });
         testGroups.get("filterI").put("filterI_VectorAPI_v1",    i -> { return filterI_VectorAPI_v1(d.aI, d.rI2, d.eI[i]); });
         testGroups.get("filterI").put("filterI_VectorAPI_v2_l2", i -> { return filterI_VectorAPI_v2_l2(d.aI, d.rI3, d.eI[i]); });
-        testGroups.get("filterI").put("filterI_VectorAPI_v2_l4", i -> { return filterI_VectorAPI_v2_l4(d.aI, d.rI3, d.eI[i]); });
-        testGroups.get("filterI").put("filterI_VectorAPI_v2_l8", i -> { return filterI_VectorAPI_v2_l8(d.aI, d.rI3, d.eI[i]); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l4", i -> { return filterI_VectorAPI_v2_l4(d.aI, d.rI4, d.eI[i]); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l8", i -> { return filterI_VectorAPI_v2_l8(d.aI, d.rI5, d.eI[i]); });
 
         testGroups.put("reduceAddIFieldsX4", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      i -> { return reduceAddIFieldsX4_loop(d.oopsX4, d.memX4); });
@@ -519,10 +519,16 @@ public class TestVectorAlgorithms {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
-//                  IRNode.VECTOR_MASK_CMP,                     "> 0",
-//                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "= 0", // not implemented
+                  IRNode.VECTOR_TEST,                         "= 0", // not implemented
                   IRNode.STORE_VECTOR,                        "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeature = {"sse4.1", "true"})
+    // x86 seems to have a limitation with 2-element VectorStoreMask, this blocks intrinsification
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "> 0",
+                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true"})
     public Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(a, r, threshold);
     }

@@ -60,6 +60,7 @@ public class VectorAlgorithmsImpl {
         public int[] rI2;
         public int[] rI3;
         public int[] rI4;
+        public int[] rI5;
         public int[] eI;
         // The test has to use the same index into eI for all implementations. But in the
         // benchmark, we'd like to use random indices, so we use the index to advance through
@@ -88,6 +89,7 @@ public class VectorAlgorithmsImpl {
             rI2 = new int[size];
             rI3 = new int[size];
             rI4 = new int[size];
+            rI5 = new int[size];
             Arrays.setAll(aI, i -> random.nextInt());
 
             // Populate with some random values from aI, and some totally random values.
