@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@
                                                                                                                                      \
   nonstatic_field(ContiguousSpace,             _bottom,                                       HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _end,                                          HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,             _top,                                          Atomic<HeapWord*>)                     \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)
