@@ -27,6 +27,7 @@
  * @summary Check if writing to Console is not blocked by other thread's read.
  * @library /test/lib
  * @run junit ReadWriteBlockingTest
+ * @run junit/othervm -Djdk.console=jdk.internal.le ReadWriteBlockingTest
  */
 
 import java.nio.file.Files;
