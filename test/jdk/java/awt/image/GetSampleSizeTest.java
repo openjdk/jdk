@@ -44,7 +44,7 @@ public class GetSampleSizeTest {
         {
             ComponentSampleModel csm =
                 new ComponentSampleModel(DataBuffer.TYPE_BYTE,
-                        width, height, 1, width, bandOffsets);
+                                         width, height, 1, width, bandOffsets);
             int numBands = csm.getNumBands();
             System.out.println("CSM numBands = " + numBands);
             if (numBands != 2) {
@@ -71,7 +71,7 @@ public class GetSampleSizeTest {
             System.out.println("SPPSM numBands = " + numBands);
             if (numBands != 4) {
                 throw new RuntimeException("Unexpected numBands");
-        }
+            }
             try {
                 System.out.println("SPPSM sample size = " + sppsm.getSampleSize(numBands));
                 throw new RuntimeException("No expected AIOBE");
