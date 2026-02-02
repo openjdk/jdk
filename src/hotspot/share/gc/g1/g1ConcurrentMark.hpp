@@ -555,6 +555,9 @@ public:
 
   uint worker_id_offset() const { return _worker_id_offset; }
 
+  void fully_initialize();
+  bool is_fully_initialized() const { return _cm_thread != nullptr; }
+  bool in_progress() const;
   uint max_num_tasks() const {return _max_num_tasks; }
 
   // Clear statistics gathered during the concurrent cycle for the given region after

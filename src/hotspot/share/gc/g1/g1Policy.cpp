@@ -739,7 +739,7 @@ double G1Policy::constant_other_time_ms(double pause_time_ms) const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  return _g1h->concurrent_mark()->cm_thread()->in_progress() || collector_state()->in_young_gc_before_mixed();
+  return _g1h->concurrent_mark()->in_progress() || collector_state()->in_young_gc_before_mixed();
 }
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
@@ -1235,7 +1235,7 @@ bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) 
   // We actually check whether we are marking here and not if we are in a
   // reclamation phase. This means that we will schedule a concurrent mark
   // even while we are still in the process of reclaiming memory.
-  bool during_cycle = _g1h->concurrent_mark()->cm_thread()->in_progress();
+  bool during_cycle = _g1h->concurrent_mark()->in_progress();
   if (!during_cycle) {
     log_debug(gc, ergo)("Request concurrent cycle initiation (requested by GC cause). "
                         "GC cause: %s",
