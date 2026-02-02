@@ -28,6 +28,7 @@
 #include "opto/adlcVMDeps.hpp"
 #include "opto/compile.hpp"
 #include "opto/rangeinference.hpp"
+#include "runtime/handles.hpp"
 
 // Portions of code courtesy of Clifford Click
 

@@ -26,10 +26,15 @@
 #include "ci/ciTypeFlow.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "libadt/dict.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/matcher.hpp"
@@ -43,6 +48,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 
 // Portions of code courtesy of Clifford Click
