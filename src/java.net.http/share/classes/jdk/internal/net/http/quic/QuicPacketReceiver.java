@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,11 @@ public interface QuicPacketReceiver {
      * {@return a list of local connectionIds for this connection)
      */
     List<QuicConnectionId> connectionIds();
+
+    /**
+     * {@return a list of active peer stateless reset tokens for this connection)
+     */
+    List<byte[]> activeResetTokens();
 
     /**
      * {@return the initial connection id assigned by the peer}
