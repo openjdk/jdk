@@ -145,7 +145,7 @@ public:
 // use the BoolNode inputs instead).
 class OpaqueConstantBoolNode : public Node {
  private:
-  bool _constant;
+  const bool _constant;
  public:
   OpaqueConstantBoolNode(Compile* C, Node* tst, bool constant) : Node(nullptr, tst), _constant(constant) {
     assert(tst->is_Bool() || tst->is_Con(), "Test node must be a BoolNode or a constant");
