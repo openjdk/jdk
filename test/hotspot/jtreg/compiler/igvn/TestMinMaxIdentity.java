@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 IBM Corporation. All rights reserved.
+ * Copyright (c) 2025, 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,21 @@ public class TestMinMaxIdentity {
                 let("arg2", arg2),
                 """
                 @Test
-                @IR(counts = {IRNode.#op, "= 1"},
-                    phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+                """,
+                type.isFloating() ?
+                    """
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                        applyIfPlatform = {"riscv64", "true"})
+                    """ :
+                    """
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+                    """,
+                """
                 @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
                 public #type $test(#type #arg1, #type #arg2) {
                     int i;
