@@ -24,12 +24,12 @@
  * Facebook Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_POOL_HH
-#define HB_POOL_HH
+#ifndef HB_FREE_POOL_HH
+#define HB_FREE_POOL_HH
 
 #include "hb.hh"
 
-/* Memory pool for persistent allocation of small objects.
+/* Memory pool for persistent alloc/free of small objects.
  *
  * Some AI musings on this, not necessarily true:
  *
@@ -41,10 +41,10 @@
  * sophisticated, use a real allocator.  Or use a real language. */
 
 template <typename T, unsigned ChunkLen = 32>
-struct hb_pool_t
+struct hb_free_pool_t
 {
-  hb_pool_t () : next (nullptr) {}
-  ~hb_pool_t ()
+  hb_free_pool_t () : next (nullptr) {}
+  ~hb_free_pool_t ()
   {
     next = nullptr;
 
@@ -104,4 +104,4 @@ struct hb_pool_t
 };
 
 
-#endif /* HB_POOL_HH */
+#endif /* HB_FREE_POOL_HH */
