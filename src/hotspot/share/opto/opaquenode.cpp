@@ -118,7 +118,6 @@ void OpaqueConstantBoolNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-
 OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
     : Node(nullptr, bol),
       _loop_node(loop_node),
