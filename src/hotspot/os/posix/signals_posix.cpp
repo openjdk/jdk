@@ -1632,10 +1632,8 @@ void PosixSignals::hotspot_sigmask(Thread* thread) {
     }
   }
 
-  if (UseAltSigStacks) {
-    PosixSignals::enable_alternate_signal_stack_for_current_thread();
-  }
-
+  // Also enable alternative signal stack, if needed
+  thread->enable_alternate_signal_stack();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1913,111 +1911,4 @@ int PosixSignals::init() {
   install_signal_handlers();
 
   return JNI_OK;
-}
-
-static size_t get_alternate_signal_stack_size() {
-  // For stack size, using the same size as the shadow zone is a good choice
-  // since that mechanism defines how much space normally is left on the stack
-  // for native code. The default size is also a min cap. It seems excessive
-  // but that is to have some headroom in case we hit an excessive number of
-  // secondary crashes during signal handling, which would increase stack
-  // usage.
-  constexpr size_t stacksize_default = 128 * K;
-  size_t stacksize = stacksize_default;
-  if (StackOverflow::is_initialized()) {
-    stacksize = MAX2(stacksize, StackOverflow::stack_shadow_zone_size());
-  }
-  stacksize = align_up(stacksize, os::vm_page_size());
-  return stacksize;
-}
-
-static void describe_stack_t(outputStream* st, const stack_t* ss) {
-  if (ss->ss_flags == SS_DISABLE) {
-    st->print("SS_DISABLE");
-  } else {
-    st->print(RANGEFMT, RANGEFMTARGS(ss->ss_sp, ss->ss_size));
-  }
-}
-
-static bool sigaltstack_and_log(const stack_t* ss, stack_t* oss) {
-  const int rc = ::sigaltstack(ss, oss);
-  if (rc == 0) {
-    assert(oss->ss_flags != SS_ONSTACK, "invariant"); // should have been an error
-    LogTarget(Debug, os, thread) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print("Thread " PTR_FORMAT ": alternate signal stack %s (",
-          p2i(Thread::current_or_null_safe()),
-          (ss->ss_flags == SS_DISABLE) ? "disabled" : "enabled");
-      describe_stack_t(&ls, ss);
-      ls.print_raw(", was: ");
-      describe_stack_t(&ls, oss);
-      ls.print_raw(")");
-    }
-    return true;
-  }
-  return false;
-}
-
-void PosixSignals::enable_alternate_signal_stack_for_current_thread() {
-  assert(UseAltSigStacks, "invariant");
-
-  const size_t stacksize = get_alternate_signal_stack_size();
-
-  // We allocate a border page in case the stacksize was too small. Hitting
-  // that during signal handling will immediately end the JVM with a segfault,
-  // but that is still better than potentially writing into neighboring
-  // memory segments. Also, if we are lucky, parts of the hs-err file may
-  // have been already saved to disk.
-  const size_t plus_guard = stacksize + os::vm_page_size();
-
-  int step = 0;
-  bool success = false;
-  char* p = os::reserve_memory(plus_guard, mtInternal);
-  if (p != nullptr) {
-    step ++;
-    success = os::commit_memory(p, plus_guard, false);
-  }
-
-  if (success) {
-    step ++;
-    DEBUG_ONLY(memset(p, 0, plus_guard));
- //   success = os::protect_memory(p, os::vm_page_size(), os::MEM_PROT_NONE, true);
-  }
-  if (success) {
-    step ++;
-    stack_t ss;
-    ss.ss_flags = 0;
-    ss.ss_sp = p;
-    ss.ss_size = plus_guard;
-    stack_t oss;
-    success = sigaltstack_and_log(&ss, &oss);
-  }
-  if (!success) {
-    log_info(os)("Failed to set alternative signal stack (step %d, errno %d)", step, errno);
-  }
-}
-
-void PosixSignals::disable_alternate_signal_stack_for_current_thread() {
-  assert(UseAltSigStacks, "invariant");
-
-  int step = 0;
-  bool success = false;
-
-  step ++;
-  stack_t ss;
-  ss.ss_flags = SS_DISABLE;
-  ss.ss_sp = nullptr;
-  ss.ss_size = 0;
-  stack_t oss;
-  success = sigaltstack_and_log(&ss, &oss);
-
-  if (success && oss.ss_flags != SS_DISABLE) {
-    step ++;
-    success = os::release_memory((char*)oss.ss_sp, oss.ss_size);
-  }
-
-  if (!success) {
-    log_info(os)("Failed to unsed alternative signal stack (step %d, errno %d)", step, errno);
-  }
 }

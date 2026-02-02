@@ -626,6 +626,13 @@ protected:
     return cur != nullptr && cur->in_asgct();
   }
 
+ // Support for UseAltSigStacks
+ private:
+  address _altsigstack;
+ public:
+  void enable_alternate_signal_stack();
+  void disable_alternate_signal_stack();
+
  private:
   VMErrorCallback* _vm_error_callbacks;
 };

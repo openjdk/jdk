@@ -988,6 +988,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   }
 #endif // INCLUDE_JVMCI
 
+  disable_alternate_signal_stack();
+
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread.
   // We call BarrierSet::barrier_set()->on_thread_detach() here so no touching of oops after this point.
   Threads::remove(this, daemon);

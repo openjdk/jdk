@@ -59,6 +59,7 @@
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
   f(mtJNI,            "JNI")                                                         \
+  f(mtAltStack,       "Alternate Stacks")                                            \
   f(mtNone,           "Unknown")                                                     \
   //end
 
