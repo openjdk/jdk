@@ -651,29 +651,14 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  Node* in1 = in(1);
-  uint op = in1->Opcode();
+  Node *in1 = in(1);
   const TypeInt* t2 = phase->type(in(2))->isa_int();
   if (t2 && t2->is_con()) {
-    int con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
+    juint constant = (juint)t2->get_con();
     const TypeInt* t1 = phase->type(in(1))->isa_int();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
-      if ((t1_support & con) == t1_support)
-        return in1;
-    }
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if (op == Op_URShiftI) {
-      const TypeInt* t12 = phase->type(in1->in(2))->isa_int();
-      if (t12 && t12->is_con()) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaInteger - 1;  // semantics of Java shifts
-        int mask = max_juint >> shift;
-        if ((mask & con) == mask)  // If AND is useless, skip it
-          return in1;
-      }
+    // Check if all bits cleared by the mask are already known to be zero
+    if (t1 != nullptr && (~constant & ~(t1->_bits._zeros)) == 0) {
+      return in1;
     }
   }
   return MulNode::Identity(phase);
@@ -782,27 +767,11 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
   Node *usr = in(1);
   const TypeLong *t2 = phase->type( in(2) )->isa_long();
   if( t2 && t2->is_con() ) {
-    jlong con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
+    julong constant = (julong)t2->get_con();
     const TypeLong* t1 = phase->type( in(1) )->isa_long();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      int bit_count = log2i_graceful(t1->_hi) + 1;
-      jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
-      if ((t1_support & con) == t1_support)
-        return usr;
-    }
-    uint lop = usr->Opcode();
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if( lop == Op_URShiftL ) {
-      const TypeInt *t12 = phase->type( usr->in(2) )->isa_int();
-      if( t12 && t12->is_con() ) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-        jlong mask = max_julong >> shift;
-        if( (mask&con) == mask )  // If AND is useless, skip it
-          return usr;
-      }
+    // Check if all bits cleared by the mask are already known to be zero
+    if (t1 != nullptr && (~constant & ~(t1->_bits._zeros)) == 0) {
+      return usr;
     }
   }
   return MulNode::Identity(phase);
@@ -1121,6 +1090,36 @@ Node* LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return IdealIL(phase, can_reshape, T_INT);
 }
 
+template <typename SType, typename UType, typename TypeClass>
+static const Type *update_lshift_bits(const TypeInteger *r1, jlong lo,
+                                      jlong hi, uint shift, int widen,
+                                      BasicType bt) {
+  const TypeClass *r1_typed = TypeClass::as_self(r1);
+  auto pattern = right_n_bits_typed<UType>(shift);
+  auto known_one_bits = r1_typed->_bits._ones << shift;
+  auto known_zero_bits = (r1_typed->_bits._zeros << shift) | pattern;
+  auto known_bits = KnownBits<UType>{known_zero_bits, known_one_bits};
+
+  // Compute the signed range based on whether the shift result will overflow
+  SType result_lo = java_shift_left(lo, shift, bt);
+  SType result_hi = java_shift_left(hi, shift, bt);
+  SType result_min = std::numeric_limits<SType>::min();
+  SType result_max = std::numeric_limits<SType>::max();
+
+  bool may_overflow = java_shift_right(result_lo, shift, bt) != lo ||
+                      java_shift_right(result_hi, shift, bt) != hi;
+  SType range_lo = may_overflow ? result_min : result_lo;
+  SType range_hi = may_overflow ? result_max : result_hi;
+  auto signed_range = RangeInt<SType>{range_lo, range_hi};
+
+  // Don't narrow the unsigned range, instead let canonicalize_constraints()
+  // infer the unsigned range from the signed range.
+  auto unsigned_range = RangeInt<UType>{0, std::numeric_limits<UType>::max()};
+  auto proto =
+      TypeIntPrototype<SType, UType>{signed_range, unsigned_range, known_bits};
+  return TypeClass::make(proto, widen);
+}
+
 const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -1141,9 +1140,9 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return t1;
   }
 
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if ((t1 == TypeInteger::bottom(bt)) || (t2 == TypeInt::INT) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+  // If the left input is BOTTOM or if nothing is known about the shift amount,
+  // then the result is BOTTOM
+  if (t2 == TypeInt::INT || t1 == Type::BOTTOM || t2 == Type::BOTTOM) {
     return TypeInteger::bottom(bt);
   }
 
@@ -1164,6 +1163,7 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   // If the shift is a constant, shift the bounds of the type,
   // unless this could lead to an overflow.
   if (!r1->is_con()) {
+    int widen = MAX2(r1->_widen, r2->_widen);
     jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
 #ifdef ASSERT
     if (bt == T_INT) {
@@ -1172,14 +1172,12 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
       assert((java_shift_right(java_shift_left(hi, shift, bt),  shift, bt) == hi) == (((hi_int << shift) >> shift) == hi_int), "inconsistent");
     }
 #endif
-    if (java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo &&
-        java_shift_right(java_shift_left(hi, shift, bt), shift, bt) == hi) {
-      // No overflow.  The range shifts up cleanly.
-      return TypeInteger::make(java_shift_left(lo, shift, bt),
-                               java_shift_left(hi,  shift, bt),
-                               MAX2(r1->_widen, r2->_widen), bt);
-    }
-    return TypeInteger::bottom(bt);
+
+    return bt == T_INT
+               ? update_lshift_bits<jint, juint, TypeInt>(r1, lo, hi, shift,
+                                                          widen, bt)
+               : update_lshift_bits<jlong, julong, TypeLong>(r1, lo, hi, shift,
+                                                             widen, bt);
   }
 
   return TypeInteger::make(java_shift_left(r1->get_con_as_long(bt), shift, bt), bt);
