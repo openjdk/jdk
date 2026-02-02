@@ -267,6 +267,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   JFR_ONLY(void enter_jfr_critical_section();)
   JFR_ONLY(void leave_jfr_critical_section();)
 
+  STACKWALKER_ONLY(void enter_stackwalker_critical_section();)
+  STACKWALKER_ONLY(void leave_stackwalker_critical_section();)
+
  private:
 
   Register _locals_register; // register that contains the pointer to the locals

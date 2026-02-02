@@ -1,5 +1,6 @@
 /*
-* Copyright (c) 2026, Datadog, Inc. All rights reserved.
+ * Copyright (c) 2026, Datadog, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,10 +176,9 @@ static bool build_from_ljf(StackWalkRequest& request,
   }
   assert(last_pc != nullptr, "invariant");
   if (is_interpreter(last_pc)) {
-    // TODO
-    //if (tl->in_sampling_critical_section()) {
-    //  return false;
-    //}
+    if (jt->in_stackwalker_critical_section()) {
+      return false;
+    }
     request._sample_pc = last_pc;
     request._sample_bcp = jt->frame_anchor()->last_Java_fp();
     return build_for_interpreter(request, jt);

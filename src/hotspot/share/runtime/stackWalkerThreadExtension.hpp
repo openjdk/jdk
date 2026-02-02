@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2026, Datadog, Inc. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +22,17 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_STACKWALKER_HPP
-#define SHARE_RUNTIME_STACKWALKER_HPP
+#ifndef SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
+#define SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
 
-#include "memory/allStatic.hpp"
+#define DECLARE_FIELD_STACKWALKER mutable bool _stackwalker_critical_section;
 
-class JavaThread;
+#define INITIALIZE_FIELD_STACKWALKER _stackwalker_critical_section = false;
 
-class StackWalkRequest {
-public:
-  void* _sample_sp;
-  void* _sample_pc;
-  void* _sample_bcp;
-};
+#define DEFINE_ACCESSOR_STACKWALKER \
+  bool in_stackwalker_critical_section() const { return _stackwalker_critical_section; }
 
-/**
- * A facility to get unbiased, precise stack-traces from a running
- * thread.
- */
-class StackWalker : public AllStatic {
-public:
-  static void build_stack_walk_request(StackWalkRequest& request, void* ucontext, JavaThread* java_thread);
-};
+#define DEFINE_OFFSET_STACKWALKER \
+  static ByteSize stackwalker_critical_section_offset() { return byte_offset_of(Thread, _stackwalker_critical_section); }
 
-#endif // SHARE_RUNTIME_STACKWALKER_HPP
+#endif // SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
