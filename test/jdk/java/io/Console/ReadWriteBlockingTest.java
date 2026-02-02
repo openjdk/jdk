@@ -26,6 +26,7 @@
  * @bug 8340830
  * @summary Check if writing to Console is not blocked by other thread's read.
  * @library /test/lib
+ * @requires (os.family == "linux" | os.family == "mac")
  * @run junit ReadWriteBlockingTest
  * @run junit/othervm -Djdk.console=jdk.internal.le ReadWriteBlockingTest
  */
