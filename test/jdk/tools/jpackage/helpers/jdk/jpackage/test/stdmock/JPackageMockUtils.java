@@ -21,19 +21,27 @@
  * questions.
  */
 
-package jdk.jpackage.internal;
+package jdk.jpackage.test.stdmock;
 
 import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.Executor;
+import jdk.jpackage.internal.ExecutorFactory;
+import jdk.jpackage.internal.Globals;
+import jdk.jpackage.internal.ObjectFactory;
 import jdk.jpackage.internal.cli.CliBundlingEnvironment;
 import jdk.jpackage.internal.cli.Main;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -42,11 +50,11 @@ import jdk.jpackage.test.mock.ToolProviderCommandMock;
 import jdk.jpackage.test.mock.VerbatimCommandMock;
 
 /**
- * Bridges "jdk.jpackage.internal" and "jdk.jpackage.test.mock" packages.
+ * Utilities to create jpackage mock.
  */
-public final class MockUtils {
+public final class JPackageMockUtils {
 
-    private MockUtils() {
+    private JPackageMockUtils() {
     }
 
     public static JPackageToolProviderBuilder buildJPackage() {
@@ -59,30 +67,23 @@ public final class MockUtils {
             return createJPackageToolProvider(os(), createObjectFactory());
         }
 
-        public Consumer<Globals> createGlobalsMutator() {
-            var objectFactory = createObjectFactory();
-            return globals -> {
-                globals.objectFactory(objectFactory);
-            };
-        }
-
         public void applyToGlobals() {
-            createGlobalsMutator().accept(Globals.instance());
+            Globals.instance().objectFactory(createObjectFactory());
         }
 
-        ExecutorFactory createExecutorFactory() {
-            var commandMocksExecutorFactory = Optional.ofNullable(script).map(MockUtils::withCommandMocks).map(mapper -> {
+        public ExecutorFactory createExecutorFactory() {
+            var commandMocksExecutorFactory = Optional.ofNullable(script).map(JPackageMockUtils::withCommandMocks).map(mapper -> {
                 return mapper.apply(ExecutorFactory.DEFAULT);
             }).orElse(ExecutorFactory.DEFAULT);
 
-            var recordingExecutorFactory = Optional.ofNullable(listener).map(MockUtils::withCommandListener).map(mapper -> {
+            var recordingExecutorFactory = Optional.ofNullable(listener).map(JPackageMockUtils::withCommandListener).map(mapper -> {
                 return mapper.apply(commandMocksExecutorFactory);
             }).orElse(commandMocksExecutorFactory);
 
             return recordingExecutorFactory;
         }
 
-        ObjectFactory createObjectFactory() {
+        public ObjectFactory createObjectFactory() {
             var executorFactory = createExecutorFactory();
             if (executorFactory == ExecutorFactory.DEFAULT) {
                 return ObjectFactory.DEFAULT;
@@ -124,6 +125,31 @@ public final class MockUtils {
 
     public static ToolProvider createJPackageToolProvider(Script script) {
         return createJPackageToolProvider(OperatingSystem.current(), script);
+    }
+
+    public static Map<OperatingSystem, Supplier<CliBundlingEnvironment>> availableBundlingEnvironments() {
+        return Map.ofEntries(
+                Map.entry(OperatingSystem.WINDOWS, "WinBundlingEnvironment"),
+                Map.entry(OperatingSystem.LINUX, "LinuxBundlingEnvironment"),
+                Map.entry(OperatingSystem.MACOS, "MacBundlingEnvironment")
+        ).entrySet().stream().map(e -> {
+            Constructor<?> ctor;
+            try {
+                ctor = Class.forName("jdk.jpackage.internal." + e.getValue()).getConstructor();
+            } catch (NoSuchMethodException | SecurityException ex) {
+                throw ExceptionBox.toUnchecked(ex);
+            } catch (ClassNotFoundException ex) {
+                return Optional.<Map.Entry<OperatingSystem, Supplier<CliBundlingEnvironment>>>empty();
+            }
+            return Optional.of(Map.entry(e.getKey(), toSupplier(() -> {
+                return (CliBundlingEnvironment)ctor.newInstance();
+            })));
+        }).flatMap(Optional::stream).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static CliBundlingEnvironment createBundlingEnvironment(OperatingSystem os) {
+        Objects.requireNonNull(os);
+        return Objects.requireNonNull(availableBundlingEnvironments().get(os)).get();
     }
 
     private static UnaryOperator<ExecutorFactory> withCommandListener(Consumer<List<String>> listener) {
@@ -181,35 +207,7 @@ public final class MockUtils {
         };
     }
 
-    public static CliBundlingEnvironment createBundlingEnvironment(OperatingSystem os) {
-        Objects.requireNonNull(os);
-
-        String bundlingEnvironmentClassName;
-        switch (os) {
-            case WINDOWS -> {
-                bundlingEnvironmentClassName = "WinBundlingEnvironment";
-            }
-            case LINUX -> {
-                bundlingEnvironmentClassName = "LinuxBundlingEnvironment";
-            }
-            case MACOS -> {
-                bundlingEnvironmentClassName = "MacBundlingEnvironment";
-            }
-            default -> {
-                throw new IllegalArgumentException();
-            }
-        }
-
-        return toSupplier(() -> {
-            var ctor = Class.forName(String.join(".",
-                    DefaultBundlingEnvironment.class.getPackageName(),
-                    bundlingEnvironmentClassName
-            )).getConstructor();
-            return (CliBundlingEnvironment)ctor.newInstance();
-        }).get();
-    }
-
-    static ToolProvider createJPackageToolProvider(OperatingSystem os, ObjectFactory of) {
+    private static ToolProvider createJPackageToolProvider(OperatingSystem os, ObjectFactory of) {
         Objects.requireNonNull(os);
         Objects.requireNonNull(of);
 

@@ -25,9 +25,9 @@
 package jdk.jpackage.internal;
 
 @FunctionalInterface
-interface ExecutorFactory {
+public interface ExecutorFactory {
 
     Executor executor();
 
-    static final ExecutorFactory DEFAULT = Executor::new;
+    public static final ExecutorFactory DEFAULT = Executor::new;
 }
