@@ -741,21 +741,23 @@ public interface Set<E> extends Collection<E> {
     }
 
     /**
-     * {@return a new lazily computed set with the provided {@code elementCandidates}}
+     * {@return a new lazily computed set with the provided {@code elementCandidates}
+     *          whose membership status will be lazily determined by the provided
+     *          {@code computingFunction}}
      * <p>
      * The returned set is an {@linkplain Collection##unmodifiable unmodifiable} set whose
-     * element candidates are known at construction. The set's element containment status
+     * element candidates are known at construction. The set's element membership status
      * are lazily computed via the provided {@code computingFunction} when they are first
      * accessed (e.g., via {@linkplain Set#contains(Object) Set::contains}).
      * <p>
      * The provided computing function is guaranteed to be successfully invoked
      * at most once per element candicate, even in a multi-threaded environment. Competing
-     * threads accessing an element candidate already under containment status computation
-     * will block until the containment status of the element candidate is computed or the
+     * threads accessing an element candidate already under membership status computation
+     * will block until the mebership status of the element candidate is computed or the
      * computing function completes abnormally.
      * <p>
      * If invoking the provided computing function throws an exception, it
-     * is rethrown to the initial caller and no containment status associated with the
+     * is rethrown to the initial caller and no membership status associated with the
      * provided element candidate is recorded.
      * <p>
      * If the provided computing function recursively calls itself via
@@ -769,12 +771,12 @@ public interface Set<E> extends Collection<E> {
      * one or more lazy elements.
      * <p>
      * The returned lazy set strongly references its underlying
-     * computing function used to compute containment status at least as long as there are
+     * computing function used to compute membership status at least as long as there are
      * uncomputed element candidates.
      * <p>
      * The returned Set is <em>not</em> {@linkplain Serializable}.
      *
-     * @implNote  after all element candidate statuses have been initialized successfully,
+     * @implNote  after all element membership statuses have been initialized successfully,
      *            the computing function is no longer strongly referenced and becomes
      *            eligible for garbage collection.
      *
@@ -783,8 +785,8 @@ public interface Set<E> extends Collection<E> {
      *                          candidate is first computed
      * @param <E>               the type of elements maintained by the returned set
      * @throws NullPointerException if the provided set of {@code elementCandidated} is
-     *                             {@code null} or if the set of {@code elementCandidated}
-     *                             contains a {@code null} element.
+     *                              {@code null} or if the set of {@code elementCandidated}
+     *                              contains a {@code null} element.
      *
      * @see LazyConstant
      * @since 27
