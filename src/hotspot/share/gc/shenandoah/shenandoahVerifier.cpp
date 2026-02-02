@@ -115,6 +115,7 @@ private:
       // We are here when the host object for *p is already marked.
       oop obj = CompressedOops::decode_raw_not_null(o);
       verify_oop_at_basic(p, obj);
+
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
       }
@@ -335,7 +336,7 @@ public:
   }
 
   /**
-   * Verify object with known interior reference.
+   * Verify object with known interior reference, with only basic verification.
    * @param p interior reference where the object is referenced from; can be off-heap
    * @param obj verified object
    */
@@ -1247,7 +1248,9 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      shenandoah_assert_correct(p, obj);
+
       oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (obj != fwd) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
@@ -1267,7 +1270,9 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      shenandoah_assert_correct(p, obj);
+
       ShenandoahHeap* heap = ShenandoahHeap::heap();
 
       if (!heap->marking_context()->is_marked_or_old(obj)) {
@@ -1321,7 +1326,9 @@ public:
   inline void work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      shenandoah_assert_correct(p, obj);
+
       if (_heap->is_in_young(obj) && !_scanner->is_card_dirty((HeapWord*) p)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          _message, "clean card, it should be dirty.", __FILE__, __LINE__);
