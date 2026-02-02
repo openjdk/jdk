@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "runtime/atomic.hpp"
 
 class G1CardTable;
 class Thread;
@@ -66,7 +67,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   G1SATBMarkQueueSet _satb_mark_queue_set;
 
-  G1CardTable* _refinement_table;
+  Atomic<G1CardTable*> _refinement_table;
 
  public:
   G1BarrierSet(G1CardTable* card_table, G1CardTable* refinement_table);
@@ -76,7 +77,7 @@ class G1BarrierSet: public CardTableBarrierSet {
     return barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
   }
 
-  G1CardTable* refinement_table() const { return _refinement_table; }
+  G1CardTable* refinement_table() const { return _refinement_table.load_relaxed(); }
 
   // Swap the global card table references, without synchronization.
   void swap_global_card_table();
