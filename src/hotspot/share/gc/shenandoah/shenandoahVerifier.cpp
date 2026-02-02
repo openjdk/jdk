@@ -110,15 +110,14 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      // Basic verification should happen before we touch anything else.
+      // For performance reasons, only fully verify non-marked field values.
+      // We are here when the host object for *p is already marked.
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      verify_oop_at_basic(p, obj);
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
       }
-      // Single threaded verification can use faster non-atomic stack and bitmap
-      // methods.
-      //
-      // For performance reasons, only fully verify non-marked field values.
-      // We are here when the host object for *p is already marked.
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
         _stack->push(ShenandoahVerifierTask(obj));
@@ -131,7 +130,7 @@ private:
     return _generation->contains(region);
   }
 
-  void verify_oop(oop obj) {
+  void verify_oop(oop obj, bool basic = false) {
     // Perform consistency checks with gradually decreasing safety level. This guarantees
     // that failure report would not try to touch something that was not yet verified to be
     // safe to process.
@@ -174,10 +173,14 @@ private:
         }
       }
 
+      check(ShenandoahAsserts::_safe_unknown, obj, obj_reg->is_active(),
+           "Object should be in active region");
+
       // ------------ obj is safe at this point --------------
 
-      check(ShenandoahAsserts::_safe_oop, obj, obj_reg->is_active(),
-            "Object should be in active region");
+      if (basic) {
+        return;
+      }
 
       switch (_options._verify_liveness) {
         case ShenandoahVerifier::_verify_liveness_disable:
@@ -328,6 +331,18 @@ public:
   void verify_oop_at(T* p, oop obj) {
     _interior_loc = p;
     verify_oop(obj);
+    _interior_loc = nullptr;
+  }
+
+  /**
+   * Verify object with known interior reference.
+   * @param p interior reference where the object is referenced from; can be off-heap
+   * @param obj verified object
+   */
+  template <class T>
+  void verify_oop_at_basic(T* p, oop obj) {
+    _interior_loc = p;
+    verify_oop(obj, /* basic = */ true);
     _interior_loc = nullptr;
   }
 
