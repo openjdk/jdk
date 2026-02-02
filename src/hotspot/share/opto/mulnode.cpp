@@ -594,26 +594,38 @@ Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-template <typename T>
-static const TypeLong* range_fold(const T t1_lo, const T t1_hi, const T t2_lo, const T t2_hi, const int widen) {
-  auto multiply = [](const T lo, const T hi) -> T {
-    return std::is_signed<T>::value ? multiply_high_signed(lo, hi) : multiply_high_unsigned(lo, hi);
-  };
-  auto make = [](T lo, T hi, int widen) -> const TypeLong* {
-    return std::is_signed<T>::value ? TypeLong::make(lo, hi, widen) : TypeLong::make_unsigned(lo, hi, widen);
-  };
-  T p00 = multiply(t1_lo, t2_lo);
-  T p01 = multiply(t1_lo, t2_hi);
-  T p10 = multiply(t1_hi, t2_lo);
-  T p11 = multiply(t1_hi, t2_hi);
-  T lo = MIN4(p00, p01, p10, p11);
-  T hi = MAX4(p00, p01, p10, p11);
-  return make(lo, hi, widen);
+static const TypeLong* mulhi_range_fold_signed(jlong t1_lo, jlong t1_hi, jlong t2_lo, jlong t2_hi, int widen) {
+  const jlong lo_lo_product = multiply_high_signed(t1_lo, t2_lo);
+  const jlong lo_hi_product = multiply_high_signed(t1_lo, t2_hi);
+  const jlong hi_lo_product = multiply_high_signed(t1_hi, t2_lo);
+  const jlong hi_hi_product = multiply_high_signed(t1_hi, t2_hi);
+  const jlong lo = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  const jlong hi = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  return TypeLong::make(lo, hi, widen);
+}
+
+static const TypeLong* mulhi_range_fold_unsigned(julong t1_lo, julong t1_hi, julong t2_lo, julong t2_hi, int widen) {
+  const julong lo_lo_product = multiply_high_unsigned(t1_lo, t2_lo);
+  const julong lo_hi_product = multiply_high_unsigned(t1_lo, t2_hi);
+  const julong hi_lo_product = multiply_high_unsigned(t1_hi, t2_lo);
+  const julong hi_hi_product = multiply_high_unsigned(t1_hi, t2_hi);
+  const julong lo = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  const julong hi = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  return TypeLong::make_unsigned(lo, hi, widen);
+}
+
+static const TypeLong* mulhi_value(const TypeLong* t1, const TypeLong* t2, bool is_unsigned) {
+  const int widen = MIN2(t1->_widen, t2->_widen);
+  if (is_unsigned) {
+    return mulhi_range_fold_unsigned(t1->_ulo, t1->_uhi, t2->_ulo, t2->_uhi, widen);
+  }
+  return mulhi_range_fold_signed(t1->_lo, t1->_hi, t2->_lo, t2->_hi, widen);
 }
 
 const Type* MulHiLNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
+
   // Either input is TOP ==> the result is TOP
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
@@ -621,14 +633,13 @@ const Type* MulHiLNode::Value(PhaseGVN* phase) const {
 
   const TypeLong* longType1 = t1->is_long();
   const TypeLong* longType2 = t2->is_long();
-  return range_fold<jlong>(longType1->_lo, longType1->_hi,
-                           longType2->_lo, longType2->_hi,
-                           MIN2(longType1->_widen, longType2->_widen));
+  return mulhi_value(longType1, longType2, false);
 }
 
 const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
+
   // Either input is TOP ==> the result is TOP
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
@@ -636,14 +647,7 @@ const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
 
   const TypeLong* longType1 = t1->is_long();
   const TypeLong* longType2 = t2->is_long();
-
-  julong p00 = multiply_high_unsigned(longType1->_ulo, longType2->_ulo);
-  julong p01 = multiply_high_unsigned(longType1->_ulo, longType2->_uhi);
-  julong p10 = multiply_high_unsigned(longType1->_uhi, longType2->_ulo);
-  julong p11 = multiply_high_unsigned(longType1->_uhi, longType2->_uhi);
-  julong lo = MIN4(p00, p01, p10, p11);
-  julong hi = MAX4(p00, p01, p10, p11);
-  return TypeLong::make_unsigned(lo, hi, MAX2(longType1->_widen, longType2->_widen));
+  return mulhi_value(longType1, longType2, true);
 }
 
 //=============================================================================
