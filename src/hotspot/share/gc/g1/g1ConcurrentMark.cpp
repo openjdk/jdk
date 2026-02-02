@@ -382,12 +382,12 @@ G1CMRootMemRegions::~G1CMRootMemRegions() {
 }
 
 void G1CMRootMemRegions::reset() {
-  _num_root_regions = 0;
+  _num_root_regions.store_relaxed(0);
 }
 
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
-  size_t idx = AtomicAccess::fetch_then_add(&_num_root_regions, 1u);
+  size_t idx = _num_root_regions.fetch_then_add(1u);
   assert(idx < _max_regions, "Trying to add more root MemRegions than there is space %zu", _max_regions);
   assert(start != nullptr && end != nullptr && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
@@ -398,36 +398,38 @@ void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
 void G1CMRootMemRegions::prepare_for_scan() {
   assert(!scan_in_progress(), "pre-condition");
 
-  _scan_in_progress = _num_root_regions > 0;
+  _scan_in_progress.store_relaxed(num_root_regions() > 0);
 
-  _claimed_root_regions = 0;
-  _should_abort = false;
+  _claimed_root_regions.store_relaxed(0);
+  _should_abort.store_relaxed(false);
 }
 
 const MemRegion* G1CMRootMemRegions::claim_next() {
-  if (_should_abort) {
+  if (_should_abort.load_relaxed()) {
     // If someone has set the should_abort flag, we return null to
     // force the caller to bail out of their loop.
     return nullptr;
   }
 
-  if (_claimed_root_regions >= _num_root_regions) {
+  uint local_num_root_regions = num_root_regions();
+  if (_claimed_root_regions.load_relaxed() >= local_num_root_regions) {
     return nullptr;
   }
 
-  size_t claimed_index = AtomicAccess::fetch_then_add(&_claimed_root_regions, 1u);
-  if (claimed_index < _num_root_regions) {
+  size_t claimed_index = _claimed_root_regions.fetch_then_add(1u);
+  if (claimed_index < local_num_root_regions) {
     return &_root_regions[claimed_index];
   }
   return nullptr;
 }
 
 uint G1CMRootMemRegions::num_root_regions() const {
-  return (uint)_num_root_regions;
+  return (uint)_num_root_regions.load_relaxed();
 }
 
 bool G1CMRootMemRegions::contains(const MemRegion mr) const {
-  for (uint i = 0; i < _num_root_regions; i++) {
+  uint local_num_root_regions = num_root_regions();
+  for (uint i = 0; i < local_num_root_regions; i++) {
     if (_root_regions[i].equals(mr)) {
       return true;
     }
@@ -437,7 +439,7 @@ bool G1CMRootMemRegions::contains(const MemRegion mr) const {
 
 void G1CMRootMemRegions::notify_scan_done() {
   MutexLocker x(G1RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
-  _scan_in_progress = false;
+  _scan_in_progress.store_relaxed(false);
   G1RootRegionScan_lock->notify_all();
 }
 
@@ -448,10 +450,10 @@ void G1CMRootMemRegions::cancel_scan() {
 void G1CMRootMemRegions::scan_finished() {
   assert(scan_in_progress(), "pre-condition");
 
-  if (!_should_abort) {
-    assert(_claimed_root_regions >= num_root_regions(),
+  if (!_should_abort.load_relaxed()) {
+    assert(_claimed_root_regions.load_relaxed() >= num_root_regions(),
            "we should have claimed all root regions, claimed %zu, length = %u",
-           _claimed_root_regions, num_root_regions());
+           _claimed_root_regions.load_relaxed(), num_root_regions());
   }
 
   notify_scan_done();
