@@ -81,7 +81,9 @@ public class TestSharedCloseJvmti {
                 // run in separate thread so that waiting on
                 // latch doesn't block main thread
                 Thread.ofPlatform().name("Trigger").start(() -> {
-                    SINK = segment.get(ValueLayout.JAVA_INT, 0);
+                    SINK = segment.get(ValueLayout.JAVA_INT, 0); // should throw
+                    System.err.println("No exception thrown during outer memory access");
+                    System.exit(1);
                 });
                 // wait until trigger thread is in JVMTI event callback
                 MAIN_LATCH.await();
@@ -107,7 +109,9 @@ public class TestSharedCloseJvmti {
             } else {
                 reentrant = true;
                 try (Arena arena = Arena.ofConfined()) {
-                    SINK = arena.allocate(4).get(ValueLayout.JAVA_INT, 0);
+                    SINK = arena.allocate(4).get(ValueLayout.JAVA_INT, 0); // should throw
+                    System.err.println("No exception thrown during reentrant memory access");
+                    System.exit(1);
                 }
                 reentrant = false;
             }

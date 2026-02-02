@@ -23,7 +23,6 @@
 
 import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.Map.entry;
-import jdk.jpackage.internal.util.Slot;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writeKey;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
@@ -52,6 +51,7 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
@@ -84,7 +84,7 @@ public class CustomInfoPListTest {
 
     @Test
     @ParameterSupplier("customPLists")
-    public void testAppImage(TestConfig cfg) throws Throwable {
+    public void testAppImage(TestConfig cfg) {
         testApp(new ConfigurationTarget(JPackageCommand.helloAppImage()), cfg);
     }
 
@@ -254,6 +254,10 @@ public class CustomInfoPListTest {
                         .addArguments(cmd.getAllArguments())
                         .setPackageType(PackageType.IMAGE)
                         .removeArgumentWithValue("--resource-dir")
+                        // Ignore externally configured runtime if any.
+                        // It may or may not have the "bin" directory, it also can be a bundle.
+                        // These factors affect the runtime plist file (see JDK-8363980) which may not be the default one.
+                        .ignoreDefaultRuntime(true)
                         .setArgumentValue("--dest", TKit.createTempDirectory("vanilla"));
                 vanillaCmd.execute();
 
@@ -320,8 +324,8 @@ public class CustomInfoPListTest {
         ;
 
         private CustomPListType(
-                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter> inputPlistWriter,
-                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter> outputPlistWriter,
+                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter, ? extends Exception> inputPlistWriter,
+                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter, ? extends Exception> outputPlistWriter,
                 String outputPlistFilename) {
             this.inputPlistWriter = ThrowingBiConsumer.toBiConsumer(inputPlistWriter);
             this.outputPlistWriter = ThrowingBiConsumer.toBiConsumer(outputPlistWriter);

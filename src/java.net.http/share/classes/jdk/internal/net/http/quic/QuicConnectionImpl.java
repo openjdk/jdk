@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1246,7 +1246,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             final PacketSpace space = packetSpace(PacketNumberSpace.APPLICATION);
             final int maxDatagramSize = getMaxDatagramSize();
             final QuicConnectionId peerConnectionId = peerConnectionId();
-            final int dstIdLength = peerConnectionId().length();
+            final int dstIdLength = peerConnectionId.length();
             if (!canSend()) {
                 return false;
             }
@@ -1745,6 +1745,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     @Override
     public List<QuicConnectionId> connectionIds() {
         return localConnIdManager.connectionIds();
+    }
+
+    @Override
+    public List<byte[]> activeResetTokens() {
+        return peerConnIdManager.activeResetTokens();
     }
 
     LocalConnIdManager localConnectionIdManager() {
@@ -2453,7 +2458,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 }
                 return;
             }
-            final QuicConnectionId currentPeerConnId = this.peerConnIdManager.getPeerConnId();
+            final QuicConnectionId currentPeerConnId = peerConnectionId();
             if (rt.sourceId().equals(currentPeerConnId)) {
                 if (debug.on()) {
                     debug.log("Invalid retry, same connection ID");
@@ -2811,7 +2816,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 // a CONNECTION_CLOSE frame is being sent to the peer when the local
                 // connection state is in DRAINING. This implies that the local endpoint
                 // is responding to an incoming CONNECTION_CLOSE frame from the peer.
-                // we remove the connection from the endpoint for such cases.
+                // we switch this connection to one that does not respond to incoming packets.
                 endpoint.pushClosedDatagram(this, peerAddress(), datagram);
             } else if (stateHandle.isMarked(QuicConnectionState.CLOSING)) {
                 // a CONNECTION_CLOSE frame is being sent to the peer when the local
