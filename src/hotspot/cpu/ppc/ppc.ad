@@ -3024,7 +3024,6 @@ encode %{
   %}
 
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
-    // use isel instruction with Power 7
     cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
     encodeP_subNode    *n_sub_base = new encodeP_subNode();
     encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
@@ -3099,7 +3098,6 @@ encode %{
     n_shift->_opnds[1] = op_src;
     n_shift->_bottom_type = _bottom_type;
 
-    // use isel instruction with Power 7
     decodeN_addNode *n_add_base = new decodeN_addNode();
     n_add_base->add_req(n_region, n_shift);
     n_add_base->_opnds[0] = op_dst;
@@ -6618,7 +6616,6 @@ instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Power 7 can use isel instruction
 instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   match(Set dst (EncodeP (Binary crx src1)));
@@ -7293,7 +7290,6 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -7313,7 +7309,6 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -7322,6 +7317,70 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
     __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
     __ fmr($dst$$FloatRegister, $src$$FloatRegister);
     __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpF(cmpOp cop, regF op1, regF op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpD(cmpOp cop, regD op1, regD op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpD(cmpOp cop, regD op1, regD op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpF(cmpOp cop, regF op1, regF op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8492,7 +8551,6 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -8551,7 +8609,6 @@ instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -10262,7 +10319,6 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10276,7 +10332,6 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10439,7 +10494,6 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10453,7 +10507,6 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -11080,7 +11133,6 @@ instruct cmov_bns_less(flagsReg crx) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmov    $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(12);
   ins_encode %{
     Label done;

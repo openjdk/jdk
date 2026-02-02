@@ -1229,7 +1229,7 @@ public:
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
 
-  // Convert BootTest condition to Assembler condition.
+  // Convert BoolTest condition to Assembler condition.
   // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
   Assembler::Condition to_assembler_cond(BoolTest::mask cond);
 %}
@@ -2579,7 +2579,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
-// Convert BootTest condition to Assembler condition.
+// Convert BoolTest condition to Assembler condition.
 // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
 Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
   Assembler::Condition result;
