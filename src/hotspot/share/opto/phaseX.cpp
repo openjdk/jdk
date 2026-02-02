@@ -532,7 +532,7 @@ void PhaseValues::init_con_caches() {
   memset(_zcons,0,sizeof(_zcons));
 }
 
-PhaseIterGVN *PhaseValues::is_IterGVN() {
+PhaseIterGVN* PhaseValues::is_IterGVN() {
   return (_phase == PhaseValuesType::iter_gvn || _phase == PhaseValuesType::ccp) ? static_cast<PhaseIterGVN*>(this) : nullptr;
 }
 
