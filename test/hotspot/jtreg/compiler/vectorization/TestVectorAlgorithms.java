@@ -206,7 +206,7 @@ public class TestVectorAlgorithms {
             int size = 100_000 + RANDOM.nextInt(10_000);
             int seed = RANDOM.nextInt();
             int numXObjects = 10_000;
-            float branchProbability = RANDOM.nextFloat(0.3, 0.7);
+            float branchProbability = RANDOM.nextFloat(0.3f, 0.7f);
             d = new VectorAlgorithmsImpl.Data(size, seed, numXObjects, branchProbability);
 
             // Run all tests
