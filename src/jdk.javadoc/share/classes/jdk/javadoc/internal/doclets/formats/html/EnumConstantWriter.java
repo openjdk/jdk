@@ -214,20 +214,12 @@ public class EnumConstantWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
-    }
-
-    @Override
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
                                   Content content) {
         Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
                 name(member), HtmlStyles.memberNameLink);
         var code = HtmlTree.CODE(memberLink);
         content.add(code);
-    }
-
-    @Override
-    protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content target) {
     }
 
     @Override

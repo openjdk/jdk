@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
@@ -311,7 +311,7 @@ void OopMapCacheEntry::deallocate_bit_mask() {
     assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
       "This bit mask should not be in the resource area");
     FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
-    debug_only(_bit_mask[0] = 0;)
+    DEBUG_ONLY(_bit_mask[0] = 0;)
   }
 }
 
@@ -448,11 +448,11 @@ OopMapCache::~OopMapCache() {
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
-  return Atomic::load_acquire(&(_array[i % size]));
+  return AtomicAccess::load_acquire(&(_array[i % size]));
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {
-  return Atomic::cmpxchg(&_array[i % size], old, entry) == old;
+  return AtomicAccess::cmpxchg(&_array[i % size], old, entry) == old;
 }
 
 void OopMapCache::flush() {
@@ -562,9 +562,9 @@ void OopMapCache::lookup(const methodHandle& method,
 
 void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
   while (true) {
-    OopMapCacheEntry* head = Atomic::load(&_old_entries);
+    OopMapCacheEntry* head = AtomicAccess::load(&_old_entries);
     entry->_next = head;
-    if (Atomic::cmpxchg(&_old_entries, head, entry) == head) {
+    if (AtomicAccess::cmpxchg(&_old_entries, head, entry) == head) {
       // Enqueued successfully.
       break;
     }
@@ -578,7 +578,7 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
 }
 
 bool OopMapCache::has_cleanup_work() {
-  return Atomic::load(&_old_entries) != nullptr;
+  return AtomicAccess::load(&_old_entries) != nullptr;
 }
 
 void OopMapCache::try_trigger_cleanup() {
@@ -592,7 +592,7 @@ void OopMapCache::try_trigger_cleanup() {
 }
 
 void OopMapCache::cleanup() {
-  OopMapCacheEntry* entry = Atomic::xchg(&_old_entries, (OopMapCacheEntry*)nullptr);
+  OopMapCacheEntry* entry = AtomicAccess::xchg(&_old_entries, (OopMapCacheEntry*)nullptr);
   if (entry == nullptr) {
     // No work.
     return;

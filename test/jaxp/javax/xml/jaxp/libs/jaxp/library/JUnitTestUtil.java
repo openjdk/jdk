@@ -32,6 +32,19 @@ public class JUnitTestUtil {
     public static final String CLS_DIR = System.getProperty("test.classes");
     public static final String SRC_DIR = System.getProperty("test.src");
 
+    // as in the Processors table in java.xml module summary
+    public enum Processor {
+        DOM,
+        SAX,
+        XMLREADER,
+        StAX,
+        VALIDATION,
+        TRANSFORM,
+        XSLTC,
+        DOMLS,
+        XPATH
+    };
+
     /**
      * Returns the System identifier (URI) of the source.
      * @param path the path to the source

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,22 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotGrowableArray.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "jni.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -42,14 +46,13 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/events.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
-#include "utilities/resourceHash.hpp"
 
 ModuleEntry* ModuleEntryTable::_javabase_module = nullptr;
 
-oop ModuleEntry::module() const { return _module.resolve(); }
+oop ModuleEntry::module_oop() const { return _module_handle.resolve(); }
 
 void ModuleEntry::set_location(Symbol* location) {
   // _location symbol's refcounts are managed by ModuleEntry,
@@ -165,7 +168,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (reads() == nullptr) {
       // Lazily create a module's reads list
-      GrowableArray<ModuleEntry*>* new_reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      AOTGrowableArray<ModuleEntry*>* new_reads = new (mtModule) AOTGrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
       set_reads(new_reads);
     }
 
@@ -272,8 +275,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _has_default_read_edges(false),
     _must_walk_reads(false),
     _is_open(is_open),
-    _is_patched(false)
-    DEBUG_ONLY(COMMA _reads_is_archived(false)) {
+    _is_patched(false) {
 
   // Initialize fields specific to a ModuleEntry
   if (_name == nullptr) {
@@ -284,7 +286,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
   }
 
   if (!module_handle.is_null()) {
-    _module = loader_data->add_handle(module_handle);
+    _module_handle = loader_data->add_handle(module_handle);
   }
 
   set_version(version);
@@ -317,6 +319,15 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
   // corresponding unnamed module can be found in the java.lang.ClassLoader object.
   oop module = java_lang_ClassLoader::unnamedModule(cld->class_loader());
 
+#if INCLUDE_CDS_JAVA_HEAP
+  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_unnamed_module(cld);
+  if (archived_unnamed_module != nullptr) {
+    archived_unnamed_module->load_from_archive(cld);
+    archived_unnamed_module->restore_archived_oops(cld);
+    return archived_unnamed_module;
+  }
+#endif
+
   // Ensure that the unnamed module was correctly set when the class loader was constructed.
   // Guarantee will cause a recognizable crash if the user code has circumvented calling the ClassLoader constructor.
   ResourceMark rm;
@@ -333,6 +344,16 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
 }
 
 ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
+#if INCLUDE_CDS_JAVA_HEAP
+  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_boot_unnamed_module();
+  if (archived_unnamed_module != nullptr) {
+    archived_unnamed_module->load_from_archive(cld);
+    // It's too early to call archived_unnamed_module->restore_archived_oops(cld).
+    // We will do it inside Modules::set_bootloader_unnamed_module()
+    return archived_unnamed_module;
+  }
+#endif
+
   // For the boot loader, the java.lang.Module for the unnamed module
   // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
   // this point initially create the ModuleEntry for the unnamed module.
@@ -345,7 +366,6 @@ ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
 // This is okay because the unnamed module gets created before the ClassLoaderData
 // is available to other threads.
 ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld) {
-
   ModuleEntry* entry = new ModuleEntry(module_handle, /*is_open*/true, /*name*/nullptr,
                                        /*version*/ nullptr, /*location*/ nullptr,
                                        cld);
@@ -374,7 +394,6 @@ ModuleEntryTable::~ModuleEntryTable() {
   ModuleEntryTableDeleter deleter;
   _table.unlink(&deleter);
   assert(_table.number_of_entries() == 0, "should have removed all entries");
-
 }
 
 void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
@@ -382,151 +401,63 @@ void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
   _loader_data = cld;
 }
 
+void ModuleEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_name);
+  it->push(&_reads);
+  it->push(&_version);
+  it->push(&_location);
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
-typedef ResourceHashtable<
-  const ModuleEntry*,
-  ModuleEntry*,
-  557, // prime number
-  AnyObj::C_HEAP> ArchivedModuleEntries;
-static ArchivedModuleEntries* _archive_modules_entries = nullptr;
+bool ModuleEntry::should_be_archived() const {
+  return SystemDictionaryShared::is_builtin_loader(loader_data());
+}
 
-#ifndef PRODUCT
-static int _num_archived_module_entries = 0;
-static int _num_inited_module_entries = 0;
-#endif
+void ModuleEntry::remove_unshareable_info() {
+  _archived_module_index = HeapShared::append_root(module_oop());
 
-ModuleEntry* ModuleEntry::allocate_archived_entry() const {
-  assert(is_named(), "unnamed packages/modules are not archived");
-  ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
-  memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
-
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    archived_entry->_archived_module_index = HeapShared::append_root(module());
-  } else {
-    archived_entry->_archived_module_index = -1;
-  }
-
-  if (_archive_modules_entries == nullptr) {
-    _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
-  }
-  assert(_archive_modules_entries->get(this) == nullptr, "Each ModuleEntry must not be shared across ModuleEntryTables");
-  _archive_modules_entries->put(this, archived_entry);
-  DEBUG_ONLY(_num_archived_module_entries++);
-
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    OopHandle null_handle;
-    archived_entry->_shared_pd = null_handle;
-  } else {
-    assert(archived_entry->shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  if (_reads != nullptr) {
+    _reads->set_in_aot_cache();
   }
 
   // Clear handles and restore at run time. Handles cannot be archived.
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    OopHandle null_handle;
+    _shared_pd = null_handle;
+  } else {
+    assert(shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  }
+
   OopHandle null_handle;
-  archived_entry->_module = null_handle;
-
-  // For verify_archived_module_entries()
-  DEBUG_ONLY(_num_inited_module_entries++);
-
-  if (log_is_enabled(Info, cds, module)) {
-    ResourceMark rm;
-    LogStream ls(Log(cds, module)::info());
-    ls.print("Stored in archive: ");
-    archived_entry->print(&ls);
-  }
-  return archived_entry;
-}
-
-bool ModuleEntry::has_been_archived() {
-  assert(!ArchiveBuilder::current()->is_in_buffer_space(this), "must be called on original ModuleEntry");
-  return _archive_modules_entries->contains(this);
-}
-
-ModuleEntry* ModuleEntry::get_archived_entry(ModuleEntry* orig_entry) {
-  ModuleEntry** ptr = _archive_modules_entries->get(orig_entry);
-  assert(ptr != nullptr && *ptr != nullptr, "must have been allocated");
-  return *ptr;
-}
-
-// This function is used to archive ModuleEntry::_reads and PackageEntry::_qualified_exports.
-// GrowableArray cannot be directly archived, as it needs to be expandable at runtime.
-// Write it out as an Array, and convert it back to GrowableArray at runtime.
-Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry*>* array) {
-  Array<ModuleEntry*>* archived_array = nullptr;
-  int length = (array == nullptr) ? 0 : array->length();
-  if (length > 0) {
-    archived_array = ArchiveBuilder::new_ro_array<ModuleEntry*>(length);
-    for (int i = 0; i < length; i++) {
-      ModuleEntry* archived_entry = get_archived_entry(array->at(i));
-      archived_array->at_put(i, archived_entry);
-      ArchivePtrMarker::mark_pointer((address*)archived_array->adr_at(i));
-    }
-  }
-
-  return archived_array;
-}
-
-GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEntry*>* archived_array) {
-  GrowableArray<ModuleEntry*>* array = nullptr;
-  int length = (archived_array == nullptr) ? 0 : archived_array->length();
-  if (length > 0) {
-    array = new (mtModule) GrowableArray<ModuleEntry*>(length, mtModule);
-    for (int i = 0; i < length; i++) {
-      ModuleEntry* archived_entry = archived_array->at(i);
-      array->append(archived_entry);
-    }
-  }
-
-  return array;
-}
-
-void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
-  closure->push(&_name);
-  closure->push(&_version);
-  closure->push(&_location);
-}
-
-void ModuleEntry::init_as_archived_entry() {
-  set_archived_reads(write_growable_array(reads()));
+  _module_handle = null_handle;
 
   _loader_data = nullptr;  // re-init at runtime
-  _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(_location);
   if (name() != nullptr) {
-    _name = ArchiveBuilder::get_buffered_symbol(_name);
-    ArchivePtrMarker::mark_pointer((address*)&_name);
-  }
-  if (_version != nullptr) {
-    _version = ArchiveBuilder::get_buffered_symbol(_version);
-  }
-  if (_location != nullptr) {
-    _location = ArchiveBuilder::get_buffered_symbol(_location);
+    Symbol* src_location = ArchiveBuilder::current()->get_source_addr(_location);
+    _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(src_location);
+  } else {
+    // _shared_path_index is used only by SystemDictionary::is_shared_class_visible_impl()
+    // for checking classes in named modules.
+    _shared_path_index = -1;
   }
   JFR_ONLY(set_trace_id(0);) // re-init at runtime
-
-  ArchivePtrMarker::mark_pointer((address*)&_reads);
-  ArchivePtrMarker::mark_pointer((address*)&_version);
-  ArchivePtrMarker::mark_pointer((address*)&_location);
 }
-
-#ifndef PRODUCT
-void ModuleEntry::verify_archived_module_entries() {
-  assert(_num_archived_module_entries == _num_inited_module_entries,
-         "%d ModuleEntries have been archived but %d of them have been properly initialized with archived java.lang.Module objects",
-         _num_archived_module_entries, _num_inited_module_entries);
-}
-#endif // PRODUCT
 
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_archive(), "runtime only");
   set_loader_data(loader_data);
-  set_reads(restore_growable_array(archived_reads()));
   JFR_ONLY(INIT_ID(this);)
+}
+
+void ModuleEntry::preload_archived_oops() {
+  (void)HeapShared::get_root(_archived_module_index, false /* clear */);
 }
 
 void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_archive(), "runtime only");
   Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
-  set_module(loader_data->add_handle(module_handle));
+  set_module_handle(loader_data->add_handle(module_handle));
 
   // This was cleared to zero during dump time -- we didn't save the value
   // because it may be affected by archive relocation.
@@ -535,9 +466,9 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
   assert(java_lang_Module::loader(module_handle()) == loader_data->class_loader(),
          "must be set in dump time");
 
-  if (log_is_enabled(Info, cds, module)) {
+  if (log_is_enabled(Info, aot, module)) {
     ResourceMark rm;
-    LogStream ls(Log(cds, module)::info());
+    LogStream ls(Log(aot, module)::info());
     ls.print("Restored from archive: ");
     print(&ls);
   }
@@ -553,38 +484,28 @@ static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
   return a->name()->fast_compare(b->name());
 }
 
-void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
-  auto syms = [&] (const SymbolHandle& key, ModuleEntry*& m) {
-      m->iterate_symbols(closure);
-  };
-  _table.iterate_all(syms);
-}
-
-Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
-  Array<ModuleEntry*>* archived_modules = ArchiveBuilder::new_rw_array<ModuleEntry*>(_table.number_of_entries());
+Array<ModuleEntry*>* ModuleEntryTable::build_aot_table(ClassLoaderData* loader_data, TRAPS) {
+  Array<ModuleEntry*>* aot_table =
+    MetadataFactory::new_array<ModuleEntry*>(loader_data, _table.number_of_entries(), nullptr, CHECK_NULL);
   int n = 0;
   auto grab = [&] (const SymbolHandle& key, ModuleEntry*& m) {
-    archived_modules->at_put(n++, m);
+    m->pack_reads();
+    aot_table->at_put(n++, m);
+    if (log_is_enabled(Info, aot, module)) {
+      ResourceMark rm;
+      LogStream ls(Log(aot, module)::info());
+      ls.print("Stored in archive: ");
+      m->print(&ls);
+    }
   };
   _table.iterate_all(grab);
 
   if (n > 1) {
     // Always allocate in the same order to produce deterministic archive.
-    QuickSort::sort(archived_modules->data(), n, compare_module_by_name);
+    QuickSort::sort(aot_table->data(), n, compare_module_by_name);
   }
-  for (int i = 0; i < n; i++) {
-    archived_modules->at_put(i, archived_modules->at(i)->allocate_archived_entry());
-    ArchivePtrMarker::mark_pointer((address*)archived_modules->adr_at(i));
-  }
-  return archived_modules;
-}
 
-void ModuleEntryTable::init_archived_entries(Array<ModuleEntry*>* archived_modules) {
-  assert(CDSConfig::is_dumping_full_module_graph(), "sanity");
-  for (int i = 0; i < archived_modules->length(); i++) {
-    ModuleEntry* archived_entry = archived_modules->at(i);
-    archived_entry->init_as_archived_entry();
-  }
+  return aot_table;
 }
 
 void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
@@ -662,7 +583,7 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
   jb_module->set_location(location);
   // Once java.base's ModuleEntry _module field is set with the known
   // java.lang.Module, java.base is considered "defined" to the VM.
-  jb_module->set_module(boot_loader_data->add_handle(module_handle));
+  jb_module->set_module_handle(boot_loader_data->add_handle(module_handle));
 
   // Store pointer to the ModuleEntry for java.base in the java.lang.Module object.
   java_lang_Module::set_module_entry(module_handle(), jb_module);
@@ -673,6 +594,8 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
 // classes needing their module field set are added to the fixup_module_list.
 // Their module field is set once java.base's java.lang.Module is known to the VM.
 void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module_handle) {
+  assert(!CDSConfig::is_using_aot_linked_classes(), "patching is not necessary with AOT-linked classes");
+
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to "
           JAVA_BASE_NAME "'s definition, invalid java.lang.Module");
@@ -700,7 +623,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
       // We allow -XX:ArchiveHeapTestClass to archive additional classes
       // into the CDS heap, but these must be in the unnamed module.
       ModuleEntry* unnamed_module = ClassLoaderData::the_null_class_loader_data()->unnamed_module();
-      Handle unnamed_module_handle(current, unnamed_module->module());
+      Handle unnamed_module_handle(current, unnamed_module->module_oop());
       java_lang_Class::fixup_module_field(k, unnamed_module_handle);
     } else
 #endif
@@ -741,11 +664,11 @@ void ModuleEntryTable::modules_do(ModuleClosure* closure) {
   _table.iterate_all(do_f);
 }
 
-void ModuleEntry::print(outputStream* st) {
+void ModuleEntry::print(outputStream* st) const {
   st->print_cr("entry " PTR_FORMAT " name %s module " PTR_FORMAT " loader %s version %s location %s strict %s",
                p2i(this),
                name_as_C_string(),
-               p2i(module()),
+               p2i(module_oop()),
                loader_data()->loader_name_and_id(),
                version() != nullptr ? version()->as_C_string() : "nullptr",
                location() != nullptr ? location()->as_C_string() : "nullptr",

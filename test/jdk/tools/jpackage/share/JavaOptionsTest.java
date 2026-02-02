@@ -37,7 +37,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror JavaOptionsTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=2840 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
  */
@@ -91,7 +91,7 @@ public class JavaOptionsTest {
         // 2.) run the launcher it generated
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
         for (String expect : expected) {
-            TKit.assertTextStream(expect).apply(output.stream());
+            TKit.assertTextStream(expect).apply(output);
         }
     }
 

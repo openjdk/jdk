@@ -31,11 +31,11 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/timer.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
@@ -50,8 +50,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
-  _gc_par_phases[RetireTLABsAndFlushLogs] = new WorkerDataArray<double>("RetireTLABsAndFlushLogs", "JT Retire TLABs And Flush Logs (ms):", max_gc_threads);
-  _gc_par_phases[NonJavaThreadFlushLogs] = new WorkerDataArray<double>("NonJavaThreadFlushLogs", "Non-JT Flush Logs (ms):", max_gc_threads);
+  _gc_par_phases[RetireTLABs] = new WorkerDataArray<double>("RetireTLABs", "JavaThread Retire TLABs (ms):", max_gc_threads);
 
   _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>("GCWorkerStart", "GC Worker Start (ms):", max_gc_threads);
   _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>("ExtRootScan", "Ext Root Scanning (ms):", max_gc_threads);
@@ -83,7 +82,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
     _gc_par_phases[OptMergeRS]->create_thread_work_items(GCMergeRSWorkItemsStrings[i], i);
   }
 
-  _gc_par_phases[MergeLB] = new WorkerDataArray<double>("MergeLB", "Log Buffers (ms):", max_gc_threads);
+  _gc_par_phases[SweepRT] = new WorkerDataArray<double>("SweepRT", "Sweep (ms):", max_gc_threads);
   _gc_par_phases[ScanHR] = new WorkerDataArray<double>("ScanHR", "Scan Heap Roots (ms):", max_gc_threads);
   _gc_par_phases[OptScanHR] = new WorkerDataArray<double>("OptScanHR", "Optional Scan Heap Roots (ms):", max_gc_threads);
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>("CodeRoots", "Code Root Scan (ms):", max_gc_threads);
@@ -98,7 +97,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
   _gc_par_phases[RestoreEvacuationFailedRegions] = new WorkerDataArray<double>("RestoreEvacuationFailedRegions", "Restore Evacuation Failed Regions (ms):", max_gc_threads);
   _gc_par_phases[RemoveSelfForwards] = new WorkerDataArray<double>("RemoveSelfForwards", "Remove Self Forwards (ms):", max_gc_threads);
-  _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
+  _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearPendingCards", "Clear Pending Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
 #if COMPILER2_OR_JVMCI
   _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
@@ -107,20 +106,21 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ResetPartialArrayStateManager] = new WorkerDataArray<double>("ResetPartialArrayStateManager", "Reset Partial Array State Manager (ms):", max_gc_threads);
   _gc_par_phases[ProcessEvacuationFailedRegions] = new WorkerDataArray<double>("ProcessEvacuationFailedRegions", "Process Evacuation Failed Regions (ms):", max_gc_threads);
 
+  _gc_par_phases[ScanHR]->create_thread_work_items("Pending Cards:", ScanHRPendingCards);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Empty:", ScanHRScannedEmptyCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[ScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
   _gc_par_phases[ScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
 
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Pending Cards:", ScanHRPendingCards);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Empty:", ScanHRScannedEmptyCards);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Refs:", ScanHRScannedOptRefs);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Used Memory:", ScanHRUsedMemory);
-
-  _gc_par_phases[MergeLB]->create_thread_work_items("Dirty Cards:", MergeLBDirtyCards);
-  _gc_par_phases[MergeLB]->create_thread_work_items("Skipped Cards:", MergeLBSkippedCards);
 
   _gc_par_phases[CodeRoots]->create_thread_work_items("Scanned Nmethods:", CodeRootsScannedNMethods);
 
@@ -129,7 +129,10 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes:", MergePSSCopiedBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste:", MergePSSLABWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste:", MergePSSLABUndoWasteBytes);
-  _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards:", MergePSSEvacFailExtra);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Pending Cards:", MergePSSPendingCards);
+  _gc_par_phases[MergePSS]->create_thread_work_items("To-Young-Gen Cards:", MergePSSToYoungGenCards);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Evac-Fail Cards:", MergePSSEvacFail);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Marked Cards:", MergePSSMarked);
 
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreEvacFailureRegionsEvacFailedNum);
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Pinned Regions:", RestoreEvacFailureRegionsPinnedNum);
@@ -150,9 +153,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 
   _gc_par_phases[OptTermination]->create_thread_work_items("Optional Termination Attempts:");
 
-  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Redirty Logged Cards (ms):", max_gc_threads);
-  _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
-
   _gc_par_phases[ResizeThreadLABs] = new WorkerDataArray<double>("ResizeTLABs", "Resize TLABs (ms):", max_gc_threads);
 
   _gc_par_phases[FreeCollectionSet] = new WorkerDataArray<double>("FreeCSet", "Free Collection Set (ms):", max_gc_threads);
@@ -171,16 +171,15 @@ void G1GCPhaseTimes::reset() {
   _cur_optional_evac_time_ms = 0.0;
   _cur_collection_nmethod_list_cleanup_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
+  _cur_merge_refinement_table_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
-  _cur_distribute_log_buffers_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_pre_evacuate_prepare_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
   _cur_post_evacuate_cleanup_2_time_ms = 0.0;
-  _cur_expand_heap_time_ms = 0.0;
+  _cur_resize_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
-  _cur_collection_start_sec = 0.0;
   _root_region_scan_wait_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
   _recorded_prepare_heap_roots_time_ms = 0.0;
@@ -193,6 +192,7 @@ void G1GCPhaseTimes::reset() {
   _cur_region_register_time = 0.0;
   _cur_verify_before_time_ms = 0.0;
   _cur_verify_after_time_ms = 0.0;
+  _cur_prepare_concurrent_task_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     if (_gc_par_phases[i] != nullptr) {
@@ -249,7 +249,7 @@ void G1GCPhaseTimes::record_gc_pause_end() {
       ASSERT_PHASE_UNINITIALIZED(MergeER);
       ASSERT_PHASE_UNINITIALIZED(MergeRS);
       ASSERT_PHASE_UNINITIALIZED(OptMergeRS);
-      ASSERT_PHASE_UNINITIALIZED(MergeLB);
+      ASSERT_PHASE_UNINITIALIZED(SweepRT);
       ASSERT_PHASE_UNINITIALIZED(ScanHR);
       ASSERT_PHASE_UNINITIALIZED(CodeRoots);
       ASSERT_PHASE_UNINITIALIZED(OptCodeRoots);
@@ -407,10 +407,7 @@ void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
-  const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
-                                         average_time_ms(NoteStartOfMark);
-
-  const double sum_ms = pre_concurrent_start_ms +
+  const double sum_ms = _cur_prepare_concurrent_task_time_ms +
                         _cur_pre_evacuate_prepare_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
@@ -419,14 +416,16 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  if (pre_concurrent_start_ms > 0.0) {
-    debug_phase(_gc_par_phases[ResetMarkingState]);
-    debug_phase(_gc_par_phases[NoteStartOfMark]);
+  // Concurrent tasks of ResetMarkingState and NoteStartOfMark are triggered during
+  // young collection. However, their execution time are not included in _gc_pause_time_ms.
+  if (_cur_prepare_concurrent_task_time_ms > 0.0) {
+    debug_time("Prepare Concurrent Start", _cur_prepare_concurrent_task_time_ms);
+    debug_phase(_gc_par_phases[ResetMarkingState], 1);
+    debug_phase(_gc_par_phases[NoteStartOfMark], 1);
   }
 
   debug_time("Pre Evacuate Prepare", _cur_pre_evacuate_prepare_time_ms);
-  debug_phase(_gc_par_phases[RetireTLABsAndFlushLogs], 1);
-  debug_phase(_gc_par_phases[NonJavaThreadFlushLogs], 1);
+  debug_phase(_gc_par_phases[RetireTLABs], 1);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
   debug_time("Region Register", _cur_region_register_time);
 
@@ -458,8 +457,8 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
   debug_phase_merge_remset();
 
-  debug_time("Distribute Log Buffers", _cur_distribute_log_buffers_time_ms);
-  debug_phase(_gc_par_phases[MergeLB]);
+  debug_time("Merge Refinement Table", _cur_merge_refinement_table_time_ms);
+  debug_phase(_gc_par_phases[SweepRT], 1);
 
   info_time("Evacuate Collection Set", _cur_collection_initial_evac_time_ms);
 
@@ -487,7 +486,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
                         _cur_post_evacuate_cleanup_2_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
                         _recorded_prepare_for_mutator_time_ms +
-                        _cur_expand_heap_time_ms;
+                        _cur_resize_heap_time_ms;
 
   info_time("Post Evacuate Collection Set", sum_ms);
 
@@ -521,7 +520,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   if (G1CollectedHeap::heap()->should_sample_collection_set_candidates()) {
     debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);
   }
-  debug_phase(_gc_par_phases[RedirtyCards], 1);
   if (UseTLAB && ResizeTLAB) {
     debug_phase(_gc_par_phases[ResizeThreadLABs], 1);
   }
@@ -536,7 +534,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   trace_phase(_gc_par_phases[RebuildFreeList]);
 
   debug_time("Prepare For Mutator", _recorded_prepare_for_mutator_time_ms);
-  debug_time("Expand Heap After Collection", _cur_expand_heap_time_ms);
+  debug_time("Resize Heap After Collection", _cur_resize_heap_time_ms);
 
   return sum_ms;
 }
@@ -545,6 +543,11 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
   info_time("Other", _gc_pause_time_ms - accounted_ms);
 }
 
+// Root-region-scan-wait, verify-before and verify-after are part of young GC,
+// but these are not measured by G1Policy. i.e. these are not included in
+// G1Policy::record_young_collection_start() and record_young_collection_end().
+// In addition, these are not included in G1GCPhaseTimes::_gc_pause_time_ms.
+// See G1YoungCollector::collect().
 void G1GCPhaseTimes::print(bool evacuation_failed) {
   if (_root_region_scan_wait_time_ms > 0.0) {
     debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
@@ -559,15 +562,13 @@ void G1GCPhaseTimes::print(bool evacuation_failed) {
 
   double accounted_ms = 0.0;
 
-  accounted_ms += _root_region_scan_wait_time_ms;
-  accounted_ms += _cur_verify_before_time_ms;
-
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
 
-  accounted_ms += _cur_verify_after_time_ms;
+  assert(_gc_pause_time_ms >= accounted_ms, "GC pause time(%.15lf ms) cannot be "
+         "smaller than the sum of each phase(%.15lf ms).", _gc_pause_time_ms, accounted_ms);
 
   print_other(accounted_ms);
 

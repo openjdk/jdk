@@ -97,6 +97,10 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * perform reads under read locks.  If a reader tries to acquire the
  * write lock it will never succeed.
  *
+ * <p>Note: If you do not rely on reentrancy, you may find that {@link
+ * StampedLock} offers better performance, as in: {@code ReadWriteLock
+ * lock = new StampedLock().asReadWriteLock()}.
+ *
  * <li><b>Lock downgrading</b>
  * <p>Reentrancy also allows downgrading from the write lock to a read lock,
  * by acquiring the write lock, then the read lock and then releasing the
@@ -207,8 +211,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *
  * <h2>Implementation Notes</h2>
  *
- * <p>This lock supports a maximum of 65535 recursive write locks
- * and 65535 read locks. Attempts to exceed these limits result in
+ * <p>This lock supports a maximum of {@link Integer#MAX_VALUE} recursive write locks
+ * and {@link Integer#MAX_VALUE} read locks. Attempts to exceed these limits result in
  * {@link Error} throws from locking methods.
  *
  * @since 1.5
@@ -734,11 +738,13 @@ public class ReentrantReadWriteLock
          * Acquires the read lock.
          *
          * <p>Acquires the read lock if the write lock is not held by
-         * another thread and returns immediately.
+         * any thread and returns immediately.
          *
-         * <p>If the write lock is held by another thread then
-         * the current thread becomes disabled for thread scheduling
-         * purposes and lies dormant until the read lock has been acquired.
+         * <p>If the write lock is held by any thread or the fairness
+         * policy prohibits acquisition of the read lock at this time,
+         * then the current thread becomes disabled for thread
+         * scheduling purposes and lies dormant until the read lock
+         * has been acquired.
          */
         public void lock() {
             sync.acquireShared(1);
@@ -749,11 +755,13 @@ public class ReentrantReadWriteLock
          * {@linkplain Thread#interrupt interrupted}.
          *
          * <p>Acquires the read lock if the write lock is not held
-         * by another thread and returns immediately.
+         * by any thread and returns immediately.
          *
-         * <p>If the write lock is held by another thread then the
-         * current thread becomes disabled for thread scheduling
-         * purposes and lies dormant until one of two things happens:
+         * <p>If the write lock is held by any thread or the fairness
+         * policy prohibits acquisition of the read lock at this time,
+         * then the current thread becomes disabled for thread
+         * scheduling purposes and lies dormant until one of two
+         * things happens:
          *
          * <ul>
          *
@@ -794,7 +802,7 @@ public class ReentrantReadWriteLock
          * another thread at the time of invocation.
          *
          * <p>Acquires the read lock if the write lock is not held by
-         * another thread and returns immediately with the value
+         * any thread and returns immediately with the value
          * {@code true}. Even when this lock has been set to use a
          * fair ordering policy, a call to {@code tryLock()}
          * <em>will</em> immediately acquire the read lock if it is
@@ -806,7 +814,7 @@ public class ReentrantReadWriteLock
          * tryLock(0, TimeUnit.SECONDS)} which is almost equivalent
          * (it also detects interruption).
          *
-         * <p>If the write lock is held by another thread then
+         * <p>If the write lock is held by any thread then
          * this method will return immediately with the value
          * {@code false}.
          *

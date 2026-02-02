@@ -359,7 +359,9 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         ? -1                                  // enforce receiver null check
         : oopDesc::klass_offset_in_bytes();   // regular null-checking behavior
 
-      __ null_check_throw(receiver_reg, klass_offset, temp1, Interpreter::throw_NullPointerException_entry());
+      address NullPointerException_entry = for_compiler_entry ? SharedRuntime::throw_NullPointerException_at_call_entry()
+                                                              : Interpreter::throw_NullPointerException_entry();
+      __ null_check_throw(receiver_reg, klass_offset, temp1, NullPointerException_entry);
 
       if (iid != vmIntrinsics::_linkToSpecial || VerifyMethodHandles) {
         __ load_klass(temp1_recv_klass, receiver_reg);

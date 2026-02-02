@@ -122,7 +122,7 @@ template <class T> int ValueRecorder<T>::add_handle(T h, bool make_findable) {
 
 
 template <class T> int ValueRecorder<T>::maybe_find_index(T h) {
-  debug_only(_find_index_calls++);
+  DEBUG_ONLY(_find_index_calls++);
   assert(!_complete, "cannot allocate more elements after size query");
   maybe_initialize();
   if (h == nullptr)  return null_index;
@@ -134,7 +134,7 @@ template <class T> int ValueRecorder<T>::maybe_find_index(T h) {
       return -1;   // We know this handle is completely new.
     }
     if (cindex >= first_index && _handles->at(cindex - first_index) == h) {
-      debug_only(_hit_indexes++);
+      DEBUG_ONLY(_hit_indexes++);
       return cindex;
     }
     if (!_indexes->cache_location_collision(cloc)) {
@@ -151,7 +151,7 @@ template <class T> int ValueRecorder<T>::maybe_find_index(T h) {
       if (cloc != nullptr) {
         _indexes->set_cache_location_index(cloc, findex);
       }
-      debug_only(_missed_indexes++);
+      DEBUG_ONLY(_missed_indexes++);
       return findex;
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,18 +161,18 @@ public class HeapSummaryEventAllGcs {
         long toStart = Events.assertField(event, "toSpace.start").getValue();
         long toEnd = Events.assertField(event, "toSpace.end").getValue();
         Asserts.assertEquals(oldEnd, youngStart, "Young should start where old ends");
-        Asserts.assertEquals(youngStart, edenStart, "Eden should be placed first in young");
         if (fromStart < toStart) {
-            // [eden][from][to]
-            Asserts.assertGreaterThanOrEqual(fromStart, edenEnd, "From should start after eden");
+            // [from][to][eden]
+            Asserts.assertEquals(youngStart, fromStart, "From should be placed first in young");
             Asserts.assertLessThanOrEqual(fromEnd, toStart, "To should start after From");
-            Asserts.assertLessThanOrEqual(toEnd, youngEnd, "To should start after From");
+            Asserts.assertLessThanOrEqual(toEnd, edenStart, "Eden should start after To");
         } else {
-            // [eden][to][from]
-            Asserts.assertGreaterThanOrEqual(toStart, edenEnd, "From should start after eden");
-            Asserts.assertLessThanOrEqual(toEnd, fromStart, "To should start after From");
-            Asserts.assertLessThanOrEqual(fromEnd, youngEnd, "To should start after From");
+            // [to][from][eden]
+            Asserts.assertEquals(youngStart, toStart, "To should be placed first in young");
+            Asserts.assertLessThanOrEqual(toEnd, fromStart, "From should start after to");
+            Asserts.assertLessThanOrEqual(fromEnd, edenStart, "Eden should start after From");
         }
+        Asserts.assertEquals(edenEnd, youngEnd, "Eden should be last of young");
     }
 
     private static void checkVirtualSpace(RecordedEvent event, String structName) {

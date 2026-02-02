@@ -48,7 +48,7 @@ public class VerifierTest implements Opcodes {
     static final String PASS_RESULT = "Hi, how are you?";
     static final String VFY_INFO_MESSAGE =
         "All non-system classes will be verified (-Xverify:remote) during CDS dump time.";
-    static final String CDS_LOGGING = "-Xlog:cds,cds+hashtables";
+    static final String CDS_LOGGING = "-Xlog:cds,aot+hashtables";
 
     enum Testset1Part {
         A, B
@@ -221,6 +221,8 @@ public class VerifierTest implements Opcodes {
                 runtime_arg1 = runtime_arg2 = runtime_arg3 = runtime_setting;
             }
             TestCommon.run("-cp", jar,
+                           "-Xms256m",
+                           "-Xmx256m",
                            "-Xlog:cds",
                            runtime_arg1, runtime_arg2, runtime_arg3,
                            "VerifierTest0")
@@ -302,6 +304,8 @@ public class VerifierTest implements Opcodes {
                 runtime_arg1 = runtime_arg2 = runtime_arg3 = runtime_setting;
             }
             TestCommon.run("-cp", jar,
+                           "-Xms256m",
+                           "-Xmx256m",
                            "-Xlog:cds",
                            runtime_arg1, runtime_arg2, runtime_arg3,
                            "Hi")

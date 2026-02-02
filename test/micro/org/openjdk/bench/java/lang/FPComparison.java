@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 import java.util.random.RandomGenerator;
@@ -36,20 +37,18 @@ import java.util.random.RandomGenerator;
 public class FPComparison {
     static final int INVOCATIONS = 1024;
 
-    float[] f1;
-    double[] d1;
-    float[] f2;
-    double[] d2;
-    int[] res;
+    static final float[] f1 = new float[INVOCATIONS];
+    static final double[] d1 = new double[INVOCATIONS];
+    static final float[] f2 = new float[INVOCATIONS];
+    static final double[] d2 = new double[INVOCATIONS];
+    static final int[] res = new int[INVOCATIONS];;
+    static final long[] resLong = new long[INVOCATIONS];
+    static final float[] resFloat = new float[INVOCATIONS];
+    static final double[] resDouble = new double[INVOCATIONS];
 
     @Setup
     public void setup() {
         var random = RandomGenerator.getDefault();
-        f1 = new float[INVOCATIONS];
-        d1 = new double[INVOCATIONS];
-        f2 = new float[INVOCATIONS];
-        d2 = new double[INVOCATIONS];
-        res = new int[INVOCATIONS];
         for (int i = 0; i < INVOCATIONS; i++) {
             int type = random.nextInt(5);
             if (type == 1) {
@@ -79,56 +78,328 @@ public class FPComparison {
     @Benchmark
     public void isNanFloat() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = Float.isNaN(f1[i]) ? 1 : 0;
+            res[i] = Float.isNaN(f1[i]) ? 1 : 2;
         }
     }
 
     @Benchmark
     public void isNanDouble() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = Double.isNaN(d1[i]) ? 1 : 0;
+            res[i] = Double.isNaN(d1[i]) ? 1 : 2;
         }
     }
 
     @Benchmark
     public void isInfiniteFloat() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = Float.isInfinite(f1[i]) ? 1 : 0;
+            res[i] = Float.isInfinite(f1[i]) ? 1 : 2;
         }
     }
 
     @Benchmark
     public void isInfiniteDouble() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = Double.isInfinite(d1[i]) ? 1 : 0;
+            res[i] = Double.isInfinite(d1[i]) ? 1 : 2;
         }
     }
 
     @Benchmark
     public void isFiniteFloat() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = Float.isFinite(f1[i]) ? 1 : 0;
+            res[i] = Float.isFinite(f1[i]) ? 1 : 2;
         }
     }
 
     @Benchmark
     public void isFiniteDouble() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = Double.isFinite(d1[i]) ? 1 : 0;
+            res[i] = Double.isFinite(d1[i]) ? 1 : 2;
         }
     }
 
     @Benchmark
     public void equalFloat() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = (f1[i] == f2[i]) ? 1 : 0;
+            res[i] = (f1[i] == f2[i]) ? 1 : 2;
         }
     }
 
     @Benchmark
     public void equalDouble() {
         for (int i = 0; i < INVOCATIONS; i++) {
-            res[i] = (d1[i] == d2[i]) ? 1 : 0;
+            res[i] = (d1[i] == d2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void lessFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (f1[i] < f2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void lessDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (d1[i] < d2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (f1[i] <= f2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (d1[i] <= d2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void greaterFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (f1[i] > f2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void greaterDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (d1[i] > d2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (f1[i] >= f2[i]) ? 1 : 2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            res[i] = (d1[i] >= d2[i]) ? 1 : 2;
+        }
+    }
+
+    // --------- result: long ---------
+
+    @Benchmark
+    public void equalFloatResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (f1[i] == f2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void equalDoubleResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (d1[i] == d2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void lessFloatResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (f1[i] < f2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void lessDoubleResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (d1[i] < d2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualFloatResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (f1[i] <= f2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualDoubleResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (d1[i] <= d2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void greaterFloatResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (f1[i] > f2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void greaterDoubleResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (d1[i] > d2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualFloatResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (f1[i] >= f2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualDoubleResLong() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resLong[i] = (d1[i] >= d2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    // --------- result: float ---------
+
+    @Benchmark
+    public void equalFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] == f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void equalDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] == d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] < f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] < d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] <= f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] <= d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] > f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] > d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] >= f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] >= d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    // --------- result: double ---------
+
+    @Benchmark
+    public void equalFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] == f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void equalDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] == d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] < f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] < d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] <= f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] <= d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] > f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] > d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] >= f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] >= d2[i]) ? 0.1 : 0.2;
         }
     }
 }

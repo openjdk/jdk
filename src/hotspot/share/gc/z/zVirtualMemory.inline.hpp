@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,47 +26,32 @@
 
 #include "gc/z/zVirtualMemory.hpp"
 
-#include "gc/z/zMemory.inline.hpp"
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zRange.inline.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 
 inline ZVirtualMemory::ZVirtualMemory()
-  : _start(zoffset(UINTPTR_MAX)),
-    _end(zoffset_end(UINTPTR_MAX)) {}
+  : ZRange() {}
 
 inline ZVirtualMemory::ZVirtualMemory(zoffset start, size_t size)
-  : _start(start),
-    _end(to_zoffset_end(start, size)) {}
-
-inline bool ZVirtualMemory::is_null() const {
-  return _start == zoffset(UINTPTR_MAX);
+  : ZRange(start, size) {
+  // ZVirtualMemory is only used for ZGranuleSize multiple ranges
+  assert(is_aligned(untype(start), ZGranuleSize), "must be multiple of ZGranuleSize");
+  assert(is_aligned(size, ZGranuleSize), "must be multiple of ZGranuleSize");
 }
 
-inline zoffset ZVirtualMemory::start() const {
-  return _start;
-}
+inline ZVirtualMemory::ZVirtualMemory(const ZRange<zoffset, zoffset_end>& range)
+  : ZVirtualMemory(range.start(), range.size()) {}
 
-inline zoffset_end ZVirtualMemory::end() const {
-  return _end;
-}
+inline int ZVirtualMemory::granule_count() const {
+  const size_t granule_count = size() >> ZGranuleSizeShift;
 
-inline size_t ZVirtualMemory::size() const {
-  return _end - _start;
-}
+  assert(granule_count <= static_cast<size_t>(std::numeric_limits<int>::max()),
+         "must not overflow an int %zu", granule_count);
 
-inline ZVirtualMemory ZVirtualMemory::split(size_t size) {
-  _start += size;
-  return ZVirtualMemory(_start - size, size);
-}
-
-inline size_t ZVirtualMemoryManager::reserved() const {
-  return _reserved;
-}
-
-inline zoffset ZVirtualMemoryManager::lowest_available_address() const {
-  return _manager.peek_low_address();
-}
-
-inline zoffset_end ZVirtualMemoryManager::highest_available_address_end() const {
-  return _manager.peak_high_address_end();
+  return static_cast<int>(granule_count);
 }
 
 #endif // SHARE_GC_Z_ZVIRTUALMEMORY_INLINE_HPP

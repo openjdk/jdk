@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,54 +21,48 @@
  * questions.
  */
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.spec.KeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
+import java.security.cert.X509Certificate;
 
 /*
  * @test
  * @bug 8048621 8133090 8167371 8236671
+ * @enablePreview
  * @summary Test basic operations with keystores (jks, jceks, pkcs12)
  * @author Yu-Ching Valerie PENG
  */
 public class TestKeyStoreBasic {
 
-    private static final String PRIVATE_KEY_PKCS8_BASE64 = ""
-        + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCpyz97liuWPDYcLH9TX8BiT78o"
-        + "lCmAfmevvch6ncXUVuCzbdaKuKXwn4EVbDszsVJLoK5zdtP+X3iDhutj+IgKmLhuczF3M9VIcWr+"
-        + "JJUyTH4+3h/RT8cjCDZOmk9iXkb5ifruVsLqzb9g+Vp140Oz7leikne7KmclHvTfvFd0WDI7Gb9v"
-        + "o4f5rT717BXJ/n+M6pNk8DLpLiEu6eziYvXRv5x+t5Go3x0eCXdaxEQUf2j876Wfr2qHRJK7lDfF"
-        + "e1DDsMg/KpKGiILYZ+g2qtVMZSxtp5BZEtfB5qV/IE5kWO+mCIAGpXSZIdbERR6pZUq8GLEe1T9e"
-        + "+sO6H24w2F19AgMBAAECggEBAId/12187dO6wUPCjumuJA1QrrBnbKdKONyai36uoc1Od4s5QFj7"
-        + "+hEIeS7rbGNYQuBvnkgusAbzkW0FIpxpHce3EJez/emux6pEOKoP77BwMt9gy+txyu0+BHi91FQg"
-        + "AGvrnQDO5EYVY4Cz/WjOsJzKu8zVLg+DS0Toa2qRFwmUe9mVAXPNOCZ3Oae/Q6tCDsaINNw0fmjj"
-        + "jn6uohPbS+n6xENG3FkQXB36getXy310xTGED2J27cmAQH6gLR6Kl2iROzNPbbpBqbuemI9kbcld"
-        + "EwBS1jRfZWeaPstYA1niVrE9UgUBzemnoh4TDkG076sYthHMr5QFGjPswnwtJ4ECgYEA0sURQ5+v"
-        + "baH4tdaemI3qpnknXTlzSpuZZmAoyvY0Id0mlduwKwmZ3Y5989wHfnnhFfyNO4IkTKjI2Wp97qP5"
-        + "4eqUNpA7FtNU7KUzMcFDTtwtNZuRYMrKlqo2lLbA+gVrAYpYZFL4b7tcwtX4DnYorDsmude6W8sG"
-        + "4Mx2VdFJC9UCgYEAzjsdXCYH5doWUHb0dvn9ID7IikffEMRM720MRjrnnnVbpzx6ACntkPDNZg7p"
-        + "TRE/mx7iBz81ZaUWE+V0wd0JvCHEdpAz3mksyvDFhU4Bgs6xzf2pSul5muhsx3hHcvvPezz5Bnxs"
-        + "faJlzkxfwotyGmvWN15GA/pyfsZjsbbTpwkCgYAO6NnbysQCIV8SnegCKqfatt9N/O5m7LLhRxQb"
-        + "p2bwrlA4cZ34rWkw/w9x3LK7A6wkfgUPnJkswxPSLXJTG05l6M4rPfCwIKr1Qopojp9QSMr569NQ"
-        + "4YeLOOc7heIIzbFQHpU6I5Rncv2Q2sn9W+ZsqJKIuvX34FjQNiZ406EzMQKBgHSxOGS61D84DuZK"
-        + "2Ps1awhC3kB4eHzJRms3vflDPWoJJ+pSKwpKrzUTPHXiPBqyhtYkPGszVeiE6CAr9sv3YZnFVaBs"
-        + "6hyQUJsob+uE/w/gGvXe8VsFDx0bJOodYfhrCbTHBHWqE81nBcocpxayxsayfAzqWB3KKd0YLrMR"
-        + "K2PZAoGAcZa8915R2m0KZ6HVJUt/JDR85jCbN71kcVDFY2XSFkOJvOdFoHNfRckfLzjq9Y2MSSTV"
-        + "+QDWbDo2doUQCejJUTaN8nP79tfyir24X5uVPvQaeVoGTKYb+LfUqK0F60lStmjuddIGSZH55y3v"
-        + "+9XjmxbVERtd1lqgQg3VlmKlEXY=";
+    private static final String PRIVATE_KEY_PKCS8_BASE64 = """
+        -----BEGIN PRIVATE KEY-----
+        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCpyz97liuWPDYcLH9TX8BiT78o
+        lCmAfmevvch6ncXUVuCzbdaKuKXwn4EVbDszsVJLoK5zdtP+X3iDhutj+IgKmLhuczF3M9VIcWr+
+        JJUyTH4+3h/RT8cjCDZOmk9iXkb5ifruVsLqzb9g+Vp140Oz7leikne7KmclHvTfvFd0WDI7Gb9v
+        o4f5rT717BXJ/n+M6pNk8DLpLiEu6eziYvXRv5x+t5Go3x0eCXdaxEQUf2j876Wfr2qHRJK7lDfF
+        e1DDsMg/KpKGiILYZ+g2qtVMZSxtp5BZEtfB5qV/IE5kWO+mCIAGpXSZIdbERR6pZUq8GLEe1T9e
+        +sO6H24w2F19AgMBAAECggEBAId/12187dO6wUPCjumuJA1QrrBnbKdKONyai36uoc1Od4s5QFj7
+        +hEIeS7rbGNYQuBvnkgusAbzkW0FIpxpHce3EJez/emux6pEOKoP77BwMt9gy+txyu0+BHi91FQg
+        AGvrnQDO5EYVY4Cz/WjOsJzKu8zVLg+DS0Toa2qRFwmUe9mVAXPNOCZ3Oae/Q6tCDsaINNw0fmjj
+        jn6uohPbS+n6xENG3FkQXB36getXy310xTGED2J27cmAQH6gLR6Kl2iROzNPbbpBqbuemI9kbcld
+        EwBS1jRfZWeaPstYA1niVrE9UgUBzemnoh4TDkG076sYthHMr5QFGjPswnwtJ4ECgYEA0sURQ5+v
+        baH4tdaemI3qpnknXTlzSpuZZmAoyvY0Id0mlduwKwmZ3Y5989wHfnnhFfyNO4IkTKjI2Wp97qP5
+        4eqUNpA7FtNU7KUzMcFDTtwtNZuRYMrKlqo2lLbA+gVrAYpYZFL4b7tcwtX4DnYorDsmude6W8sG
+        4Mx2VdFJC9UCgYEAzjsdXCYH5doWUHb0dvn9ID7IikffEMRM720MRjrnnnVbpzx6ACntkPDNZg7p
+        TRE/mx7iBz81ZaUWE+V0wd0JvCHEdpAz3mksyvDFhU4Bgs6xzf2pSul5muhsx3hHcvvPezz5Bnxs
+        faJlzkxfwotyGmvWN15GA/pyfsZjsbbTpwkCgYAO6NnbysQCIV8SnegCKqfatt9N/O5m7LLhRxQb
+        p2bwrlC4cZ34rWkw/w9x3LK7A6wkfgUPnJkswxPSLXJTG05l6M4rPfCwIKr1Qopojp9QSMr569NQ
+        4YeLOOc7heIIzbFQHpU6I5Rncv2Q2sn9W+ZsqJKIuvX34FjQNiZ406EzMQKBgHSxOGS61D84DuZK
+        2Ps1awhC3kB4eHzJRms3vflDPWoJJ+pSKwpKrzUTPHXiPBqyhtYkPGszVeiE6CAr9sv3YZnFVaBs
+        6hyQUJsob+uE/w/gGvXe8VsFDx0bJOodYfhrCbTHBHWqE81nBcocpxayxsayfAzqWB3KKd0YLrMR
+        K2PZAoGAcZa8915R2m0KZ6HVJUt/JDR85jCbN71kcVDFY2XSFkOJvOdFoHNfRckfLzjq9Y2MSSTV
+        +QDWbDo2doUQCejJUTaN8nP79tfyir24X5uVPvQaeVoGTKYb+LfUqK0F60lStmjuddIGSZH55y3v
+        +9XjmxbVERtd1lqgQg3VlmKlEXY=
+        -----END PRIVATE KEY-----
+        """;
 
     /*
      * Certificate:
@@ -132,20 +126,9 @@ public class TestKeyStoreBasic {
 
     public void runTest(String provider) throws Exception {
 
-        // load private key
-        // all keystore types should support private keys
-        KeySpec spec = new PKCS8EncodedKeySpec(
-                Base64.getMimeDecoder().decode(PRIVATE_KEY_PKCS8_BASE64));
-        PrivateKey privateKey = KeyFactory.getInstance("RSA")
-                .generatePrivate(spec);
-
-        // load x509 certificate
-        Certificate cert;
-        try (InputStream is = new BufferedInputStream(
-                new ByteArrayInputStream(CERTIFICATE.getBytes()))) {
-            cert = CertificateFactory.getInstance("X.509")
-                    .generateCertificate(is);
-        }
+        PEMDecoder pemDecoder = PEMDecoder.of();
+        PrivateKey privateKey = pemDecoder.decode(PRIVATE_KEY_PKCS8_BASE64, PrivateKey.class);
+        Certificate cert = pemDecoder.decode(CERTIFICATE, X509Certificate.class);
 
         int numEntries = 5;
         String type = null;

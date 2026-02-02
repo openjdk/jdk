@@ -54,12 +54,6 @@ void ZRememberedSet::initialize(size_t page_size) {
   _bitmap[1].initialize(size_in_bits, true /* clear */);
 }
 
-void ZRememberedSet::delete_all() {
-  assert(is_initialized(), "precondition");
-  _bitmap[0].resize(0);
-  _bitmap[1].resize(0);
-}
-
 bool ZRememberedSet::is_cleared_current() const {
   return current()->is_empty();
 }

@@ -443,19 +443,7 @@ final class HotSpotMethodData implements MetaspaceObject {
         }
     }
 
-    static class RawItemProfile<T> {
-        final int entries;
-        final T[] items;
-        final long[] counts;
-        final long totalCount;
-
-        RawItemProfile(int entries, T[] items, long[] counts, long totalCount) {
-            this.entries = entries;
-            this.items = items;
-            this.counts = counts;
-            this.totalCount = totalCount;
-        }
-    }
+    record RawItemProfile<T>(int entries, T[] items, long[] counts, long totalCount) {}
 
     abstract static class AbstractTypeData extends CounterData {
 

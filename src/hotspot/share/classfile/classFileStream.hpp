@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,9 @@ class ClassFileStream: public ResourceObj {
   const char* const _source;     // Source of stream (directory name, ZIP/JAR archive name)
   bool _need_verify;             // True if we need to verify and check truncation of stream bytes.
   bool _from_boot_loader_modules_image;  // True if this was created by ClassPathImageEntry.
-  void truncated_file_error(TRAPS) const ;
+  bool _from_class_file_load_hook;       // True if this is from CFLH (needs verification)
+
+  void truncated_file_error(TRAPS) const;
 
  protected:
   const u1* clone_buffer() const;
@@ -55,7 +57,8 @@ class ClassFileStream: public ResourceObj {
   ClassFileStream(const u1* buffer,
                   int length,
                   const char* source,
-                  bool from_boot_loader_modules_image = false);
+                  bool from_boot_loader_modules_image = false,
+                  bool from_class_file_load_hook = false);
 
   virtual const ClassFileStream* clone() const;
 
@@ -153,7 +156,7 @@ class ClassFileStream: public ResourceObj {
   // Tells whether eos is reached
   bool at_eos() const { return _current == _buffer_end; }
 
-  uint64_t compute_fingerprint() const;
+  bool from_class_file_load_hook() const { return _from_class_file_load_hook; }
 };
 
 #endif // SHARE_CLASSFILE_CLASSFILESTREAM_HPP

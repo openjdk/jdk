@@ -57,8 +57,8 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
 
   // Early initialization
   ZNMT::initialize();
-  ZGlobalsPointers::initialize();
   ZNUMA::initialize();
+  ZGlobalsPointers::initialize();
   ZCPU::initialize();
   ZStatValue::initialize();
   ZThreadLocalAllocBuffer::initialize();

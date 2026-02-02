@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ public class TestThreadDumpClassInitMonitor {
     // so use getTestJDKTool() instead of getCompileJDKTool() or even
     // getJDKTool() which can fall back to "compile.jdk".
     final static String JSTACK = JDKToolFinder.getTestJDKTool("jstack");
+    // jstack output may be lengthy, disable streaming output to avoid deadlocks
+    final static String DISABLE_STREAMING_OUTPUT = "-J-Djdk.attach.allowStreamingOutput=false";
     final static String PID = "" + ProcessHandle.current().pid();
 
     final static Thread current = Thread.currentThread();
@@ -111,7 +113,7 @@ public class TestThreadDumpClassInitMonitor {
 
             // Now run jstack
             try {
-                ProcessBuilder pb = new ProcessBuilder(JSTACK, PID);
+                ProcessBuilder pb = new ProcessBuilder(JSTACK, DISABLE_STREAMING_OUTPUT, PID);
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
                 stackDump = output.asLines();

@@ -196,33 +196,23 @@ final class P11Mac extends MacSpi {
         reset(true);
         p11Key = null;
         if (svcPbeKi != null) {
-            if (key instanceof P11Key) {
-                // If the key is a P11Key, it must come from a PBE derivation
-                // because this is a PBE Mac service. In addition to checking
-                // the key, check that params (if passed) are consistent.
-                PBEUtil.checkKeyAndParams(key, params, algorithm);
-            } else {
-                // If the key is not a P11Key, a derivation is needed. Data for
-                // derivation has to be carried either as part of the key or
-                // params. Use SunPKCS11 PBE key derivation to obtain a P11Key.
-                // Assign the derived key to p11Key because conversion is never
-                // needed for this case.
-                PBEKeySpec pbeKeySpec = PBEUtil.getPBAKeySpec(key, params);
-                try {
-                    P11Key.P11PBEKey p11PBEKey =
-                            P11SecretKeyFactory.derivePBEKey(token,
-                            pbeKeySpec, svcPbeKi);
-                    // This Mac service uses the token where the derived key
-                    // lives so there won't be any need to re-derive and use
-                    // the password. The p11Key cannot be accessed out of this
-                    // class.
-                    p11PBEKey.clearPassword();
-                    p11Key = p11PBEKey;
-                } catch (InvalidKeySpecException e) {
-                    throw new InvalidKeyException(e);
-                } finally {
-                    pbeKeySpec.clearPassword();
-                }
+            // Do key derivation using P11SecretKeyFactory, then store the
+            // derived key to p11Key
+            PBEKeySpec pbeKeySpec = PBEUtil.getPBAKeySpec(key, params);
+            try {
+                P11Key.P11PBKDFKey derivedKey =
+                        P11SecretKeyFactory.derivePBEKey(token,
+                        pbeKeySpec, svcPbeKi);
+                // This Mac service uses the token where the derived key
+                // lives so there won't be any need to re-derive and use
+                // the password. The p11Key cannot be accessed out of this
+                // class.
+                derivedKey.clearPassword();
+                p11Key = derivedKey;
+            } catch (InvalidKeySpecException e) {
+                throw new InvalidKeyException(e);
+            } finally {
+                pbeKeySpec.clearPassword();
             }
             if (params instanceof PBEParameterSpec pbeParams) {
                 // For PBE services, reassign params to the underlying
@@ -230,15 +220,12 @@ final class P11Mac extends MacSpi {
                 // value to be null.
                 params = pbeParams.getParameterSpec();
             }
+        } else { // for the non-PBE case
+            p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
         }
         if (params != null) {
             throw new InvalidAlgorithmParameterException(
                     "Parameters not supported");
-        }
-        // In non-PBE cases and PBE cases where we didn't derive,
-        // a key conversion might be needed.
-        if (p11Key == null) {
-            p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
         }
         try {
             initialize();
@@ -292,14 +279,15 @@ final class P11Mac extends MacSpi {
             if (len <= 0) {
                 return;
             }
-            if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
+            if (!(byteBuffer instanceof DirectBuffer)) {
                 super.engineUpdate(byteBuffer);
                 return;
             }
             int ofs = byteBuffer.position();
             NIO_ACCESS.acquireSession(byteBuffer);
             try  {
-                token.p11.C_SignUpdate(session.id(), dByteBuffer.address() + ofs, null, 0, len);
+                final long address = NIO_ACCESS.getBufferAddress(byteBuffer);
+                token.p11.C_SignUpdate(session.id(), address + ofs, null, 0, len);
             } finally {
                 NIO_ACCESS.releaseSession(byteBuffer);
             }

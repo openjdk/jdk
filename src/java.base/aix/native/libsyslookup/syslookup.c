@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,10 @@
 // Adding at least one #include removes unwanted warnings on some platforms.
 #include <string.h>
 #include <math.h>
+
+#include "jni_util.h"
+
+DEF_STATIC_JNI_OnLoad
 
 // Addresses of functions to be referenced using static linking.
 void* funcs[] = {

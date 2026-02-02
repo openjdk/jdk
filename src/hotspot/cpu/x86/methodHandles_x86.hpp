@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ public:
                            Register obj, vmClassID klass_id,
                            const char* error_message = "wrong klass") NOT_DEBUG_RETURN;
 
+  static void verify_method(MacroAssembler* _masm, Register method, Register temp, vmIntrinsics::ID iid) NOT_DEBUG_RETURN;
+
   static void verify_method_handle(MacroAssembler* _masm, Register mh_reg) {
     verify_klass(_masm, mh_reg, VM_CLASS_ID(MethodHandle_klass),
                  "reference is a MH");
@@ -48,7 +50,7 @@ public:
   // Similar to InterpreterMacroAssembler::jump_from_interpreted.
   // Takes care of special dispatch from single stepping too.
   static void jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
-                                      bool for_compiler_entry);
+                                      bool for_compiler_entry, vmIntrinsics::ID iid);
 
   static void jump_to_lambda_form(MacroAssembler* _masm,
                                   Register recv, Register method_temp,
@@ -60,5 +62,5 @@ public:
 
   static Register saved_last_sp_register() {
     // Should be in sharedRuntime, not here.
-    return LP64_ONLY(r13) NOT_LP64(rsi);
+    return r13;
   }

@@ -70,7 +70,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
     const uint64_t immediate = ((uint64_t)immediates[index]) << 32;
     assert(immediate > 0 && Assembler::operand_valid_for_logical_immediate(/*is32*/false, immediate),
            "Invalid immediate %d " UINT64_FORMAT, index, immediate);
-    result = os::attempt_reserve_memory_at((char*)immediate, size, false);
+    result = os::attempt_reserve_memory_at((char*)immediate, size, mtNone);
     if (result == nullptr) {
       log_trace(metaspace, map)("Failed to attach at " UINT64_FORMAT_X, immediate);
     }
@@ -114,7 +114,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   if (result == nullptr) {
     constexpr size_t alignment = nth_bit(32);
     log_debug(metaspace, map)("Trying to reserve at a 32-bit-aligned address");
-    result = os::reserve_memory_aligned(size, alignment, false);
+    result = os::reserve_memory_aligned(size, alignment, mtNone);
   }
 
   return result;

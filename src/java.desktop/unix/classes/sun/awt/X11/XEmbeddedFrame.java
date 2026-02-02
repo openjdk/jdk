@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void addNotify()
     {
         if (!isDisplayable()) {
@@ -82,6 +83,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
     /*
      * The method shouldn't be called in case of active XEmbed.
      */
+    @Override
     public boolean traverseIn(boolean direction) {
         XEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -95,6 +97,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         return false;
     }
 
+    @Override
     protected boolean traverseOut(boolean direction) {
         XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -110,6 +113,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
     /*
      * The method shouldn't be called in case of active XEmbed.
      */
+    @Override
     public void synthesizeWindowActivation(boolean doActivate) {
         XEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -122,6 +126,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void registerAccelerator(AWTKeyStroke stroke) {
         XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -130,6 +135,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void unregisterAccelerator(AWTKeyStroke stroke) {
         XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);

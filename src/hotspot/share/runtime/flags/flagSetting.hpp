@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 
 typedef AutoModifyRestore<bool> FlagSetting;
 typedef AutoModifyRestore<uint> UIntFlagSetting;
+typedef AutoModifyRestore<int>  IntFlagSetting;
 
 // Legacy use of FLAG_GUARD. Retained in the code to help identify use-cases
 // that should be addressed when this file is removed.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Tests the jwebserver's maximum request time
  * @modules jdk.httpserver
  * @library /test/lib
- * @run testng/othervm MaxRequestTimeTest
+ * @run junit/othervm MaxRequestTimeTest
  */
 
 import java.io.IOException;
@@ -47,12 +47,13 @@ import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * This test confirms that the jwebserver does not wait indefinitely for
@@ -71,24 +72,21 @@ import static org.testng.Assert.*;
  */
 public class MaxRequestTimeTest {
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
+    static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
     static final String JWEBSERVER = getJwebserver(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("MaxRequestTimeTest");
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
     static final AtomicInteger PORT = new AtomicInteger();
 
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
         Files.createDirectories(TEST_DIR);
-
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
     }
 
     @Test
@@ -121,17 +119,17 @@ public class MaxRequestTimeTest {
                 </html>
                 """;
 
-    void sendHTTPRequest() throws IOException, InterruptedException {
+    static void sendHTTPRequest() throws IOException, InterruptedException {
         out.println("\n--- sendHTTPRequest");
         var client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .build();
         var request = HttpRequest.newBuilder(URI.create("http://localhost:" + PORT.get() + "/")).build();
         var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(response.body(), expectedBody);
+        assertEquals(expectedBody, response.body());
     }
 
-    void sendHTTPSRequest() throws IOException, InterruptedException {
+    static void sendHTTPSRequest() throws IOException, InterruptedException {
         out.println("\n--- sendHTTPSRequest");
         var client = HttpClient.newBuilder()
                 .sslContext(sslContext)
@@ -146,8 +144,8 @@ public class MaxRequestTimeTest {
         }
     }
 
-    @AfterTest
-    public void teardown() throws IOException {
+    @AfterAll
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
@@ -174,7 +172,7 @@ public class MaxRequestTimeTest {
     static Process startProcess(String name, StringBuffer sb) throws Throwable {
         // starts the process, parses the port and awaits startup line before sending requests
         return ProcessTools.startProcess(name,
-                new ProcessBuilder(JWEBSERVER, "-p", "0").directory(TEST_DIR.toFile()),
+                new ProcessBuilder(JWEBSERVER, LOCALE_OPT, "-p", "0").directory(TEST_DIR.toFile()),
                 line -> {
                     if (line.startsWith(REGULAR_STARTUP_LINE_STRING_2)) { parseAndSetPort(line); }
                     sb.append(line + "\n");

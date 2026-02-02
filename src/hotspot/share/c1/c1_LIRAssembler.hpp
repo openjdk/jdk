@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_block(BlockBegin* block);
   void emit_lir_list(LIR_List* list);
 
-  // any last minute peephole optimizations are performed here.  In
-  // particular sparc uses this for delay slot filling.
+  // any last minute peephole optimizations are performed here.
   void peephole(LIR_List* list);
 
   void return_op(LIR_Opr result, C1SafepointPollStub* code_stub);
@@ -204,7 +203,6 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_rtcall(LIR_OpRTCall* op);
   void emit_profile_call(LIR_OpProfileCall* op);
   void emit_profile_type(LIR_OpProfileType* op);
-  void emit_delay(LIR_OpDelay* op);
 
   void arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info);
   void arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr temp, LIR_Opr result, CodeEmitInfo* info);

@@ -28,7 +28,10 @@ package jdk.tools.jlink.internal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 
@@ -42,6 +45,9 @@ public class LinkableRuntimeImage {
     public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/runtimelink/fs_%s_files";
     // The diff files per module for supporting linking from the run-time image
     public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
+    // meta data for upgradable files
+    private static final String UPGRADEABLE_FILES_PATTERN = "jdk/tools/jlink/internal/runtimelink/upgrade_files_%s.conf";
+    private static final Module JDK_JLINK_MOD = LinkableRuntimeImage.class.getModule();
 
     /**
      * In order to be able to show whether or not a runtime is capable of
@@ -62,7 +68,38 @@ public class LinkableRuntimeImage {
 
     private static InputStream getDiffInputStream(String module) throws IOException {
         String resourceName = String.format(DIFF_PATTERN, module);
-        return LinkableRuntimeImage.class.getModule().getResourceAsStream(resourceName);
+        return JDK_JLINK_MOD.getResourceAsStream(resourceName);
+    }
+
+    private static Set<String> upgradeableFiles(String module) {
+        String resourceName = String.format(UPGRADEABLE_FILES_PATTERN, module);
+        InputStream filesIn = null;
+        try {
+            filesIn = JDK_JLINK_MOD.getResourceAsStream(resourceName);
+        } catch (IOException e) {
+            throw new AssertionError("Unexpected IO error getting res stream");
+        }
+        if (filesIn == null) {
+            // no upgradeable files
+            return Set.of();
+        }
+        Set<String> upgradeableFiles = new HashSet<>();
+        final InputStream in = filesIn;
+        try (in;
+             Scanner scanner = new Scanner(filesIn)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.trim().startsWith("#")) {
+                    // Skip comments
+                    continue;
+                }
+                upgradeableFiles.add(line);
+            }
+        } catch (IOException e) {
+            throw new AssertionError("Failure to retrieve upgradeable files for " +
+                                     "module " + module, e);
+        }
+        return upgradeableFiles;
     }
 
     public static Archive newArchive(String module,
@@ -81,7 +118,13 @@ public class LinkableRuntimeImage {
             throw new AssertionError("Failure to retrieve resource diff for " +
                                      "module " + module, e);
         }
-        return new JRTArchive(module, path, !ignoreModifiedRuntime, perModuleDiff, taskHelper);
+        Set<String> upgradeableFiles = upgradeableFiles(module);
+        return new JRTArchive(module,
+                              path,
+                              !ignoreModifiedRuntime,
+                              perModuleDiff,
+                              taskHelper,
+                              upgradeableFiles);
     }
 
 

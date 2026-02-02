@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ import sun.text.SupplementaryCharacterData;
  * </blockquote>
  *
  * <p>For a more complete explanation, see <a
- * href="http://www.ibm.com/java/education/boundaries/boundaries.html">http://www.ibm.com/java/education/boundaries/boundaries.html</a>.
+ * href="https://icu-project.org/docs/papers/text_boundary_analysis_in_java/">Text Boundary Analysis in Java</a> by Richard Gillam.
  * &nbsp; For examples, see the resource data (which is annotated).</p>
  *
  * @author Richard Gillam

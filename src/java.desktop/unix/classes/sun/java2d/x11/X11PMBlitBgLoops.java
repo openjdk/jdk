@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.awt.Composite;
  * this type of BlitBg will accelerated double-buffer copies between those
  * two surfaces.
 */
-public class X11PMBlitBgLoops extends BlitBg {
+public final class X11PMBlitBgLoops extends BlitBg {
 
     public static void register()
     {

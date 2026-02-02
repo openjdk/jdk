@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.io.File;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 
-public class PlatformGraphicsInfo {
+public final class PlatformGraphicsInfo {
 
     public static GraphicsEnvironment createGE() {
         return new X11GraphicsEnvironment();
@@ -85,7 +85,6 @@ public class PlatformGraphicsInfo {
 
             No X11 DISPLAY variable was set,
             or no headful library support was found,
-            but this program performed an operation which requires it,
-            """;
+            but this program performed an operation which requires it.""";
     }
 }

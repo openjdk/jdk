@@ -29,8 +29,8 @@
 #include "nmt/mallocHeader.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/threadCritical.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
@@ -62,9 +62,9 @@ class MemoryCounter {
   }
 
   inline void allocate(size_t sz) {
-    size_t cnt = Atomic::add(&_count, size_t(1), memory_order_relaxed);
+    size_t cnt = AtomicAccess::add(&_count, size_t(1), memory_order_relaxed);
     if (sz > 0) {
-      size_t sum = Atomic::add(&_size, sz, memory_order_relaxed);
+      size_t sum = AtomicAccess::add(&_size, sz, memory_order_relaxed);
       update_peak(sum, cnt);
     }
   }
@@ -72,29 +72,29 @@ class MemoryCounter {
   inline void deallocate(size_t sz) {
     assert(count() > 0, "Nothing allocated yet");
     assert(size() >= sz, "deallocation > allocated");
-    Atomic::dec(&_count, memory_order_relaxed);
+    AtomicAccess::dec(&_count, memory_order_relaxed);
     if (sz > 0) {
-      Atomic::sub(&_size, sz, memory_order_relaxed);
+      AtomicAccess::sub(&_size, sz, memory_order_relaxed);
     }
   }
 
   inline void resize(ssize_t sz) {
     if (sz != 0) {
       assert(sz >= 0 || size() >= size_t(-sz), "Must be");
-      size_t sum = Atomic::add(&_size, size_t(sz), memory_order_relaxed);
+      size_t sum = AtomicAccess::add(&_size, size_t(sz), memory_order_relaxed);
       update_peak(sum, _count);
     }
   }
 
-  inline size_t count() const { return Atomic::load(&_count); }
-  inline size_t size()  const { return Atomic::load(&_size);  }
+  inline size_t count() const { return AtomicAccess::load(&_count); }
+  inline size_t size()  const { return AtomicAccess::load(&_size);  }
 
   inline size_t peak_count() const {
-    return Atomic::load(&_peak_count);
+    return AtomicAccess::load(&_peak_count);
   }
 
   inline size_t peak_size() const {
-    return Atomic::load(&_peak_size);
+    return AtomicAccess::load(&_peak_size);
   }
 };
 
@@ -205,7 +205,7 @@ class MallocMemorySnapshot {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static MallocMemorySnapshot _snapshot;
+  static DeferredStatic<MallocMemorySnapshot> _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -252,7 +252,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,11 @@ class D3DTextRenderer extends BufferedTextPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends D3DTextRenderer {
+    private static final class Tracer extends D3DTextRenderer {
         Tracer(D3DTextRenderer d3dtr) {
             super(d3dtr.rq);
         }
+        @Override
         protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
             GraphicsPrimitive.tracePrimitive("D3DDrawGlyphs");
             super.drawGlyphList(sg2d, gl);

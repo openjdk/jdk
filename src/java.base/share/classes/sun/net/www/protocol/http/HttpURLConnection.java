@@ -61,6 +61,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import jdk.internal.access.JavaNetHttpCookieAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.Exceptions;
 import sun.net.NetProperties;
 import sun.net.NetworkClient;
 import sun.net.util.IPAddressUtil;
@@ -77,6 +78,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static sun.net.util.ProxyUtil.copyProxy;
 import static sun.net.www.protocol.http.AuthScheme.BASIC;
 import static sun.net.www.protocol.http.AuthScheme.DIGEST;
 import static sun.net.www.protocol.http.AuthScheme.NTLM;
@@ -621,10 +623,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (port != -1 && port != url.getDefaultPort()) {
                 host += ":" + String.valueOf(port);
             }
-            String reqHost = requests.findValue("Host");
-            if (reqHost == null || !reqHost.equalsIgnoreCase(host)) {
-                requests.set("Host", host);
-            }
+            // if the "Host" header hasn't been explicitly set, then set its
+            // value to the one determined through the request URL
+            requests.setIfNotSet("Host", host);
+
             requests.setIfNotSet("Accept", acceptString);
 
             /*
@@ -854,7 +856,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         responses = new MessageHeader(maxHeaderSize);
         userHeaders = new MessageHeader();
         this.handler = handler;
-        instProxy = p;
+        instProxy = copyProxy(p);
         cookieHandler = CookieHandler.getDefault();
         cacheHandler = ResponseCache.getDefault();
     }
@@ -956,7 +958,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     final Iterator<Proxy> it = proxies.iterator();
                     Proxy p;
                     while (it.hasNext()) {
-                        p = it.next();
+                        p = copyProxy(it.next());
                         try {
                             if (!failedOnce) {
                                 http = getNewHttpClient(url, p, connectTimeout);
@@ -1078,6 +1080,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         responseCode = Integer.parseInt(sa[1]);
                     if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                         logger.fine("response code received " + responseCode);
+                    }
+                    if (sa.length > 2)
+                        responseMessage = String.join(" ", Arrays.copyOfRange(sa, 2, sa.length));
+                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                        logger.fine("response message received " + responseMessage);
                     }
                 } catch (NumberFormatException numberFormatException) {
                 }
@@ -1463,16 +1470,29 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         /* in this case, only one header field will be present */
                         String raw = responses.findValue ("Proxy-Authenticate");
                         reset ();
-                        if (!proxyAuthentication.setHeaders(this,
-                                                        authhdr.headerParser(), raw)) {
+                        try {
+                            proxyAuthentication.setHeaders(this,
+                                    authhdr.headerParser(), raw);
+                        } catch (IOException ex) {
                             disconnectInternal();
-                            throw new IOException ("Authentication failure");
+                            if (Exceptions.enhancedNonSocketExceptions()) {
+                                throw new IOException ("Authentication failure", ex);
+                            } else {
+                                throw new IOException ("Authentication failure");
+                            }
                         }
-                        if (serverAuthentication != null && srvHdr != null &&
-                                !serverAuthentication.setHeaders(this,
-                                                        srvHdr.headerParser(), raw)) {
-                            disconnectInternal ();
-                            throw new IOException ("Authentication failure");
+                        if (serverAuthentication != null && srvHdr != null) {
+                            try {
+                                serverAuthentication.setHeaders(this,
+                                        srvHdr.headerParser(), raw);
+                            } catch (IOException ex) {
+                                disconnectInternal();
+                                if (Exceptions.enhancedNonSocketExceptions()) {
+                                    throw new IOException ("Authentication failure", ex);
+                                } else {
+                                    throw new IOException ("Authentication failure");
+                                }
+                            }
                         }
                         authObj = null;
                         doingNTLMp2ndStage = false;
@@ -1551,9 +1571,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     } else {
                         reset ();
                         /* header not used for ntlm */
-                        if (!serverAuthentication.setHeaders(this, null, raw)) {
+                        try {
+                            serverAuthentication.setHeaders(this, null, raw);
+                        } catch (IOException ex) {
                             disconnectWeb();
-                            throw new IOException ("Authentication failure");
+                            if (Exceptions.enhancedNonSocketExceptions()) {
+                                throw new IOException ("Authentication failure", ex);
+                            } else {
+                                throw new IOException ("Authentication failure");
+                            }
                         }
                         doingNTLM2ndStage = false;
                         authObj = null;
@@ -1929,10 +1955,16 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     } else {
                         String raw = responses.findValue ("Proxy-Authenticate");
                         reset ();
-                        if (!proxyAuthentication.setHeaders(this,
-                                                authhdr.headerParser(), raw)) {
+                        try {
+                            proxyAuthentication.setHeaders(this,
+                                    authhdr.headerParser(), raw);
+                        } catch (IOException ex) {
                             disconnectInternal();
-                            throw new IOException ("Authentication failure");
+                            if (Exceptions.enhancedNonSocketExceptions()) {
+                                throw new IOException ("Authentication failure", ex);
+                            } else {
+                                throw new IOException ("Authentication failure");
+                            }
                         }
                         authObj = null;
                         doingNTLMp2ndStage = false;
@@ -2195,7 +2227,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 };
             }
             if (ret != null) {
-                if (!ret.setHeaders(this, p, raw)) {
+                try {
+                    ret.setHeaders(this, p, raw);
+                } catch (IOException e) {
                     ret.disposeContext();
                     ret = null;
                 }
@@ -2352,7 +2386,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
             }
             if (ret != null ) {
-                if (!ret.setHeaders(this, p, raw)) {
+                try {
+                    ret.setHeaders(this, p, raw);
+                } catch (IOException e) {
                     ret.disposeContext();
                     ret = null;
                 }

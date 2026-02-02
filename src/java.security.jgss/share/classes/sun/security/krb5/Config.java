@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,11 @@ public class Config {
      */
     public static final int MAX_REFERRALS;
 
+    /**
+     * Maximum number of files that can be included.
+     */
+    private static final int MAX_INCLUDE_FILE = 100;
+
     static {
         String disableReferralsProp =
                 SecurityProperties.getOverridableProperty(
@@ -96,7 +101,12 @@ public class Config {
      */
     private static Config singleton = null;
 
-    /*
+    /**
+     * All lines read from all krb5 config files.
+     */
+    private Map<Path,List<String>> allConfs = new HashMap<>();
+
+    /**
      * Hashtable used to store configuration information.
      */
     private Hashtable<String,Object> stanzaTable = new Hashtable<>();
@@ -202,11 +212,10 @@ public class Config {
 
         // Always read the Kerberos configuration file
         try {
-            List<String> configFile;
             String fileName = getJavaFileName();
             if (fileName != null) {
-                configFile = loadConfigFile(fileName);
-                stanzaTable = parseStanzaTable(configFile);
+                Path p = loadConfigFile(fileName); // p is main entry
+                parseStanzaTable(p);
                 if (DEBUG != null) {
                     DEBUG.println("Loaded from Java config");
                 }
@@ -224,9 +233,9 @@ public class Config {
                     }
                 }
                 if (!found) {
-                    fileName = getNativeFileName();
-                    configFile = loadConfigFile(fileName);
-                    stanzaTable = parseStanzaTable(configFile);
+                    fileName = getNativeFileName(); // p is main entry
+                    Path p = loadConfigFile(fileName);
+                    parseStanzaTable(p);
                     if (DEBUG != null) {
                         DEBUG.println("Loaded from native config");
                     }
@@ -564,80 +573,129 @@ public class Config {
     }
 
     /**
-     * Reads the lines of the configuration file. All include and includedir
-     * directives are resolved by calling this method recursively.
+     * Reads a configuration file. All include and includedir directives are
+     * also read by calling this method recursively. All contents are stored
+     * in {@link #allConfs} with file name as key.
      *
-     * @param file the krb5.conf file, must be absolute
-     * @param content the lines. Comment and empty lines are removed,
-     *                all lines trimmed, include and includedir
-     *                directives resolved, unknown directives ignored
+     * Comment and empty lines are removed, all lines are trimmed, include and
+     * includedir directives are processed and translated to "#include" followed
+     * by a file name (not a directory name), unknown directives are ignored.
+     *
+     * @param file a krb5 config file, must be absolute
      * @param dups a set of Paths to check for possible infinite loop
      * @throws IOException if there is an I/O error
+     * @throws KrbException other errors
      */
-    private static Void readConfigFileLines(
-            Path file, List<String> content, Set<Path> dups)
-            throws IOException {
+    private void readConfigFileLines(Path file, Set<Path> dups)
+            throws KrbException, IOException {
 
         if (DEBUG != null) {
             DEBUG.println("Loading krb5 profile at " + file);
         }
+
         if (!file.isAbsolute()) {
-            throw new IOException("Profile path not absolute");
+            throw new KrbException("Profile path not absolute");
+        }
+        if (allConfs.size() > MAX_INCLUDE_FILE) {
+            throw new KrbException("Too many include files");
         }
 
         if (!dups.add(file)) {
-            throw new IOException("Profile path included more than once");
+            throw new KrbException("Recursive include");
         }
 
-        List<String> lines = Files.readAllLines(file);
-
-        boolean inDirectives = true;
-        for (String line: lines) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
-                continue;
+        try {
+            if (allConfs.containsKey(file)) {
+                // Already parsed. Including a file multiple times is allowed.
+                // Just make sure it cannot be recursive.
+                return;
             }
-            if (inDirectives) {
-                if (line.charAt(0) == '[') {
-                    inDirectives = false;
-                    content.add(line);
-                } else if (line.startsWith("includedir ")) {
+
+            List<String> lines = Files.readAllLines(file);
+            List<String> content = new ArrayList<>();
+
+            // Add content to map at the beginning to detect duplicates
+            allConfs.put(file, content);
+
+            boolean inSections = false;
+            for (String line : lines) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
+                    continue;
+                }
+                if (line.startsWith("includedir ")) {
                     Path dir = Paths.get(
                             line.substring("includedir ".length()).trim());
                     try (Stream<Path> files = Files.list(dir)) {
-                        for (Path p: files.sorted().toList()) {
+                        for (Path p : files.sorted().toList()) {
                             if (Files.isDirectory(p)) continue;
                             String name = p.getFileName().toString();
                             if (name.matches("[a-zA-Z0-9_-]+") ||
                                     (!name.startsWith(".") &&
                                             name.endsWith(".conf"))) {
                                 // if dir is absolute, so is p
-                                readConfigFileLines(p, content, dups);
+                                readConfigFileLines(p, dups);
+                                content.add("#include " + p);
                             }
                         }
                     }
                 } else if (line.startsWith("include ")) {
-                    readConfigFileLines(
-                            Paths.get(line.substring("include ".length()).trim()),
-                            content, dups);
+                    Path p = Paths.get(line.substring("include ".length()).trim());
+                    content.add("#include " + p);
+                    readConfigFileLines(p, dups);
                 } else {
-                    // Unsupported directives
-                    if (DEBUG != null) {
-                        DEBUG.println("Unknown directive: " + line);
+                    if (!inSections) {
+                        if (line.charAt(0) == '[') {
+                            inSections = true;
+                            content.add(line);
+                        } else {
+                            // Unsupported directives
+                            if (DEBUG != null) {
+                                DEBUG.println("Line not in any section: " + line);
+                            }
+                        }
+                    } else {
+                        content.add(line);
                     }
                 }
-            } else {
-                content.add(line);
             }
+        } finally {
+            dups.remove(file);
         }
-        return null;
     }
 
     /**
-     * Reads the configuration file and return normalized lines.
+     * Reads the main configuration file.
+     *
+     * @param fileName the configuration file
+     * @return absolute path to the config file
+     */
+    private Path loadConfigFile(final String fileName)
+            throws IOException, KrbException {
+
+        if (DEBUG != null) {
+            DEBUG.println("Loading config file from " + fileName);
+        }
+        Set<Path> dupsCheck = new HashSet<>();
+        Path fullp = Paths.get(fileName).toAbsolutePath();
+        if (!Files.exists(fullp)) {
+            // This is OK. There are other ways to get
+            // Kerberos 5 settings
+        } else {
+            readConfigFileLines(fullp, dupsCheck);
+        }
+        return fullp;
+    }
+
+    /**
+     * Normalizes strings read from one config file. All sections and
+     * subsections are enclosed in braces. Directives ("#include") are
+     * kept in the same place.
+     *
      * If the original file is:
      *
      *     [realms]
+     *     includedir /tmp/inc
      *     EXAMPLE.COM =
      *     {
      *         kdc = kerberos.example.com
@@ -645,10 +703,24 @@ public class Config {
      *     }
      *     ...
      *
-     * The result will be (no indentations):
+     * The output of readConfigFileLines will be (no indentations):
+     *
+     *     [realms]
+     *     #include /tmp/inc/conf1
+     *     #include /tmp/inc/conf2
+     *     EXAMPLE.COM =
+     *     {
+     *         kdc = kerberos.example.com
+     *         ...
+     *     }
+     *     ...
+     *
+     * The output of normalize will be (no indentations):
      *
      *     {
      *         realms = {
+     *     #include /tmp/inc/conf1
+     *     #include /tmp/inc/conf2
      *             EXAMPLE.COM = {
      *                 kdc = kerberos.example.com
      *                 ...
@@ -657,37 +729,32 @@ public class Config {
      *         ...
      *     }
      *
-     * @param fileName the configuration file
-     * @return normalized lines
+     * @param raw input list of strings
+     * @return normalized list of strings
+     * @throws KrbException when the format is not correct
      */
-    private List<String> loadConfigFile(final String fileName)
-            throws IOException, KrbException {
-
-        if (DEBUG != null) {
-            DEBUG.println("Loading config file from " + fileName);
-        }
+    private static List<String> normalize(List<String> raw) throws KrbException {
         List<String> result = new ArrayList<>();
-        List<String> raw = new ArrayList<>();
-        Set<Path> dupsCheck = new HashSet<>();
-
-        Path fullp = Paths.get(fileName).toAbsolutePath();
-        Path path = Paths.get(fileName);
-        if (!Files.exists(path)) {
-            // This is OK. There are other ways to get
-            // Kerberos 5 settings
-        } else {
-            readConfigFileLines(fullp, raw, dupsCheck);
-        }
-
-        String previous = null;
+        List<String> unwritten = new ArrayList<>();
+        String previous = null; // unfinished line
         for (String line: raw) {
-            if (line.startsWith("[")) {
+            if (line.startsWith("#")) { // directives like "#include". Do not
+                                        // write out immediately, might follow
+                                        // a previous line.
+                if (previous == null) {
+                    result.add(line);
+                } else {
+                    unwritten.add(line);
+                }
+            } else if (line.startsWith("[")) {
                 if (!line.endsWith("]")) {
                     throw new KrbException("Illegal config content:"
                             + line);
                 }
                 if (previous != null) {
                     result.add(previous);
+                    unwritten.forEach(result::add);
+                    unwritten.clear();
                     result.add("}");
                 }
                 String title = line.substring(
@@ -706,6 +773,8 @@ public class Config {
                 if (line.length() > 1) {
                     // { and content on the same line
                     result.add(previous);
+                    unwritten.forEach(result::add);
+                    unwritten.clear();
                     previous = line.substring(1).trim();
                 }
             } else {
@@ -716,11 +785,15 @@ public class Config {
                         "Config file must starts with a section");
                 }
                 result.add(previous);
+                unwritten.forEach(result::add);
+                unwritten.clear();
                 previous = line;
             }
         }
         if (previous != null) {
             result.add(previous);
+            unwritten.forEach(result::add);
+            unwritten.clear();
             result.add("}");
         }
         return result;
@@ -734,44 +807,52 @@ public class Config {
      * another sub-sub-section or a non-empty vector of strings for final values
      * (even if there is only one value defined).
      * <p>
-     * For top-level sections with duplicates names, their contents are merged.
-     * For sub-sections the former overwrites the latter. For final values,
-     * they are stored in a vector in their appearing order. Please note these
-     * values must appear in the same sub-section. Otherwise, the sub-section
-     * appears first should have already overridden the others.
+     * Contents of duplicated sections are merged. Values for duplicated names
+     * are stored in a vector in their appearing order. If the same name is used
+     * as both a section name and a value name, the first appearance decides the
+     * type and the latter appearances of different types are ignored.
      * <p>
-     * As a corner case, if the same name is used as both a section name and a
-     * value name, the first appearance decides the type. That is to say, if the
-     * first one is for a section, all latter appearances are ignored. If it's
-     * a value, latter appearances as sections are ignored, but those as values
-     * are added to the vector.
-     * <p>
-     * The behavior described above is compatible to other krb5 implementations
-     * but it's not decumented publicly anywhere. the best practice is not to
+     * The behavior described above is compatible to other krb5 implementations,
+     * but it's not documented publicly anywhere. the best practice is not to
      * assume any kind of override functionality and only specify values for
      * a particular key in one place.
      *
-     * @param v the normalized input as return by loadConfigFile
+     * @param entry path to config file, could be an included one
      * @throws KrbException if there is a file format error
      */
     @SuppressWarnings("unchecked")
-    private Hashtable<String,Object> parseStanzaTable(List<String> v)
+    private void parseStanzaTable(Path entry)
             throws KrbException {
         Hashtable<String,Object> current = stanzaTable;
+        // Current sections and subsections
+        Deque<Hashtable<String,Object>> stack = new ArrayDeque<>();
+        List<String> v = allConfs.get(entry);
+        if (v == null) {
+            // this happens when root krb5.conf is missing
+            return;
+        }
+        v = normalize(v);
+        if (DEBUG != null) {
+            DEBUG.println(">>> Begin Kerberos config at " + entry);
+            v.forEach(DEBUG::println);
+            DEBUG.println(">>> End Kerberos config at " + entry);
+        }
         for (String line: v) {
-            if (DEBUG != null) {
-                DEBUG.println(line);
-            }
-            // There are only 3 kinds of lines
-            // 1. a = b
-            // 2. a = {
-            // 3. }
-            if (line.equals("}")) {
+            // There are only 4 kinds of lines after normalization
+            // 1. #include
+            // 2. a = b
+            // 3. a = {
+            // 4. }
+            if (line.startsWith("#include ")) {
+                // parse in-place at the top level, i.e. included file
+                // is not considered inside the current section.
+                parseStanzaTable(Path.of(line.substring(9)));
+            } else if (line.equals("}")) {
                 // Go back to parent, see below
-                current = (Hashtable<String,Object>)current.remove(" PARENT ");
-                if (current == null) {
+                if (stack.isEmpty()) {
                     throw new KrbException("Unmatched close brace");
                 }
+                current = stack.pop();
             } else {
                 int pos = line.indexOf('=');
                 if (pos < 0) {
@@ -784,37 +865,33 @@ public class Config {
                     if (current == stanzaTable) {
                         key = key.toLowerCase(Locale.US);
                     }
-                    // When there are dup names for sections
                     if (current.containsKey(key)) {
-                        if (current == stanzaTable) {   // top-level, merge
-                            // The value at top-level must be another Hashtable
-                            subTable = (Hashtable<String,Object>)current.get(key);
-                        } else {                        // otherwise, ignored
-                            // read and ignore it (do not put into current)
+                        Object obj = current.get(key);
+                        if (obj instanceof Hashtable) {
+                            // dup section, merge
+                            subTable = (Hashtable<String,Object>) obj;
+                        } else {
+                            // different type, parse and ignore
                             subTable = new Hashtable<>();
                         }
                     } else {
                         subTable = new Hashtable<>();
                         current.put(key, subTable);
                     }
-                    // A special entry for its parent. Put whitespaces around,
-                    // so will never be confused with a normal key
-                    subTable.put(" PARENT ", current);
+                    // Remember where I am.
+                    stack.push(current);
                     current = subTable;
                 } else {
-                    Vector<String> values;
                     if (current.containsKey(key)) {
                         Object obj = current.get(key);
                         if (obj instanceof Vector) {
-                            // String values are merged
-                            values = (Vector<String>)obj;
-                            values.add(value);
+                            // dup value, accumulate
+                            ((Vector<String>) obj).add(value);
                         } else {
-                            // If a key shows as section first and then a value,
-                            // ignore the value.
+                            // different type, ignore
                         }
                     } else {
-                        values = new Vector<String>();
+                        Vector<String> values = new Vector<>();
                         values.add(value);
                         current.put(key, values);
                     }
@@ -824,7 +901,6 @@ public class Config {
         if (current != stanzaTable) {
             throw new KrbException("Not closed");
         }
-        return current;
     }
 
     /**

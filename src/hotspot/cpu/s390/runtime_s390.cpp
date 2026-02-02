@@ -43,8 +43,6 @@
 
 //------------------------------generate_exception_blob---------------------------
 // creates exception blob at the end
-// Using exception blob, this code is jumped from a compiled method.
-// (see emit_exception_handler in s390.ad file)
 //
 // Given an exception pc at a call we call into the runtime for the
 // handler in this method. This handler might merely restore state
@@ -70,8 +68,11 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   Register handle_exception = Z_ARG5;
@@ -115,7 +116,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ z_lgr(Z_SP, saved_sp);
 
   // [Z_RET] isn't null was possible in hotspot5 but not in sapjvm6.
-  // C2I adapter extensions are now removed by a resize in the frame manager
+  // C2I adapter extensions are now removed by a resize in the template interpreter
   // (unwind_initial_activation_pending_exception).
 #ifdef ASSERT
   __ z_ltgr(handle_exception, handle_exception);

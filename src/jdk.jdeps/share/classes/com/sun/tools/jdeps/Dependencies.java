@@ -79,7 +79,7 @@ public class Dependencies {
         private static final long serialVersionUID = 4111110813961313203L;
 
         public ClassFileError(Throwable cause) {
-            initCause(cause);
+            super(cause.getMessage(), cause);
         }
     }
 

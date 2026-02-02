@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,13 @@ import com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Igor Kushnirskiy
  */
 
-public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
+public final class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new WindowsPopupMenuSeparatorUI();
     }
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         Dimension s = c.getSize();
         XPStyle xp = XPStyle.getXP();
@@ -82,6 +83,7 @@ public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
         }
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         int fontHeight = 0;
         Font font = c.getFont();

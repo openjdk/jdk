@@ -71,7 +71,7 @@ public class TestShenandoahBarrierExpansion {
 
     @Test
     @IR(failOn = IRNode.IF, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = { IRNode.IF, "3" }, phase = CompilePhase.BARRIER_EXPANSION)
+    @IR(counts = { IRNode.IF, "4" }, phase = CompilePhase.BARRIER_EXPANSION)
     private static void testLoadTwoFieldObjectAndEscape() {
         final A field2 = staticField2;
         final A field3 = staticField3;

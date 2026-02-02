@@ -59,7 +59,6 @@ private:
   KlassCleaningTask                   _klass_cleaning_task;
 public:
   ShenandoahClassUnloadingTask(ShenandoahPhaseTimings::Phase phase,
-                               uint num_workers,
                                bool unloading_occurred);
 
   void work(uint worker_id);

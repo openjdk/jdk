@@ -22,9 +22,9 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/globals.hpp"
@@ -62,8 +62,8 @@ void GCInitLogger::print_cpu() {
 }
 
 void GCInitLogger::print_memory() {
-  julong memory = os::physical_memory();
-  log_info_p(gc, init)("Memory: " JULONG_FORMAT "%s",
+  physical_memory_size_type memory = os::physical_memory();
+  log_info_p(gc, init)("Memory: " PHYS_MEM_TYPE_FORMAT "%s",
                        byte_size_in_proper_unit(memory), proper_unit_for_byte_size(memory));
 }
 

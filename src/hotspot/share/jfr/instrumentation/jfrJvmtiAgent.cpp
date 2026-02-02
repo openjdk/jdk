@@ -78,19 +78,6 @@ extern "C" void JNICALL jfr_on_class_file_load_hook(jvmtiEnv *jvmti_env,
                                                     const unsigned char* class_data,
                                                     jint* new_class_data_len,
                                                     unsigned char** new_class_data) {
-  if (class_being_redefined == nullptr) {
-    return;
-  }
-  JavaThread* jt = JavaThread::thread_from_jni_environment(jni_env);
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));;
-  ThreadInVMfromNative tvmfn(jt);
-  JfrUpcalls::on_retransform(JfrTraceId::load_raw(class_being_redefined),
-                             class_being_redefined,
-                             class_data_len,
-                             class_data,
-                             new_class_data_len,
-                             new_class_data,
-                             jt);
 }
 
 // caller needs ResourceMark
@@ -175,6 +162,10 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
       }
     }
   }
+  retransform_classes(env, classes, classes_count, THREAD);
+}
+
+void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jclass* classes, jint classes_count, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
   const jvmtiError result = jfr_jvmti_env->RetransformClasses(classes_count, classes);
   if (result != JVMTI_ERROR_NONE) {

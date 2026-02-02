@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,9 @@ public final class SetHeaderInfo {
                          ColorSpace.CS_CIEXYZ, ColorSpace.CS_PYCC,
                          ColorSpace.CS_GRAY};
         for (int cspace : cspaces) {
-            ICC_Profile icc = ICC_Profile.getInstance(cspace);
+            ICC_Profile builtInProfile = ICC_Profile.getInstance(cspace);
+            ICC_Profile icc = ICC_Profile.getInstance(builtInProfile.getData());
+
             testSame(icc);
             testCustom(icc);
             // some corner cases

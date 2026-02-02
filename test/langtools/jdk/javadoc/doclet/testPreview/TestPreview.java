@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533 8343239 8318416
+ *           8331947 8281533 8343239 8318416 8346109 8359024
  * @summary  test generated docs for items declared using preview
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -63,9 +63,9 @@ public class TestPreview extends JavadocTester {
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
                     "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
-                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class="
+                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class in preview\" class="
                         + "\"external-link\">Core</a><sup class=\"preview-mark\"><a href=\"" + doc + "java.base/pr"
-                        + "eview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\""
+                        + "eview/Core.html#preview-preview.Core\" class=\""
                         + "external-link\">PREVIEW</a>");
         checkOutput("m/pkg/DocAnnotation.html", true,
                 "<span class=\"modifiers\">public @interface </span><span class=\"element-name type-name-label\">DocAnnotation</span>");
@@ -104,7 +104,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="package">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Packages</span></div>
                     </div>
                     <div id="package.tabpanel" role="tabpanel" aria-labelledby="package-tab0">
@@ -122,7 +122,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="record-class">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Record Classes</span></div>
                     </div>
                     <div id="record-class.tabpanel" role="tabpanel" aria-labelledby="record-class-tab0">
@@ -139,7 +139,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="method">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Methods</span></div>
                     </div>
                     <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
@@ -254,7 +254,7 @@ public class TestPreview extends JavadocTester {
         checkOutput("api2/api/API.html", true,
                     "<p><a href=\"#test()\"><code>test()</code></a></p>",
                     "<p><a href=\"#testNoPreviewInSig()\"><code>testNoPreviewInSig()</code></a></p>",
-                    "title=\"class or interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
+                    "title=\"interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
                             + "tml\" title=\"class in api\">API</a><sup class=\"preview-mark\"><a href=\"#preview-"
                             + "api.API\">PREVIEW</a></sup>&gt;");
         checkOutput("api2/api/API2.html", true,
@@ -295,5 +295,55 @@ public class TestPreview extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                     "Indirect exports from the <code>java.base</code> module are");
+    }
+
+    // Test for JDK hidden option to add an entry for a non-preview element
+    // in the preview page based on the presence of a javadoc tag.
+    @Test
+    public void testPreviewNoteTag(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                import jdk.internal.javac.PreviewFeature;
+
+                /**
+                 * Preview feature
+                 */
+                @PreviewFeature(feature= PreviewFeature.Feature.TEST)
+                public interface CoreInterface {
+                }
+                """, """
+                package p;
+
+                 /**
+                  * Non preview feature.
+                  * {@previewNote 2147483647 Preview API Note}
+                  */
+                 public interface NonPrevieFeature {
+                 }
+                """);
+        javadoc("-d", "out-preview-note-tag",
+                "--add-exports", "java.base/jdk.internal.javac=ALL-UNNAMED",
+                "-tag", "previewNote:a:Preview Note:",
+                "--preview-note-tag", "previewNote",
+                "--source-path",
+                src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("preview-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul class="contents-list">
+                    <li id="contents-interface"><a href="#interface">Interfaces</a></li>
+                    <li id="contents-preview-api-notes"><a href="#preview-api-notes">Permanent APIs affected by Preview Features</a></li>""",
+                """
+                    <div class="caption"><span>Permanent APIs affected by Preview Features</span></div>""",
+                """
+                    <div class="col-summary-item-name even-row-color preview-api-notes preview-api-notes-tab1\
+                    "><a href="p/NonPrevieFeature.html" title="interface in p">p.NonPrevieFeature</a></div>
+                    <div class="col-second even-row-color preview-api-notes preview-api-notes-tab1">Test Feature</div>
+                    <div class="col-last even-row-color preview-api-notes preview-api-notes-tab1">
+                    <div class="block">Non preview feature.</div>""");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 8274736 8277970
+ * @bug 8274736 8277970 8355262
  * @summary Concurrent read/close of SSLSockets causes SSLSessions to be
  *          invalidated unnecessarily
  * @library /javax/net/ssl/templates
@@ -52,6 +52,18 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class NoInvalidateSocketException extends SSLSocketTemplate {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,session
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     private static final int ITERATIONS = 10;
 
     // This controls how long the main thread waits before closing the socket.
@@ -73,8 +85,8 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     private static volatile boolean finished = false;
 
     public static void main(String[] args) throws Exception {
-        if (System.getProperty("javax.net.debug") == null) {
-            System.setProperty("javax.net.debug", "session");
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,session");
         }
 
         if (args != null && args.length >= 1) {
@@ -285,7 +297,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
         // Signal the client, the server is ready to accept connection.
         serverCondition.countDown();
 
-        // Try to accept a connection in 5 seconds.
+        // Try to accept a connection in 10 seconds.
         // We will do this in a loop until the client flips the
         // finished variable to true
         SSLSocket sslSocket;
@@ -351,7 +363,7 @@ public class NoInvalidateSocketException extends SSLSocketTemplate {
     public void configureServerSocket(SSLServerSocket socket) {
         try {
             socket.setReuseAddress(true);
-            socket.setSoTimeout(5000);
+            socket.setSoTimeout(10000);
         } catch (SocketException se) {
             // Rethrow as unchecked to satisfy the override signature
             throw new RuntimeException(se);

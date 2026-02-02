@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,9 +534,9 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
         shmget(IPC_PRIVATE, (size_t) height * img->bytes_per_line,
                IPC_CREAT|mitShmPermissionMask);
     if (shminfo->shmid < 0) {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                       "X11SD_SetupSharedSegment shmget has failed: %s",
-                       strerror(errno));
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "X11SD_SetupSharedSegment shmget has failed: %s",
+                      strerror(errno));
         free((void *)shminfo);
         XDestroyImage(img);
         return NULL;
@@ -545,9 +545,9 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
     shminfo->shmaddr = (char *) shmat(shminfo->shmid, 0, 0);
     if (shminfo->shmaddr == ((char *) -1)) {
         shmctl(shminfo->shmid, IPC_RMID, 0);
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                       "X11SD_SetupSharedSegment shmat has failed: %s",
-                       strerror(errno));
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "X11SD_SetupSharedSegment shmat has failed: %s",
+                      strerror(errno));
         free((void *)shminfo);
         XDestroyImage(img);
         return NULL;
@@ -567,9 +567,9 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
     shmctl(shminfo->shmid, IPC_RMID, 0);
 
     if (isXShmAttachFailed() == JNI_TRUE) {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                       "X11SD_SetupSharedSegment XShmAttach has failed: %s",
-                       strerror(errno));
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "X11SD_SetupSharedSegment XShmAttach has failed: %s",
+                      strerror(errno));
         shmdt(shminfo->shmaddr);
         free((void *)shminfo);
         XDestroyImage(img);

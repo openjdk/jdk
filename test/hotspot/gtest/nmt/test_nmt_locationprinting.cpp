@@ -113,7 +113,7 @@ TEST_VM(NMT, DISABLED_location_printing_cheap_dead_7) { test_for_dead_c_heap_blo
 #endif
 
 static void test_for_mmap(size_t sz, ssize_t offset) {
-  char* addr = os::reserve_memory(sz, false, mtTest);
+  char* addr = os::reserve_memory(sz, mtTest);
   if (MemTracker::enabled()) {
     test_pointer(addr + offset, true, "in mmap'd memory region");
   } else {

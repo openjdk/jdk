@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,7 @@ public class currentcm001 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
 
@@ -196,13 +197,7 @@ public class currentcm001 {
             //String bpLine2 = "breakpointLineNumber2";
             //String bpLine3 = "breakpointLineNumber3";
 
-
-            List            allThreads   = null;
-
             ObjectReference monitor      = null;
-
-            ListIterator    listIterator = null;
-            List            classes      = null;
 
             //BreakpointRequest breakpRequest1 = null;
             //BreakpointRequest breakpRequest2 = null;
@@ -212,29 +207,7 @@ public class currentcm001 {
             label0: {
 
                 log2("getting ThreadReference objects");
-                try {
-                    allThreads  = vm.allThreads();
-//                    classes     = vm.classesByName(testedClassName);
-//                    testedclass = (ReferenceType) classes.get(0);
-                } catch ( Exception e) {
-                    log3("ERROR: Exception at very beginning !? : " + e);
-                    expresult = returnCode1;
-                    break label0;
-                }
-
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        mainThread = (ThreadReference) listIterator.next();
-                        if (mainThread.name().equals("main"))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO 'main' thread  ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                mainThread = debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread", "main");
             }
 
             label1: {

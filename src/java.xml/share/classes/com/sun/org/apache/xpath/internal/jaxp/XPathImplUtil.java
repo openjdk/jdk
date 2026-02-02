@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.org.apache.xpath.internal.axes.LocPathIterator;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import java.io.IOException;
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -44,6 +45,7 @@ import javax.xml.xpath.XPathVariableResolver;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.traversal.NodeIterator;
@@ -54,7 +56,7 @@ import org.xml.sax.SAXException;
  * This class contains several utility methods used by XPathImpl and
  * XPathExpressionImpl
  *
- * @LastModified: Jan 2022
+ * @LastModified: June 2025
  */
 class XPathImplUtil {
     XPathFunctionResolver functionResolver;
@@ -67,6 +69,7 @@ class XPathImplUtil {
     boolean featureSecureProcessing = false;
     JdkXmlFeatures featureManager;
     XMLSecurityManager xmlSecMgr;
+    XMLSecurityPropertyManager xmlSecPropMgr;
 
     /**
      * Evaluate an XPath context using the internal XPath engine
@@ -85,8 +88,7 @@ class XPathImplUtil {
                     new Object[] {}));
         }
         if (functionResolver != null) {
-            JAXPExtensionsProvider jep = new JAXPExtensionsProvider(
-                    functionResolver, featureSecureProcessing, featureManager);
+            JAXPExtensionsProvider jep = new JAXPExtensionsProvider(functionResolver);
             xpathSupport = new com.sun.org.apache.xpath.internal.XPathContext(jep);
         } else {
             xpathSupport = new com.sun.org.apache.xpath.internal.XPathContext();
@@ -129,7 +131,12 @@ class XPathImplUtil {
             //
             // so we really have to create a fresh DocumentBuilder every time we need one
             // - KK
-            DocumentBuilderFactory dbf = JdkXmlUtils.getDOMFactory(overrideDefaultParser);
+            DocumentBuilderFactory dbf = JdkXmlUtils.getDOMFactory(
+                    overrideDefaultParser, xmlSecMgr, xmlSecPropMgr);
+            if (xmlSecMgr != null && xmlSecMgr.isSecureProcessingSet()) {
+                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                        xmlSecMgr.isSecureProcessing());
+            }
             return dbf.newDocumentBuilder().parse(source);
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new XPathExpressionException (e);

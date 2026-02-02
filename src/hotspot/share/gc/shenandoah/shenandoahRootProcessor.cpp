@@ -26,9 +26,9 @@
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -45,7 +45,7 @@ ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimi
 }
 
 uint ShenandoahJavaThreadsIterator::claim() {
-  return Atomic::fetch_then_add(&_claimed, _stride, memory_order_relaxed);
+  return AtomicAccess::fetch_then_add(&_claimed, _stride, memory_order_relaxed);
 }
 
 void ShenandoahJavaThreadsIterator::threads_do(ThreadClosure* cl, uint worker_id) {
@@ -58,9 +58,9 @@ void ShenandoahJavaThreadsIterator::threads_do(ThreadClosure* cl, uint worker_id
 }
 
 ShenandoahThreadRoots::ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par) :
-  _phase(phase), _is_par(is_par) {
-  Threads::change_thread_claim_token();
-}
+  _phase(phase),
+  _is_par(is_par),
+  _threads_claim_token_scope() {}
 
 void ShenandoahThreadRoots::oops_do(OopClosure* oops_cl, NMethodClosure* code_cl, uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
@@ -72,10 +72,6 @@ void ShenandoahThreadRoots::threads_do(ThreadClosure* tc, uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
   ResourceMark rm;
   Threads::possibly_parallel_threads_do(_is_par, tc);
-}
-
-ShenandoahThreadRoots::~ShenandoahThreadRoots() {
-  Threads::assert_all_threads_claimed();
 }
 
 ShenandoahCodeCacheRoots::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {

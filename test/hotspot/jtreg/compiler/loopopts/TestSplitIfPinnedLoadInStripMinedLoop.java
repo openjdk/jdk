@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class TestSplitIfPinnedLoadInStripMinedLoop {
     }
 
     // Same as test2 but with reference to inner loop induction variable 'j' and different order of instructions.
-    // Triggers an assert in PhaseCFG::insert_anti_dependences if loop strip mining verification is disabled:
+    // Triggers an assert in PhaseCFG::raise_above_anti_dependences if loop strip mining verification is disabled:
     // assert(!LCA_orig->dominates(pred_block) || early->dominates(pred_block)) failed: early is high enough
     int test4(MyClass obj1, MyClass obj2) {
         for (int i = 0; i < 10; ++i) {

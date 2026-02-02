@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,10 +138,10 @@ void drawTex2Tex(MTLContext *mtlc,
                         jdouble dx1, jdouble dy1, jdouble dx2, jdouble dy2)
 {
 #ifdef TRACE_drawTex2Tex
-    J2dRlsTraceLn2(J2D_TRACE_VERBOSE, "drawTex2Tex: src tex=%p, dst tex=%p", src, dst);
-    J2dRlsTraceLn4(J2D_TRACE_VERBOSE, "  sw=%d sh=%d dw=%d dh=%d", src.width, src.height, dst.width, dst.height);
-    J2dRlsTraceLn4(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d", sx1, sy1, sx2, sy2);
-    J2dRlsTraceLn4(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f", dx1, dy1, dx2, dy2);
+    J2dRlsTraceLn(J2D_TRACE_VERBOSE, "drawTex2Tex: src tex=%p, dst tex=%p", src, dst);
+    J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  sw=%d sh=%d dw=%d dh=%d", src.width, src.height, dst.width, dst.height);
+    J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d", sx1, sy1, sx2, sy2);
+    J2dRlsTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f", dx1, dy1, dx2, dy2);
 #endif //TRACE_drawTex2Tex
 
     id<MTLRenderCommandEncoder> encoder = [mtlc.encoderManager getTextureEncoder:dst
@@ -174,7 +174,7 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
     const int dh = MIN(dy2 - dy1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
 
     if (dw < sw || dh < sh) {
-        J2dTraceLn4(J2D_TRACE_ERROR, "replaceTextureRegion: dest size: (%d, %d) less than source size: (%d, %d)", dw, dh, sw, sh);
+        J2dTraceLn(J2D_TRACE_ERROR, "replaceTextureRegion: dest size: (%d, %d) less than source size: (%d, %d)", dw, dh, sw, sh);
         return;
     }
 
@@ -182,8 +182,8 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
     raster += (NSUInteger)srcInfo->bounds.y1 * (NSUInteger)srcInfo->scanStride + (NSUInteger)srcInfo->bounds.x1 * (NSUInteger)srcInfo->pixelStride;
 
     @autoreleasepool {
-        J2dTraceLn4(J2D_TRACE_VERBOSE, "replaceTextureRegion src (dw, dh) : [%d, %d] dest (dx1, dy1) =[%d, %d]",
-                    dw, dh, dx1, dy1);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "replaceTextureRegion src (dw, dh) : [%d, %d] dest (dx1, dy1) =[%d, %d]",
+                   dw, dh, dx1, dy1);
         id<MTLBuffer> buff = [[mtlc.device newBufferWithLength:(sw * sh * srcInfo->pixelStride) options:MTLResourceStorageModeManaged] autorelease];
 
         // copy src pixels inside src bounds to buff
@@ -327,37 +327,37 @@ jboolean clipDestCoords(
             dcy2 = maxY;
 
         if (dcx1 >= dcx2) {
-            J2dTraceLn2(J2D_TRACE_ERROR, "\tclipDestCoords: dcx1=%1.2f, dcx2=%1.2f", dcx1, dcx2);
+            J2dTraceLn(J2D_TRACE_ERROR, "\tclipDestCoords: dcx1=%1.2f, dcx2=%1.2f", dcx1, dcx2);
             dcx1 = dcx2;
         }
         if (dcy1 >= dcy2) {
-            J2dTraceLn2(J2D_TRACE_ERROR, "\tclipDestCoords: dcy1=%1.2f, dcy2=%1.2f", dcy1, dcy2);
+            J2dTraceLn(J2D_TRACE_ERROR, "\tclipDestCoords: dcy1=%1.2f, dcy2=%1.2f", dcy1, dcy2);
             dcy1 = dcy2;
         }
     }
     if (*dx2 <= dcx1 || *dx1 >= dcx2 || *dy2 <= dcy1 || *dy1 >= dcy2) {
         J2dTraceLn(J2D_TRACE_INFO, "\tclipDestCoords: dest rect doesn't intersect clip area");
-        J2dTraceLn4(J2D_TRACE_INFO, "\tdx2=%1.4f <= dcx1=%1.4f || *dx1=%1.4f >= dcx2=%1.4f", *dx2, dcx1, *dx1, dcx2);
-        J2dTraceLn4(J2D_TRACE_INFO, "\t*dy2=%1.4f <= dcy1=%1.4f || *dy1=%1.4f >= dcy2=%1.4f", *dy2, dcy1, *dy1, dcy2);
+        J2dTraceLn(J2D_TRACE_INFO, "\tdx2=%1.4f <= dcx1=%1.4f || *dx1=%1.4f >= dcx2=%1.4f", *dx2, dcx1, *dx1, dcx2);
+        J2dTraceLn(J2D_TRACE_INFO, "\t*dy2=%1.4f <= dcy1=%1.4f || *dy1=%1.4f >= dcy2=%1.4f", *dy2, dcy1, *dy1, dcy2);
         return JNI_FALSE;
     }
     if (*dx1 < dcx1) {
-        J2dTraceLn3(J2D_TRACE_VERBOSE, "\t\tdx1=%1.2f, will be clipped to %1.2f | sx1+=%d", *dx1, dcx1, (jint)((dcx1 - *dx1) * (sw/dw)));
+        J2dTraceLn(J2D_TRACE_VERBOSE, "\t\tdx1=%1.2f, will be clipped to %1.2f | sx1+=%d", *dx1, dcx1, (jint)((dcx1 - *dx1) * (sw/dw)));
         *sx1 += (jint)((dcx1 - *dx1) * (sw/dw));
         *dx1 = dcx1;
     }
     if (*dx2 > dcx2) {
-        J2dTraceLn3(J2D_TRACE_VERBOSE, "\t\tdx2=%1.2f, will be clipped to %1.2f | sx2-=%d", *dx2, dcx2, (jint)((*dx2 - dcx2) * (sw/dw)));
+        J2dTraceLn(J2D_TRACE_VERBOSE, "\t\tdx2=%1.2f, will be clipped to %1.2f | sx2-=%d", *dx2, dcx2, (jint)((*dx2 - dcx2) * (sw/dw)));
         *sx2 -= (jint)((*dx2 - dcx2) * (sw/dw));
         *dx2 = dcx2;
     }
     if (*dy1 < dcy1) {
-        J2dTraceLn3(J2D_TRACE_VERBOSE, "\t\tdy1=%1.2f, will be clipped to %1.2f | sy1+=%d", *dy1, dcy1, (jint)((dcy1 - *dy1) * (sh/dh)));
+        J2dTraceLn(J2D_TRACE_VERBOSE, "\t\tdy1=%1.2f, will be clipped to %1.2f | sy1+=%d", *dy1, dcy1, (jint)((dcy1 - *dy1) * (sh/dh)));
         *sy1 += (jint)((dcy1 - *dy1) * (sh/dh));
         *dy1 = dcy1;
     }
     if (*dy2 > dcy2) {
-        J2dTraceLn3(J2D_TRACE_VERBOSE, "\t\tdy2=%1.2f, will be clipped to %1.2f | sy2-=%d", *dy2, dcy2, (jint)((*dy2 - dcy2) * (sh/dh)));
+        J2dTraceLn(J2D_TRACE_VERBOSE, "\t\tdy2=%1.2f, will be clipped to %1.2f | sy2-=%d", *dy2, dcy2, (jint)((*dy2 - dcy2) * (sh/dh)));
         *sy2 -= (jint)((*dy2 - dcy2) * (sh/dh));
         *dy2 = dcy2;
     }
@@ -392,7 +392,7 @@ MTLBlitLoops_IsoBlit(JNIEnv *env,
     id<MTLTexture> srcTex = srcOps->pTexture;
     id<MTLTexture> dstTex = dstOps->pTexture;
     if (srcTex == nil || srcTex == nil) {
-        J2dTraceLn2(J2D_TRACE_ERROR, "MTLBlitLoops_IsoBlit: surface is null (stex=%p, dtex=%p)", srcTex, dstTex);
+        J2dTraceLn(J2D_TRACE_ERROR, "MTLBlitLoops_IsoBlit: surface is null (stex=%p, dtex=%p)", srcTex, dstTex);
         return;
     }
 
@@ -402,7 +402,7 @@ MTLBlitLoops_IsoBlit(JNIEnv *env,
     const jdouble dh = dy2 - dy1;
 
     if (sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) {
-        J2dTraceLn4(J2D_TRACE_WARNING, "MTLBlitLoops_IsoBlit: invalid dimensions: sw=%d, sh%d, dw=%d, dh=%d", sw, sh, dw, dh);
+        J2dTraceLn(J2D_TRACE_WARNING, "MTLBlitLoops_IsoBlit: invalid dimensions: sw=%d, sh%d, dw=%d, dh=%d", sw, sh, dw, dh);
         return;
     }
 
@@ -431,8 +431,8 @@ MTLBlitLoops_IsoBlit(JNIEnv *env,
 
     if (bounds.x2 <= bounds.x1 || bounds.y2 <= bounds.y1) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "MTLBlitLoops_IsoBlit: source rectangle doesn't intersect with source surface bounds");
-        J2dTraceLn6(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d sw=%d sh=%d", sx1, sy1, sx2, sy2, srcOps->width, srcOps->height);
-        J2dTraceLn4(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f", dx1, dy1, dx2, dy2);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d sw=%d sh=%d", sx1, sy1, sx2, sy2, srcOps->width, srcOps->height);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f", dx1, dy1, dx2, dy2);
         return;
     }
 
@@ -521,7 +521,7 @@ MTLBlitLoops_Blit(JNIEnv *env,
         return;
     }
     if (srctype < 0 || srctype >= sizeof(RasterFormatInfos)/ sizeof(MTLRasterFormatInfo)) {
-        J2dTraceLn1(J2D_TRACE_ERROR, "MTLBlitLoops_Blit: source pixel format %d isn't supported", srctype);
+        J2dTraceLn(J2D_TRACE_ERROR, "MTLBlitLoops_Blit: source pixel format %d isn't supported", srctype);
         return;
     }
     const jint sw    = sx2 - sx1;
@@ -641,14 +641,14 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
                              jint srcx, jint srcy, jint dstx, jint dsty,
                              jint width, jint height)
 {
-    J2dTraceLn6(J2D_TRACE_VERBOSE, "MTLBlitLoops_SurfaceToSwBlit: sx=%d sy=%d w=%d h=%d dx=%d dy=%d", srcx, srcy, width, height, dstx, dsty);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLBlitLoops_SurfaceToSwBlit: sx=%d sy=%d w=%d h=%d dx=%d dy=%d", srcx, srcy, width, height, dstx, dsty);
 
     BMTLSDOps *srcOps = (BMTLSDOps *)jlong_to_ptr(pSrcOps);
     SurfaceDataOps *dstOps = (SurfaceDataOps *)jlong_to_ptr(pDstOps);
     SurfaceDataRasInfo srcInfo, dstInfo;
 
     if (dsttype < 0 || dsttype >= sizeof(RasterFormatInfos)/ sizeof(MTLRasterFormatInfo)) {
-        J2dTraceLn1(J2D_TRACE_ERROR, "MTLBlitLoops_SurfaceToSwBlit: destination pixel format %d isn't supported", dsttype);
+        J2dTraceLn(J2D_TRACE_ERROR, "MTLBlitLoops_SurfaceToSwBlit: destination pixel format %d isn't supported", dsttype);
         return;
     }
 
@@ -736,7 +736,7 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             // NOTE: using of separate blitCommandBuffer can produce errors (draw into surface (with general cmd-buf)
             // can be unfinished when reading raster from blit cmd-buf).
             // Consider to use [mtlc.encoderManager createBlitEncoder] and [mtlc commitCommandBuffer:JNI_TRUE];
-            J2dTraceLn1(J2D_TRACE_VERBOSE, "MTLBlitLoops_SurfaceToSwBlit: source texture %p", srcOps->pTexture);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "MTLBlitLoops_SurfaceToSwBlit: source texture %p", srcOps->pTexture);
 
             id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
             id<MTLBlitCommandEncoder> blitEncoder = [cb blitCommandEncoder];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class IPv6BoundHost {
     private static final Path JDK_BIN_DIR = Path.of(System.getProperty("java.home")).resolve("bin");
     private static final Path JWEBSERVER_BINARY = OperatingSystem.isWindows()
             ? JDK_BIN_DIR.resolve("jwebserver.exe") : JDK_BIN_DIR.resolve("jwebserver");
+    private static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
 
     public static void main(final String[] args) throws Exception {
         IPSupport.printPlatformSupport(System.err); // for debug purposes
@@ -68,6 +69,7 @@ public class IPv6BoundHost {
         final StringBuilder sb = new StringBuilder();  // stdout & stderr
         final List<String> cmd = new ArrayList<>();
         cmd.add(JWEBSERVER_BINARY.toString());
+        cmd.add(LOCALE_OPT);
         cmd.addAll(args);
         // start the process and await the waitForLine before returning
         final Process p = ProcessTools.startProcess("8332020-test", new ProcessBuilder(cmd),

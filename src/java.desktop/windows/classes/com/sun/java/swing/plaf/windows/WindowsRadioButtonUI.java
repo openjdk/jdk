@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,12 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.basic.BasicRadioButtonUI;
 
-import sun.awt.AppContext;
-
 /**
  * Windows rendition of the component.
  */
 public class WindowsRadioButtonUI extends BasicRadioButtonUI
 {
-    private static final Object WINDOWS_RADIO_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new WindowsRadioButtonUI();
 
     protected int dashedRectGapX;
     protected int dashedRectGapY;
@@ -60,19 +58,13 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        WindowsRadioButtonUI windowsRadioButtonUI =
-                (WindowsRadioButtonUI) appContext.get(WINDOWS_RADIO_BUTTON_UI_KEY);
-        if (windowsRadioButtonUI == null) {
-            windowsRadioButtonUI = new WindowsRadioButtonUI();
-            appContext.put(WINDOWS_RADIO_BUTTON_UI_KEY, windowsRadioButtonUI);
-        }
-        return windowsRadioButtonUI;
+        return UI;
     }
 
     // ********************************
     //           Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!initialized) {
@@ -88,6 +80,7 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         initialized = false;
@@ -104,11 +97,13 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
     /**
      * Overridden method to render the text without the mnemonic
      */
+    @Override
     protected void paintText(Graphics g, AbstractButton b, Rectangle textRect, String text) {
         WindowsGraphicsUtils.paintText(g, b, textRect, text, getTextShiftOffset());
     }
 
 
+    @Override
     protected void paintFocus(Graphics g, Rectangle textRect, Dimension d){
         g.setColor(getFocusColor());
         BasicGraphicsUtils.drawDashedRect(g, textRect.x, textRect.y, textRect.width, textRect.height);
@@ -117,6 +112,7 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
     // ********************************
     //          Layout Methods
     // ********************************
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension d = super.getPreferredSize(c);
 

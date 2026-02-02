@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -50,7 +50,7 @@ import com.sun.org.apache.bcel.internal.Const;
  *}
  *</pre>
  * @since 6.0
- * @LastModified: May 2021
+ * @LastModified: Sept 2025
  */
 public abstract class ElementValue {
 
@@ -67,6 +67,7 @@ public abstract class ElementValue {
     public static final byte PRIMITIVE_LONG = 'J';
     public static final byte PRIMITIVE_SHORT = 'S';
     public static final byte PRIMITIVE_BOOLEAN = 'Z';
+    static final ElementValue[] EMPTY_ARRAY = {};
 
     /**
      * Reads an {@code element_value} as an {@code ElementValue}.
@@ -124,7 +125,7 @@ public abstract class ElementValue {
             final int numArrayVals = input.readUnsignedShort();
             final ElementValue[] evalues = new ElementValue[numArrayVals];
             for (int j = 0; j < numArrayVals; j++) {
-                evalues[j] = ElementValue.readElementValue(input, cpool, arrayNesting);
+                evalues[j] = readElementValue(input, cpool, arrayNesting);
             }
             return new ArrayElementValue(ARRAY, evalues, cpool);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,9 +245,12 @@ public class PathHandler implements Closeable {
                 CompileTheWorld.OUT.println(String.format("[%d]\t%s", id, name));
                 aClass = entry.loader().loadClass(name);
                 Compiler.compileClass(aClass, id, executor);
+            } catch (NoClassDefFoundError e) {
+                CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to load/compile, skipped: %s%n",
+                    id, name, e);
             } catch (Throwable e) {
-                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING skipped: %s",
-                        id, name, e));
+                CompileTheWorld.OUT.printf("[%d]\t%s\tWARNING skipped: %s%n",
+                    id, name, e);
                 e.printStackTrace(CompileTheWorld.ERR);
             }
         }

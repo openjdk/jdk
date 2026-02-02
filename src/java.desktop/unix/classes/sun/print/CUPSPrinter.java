@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.PrinterName;
 
 
-public class CUPSPrinter  {
+public final class CUPSPrinter  {
     private static final String debugPrefix = "CUPSPrinter>> ";
     private static final double PRINTER_DPI = 72.0;
     private boolean initialized;

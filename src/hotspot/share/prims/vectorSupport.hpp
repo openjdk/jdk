@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,6 @@ class VectorSupport : AllStatic {
     VECTOR_OP_COMPRESS_BITS = 33,
     VECTOR_OP_EXPAND_BITS = 34,
 
-    // Vector Math Library
     VECTOR_OP_TAN   = 101,
     VECTOR_OP_TANH  = 102,
     VECTOR_OP_SIN   = 103,
@@ -127,10 +126,6 @@ class VectorSupport : AllStatic {
     VECTOR_OP_SUSUB = 122,
     VECTOR_OP_UMIN  = 123,
     VECTOR_OP_UMAX  = 124,
-
-    VECTOR_OP_MATH_START = VECTOR_OP_TAN,
-    VECTOR_OP_MATH_END   = VECTOR_OP_HYPOT,
-    NUM_VECTOR_OP_MATH   = VECTOR_OP_MATH_END - VECTOR_OP_MATH_START + 1
   };
 
   enum {
@@ -146,8 +141,6 @@ class VectorSupport : AllStatic {
     MODE_BROADCAST = 0,
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
-
-  static const char* mathname[VectorSupport::NUM_VECTOR_OP_MATH];
 
   static int vop2ideal(jint vop, BasicType bt);
   static bool has_scalar_op(jint id);

@@ -27,8 +27,8 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 // #define LOG_PLEASE
 #include "testutils.hpp"
@@ -157,7 +157,7 @@ public:
       // the hole.
       const uintptr_t candidate = nth_bit(i);
       if ((candidate + _len) <= ARMB_constants::absolute_max) {
-        _base = os::attempt_reserve_memory_at((char*)candidate, _len);
+        _base = os::attempt_reserve_memory_at((char*)candidate, _len, mtTest);
       }
     }
     if (_base == nullptr) {
@@ -165,8 +165,8 @@ public:
     }
     // Release total mapping, remap the individual non-holy parts
     os::release_memory(_base, _len);
-    _p1 = os::attempt_reserve_memory_at(_base + _p1_offset, _p1_size);
-    _p2 = os::attempt_reserve_memory_at(_base + _p2_offset, _p2_size);
+    _p1 = os::attempt_reserve_memory_at(_base + _p1_offset, _p1_size, mtTest);
+    _p2 = os::attempt_reserve_memory_at(_base + _p2_offset, _p2_size, mtTest);
     if (_p1 == nullptr || _p2 == nullptr) {
       return false;
     }
@@ -206,7 +206,7 @@ static void test_attempt_reserve_memory_between_random_distribution(unsigned num
   // Allocate n times within that hole (with subsequent deletions) and remember unique addresses returned.
   constexpr unsigned num_tries_per_attach_point = 100;
   ResourceMark rm;
-  ResourceHashtable<char*, unsigned> ht;
+  HashTable<char*, unsigned> ht;
   const unsigned num_tries = expect_failure ? 3 : (num_possible_attach_points * num_tries_per_attach_point);
   unsigned num_uniq = 0; // Number of uniq addresses returned
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8343020
+ * @bug 4313887 6838333 8343020 8357425
  * @summary Unit test for java.nio.file.SecureDirectoryStream
- * @requires (os.family == "linux" | os.family == "mac")
- * @library ..
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main SecureDS
  */
 
 import java.nio.file.*;
@@ -36,6 +38,8 @@ import java.nio.file.attribute.*;
 import java.nio.channels.*;
 import java.io.IOException;
 import java.util.*;
+
+import jdk.test.lib.Platform;
 
 public class SecureDS {
     static boolean supportsSymbolicLinks;
@@ -54,6 +58,7 @@ public class SecureDS {
             // run tests
             doBasicTests(dir);
             doMoveTests(dir);
+            doSetPermissions(dir);
             miscTests(dir);
 
         } finally {
@@ -172,6 +177,62 @@ public class SecureDS {
         delete(dir2);
     }
 
+    // Exercise setting permisions on the SecureDirectoryStream's view
+    static void doSetPermissions(Path dir) throws IOException {
+        Path aDir = createDirectory(dir.resolve("dir"));
+
+        Set<PosixFilePermission> noperms = EnumSet.noneOf(PosixFilePermission.class);
+        Set<PosixFilePermission> permsDir = getPosixFilePermissions(aDir);
+
+        try (SecureDirectoryStream<Path> stream =
+             (SecureDirectoryStream<Path>)newDirectoryStream(aDir);) {
+
+            // Test setting permission on directory with no permissions
+            setPosixFilePermissions(aDir, noperms);
+            assertTrue(getPosixFilePermissions(aDir).equals(noperms));
+            PosixFileAttributeView view = stream.getFileAttributeView(PosixFileAttributeView.class);
+            view.setPermissions(permsDir);
+            assertTrue(getPosixFilePermissions(aDir).equals(permsDir));
+
+            if (supportsSymbolicLinks) {
+                // Create a file and a link to the file
+                Path fileEntry = Path.of("file");
+                Path file = createFile(aDir.resolve(fileEntry));
+                Set<PosixFilePermission> permsFile = getPosixFilePermissions(file);
+                Path linkEntry = Path.of("link");
+                Path link = createSymbolicLink(aDir.resolve(linkEntry), fileEntry);
+                Set<PosixFilePermission> permsLink = getPosixFilePermissions(link, NOFOLLOW_LINKS);
+
+                // Test following link to file
+                view = stream.getFileAttributeView(link, PosixFileAttributeView.class);
+                view.setPermissions(noperms);
+                assertTrue(getPosixFilePermissions(file).equals(noperms));
+                assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
+                view.setPermissions(permsFile);
+                assertTrue(getPosixFilePermissions(file).equals(permsFile));
+                assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
+
+                // Symbolic link permissions do not apply on Linux
+                if (!Platform.isLinux()) {
+                    // Test not following link to file
+                    view = stream.getFileAttributeView(link, PosixFileAttributeView.class, NOFOLLOW_LINKS);
+                    view.setPermissions(noperms);
+                    assertTrue(getPosixFilePermissions(file).equals(permsFile));
+                    assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(noperms));
+                    view.setPermissions(permsLink);
+                    assertTrue(getPosixFilePermissions(file).equals(permsFile));
+                    assertTrue(getPosixFilePermissions(link, NOFOLLOW_LINKS).equals(permsLink));
+                }
+
+                delete(link);
+                delete(file);
+            }
+
+            // clean-up
+            delete(aDir);
+        }
+    }
+
     // Exercise SecureDirectoryStream's move method
     static void doMoveTests(Path dir) throws IOException {
         Path dir1 = createDirectory(dir.resolve("dir1"));
@@ -231,6 +292,27 @@ public class SecureDS {
             }
         }
 
+        // Test: move to cwd
+        final String TEXT = "Sous le pont Mirabeau coule la Seine";
+        Path file = Path.of("file");
+        Path filepath = dir.resolve(file);
+        Path cwd = Path.of(System.getProperty("user.dir"));
+        Path result = cwd.resolve(file);
+        Files.writeString(filepath, TEXT);
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir);) {
+            if (ds instanceof SecureDirectoryStream<Path> sds) {
+                sds.move(file, null, file);
+                if (!TEXT.equals(Files.readString(result)))
+                    throw new RuntimeException(result + " content incorrect");
+            } else {
+                throw new RuntimeException("Not a SecureDirectoryStream");
+            }
+        } finally {
+            boolean fileDeleted = Files.deleteIfExists(filepath);
+            if (!fileDeleted)
+                Files.deleteIfExists(result);
+        }
+
         // clean-up
         delete(dir1);
         delete(dir2);
@@ -271,10 +353,6 @@ public class SecureDS {
         } catch (NullPointerException x) { }
         try {
             stream.move(null, stream, file);
-            shouldNotGetHere();
-        } catch (NullPointerException x) { }
-        try {
-            stream.move(file, null, file);
             shouldNotGetHere();
         } catch (NullPointerException x) { }
         try {

@@ -41,6 +41,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
+#include "opto/subtypenode.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 
@@ -1097,11 +1098,11 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 
 Node* Parse::floating_point_mod(Node* a, Node* b, BasicType type) {
   assert(type == BasicType::T_FLOAT || type == BasicType::T_DOUBLE, "only float and double are floating points");
-  CallNode* mod = type == BasicType::T_DOUBLE ? static_cast<CallNode*>(new ModDNode(C, a, b)) : new ModFNode(C, a, b);
+  CallLeafPureNode* mod = type == BasicType::T_DOUBLE ? static_cast<CallLeafPureNode*>(new ModDNode(C, a, b)) : new ModFNode(C, a, b);
 
-  Node* prev_mem = set_predefined_input_for_runtime_call(mod);
-  mod = _gvn.transform(mod)->as_Call();
-  set_predefined_output_for_runtime_call(mod, prev_mem, TypeRawPtr::BOTTOM);
+  set_predefined_input_for_runtime_call(mod);
+  mod = _gvn.transform(mod)->as_CallLeafPure();
+  set_predefined_output_for_runtime_call(mod);
   Node* result = _gvn.transform(new ProjNode(mod, TypeFunc::Parms + 0));
   record_for_igvn(mod);
   return result;
@@ -1719,38 +1720,108 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   return obj;
 }
 
+// Matches exact and inexact type check IR shapes during parsing.
+// On successful match, returns type checked object node and its type after successful check
+// as out parameters.
+static bool match_type_check(PhaseGVN& gvn,
+                             BoolTest::mask btest,
+                             Node* con, const Type* tcon,
+                             Node* val, const Type* tval,
+                             Node** obj, const TypeOopPtr** cast_type) { // out-parameters
+  // Look for opportunities to sharpen the type of a node whose klass is compared with a constant klass.
+  // The constant klass being tested against can come from many bytecode instructions (implicitly or explicitly),
+  // and also from profile data used by speculative casts.
+  if (btest == BoolTest::eq && tcon->isa_klassptr()) {
+    // Found:
+    //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
+    // or the narrowOop equivalent.
+    (*obj) = extract_obj_from_klass_load(&gvn, val);
+    (*cast_type) = tcon->isa_klassptr()->as_instance_type();
+    return true; // found
+  }
+
+  // Match an instanceof check.
+  // During parsing its IR shape is not canonicalized yet.
+  //
+  //             obj superklass
+  //              |    |
+  //           SubTypeCheck
+  //                |
+  //               Bool [eq] / [ne]
+  //                |
+  //                If
+  //               / \
+  //              T   F
+  //               \ /
+  //              Region
+  //                 \  ConI ConI
+  //                  \  |  /
+  //          val ->    Phi  ConI  <- con
+  //                     \  /
+  //                     CmpI
+  //                      |
+  //                    Bool [btest]
+  //                      |
+  //
+  if (tval->isa_int() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
+    RegionNode* diamond = val->in(0)->as_Region();
+    IfNode* if1 = diamond->in(1)->in(0)->as_If();
+    BoolNode* b1 = if1->in(1)->isa_Bool();
+    if (b1 != nullptr && b1->in(1)->isa_SubTypeCheck()) {
+      assert(b1->_test._test == BoolTest::eq ||
+             b1->_test._test == BoolTest::ne, "%d", b1->_test._test);
+
+      ProjNode* success_proj = if1->proj_out(b1->_test._test == BoolTest::eq ? 1 : 0);
+      int idx = diamond->find_edge(success_proj);
+      assert(idx == 1 || idx == 2, "");
+      Node* vcon = val->in(idx);
+
+      assert(val->find_edge(con) > 0, "");
+      if ((btest == BoolTest::eq && vcon == con) || (btest == BoolTest::ne && vcon != con)) {
+        SubTypeCheckNode* sub = b1->in(1)->as_SubTypeCheck();
+        Node* obj_or_subklass = sub->in(SubTypeCheckNode::ObjOrSubKlass);
+        Node* superklass = sub->in(SubTypeCheckNode::SuperKlass);
+
+        if (gvn.type(obj_or_subklass)->isa_oopptr()) {
+          const TypeKlassPtr* klass_ptr_type = gvn.type(superklass)->is_klassptr();
+          const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
+
+          (*obj) = obj_or_subklass;
+          (*cast_type) = improved_klass_ptr_type->cast_to_exactness(false)->as_instance_type();
+          return true; // found
+        }
+      }
+    }
+  }
+  return false; // not found
+}
+
 void Parse::sharpen_type_after_if(BoolTest::mask btest,
                                   Node* con, const Type* tcon,
                                   Node* val, const Type* tval) {
-  // Look for opportunities to sharpen the type of a node
-  // whose klass is compared with a constant klass.
-  if (btest == BoolTest::eq && tcon->isa_klassptr()) {
-    Node* obj = extract_obj_from_klass_load(&_gvn, val);
-    const TypeOopPtr* con_type = tcon->isa_klassptr()->as_instance_type();
-    if (obj != nullptr && (con_type->isa_instptr() || con_type->isa_aryptr())) {
-       // Found:
-       //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
-       // or the narrowOop equivalent.
-       const Type* obj_type = _gvn.type(obj);
-       const TypeOopPtr* tboth = obj_type->join_speculative(con_type)->isa_oopptr();
-       if (tboth != nullptr && tboth->klass_is_exact() && tboth != obj_type &&
-           tboth->higher_equal(obj_type)) {
-          // obj has to be of the exact type Foo if the CmpP succeeds.
-          int obj_in_map = map()->find_edge(obj);
-          JVMState* jvms = this->jvms();
-          if (obj_in_map >= 0 &&
-              (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
-            TypeNode* ccast = new CheckCastPPNode(control(), obj, tboth);
-            const Type* tcc = ccast->as_Type()->type();
-            assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
-            // Delay transform() call to allow recovery of pre-cast value
-            // at the control merge.
-            _gvn.set_type_bottom(ccast);
-            record_for_igvn(ccast);
-            // Here's the payoff.
-            replace_in_map(obj, ccast);
-          }
-       }
+  Node* obj = nullptr;
+  const TypeOopPtr* cast_type = nullptr;
+  // Insert a cast node with a narrowed type after a successful type check.
+  if (match_type_check(_gvn, btest, con, tcon, val, tval,
+                       &obj, &cast_type)) {
+    assert(obj != nullptr && cast_type != nullptr, "missing type check info");
+    const Type* obj_type = _gvn.type(obj);
+    const TypeOopPtr* tboth = obj_type->join_speculative(cast_type)->isa_oopptr();
+    if (tboth != nullptr && tboth != obj_type && tboth->higher_equal(obj_type)) {
+      int obj_in_map = map()->find_edge(obj);
+      JVMState* jvms = this->jvms();
+      if (obj_in_map >= 0 &&
+          (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
+        TypeNode* ccast = new CheckCastPPNode(control(), obj, tboth);
+        const Type* tcc = ccast->as_Type()->type();
+        assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
+        // Delay transform() call to allow recovery of pre-cast value
+        // at the control merge.
+        _gvn.set_type_bottom(ccast);
+        record_for_igvn(ccast);
+        // Here's the payoff.
+        replace_in_map(obj, ccast);
+      }
     }
   }
 
@@ -2782,8 +2853,10 @@ void Parse::do_one_bytecode() {
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
+    printer->set_parse(this);
     printer->print_graph(buffer);
     printer->set_traverse_outs(old);
+    printer->set_parse(nullptr);
   }
 #endif
 }

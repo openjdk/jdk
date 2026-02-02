@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,6 +290,8 @@ public class BasicJMapTest {
     private static OutputAnalyzer jmap(String... toolArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jmap");
         launcher.addVMArgs(Utils.getTestJavaOpts());
+        // jmap output may be lengthy, disable streaming output to avoid deadlocks
+        launcher.addVMArg("-Djdk.attach.allowStreamingOutput=false");
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);

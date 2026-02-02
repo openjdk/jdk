@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
    @bug 4070044 4164823
    @summary Check getCanonicalPath's treatment of drive-relative paths (win32)
+   @requires (os.family == "windows")
  */
 
 import java.io.*;
@@ -36,11 +37,6 @@ public class DriveRelativePath {
     }
 
     public static void main(String[] args) throws IOException {
-
-        if (File.separatorChar != '\\') {
-            /* This test is only valid on win32 systems */
-            return;
-        }
 
         File f = new File("foo");
         String c = f.getCanonicalPath();

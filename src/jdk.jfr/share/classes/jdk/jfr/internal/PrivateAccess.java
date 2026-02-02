@@ -32,7 +32,6 @@ import jdk.jfr.AnnotationElement;
 import jdk.jfr.Configuration;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
-import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
@@ -56,9 +55,9 @@ public abstract class PrivateAccess {
         // deadlock with FlightRecorderPermission.<clinit>
         if (instance == null) {
             // Will trigger
-            // FlightRecorderPermission.<clinit>
+            // EventSettings.<clinit>
             // which will call PrivateAccess.setPrivateAccess
-            new FlightRecorderPermission("accessFlightRecorder");
+            SecuritySupport.ensureClassIsInitialized(EventSettings.class);
         }
         return instance;
     }

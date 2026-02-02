@@ -444,7 +444,7 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
     <xsl:apply-templates select="." mode="functionid"/>
     <xsl:text> , current_thread)</xsl:text>
     <xsl:value-of select="$space"/>
-    <xsl:text>debug_only(VMNativeEntryWrapper __vew;)</xsl:text>
+    <xsl:text>DEBUG_ONLY(VMNativeEntryWrapper __vew;)</xsl:text>
     <xsl:if test="count(@callbacksafe)=0 or not(contains(@callbacksafe,'safe'))">
       <xsl:value-of select="$space"/>
       <xsl:text>PreserveExceptionMark __em(this_thread);</xsl:text>

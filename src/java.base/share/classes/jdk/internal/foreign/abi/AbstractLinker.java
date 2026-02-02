@@ -71,7 +71,20 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         MemorySegment makeStub(MethodHandle target, Arena arena);
     }
 
-    private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {}
+    private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {
+        // Overrides for boot performance
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof LinkRequest other &&
+                    other.descriptor.equals(descriptor) &&
+                    other.options.equals(options);
+        }
+
+        @Override
+        public int hashCode() {
+            return descriptor.hashCode() * 1237 + options.hashCode();
+        }
+    }
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();
     private final SoftReferenceCache<LinkRequest, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
     private final Set<MemoryLayout> CANONICAL_LAYOUTS_CACHE = new HashSet<>(canonicalLayouts().values());
@@ -308,22 +321,30 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             case StructLayout sl -> MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
             case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
             case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
-            case AddressLayout al -> al.targetLayout()
-                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl))) // restricted
-                    .orElseGet(al::withoutName);
+            case AddressLayout al -> {
+                var stripped = al.withoutName();
+                var target = al.targetLayout();
+                if (target.isPresent())
+                    stripped = stripped.withTargetLayout(stripNames(target.get()));
+                yield stripped;
+            }
             default -> ml.withoutName(); // ValueLayout and PaddingLayout
         };
     }
 
     private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
-        return layouts.stream()
-                .map(AbstractLinker::stripNames)
-                .toArray(MemoryLayout[]::new);
+        var ret = new MemoryLayout[layouts.size()];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = stripNames(layouts.get(i));
+        }
+        return ret;
     }
 
     private static FunctionDescriptor stripNames(FunctionDescriptor function) {
-        return function.returnLayout()
-                .map(rl -> FunctionDescriptor.of(stripNames(rl), stripNames(function.argumentLayouts())))
-                .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
+        var retLayout = function.returnLayout();
+        if (retLayout.isEmpty()) {
+            return FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts()));
+        }
+        return FunctionDescriptor.of(stripNames(retLayout.get()), stripNames(function.argumentLayouts()));
     }
 }

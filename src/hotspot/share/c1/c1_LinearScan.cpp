@@ -43,7 +43,7 @@
   static LinearScanTimers _total_timer;
 
   // helper macro for short definition of timer
-  #define TIME_LINEAR_SCAN(timer_name)  TraceTime _block_timer("", _total_timer.timer(LinearScanTimers::timer_name), TimeLinearScan || TimeEachLinearScan, Verbose);
+  #define TIME_LINEAR_SCAN(timer_name)  TraceTime _block_timer("", _total_timer.timer(LinearScanTimers::timer_name), TimeLinearScan, Verbose);
 
 #else
   #define TIME_LINEAR_SCAN(timer_name)
@@ -1087,43 +1087,23 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   // this operand is allowed to be on the stack in some cases
   BasicType opr_type = opr->type_register();
   if (opr_type == T_FLOAT || opr_type == T_DOUBLE) {
-    if (IA32_ONLY( (UseSSE == 1 && opr_type == T_FLOAT) || UseSSE >= 2 ) NOT_IA32( true )) {
-      // SSE float instruction (T_DOUBLE only supported with SSE2)
-      switch (op->code()) {
-        case lir_cmp:
-        case lir_add:
-        case lir_sub:
-        case lir_mul:
-        case lir_div:
-        {
-          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
-          LIR_Op2* op2 = (LIR_Op2*)op;
-          if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
-            assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
-            return shouldHaveRegister;
-          }
+    // SSE float instruction
+    switch (op->code()) {
+      case lir_cmp:
+      case lir_add:
+      case lir_sub:
+      case lir_mul:
+      case lir_div:
+      {
+        assert(op->as_Op2() != nullptr, "must be LIR_Op2");
+        LIR_Op2* op2 = (LIR_Op2*)op;
+        if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
+          assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
+          return shouldHaveRegister;
         }
-        default:
-          break;
       }
-    } else {
-      // FPU stack float instruction
-      switch (op->code()) {
-        case lir_add:
-        case lir_sub:
-        case lir_mul:
-        case lir_div:
-        {
-          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
-          LIR_Op2* op2 = (LIR_Op2*)op;
-          if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
-            assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
-            return shouldHaveRegister;
-          }
-        }
-        default:
-          break;
-      }
+      default:
+        break;
     }
     // We want to sometimes use logical operations on pointers, in particular in GC barriers.
     // Since 64bit logical operations do not current support operands on stack, we have to make sure
@@ -1284,28 +1264,20 @@ void LinearScan::build_intervals() {
   // virtual fpu operands. Otherwise no allocation for fpu registers is
   // performed and so the temp ranges would be useless
   if (has_fpu_registers()) {
-#ifdef X86
-    if (UseSSE < 2) {
-#endif // X86
-      for (i = 0; i < FrameMap::nof_caller_save_fpu_regs; i++) {
-        LIR_Opr opr = FrameMap::caller_save_fpu_reg_at(i);
-        assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
-        assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
-        caller_save_registers[num_caller_save_registers++] = reg_num(opr);
-      }
-#ifdef X86
+#ifndef X86
+    for (i = 0; i < FrameMap::nof_caller_save_fpu_regs; i++) {
+      LIR_Opr opr = FrameMap::caller_save_fpu_reg_at(i);
+      assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
+      assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
+      caller_save_registers[num_caller_save_registers++] = reg_num(opr);
     }
-#endif // X86
-
-#ifdef X86
-    if (UseSSE > 0) {
-      int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
-      for (i = 0; i < num_caller_save_xmm_regs; i ++) {
-        LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(i);
-        assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
-        assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
-        caller_save_registers[num_caller_save_registers++] = reg_num(opr);
-      }
+#else
+    int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
+    for (i = 0; i < num_caller_save_xmm_regs; i ++) {
+      LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(i);
+      assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
+      assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
+      caller_save_registers[num_caller_save_registers++] = reg_num(opr);
     }
 #endif // X86
   }
@@ -2152,40 +2124,30 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 #ifndef __SOFTFP__
       case T_FLOAT: {
 #ifdef X86
-        if (UseSSE >= 1) {
-          int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
-          if (UseAVX < 3) {
-            last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
-          }
-#endif // LP64
-          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
-          assert(interval->assigned_regHi() == any_reg, "must not have hi register");
-          return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
+        int last_xmm_reg = pd_last_xmm_reg;
+        if (UseAVX < 3) {
+          last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
         }
-#endif // X86
-
+        assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
+#else
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
         return LIR_OprFact::single_fpu(assigned_reg - pd_first_fpu_reg);
+#endif // !X86
       }
 
       case T_DOUBLE: {
-#ifdef X86
-        if (UseSSE >= 2) {
-          int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
-          if (UseAVX < 3) {
-            last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
-          }
-#endif // LP64
-          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
-          assert(interval->assigned_regHi() == any_reg, "must not have hi register (double xmm values are stored in one register)");
-          return LIR_OprFact::double_xmm(assigned_reg - pd_first_xmm_reg);
+#if defined(X86)
+        int last_xmm_reg = pd_last_xmm_reg;
+        if (UseAVX < 3) {
+          last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
         }
-#endif // X86
-
-#if defined(ARM32)
+        assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register (double xmm values are stored in one register)");
+        LIR_Opr result = LIR_OprFact::double_xmm(assigned_reg - pd_first_xmm_reg);
+#elif defined(ARM32)
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() >= pd_first_fpu_reg && interval->assigned_regHi() <= pd_last_fpu_reg, "no fpu register");
         assert(assigned_reg % 2 == 0 && assigned_reg + 1 == interval->assigned_regHi(), "must be sequential and even");
@@ -3054,8 +3016,6 @@ void LinearScan::assign_reg_num() {
 
 
 void LinearScan::do_linear_scan() {
-  NOT_PRODUCT(_total_timer.begin_method());
-
   number_instructions();
 
   NOT_PRODUCT(print_lir(1, "Before Register Allocation"));
@@ -3110,7 +3070,6 @@ void LinearScan::do_linear_scan() {
 
   NOT_PRODUCT(print_lir(1, "Before Code Generation", false));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_final));
-  NOT_PRODUCT(_total_timer.end_method(this));
 }
 
 
@@ -6762,45 +6721,6 @@ const char* LinearScanTimers::timer_name(int idx) {
     case timer_assign_reg_num:           return "Assign Reg Num";
     case timer_optimize_lir:             return "Optimize LIR";
     default: ShouldNotReachHere();       return "";
-  }
-}
-
-void LinearScanTimers::begin_method() {
-  if (TimeEachLinearScan) {
-    // reset all timers to measure only current method
-    for (int i = 0; i < number_of_timers; i++) {
-      timer(i)->reset();
-    }
-  }
-}
-
-void LinearScanTimers::end_method(LinearScan* allocator) {
-  if (TimeEachLinearScan) {
-
-    double c = timer(timer_do_nothing)->seconds();
-    double total = 0;
-    for (int i = 1; i < number_of_timers; i++) {
-      total += timer(i)->seconds() - c;
-    }
-
-    if (total >= 0.0005) {
-      // print all information in one line for automatic processing
-      tty->print("@"); allocator->compilation()->method()->print_name();
-
-      tty->print("@ %d ", allocator->compilation()->method()->code_size());
-      tty->print("@ %d ", allocator->block_at(allocator->block_count() - 1)->last_lir_instruction_id() / 2);
-      tty->print("@ %d ", allocator->block_count());
-      tty->print("@ %d ", allocator->num_virtual_regs());
-      tty->print("@ %d ", allocator->interval_count());
-      tty->print("@ %d ", allocator->_num_calls);
-      tty->print("@ %d ", allocator->num_loops());
-
-      tty->print("@ %6.6f ", total);
-      for (int i = 1; i < number_of_timers; i++) {
-        tty->print("@ %4.1f ", ((timer(i)->seconds() - c) / total) * 100);
-      }
-      tty->cr();
-    }
   }
 }
 

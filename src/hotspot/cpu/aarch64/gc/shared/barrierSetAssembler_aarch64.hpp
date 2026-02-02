@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@ class Node;
 
 enum class NMethodPatchingType {
   stw_instruction_and_data_patch,
-  conc_instruction_and_data_patch,
-  conc_data_patch
+  conc_instruction_and_data_patch
 };
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
@@ -48,7 +47,7 @@ public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register count, Register tmp, RegSet saved_regs) {}
+                                  Register start, Register count, Register tmp) {}
 
   virtual void copy_load_at(MacroAssembler* masm,
                             DecoratorSet decorators,

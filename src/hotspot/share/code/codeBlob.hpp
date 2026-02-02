@@ -28,9 +28,9 @@
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
-#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaFrameAnchor.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -97,10 +97,18 @@ enum class CodeBlobKind : u1 {
 class UpcallStub;      // for as_upcall_stub()
 class RuntimeStub;     // for as_runtime_stub()
 class JavaFrameAnchor; // for UpcallStub::jfa_for_frame
+class AdapterBlob;
+class ExceptionBlob;
+class DeoptimizationBlob;
+class SafepointBlob;
+class UncommonTrapBlob;
 
 class CodeBlob {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+
+private:
+  void restore_mutable_data(address reloc_data);
 
 protected:
   // order fields from large to small to minimize padding between fields
@@ -140,8 +148,15 @@ protected:
    public:
     virtual void print_on(const CodeBlob* instance, outputStream* st) const = 0;
     virtual void print_value_on(const CodeBlob* instance, outputStream* st) const = 0;
+    virtual void prepare_for_archiving(CodeBlob* instance) const {
+      instance->prepare_for_archiving_impl();
+    };
+    virtual void post_restore(CodeBlob* instance) const {
+      instance->post_restore_impl();
+    };
   };
 
+  static const Vptr* vptr(CodeBlobKind kind);
   const Vptr* vptr() const;
 
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
@@ -151,7 +166,11 @@ protected:
   // Simple CodeBlob used for simple BufferBlob.
   CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size);
 
+
   void operator delete(void* p) { }
+
+  void prepare_for_archiving_impl();
+  void post_restore_impl();
 
 public:
 
@@ -188,8 +207,13 @@ public:
   nmethod* as_nmethod_or_null() const         { return is_nmethod() ? (nmethod*) this : nullptr; }
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
+  AdapterBlob* as_adapter_blob() const        { assert(is_adapter_blob(), "must be adapter blob"); return (AdapterBlob*) this; }
+  ExceptionBlob* as_exception_blob() const    { assert(is_exception_stub(), "must be exception stub"); return (ExceptionBlob*) this; }
+  DeoptimizationBlob* as_deoptimization_blob() const { assert(is_deoptimization_stub(), "must be deopt stub"); return (DeoptimizationBlob*) this; }
+  SafepointBlob* as_safepoint_blob() const    { assert(is_safepoint_stub(), "must be safepoint stub"); return (SafepointBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
+  UncommonTrapBlob* as_uncommon_trap_blob() const { assert(is_uncommon_trap_stub(), "must be uncommon trap stub"); return (UncommonTrapBlob*) this; }
 
   // Boundaries
   address    header_begin() const             { return (address)    this; }
@@ -223,7 +247,7 @@ public:
   // Sizes
   int size() const               { return _size; }
   int header_size() const        { return _header_size; }
-  int relocation_size() const    { return pointer_delta_as_int((address) relocation_end(), (address) relocation_begin()); }
+  int relocation_size() const    { return _relocation_size; }
   int content_size() const       { return pointer_delta_as_int(content_end(), content_begin()); }
   int code_size() const          { return pointer_delta_as_int(code_end(), code_begin()); }
 
@@ -244,6 +268,7 @@ public:
   // OopMap for frame
   ImmutableOopMapSet* oop_maps() const           { return _oop_maps; }
   void set_oop_maps(OopMapSet* p);
+  void set_oop_maps(ImmutableOopMapSet* p)       { _oop_maps = p; }
 
   const ImmutableOopMap* oop_map_for_slot(int slot, address return_address) const;
   const ImmutableOopMap* oop_map_for_return_address(address return_address) const;
@@ -278,13 +303,28 @@ public:
   void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
   void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
 #endif
+
+  void copy_to(address buffer) {
+    memcpy(buffer, this, this->size());
+  }
+
+  // methods to archive a blob into AOT code cache
+  void prepare_for_archiving();
+  static void archive_blob(CodeBlob* blob, address archive_buffer);
+
+  // methods to restore a blob from AOT code cache into the CodeCache
+  void post_restore();
+  CodeBlob* restore(address code_cache_buffer, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps);
+  static CodeBlob* create(CodeBlob* archived_blob,
+                          const char* name,
+                          address archived_reloc_data,
+                          ImmutableOopMapSet* archived_oop_maps);
 };
 
 //----------------------------------------------------------------------------------------------------
 // RuntimeBlob: used for non-compiled method code (adapters, stubs, blobs)
 
 class RuntimeBlob : public CodeBlob {
-  friend class VMStructs;
  public:
 
   // Creation
@@ -331,8 +371,8 @@ class BufferBlob: public RuntimeBlob {
 
  private:
   // Creation support
-  BufferBlob(const char* name, CodeBlobKind kind, int size);
-  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size);
+  BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size = sizeof(BufferBlob));
+  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size = sizeof(BufferBlob));
 
   void* operator new(size_t s, unsigned size) throw();
 
@@ -363,12 +403,27 @@ class BufferBlob: public RuntimeBlob {
 // AdapterBlob: used to hold C2I/I2C adapters
 
 class AdapterBlob: public BufferBlob {
+public:
+  enum Entry {
+    I2C,
+    C2I,
+    C2I_Unverified,
+    C2I_No_Clinit_Check,
+    ENTRY_COUNT
+  };
 private:
-  AdapterBlob(int size, CodeBuffer* cb);
-
+  AdapterBlob(int size, CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  // _i2c_offset is always 0 so no need to store it
+  int _c2i_offset;
+  int _c2i_unverified_offset;
+  int _c2i_no_clinit_check_offset;
 public:
   // Creation
-  static AdapterBlob* create(CodeBuffer* cb);
+  static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  address i2c_entry() { return code_begin(); }
+  address c2i_entry() { return i2c_entry() + _c2i_offset; }
+  address c2i_unverified_entry() { return i2c_entry() + _c2i_unverified_offset; }
+  address c2i_no_clinit_check_entry() { return _c2i_no_clinit_check_offset == -1 ? nullptr : i2c_entry() + _c2i_no_clinit_check_offset; }
 };
 
 //---------------------------------------------------------------------------------------------------
@@ -416,6 +471,7 @@ class RuntimeStub: public RuntimeBlob {
   void* operator new(size_t s, unsigned size) throw();
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static RuntimeStub* new_runtime_stub(
     const char* stub_name,
@@ -518,6 +574,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 4 JVMTI_ONLY(+ 2);
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
@@ -576,7 +633,6 @@ class DeoptimizationBlob: public SingletonBlob {
 #ifdef COMPILER2
 
 class UncommonTrapBlob: public SingletonBlob {
-  friend class VMStructs;
  private:
   // Creation support
   UncommonTrapBlob(
@@ -600,7 +656,6 @@ class UncommonTrapBlob: public SingletonBlob {
 // ExceptionBlob: used for exception unwinding in compiled code (currently only used by Compiler 2)
 
 class ExceptionBlob: public SingletonBlob {
-  friend class VMStructs;
  private:
   // Creation support
   ExceptionBlob(
@@ -617,6 +672,18 @@ class ExceptionBlob: public SingletonBlob {
     OopMapSet*  oop_maps,
     int         frame_size
   );
+
+  void post_restore_impl() {
+    trace_new_stub(this, "ExceptionBlob");
+  }
+
+  class Vptr : public SingletonBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      ((ExceptionBlob*)instance)->post_restore_impl();
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 #endif // COMPILER2
 
@@ -625,7 +692,6 @@ class ExceptionBlob: public SingletonBlob {
 // SafepointBlob: handles illegal_instruction exceptions during a safepoint
 
 class SafepointBlob: public SingletonBlob {
-  friend class VMStructs;
  private:
   // Creation support
   SafepointBlob(
@@ -636,6 +702,7 @@ class SafepointBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static SafepointBlob* create(
     CodeBuffer* cb,

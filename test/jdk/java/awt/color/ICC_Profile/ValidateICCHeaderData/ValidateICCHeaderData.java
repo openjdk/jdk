@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337703
+ * @bug 8347377 8358057
  * @summary To verify if ICC_Profile's setData() and getInstance() methods
  *          validate header data and throw IAE for invalid values.
  * @run main ValidateICCHeaderData
@@ -144,9 +144,7 @@ public class ValidateICCHeaderData {
         System.out.println("CASE 10: Passed \n");
 
         System.out.println("CASE 11: Testing INVALID Rendering Intent ...");
-        //valid rendering intent values are 0-3
-        int invalidRenderIntent = 5;
-        testInvalidHeaderData(invalidRenderIntent, RENDER_INTENT_START_INDEX, 4);
+        testInvalidIntent();
         System.out.println("CASE 11: Passed \n");
 
         System.out.println("CASE 12: Testing INVALID Header Size ...");
@@ -163,8 +161,8 @@ public class ValidateICCHeaderData {
         testProfileCreation(false);
         System.out.println("CASE 14: Passed \n");
 
-        System.out.println("CASE 15: Testing Deserialization of ICC_Profile ...");
-        testDeserialization();
+        System.out.println("CASE 15: Testing loading of ICC_Profile from file ...");
+        testLoading();
         System.out.println("CASE 15: Passed \n");
 
         System.out.println("Successfully completed testing all 15 cases. Test Passed !!");
@@ -184,6 +182,21 @@ public class ValidateICCHeaderData {
             throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
         } catch (IllegalArgumentException iae) {
             System.out.println("Expected IAE thrown: " + iae.getMessage());
+        }
+    }
+
+    private static void testInvalidIntent() {
+        //valid rendering intent values are 0-3
+        int invalidRenderIntent = 5;
+        try {
+            setTag(invalidRenderIntent, RENDER_INTENT_START_INDEX, 4);
+            throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
+        } catch (IllegalArgumentException iae) {
+            String message = iae.getMessage();
+            System.out.println("Expected IAE thrown: " + message);
+            if (!message.contains(": " + invalidRenderIntent)) {
+                throw new RuntimeException("Test Failed ! Unexpected text");
+            }
         }
     }
 
@@ -248,9 +261,9 @@ public class ValidateICCHeaderData {
         }
     }
 
-    private static void testDeserialization() throws IOException {
-        //invalidSRGB.icc is serialized on older version of JDK
-        //Upon deserialization, the invalid profile is expected to throw IAE
+    private static void testLoading() throws IOException {
+        // invalidSRGB.icc is a profile file that was produced by an older JDK
+        // When attempting to load it, the current JDK is expected to throw IAE
         try {
             ICC_Profile.getInstance("./invalidSRGB.icc");
             throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");

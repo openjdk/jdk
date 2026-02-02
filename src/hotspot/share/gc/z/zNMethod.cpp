@@ -22,8 +22,8 @@
  */
 
 #include "code/codeCache.hpp"
-#include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
+#include "code/relocInfo.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -48,7 +48,7 @@
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "utilities/debug.hpp"
 
@@ -146,7 +146,7 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const oop o = AtomicAccess::load(p); // C1 PatchingStub may replace it concurrently.
       const char* const external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop: " PTR_FORMAT " (%s)",
                      p2i(o), external_name);
@@ -241,7 +241,7 @@ void ZNMethod::disarm(nmethod* nm) {
 
 void ZNMethod::set_guard_value(nmethod* nm, int value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  bs->set_guard_value(nm, value);
+  bs->guard_with(nm, value);
 }
 
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
@@ -300,9 +300,8 @@ void ZNMethod::nmethods_do(bool secondary, NMethodClosure* cl) {
 }
 
 uintptr_t ZNMethod::color(nmethod* nm) {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  // color is stored at low order bits of int; conversion to uintptr_t is fine
-  return (uintptr_t)bs_nm->guard_value(nm);
+  ZBarrierSetNMethod* bs_nm = static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod());
+  return bs_nm->color(nm);
 }
 
 oop ZNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
@@ -315,7 +314,7 @@ oop ZNMethod::oop_load_phantom(const nmethod* nm, int index) {
 
 oop ZNMethod::oop_load(const nmethod* const_nm, int index, bool keep_alive) {
   // The rest of the code is not ready to handle const nmethod, so cast it away
-  // until we are more consistent with our const corectness.
+  // until we are more consistent with our const correctness.
   nmethod* nm = const_cast<nmethod*>(const_nm);
 
   if (!is_armed(nm)) {

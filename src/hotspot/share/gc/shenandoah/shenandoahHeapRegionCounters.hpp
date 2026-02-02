@@ -26,8 +26,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
 
-#include "memory/allocation.hpp"
 #include "logging/logFileStreamOutput.hpp"
+#include "memory/allocation.hpp"
 
 /**
  * This provides the following in JVMStat:

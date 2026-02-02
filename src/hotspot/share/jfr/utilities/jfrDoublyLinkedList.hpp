@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ void JfrDoublyLinkedList<T>::append_list(T* const head_node, T* const tail_node,
   }
   *lt = tail_node;
   const T* node = head_node;
-  debug_only(validate_count_param(node, count);)
+  DEBUG_ONLY(validate_count_param(node, count);)
     _count += count;
   assert(tail() == tail_node, "invariant");
   assert(in_list(tail_node), "not in list error");

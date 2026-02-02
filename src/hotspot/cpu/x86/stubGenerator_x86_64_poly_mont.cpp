@@ -559,20 +559,29 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
 
 address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::intpoly_montgomeryMult_P256_id;
+  StubId stub_id = StubId::stubgen_intpoly_montgomeryMult_P256_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();
 
-  if (EnableX86ECoreOpts && UseAVX > 1) {
-    __ push(r12);
-    __ push(r13);
-    __ push(r14);
+  if (VM_Version::supports_avx512ifma() && VM_Version::supports_avx512vlbw()) {
+    // Register Map
+    const Register aLimbs  = c_rarg0; // rdi | rcx
+    const Register bLimbs  = c_rarg1; // rsi | rdx
+    const Register rLimbs  = c_rarg2; // rdx | r8
+    const Register tmp     = r9;
+
+    montgomeryMultiply(aLimbs, bLimbs, rLimbs, tmp, _masm);
+  } else {
+    assert(VM_Version::supports_avxifma(), "Require AVX_IFMA support");
+    __ push_ppx(r12);
+    __ push_ppx(r13);
+    __ push_ppx(r14);
     #ifdef _WIN64
-    __ push(rsi);
-    __ push(rdi);
+    __ push_ppx(rsi);
+    __ push_ppx(rdi);
     #endif
-    __ push(rbp);
+    __ push_ppx(rbp);
     __ movq(rbp, rsp);
   __ andq(rsp, -32);
   __ subptr(rsp, 32);
@@ -599,22 +608,14 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
                            tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, _masm);
 
     __ movq(rsp, rbp);
-    __ pop(rbp);
+    __ pop_ppx(rbp);
     #ifdef _WIN64
-    __ pop(rdi);
-    __ pop(rsi);
+    __ pop_ppx(rdi);
+    __ pop_ppx(rsi);
     #endif
-    __ pop(r14);
-    __ pop(r13);
-    __ pop(r12);
-  } else {
-    // Register Map
-    const Register aLimbs  = c_rarg0; // rdi | rcx
-    const Register bLimbs  = c_rarg1; // rsi | rdx
-    const Register rLimbs  = c_rarg2; // rdx | r8
-    const Register tmp     = r9;
-
-    montgomeryMultiply(aLimbs, bLimbs, rLimbs, tmp, _masm);
+    __ pop_ppx(r14);
+    __ pop_ppx(r13);
+    __ pop_ppx(r12);
   }
 
   __ leave();
@@ -680,7 +681,7 @@ address StubGenerator::generate_intpoly_assign() {
   // Special Cases 5, 10, 14, 16, 19
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::intpoly_assign_id;
+  StubId stub_id = StubId::stubgen_intpoly_assign_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();

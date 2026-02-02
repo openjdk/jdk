@@ -28,16 +28,16 @@
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/threads.hpp"
@@ -61,7 +61,7 @@ ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
   assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
 }
 
-void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops) {
+void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
@@ -75,9 +75,9 @@ void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->mode()->is_generational() && heap->active_generation()->is_young()) {
+  if (generation->is_young()) {
     shenandoah_assert_safepoint();
+    shenandoah_assert_generational();
     ShenandoahGenerationalHeap::heap()->old_generation()->card_scan()->roots_do(oops);
   }
 
@@ -87,7 +87,7 @@ void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops) {
   Threads::possibly_parallel_oops_do(true, oops, nullptr);
 }
 
-void ShenandoahRootVerifier::strong_roots_do(OopIterateClosure* oops) {
+void ShenandoahRootVerifier::strong_roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
@@ -98,8 +98,8 @@ void ShenandoahRootVerifier::strong_roots_do(OopIterateClosure* oops) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->mode()->is_generational() && heap->active_generation()->is_young()) {
+  if (generation->is_young()) {
+    shenandoah_assert_generational();
     ShenandoahGenerationalHeap::heap()->old_generation()->card_scan()->roots_do(oops);
   }
 

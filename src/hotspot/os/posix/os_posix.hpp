@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,9 @@ public:
   // Returns true if given uid is root.
   static bool is_root(uid_t uid);
 
+  // Returns true if the current user is root.
+  static bool is_current_user_root();
+
   // Returns true if given uid is effective or root uid.
   static bool matches_effective_uid_or_root(uid_t uid);
 
@@ -89,7 +92,12 @@ public:
   static address ucontext_get_pc(const ucontext_t* ctx);
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
+  DEBUG_ONLY(static bool ucontext_is_interpreter(const ucontext_t* ctx);)
+
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
+
+  // clock ticks per second of the system
+  static int clock_tics_per_second();
 
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,

@@ -45,7 +45,8 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -baselocales "en-US" \
 	    -year $(COPYRIGHT_YEAR) \
 	    -o $(GENSRC_DIR) \
-	    -tzdatadir $(TZ_DATA_DIR))
+	    -tzdatadir $(TZ_DATA_DIR) \
+	    -utf8)
 	$(TOUCH) $@
 
 TARGETS += $(CLDR_GEN_DONE)

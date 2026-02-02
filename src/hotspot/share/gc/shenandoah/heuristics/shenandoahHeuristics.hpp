@@ -36,7 +36,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name) && (name)) {                                  \
       log_info(gc)("Heuristics ergonomically sets -XX:-" #name);            \
-      FLAG_SET_DEFAULT(name, false);                                        \
+      FLAG_SET_ERGO(name, false);                                           \
     }                                                                       \
   } while (0)
 
@@ -44,7 +44,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name) && !(name)) {                                 \
       log_info(gc)("Heuristics ergonomically sets -XX:+" #name);            \
-      FLAG_SET_DEFAULT(name, true);                                         \
+      FLAG_SET_ERGO(name, true);                                            \
     }                                                                       \
   } while (0)
 
@@ -52,7 +52,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name)) {                                            \
       log_info(gc)("Heuristics ergonomically sets -XX:" #name "=" #value);  \
-      FLAG_SET_DEFAULT(name, value);                                        \
+      FLAG_SET_ERGO(name, value);                                           \
     }                                                                       \
   } while (0)
 
@@ -129,6 +129,13 @@ protected:
 #endif
     }
 
+    inline void update_livedata(size_t live) {
+      _region_union._live_data = live;
+#ifdef ASSERT
+      _union_tag = is_live_data;
+#endif
+    }
+
     inline ShenandoahHeapRegion* get_region() const {
       assert(_union_tag != is_uninitialized, "Cannot fetch region from uninitialized RegionData");
       return _region;
@@ -176,9 +183,12 @@ protected:
 
   static int compare_by_garbage(RegionData a, RegionData b);
 
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
-                                                     RegionData* data, size_t data_size,
-                                                     size_t free) = 0;
+  // This is a helper function to choose_collection_set(), returning the number of regions that need to be transferred to
+  // the old reserve from the young reserve in order to effectively evacuate the chosen collection set.  In non-generational
+  // mode, the return value is 0.
+  virtual size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                                       RegionData* data, size_t data_size,
+                                                       size_t free) = 0;
 
   void adjust_penalty(intx step);
 
@@ -218,7 +228,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_success_degenerated();
+  virtual void record_degenerated();
 
   virtual void record_success_full();
 
@@ -226,7 +236,9 @@ public:
 
   virtual void record_requested_gc();
 
-  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
+  // Choose the collection set, returning the number of regions that need to be transferred to the old reserve from the young
+  // reserve in order to effectively evacuate the chosen collection set.  In non-generational mode, the return value is 0.
+  virtual size_t choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
 
@@ -240,6 +252,11 @@ public:
   virtual void initialize();
 
   double elapsed_cycle_time() const;
+
+  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
+    // do nothing
+    return 0;
+  }
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);

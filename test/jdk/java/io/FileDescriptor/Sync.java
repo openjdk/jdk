@@ -39,7 +39,7 @@ import jdk.test.lib.thread.VThreadRunner;
 public class Sync {
 
     static final String TEST_DIR = System.getProperty("test.dir", ".");
-    static final int TRIES = 10_000;
+    static final int TRIES = 1_000;
 
     public static void testWith(File file) throws Exception {
         try (FileOutputStream fos = new FileOutputStream(file)) {

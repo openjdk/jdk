@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Map;
  * @bug 8261095
  * @summary Test the clhsdb 'symbol' command on live process
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbSymbol
  */

@@ -45,7 +45,7 @@ void ZArguments::initialize_heap_flags_and_sizes() {
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
     // We are really just guessing how much memory the program needs.
     // When that is the case, we don't want the soft and hard limits to be the same
-    // as it can cause flakyness in the number of GC threads used, in order to keep
+    // as it can cause flakiness in the number of GC threads used, in order to keep
     // to a random number we just pulled out of thin air.
     FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize * 90 / 100);
   }
@@ -121,9 +121,19 @@ void ZArguments::select_max_gc_threads() {
 void ZArguments::initialize() {
   GCArguments::initialize();
 
-  // Enable NUMA by default
-  if (FLAG_IS_DEFAULT(UseNUMA)) {
-    FLAG_SET_DEFAULT(UseNUMA, true);
+  // NUMA settings
+  if (FLAG_IS_DEFAULT(ZFakeNUMA)) {
+    // Enable NUMA by default
+    if (FLAG_IS_DEFAULT(UseNUMA)) {
+      FLAG_SET_DEFAULT(UseNUMA, true);
+    }
+  } else {
+    if (UseNUMA) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        warning("ZFakeNUMA is enabled; turning off UseNUMA");
+      }
+      FLAG_SET_ERGO(UseNUMA, false);
+    }
   }
 
   select_max_gc_threads();
@@ -131,6 +141,11 @@ void ZArguments::initialize() {
   // Backwards compatible alias for ZCollectionIntervalMajor
   if (!FLAG_IS_DEFAULT(ZCollectionInterval)) {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
+  }
+
+  // Set an initial TLAB size to avoid depending on the current capacity
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    FLAG_SET_DEFAULT(TLABSize, 256*K);
   }
 
   // Set medium page size here because MaxTenuringThreshold may use it.
@@ -147,9 +162,8 @@ void ZArguments::initialize() {
     uint tenuring_threshold;
     for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
       // Reduce the number of object ages, if the resulting garbage is too high
-      const size_t medium_page_overhead = ZPageSizeMedium * tenuring_threshold;
-      const size_t small_page_overhead = ZPageSizeSmall * ConcGCThreads * tenuring_threshold;
-      if (small_page_overhead + medium_page_overhead >= ZHeuristics::significant_young_overhead()) {
+      const size_t per_age_overhead = ZHeuristics::relocation_headroom();
+      if (per_age_overhead * tenuring_threshold >= ZHeuristics::significant_young_overhead()) {
         break;
       }
     }
@@ -192,6 +206,13 @@ void ZArguments::initialize() {
   // More events
   if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
     FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
+  }
+
+  if (VerifyArchivedFields > 0) {
+    // ZGC doesn't support verifying at arbitrary points as our normal state is that everything in the
+    // heap looks completely insane. Only at some particular points does the heap look sort of sane.
+    // So instead of verifying we trigger a GC that does its own verification when it's suitable.
+    FLAG_SET_DEFAULT(VerifyArchivedFields, 2);
   }
 
   // Verification before startup and after exit not (yet) supported

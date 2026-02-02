@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,37 @@
 /* @test
  * @bug 4313887 6838333 8273922
  * @summary Unit test for java.nio.file.attribute.UserDefinedFileAttributeView
+ *     (use -Dseed=X to set PRNG seed)
  * @library ../.. /test/lib
  * @key randomness
  * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.RandomFactory
+ * @build jtreg.SkippedException
  * @run main Basic
  */
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import static java.nio.file.LinkOption.*;
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
+
 import jdk.test.lib.Platform;
+import jdk.test.lib.RandomFactory;
+
+import jtreg.SkippedException;
 
 public class Basic {
 
-    private static Random rand = new Random();
+    // Must be indeterministic
+    private static final Random rand = RandomFactory.getRandom();
 
     private static final String ATTR_NAME = "mime_type";
     private static final String ATTR_VALUE = "text/plain";
@@ -88,8 +96,12 @@ public class Basic {
     static void test(Path file, LinkOption... options) throws IOException {
         final UserDefinedFileAttributeView view =
             Files.getFileAttributeView(file, UserDefinedFileAttributeView.class, options);
-        ByteBuffer buf = rand.nextBoolean() ?
-            ByteBuffer.allocate(100) : ByteBuffer.allocateDirect(100);
+        final ByteBuffer buf = switch (rand.nextInt(3)) {
+            case 0 -> ByteBuffer.allocate(100);
+            case 1 -> ByteBuffer.allocateDirect(100);
+            case 2 -> Arena.ofAuto().allocate(100).asByteBuffer();
+            default -> throw new InternalError("Should not reach here");
+        };
 
         // Test: write
         buf.put(ATTR_VALUE.getBytes()).flip();
@@ -275,10 +287,8 @@ public class Basic {
         // create temporary directory to run tests
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            if (!Files.getFileStore(dir).supportsFileAttributeView("user")) {
-                System.out.println("UserDefinedFileAttributeView not supported - skip test");
-                return;
-            }
+            if (!Files.getFileStore(dir).supportsFileAttributeView("user"))
+                throw new SkippedException("UserDefinedFileAttributeView not supported");
 
             // test access to user defined attributes of regular file
             Path file = dir.resolve("foo.html");
@@ -304,7 +314,7 @@ public class Basic {
                 Path link = dir.resolve("link");
                 Files.createSymbolicLink(link, target);
                 try {
-                    test(link, NOFOLLOW_LINKS);
+                    test(link, LinkOption.NOFOLLOW_LINKS);
                 } catch (IOException x) {
                     // access to attributes of sym link may not be supported
                 } finally {

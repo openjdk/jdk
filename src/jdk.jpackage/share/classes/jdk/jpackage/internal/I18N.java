@@ -24,39 +24,51 @@
  */
 package jdk.jpackage.internal;
 
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.util.LocalizedExceptionBuilder;
 import jdk.jpackage.internal.util.MultiResourceBundle;
+import jdk.jpackage.internal.util.StringBundle;
 
-class I18N {
+final class I18N {
 
     static String getString(String key) {
         return BUNDLE.getString(key);
     }
 
     static String format(String key, Object ... args) {
-        var str = getString(key);
-        if (args.length != 0) {
-            return MessageFormat.format(str, args);
-        } else {
-            return str;
-        }
+        return BUNDLE.format(key, args);
     }
 
-    private static final ResourceBundle BUNDLE;
+    static LocalizedExceptionBuilder<?> buildException() {
+        return LocalizedExceptionBuilder.buildLocalizedException(BUNDLE);
+    }
+
+    static ConfigException.Builder buildConfigException() {
+        return ConfigException.build(BUNDLE);
+    }
+
+    static ConfigException.Builder buildConfigException(String msgId, Object ... args) {
+        return ConfigException.build(BUNDLE, msgId, args);
+    }
+
+    static ConfigException.Builder buildConfigException(Throwable t) {
+        return ConfigException.build(BUNDLE, t);
+    }
+
+    private static final StringBundle BUNDLE;
 
     static {
         var prefix = "jdk.jpackage.internal.resources.";
-        BUNDLE = MultiResourceBundle.create(
+        BUNDLE = StringBundle.fromResourceBundle(MultiResourceBundle.create(
                 prefix + "MainResources",
                 Map.of(
                         OperatingSystem.LINUX, List.of(prefix + "LinuxResources"),
                         OperatingSystem.MACOS, List.of(prefix + "MacResources"),
                         OperatingSystem.WINDOWS, List.of(prefix + "WinResources", prefix + "WinResourcesNoL10N")
                 )
-        );
+        ));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,14 @@
  * questions.
  */
 
-import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import jdk.jpackage.test.JPackageCommand;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
-import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test that terminating of the parent app launcher process automatically
@@ -48,7 +48,7 @@ import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
 public class Win8301247Test {
 
     @Test
-    public void test() throws IOException, InterruptedException {
+    public void test() throws InterruptedException, ExecutionException {
         var cmd = JPackageCommand.helloAppImage().ignoreFakeRuntime();
 
         // Launch the app in a way it doesn't exit to let us trap app laucnher
@@ -56,22 +56,44 @@ public class Win8301247Test {
         cmd.addArguments("--java-options", "-Djpackage.test.noexit=true");
         cmd.executeAndAssertImageCreated();
 
-        try ( // Launch the app in a separate thread
-                ExecutorService exec = Executors.newSingleThreadExecutor()) {
-            exec.execute(() -> {
-                HelloApp.executeLauncher(cmd);
-            });
+        var state = TKit.state();
+        var f = new CompletableFuture<Process>();
 
+        // Launch the app in a separate thread
+        new Thread(() -> {
+            TKit.withState(() -> {
+                HelloApp.assertMainLauncher(cmd).get().processListener(f::complete).execute();
+            }, state);
+        }).start();
+
+        var mainLauncherProcess = f.get();
+
+        Optional<ProcessHandle> childProcess = Optional.empty();
+
+        try {
             // Wait a bit to let the app start
             Thread.sleep(Duration.ofSeconds(10));
 
-            // Find the main app launcher process and kill it
-            killAppLauncherProcess(cmd, null, 2);
+            try (var children = mainLauncherProcess.children()) {
+                childProcess = children.filter(p -> {
+                    return mainLauncherProcess.info().command().equals(p.info().command());
+                }).findFirst();
+            }
+
+            TKit.assertTrue(childProcess.isPresent(),
+                    String.format("Check the main launcher process with PID=%d restarted", mainLauncherProcess.pid()));
+        } finally {
+            // Kill the main app launcher process
+            TKit.trace("About to kill the main launcher process...");
+            mainLauncherProcess.destroyForcibly();
 
             // Wait a bit and check if child app launcher process is still running (it must NOT)
             Thread.sleep(Duration.ofSeconds(5));
 
-            killAppLauncherProcess(cmd, null, 0);
+            childProcess.ifPresent(p -> {
+                TKit.assertTrue(!p.isAlive(), String.format(
+                        "Check restarted main launcher process with PID=%d is not alive", p.pid()));
+            });
         }
     }
 }

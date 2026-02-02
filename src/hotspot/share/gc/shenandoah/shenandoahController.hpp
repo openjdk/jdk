@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
 
-#include "gc/shared/gcCause.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
@@ -37,13 +37,14 @@
 class ShenandoahController: public ConcurrentGCThread {
 private:
   shenandoah_padding(0);
-  volatile size_t _allocs_seen;
-  shenandoah_padding(1);
   // A monotonically increasing GC count.
   volatile size_t _gc_id;
-  shenandoah_padding(2);
+  shenandoah_padding(1);
 
 protected:
+  const Mutex::Rank WAITERS_LOCK_RANK = Mutex::safepoint - 5;
+  const Mutex::Rank CONTROL_LOCK_RANK = Mutex::nosafepoint - 2;
+
   // While we could have a single lock for these, it may risk unblocking
   // GC waiters when alloc failure GC cycle finishes. We want instead
   // to make complete explicit cycle for demanding customers.
@@ -55,10 +56,9 @@ protected:
 
 public:
   ShenandoahController():
-    _allocs_seen(0),
     _gc_id(0),
-    _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
-    _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true)
+    _alloc_failure_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahAllocFailureWaiters_lock", true),
+    _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true)
   { }
 
   // Request a collection cycle. This handles "explicit" gc requests
@@ -75,14 +75,6 @@ public:
 
   // Notify threads waiting for GC to complete.
   void notify_alloc_failure_waiters();
-
-  // This is called for every allocation. The control thread accumulates
-  // this value when idle. During the gc cycle, the control resets it
-  // and reports it to the pacer.
-  void pacing_notify_alloc(size_t words);
-
-  // Zeros out the number of allocations seen since the last GC cycle.
-  size_t reset_allocs_seen();
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
   size_t get_gc_id();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,14 @@
 
 /*
  * @test
- * @bug 8266670 8293626
+ * @bug 8266670 8293626 8297271
  * @summary Basic tests of AccessFlag
+ * @run junit BasicAccessFlagTest
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.EnumSet;
@@ -36,30 +39,26 @@ import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 public class BasicAccessFlagTest {
-    public static void main(String... args) throws Exception {
-        testSourceModifiers();
-        testMaskOrdering();
-        testDisjoint();
-        testMaskToAccessFlagsPositive();
-        testLocationsNullHandling();
-    }
 
     /*
      * Verify sourceModifier() == true access flags have a
      * corresponding constant in java.lang.reflect.Modifier.
      */
-    private static void testSourceModifiers() throws Exception {
+    @Test
+    public void testSourceModifiers() throws Exception {
         Class<?> modifierClass = Modifier.class;
 
         for(AccessFlag accessFlag : AccessFlag.values()) {
             if (accessFlag.sourceModifier()) {
                 // Check for consistency
                 Field f = modifierClass.getField(accessFlag.name());
-                if (accessFlag.mask() != f.getInt(null) ) {
-                    throw new RuntimeException("Unexpected mask for " +
-                                               accessFlag);
-                }
+                assertEquals(f.getInt(null), accessFlag.mask(), accessFlag + " mask");
             }
         }
     }
@@ -67,22 +66,22 @@ public class BasicAccessFlagTest {
     // The mask values of the enum constants must be non-decreasing;
     // in other words stay the same (for colliding mask values) or go
     // up.
-    private static void testMaskOrdering() {
+    @Test
+    public void testMaskOrdering() {
         AccessFlag[] values = AccessFlag.values();
         for (int i = 1; i < values.length; i++) {
             AccessFlag left  = values[i-1];
             AccessFlag right = values[i];
-            if (left.mask() > right.mask()) {
-                throw new RuntimeException(left
-                                           + "has a greater mask than "
-                                           + right);
-            }
+            assertTrue(left.mask() <= right.mask(), () -> left
+                    + "has a greater mask than "
+                    + right);
         }
     }
 
     // Test that if access flags have a matching mask, their locations
     // are disjoint.
-    private static void testDisjoint() {
+    @Test
+    public void testDisjoint() {
         // First build the mask -> access flags map...
         Map<Integer, Set<AccessFlag>> maskToFlags = new LinkedHashMap<>();
 
@@ -90,7 +89,7 @@ public class BasicAccessFlagTest {
             Integer mask = accessFlag.mask();
             Set<AccessFlag> flags = maskToFlags.get(mask);
 
-            if (flags == null ) {
+            if (flags == null) {
                 flags = new HashSet<>();
                 flags.add(accessFlag);
                 maskToFlags.put(mask, flags);
@@ -135,7 +134,8 @@ public class BasicAccessFlagTest {
 
     // For each access flag, make sure it is recognized on every kind
     // of location it can apply to
-    private static void testMaskToAccessFlagsPositive() {
+    @Test
+    public void testMaskToAccessFlagsPositive() {
         for (var accessFlag : AccessFlag.values()) {
             Set<AccessFlag> expectedSet = EnumSet.of(accessFlag);
             for (var location : accessFlag.locations()) {
@@ -146,14 +146,55 @@ public class BasicAccessFlagTest {
                                                accessFlag + ", " + location);
                 }
             }
+            for (var cffv : ClassFileFormatVersion.values()) {
+                for (var location : accessFlag.locations(cffv)) {
+                    Set<AccessFlag> computedSet =
+                            AccessFlag.maskToAccessFlags(accessFlag.mask(), location, cffv);
+                    if (!expectedSet.equals(computedSet)) {
+                        throw new RuntimeException("Bad set computation on " +
+                                accessFlag + ", " + location);
+                    }
+                }
+            }
         }
+        assertEquals(Set.of(AccessFlag.STRICT), AccessFlag.maskToAccessFlags(Modifier.STRICT, AccessFlag.Location.METHOD, ClassFileFormatVersion.RELEASE_8));
     }
 
-    private static void testLocationsNullHandling() {
-        for (var flag : AccessFlag.values() ) {
+    @Test
+    public void testMaskToAccessFlagsNegative() {
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(Modifier.STRICT, AccessFlag.Location.METHOD));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(Modifier.STRICT, AccessFlag.Location.METHOD, ClassFileFormatVersion.RELEASE_17));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(Modifier.STRICT, AccessFlag.Location.METHOD, ClassFileFormatVersion.RELEASE_1));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(Modifier.PRIVATE, AccessFlag.Location.CLASS));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(ClassFile.ACC_MODULE, AccessFlag.Location.CLASS, ClassFileFormatVersion.RELEASE_8));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(ClassFile.ACC_ANNOTATION, AccessFlag.Location.CLASS, ClassFileFormatVersion.RELEASE_4));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(ClassFile.ACC_ENUM, AccessFlag.Location.FIELD, ClassFileFormatVersion.RELEASE_4));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(ClassFile.ACC_SYNTHETIC, AccessFlag.Location.INNER_CLASS, ClassFileFormatVersion.RELEASE_4));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(ClassFile.ACC_PUBLIC, AccessFlag.Location.INNER_CLASS, ClassFileFormatVersion.RELEASE_0));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(ClassFile.ACC_MANDATED, AccessFlag.Location.METHOD_PARAMETER, ClassFileFormatVersion.RELEASE_7));
+        assertThrows(IllegalArgumentException.class, () -> AccessFlag.maskToAccessFlags(ClassFile.ACC_MANDATED, AccessFlag.Location.MODULE, ClassFileFormatVersion.RELEASE_7));
+    }
+
+    @Test
+    public void testLocationsNullHandling() {
+        for (var flag : AccessFlag.values()) {
+            assertThrows(NullPointerException.class, () -> flag.locations(null));
+        }
+
+        for (var location : AccessFlag.Location.values()) {
+            assertThrows(NullPointerException.class, () -> location.flags(null));
+        }
+
+        for (var location : AccessFlag.Location.values()) {
             try {
-                flag.locations(null);
-                throw new RuntimeException("Did not get NPE on " + flag + ".location(null)");
+                location.flags(null);
+                throw new RuntimeException("Did not get NPE on " + location + ".flags(null)");
+            } catch (NullPointerException npe ) {
+                ; // Expected
+            }
+            try {
+                location.flagsMask(null);
+                throw new RuntimeException("Did not get NPE on " + location + ".flagsMask(null)");
             } catch (NullPointerException npe ) {
                 ; // Expected
             }

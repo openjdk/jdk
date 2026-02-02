@@ -36,6 +36,11 @@ import sun.security.ssl.SignatureAlgorithmsExtension.SignatureSchemesSpec;
 
 /**
  * Pack of the "signature_algorithms_cert" extensions.
+ * <p>
+ * Note: Per RFC 8446, if no "signature_algorithms_cert" extension is
+ *       present, then the "signature_algorithms" extension also applies to
+ *       signatures appearing in certificates.
+ *       See {@code SignatureAlgorithmsExtension} for details.
  */
 final class CertSignAlgsExtension {
     static final HandshakeProducer chNetworkProducer =
@@ -89,7 +94,7 @@ final class CertSignAlgsExtension {
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable " +
                             "signature_algorithms_cert extension");
@@ -99,13 +104,7 @@ final class CertSignAlgsExtension {
             }
 
             // Produce the extension.
-            if (chc.localSupportedCertSignAlgs == null) {
-                chc.localSupportedCertSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                chc.sslConfig,
-                                chc.algorithmConstraints, chc.activeProtocols,
-                                CERTIFICATE_SCOPE);
-            }
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             int vectorLen = SignatureScheme.sizeInRecord() *
                     chc.localSupportedCertSignAlgs.size();
@@ -145,7 +144,7 @@ final class CertSignAlgsExtension {
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable " +
                             "signature_algorithms_cert extension");
@@ -236,7 +235,7 @@ final class CertSignAlgsExtension {
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable " +
                             "signature_algorithms_cert extension");
@@ -245,15 +244,8 @@ final class CertSignAlgsExtension {
             }
 
             // Produce the extension.
-            if (shc.localSupportedCertSignAlgs == null) {
-                shc.localSupportedCertSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints,
-                                List.of(shc.negotiatedProtocol),
-                                CERTIFICATE_SCOPE);
-            }
-
+            // localSupportedCertSignAlgs has been already updated when we set
+            // the negotiated protocol.
             int vectorLen = SignatureScheme.sizeInRecord()
                     * shc.localSupportedCertSignAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
@@ -291,7 +283,7 @@ final class CertSignAlgsExtension {
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable " +
                             "signature_algorithms_cert extension");

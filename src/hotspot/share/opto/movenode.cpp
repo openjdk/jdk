@@ -90,6 +90,10 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in(IfTrue))    == Type::TOP) {
     return nullptr;
   }
+  Node* progress = TypeNode::Ideal(phase, can_reshape);
+  if (progress != nullptr) {
+    return progress;
+  }
 
   // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
   // make BoolTests non-canonical.
@@ -267,9 +271,9 @@ Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
 
   // Create the Min/Max node based on the type and kind
   if (cmp_op == Op_CmpL) {
-    return MaxNode::build_min_max_long(phase, cmp_l, cmp_r, is_max);
+    return MinMaxNode::build_min_max_long(phase, cmp_l, cmp_r, is_max);
   } else {
-    return MaxNode::build_min_max_int(cmp_l, cmp_r, is_max);
+    return MinMaxNode::build_min_max_int(cmp_l, cmp_r, is_max);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.swing.plaf.UIResource;
  *
  */
 @SuppressWarnings("serial") // JDK-implementation class
-public class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
+public final class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
     private static final int X_OFFSET = 9;
     private boolean ascending;
 
@@ -45,6 +45,7 @@ public class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
         this.ascending = ascending;
     }
 
+    @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         x += X_OFFSET;
         if (ascending) {
@@ -89,9 +90,11 @@ public class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
         g.fillRect(x, y, 1, 2);
     }
 
+    @Override
     public int getIconWidth() {
         return X_OFFSET + 8;
     }
+    @Override
     public int getIconHeight() {
         return 9;
     }

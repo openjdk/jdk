@@ -34,21 +34,28 @@ else
   JCOV_INPUT_IMAGE_DIR := $(JDK_IMAGE_DIR)
 endif
 
+JCOV_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/jcov
+
 #moving instrumented jdk image in and out of jcov_temp because of CODETOOLS-7902299
-JCOV_TEMP := $(SUPPORT_OUTPUTDIR)/jcov_temp
+JCOV_TEMP := $(JCOV_SUPPORT_DIR)/temp
+
+ifneq ($(JCOV_MODULES), )
+  JCOV_MODULES_FILTER := $(foreach m, $(JCOV_MODULES), -include_module $m)
+endif
 
 $(JCOV_IMAGE_DIR)/release: $(JCOV_INPUT_IMAGE_DIR)/release
 	$(call LogWarn, Creating instrumented jdk image with JCov)
 	$(call MakeDir, $(JCOV_TEMP) $(IMAGES_OUTPUTDIR))
 	$(RM) -r $(JCOV_IMAGE_DIR) $(JCOV_TEMP)/*
 	$(CP) -r $(JCOV_INPUT_IMAGE_DIR) $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR)
-	$(JAVA) -Xmx3g -jar $(JCOV_HOME)/lib/jcov.jar JREInstr \
+	$(call ExecuteWithLog, $(JCOV_SUPPORT_DIR)/run-jcov, \
+	    $(JAVA) -Xmx3g -jar $(JCOV_HOME)/lib/jcov.jar JREInstr \
 	    -t $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR)/template.xml \
 	    -rt $(JCOV_HOME)/lib/jcov_network_saver.jar \
 	    -exclude 'java.lang.Object' \
 	    -exclude jdk.test.Main -exclude '**\$Proxy*' \
-	    $(JCOV_FILTERS) \
-	    $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR)
+	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
+	    $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR))
 	$(MV) $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR) $(JCOV_IMAGE_DIR)
 	$(RMDIR) $(JCOV_TEMP)
 

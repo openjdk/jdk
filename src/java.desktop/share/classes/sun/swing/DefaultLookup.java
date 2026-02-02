@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.Insets;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
-import sun.awt.AppContext;
 
 /**
  * DefaultLookup provides a way to customize the lookup done by the
@@ -44,17 +43,9 @@ import sun.awt.AppContext;
  * @author Scott Violet
  */
 public class DefaultLookup {
+
     /**
-     * Key used to store DefaultLookup for AppContext.
-     */
-    private static final Object DEFAULT_LOOKUP_KEY = new
-                                        StringBuffer("DefaultLookup");
-    /**
-     * Thread that last asked for a default.
-     */
-    private static Thread currentDefaultThread;
-    /**
-     * DefaultLookup for last thread.
+     * DefaultLookup currently set.
      */
     private static DefaultLookup currentDefaultLookup;
 
@@ -63,28 +54,24 @@ public class DefaultLookup {
      */
     private static boolean isLookupSet;
 
-
     /**
-     * Sets the DefaultLookup instance to use for the current
-     * <code>AppContext</code>. Null implies the UIManager should be
-     * used.
+     * Sets the DefaultLookup instance to use.
+     * Null implies the UIManager should be used.
      */
     public static void setDefaultLookup(DefaultLookup lookup) {
         synchronized(DefaultLookup.class) {
             if (!isLookupSet && lookup == null) {
-                // Null was passed in, and no one has invoked setDefaultLookup
+                // Null was passed in, and no one has previously invoked setDefaultLookup
                 // with a non-null value, we don't need to do anything.
                 return;
             }
             else if (lookup == null) {
-                // null was passed in, but someone has invoked setDefaultLookup
+                // null was passed in, but someone has previously invoked setDefaultLookup
                 // with a non-null value, use an instance of DefaultLookup
                 // which will fallback to UIManager.
                 lookup = new DefaultLookup();
             }
             isLookupSet = true;
-            AppContext.getAppContext().put(DEFAULT_LOOKUP_KEY, lookup);
-            currentDefaultThread = Thread.currentThread();
             currentDefaultLookup = lookup;
         }
     }
@@ -98,27 +85,13 @@ public class DefaultLookup {
             // No one has set a valid DefaultLookup, use UIManager.
             return UIManager.get(key, c.getLocale());
         }
-        Thread thisThread = Thread.currentThread();
         DefaultLookup lookup;
         synchronized(DefaultLookup.class) {
-            // See if we've already cached the DefaultLookup for this thread,
-            // and use it if we have.
-            if (thisThread == currentDefaultThread) {
-                // It is cached, use it.
-                lookup = currentDefaultLookup;
-            }
-            else {
-                // Not cached, get the DefaultLookup to use from the AppContext
-                lookup = (DefaultLookup)AppContext.getAppContext().get(
-                                                   DEFAULT_LOOKUP_KEY);
-                if (lookup == null) {
-                    // Fallback to DefaultLookup, which will redirect to the
-                    // UIManager.
-                    lookup = new DefaultLookup();
-                    AppContext.getAppContext().put(DEFAULT_LOOKUP_KEY, lookup);
-                }
-                // Cache the values to make the next lookup easier.
-                currentDefaultThread = thisThread;
+            lookup = currentDefaultLookup;
+            if (lookup == null) {
+                // Fallback to DefaultLookup, which will redirect to the
+                // UIManager.
+                lookup = new DefaultLookup();
                 currentDefaultLookup = lookup;
             }
         }

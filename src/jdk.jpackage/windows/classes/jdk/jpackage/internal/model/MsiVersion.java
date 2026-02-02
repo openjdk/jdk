@@ -25,7 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.math.BigInteger;
-import java.text.MessageFormat;
+import static jdk.jpackage.internal.model.I18N.buildLocalizedException;
 
 
 public final class MsiVersion {
@@ -45,26 +45,29 @@ public final class MsiVersion {
         BigInteger[] components = ver.getComponents();
 
         if (components.length < 2 || components.length > 4) {
-            throw new IllegalArgumentException(MessageFormat.format(
-                    I18N.getString("error.msi-product-version-components"),
-                    value));
+            throw buildLocalizedException()
+                    .message("error.msi-product-version-components", value)
+                    .create(IllegalArgumentException::new);
         }
 
         if (BigInteger.valueOf(255).compareTo(components[0]) < 0) {
-            throw new IllegalArgumentException(I18N.getString(
-                    "error.msi-product-version-major-out-of-range"));
+            throw buildLocalizedException()
+                    .message("error.msi-product-version-major-out-of-range")
+                    .create(IllegalArgumentException::new);
         }
 
         if (components.length > 1 && BigInteger.valueOf(255).compareTo(
                 components[1]) < 0) {
-            throw new IllegalArgumentException(I18N.getString(
-                    "error.msi-product-version-minor-out-of-range"));
+            throw buildLocalizedException()
+                    .message("error.msi-product-version-minor-out-of-range")
+                    .create(IllegalArgumentException::new);
         }
 
         if (components.length > 2 && BigInteger.valueOf(65535).compareTo(
                 components[2]) < 0) {
-            throw new IllegalArgumentException(I18N.getString(
-                    "error.msi-product-version-build-out-of-range"));
+            throw buildLocalizedException()
+                    .message("error.msi-product-version-build-out-of-range")
+                    .create(IllegalArgumentException::new);
         }
 
         return ver;

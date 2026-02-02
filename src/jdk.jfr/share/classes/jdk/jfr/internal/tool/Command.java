@@ -318,6 +318,10 @@ abstract class Command {
         System.out.println(text);
     }
 
+    protected final void printf(String text, Object ... args) {
+        System.out.printf(text, args);
+    }
+
     public static void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {
         if (typo.equals(options.peek())) {
             throw new UserSyntaxException("unknown option " + typo + ", did you mean " + correct + "?");

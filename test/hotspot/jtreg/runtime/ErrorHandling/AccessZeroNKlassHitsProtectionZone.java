@@ -38,7 +38,7 @@
 /*
  * @test id=no_coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
- * @requires vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -64,7 +64,7 @@
 /*
  * @test id=coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
- * @requires vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -99,7 +99,6 @@ public class AccessZeroNKlassHitsProtectionZone {
         args.add("-Xlog:metaspace*");
         args.add("-Xlog:cds");
         if (COH) {
-            args.add("-XX:+UnlockExperimentalVMOptions");
             args.add("-XX:+UseCompactObjectHeaders");
         }
         if (CDS) {
@@ -143,7 +142,11 @@ public class AccessZeroNKlassHitsProtectionZone {
             for (forceBase = start; forceBase < end; forceBase += step) {
                 String thisBaseString = String.format("0x%016X", forceBase).toLowerCase();
                 output = run_test(COH, CDS, thisBaseString);
-                if (output.contains("CompressedClassSpaceBaseAddress=" + thisBaseString + " given, but reserving class space failed.")) {
+                if (output.contains("CompressedClassSpaceBaseAddress=" + thisBaseString + " given, but reserving class space failed.") ||
+                    output.matches ("CompressedClassSpaceBaseAddress=" + thisBaseString + " given with shift .*, cannot be used to encode class pointers")) {
+                    // possible output:
+                    //     CompressedClassSpaceBaseAddress=0x0000000c00000000 given, but reserving class space failed.
+                    //     CompressedClassSpaceBaseAddress=0x0000000d00000000 given with shift 6, cannot be used to encode class pointers
                     // try next one
                 } else if (output.contains("Successfully forced class space address to " + thisBaseString)) {
                     break;

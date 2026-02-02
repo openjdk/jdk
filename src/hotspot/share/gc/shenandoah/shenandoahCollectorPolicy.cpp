@@ -37,6 +37,7 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _abbreviated_degenerated_gcs(0),
   _success_full_gcs(0),
   _consecutive_degenerated_gcs(0),
+  _consecutive_degenerated_gcs_without_progress(0),
   _consecutive_young_gcs(0),
   _mixed_gcs(0),
   _success_old_gcs(0),
@@ -67,14 +68,14 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC
 }
 
 void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
-  _consecutive_degenerated_gcs = 0;
+  reset_consecutive_degenerated_gcs();
   _alloc_failure_degenerated_upgrade_to_full++;
 }
 
 void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young, bool is_abbreviated) {
   update_young(is_young);
 
-  _consecutive_degenerated_gcs = 0;
+  reset_consecutive_degenerated_gcs();
   _success_concurrent_gcs++;
   if (is_abbreviated) {
     _abbreviated_concurrent_gcs++;
@@ -95,11 +96,18 @@ void ShenandoahCollectorPolicy::record_interrupted_old() {
   _interrupted_old_gcs++;
 }
 
-void ShenandoahCollectorPolicy::record_success_degenerated(bool is_young, bool is_abbreviated) {
+void ShenandoahCollectorPolicy::record_degenerated(bool is_young, bool is_abbreviated, bool progress) {
   update_young(is_young);
 
   _success_degenerated_gcs++;
   _consecutive_degenerated_gcs++;
+
+  if (progress) {
+    _consecutive_degenerated_gcs_without_progress = 0;
+  } else {
+    _consecutive_degenerated_gcs_without_progress++;
+  }
+
   if (is_abbreviated) {
     _abbreviated_degenerated_gcs++;
   }
@@ -114,7 +122,7 @@ void ShenandoahCollectorPolicy::update_young(bool is_young) {
 }
 
 void ShenandoahCollectorPolicy::record_success_full() {
-  _consecutive_degenerated_gcs = 0;
+  reset_consecutive_degenerated_gcs();
   _consecutive_young_gcs = 0;
   _success_full_gcs++;
 }
@@ -192,7 +200,7 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
 void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("Under allocation pressure, concurrent cycles may cancel, and either continue cycle");
   out->print_cr("under stop-the-world pause or result in stop-the-world Full GC. Increase heap size,");
-  out->print_cr("tune GC heuristics, set more aggressive pacing delay, or lower allocation rate");
+  out->print_cr("tune GC heuristics, or lower allocation rate");
   out->print_cr("to avoid Degenerated and Full GC cycles. Abbreviated cycles are those which found");
   out->print_cr("enough regions with no live objects to skip evacuation.");
   out->cr();

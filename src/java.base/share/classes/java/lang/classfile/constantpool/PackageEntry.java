@@ -58,6 +58,19 @@ public sealed interface PackageEntry extends PoolEntry
 
     /**
      * {@return a symbolic descriptor for the {@linkplain #name() package name}}
+     *
+     * @apiNote
+     * If only symbol equivalence is desired, {@link #matches(PackageDesc)
+     * matches} should be used.  It requires reduced parsing and can
+     * improve {@code class} file reading performance.
      */
     PackageDesc asSymbol();
+
+    /**
+     * {@return whether this entry describes the given package}
+     *
+     * @param desc the package descriptor
+     * @since 25
+     */
+    boolean matches(PackageDesc desc);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,12 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
  *      -Dsun.net.httpserver.idleInterval=50000
- *      -Djdk.tracePinnedThreads=full
  *      HttpClientLocalAddrTest
  *
  */
 public class HttpClientLocalAddrTest implements HttpServerAdapters {
 
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static HttpServerAdapters.HttpTestServer http1_1_Server;
     private static URI httpURI;
     private static HttpServerAdapters.HttpTestServer https_1_1_Server;
@@ -84,9 +83,6 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
     // start various HTTP/HTTPS servers that will be invoked against in the tests
     @BeforeClass
     public static void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        Assert.assertNotNull(sslContext, "Unexpected null sslContext");
-
         HttpServerAdapters.HttpTestHandler handler = (exchange) -> {
             // the handler receives a request and sends back a 200 response with the
             // response body containing the raw IP address (in byte[] form) of the client from whom

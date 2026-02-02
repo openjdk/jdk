@@ -316,22 +316,35 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_MSG_CHECKING([if we should add external native debug symbols to the shipped bundles])
   AC_ARG_WITH([external-symbols-in-bundles],
       [AS_HELP_STRING([--with-external-symbols-in-bundles],
-      [which type of external native debug symbol information shall be shipped in product bundles (none, public, full)
-      (e.g. ship full/stripped pdbs on Windows) @<:@none@:>@])])
+      [which type of external native debug symbol information shall be shipped with bundles/images (none, public, full).
+      @<:@none in release builds, full otherwise. --with-native-debug-symbols=external/zipped is a prerequisite. public is only supported on Windows@:>@])],
+      [],
+      [with_external_symbols_in_bundles=default])
 
   if test "x$with_external_symbols_in_bundles" = x || test "x$with_external_symbols_in_bundles" = xnone ; then
     AC_MSG_RESULT([no])
   elif test "x$with_external_symbols_in_bundles" = xfull || test "x$with_external_symbols_in_bundles" = xpublic ; then
-    if test "x$OPENJDK_TARGET_OS" != xwindows ; then
-      AC_MSG_ERROR([--with-external-symbols-in-bundles currently only works on windows!])
-    elif test "x$COPY_DEBUG_SYMBOLS" != xtrue ; then
-      AC_MSG_ERROR([--with-external-symbols-in-bundles only works when --with-native-debug-symbols=external is used!])
-    elif test "x$with_external_symbols_in_bundles" = xfull ; then
+    if test "x$COPY_DEBUG_SYMBOLS" != xtrue ; then
+      AC_MSG_ERROR([--with-external-symbols-in-bundles only works when --with-native-debug-symbols=external/zipped is used!])
+    elif test "x$with_external_symbols_in_bundles" = xpublic && test "x$OPENJDK_TARGET_OS" != xwindows ; then
+      AC_MSG_ERROR([--with-external-symbols-in-bundles=public is only supported on Windows!])
+    fi
+
+    if test "x$with_external_symbols_in_bundles" = xfull ; then
       AC_MSG_RESULT([full])
       SHIP_DEBUG_SYMBOLS=full
     else
       AC_MSG_RESULT([public])
       SHIP_DEBUG_SYMBOLS=public
+    fi
+  elif test "x$with_external_symbols_in_bundles" = xdefault ; then
+    if test "x$DEBUG_LEVEL" = xrelease ; then
+      AC_MSG_RESULT([no (default)])
+    elif test "x$COPY_DEBUG_SYMBOLS" = xtrue ; then
+      AC_MSG_RESULT([full (default)])
+      SHIP_DEBUG_SYMBOLS=full
+    else
+      AC_MSG_RESULT([no (default, native debug symbols are not external/zipped)])
     fi
   else
     AC_MSG_ERROR([$with_external_symbols_in_bundles is an unknown value for --with-external-symbols-in-bundles])
@@ -405,10 +418,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       JCOV_FILTERS="$with_jcov_filters"
     fi
   fi
+
+  UTIL_ARG_WITH(NAME: jcov-modules, TYPE: string,
+      DEFAULT: [], RESULT: JCOV_MODULES_COMMMA_SEPARATED,
+      DESC: [which modules to include in jcov (comma-separated)],
+      OPTIONAL: true)
+
+  # Replace ","  with " ".
+  JCOV_MODULES=${JCOV_MODULES_COMMMA_SEPARATED//,/ }
   AC_SUBST(JCOV_ENABLED)
   AC_SUBST(JCOV_HOME)
   AC_SUBST(JCOV_INPUT_JDK)
   AC_SUBST(JCOV_FILTERS)
+  AC_SUBST(JCOV_MODULES)
 ])
 
 ################################################################################
@@ -472,6 +494,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 
 ################################################################################
 #
+# Static analyzer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_ANALYZER],
+[
+  UTIL_ARG_ENABLE(NAME: static-analyzer, DEFAULT: false, RESULT: STATIC_ANALYZER_ENABLED,
+      DESC: [enable the GCC static analyzer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if static analyzer is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        STATIC_ANALYZER_CFLAGS="-fanalyzer -Wno-analyzer-fd-leak"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $STATIC_ANALYZER_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $STATIC_ANALYZER_CFLAGS"
+      ])
+  AC_SUBST(STATIC_ANALYZER_ENABLED)
+])
+
+################################################################################
+#
 # LeakSanitizer
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
@@ -520,8 +567,26 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   # Silence them for now.
   UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base -fno-sanitize=alignment \
       $ADDITIONAL_UBSAN_CHECKS"
-  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -Wno-array-bounds -Wno-stringop-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-array-bounds -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -Wno-format-overflow -Wno-stringop-overflow -Wno-stringop-truncation"
+  fi
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
+  # On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
+  # full qualified llvm_symbolizer path in the __ubsan_default_options() function in
+  # make/data/ubsan/ubsan_default_options.c. To get it there we compile our sources
+  # with an additional define LLVM_SYMBOLIZER, which we set here.
+  # To calculate the correct llvm_symbolizer path we can use the location of the compiler, because
+  # their relation is fixed.
+  # In the ubsan case we have to link every binary with the C++-compiler as linker, because inherently
+  # the C-Compiler and the C++-compiler used as linker provide a different set of ubsan exports.
+  # Linking an executable with the C-compiler and one of its shared libraries with the C++-compiler
+  # leeds to unresolved symbols.
+  if test "x$TOOLCHAIN_TYPE" = "xclang" && test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
+    UBSAN_LDFLAGS="$UBSAN_LDFLAGS -Wl,-bbigtoc"
+    LD="$LDCXX"
+  fi
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
       CHECK_AVAILABLE: [
@@ -986,6 +1051,18 @@ AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
     AC_MSG_RESULT([none])
   fi
   AC_SUBST(SIGNING_HOOK)
+])
+
+################################################################################
+#
+# Setup how javac should handle warnings.
+#
+AC_DEFUN([JDKOPT_SETUP_JAVA_WARNINGS],
+[
+  UTIL_ARG_ENABLE(NAME: java-warnings-as-errors, DEFAULT: true,
+      RESULT: JAVA_WARNINGS_AS_ERRORS,
+      DESC: [consider java warnings to be an error])
+  AC_SUBST(JAVA_WARNINGS_AS_ERRORS)
 ])
 
 ################################################################################

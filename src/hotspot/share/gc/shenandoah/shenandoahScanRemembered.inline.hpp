@@ -26,18 +26,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
 
-#include "memory/iterator.hpp"
-#include "oops/oop.hpp"
-#include "oops/objArrayOop.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
+
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.hpp"
 
 // Process all objects starting within count clusters beginning with first_cluster and for which the start address is
 // less than end_of_range.  For any non-array object whose header lies on a dirty card, scan the entire object,
@@ -49,7 +50,7 @@
 // degenerated execution, leading to dangling references.
 template <typename ClosureType>
 void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
-                                                               ClosureType* cl, bool use_write_table, uint worker_id) {
+                                                ClosureType* cl, bool use_write_table, uint worker_id) {
 
   assert(ShenandoahHeap::heap()->old_generation()->is_parsable(), "Old generation regions must be parsable for remembered set scan");
   // If old-gen evacuation is active, then MarkingContext for old-gen heap regions is valid.  We use the MarkingContext
@@ -101,7 +102,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
   // tams and ctx below are for old generation marking. As such, young gen roots must
   // consider everything above tams, since it doesn't represent a TAMS for young gen's
   // SATB marking.
-  const HeapWord* tams = (ctx == nullptr ? region->bottom() : ctx->top_at_mark_start(region));
+  HeapWord* const tams = (ctx == nullptr ? region->bottom() : ctx->top_at_mark_start(region));
 
   NOT_PRODUCT(ShenandoahCardStats stats(whole_cards, card_stats(worker_id));)
 
@@ -161,19 +162,37 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // [left, right) is a maximal right-open interval of dirty cards
       HeapWord* left = _rs->addr_for_card_index(dirty_l);        // inclusive
       HeapWord* right = _rs->addr_for_card_index(dirty_r + 1);   // exclusive
+      if (end_addr <= left) {
+        // The range of addresses to be scanned is empty
+        continue;
+      }
       // Clip right to end_addr established above (still exclusive)
       right = MIN2(right, end_addr);
       assert(right <= region->top() && end_addr <= region->top(), "Busted bounds");
       const MemRegion mr(left, right);
 
-      // NOTE: We'll not call block_start() repeatedly
-      // on a very large object if its head card is dirty. If not,
-      // (i.e. the head card is clean) we'll call it each time we
-      // process a new dirty range on the object. This is always
-      // the case for large object arrays, which are typically more
+      // NOTE: We'll not call first_object_start() repeatedly
+      // on a very large object, i.e. one spanning multiple cards,
+      // if its head card is dirty. If not, (i.e. its head card is clean)
+      // we'll call it each time we process a new dirty range on the object.
+      // This is always the case for large object arrays, which are typically more
       // common.
-      HeapWord* p = _scc->block_start(dirty_l);
+      assert(ctx != nullptr || heap->old_generation()->is_parsable(), "Error");
+      HeapWord* p = _scc->first_object_start(dirty_l, ctx, tams, right);
+      assert((p == nullptr) || (p < right), "No first object found is denoted by nullptr, p: "
+             PTR_FORMAT ", right: " PTR_FORMAT ", end_addr: " PTR_FORMAT ", next card addr: " PTR_FORMAT,
+             p2i(p), p2i(right), p2i(end_addr), p2i(_rs->addr_for_card_index(dirty_r + 1)));
+      if (p == nullptr) {
+        // There are no live objects to be scanned in this dirty range.  cur_index identifies first card in this
+        // uninteresting dirty range.  At top of next loop iteration, we will either end the looop
+        // (because cur_index < start_card_index) or we will begin the search for a range of clean cards.
+        continue;
+      }
+
       oop obj = cast_to_oop(p);
+      assert(oopDesc::is_oop(obj), "Not an object at " PTR_FORMAT ", left: " PTR_FORMAT ", right: " PTR_FORMAT,
+             p2i(p), p2i(left), p2i(right));
+      assert(ctx==nullptr || ctx->is_marked(obj), "Error");
 
       // PREFIX: The object that straddles into this range of dirty cards
       // from the left may be subject to special treatment unless
@@ -342,9 +361,9 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
     }
   }
 
-  log_debug(gc)("Remembered set scan processing Region %zu, from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
-                region->index(), p2i(start_of_range), p2i(end_of_range),
-                use_write_table? "read/write (updating)": "read (marking)");
+  log_debug(gc, remset)("Remembered set scan processing Region %zu, from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
+                        region->index(), p2i(start_of_range), p2i(end_of_range),
+                        use_write_table? "read/write (updating)": "read (marking)");
 
   // Note that end_of_range may point to the middle of a cluster because we limit scanning to
   // region->top() or region->get_update_watermark(). We avoid processing past end_of_range.
@@ -368,7 +387,7 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   if (_index >= _total_chunks) {
     return false;
   }
-  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
   if (new_index > _total_chunks) {
     // First worker that hits new_index == _total_chunks continues, other
     // contending workers return false.

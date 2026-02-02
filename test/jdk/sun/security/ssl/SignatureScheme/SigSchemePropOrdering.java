@@ -38,6 +38,16 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SigSchemePropOrdering extends AbstractCheckSignatureSchemes {
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl:handshake
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
 
     private static final String SIG_SCHEME_STR =
             "rsa_pkcs1_sha256,rsa_pss_rsae_sha256,rsa_pss_pss_sha256," +
@@ -48,7 +58,10 @@ public class SigSchemePropOrdering extends AbstractCheckSignatureSchemes {
     }
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("javax.net.debug", "ssl:handshake");
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl:handshake");
+        }
+
         System.setProperty("jdk.tls.client.SignatureSchemes", SIG_SCHEME_STR);
         System.setProperty("jdk.tls.server.SignatureSchemes", SIG_SCHEME_STR);
         new SigSchemePropOrdering().run();

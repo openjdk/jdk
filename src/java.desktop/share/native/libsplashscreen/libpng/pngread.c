@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018-2025 Cosmin Truta
+ * Copyright (c) 2018-2026 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -52,7 +52,8 @@
 /* Create a PNG structure for reading, and allocate any memory needed. */
 PNG_FUNCTION(png_structp,PNGAPI
 png_create_read_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
-    png_error_ptr error_fn, png_error_ptr warn_fn),PNG_ALLOCATED)
+    png_error_ptr error_fn, png_error_ptr warn_fn),
+    PNG_ALLOCATED)
 {
 #ifndef PNG_USER_MEM_SUPPORTED
    png_structp png_ptr = png_create_png_struct(user_png_ver, error_ptr,
@@ -68,7 +69,8 @@ png_create_read_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
 PNG_FUNCTION(png_structp,PNGAPI
 png_create_read_struct_2,(png_const_charp user_png_ver, png_voidp error_ptr,
     png_error_ptr error_fn, png_error_ptr warn_fn, png_voidp mem_ptr,
-    png_malloc_ptr malloc_fn, png_free_ptr free_fn),PNG_ALLOCATED)
+    png_malloc_ptr malloc_fn, png_free_ptr free_fn),
+    PNG_ALLOCATED)
 {
    png_structp png_ptr = png_create_png_struct(user_png_ver, error_ptr,
        error_fn, warn_fn, mem_ptr, malloc_fn, free_fn);
@@ -548,7 +550,6 @@ png_read_row(png_structrp png_ptr, png_bytep row, png_bytep dsp_row)
 
    if (png_ptr->read_row_fn != NULL)
       (*(png_ptr->read_row_fn))(png_ptr, png_ptr->row_number, png_ptr->pass);
-
 }
 #endif /* SEQUENTIAL_READ */
 
@@ -731,7 +732,12 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
       png_uint_32 chunk_name = png_ptr->chunk_name;
 
       if (chunk_name != png_IDAT)
-         png_ptr->mode |= PNG_HAVE_CHUNK_AFTER_IDAT;
+      {
+         /* These flags must be set consistently for all non-IDAT chunks,
+          * including the unknown chunks.
+          */
+         png_ptr->mode |= PNG_HAVE_CHUNK_AFTER_IDAT | PNG_AFTER_IDAT;
+      }
 
       if (chunk_name == png_IEND)
          png_handle_chunk(png_ptr, info_ptr, length);
@@ -838,7 +844,8 @@ png_read_destroy(png_structrp png_ptr)
 #endif
 
 #if defined(PNG_READ_EXPAND_SUPPORTED) && \
-    defined(PNG_ARM_NEON_IMPLEMENTATION)
+    (defined(PNG_ARM_NEON_IMPLEMENTATION) || \
+     defined(PNG_RISCV_RVV_IMPLEMENTATION))
    png_free(png_ptr, png_ptr->riffled_palette);
    png_ptr->riffled_palette = NULL;
 #endif
@@ -890,7 +897,7 @@ png_set_read_status_fn(png_structrp png_ptr, png_read_status_ptr read_row_fn)
 #ifdef PNG_INFO_IMAGE_SUPPORTED
 void PNGAPI
 png_read_png(png_structrp png_ptr, png_inforp info_ptr,
-    int transforms, voidp params)
+    int transforms, png_voidp params)
 {
    png_debug(1, "in png_read_png");
 
@@ -1127,19 +1134,20 @@ png_read_png(png_structrp png_ptr, png_inforp info_ptr,
 
 typedef struct
 {
-   /* Arguments: */
+   /* Arguments */
    png_imagep image;
-   png_voidp  buffer;
+   png_voidp buffer;
    png_int_32 row_stride;
-   png_voidp  colormap;
+   png_voidp colormap;
    png_const_colorp background;
-   /* Local variables: */
-   png_voidp       local_row;
-   png_voidp       first_row;
-   ptrdiff_t       row_bytes;           /* step between rows */
-   int             file_encoding;       /* E_ values above */
-   png_fixed_point gamma_to_linear;     /* For P_FILE, reciprocal of gamma */
-   int             colormap_processing; /* PNG_CMAP_ values above */
+
+   /* Instance variables */
+   png_voidp local_row;
+   png_voidp first_row;
+   ptrdiff_t row_step;              /* step between rows */
+   int file_encoding;               /* E_ values above */
+   png_fixed_point gamma_to_linear; /* For P_FILE, reciprocal of gamma */
+   int colormap_processing;         /* PNG_CMAP_ values above */
 } png_image_read_control;
 
 /* Do all the *safe* initialization - 'safe' means that png_error won't be
@@ -1357,7 +1365,7 @@ png_image_read_header(png_voidp argument)
 
 #ifdef PNG_STDIO_SUPPORTED
 int PNGAPI
-png_image_begin_read_from_stdio(png_imagep image, FILE* file)
+png_image_begin_read_from_stdio(png_imagep image, FILE *file)
 {
    if (image != NULL && image->version == PNG_IMAGE_VERSION)
    {
@@ -2860,17 +2868,17 @@ png_image_read_and_map(png_voidp argument)
    }
 
    {
-      png_uint_32  height = image->height;
-      png_uint_32  width = image->width;
-      int          proc = display->colormap_processing;
-      png_bytep    first_row = png_voidcast(png_bytep, display->first_row);
-      ptrdiff_t    step_row = display->row_bytes;
+      png_uint_32 height = image->height;
+      png_uint_32 width = image->width;
+      int proc = display->colormap_processing;
+      png_bytep first_row = png_voidcast(png_bytep, display->first_row);
+      ptrdiff_t row_step = display->row_step;
       int pass;
 
       for (pass = 0; pass < passes; ++pass)
       {
-         unsigned int     startx, stepx, stepy;
-         png_uint_32      y;
+         unsigned int startx, stepx, stepy;
+         png_uint_32 y;
 
          if (png_ptr->interlaced == PNG_INTERLACE_ADAM7)
          {
@@ -2894,7 +2902,7 @@ png_image_read_and_map(png_voidp argument)
          for (; y<height; y += stepy)
          {
             png_bytep inrow = png_voidcast(png_bytep, display->local_row);
-            png_bytep outrow = first_row + y * step_row;
+            png_bytep outrow = first_row + y * row_step;
             png_const_bytep end_row = outrow + width;
 
             /* Read read the libpng data into the temporary buffer. */
@@ -3103,20 +3111,20 @@ png_image_read_colormapped(png_voidp argument)
     */
    {
       png_voidp first_row = display->buffer;
-      ptrdiff_t row_bytes = display->row_stride;
+      ptrdiff_t row_step = display->row_stride;
 
-      /* The following expression is designed to work correctly whether it gives
-       * a signed or an unsigned result.
+      /* The following adjustment is to ensure that calculations are correct,
+       * regardless whether row_step is positive or negative.
        */
-      if (row_bytes < 0)
+      if (row_step < 0)
       {
          char *ptr = png_voidcast(char*, first_row);
-         ptr += (image->height-1) * (-row_bytes);
+         ptr += (image->height-1) * (-row_step);
          first_row = png_voidcast(png_voidp, ptr);
       }
 
       display->first_row = first_row;
-      display->row_bytes = row_bytes;
+      display->row_step = row_step;
    }
 
    if (passes == 0)
@@ -3134,22 +3142,77 @@ png_image_read_colormapped(png_voidp argument)
 
    else
    {
-      png_alloc_size_t row_bytes = (png_alloc_size_t)display->row_bytes;
+      ptrdiff_t row_step = display->row_step;
 
       while (--passes >= 0)
       {
-         png_uint_32      y = image->height;
-         png_bytep        row = png_voidcast(png_bytep, display->first_row);
+         png_uint_32 y = image->height;
+         png_bytep row = png_voidcast(png_bytep, display->first_row);
 
          for (; y > 0; --y)
          {
             png_read_row(png_ptr, row, NULL);
-            row += row_bytes;
+            row += row_step;
          }
       }
 
       return 1;
    }
+}
+
+/* Row reading for interlaced 16-to-8 bit depth conversion with local buffer. */
+static int
+png_image_read_direct_scaled(png_voidp argument)
+{
+   png_image_read_control *display = png_voidcast(png_image_read_control*,
+       argument);
+   png_imagep image = display->image;
+   png_structrp png_ptr = image->opaque->png_ptr;
+   png_inforp info_ptr = image->opaque->info_ptr;
+   png_bytep local_row = png_voidcast(png_bytep, display->local_row);
+   png_bytep first_row = png_voidcast(png_bytep, display->first_row);
+   ptrdiff_t row_step = display->row_step;
+   size_t row_bytes = png_get_rowbytes(png_ptr, info_ptr);
+   int passes;
+
+   /* Handle interlacing. */
+   switch (png_ptr->interlaced)
+   {
+      case PNG_INTERLACE_NONE:
+         passes = 1;
+         break;
+
+      case PNG_INTERLACE_ADAM7:
+         passes = PNG_INTERLACE_ADAM7_PASSES;
+         break;
+
+      default:
+         png_error(png_ptr, "unknown interlace type");
+   }
+
+   /* Read each pass using local_row as intermediate buffer. */
+   while (--passes >= 0)
+   {
+      png_uint_32 y = image->height;
+      png_bytep output_row = first_row;
+
+      for (; y > 0; --y)
+      {
+         /* Read into local_row (gets transformed 8-bit data). */
+         png_read_row(png_ptr, local_row, NULL);
+
+         /* Copy from local_row to user buffer.
+          * Use row_bytes (i.e. the actual size in bytes of the row data) for
+          * copying into output_row. Use row_step for advancing output_row,
+          * to respect the caller's stride for padding or negative (bottom-up)
+          * layouts.
+          */
+         memcpy(output_row, local_row, row_bytes);
+         output_row += row_step;
+      }
+   }
+
+   return 1;
 }
 
 /* Just the row reading part of png_image_read. */
@@ -3177,17 +3240,18 @@ png_image_read_composite(png_voidp argument)
    }
 
    {
-      png_uint_32  height = image->height;
-      png_uint_32  width = image->width;
-      ptrdiff_t    step_row = display->row_bytes;
+      png_uint_32 height = image->height;
+      png_uint_32 width = image->width;
+      ptrdiff_t row_step = display->row_step;
       unsigned int channels =
           (image->format & PNG_FORMAT_FLAG_COLOR) != 0 ? 3 : 1;
+      int optimize_alpha = (png_ptr->flags & PNG_FLAG_OPTIMIZE_ALPHA) != 0;
       int pass;
 
       for (pass = 0; pass < passes; ++pass)
       {
-         unsigned int     startx, stepx, stepy;
-         png_uint_32      y;
+         unsigned int startx, stepx, stepy;
+         png_uint_32 y;
 
          if (png_ptr->interlaced == PNG_INTERLACE_ADAM7)
          {
@@ -3219,7 +3283,7 @@ png_image_read_composite(png_voidp argument)
             png_read_row(png_ptr, inrow, NULL);
 
             outrow = png_voidcast(png_bytep, display->first_row);
-            outrow += y * step_row;
+            outrow += y * row_step;
             end_row = outrow + width * channels;
 
             /* Now do the composition on each pixel in this row. */
@@ -3238,20 +3302,44 @@ png_image_read_composite(png_voidp argument)
 
                      if (alpha < 255) /* else just use component */
                      {
-                        /* This is PNG_OPTIMIZED_ALPHA, the component value
-                         * is a linear 8-bit value.  Combine this with the
-                         * current outrow[c] value which is sRGB encoded.
-                         * Arithmetic here is 16-bits to preserve the output
-                         * values correctly.
-                         */
-                        component *= 257*255; /* =65535 */
-                        component += (255-alpha)*png_sRGB_table[outrow[c]];
+                        if (optimize_alpha != 0)
+                        {
+                           /* This is PNG_OPTIMIZED_ALPHA, the component value
+                            * is a linear 8-bit value.  Combine this with the
+                            * current outrow[c] value which is sRGB encoded.
+                            * Arithmetic here is 16-bits to preserve the output
+                            * values correctly.
+                            */
+                           component *= 257*255; /* =65535 */
+                           component += (255-alpha)*png_sRGB_table[outrow[c]];
 
-                        /* So 'component' is scaled by 255*65535 and is
-                         * therefore appropriate for the sRGB to linear
-                         * conversion table.
-                         */
-                        component = PNG_sRGB_FROM_LINEAR(component);
+                           /* Clamp to the valid range to defend against
+                            * unforeseen cases where the data might be sRGB
+                            * instead of linear premultiplied.
+                            * (Belt-and-suspenders for CVE-2025-66293.)
+                            */
+                           if (component > 255*65535)
+                              component = 255*65535;
+
+                           /* So 'component' is scaled by 255*65535 and is
+                            * therefore appropriate for the sRGB-to-linear
+                            * conversion table.
+                            */
+                           component = PNG_sRGB_FROM_LINEAR(component);
+                        }
+                        else
+                        {
+                           /* Compositing was already done on the palette
+                            * entries.  The data is sRGB premultiplied on black.
+                            * Composite with the background in sRGB space.
+                            * This is not gamma-correct, but matches what was
+                            * done to the palette.
+                            */
+                           png_uint_32 background = outrow[c];
+                           component += ((255-alpha) * background + 127) / 255;
+                           if (component > 255)
+                              component = 255;
+                        }
                      }
 
                      outrow[c] = (png_byte)component;
@@ -3340,12 +3428,12 @@ png_image_read_background(png_voidp argument)
           */
          {
             png_bytep first_row = png_voidcast(png_bytep, display->first_row);
-            ptrdiff_t step_row = display->row_bytes;
+            ptrdiff_t row_step = display->row_step;
 
             for (pass = 0; pass < passes; ++pass)
             {
-               unsigned int     startx, stepx, stepy;
-               png_uint_32      y;
+               unsigned int startx, stepx, stepy;
+               png_uint_32 y;
 
                if (png_ptr->interlaced == PNG_INTERLACE_ADAM7)
                {
@@ -3372,7 +3460,7 @@ png_image_read_background(png_voidp argument)
                   {
                      png_bytep inrow = png_voidcast(png_bytep,
                          display->local_row);
-                     png_bytep outrow = first_row + y * step_row;
+                     png_bytep outrow = first_row + y * row_step;
                      png_const_bytep end_row = outrow + width;
 
                      /* Read the row, which is packed: */
@@ -3417,7 +3505,7 @@ png_image_read_background(png_voidp argument)
                   {
                      png_bytep inrow = png_voidcast(png_bytep,
                          display->local_row);
-                     png_bytep outrow = first_row + y * step_row;
+                     png_bytep outrow = first_row + y * row_step;
                      png_const_bytep end_row = outrow + width;
 
                      /* Read the row, which is packed: */
@@ -3463,9 +3551,9 @@ png_image_read_background(png_voidp argument)
             png_uint_16p first_row = png_voidcast(png_uint_16p,
                 display->first_row);
             /* The division by two is safe because the caller passed in a
-             * stride which was multiplied by 2 (below) to get row_bytes.
+             * stride which was multiplied by 2 (below) to get row_step.
              */
-            ptrdiff_t    step_row = display->row_bytes / 2;
+            ptrdiff_t row_step = display->row_step / 2;
             unsigned int preserve_alpha = (image->format &
                 PNG_FORMAT_FLAG_ALPHA) != 0;
             unsigned int outchannels = 1U+preserve_alpha;
@@ -3479,8 +3567,8 @@ png_image_read_background(png_voidp argument)
 
             for (pass = 0; pass < passes; ++pass)
             {
-               unsigned int     startx, stepx, stepy;
-               png_uint_32      y;
+               unsigned int startx, stepx, stepy;
+               png_uint_32 y;
 
                /* The 'x' start and step are adjusted to output components here.
                 */
@@ -3507,7 +3595,7 @@ png_image_read_background(png_voidp argument)
                for (; y<height; y += stepy)
                {
                   png_const_uint_16p inrow;
-                  png_uint_16p outrow = first_row + y*step_row;
+                  png_uint_16p outrow = first_row + y * row_step;
                   png_uint_16p end_row = outrow + width * outchannels;
 
                   /* Read the row, which is packed: */
@@ -3570,6 +3658,7 @@ png_image_read_direct(png_voidp argument)
    int linear = (format & PNG_FORMAT_FLAG_LINEAR) != 0;
    int do_local_compose = 0;
    int do_local_background = 0; /* to avoid double gamma correction bug */
+   int do_local_scale = 0; /* for interlaced 16-to-8 bit conversion */
    int passes = 0;
 
    /* Add transforms to ensure the correct output format is produced then check
@@ -3703,7 +3792,15 @@ png_image_read_direct(png_voidp argument)
             png_set_expand_16(png_ptr);
 
          else /* 8-bit output */
+         {
             png_set_scale_16(png_ptr);
+
+            /* For interlaced images, use local_row buffer to avoid overflow
+             * in png_combine_row() which writes using IHDR bit-depth.
+             */
+            if (png_ptr->interlaced != 0)
+               do_local_scale = 1;
+         }
 
          change &= ~PNG_FORMAT_FLAG_LINEAR;
       }
@@ -3935,23 +4032,23 @@ png_image_read_direct(png_voidp argument)
     */
    {
       png_voidp first_row = display->buffer;
-      ptrdiff_t row_bytes = display->row_stride;
+      ptrdiff_t row_step = display->row_stride;
 
       if (linear != 0)
-         row_bytes *= 2;
+         row_step *= 2;
 
-      /* The following expression is designed to work correctly whether it gives
-       * a signed or an unsigned result.
+      /* The following adjustment is to ensure that calculations are correct,
+       * regardless whether row_step is positive or negative.
        */
-      if (row_bytes < 0)
+      if (row_step < 0)
       {
          char *ptr = png_voidcast(char*, first_row);
-         ptr += (image->height-1) * (-row_bytes);
+         ptr += (image->height - 1) * (-row_step);
          first_row = png_voidcast(png_voidp, ptr);
       }
 
       display->first_row = first_row;
-      display->row_bytes = row_bytes;
+      display->row_step = row_step;
    }
 
    if (do_local_compose != 0)
@@ -3980,19 +4077,37 @@ png_image_read_direct(png_voidp argument)
       return result;
    }
 
+   else if (do_local_scale != 0)
+   {
+      /* For interlaced 16-to-8 conversion, use an intermediate row buffer
+       * to avoid buffer overflows in png_combine_row. The local_row is sized
+       * for the transformed (8-bit) output, preventing the overflow that would
+       * occur if png_combine_row wrote 16-bit data directly to the user buffer.
+       */
+      int result;
+      png_voidp row = png_malloc(png_ptr, png_get_rowbytes(png_ptr, info_ptr));
+
+      display->local_row = row;
+      result = png_safe_execute(image, png_image_read_direct_scaled, display);
+      display->local_row = NULL;
+      png_free(png_ptr, row);
+
+      return result;
+   }
+
    else
    {
-      png_alloc_size_t row_bytes = (png_alloc_size_t)display->row_bytes;
+      ptrdiff_t row_step = display->row_step;
 
       while (--passes >= 0)
       {
-         png_uint_32      y = image->height;
-         png_bytep        row = png_voidcast(png_bytep, display->first_row);
+         png_uint_32 y = image->height;
+         png_bytep row = png_voidcast(png_bytep, display->first_row);
 
          for (; y > 0; --y)
          {
             png_read_row(png_ptr, row, NULL);
-            row += row_bytes;
+            row += row_step;
          }
       }
 

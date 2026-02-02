@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,5 +386,12 @@ public final class BytecodeFrame extends BytecodePosition {
     @Override
     public String toString() {
         return CodeUtil.append(new StringBuilder(100), this).toString();
+    }
+
+    /**
+     * Returns a copy of the array describing the Java kinds in {@link #values}.
+     */
+    public JavaKind[] getSlotKinds() {
+        return (slotKinds == null) ? null : slotKinds.clone();
     }
 }

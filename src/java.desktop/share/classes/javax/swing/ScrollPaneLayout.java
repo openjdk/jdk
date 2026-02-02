@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import java.io.Serializable;
 
 
 /**
- * The layout manager used by <code>JScrollPane</code>.
- * <code>JScrollPaneLayout</code> is
+ * The layout manager used by {@code JScrollPane}.
+ * {@code ScrollPaneLayout} is
  * responsible for nine components: a viewport, two scrollbars,
  * a row header, a column header, and four "corner" components.
  * <p>

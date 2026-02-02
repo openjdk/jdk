@@ -46,11 +46,12 @@ import jdk.jfr.internal.consumer.ChunkParser;
 import jdk.jfr.internal.consumer.ParserState;
 import jdk.jfr.internal.consumer.RecordingInput;
 import jdk.jfr.internal.consumer.filter.ChunkWriter;
+import jdk.jfr.internal.consumer.filter.ChunkWriter.RemovedEvents;
 
 /**
  * A recording file.
  * <p>
- * The following example shows how read and print all events in a recording file.
+ * The following example shows how to read and print all events in a recording file.
  *
  * {@snippet class="Snippets" region="RecordingFileOverview"}
  *
@@ -229,12 +230,18 @@ public final class RecordingFile implements Closeable {
     public void write(Path destination, Predicate<RecordedEvent> filter) throws IOException {
         Objects.requireNonNull(destination, "destination");
         Objects.requireNonNull(filter, "filter");
-        try (ChunkWriter cw = new ChunkWriter(file.toPath(), destination, filter)) {
+        write(destination, filter, false);
+    }
+
+    // package private
+    List<RemovedEvents> write(Path destination, Predicate<RecordedEvent> filter, boolean collectResults) throws IOException {
+        try (ChunkWriter cw = new ChunkWriter(file.toPath(), destination, filter, collectResults)) {
             try (RecordingFile rf = new RecordingFile(cw)) {
                 while (rf.hasMoreEvents()) {
                     rf.readEvent();
                 }
             }
+            return cw.getRemovedEventTypes();
         }
     }
 

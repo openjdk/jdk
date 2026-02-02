@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @key headful
  * @bug 8041990
- * @summary Language specific keys does not work in applets when opened outside the browser
+ * @summary Language specific keys does not work in non-default AppContexts of top-level windows
  * @author Petr Pchelko
  * @modules java.desktop/sun.awt
  */

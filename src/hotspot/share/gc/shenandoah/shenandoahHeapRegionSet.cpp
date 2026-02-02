@@ -23,11 +23,11 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahHeapRegionSetIterator::ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set) :

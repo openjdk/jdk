@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,20 @@
 /*
  * @test
  * @bug 8221481
+ * @summary Test the platform SocketImpl when used in unintended ways
  * @compile/module=java.base java/net/PlatformSocketImpl.java
  * @run testng/othervm BadUsages
- * @summary Test the platform SocketImpl when used in unintended ways
  */
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.net.SocketException;
-import java.net.SocketImpl;
 import java.net.SocketOption;
 import java.net.SocketOptions;
 import java.net.StandardSocketOptions;
-import java.util.Set;
 
 import java.net.PlatformSocketImpl;  // test helper
 
@@ -78,6 +74,15 @@ public class BadUsages {
         var impl = new PlatformSocketImpl(false);
         impl.close();
         expectThrows(IOException.class, () -> impl.create(true));
+    }
+
+    /**
+     * Test create when not a stream socket.
+     */
+    public void testCreate3() throws IOException {
+        try (var impl = new PlatformSocketImpl(false)) {
+            expectThrows(IOException.class, () -> impl.create(false));
+        }
     }
 
     /**
@@ -230,18 +235,6 @@ public class BadUsages {
     public void testAccept2() throws IOException {
         try (var impl = new PlatformSocketImpl(true)) {
             impl.create(true);
-            var si = new PlatformSocketImpl(false);
-            expectThrows(IOException.class, () -> impl.accept(si));
-        }
-    }
-
-    /**
-     * Test accept when not a stream socket.
-     */
-    public void testAccept3() throws IOException {
-        try (var impl = new PlatformSocketImpl(false)) {
-            impl.create(false);
-            impl.bind(InetAddress.getLoopbackAddress(), 0);
             var si = new PlatformSocketImpl(false);
             expectThrows(IOException.class, () -> impl.accept(si));
         }

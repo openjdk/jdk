@@ -23,13 +23,10 @@
 
 #ifdef _WINDOWS
 
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zList.inline.hpp"
-#include "gc/z/zMapper_windows.hpp"
-#include "gc/z/zMemory.inline.hpp"
-#include "gc/z/zSyscall_windows.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
+#include "gc/z/zVirtualMemoryManager.inline.hpp"
 #include "runtime/os.hpp"
 #include "zunittest.hpp"
 
@@ -37,58 +34,46 @@ using namespace testing;
 
 class ZMapperTest : public ZTest {
 private:
-  static constexpr size_t ReservationSize = 32 * M;
+  static constexpr size_t ReservationSize = 3 * ZGranuleSize;
 
-  ZVirtualMemoryManager* _vmm;
-  ZMemoryManager*        _va;
+  ZAddressReserver        _zaddress_reserver;
+  ZVirtualMemoryReserver* _reserver;
+  ZVirtualMemoryRegistry* _registry;
 
 public:
   virtual void SetUp() {
-    // Only run test on supported Windows versions
-    if (!is_os_supported()) {
-      GTEST_SKIP() << "Requires Windows version 1803 or later";
-    }
+    _zaddress_reserver.SetUp(ReservationSize);
+    _reserver = _zaddress_reserver.reserver();
+    _registry = _zaddress_reserver.registry();
 
-    // Fake a ZVirtualMemoryManager
-    _vmm = (ZVirtualMemoryManager*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
-    _vmm = ::new (_vmm) ZVirtualMemoryManager(ReservationSize);
-
-    // Construct its internal ZMemoryManager
-    _va = new (&_vmm->_manager) ZMemoryManager();
-
-    // Reserve address space for the test
-    if (_vmm->reserved() != ReservationSize) {
-      GTEST_SKIP() << "Failed to reserve address space";
+    if (_reserver->reserved() < ReservationSize || !_registry->is_contiguous()) {
+      GTEST_SKIP() << "Fixture failed to reserve adequate memory, reserved "
+          << (_reserver->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
     }
   }
 
   virtual void TearDown() {
-    if (!is_os_supported()) {
-      // Test skipped, nothing to cleanup
-      return;
-    }
-
     // Best-effort cleanup
-    _vmm->unreserve_all();
-    _vmm->~ZVirtualMemoryManager();
-    os::free(_vmm);
+    _registry = nullptr;
+    _reserver = nullptr;
+    _zaddress_reserver.TearDown();
   }
 
   void test_unreserve() {
-    zoffset bottom = _va->alloc_low_address(ZGranuleSize);
-    zoffset middle = _va->alloc_low_address(ZGranuleSize);
-    zoffset top    = _va->alloc_low_address(ZGranuleSize);
+    ZVirtualMemory bottom = _registry->remove_from_low(ZGranuleSize);
+    ZVirtualMemory middle = _registry->remove_from_low(ZGranuleSize);
+    ZVirtualMemory top    = _registry->remove_from_low(ZGranuleSize);
 
-    ASSERT_EQ(bottom, zoffset(0));
-    ASSERT_EQ(middle, bottom + 1 * ZGranuleSize);
-    ASSERT_EQ(top,    bottom + 2 * ZGranuleSize);
+    ASSERT_EQ(bottom, ZVirtualMemory(bottom.start(),                    ZGranuleSize));
+    ASSERT_EQ(middle, ZVirtualMemory(bottom.start() + 1 * ZGranuleSize, ZGranuleSize));
+    ASSERT_EQ(top,    ZVirtualMemory(bottom.start() + 2 * ZGranuleSize, ZGranuleSize));
 
     // Unreserve the middle part
-    ZMapper::unreserve(ZOffset::address_unsafe(middle), ZGranuleSize);
+    _reserver->unreserve(middle);
 
     // Make sure that we still can unreserve the memory before and after
-    ZMapper::unreserve(ZOffset::address_unsafe(bottom), ZGranuleSize);
-    ZMapper::unreserve(ZOffset::address_unsafe(top), ZGranuleSize);
+    _reserver->unreserve(bottom);
+    _reserver->unreserve(top);
   }
 };
 

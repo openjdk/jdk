@@ -43,6 +43,7 @@ class ShenandoahHeapRegion {
   friend class VMStructs;
   friend class ShenandoahHeapRegionStateConstant;
 private:
+
   /*
     Region state is described by a state machine. Transitions are guarded by
     heap lock, which allows changing the state of several regions atomically.
@@ -216,7 +217,7 @@ public:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return Atomic::load(&_state); }
+  RegionState state()              const { return AtomicAccess::load(&_state); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();
@@ -259,9 +260,12 @@ private:
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
+  size_t _mixed_candidate_garbage_words;
+
   HeapWord* volatile _update_watermark;
 
   uint _age;
+  bool _promoted_in_place;
   CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
@@ -354,6 +358,15 @@ public:
 
   inline void save_top_before_promote();
   inline HeapWord* get_top_before_promote() const { return _top_before_promoted; }
+
+  inline void set_promoted_in_place() {
+    _promoted_in_place = true;
+  }
+
+  // Returns true iff this region was promoted in place subsequent to the most recent start of concurrent old marking.
+  inline bool was_promoted_in_place() {
+    return _promoted_in_place;
+  }
   inline void restore_top_before_promote();
   inline size_t garbage_before_padded_for_promote() const;
 
@@ -366,6 +379,9 @@ public:
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
+  // Allocate fill after top
+  inline HeapWord* allocate_fill(size_t word_size);
+
   inline void clear_live_data();
   void set_live_data(size_t s);
 
@@ -376,9 +392,23 @@ public:
   inline void increase_live_data_gc_words(size_t s);
 
   inline bool has_live() const;
+
+  // Represents the number of live bytes identified by most recent marking effort.  Does not include the bytes
+  // above TAMS.
   inline size_t get_live_data_bytes() const;
+
+  // Represents the number of live words identified by most recent marking effort.  Does not include the words
+  // above TAMS.
   inline size_t get_live_data_words() const;
 
+  inline size_t get_mixed_candidate_live_data_bytes() const;
+  inline size_t get_mixed_candidate_live_data_words() const;
+
+  inline void capture_mixed_candidate_garbage();
+
+  // Returns garbage by calculating difference between used and get_live_data_words.  The value returned is only
+  // meaningful immediately following completion of marking.  If there have been subsequent allocations in this region,
+  // use a different approach to determine garbage, such as (used() - get_mixed_candidate_live_data_bytes())
   inline size_t garbage() const;
 
   void print_on(outputStream* st) const;
@@ -444,7 +474,7 @@ public:
     return (bottom() <= p) && (p < top());
   }
 
-  inline void adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t);
+  inline void adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t);
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;
@@ -492,7 +522,7 @@ public:
   }
 
 private:
-  void decrement_humongous_waste() const;
+  void decrement_humongous_waste();
   void do_commit();
   void do_uncommit();
 

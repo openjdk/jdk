@@ -2027,7 +2027,7 @@ void GenerateOopMap::ret_jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, i
     int target_bci = rtEnt->jsrs(i);
     // Make sure a jrtRet does not set the changed bit for dead basicblock.
     BasicBlock* jsr_bb    = get_basic_block_containing(target_bci - 1);
-    debug_only(BasicBlock* target_bb = &jsr_bb[1];)
+    DEBUG_ONLY(BasicBlock* target_bb = &jsr_bb[1];)
     assert(target_bb  == get_basic_block_at(target_bci), "wrong calc. of successor basicblock");
     bool alive = jsr_bb->is_alive();
     if (TraceNewOopMapGeneration) {
@@ -2150,10 +2150,10 @@ bool GenerateOopMap::compute_map(Thread* current) {
 void GenerateOopMap::error_work(const char *format, va_list ap) {
   _got_error = true;
   char msg_buffer[512];
-  os::vsnprintf(msg_buffer, sizeof(msg_buffer), format, ap);
+  (void) os::vsnprintf(msg_buffer, sizeof(msg_buffer), format, ap);
   // Append method name
   char msg_buffer2[512];
-  os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
+  (void) os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
   Thread* current = Thread::current();
   if (current->can_call_java()) {
     _exception = Exceptions::new_exception(JavaThread::cast(current),

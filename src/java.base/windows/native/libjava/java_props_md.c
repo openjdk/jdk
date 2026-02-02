@@ -46,7 +46,7 @@
 
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
 static BOOL SetupI18nProps(LCID lcid, char** language, char** script, char** country,
-               char** variant, char** encoding);
+               char** variant);
 
 #define PROPSIZE 9      // eight-letter + null terminator
 #define SNAMESIZE 86    // max number of chars for LOCALE_SNAME is 85
@@ -166,7 +166,7 @@ getEncodingFromLangID(LANGID langID)
 DllExport const char *
 getJavaIDFromLangID(LANGID langID)
 {
-    char * elems[5]; // lang, script, ctry, variant, encoding
+    char * elems[4]; // lang, script, ctry, variant
     char * ret;
     int index;
 
@@ -175,12 +175,12 @@ getJavaIDFromLangID(LANGID langID)
         return NULL;
     }
 
-    for (index = 0; index < 5; index++) {
+    for (index = 0; index < 4; index++) {
         elems[index] = NULL;
     }
 
     if (SetupI18nProps(MAKELCID(langID, SORT_DEFAULT),
-                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]), &(elems[4]))) {
+                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]))) {
 
         // there always is the "language" tag
         strcpy(ret, elems[0]);
@@ -197,7 +197,7 @@ getJavaIDFromLangID(LANGID langID)
         ret = NULL;
     }
 
-    for (index = 0; index < 5; index++) {
+    for (index = 0; index < 4; index++) {
         if (elems[index] != NULL) {
             free(elems[index]);
         }
@@ -262,7 +262,7 @@ cpu_isalist(void)
 
 static BOOL
 SetupI18nProps(LCID lcid, char** language, char** script, char** country,
-               char** variant, char** encoding) {
+               char** variant) {
     /* script */
     char tmp[SNAMESIZE];
     *script = malloc(PROPSIZE);
@@ -319,11 +319,6 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
         strcpy(*variant, "NY");
     }
 
-    /* encoding */
-    *encoding = getEncodingInternal(lcid);
-    if (*encoding == NULL) {
-        return FALSE;
-    }
     return TRUE;
 }
 
@@ -424,17 +419,6 @@ GetJavaProperties(JNIEnv* env)
          *  Operating system            dwMajorVersion  dwMinorVersion
          * ==================           ==============  ==============
          *
-         * Windows 95                   4               0
-         * Windows 98                   4               10
-         * Windows ME                   4               90
-         * Windows 3.51                 3               51
-         * Windows NT 4.0               4               0
-         * Windows 2000                 5               0
-         * Windows XP 32 bit            5               1
-         * Windows Server 2003 family   5               2
-         * Windows XP 64 bit            5               2
-         *       where ((&ver.wServicePackMinor) + 2) = 1
-         *       and  si.wProcessorArchitecture = 9
          * Windows Vista family         6               0  (VER_NT_WORKSTATION)
          * Windows Server 2008          6               0  (!VER_NT_WORKSTATION)
          * Windows 7                    6               1  (VER_NT_WORKSTATION)
@@ -457,61 +441,19 @@ GetJavaProperties(JNIEnv* env)
          * versions are released.
          */
         switch (platformId) {
-        case VER_PLATFORM_WIN32_WINDOWS:
-           if (majorVersion == 4) {
-                switch (minorVersion) {
-                case  0: sprops.os_name = "Windows 95";           break;
-                case 10: sprops.os_name = "Windows 98";           break;
-                case 90: sprops.os_name = "Windows Me";           break;
-                default: sprops.os_name = "Windows 9X (unknown)"; break;
-                }
-            } else {
-                sprops.os_name = "Windows 9X (unknown)";
-            }
-            break;
         case VER_PLATFORM_WIN32_NT:
-            if (majorVersion <= 4) {
-                sprops.os_name = "Windows NT";
-            } else if (majorVersion == 5) {
-                switch (minorVersion) {
-                case  0: sprops.os_name = "Windows 2000";         break;
-                case  1: sprops.os_name = "Windows XP";           break;
-                case  2:
-                   /*
-                    * From MSDN OSVERSIONINFOEX and SYSTEM_INFO documentation:
-                    *
-                    * "Because the version numbers for Windows Server 2003
-                    * and Windows XP 6u4 bit are identical, you must also test
-                    * whether the wProductType member is VER_NT_WORKSTATION.
-                    * and si.wProcessorArchitecture is
-                    * PROCESSOR_ARCHITECTURE_AMD64 (which is 9)
-                    * If it is, the operating system is Windows XP 64 bit;
-                    * otherwise, it is Windows Server 2003."
-                    */
-                    if (is_workstation && is_64bit) {
-                        sprops.os_name = "Windows XP"; /* 64 bit */
-                    } else {
-                        sprops.os_name = "Windows 2003";
-                    }
-                    break;
-                default: sprops.os_name = "Windows NT (unknown)"; break;
-                }
-            } else if (majorVersion == 6) {
+            if (majorVersion == 6) {
                 /*
                  * See table in MSDN OSVERSIONINFOEX documentation.
                  */
                 if (is_workstation) {
                     switch (minorVersion) {
-                    case  0: sprops.os_name = "Windows Vista";        break;
-                    case  1: sprops.os_name = "Windows 7";            break;
                     case  2: sprops.os_name = "Windows 8";            break;
                     case  3: sprops.os_name = "Windows 8.1";          break;
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 } else {
                     switch (minorVersion) {
-                    case  0: sprops.os_name = "Windows Server 2008";    break;
-                    case  1: sprops.os_name = "Windows Server 2008 R2"; break;
                     case  2: sprops.os_name = "Windows Server 2012";    break;
                     case  3: sprops.os_name = "Windows Server 2012 R2"; break;
                     default: sprops.os_name = "Windows NT (unknown)";
@@ -627,7 +569,7 @@ GetJavaProperties(JNIEnv* env)
     /*
      *  user.language
      *  user.script, user.country, user.variant (if user's environment specifies them)
-     *  file.encoding
+     *  native.encoding
      */
     {
         /*
@@ -639,8 +581,7 @@ GetJavaProperties(JNIEnv* env)
         LCID userDefaultUILCID = MAKELCID(userDefaultUILang, SORTIDFROMLCID(userDefaultLCID));
 
         {
-            char * display_encoding;
-            HANDLE hStdOutErr;
+            HANDLE hStdHandle;
 
             // Windows UI Language selection list only cares "language"
             // information of the UI Language. For example, the list
@@ -658,19 +599,19 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.format_language,
                            &sprops.format_script,
                            &sprops.format_country,
-                           &sprops.format_variant,
-                           &sprops.encoding);
+                           &sprops.format_variant);
             SetupI18nProps(userDefaultUILCID,
                            &sprops.display_language,
                            &sprops.display_script,
                            &sprops.display_country,
-                           &sprops.display_variant,
-                           &display_encoding);
+                           &sprops.display_variant);
 
             sprops.sun_jnu_encoding = getEncodingInternal(0);
             if (sprops.sun_jnu_encoding == NULL) {
                 sprops.sun_jnu_encoding = "UTF-8";
             }
+            sprops.encoding = sprops.sun_jnu_encoding;
+
             if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && majorVersion == 6) {
                 // MS claims "Vista has built-in support for HKSCS-2004.
                 // All of the HKSCS-2004 characters have Unicode 4.1.
@@ -683,14 +624,19 @@ GetJavaProperties(JNIEnv* env)
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
 
-            hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (hStdOutErr != INVALID_HANDLE_VALUE &&
-                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
+            hStdHandle = GetStdHandle(STD_INPUT_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
+                sprops.stdin_encoding = getConsoleEncoding(FALSE);
+            }
+            hStdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
                 sprops.stdout_encoding = getConsoleEncoding(TRUE);
             }
-            hStdOutErr = GetStdHandle(STD_ERROR_HANDLE);
-            if (hStdOutErr != INVALID_HANDLE_VALUE &&
-                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
+            hStdHandle = GetStdHandle(STD_ERROR_HANDLE);
+            if (hStdHandle != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdHandle) == FILE_TYPE_CHAR) {
                 if (sprops.stdout_encoding != NULL)
                     sprops.stderr_encoding = sprops.stdout_encoding;
                 else

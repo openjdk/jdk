@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug     5003235
  * @summary Private inner class accessible from subclasses
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile/fail/ref=T5003235a.out -XDrawDiagnostics T5003235a.java
  */
 

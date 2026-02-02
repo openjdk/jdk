@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class GraphKit : public Phase {
                                         _sp = jvms->sp();
                                         _bci = jvms->bci();
                                         _method = jvms->has_method() ? jvms->method() : nullptr; }
-  void set_map(SafePointNode* m)      { _map = m; debug_only(verify_map()); }
+  void set_map(SafePointNode* m)      { _map = m; DEBUG_ONLY(verify_map()); }
   void set_sp(int sp)                 { assert(sp >= 0, "sp must be non-negative: %d", sp); _sp = sp; }
   void clean_stack(int from_sp); // clear garbage beyond from_sp to top
 
@@ -226,14 +226,14 @@ class GraphKit : public Phase {
     if (ex_map != nullptr) {
       _exceptions = ex_map->next_exception();
       ex_map->set_next_exception(nullptr);
-      debug_only(verify_exception_state(ex_map));
+      DEBUG_ONLY(verify_exception_state(ex_map));
     }
     return ex_map;
   }
 
   // Add an exception, using the given JVM state, without commoning.
   void push_exception_state(SafePointNode* ex_map) {
-    debug_only(verify_exception_state(ex_map));
+    DEBUG_ONLY(verify_exception_state(ex_map));
     ex_map->set_next_exception(_exceptions);
     _exceptions = ex_map;
   }
@@ -709,6 +709,8 @@ class GraphKit : public Phase {
   void increment_counter(address counter_addr);   // increment a debug counter
   void increment_counter(Node*   counter_addr);   // increment a debug counter
 
+  void halt(Node* ctrl, Node* frameptr, const char* reason, bool generate_code_in_product = true);
+
   // Bail out to the interpreter right now
   // The optional klass is the one causing the trap.
   // The optional reason is debug information written to the compile log.
@@ -784,6 +786,7 @@ class GraphKit : public Phase {
     RC_NARROW_MEM = 16,         // input memory is same as output
     RC_UNCOMMON = 32,           // freq. expected to be like uncommon trap
     RC_VECTOR = 64,             // CallLeafVectorNode
+    RC_PURE = 128,              // CallLeaf is pure
     RC_LEAF = 0                 // null value:  no flags set
   };
 

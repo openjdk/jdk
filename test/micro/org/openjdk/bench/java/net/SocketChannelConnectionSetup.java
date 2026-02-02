@@ -27,9 +27,9 @@ import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
@@ -49,55 +49,31 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 public class SocketChannelConnectionSetup {
 
     private ServerSocketChannel ssc;
+
+    private Path sscFilePath;
+
     private SocketChannel s1, s2;
 
-    private static volatile String tempDir;
-    private static final AtomicInteger count = new AtomicInteger(0);
-    private volatile Path socket;
-
-    @Param({"inet", "unix"})
-    private volatile String family;
-
-    static {
-        try {
-            Path p = Files.createTempDirectory("readWriteTest");
-            tempDir = p.toString();
-        } catch (IOException e) {
-            tempDir = null;
-        }
-    }
-
-    private ServerSocketChannel getServerSocketChannel() throws IOException {
-        if (family.equals("inet"))
-            return getInetServerSocketChannel();
-        else if (family.equals("unix"))
-            return getUnixServerSocketChannel();
-        throw new InternalError();
-    }
-
-
-    private ServerSocketChannel getInetServerSocketChannel() throws IOException {
-        return ServerSocketChannel.open().bind(null);
-    }
-
-    private ServerSocketChannel getUnixServerSocketChannel() throws IOException {
-        int next = count.incrementAndGet();
-        socket = Paths.get(tempDir, Integer.toString(next));
-        UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(socket);
-        return ServerSocketChannel.open(StandardProtocolFamily.UNIX).bind(addr);
-    }
+    @Param({"INET", "UNIX"})
+    private String family;
 
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
-        ssc = getServerSocketChannel();
+        StandardProtocolFamily typedFamily = StandardProtocolFamily.valueOf(family);
+        ssc = ServerSocketChannel.open(typedFamily).bind(null);
+        // Record the UDS file path right after binding, as the socket may be
+        // closed later due to a failure, and subsequent calls to `getPath()`
+        // will throw.
+        sscFilePath = ssc.getLocalAddress() instanceof UnixDomainSocketAddress udsChannel
+                ? udsChannel.getPath()
+                : null;
     }
 
     @TearDown(Level.Trial)
-    public void afterRun() throws IOException {
+    public void afterRun() throws Exception {
         ssc.close();
-        if (family.equals("unix")) {
-            Files.deleteIfExists(socket);
-            Files.deleteIfExists(Path.of(tempDir));
+        if (sscFilePath != null) {
+            Files.delete(sscFilePath);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -858,13 +858,14 @@ abstract class XScrollbar {
         return retVal;
     }
 
+    @Override
     public String toString() {
         return getClass() + "[" + width + "x" + height + "," + barWidth + "x" + barLength + "]";
     }
 }
 
 
-class XScrollRepeater implements Runnable {
+final class XScrollRepeater implements Runnable {
     /**
      * Time to pause before the first scroll repeat.
      */
@@ -922,6 +923,7 @@ class XScrollRepeater implements Runnable {
         newScroll = true;
     }
 
+    @Override
     public void run () {
         synchronized(this) {
             if (shouldSkip) {

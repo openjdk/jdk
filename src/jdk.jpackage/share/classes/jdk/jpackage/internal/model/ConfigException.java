@@ -25,26 +25,83 @@
 
 package jdk.jpackage.internal.model;
 
-public class ConfigException extends Exception {
+import jdk.jpackage.internal.util.LocalizedExceptionBuilder;
+import jdk.jpackage.internal.util.StringBundle;
+
+/**
+ * Signals that error has occurred at configuration phase.
+ * <p>
+ * It contains an error message and an optional advice message on how to correct the error.
+ * <p>
+ * The preferred way to construct instances of this class is to use
+ * {@link #build(StringBundle)}, or {@link #build(StringBundle, Throwable)},
+ * or {@link #build(StringBundle, String, Object...)} methods.
+ *
+ * {@snippet :
+ * StringBundle i18n = getStringBundle(); // Some way to obtain a string bundle with localized messages
+ *
+ * throw ConfigException.build(i18n)
+ *         .message("error.no.name")
+ *         .advice("error.no.name.advice")
+ *         .create();
+ * }
+ */
+public class ConfigException extends JPackageException {
     private static final long serialVersionUID = 1L;
-    final String advice;
+    private final String advice;
 
     public ConfigException(String msg, String advice) {
         super(msg);
         this.advice = advice;
     }
 
-    public ConfigException(String msg, String advice, Exception cause) {
+    public ConfigException(String msg, String advice, Throwable cause) {
         super(msg, cause);
         this.advice = advice;
     }
 
-    public ConfigException(Exception cause) {
-        super(cause);
-        this.advice = null;
+    public ConfigException(String msg, Throwable cause) {
+        this(msg, null, cause);
     }
 
     public String getAdvice() {
         return advice;
+    }
+
+    public static Builder build(StringBundle i18n) {
+        return new Builder(i18n);
+    }
+
+    public static Builder build(StringBundle i18n, String msgId, Object ... args) {
+        return build(i18n).message(msgId, args);
+    }
+
+    public static Builder build(StringBundle i18n, Throwable t) {
+        return build(i18n).causeAndMessage(t);
+    }
+
+    /**
+     * Builds {@link ConfigException} instances.
+     */
+    public static class Builder extends LocalizedExceptionBuilder<Builder> {
+
+        public Builder advice(String adviceId, Object ... args) {
+            advice = formatString(adviceId, args);
+            return this;
+        }
+
+        private Builder(StringBundle i18n) {
+            super(i18n);
+        }
+
+        public ConfigException create() {
+            return create(this::create);
+        }
+
+        private ConfigException create(String msg, Throwable cause) {
+            return new ConfigException(msg, advice, cause);
+        }
+
+        private String advice;
     }
 }

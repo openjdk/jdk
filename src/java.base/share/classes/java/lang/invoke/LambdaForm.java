@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import java.lang.classfile.TypeKind;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
@@ -122,6 +123,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * <p>
  * @author John Rose, JSR 292 EG
  */
+@AOTSafeClassInitializer
 class LambdaForm {
     final int arity;
     final int result;
@@ -137,13 +139,16 @@ class LambdaForm {
 
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 
+    /// Represents the "basic" types that exist in the JVM linkage and stack/locals.
+    /// All objects are erased to a reference.
+    /// All subwords (boolean, byte, char, short) are promoted to int.
     enum BasicType {
-        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.REFERENCE), // all reference types
+        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.REFERENCE),
         I_TYPE('I', int.class,    Wrapper.INT,    TypeKind.INT),
         J_TYPE('J', long.class,   Wrapper.LONG,   TypeKind.LONG),
         F_TYPE('F', float.class,  Wrapper.FLOAT,  TypeKind.FLOAT),
-        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DOUBLE),  // all primitive types
-        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VOID);    // not valid in all contexts
+        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DOUBLE),  // end arg types
+        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VOID);    // only valid in method return
 
         static final @Stable BasicType[] ALL_TYPES = BasicType.values();
         static final @Stable BasicType[] ARG_TYPES = Arrays.copyOf(ALL_TYPES, ALL_TYPES.length-1);
@@ -263,42 +268,30 @@ class LambdaForm {
         DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial", "newInvokeSpecial"),
         DIRECT_INVOKE_INTERFACE("DMH.invokeInterface", "invokeInterface"),
         DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit", "invokeStaticInit"),
-        GET_REFERENCE("getReference"),
-        PUT_REFERENCE("putReference"),
-        GET_REFERENCE_VOLATILE("getReferenceVolatile"),
-        PUT_REFERENCE_VOLATILE("putReferenceVolatile"),
-        GET_INT("getInt"),
-        PUT_INT("putInt"),
-        GET_INT_VOLATILE("getIntVolatile"),
-        PUT_INT_VOLATILE("putIntVolatile"),
-        GET_BOOLEAN("getBoolean"),
-        PUT_BOOLEAN("putBoolean"),
-        GET_BOOLEAN_VOLATILE("getBooleanVolatile"),
-        PUT_BOOLEAN_VOLATILE("putBooleanVolatile"),
-        GET_BYTE("getByte"),
-        PUT_BYTE("putByte"),
-        GET_BYTE_VOLATILE("getByteVolatile"),
-        PUT_BYTE_VOLATILE("putByteVolatile"),
-        GET_CHAR("getChar"),
-        PUT_CHAR("putChar"),
-        GET_CHAR_VOLATILE("getCharVolatile"),
-        PUT_CHAR_VOLATILE("putCharVolatile"),
-        GET_SHORT("getShort"),
-        PUT_SHORT("putShort"),
-        GET_SHORT_VOLATILE("getShortVolatile"),
-        PUT_SHORT_VOLATILE("putShortVolatile"),
-        GET_LONG("getLong"),
-        PUT_LONG("putLong"),
-        GET_LONG_VOLATILE("getLongVolatile"),
-        PUT_LONG_VOLATILE("putLongVolatile"),
-        GET_FLOAT("getFloat"),
-        PUT_FLOAT("putFloat"),
-        GET_FLOAT_VOLATILE("getFloatVolatile"),
-        PUT_FLOAT_VOLATILE("putFloatVolatile"),
-        GET_DOUBLE("getDouble"),
-        PUT_DOUBLE("putDouble"),
-        GET_DOUBLE_VOLATILE("getDoubleVolatile"),
-        PUT_DOUBLE_VOLATILE("putDoubleVolatile"),
+        FIELD_ACCESS("fieldAccess"),
+        FIELD_ACCESS_INIT("fieldAccessInit"),
+        VOLATILE_FIELD_ACCESS("volatileFieldAccess"),
+        VOLATILE_FIELD_ACCESS_INIT("volatileFieldAccessInit"),
+        FIELD_ACCESS_B("fieldAccessB"),
+        FIELD_ACCESS_INIT_B("fieldAccessInitB"),
+        VOLATILE_FIELD_ACCESS_B("volatileFieldAccessB"),
+        VOLATILE_FIELD_ACCESS_INIT_B("volatileFieldAccessInitB"),
+        FIELD_ACCESS_C("fieldAccessC"),
+        FIELD_ACCESS_INIT_C("fieldAccessInitC"),
+        VOLATILE_FIELD_ACCESS_C("volatileFieldAccessC"),
+        VOLATILE_FIELD_ACCESS_INIT_C("volatileFieldAccessInitC"),
+        FIELD_ACCESS_S("fieldAccessS"),
+        FIELD_ACCESS_INIT_S("fieldAccessInitS"),
+        VOLATILE_FIELD_ACCESS_S("volatileFieldAccessS"),
+        VOLATILE_FIELD_ACCESS_INIT_S("volatileFieldAccessInitS"),
+        FIELD_ACCESS_Z("fieldAccessZ"),
+        FIELD_ACCESS_INIT_Z("fieldAccessInitZ"),
+        VOLATILE_FIELD_ACCESS_Z("volatileFieldAccessZ"),
+        VOLATILE_FIELD_ACCESS_INIT_Z("volatileFieldAccessInitZ"),
+        FIELD_ACCESS_CAST("fieldAccessCast"),
+        FIELD_ACCESS_INIT_CAST("fieldAccessInitCast"),
+        VOLATILE_FIELD_ACCESS_CAST("volatileFieldAccessCast"),
+        VOLATILE_FIELD_ACCESS_INIT_CAST("volatileFieldAccessInitCast"),
         TRY_FINALLY("tryFinally"),
         TABLE_SWITCH("tableSwitch"),
         COLLECTOR("collector"),
@@ -369,14 +362,6 @@ class LambdaForm {
     }
     static LambdaForm create(int arity, Name[] names, boolean forceInline, Kind kind) {
         return create(arity, names, DEFAULT_RESULT, forceInline, DEFAULT_CUSTOMIZED, kind);
-    }
-
-    private static LambdaForm createBlankForType(MethodType mt) {
-        // Make a dummy blank lambda form.
-        // It is used as a template for managing the invocation of similar forms that are non-empty.
-        // Called only from getPreparedForm.
-        LambdaForm form = new LambdaForm(0, 0, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, new Name[0], Kind.GENERIC);
-        return form;
     }
 
     private static int fixResult(int result, Name[] names) {
@@ -785,14 +770,15 @@ class LambdaForm {
             return;
         }
         MethodType mtype = methodType();
-        LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
-        if (prep == null) {
+        MethodTypeForm form = mtype.form();
+
+        MemberName entry = form.cachedInterpretEntry();
+        if (entry == null) {
             assert (isValidSignature(basicTypeSignature()));
-            prep = LambdaForm.createBlankForType(mtype);
-            prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
-            prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
+            entry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
+            entry = form.setCachedInterpretEntry(entry);
         }
-        this.vmentry = prep.vmentry;
+        this.vmentry = entry;
         // TO DO: Maybe add invokeGeneric, invokeWithArguments
     }
 
@@ -1051,6 +1037,7 @@ class LambdaForm {
         return false;
     }
 
+    @AOTSafeClassInitializer
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
@@ -1746,7 +1733,14 @@ class LambdaForm {
         UNSAFE.ensureClassInitialized(Holder.class);
     }
 
-    /* Placeholder class for identity and constant forms generated ahead of time */
+    /// Holds pre-generated bytecode for common lambda forms.
+    ///
+    /// This class may be substituted in the JDK's modules image, or in an AOT
+    /// cache, by a version generated by [GenerateJLIClassesHelper].
+    ///
+    /// The method names of this class are internal tokens recognized by
+    /// [InvokerBytecodeGenerator#lookupPregenerated] and are subject to change.
+    @AOTSafeClassInitializer
     final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER

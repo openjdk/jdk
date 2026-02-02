@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public interface InputGraphProvider {
 
     void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
 
-    void clearSelectedNodes();
+    void clearSelectedElements();
 
     /**
      * @return an iterator walking forward through the {@link InputGraph}s following the {@link #getGraph()}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,7 +689,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -717,7 +717,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -727,6 +727,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             this, m,
             UN_IMPL.find(op, opc, IntVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<IntVector, VectorMask<Integer>>>
@@ -824,6 +825,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                     = this.compare(EQ, (int) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -849,6 +851,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             this, that, m,
             BIN_IMPL.find(op, opc, IntVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<IntVector, VectorMask<Integer>>>
@@ -2855,9 +2858,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) Math.max(a, b)));
             case VECTOR_OP_UMIN: return (v, m) ->
-                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (int) VectorMath.minUnsigned(a, b)));
+                    toBits(v.rOp(UMAX_VALUE, m, (i, a, b) -> (int) VectorMath.minUnsigned(a, b)));
             case VECTOR_OP_UMAX: return (v, m) ->
-                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) VectorMath.maxUnsigned(a, b)));
+                    toBits(v.rOp(UMIN_VALUE, m, (i, a, b) -> (int) VectorMath.maxUnsigned(a, b)));
+            case VECTOR_OP_SUADD: return (v, m) ->
+                    toBits(v.rOp((int)0, m, (i, a, b) -> (int) VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((int)-1, m, (i, a, b) -> (int)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -2870,6 +2875,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     private static final int MIN_OR_INF = Integer.MIN_VALUE;
     private static final int MAX_OR_INF = Integer.MAX_VALUE;
+    private static final int UMIN_VALUE = (int)0;   // Minimum unsigned value
+    private static final int UMAX_VALUE = (int)-1;  // Maximum unsigned value
 
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op);
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op,
@@ -3094,8 +3101,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         return VectorSupport.loadWithMap(
             vectorType, null, int.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, null,
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
@@ -3366,7 +3373,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         VectorSupport.storeWithMap(
             vsp.vectorType(), null, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
             a, offset, indexMap, mapOffset,
@@ -3543,8 +3550,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, int.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, m,
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
@@ -3640,7 +3647,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         VectorSupport.storeWithMap(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
             a, offset, indexMap, mapOffset,
@@ -3711,6 +3718,18 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 .reinterpretAsInts();
         }
         return this;
+    }
+
+    @Override
+    @ForceInline
+    final
+    IntVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<Integer> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (IntVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =
