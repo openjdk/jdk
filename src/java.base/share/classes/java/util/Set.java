@@ -82,7 +82,7 @@ import java.util.function.Predicate;
  * Set to behave inconsistently or its contents to appear to change.
  * <li>They disallow {@code null} elements. Attempts to create them with
  * {@code null} elements result in {@code NullPointerException}.
- * <li>They are serializable if all elements are serializable.
+ * <li>Unless otherwise specified, they are serializable if all elements are serializable.
  * <li>They reject duplicate elements at creation time. Duplicate elements
  * passed to a static factory method result in {@code IllegalArgumentException}.
  * <li>The iteration order of set elements is unspecified and is subject to change.
@@ -741,19 +741,24 @@ public interface Set<E> extends Collection<E> {
     }
 
     /**
-     * {@return a new lazily computed set with the provided {@code elementCandidates}
-     *          whose membership status will be lazily determined by the provided
-     *          {@code computingFunction}}
+     * {@return a new lazily computed set whose logical membership for each provided
+     *          {@code elementCandidates} is computed via the provided
+     *          {@code computingFunction} on demand}
      * <p>
-     * The returned set is an {@linkplain Collection##unmodifiable unmodifiable} set whose
-     * element candidates are known at construction. The set's element membership status
-     * are lazily computed via the provided {@code computingFunction} when they are first
-     * accessed (e.g., via {@linkplain Set#contains(Object) Set::contains}).
+     * In the following, the term <em>membership status</em> means whether an element is a
+     * logical member or a non-member. The returned set is an
+     * {@linkplain Collection##unmodifiable unmodifiable} set whose element candidates are
+     * known at construction. The set's element membership statuses are lazily computed
+     * via the provided {@code computingFunction} when first accessed (e.g., via
+     * {@linkplain Set#contains(Object) Set::contains}). Once the membership status has
+     * been successfully computed for an element candidate, the associated membership
+     * status is initialized (i.e., either as <em>a logical member</em> or as
+     * <em>a logical non-member</em>).
      * <p>
      * The provided computing function is guaranteed to be successfully invoked
-     * at most once per element candicate, even in a multi-threaded environment. Competing
+     * at most once per element candidate, even in a multi-threaded environment. Competing
      * threads accessing an element candidate already under membership status computation
-     * will block until the mebership status of the element candidate is computed or the
+     * will block until the membership status of the element candidate is computed or the
      * computing function completes abnormally.
      * <p>
      * If invoking the provided computing function throws an exception, it
@@ -775,18 +780,50 @@ public interface Set<E> extends Collection<E> {
      * uncomputed element candidates.
      * <p>
      * The returned Set is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * Here is an example involving an application that manages various configurable
+     * options -- commonly referred to as "switches" -- that control its behavior. The
+     * state of these switches can be determined through the command line, a configuration
+     * file, or even a remote connection. By using a lazy set, we ensure that the states
+     * of these switches are evaluated only once. Once computed, the results are eligible
+     * for constant folding by the JVM:
+     * {@snippet lang = java:
+     * class Application {
+     *
+     *     enum Option{VERBOSE, DRY_RUN, STRICT}
+     *
+     *     // Lazily initialized Set of Options
+     *     static final Set<Option> OPTIONS =
+     *             Set.ofLazy(EnumSet.allOf(Option.class), Application::isEnabled);
+     *
+     *     public static void process() {
+     *         if (OPTIONS.contains(Option.DRY_RUN)) {
+     *             // Skip processing in DRY_RUN mode
+     *             return;
+     *         }
+     *         // Actual processing logic goes here
+     *     }
+     *
+     *     // Determines if a given Option is enabled (true) or disabled (false)
+     *     private static boolean isEnabled(Option option) {
+     *         ...
+     *     }
+     *
+     * }
+     * }
      *
      * @implNote  after all element membership statuses have been initialized successfully,
      *            the computing function is no longer strongly referenced and becomes
      *            eligible for garbage collection.
      *
      * @param elementCandidates the (non-null) element candidates to be evaluated
-     * @param computingFunction to invoke whenever the containment status of an element
+     * @param computingFunction to invoke whenever the membership status of an element
      *                          candidate is first computed
      * @param <E>               the type of elements maintained by the returned set
-     * @throws NullPointerException if the provided set of {@code elementCandidated} is
-     *                              {@code null} or if the set of {@code elementCandidated}
-     *                              contains a {@code null} element.
+     * @throws NullPointerException if the provided set of {@code elementCandidates} is
+     *                              {@code null}, if the set of {@code elementCandidates}
+     *                              contains a {@code null} element, or if the provided
+     *                              {@code computingFunction} is {@code null}
      *
      * @see LazyConstant
      * @since 27
