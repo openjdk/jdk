@@ -309,7 +309,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
-  case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
   case vmIntrinsics::_getCharStringU:           return inline_string_char_access(!is_store);
   case vmIntrinsics::_putCharStringU:           return inline_string_char_access( is_store);
@@ -1525,101 +1524,6 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
 #else  //_LP64
 #define XTOP        /*no additional argument*/
 #endif //_LP64
-
-//------------------------inline_string_toBytesU--------------------------
-// public static byte[] StringUTF16.toBytes(char[] value, int off, int len)
-bool LibraryCallKit::inline_string_toBytesU() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-  // Get the arguments.
-  Node* value     = argument(0);
-  Node* offset    = argument(1);
-  Node* length    = argument(2);
-
-  Node* newcopy = nullptr;
-
-  // Set the original stack and the reexecute bit for the interpreter to reexecute
-  // the bytecode that invokes StringUTF16.toBytes() if deoptimization happens.
-  { PreserveReexecuteState preexecs(this);
-    jvms()->set_should_reexecute(true);
-
-    // Check if a null path was taken unconditionally.
-    value = null_check(value);
-
-    RegionNode* bailout = new RegionNode(1);
-    record_for_igvn(bailout);
-
-    // Range checks
-    generate_negative_guard(offset, bailout);
-    generate_negative_guard(length, bailout);
-    generate_limit_guard(offset, length, load_array_length(value), bailout);
-    // Make sure that resulting byte[] length does not overflow Integer.MAX_VALUE
-    generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout);
-
-    if (bailout->req() > 1) {
-      PreserveJVMState pjvms(this);
-      set_control(_gvn.transform(bailout));
-      uncommon_trap(Deoptimization::Reason_intrinsic,
-                    Deoptimization::Action_maybe_recompile);
-    }
-    if (stopped()) {
-      return true;
-    }
-
-    Node* size = _gvn.transform(new LShiftINode(length, intcon(1)));
-    Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
-    newcopy = new_array(klass_node, size, 0);  // no arguments to push
-    AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy);
-    guarantee(alloc != nullptr, "created above");
-
-    // Calculate starting addresses.
-    Node* src_start = array_element_address(value, offset, T_CHAR);
-    Node* dst_start = basic_plus_adr(newcopy, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-
-    // Check if dst array address is aligned to HeapWordSize
-    bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
-    // If true, then check if src array address is aligned to HeapWordSize
-    if (aligned) {
-      const TypeInt* toffset = gvn().type(offset)->is_int();
-      aligned = toffset->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_CHAR) +
-                                       toffset->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
-    }
-
-    // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
-    const char* copyfunc_name = "arraycopy";
-    address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
-    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
-                      OptoRuntime::fast_arraycopy_Type(),
-                      copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
-                      src_start, dst_start, ConvI2X(length) XTOP);
-    // Do not let reads from the cloned object float above the arraycopy.
-    if (alloc->maybe_set_complete(&_gvn)) {
-      // "You break it, you buy it."
-      InitializeNode* init = alloc->initialization();
-      assert(init->is_complete(), "we just did this");
-      init->set_complete_with_arraycopy();
-      assert(newcopy->is_CheckCastPP(), "sanity");
-      assert(newcopy->in(0)->in(0) == init, "dest pinned");
-    }
-    // Do not let stores that initialize this object be reordered with
-    // a subsequent store that would make this object accessible by
-    // other threads.
-    // Record what AllocateNode this StoreStore protects so that
-    // escape analysis can go from the MemBarStoreStoreNode to the
-    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-    // based on the escape status of the AllocateNode.
-    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-  } // original reexecute is set back here
-
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
-  if (!stopped()) {
-    set_result(newcopy);
-  }
-  clear_upper_avx();
-
-  return true;
-}
 
 //------------------------inline_string_getCharsU--------------------------
 // public void StringUTF16.getChars(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
