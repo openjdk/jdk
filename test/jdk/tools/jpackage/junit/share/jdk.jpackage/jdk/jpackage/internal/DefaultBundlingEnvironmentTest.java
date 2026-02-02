@@ -54,6 +54,7 @@ import jdk.jpackage.test.mock.CommandActionSpecs;
 import jdk.jpackage.test.mock.CommandMock;
 import jdk.jpackage.test.mock.CommandMockExit;
 import jdk.jpackage.test.mock.Script;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
 import org.junit.jupiter.api.Test;
 
 
@@ -96,7 +97,7 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
 
         var script = createMockScript(op);
 
-        ToolProvider jpackage = MockUtils.buildJPackage()
+        ToolProvider jpackage = JPackageMockUtils.buildJPackage()
                 .os(op.os())
                 .script(script)
                 .listener(executedCommands::add).create();
