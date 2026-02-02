@@ -46,11 +46,23 @@ struct AtomicInitializationTestSupport {
     {}
   };
 
+  struct HolderNoConstructor {
+    Atomic<T> _default_initialized;
+  };
+
   void test() {
     T t = T();
 
     {
       Holder h;
+
+      EXPECT_EQ(t, h._explicitly_initialized.load_relaxed());
+      EXPECT_EQ(t, h._default_initialized.load_relaxed());
+      EXPECT_EQ(t, h._value_initialized.load_relaxed());
+    }
+
+    {
+      Holder h{};
 
       EXPECT_EQ(t, h._explicitly_initialized.load_relaxed());
       EXPECT_EQ(t, h._default_initialized.load_relaxed());
@@ -65,6 +77,28 @@ struct AtomicInitializationTestSupport {
       EXPECT_EQ(t, h->_explicitly_initialized.load_relaxed());
       EXPECT_EQ(t, h->_default_initialized.load_relaxed());
       EXPECT_EQ(t, h->_value_initialized.load_relaxed());
+    }
+
+    // No-constructor variant
+
+    {
+      HolderNoConstructor h;
+
+      EXPECT_EQ(t, h._default_initialized.load_relaxed());
+    }
+
+    {
+      HolderNoConstructor h{};
+
+      EXPECT_EQ(t, h._default_initialized.load_relaxed());
+    }
+
+    {
+      alignas(HolderNoConstructor) char mem[sizeof(HolderNoConstructor)];
+      memset(mem, 0xFF, sizeof(HolderNoConstructor));
+      HolderNoConstructor* h = new (mem) HolderNoConstructor();
+
+      EXPECT_EQ(t, h->_default_initialized.load_relaxed());
     }
   }
 };
