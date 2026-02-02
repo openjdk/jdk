@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,9 +52,6 @@ static void asm_check(const unsigned int *insns, const unsigned int *insns1, siz
 }
 
 TEST_VM(AssemblerAArch64, validate) {
-  // Disable PreferSVEMergingModeCPY to ensure consistent encoding with asmtest.out.h
-  FlagSetting fs(PreferSVEMergingModeCPY, false);
-
   // Smoke test for assembler
   BufferBlob* b = BufferBlob::create("aarch64Test", 500000);
   CodeBuffer code(b);

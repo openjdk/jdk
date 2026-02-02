@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3835,18 +3835,6 @@ private:
 public:
   // SVE copy signed integer immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8, bool isMerge) {
-    // When PreferSVEMergingModeCPY is enabled, optimize the SVE `cpy (immediate,
-    // zeroing)` instruction as `movi + cpy (immediate, merging)` instructions
-    // for better performance.
-    if (PreferSVEMergingModeCPY && !isMerge) {
-      // Generates a NEON instruction `movi Vd.2d, #0`.
-      // On AArch64, Z and V registers alias in the low 128 bits, so Vd is the
-      // low 128 bits of Zd. A write to Vd also clears all bits of Zd above 128,
-      // so this `movi` instruction effectively zeroes the entire Zd register.
-      // According to the Arm Software Optimization Guide, `movi` is zero cost.
-      movi(Zd, T2D, 0);
-      isMerge = true;
-    }
     sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
   }
   // SVE copy floating-point immediate to vector elements (predicated)

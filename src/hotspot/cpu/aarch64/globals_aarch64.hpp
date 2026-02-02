@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -104,8 +104,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(uint, UseSVE, 0,                                              \
           "Highest supported SVE instruction set version")              \
           range(0, 2)                                                   \
-  product(bool, PreferSVEMergingModeCPY, false,                         \
-          "Prefer SVE merging-mode CPY instruction")                    \
   product(bool, UseBlockZeroing, true,                                  \
           "Use DC ZVA for block zeroing")                               \
   product(intx, BlockZeroingLowLimit, 256,                              \

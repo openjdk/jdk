@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,4 +213,8 @@
   void vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
                          int vector_length_in_bytes);
+
+  // Optimized SVE cpy instructions
+  void sve_cpy_optimized(FloatRegister dst, SIMD_RegVariant T, PRegister pg,
+                         int imm8, bool isMerge);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

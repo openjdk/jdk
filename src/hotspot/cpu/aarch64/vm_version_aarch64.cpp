@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -221,12 +221,15 @@ void VM_Version::initialize() {
   }
 
   // Neoverse
-  if (_cpu == CPU_ARM && (model_is(CPU_MODEL_NEOVERSE_N1) ||
-                          model_is(CPU_MODEL_NEOVERSE_N2) ||
-                          model_is(CPU_MODEL_NEOVERSE_N3) ||
-                          model_is(CPU_MODEL_NEOVERSE_V1) ||
-                          model_is(CPU_MODEL_NEOVERSE_V2) ||
-                          model_is(CPU_MODEL_NEOVERSE_V3))) {
+  //   N1: 0xd0c
+  //   N2: 0xd49
+  //   N3: 0xd8e
+  //   V1: 0xd40
+  //   V2: 0xd4f
+  //   V3: 0xd84
+  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
+                          model_is(0xd40) || model_is(0xd4f) ||
+                          model_is(0xd8e) || model_is(0xd84))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -258,10 +261,12 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
+  // Neoverse
+  //   V1: 0xd40
+  //   V2: 0xd4f
+  //   V3: 0xd84
   if (_cpu == CPU_ARM &&
-      (model_is(CPU_MODEL_NEOVERSE_V1) ||
-       model_is(CPU_MODEL_NEOVERSE_V2) ||
-       model_is(CPU_MODEL_NEOVERSE_V3))) {
+      (model_is(0xd40) || model_is(0xd4f) || model_is(0xd84))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
@@ -596,23 +601,6 @@ void VM_Version::initialize() {
     } else {
       FLAG_SET_DEFAULT(MaxVectorSize, FloatRegister::neon_vl);
     }
-  }
-
-  // Enable PreferSVEMergingModeCPY by default on Neoverse V1/V2, because the
-  // merging mode SVE CPY instruction performs better on them.
-  if (_cpu == CPU_ARM && (model_is(CPU_MODEL_NEOVERSE_V1) ||
-                          model_is(CPU_MODEL_NEOVERSE_V2))) {
-    if (FLAG_IS_DEFAULT(PreferSVEMergingModeCPY)) {
-      FLAG_SET_DEFAULT(PreferSVEMergingModeCPY, true);
-    }
-  }
-
-  // PreferSVEMergingModeCPY is only meaningful when SVE is enabled.
-  if (UseSVE == 0 && PreferSVEMergingModeCPY) {
-    if (!FLAG_IS_DEFAULT(PreferSVEMergingModeCPY)) {
-      warning("PreferSVEMergingModeCPY specified, but SVE is disabled. Disabling PreferSVEMergingModeCPY");
-    }
-    FLAG_SET_DEFAULT(PreferSVEMergingModeCPY, false);
   }
 
   int inline_size = (UseSVE > 0 && MaxVectorSize >= FloatRegister::sve_vl_min) ? MaxVectorSize : 0;
