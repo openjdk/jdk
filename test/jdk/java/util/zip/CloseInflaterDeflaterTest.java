@@ -203,7 +203,7 @@ public class CloseInflaterDeflaterTest {
      * @param zip will be the instance of either JarOutputStream or ZipOutputStream
      * @throws IOException if an error occurs
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("testZipAndJar")
     public void testZipCloseEntry(ZipOutputStream zip) throws IOException {
         assertThrows(IOException.class , () -> zip.putNextEntry(new ZipEntry("")));
