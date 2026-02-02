@@ -705,7 +705,8 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     // This means the access is dead
     return phase->C->top();
   } else if (adr_type->base() == TypePtr::AnyPtr) {
-    // Give up on a very wide access, this will upset Compile::get_alias_index
+    assert(adr_type->ptr() == TypePtr::Null, "MemNode should never access a wide memory");
+    // Give up, this will upset Compile::get_alias_index
     return nullptr;
   }
 

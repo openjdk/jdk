@@ -29,8 +29,8 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @bug 8376220
- * @summary Tests that memory accesses can get elided if there is a preceding access to the same
- *          field but the bases are provably different.
+ * @summary Tests that memory accesses can be elided when the compiler can see the value at the
+ *          accessed memory location by walking the memory graph.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver ${test.main.class}
@@ -154,7 +154,7 @@ public class TestFindStore {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD)
+    @IR(failOn = IRNode.LOAD, applyIf = {"ArrayCopyLoadStoreMaxElem", "<100"})
     static int testLoadArrayCopy(int[] a1, int[] a2, int v) {
         a2[2] = v;
         // Should be large so the compiler does not just transform it into a couple of loads and stores
