@@ -148,6 +148,7 @@ class OpaqueConstantBoolNode : public Node {
   bool _constant;
  public:
   OpaqueConstantBoolNode(Compile* C, Node* tst, bool constant) : Node(nullptr, tst), _constant(constant) {
+    assert(tst->is_Bool() || tst->is_Con(), "Test node must be a BoolNode or a constant");
     init_class_id(Class_OpaqueConstantBool);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
