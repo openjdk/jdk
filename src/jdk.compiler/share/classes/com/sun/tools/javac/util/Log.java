@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,12 +141,15 @@ public class Log extends AbstractLog {
             LintCategory category = diag.getLintCategory();
             if (category != null) {                                         // this is a lint warning; find the applicable Lint
                 DiagnosticPosition pos = diag.getDiagnosticPosition();
+                Lint theRootLint = rootLint();
                 if (pos != null && category.annotationSuppression) {        // we should apply the Lint from the warning's position
 
                     // Optimization: We don't need to go through the trouble of calculating the Lint instance at "pos" if
                     // (a) "category" is disabled at the root level, and (b) the diagnostic doesn't have the DEFAULT_ENABLED
                     // flag: @SuppressWarnings can only disable lint categories, so "category" is disabled in the entire file.
-                    if (!rootLint().isEnabled(category) &&
+                    // But if tracking SUPPRESSION, skip this optimization because it might cause a validation to be missed.
+                    if (!theRootLint.isEnabled(category, false) &&
+                      !theRootLint.isEnabled(SUPPRESSION, false) &&
                       !diag.isFlagSet(DEFAULT_ENABLED) &&
                       !diag.getCode().equals(RequiresTransitiveAutomatic.key()))    // accommodate the "requires" hack below
                         return;
@@ -157,7 +160,7 @@ public class Log extends AbstractLog {
                         return;
                     }
                 } else                                                      // we should apply the root Lint
-                    lint = rootLint();
+                    lint = theRootLint;
             }
             reportWithLint(diag, lint);
         }
@@ -168,7 +171,7 @@ public class Log extends AbstractLog {
         public final void reportWithLint(JCDiagnostic diag, Lint lint) {
 
             // Apply hackery for REQUIRES_TRANSITIVE_AUTOMATIC (see also Check.checkModuleRequires())
-            if (diag.getCode().equals(RequiresTransitiveAutomatic.key()) && !lint.isEnabled(REQUIRES_TRANSITIVE_AUTOMATIC)) {
+            if (diag.getCode().equals(RequiresTransitiveAutomatic.key()) && !lint.isEnabled(REQUIRES_TRANSITIVE_AUTOMATIC, true)) {
                 reportWithLint(
                   diags.warning(null, diag.getDiagnosticSource(), diag.getDiagnosticPosition(), RequiresAutomatic), lint);
                 return;
@@ -178,12 +181,14 @@ public class Log extends AbstractLog {
             if (lint != null) {
                 LintCategory category = diag.getLintCategory();
                 boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?       // is the warning not enabled by default?
-                  lint.isEnabled(category) :                            // then emit if the category is enabled
+                  lint.isEnabled(category, false) :                     // then emit if the category is enabled
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
-                    !lint.isSuppressed(category) :                      // ...suppression happens via @SuppressWarnings
+                    !lint.isSuppressed(category, false) :               // ...suppression happens via @SuppressWarnings
                     !options.isDisabled(Option.XLINT, category);        // ...suppression happens via -Xlint:-category
-                if (!emit)
+                if (!emit) {
+                    validateSuppression(new SuppressionValidation(lint, diag));     // validate any suppression
                     return;
+                }
             }
 
             // Proceed
@@ -194,6 +199,11 @@ public class Log extends AbstractLog {
          * Step 3: Handle a diagnostic to which the applicable Lint instance (if any) has been applied.
          */
         protected abstract void reportReady(JCDiagnostic diag);
+
+        /**
+         * Validate a lint suppression.
+         */
+        protected abstract void validateSuppression(SuppressionValidation validation);
 
         protected void addLintWaiter(JavaFileObject sourceFile, JCDiagnostic diagnostic) {
             lintWaitersMap.computeIfAbsent(sourceFile, s -> new LinkedList<>()).add(diagnostic);
@@ -230,6 +240,13 @@ public class Log extends AbstractLog {
                 return diagnosticList.isEmpty();
             });
         }
+
+        // Represents the operation by which the suppression of a lint category is validated
+        protected record SuppressionValidation(Lint lint, JCDiagnostic diag) {
+            void apply() {
+                lint.validateSuppression(diag.getLintCategory());
+            }
+        }
     }
 
     /**
@@ -242,6 +259,9 @@ public class Log extends AbstractLog {
 
         @Override
         protected void reportReady(JCDiagnostic diag) { }
+
+        @Override
+        protected void validateSuppression(SuppressionValidation validation) { }
     }
 
     /**
@@ -253,6 +273,7 @@ public class Log extends AbstractLog {
      */
     public class DeferredDiagnosticHandler extends DiagnosticHandler {
         private List<JCDiagnostic> deferred = new ArrayList<>();
+        private List<SuppressionValidation> validatedSuppressions = new ArrayList<>();
         private final Predicate<JCDiagnostic> filter;
         private final boolean passOnNonDeferrable;
 
@@ -291,6 +312,15 @@ public class Log extends AbstractLog {
             }
         }
 
+        @Override
+        protected void validateSuppression(SuppressionValidation validation) {
+            if (deferrable(validation.diag)) {
+                validatedSuppressions.add(validation);
+            } else {
+                prev.validateSuppression(validation);
+            }
+        }
+
         public List<JCDiagnostic> getDiagnostics() {
             return deferred;
         }
@@ -315,6 +345,12 @@ public class Log extends AbstractLog {
                 .filter(accepter)
                 .forEach(diagnostic -> prev.addLintWaiter(sourceFile, diagnostic)));
             lintWaitersMap = null; // prevent accidental ongoing use
+
+            // Flush matching suppression validations to the previous handler
+            validatedSuppressions.stream()
+              .filter(vs -> accepter.test(vs.diag))
+              .forEach(prev::validateSuppression);
+            validatedSuppressions = null; // prevent accidental ongoing use
         }
 
         /** Report all deferred diagnostics in the specified order. */
@@ -947,9 +983,14 @@ public class Log extends AbstractLog {
                 // Apply the appropriate mandatory warning aggregator, if needed
                 if (diagnostic.isFlagSet(AGGREGATE)) {
                     LintCategory category = diagnostic.getLintCategory();
-                    boolean verbose = lintFor(diagnostic).isEnabled(category);
-                    if (!aggregatorFor(category).aggregate(diagnostic, verbose))
+                    Lint lint = lintFor(diagnostic);
+                    boolean verbose = lint.isEnabled(category, false);
+                    if (!aggregatorFor(category).aggregate(diagnostic, verbose)) {
+
+                        // Aggregation effectively suppresses the warning, so validate that suppression
+                        validateSuppression(new SuppressionValidation(lint, diagnostic));
                         return;
+                    }
                 }
 
                 // Strict warnings are always emitted
@@ -981,6 +1022,11 @@ public class Log extends AbstractLog {
             if (diagnostic.isFlagSet(COMPRESSED)) {
                 compressedOutput = true;
             }
+        }
+
+        @Override
+        protected void validateSuppression(SuppressionValidation validation) {
+            validation.apply();     // make it real
         }
     }
 
