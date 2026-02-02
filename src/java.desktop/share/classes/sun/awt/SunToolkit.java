@@ -426,16 +426,6 @@ public abstract class SunToolkit extends Toolkit
         }
     }
 
-    /* This is temporary to help migrate away from using app contexts.
-     * It is used by code which has been subject to that migration.
-     * However until that is complete, there is a single main app context we
-     * can retrieve to use which would be the same as if the code had
-     * not been migrated.
-     */
-    public static void postEvent(AWTEvent event) {
-        postEvent(AppContext.getAppContext(), event);
-    }
-
     /*
      * Post an AWTEvent to the Java EventQueue, using the PostEventQueue
      * to avoid possibly calling client code (EventQueueSubclass.postEvent())
