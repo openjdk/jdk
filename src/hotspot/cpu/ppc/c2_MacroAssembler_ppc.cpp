@@ -666,6 +666,9 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
 
 // Works for single and double precision floats.
 // dst = (op1 cmp(cc) op2) ? src1 : src2;
+// Unordered semantics are the same as for CmpF3Node/CmpD3Node which implement the fcmpl/dcmpl bytecodes.
+// Comparing unordered values has the same result as when src1 is less than src2.
+// So dst = src1 for <, <=, != and dst = src2 for >, >=, ==.
 void C2_MacroAssembler::cmovF(int cc, VectorSRegister dst, VectorSRegister op1, VectorSRegister op2,
                               VectorSRegister src1, VectorSRegister src2, VectorSRegister tmp) {
   // See operand cmpOp() for details.
