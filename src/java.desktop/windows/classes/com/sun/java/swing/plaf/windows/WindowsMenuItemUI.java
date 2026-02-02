@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,6 +238,15 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         SwingUtilities3.paintAccText(g, lh, lr, disabledForeground,
                                      acceleratorSelectionForeground,
                                      acceleratorForeground);
+        if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
+            Rectangle rect = lr.getArrowRect();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                rect.x += lh.getAfterCheckIconGap();
+            } else {
+                rect.x -= lh.getAfterCheckIconGap();
+            }
+            lr.setArrowRect(rect);
+        }
         SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
 
         // Restore original graphics font and color

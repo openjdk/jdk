@@ -42,6 +42,8 @@ import java.util.function.IntUnaryOperator;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
 import java.lang.invoke.VarHandle;
 
 /**
@@ -371,6 +373,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     /**
      * Standard hotspot implementation using intrinsics.
      */
+    @TrustFinalFields
     private static final class AtomicIntegerFieldUpdaterImpl<T>
         extends AtomicIntegerFieldUpdater<T> {
         private static final Unsafe U = Unsafe.getUnsafe();

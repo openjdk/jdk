@@ -1,23 +1,24 @@
-DeconstructionPatternErrors.java:35:37: compiler.err.illegal.start.of.type
-DeconstructionPatternErrors.java:37:28: compiler.err.illegal.start.of.type
-DeconstructionPatternErrors.java:39:42: compiler.err.expected: ';'
-DeconstructionPatternErrors.java:39:43: compiler.err.not.stmt
-DeconstructionPatternErrors.java:15:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.util.List<java.lang.String>, java.util.ArrayList<java.lang.Integer>)
-DeconstructionPatternErrors.java:16:29: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, java.util.ArrayList<java.lang.Integer>
-DeconstructionPatternErrors.java:17:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
-DeconstructionPatternErrors.java:18:28: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
-DeconstructionPatternErrors.java:19:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, DeconstructionPatternErrors.P)
-DeconstructionPatternErrors.java:20:26: compiler.err.incorrect.number.of.nested.patterns: java.lang.Runnable,java.lang.Runnable, java.lang.Runnable
+DeconstructionPatternErrors.java:36:37: compiler.err.illegal.start.of.type
+DeconstructionPatternErrors.java:38:28: compiler.err.illegal.start.of.type
+DeconstructionPatternErrors.java:40:42: compiler.err.expected: ';'
+DeconstructionPatternErrors.java:40:43: compiler.err.not.stmt
+DeconstructionPatternErrors.java:16:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.util.List<java.lang.String>, java.util.ArrayList<java.lang.Integer>)
+DeconstructionPatternErrors.java:17:29: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, java.util.ArrayList<java.lang.Integer>
+DeconstructionPatternErrors.java:18:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
+DeconstructionPatternErrors.java:19:28: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
+DeconstructionPatternErrors.java:20:29: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, DeconstructionPatternErrors.P)
 DeconstructionPatternErrors.java:21:26: compiler.err.incorrect.number.of.nested.patterns: java.lang.Runnable,java.lang.Runnable, java.lang.Runnable
-DeconstructionPatternErrors.java:22:26: compiler.err.incorrect.number.of.nested.patterns: int, int,compiler.misc.type.none
-DeconstructionPatternErrors.java:23:26: compiler.err.incorrect.number.of.nested.patterns: int, int,int
-DeconstructionPatternErrors.java:24:36: compiler.err.cant.resolve.location: kindname.class, Unresolvable, , , (compiler.misc.location: kindname.class, DeconstructionPatternErrors, null)
-DeconstructionPatternErrors.java:24:26: compiler.err.incorrect.number.of.nested.patterns: int, int,Unresolvable
-DeconstructionPatternErrors.java:25:13: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, DeconstructionPatternErrors.GenRecord<java.lang.String>
-DeconstructionPatternErrors.java:26:29: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, DeconstructionPatternErrors.GenRecord<java.lang.String>
-DeconstructionPatternErrors.java:27:44: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer)
-DeconstructionPatternErrors.java:27:13: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, DeconstructionPatternErrors.GenRecord<java.lang.String>
-DeconstructionPatternErrors.java:28:40: compiler.err.match.binding.exists
-DeconstructionPatternErrors.java:29:56: compiler.err.already.defined: kindname.variable, v1, kindname.method, meth()
-DeconstructionPatternErrors.java:29:64: compiler.err.already.defined: kindname.variable, v2, kindname.method, meth()
-22 errors
+DeconstructionPatternErrors.java:22:26: compiler.err.incorrect.number.of.nested.patterns: java.lang.Runnable,java.lang.Runnable, java.lang.Runnable
+DeconstructionPatternErrors.java:23:26: compiler.err.incorrect.number.of.nested.patterns: int, int,compiler.misc.type.none
+DeconstructionPatternErrors.java:24:26: compiler.err.incorrect.number.of.nested.patterns: int, int,int
+DeconstructionPatternErrors.java:25:36: compiler.err.cant.resolve.location: kindname.class, Unresolvable, , , (compiler.misc.location: kindname.class, DeconstructionPatternErrors, null)
+DeconstructionPatternErrors.java:25:26: compiler.err.incorrect.number.of.nested.patterns: int, int,Unresolvable
+DeconstructionPatternErrors.java:26:13: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, DeconstructionPatternErrors.GenRecord<java.lang.String>
+DeconstructionPatternErrors.java:27:29: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, DeconstructionPatternErrors.GenRecord<java.lang.String>
+DeconstructionPatternErrors.java:28:44: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer)
+DeconstructionPatternErrors.java:28:13: compiler.err.instanceof.reifiable.not.safe: java.lang.Object, DeconstructionPatternErrors.GenRecord<java.lang.String>
+DeconstructionPatternErrors.java:29:40: compiler.err.match.binding.exists
+DeconstructionPatternErrors.java:30:56: compiler.err.already.defined: kindname.variable, v1, kindname.method, meth()
+DeconstructionPatternErrors.java:30:64: compiler.err.already.defined: kindname.variable, v2, kindname.method, meth()
+DeconstructionPatternErrors.java:44:26: compiler.err.deconstruction.pattern.only.records: T
+23 errors

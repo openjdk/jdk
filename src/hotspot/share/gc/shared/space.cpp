@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
@@ -69,7 +68,7 @@ void ContiguousSpace::clear(bool mangle_space) {
 #ifndef PRODUCT
 
 void ContiguousSpace::mangle_unused_area() {
-  mangle_unused_area(MemRegion(_top, _end));
+  mangle_unused_area(MemRegion(top(), _end));
 }
 
 void ContiguousSpace::mangle_unused_area(MemRegion mr) {
@@ -128,11 +127,8 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = AtomicAccess::cmpxchg(top_addr(), obj, new_top);
-      // result can be one of two:
-      //  the old top value: the exchange succeeded
-      //  otherwise: the new value of the top is returned.
-      if (result == obj) {
+      // Retry if we did not successfully updated the top pointers.
+      if (_top.compare_set(obj, new_top)) {
         assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
         return obj;
       }
