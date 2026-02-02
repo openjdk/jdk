@@ -284,8 +284,8 @@ public abstract class HttpServer {
      * then some implementations may use <em>string prefix matching</em> where
      * this context path matches request paths {@code /foo},
      * {@code /foo/bar}, or {@code /foobar}. Others may use <em>path prefix
-     * matching</em> where {@code /foo} matches only request paths
-     * {@code /foo} and {@code /foo/bar}, but not {@code /foobar}.
+     * matching</em> where {@code /foo} matches request paths {@code /foo} and
+     * {@code /foo/bar}, but not {@code /foobar}.
      *
      * @implNote
      * By default, the JDK built-in implementation uses path prefix matching.

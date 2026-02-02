@@ -21,12 +21,7 @@
  * questions.
  */
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-
-import java.net.http.HttpClient;
-
-import static java.net.http.HttpClient.Builder.NO_PROXY;
 
 /*
  * @test
@@ -39,33 +34,28 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
  *      ${test.main.class}
  */
 
-class ContextPathMatcherStringPrefixTest {
-
-    private static final HttpClient CLIENT =
-            HttpClient.newBuilder().proxy(NO_PROXY).build();
-
-    @AfterAll
-    static void stopClient() {
-        CLIENT.shutdownNow();
-    }
+class ContextPathMatcherStringPrefixTest extends ContextPathMatcherPathPrefixTest {
 
     @Test
+    @Override
     void testContextPathAtRoot() throws Exception {
-        try (var infra = new ContextPathMatcherPathPrefixTest.Infra("/")) {
+        try (var infra = new Infra("/")) {
             infra.expect(200, "/foo", "/foo/", "/foo/bar", "/foobar");
         }
     }
 
     @Test
+    @Override
     void testContextPathAtSubDir() throws Exception {
-        try (var infra = new ContextPathMatcherPathPrefixTest.Infra("/foo")) {
+        try (var infra = new Infra("/foo")) {
             infra.expect(200, "/foo", "/foo/", "/foo/bar", "/foobar");
         }
     }
 
     @Test
+    @Override
     void testContextPathAtSubDirWithTrailingSlash() throws Exception {
-        try (var infra = new ContextPathMatcherPathPrefixTest.Infra("/foo/")) {
+        try (var infra = new Infra("/foo/")) {
             infra.expect(200, "/foo/", "/foo/bar");
             infra.expect(404, "/foo", "/foobar");
         }

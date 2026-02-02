@@ -40,6 +40,8 @@ class ContextList {
         // expects the protocol to be lower-cased using ROOT locale, hence:
         assert ctx.getProtocol().equals(ctx.getProtocol().toLowerCase(Locale.ROOT));
         assert ctx.getPath() != null;
+        // `ContextPathMatcher` expects context paths to be non-empty:
+        assert !ctx.getPath().isEmpty();
         if (contains(ctx)) {
             throw new IllegalArgumentException("cannot add context to list");
         }
@@ -199,10 +201,19 @@ class ContextList {
                 }
 
                 // Is it a path-prefix match?
-                if (contextPath.charAt(contextPathLength - 1) == '/'
-                        || requestPath.charAt(contextPathLength) == '/') {
-                    return true;
-                }
+                assert contextPathLength > 0;
+                return
+                        // Case 1: The request path starts with the context
+                        // path, but the context path has an extra path
+                        // separator suffix. For instance, the context path is
+                        // `/foo/` and the request path is `/foo/bar`.
+                        contextPath.charAt(contextPathLength - 1) == '/' ||
+                                // Case 2: The request path starts with the
+                                // context path, but the request path has an
+                                // extra path separator suffix. For instance,
+                                // context path is `/foo` and the request path
+                                // is `/foo/` or `/foo/bar`.
+                                requestPath.charAt(contextPathLength) == '/';
 
             }
 

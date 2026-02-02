@@ -37,6 +37,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import org.junit.jupiter.api.AfterAll;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -72,12 +73,18 @@ import org.junit.jupiter.api.Test;
 
 public class ContextPathMatcherPathPrefixTest {
 
-    private static final HttpClient CLIENT =
+    protected static final HttpClient CLIENT =
             HttpClient.newBuilder().proxy(NO_PROXY).build();
 
     @AfterAll
     static void stopClient() {
         CLIENT.shutdownNow();
+    }
+
+    @Test
+    void testContextPathOfEmptyString() {
+        var iae = assertThrows(IllegalArgumentException.class, () -> new Infra(""));
+        assertEquals("Illegal value for path or protocol", iae.getMessage());
     }
 
     @Test
@@ -103,7 +110,7 @@ public class ContextPathMatcherPathPrefixTest {
         }
     }
 
-    public static final class Infra implements AutoCloseable {
+    protected static final class Infra implements AutoCloseable {
 
         private static final InetSocketAddress LO_SA_0 =
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
@@ -114,14 +121,14 @@ public class ContextPathMatcherPathPrefixTest {
 
         private final String contextPath;
 
-        public Infra(String contextPath) throws IOException {
+        protected Infra(String contextPath) throws IOException {
             this.server = HttpServer.create(LO_SA_0, 10);
             server.createContext(contextPath, HANDLER);
             server.start();
             this.contextPath = contextPath;
         }
 
-        public void expect(int statusCode, String... requestPaths) throws Exception {
+        protected void expect(int statusCode, String... requestPaths) throws Exception {
             for (String requestPath : requestPaths) {
                 var requestURI = URI.create("http://%s:%s%s".formatted(
                         server.getAddress().getHostString(),

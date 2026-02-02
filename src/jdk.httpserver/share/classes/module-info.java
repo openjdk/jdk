@@ -107,7 +107,7 @@ import com.sun.net.httpserver.*;
  * {@code pathPrefix})<br/>
  *
  * The path matching scheme used to route requests to context handlers.
- * Following list of values are allowed by this property.</p>
+ * The property can be configured with one of the following values:</p>
  *
  * <blockquote>
  * <dl>
@@ -117,7 +117,7 @@ import com.sun.net.httpserver.*;
  * would match request paths {@code /foo}, {@code /foo/}, and {@code /foo/bar},
  * but not {@code /foobar}.</dd>
  * <dt>{@code stringPrefix}</dt>
- * <dd>Request path string must begin with the context path string. For
+ * <dd>The request path string must begin with the context path string. For
  * instance, the context path {@code /foo} would match request paths
  * {@code /foo}, {@code /foo/}, {@code /foo/bar}, and {@code /foobar}.
  * </dd>
