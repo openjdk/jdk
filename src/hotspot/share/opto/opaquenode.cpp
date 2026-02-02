@@ -112,6 +112,13 @@ const Type* OpaqueConstantBoolNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
+#ifndef PRODUCT
+void OpaqueConstantBoolNode::dump_spec(outputStream *st) const {
+  st->print(_constant ? " #true" : " #false");
+}
+#endif
+
+
 OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
     : Node(nullptr, bol),
       _loop_node(loop_node),
