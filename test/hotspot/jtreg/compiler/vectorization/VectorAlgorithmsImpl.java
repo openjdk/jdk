@@ -61,11 +61,19 @@ public class VectorAlgorithmsImpl {
         public int[] rI3;
         public int[] rI4;
         public int[] rI5;
-        public int[] eI;
+
+        // Search element for "findI"
+        public int[] eI_findI;
         // The test has to use the same index into eI for all implementations. But in the
         // benchmark, we'd like to use random indices, so we use the index to advance through
         // the array.
-        public int eI_idx = 0;
+        public int eI_findI_idx = 0;
+
+        // Data and threshold eI value for "filterI".
+        // We create the data in a range, and then pick a threshold scaled to that range,
+        // so that the branch in the filter is branchProbability.
+        public int[] aI_filterI;
+        public int eI_filterI;
 
         public float[] aF;
         public float[] bF;
@@ -79,7 +87,7 @@ public class VectorAlgorithmsImpl {
         public int[] oopsX4;
         public int[] memX4;
 
-        public Data(int size, int seed, int numX4Objects) {
+        public Data(int size, int seed, int numX4Objects, float branchProbability) {
             Random random = new Random(seed);
 
             // int: one input array and multiple output arrays so different implementations can
@@ -93,10 +101,15 @@ public class VectorAlgorithmsImpl {
             Arrays.setAll(aI, i -> random.nextInt());
 
             // Populate with some random values from aI, and some totally random values.
-            eI = new int[0x10000];
-            for (int i = 0; i < eI.length; i++) {
-                eI[i] = (random.nextInt(10) == 0) ? random.nextInt() : aI[random.nextInt(size)];
+            eI_findI = new int[0x10000];
+            for (int i = 0; i < eI_findI.length; i++) {
+                eI_findI[i] = (random.nextInt(10) == 0) ? random.nextInt() : aI[random.nextInt(size)];
             }
+
+            int filterI_range = 1000_000;
+            aI_filterI = new int[size];
+            Arrays.setAll(aI, i -> random.nextInt(filterI_range));
+            eI_filterI = (int)(filterI_range * (1.0f - branchProbability));
 
             // X4 oop setup.
             // oopsX4 holds "addresses" (i.e. indices), that point to the 16-byte objects in memX4.
