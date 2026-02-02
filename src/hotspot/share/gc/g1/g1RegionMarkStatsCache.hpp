@@ -44,8 +44,6 @@ struct G1RegionMarkStats {
   Atomic<size_t> _live_words;
   Atomic<size_t> _incoming_refs;
 
-  G1RegionMarkStats() : _live_words(0), _incoming_refs(0) { }
-
   // Clear all members.
   void clear() {
     _live_words.store_relaxed(0);
