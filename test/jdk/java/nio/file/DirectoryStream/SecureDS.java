@@ -379,22 +379,18 @@ public class SecureDS {
         stream.close();     // should be no-op
 
         // ClosedDirectoryStreamException
-        try {
+        assertThrows(ClosedDirectoryStreamException.class, () -> {
             stream.newDirectoryStream(file);
-            fail("Should not reach here");
-        } catch (ClosedDirectoryStreamException x) { }
-        try {
+        });
+        assertThrows(ClosedDirectoryStreamException.class, () -> {
             stream.newByteChannel(file, EnumSet.of(READ));
-            fail("Should not reach here");
-        } catch (ClosedDirectoryStreamException x) { }
-        try {
+        });
+        assertThrows(ClosedDirectoryStreamException.class, () -> {
             stream.move(file, stream, file);
-            fail("Should not reach here");
-        } catch (ClosedDirectoryStreamException x) { }
-        try {
+        });
+        assertThrows(ClosedDirectoryStreamException.class, () -> {
             stream.deleteFile(file);
-            fail("Should not reach here");
-        } catch (ClosedDirectoryStreamException x) { }
+        });
 
         // clean-up
         delete(dir.resolve(file));
