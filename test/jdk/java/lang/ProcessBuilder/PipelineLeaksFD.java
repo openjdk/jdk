@@ -327,11 +327,9 @@ public class PipelineLeaksFD {
         private static int nextInt = 1;
         private final String key;
         private final String name;
-        private int count;
         KeyedString(String key, String name) {
             this.key = key;
             this.name = name;
-            this.count = 0;
         }
 
         KeyedString(String s) {
@@ -341,7 +339,6 @@ public class PipelineLeaksFD {
 
         static KeyedString getKey(String key, String otherKey) {
             var k = map.computeIfAbsent(key, KeyedString::new);
-            k.count++;
             if (otherKey != null) {
                 map.putIfAbsent(otherKey, k);
             }
@@ -349,7 +346,7 @@ public class PipelineLeaksFD {
         }
 
         public String toString() {
-            return name + "(" + count + "), osInfo: " + key;
+            return name + ": osInfo: " + key;
         }
     }
 }
