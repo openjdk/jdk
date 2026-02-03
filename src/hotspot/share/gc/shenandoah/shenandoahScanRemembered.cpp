@@ -231,7 +231,12 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
     previous_address = address;
 
     const oop obj = cast_to_oop(address);
-    address += obj->oop_iterate_size(&make_cards_dirty);
+    if (!_rs->is_write_card_dirty(object_card_index)) {
+      address += obj->oop_iterate_size(&make_cards_dirty);
+    } else {
+      // card is already dirty, we don't need to visit pointers for this object
+      address += obj->size();
+    }
   }
 
   // Register the last object seen in this range.
