@@ -23,12 +23,6 @@
  */
 
 #include "runtime/thread.hpp"
-#include "utilities/debug.hpp"
 
-void Thread::enable_alternate_signal_stack() {
-  ShouldNotCallThis();
-}
-
-void Thread::disable_alternate_signal_stack() {
-  ShouldNotCallThis();
-}
+void Thread::enable_alternate_signal_stack() {}
+void Thread::disable_alternate_signal_stack() {}

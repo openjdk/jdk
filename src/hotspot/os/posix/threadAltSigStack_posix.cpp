@@ -24,10 +24,9 @@
 
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/parseInteger.hpp"
 
 #include <signal.h>
 
@@ -67,9 +66,9 @@ static void sigaltstack_and_log(const stack_t* ss, stack_t* oss) {
   const int rc = ::sigaltstack(ss, oss);
   // All possible errors are programmer errors and should not happen at runtime.
   assert(rc == 0,
-         "sigaltstack failed (%d)%s",
-         errno,
-         (oss->ss_flags == SS_ONSTACK) ? "(called from signal handler?)" : "");
+         "sigaltstack failed (%s)%s",
+         os::errno_name(errno),
+         (oss->ss_flags == SS_ONSTACK) ? " (called from signal handler?)" : "");
   LogTarget(Debug, os, thread) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
