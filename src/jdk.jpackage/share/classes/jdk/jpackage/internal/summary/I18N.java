@@ -52,7 +52,7 @@ final class I18N {
                 Map.of(
                         OperatingSystem.LINUX, List.of(prefix + "LinuxResources"),
                         OperatingSystem.MACOS, List.of(prefix + "MacResources"),
-                        OperatingSystem.WINDOWS, List.of(prefix + "WinResources")
+                        OperatingSystem.WINDOWS, List.of(prefix + "WinResources", prefix + "MacResources", prefix + "LinuxResources")
                 )
         ));
     }
