@@ -283,7 +283,6 @@ public class ExhaustivenessComputer {
                         }
 
                         Set<Symbol> permitted = allPermittedSubTypes(clazz, isApplicableSubtypePredicate(selectorType));
-                        int permittedSubtypes = permitted.size();
 
                         //the set of pending permitted subtypes needed to cover clazz:
                         Set<Symbol> pendingPermitted = new HashSet<>(permitted);
@@ -315,7 +314,7 @@ public class ExhaustivenessComputer {
                         }
 
                         if (pendingPermitted.isEmpty()) {
-                            toAdd.add(new BindingPattern(clazz.type, permittedSubtypes, Set.of()));
+                            toAdd.add(new BindingPattern(clazz.type, Set.of()));
                         }
                     }
                 }
@@ -653,7 +652,7 @@ public class ExhaustivenessComputer {
                 covered &= checkCovered(componentType[i], List.of(newNested));
             }
             if (covered) {
-                PatternDescription pd = new BindingPattern(rpOne.recordType, -1, Set.of(pattern));
+                PatternDescription pd = new BindingPattern(rpOne.recordType, Set.of(pattern));
                 return pd;
             } else if (reducedNestedPatterns != null) {
                 PatternDescription pd = new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns, Set.of(pattern));
@@ -738,10 +737,10 @@ public class ExhaustivenessComputer {
             throw Assert.error();
         }
     }
-    public record BindingPattern(Type type, int permittedSubtypes, Set<PatternDescription> sourcePatterns) implements PatternDescription {
+    public record BindingPattern(Type type, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public BindingPattern(Type type) {
-            this(type, -1, Set.of());
+            this(type, Set.of());
         }
 
         @Override
