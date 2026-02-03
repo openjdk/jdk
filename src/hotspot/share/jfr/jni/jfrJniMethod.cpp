@@ -66,10 +66,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#ifdef LINUX
-#include "os_linux.hpp"
-#include "osContainer_linux.hpp"
-#endif
 
 #define NO_TRANSITION(result_type, header) extern "C" { result_type JNICALL header {
 #define NO_TRANSITION_END } }
@@ -400,35 +396,18 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_class_instrumented(JNIEnv* env, jclass jvm, jc
 JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  return OSContainer::is_containerized();
-#else
-  return false;
-#endif
+  return os::is_containerized();
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  // We want the host memory, not the container limit.
-  // os::physical_memory() would return the container limit.
-  return static_cast<jlong>(os::Linux::physical_memory());
-#else
-  return static_cast<jlong>(os::physical_memory());
-#endif
+  return static_cast<jlong>(os::Machine::physical_memory());
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
-#ifdef LINUX
-  // We want the host swap memory, not the container value.
-  physical_memory_size_type host_swap = 0;
-  (void)os::Linux::host_swap(host_swap); // Discard return value and treat as no swap
-  return static_cast<jlong>(host_swap);
-#else
   physical_memory_size_type total_swap_space = 0;
   // Return value ignored - defaulting to 0 on failure.
-  (void)os::total_swap_space(total_swap_space);
+  (void)os::Machine::total_swap_space(total_swap_space);
   return static_cast<jlong>(total_swap_space);
-#endif
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -85,6 +86,7 @@ public class AppContentTest {
     @Test
     @ParameterSupplier("test")
     @ParameterSupplier(value="testSymlink", ifNotOS = WINDOWS)
+    @ParameterSupplier
     public void testAppImage(TestSpec testSpec) throws Exception {
         testSpec.test(new ConfigurationTarget(JPackageCommand.helloAppImage()));
     }
@@ -126,6 +128,14 @@ public class AppContentTest {
         }).toList();
     }
 
+    public static Collection<Object[]> testAppImage() {
+        return Stream.of(
+                build().add(NonExistentPath.create("*output-app-image*", JPackageCommand::outputBundle))
+        ).map(TestSpec.Builder::create).map(v -> {
+            return new Object[] {v};
+        }).toList();
+    }
+
     public static Collection<Object[]> testSymlink() {
         return Stream.of(
                 build().add(TEST_JAVA)
@@ -150,7 +160,7 @@ public class AppContentTest {
 
         void test(ConfigurationTarget target) {
             final int expectedJPackageExitCode;
-            if (contentFactories.stream().flatMap(List::stream).anyMatch(TEST_BAD::equals)) {
+            if (contentFactories.stream().flatMap(List::stream).anyMatch(NonExistentPath.class::isInstance)) {
                 expectedJPackageExitCode = 1;
             } else {
                 expectedJPackageExitCode = 0;
@@ -159,9 +169,11 @@ public class AppContentTest {
             final List<List<Content>> allContent = new ArrayList<>();
 
             target.addInitializer(JPackageCommand::setFakeRuntime)
-            .addRunOnceInitializer(_ -> {
+            .addInitializer(cmd -> {
                 contentFactories.stream().map(group -> {
-                    return group.stream().map(ContentFactory::create).toList();
+                    return group.stream().map(contentFactory -> {
+                        return contentFactory.create(cmd);
+                    }).toList();
                 }).forEach(allContent::add);
             }).addInitializer(cmd -> {
                 allContent.stream().map(group -> {
@@ -192,6 +204,10 @@ public class AppContentTest {
             });
 
             target.addInstallVerifier(cmd -> {
+                if (expectedJPackageExitCode != 0) {
+                    return;
+                }
+
                 var appContentRoot = getAppContentRoot(cmd);
 
                 Set<PathVerifier> disabledVerifiers = new HashSet<>();
@@ -329,7 +345,7 @@ public class AppContentTest {
 
     @FunctionalInterface
     private interface ContentFactory {
-        Content create();
+        Content create(JPackageCommand cmd);
     }
 
     private interface Content {
@@ -337,12 +353,7 @@ public class AppContentTest {
         Iterable<PathVerifier> verifiers(Path appContentRoot);
     }
 
-    private sealed interface PathVerifier permits
-            RegularFileVerifier,
-            DirectoryVerifier,
-            SymlinkTargetVerifier,
-            NoPathVerifier {
-
+    private sealed interface PathVerifier {
         Path path();
         void verify();
     }
@@ -467,22 +478,45 @@ public class AppContentTest {
     /**
      * Non-existing content.
      */
-    private static final class NonExistantPath implements ContentFactory {
+    private static final class NonExistentPath implements ContentFactory {
+
+        private NonExistentPath(String label, Function<JPackageCommand, Path> makePath) {
+            this.label = Objects.requireNonNull(label);
+            this.makePath = Objects.requireNonNull(makePath);
+        }
+
         @Override
-        public Content create() {
-            var nonExistant = TKit.createTempFile("non-existant");
-            try {
-                TKit.deleteIfExists(nonExistant);
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
+        public Content create(JPackageCommand cmd) {
+            var nonexistent = makePath.apply(cmd);
+            if (Files.exists(nonexistent)) {
+                throw new IllegalStateException();
             }
-            return new FileContent(nonExistant, 0);
+            return new FileContent(nonexistent, 0);
         }
 
         @Override
         public String toString() {
-            return "*non-existant*";
+            return label;
         }
+
+        static NonExistentPath create(String label, Function<JPackageCommand, Path> makePath) {
+            return new NonExistentPath(label, makePath);
+        }
+
+        static NonExistentPath create(String path) {
+            return new NonExistentPath(String.format("*%s*", Objects.requireNonNull(path)), _ -> {
+                var nonexistent = TKit.createTempFile(path);
+                try {
+                    TKit.deleteIfExists(nonexistent);
+                    return nonexistent;
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            });
+        }
+
+        private final String label;
+        private final Function<JPackageCommand, Path> makePath;
     }
 
     /**
@@ -565,7 +599,7 @@ public class AppContentTest {
         }
 
         @Override
-        public Content create() {
+        public Content create(JPackageCommand cmd) {
             final var appContentRoot = createAppContentRoot();
 
             final var symlinkPath = appContentRoot.resolve(symlinkPath());
@@ -639,7 +673,7 @@ public class AppContentTest {
         }
 
         @Override
-        public Content create() {
+        public Content create(JPackageCommand cmd) {
             Path srcPath = factory.get();
             if (!srcPath.endsWith(pathInAppContentRoot)) {
                 throw new IllegalArgumentException();
@@ -672,7 +706,7 @@ public class AppContentTest {
     private static final ContentFactory TEST_JAVA = createTextFileContent("apps/PrintEnv.java", "Not what someone would expect");
     private static final ContentFactory TEST_DUKE = createTextFileContent("duke.txt", "Hi Duke!");
     private static final ContentFactory TEST_DIR = createDirTreeContent("apps");
-    private static final ContentFactory TEST_BAD = new NonExistantPath();
+    private static final ContentFactory TEST_BAD = NonExistentPath.create("non-existent");
 
     // On OSX `--app-content` paths will be copied into the "Contents" folder
     // of the output app image.

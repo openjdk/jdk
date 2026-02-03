@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ class ParkEvent;
 class BasicLock;
 class ContinuationWrapper;
 
-
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
   enum TStates : uint8_t { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER };
@@ -72,7 +71,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
-
+  const char* getTStateName(TStates state);
   void set_bad_pointers() {
 #ifdef ASSERT
     this->_prev  = (ObjectWaiter*) badAddressVal;
@@ -352,7 +351,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
 
- private:
   class ExitOnSuspend {
    protected:
     ObjectMonitor* _om;
@@ -362,23 +360,16 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     void operator()(JavaThread* current);
     bool exited() { return _om_exited; }
   };
-  class ClearSuccOnSuspend {
-   protected:
-    ObjectMonitor* _om;
-   public:
-    ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
-    void operator()(JavaThread* current);
-  };
 
   bool      enter_is_async_deflating();
-  void      notify_contended_enter(JavaThread *current);
+  void      notify_contended_enter(JavaThread *current, bool post_jvmti_events = true);
  public:
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);
-  bool      enter(JavaThread* current);
+  bool      enter(JavaThread* current, bool post_jvmti_events = true);
   bool      try_enter(JavaThread* current, bool check_for_recursion = true);
   bool      spin_enter(JavaThread* current);
-  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
+  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark, bool post_jvmti_events = true);
   void      exit(JavaThread* current, bool not_suspended = true);
   bool      resume_operation(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      wait(jlong millis, bool interruptible, TRAPS);

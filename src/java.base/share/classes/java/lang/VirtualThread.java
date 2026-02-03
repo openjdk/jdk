@@ -620,9 +620,12 @@ final class VirtualThread extends BaseVirtualThread {
         // Object.wait
         if (s == WAITING || s == TIMED_WAITING) {
             int newState;
+            boolean blocked;
             boolean interruptible = interruptibleWait;
             if (s == WAITING) {
                 setState(newState = WAIT);
+                // may have been notified while in transition
+                blocked = notified && compareAndSetState(WAIT, BLOCKED);
             } else {
                 // For timed-wait, a timeout task is scheduled to execute. The timeout
                 // task will change the thread state to UNBLOCKED and submit the thread
@@ -637,22 +640,22 @@ final class VirtualThread extends BaseVirtualThread {
                     byte seqNo = ++timedWaitSeqNo;
                     timeoutTask = schedule(() -> waitTimeoutExpired(seqNo), timeout, MILLISECONDS);
                     setState(newState = TIMED_WAIT);
+                    // May have been notified while in transition. This must be done while
+                    // holding the monitor to avoid changing the state of a new timed wait call.
+                    blocked = notified && compareAndSetState(TIMED_WAIT, BLOCKED);
                 }
             }
 
-            // may have been notified while in transition to wait state
-            if (notified && compareAndSetState(newState, BLOCKED)) {
-                // may have even been unblocked already
+            if (blocked) {
+                // may have been unblocked already
                 if (blockPermit && compareAndSetState(BLOCKED, UNBLOCKED)) {
-                    submitRunContinuation();
+                    lazySubmitRunContinuation();
                 }
-                return;
-            }
-
-            // may have been interrupted while in transition to wait state
-            if (interruptible && interrupted && compareAndSetState(newState, UNBLOCKED)) {
-                submitRunContinuation();
-                return;
+            } else {
+                // may have been interrupted while in transition to wait state
+                if (interruptible && interrupted && compareAndSetState(newState, UNBLOCKED)) {
+                    lazySubmitRunContinuation();
+                }
             }
             return;
         }

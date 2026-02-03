@@ -1195,7 +1195,7 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-Node* MaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
+Node* MinMaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
   if (is_max) {
     return new MaxINode(a, b);
   } else {
@@ -1203,7 +1203,7 @@ Node* MaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
   }
 }
 
-Node* MaxNode::build_min_max_long(PhaseGVN* phase, Node* a, Node* b, bool is_max) {
+Node* MinMaxNode::build_min_max_long(PhaseGVN* phase, Node* a, Node* b, bool is_max) {
   if (is_max) {
     return new MaxLNode(phase->C, a, b);
   } else {
@@ -1211,7 +1211,7 @@ Node* MaxNode::build_min_max_long(PhaseGVN* phase, Node* a, Node* b, bool is_max
   }
 }
 
-Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
+Node* MinMaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
   assert(is_int == (gvn.type(b)->isa_int() != nullptr), "inconsistent inputs");
@@ -1243,7 +1243,7 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
   return res;
 }
 
-Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn) {
+Node* MinMaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
   assert(is_int == (gvn.type(b)->isa_int() != nullptr), "inconsistent inputs");
@@ -1290,7 +1290,7 @@ static bool can_overflow(const TypeLong* t, jlong c) {
 // Let <x, x_off> = x_operands and <y, y_off> = y_operands.
 // If x == y and neither add(x, x_off) nor add(y, y_off) overflow, return
 // add(x, op(x_off, y_off)). Otherwise, return nullptr.
-Node* MaxNode::extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands) {
+Node* MinMaxNode::extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands) {
   Node* x = x_operands.first;
   Node* y = y_operands.first;
   int opcode = Opcode();
@@ -1327,7 +1327,7 @@ static ConstAddOperands as_add_with_constant(Node* n) {
   return ConstAddOperands(x, c_type->is_int()->get_con());
 }
 
-Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+Node* MinMaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
   Node* n = AddNode::Ideal(phase, can_reshape);
   if (n != nullptr) {
     return n;
@@ -1401,7 +1401,7 @@ Node* MaxINode::Identity(PhaseGVN* phase) {
     return in(2);
   }
 
-  return MaxNode::Identity(phase);
+  return MinMaxNode::Identity(phase);
 }
 
 //=============================================================================
@@ -1434,7 +1434,7 @@ Node* MinINode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  return MaxNode::Identity(phase);
+  return MinMaxNode::Identity(phase);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1564,7 +1564,7 @@ Node* MaxLNode::Identity(PhaseGVN* phase) {
     return in(2);
   }
 
-  return MaxNode::Identity(phase);
+  return MinMaxNode::Identity(phase);
 }
 
 Node* MaxLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1596,7 +1596,7 @@ Node* MinLNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  return MaxNode::Identity(phase);
+  return MinMaxNode::Identity(phase);
 }
 
 Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1610,7 +1610,7 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-int MaxNode::opposite_opcode() const {
+int MinMaxNode::opposite_opcode() const {
   if (Opcode() == max_opcode()) {
     return min_opcode();
   } else {
@@ -1621,7 +1621,7 @@ int MaxNode::opposite_opcode() const {
 
 // Given a redundant structure such as Max/Min(A, Max/Min(B, C)) where A == B or A == C, return the useful part of the structure.
 // 'operation' is the node expected to be the inner 'Max/Min(B, C)', and 'operand' is the node expected to be the 'A' operand of the outer node.
-Node* MaxNode::find_identity_operation(Node* operation, Node* operand) {
+Node* MinMaxNode::find_identity_operation(Node* operation, Node* operand) {
   if (operation->Opcode() == Opcode() || operation->Opcode() == opposite_opcode()) {
     Node* n1 = operation->in(1);
     Node* n2 = operation->in(2);
@@ -1645,17 +1645,17 @@ Node* MaxNode::find_identity_operation(Node* operation, Node* operand) {
   return nullptr;
 }
 
-Node* MaxNode::Identity(PhaseGVN* phase) {
+Node* MinMaxNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
       return in(1);
   }
 
-  Node* identity_1 = MaxNode::find_identity_operation(in(2), in(1));
+  Node* identity_1 = MinMaxNode::find_identity_operation(in(2), in(1));
   if (identity_1 != nullptr) {
     return identity_1;
   }
 
-  Node* identity_2 = MaxNode::find_identity_operation(in(1), in(2));
+  Node* identity_2 = MinMaxNode::find_identity_operation(in(1), in(2));
   if (identity_2 != nullptr) {
     return identity_2;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,32 +27,34 @@
 
 #include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspaceClosureType.hpp"
 
 // This is for dumping detailed statistics for the allocations
 // in the shared spaces.
 class DumpAllocStats : public StackObj {
 public:
 
-  // Here's poor man's enum inheritance
-#define SHAREDSPACE_OBJ_TYPES_DO(f) \
-  METASPACE_OBJ_TYPES_DO(f) \
+#define DUMPED_OBJ_TYPES_DO(f) \
+  METASPACE_CLOSURE_TYPES_DO(f) \
   f(SymbolHashentry) \
   f(SymbolBucket) \
   f(StringHashentry) \
   f(StringBucket) \
-  f(ModulesNatives) \
   f(CppVTables) \
   f(Other)
 
+#define DUMPED_TYPE_DECLARE(name) name ## Type,
+#define DUMPED_TYPE_NAME_CASE(name) case name ## Type: return #name;
+
   enum Type {
     // Types are MetaspaceObj::ClassType, MetaspaceObj::SymbolType, etc
-    SHAREDSPACE_OBJ_TYPES_DO(METASPACE_OBJ_TYPE_DECLARE)
+    DUMPED_OBJ_TYPES_DO(DUMPED_TYPE_DECLARE)
     _number_of_types
   };
 
   static const char* type_name(Type type) {
     switch(type) {
-    SHAREDSPACE_OBJ_TYPES_DO(METASPACE_OBJ_TYPE_NAME_CASE)
+    DUMPED_OBJ_TYPES_DO(DUMPED_TYPE_NAME_CASE)
     default:
       ShouldNotReachHere();
       return nullptr;
@@ -101,16 +103,12 @@ public:
   CompactHashtableStats* symbol_stats() { return &_symbol_stats; }
   CompactHashtableStats* string_stats() { return &_string_stats; }
 
-  void record(MetaspaceObj::Type type, int byte_size, bool read_only) {
-    assert(int(type) >= 0 && type < MetaspaceObj::_number_of_types, "sanity");
+  void record(MetaspaceClosureType type, int byte_size, bool read_only) {
+    int t = (int)type;
+    assert(t >= 0 && t < (int)MetaspaceClosureType::_number_of_types, "sanity");
     int which = (read_only) ? RO : RW;
-    _counts[which][type] ++;
-    _bytes [which][type] += byte_size;
-  }
-
-  void record_modules(int byte_size, bool read_only) {
-    int which = (read_only) ? RO : RW;
-    _bytes [which][ModulesNativesType] += byte_size;
+    _counts[which][t] ++;
+    _bytes [which][t] += byte_size;
   }
 
   void record_other_type(int byte_size, bool read_only) {

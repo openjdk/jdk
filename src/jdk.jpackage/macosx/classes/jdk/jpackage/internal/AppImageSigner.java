@@ -171,7 +171,7 @@ final class AppImageSigner {
         // In addition add possible reason for failure. For example
         // "--app-content" can fail "codesign".
 
-        if (!app.contentDirs().isEmpty()) {
+        if (!app.contentDirSources().isEmpty()) {
             Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 

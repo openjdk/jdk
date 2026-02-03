@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/timer.hpp"
 
@@ -39,19 +39,27 @@ G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
 {}
 
 void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
-  AtomicAccess::add(&_sweep_duration, other->_sweep_duration, memory_order_relaxed);
-  AtomicAccess::add(&_yield_during_sweep_duration, other->_yield_during_sweep_duration, memory_order_relaxed);
+  _sweep_duration.add_then_fetch(other->_sweep_duration.load_relaxed(), memory_order_relaxed);
+  _yield_during_sweep_duration.add_then_fetch(other->yield_during_sweep_duration(), memory_order_relaxed);
 
-  AtomicAccess::add(&_cards_scanned, other->_cards_scanned, memory_order_relaxed);
-  AtomicAccess::add(&_cards_clean, other->_cards_clean, memory_order_relaxed);
-  AtomicAccess::add(&_cards_not_parsable, other->_cards_not_parsable, memory_order_relaxed);
-  AtomicAccess::add(&_cards_already_refer_to_cset, other->_cards_already_refer_to_cset, memory_order_relaxed);
-  AtomicAccess::add(&_cards_refer_to_cset, other->_cards_refer_to_cset, memory_order_relaxed);
-  AtomicAccess::add(&_cards_no_cross_region, other->_cards_no_cross_region, memory_order_relaxed);
+  _cards_scanned.add_then_fetch(other->cards_scanned(), memory_order_relaxed);
+  _cards_clean.add_then_fetch(other->cards_clean(), memory_order_relaxed);
+  _cards_not_parsable.add_then_fetch(other->cards_not_parsable(), memory_order_relaxed);
+  _cards_already_refer_to_cset.add_then_fetch(other->cards_already_refer_to_cset(), memory_order_relaxed);
+  _cards_refer_to_cset.add_then_fetch(other->cards_refer_to_cset(), memory_order_relaxed);
+  _cards_no_cross_region.add_then_fetch(other->cards_no_cross_region(), memory_order_relaxed);
 
-  AtomicAccess::add(&_refine_duration, other->_refine_duration, memory_order_relaxed);
+  _refine_duration.add_then_fetch(other->refine_duration(), memory_order_relaxed);
 }
 
 void G1ConcurrentRefineStats::reset() {
-  *this = G1ConcurrentRefineStats();
+  _sweep_duration.store_relaxed(0);
+  _yield_during_sweep_duration.store_relaxed(0);
+  _cards_scanned.store_relaxed(0);
+  _cards_clean.store_relaxed(0);
+  _cards_not_parsable.store_relaxed(0);
+  _cards_already_refer_to_cset.store_relaxed(0);
+  _cards_refer_to_cset.store_relaxed(0);
+  _cards_no_cross_region.store_relaxed(0);
+  _refine_duration.store_relaxed(0);
 }

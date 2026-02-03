@@ -102,6 +102,30 @@ private:
   size_t _fragmentation_first_old_region;
   size_t _fragmentation_last_old_region;
 
+  // State variables involved in construction of a mixed-evacuation collection set.  These variables are initialized
+  // when client code invokes prime_collection_set().  They are consulted, and sometimes modified, when client code
+  // calls top_off_collection_set() to possibly expand the number of old-gen regions in a mixed evacuation cset, and by
+  // finalize_mixed_evacs(), which prepares the way for mixed evacuations to begin.
+  ShenandoahCollectionSet* _mixed_evac_cset;
+  size_t _evacuated_old_bytes;
+  size_t _collected_old_bytes;
+  size_t _included_old_regions;
+  size_t _old_evacuation_reserve;
+  size_t _old_evacuation_budget;
+
+  // This represents the amount of memory that can be evacuated from old into initially empty regions during a mixed evacuation.
+  // This is the total amount of unfragmented free memory in old divided by ShenandoahOldEvacWaste.
+  size_t _unspent_unfragmented_old_budget;
+
+  // This represents the amount of memory that can be evacuated from old into initially non-empty regions during a mixed
+  // evacuation.  This is the total amount of initially fragmented free memory in old divided by ShenandoahOldEvacWaste.
+  size_t _unspent_fragmented_old_budget;
+
+  // If there is more available memory in old than is required by the intended mixed evacuation, the amount of excess
+  // memory is represented by _excess_fragmented_old.  To convert this value into a promotion budget, multiply by
+  // ShenandoahOldEvacWaste and divide by ShenandoahPromoWaste.
+  size_t _excess_fragmented_old_budget;
+
   // The value of command-line argument ShenandoahOldGarbageThreshold represents the percent of garbage that must
   // be present within an old-generation region before that region is considered a good candidate for inclusion in
   // the collection set under normal circumstances.  For our purposes, normal circustances are when the memory consumed
@@ -131,7 +155,15 @@ private:
   void set_trigger_if_old_is_overgrown();
 
  protected:
-  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size, size_t free) override;
+  size_t
+  choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size, size_t free) override;
+
+  // This internal helper routine adds as many mixed evacuation candidate regions as fit within the old-gen evacuation budget
+  // to the collection set.  This may be called twice to prepare for any given mixed evacuation cycle, the first time with
+  // a conservative old evacuation budget, and the second time with a larger more aggressive old evacuation budget.  Returns
+  // true iff we need to finalize mixed evacs.  (If no regions are added to the collection set, there is no need to finalize
+  // mixed evacuations.)
+  bool add_old_regions_to_cset();
 
 public:
   explicit ShenandoahOldHeuristics(ShenandoahOldGeneration* generation, ShenandoahGenerationalHeap* gen_heap);
@@ -139,8 +171,22 @@ public:
   // Prepare for evacuation of old-gen regions by capturing the mark results of a recently completed concurrent mark pass.
   void prepare_for_old_collections();
 
-  // Return true iff the collection set is primed with at least one old-gen region.
-  bool prime_collection_set(ShenandoahCollectionSet* set);
+  // Initialize instance variables to support the preparation of a mixed-evacuation collection set.  Adds as many
+  // old candidate regions into the collection set as can fit within the iniital conservative old evacuation budget.
+  // Returns true iff we need to finalize mixed evacs.
+  bool prime_collection_set(ShenandoahCollectionSet* collection_set);
+
+  // If young evacuation did not consume all of its available evacuation reserve, add as many additional mixed-
+  // evacuation candidate regions into the collection set as will fit within this excess repurposed reserved.
+  // Returns true iff we need to finalize mixed evacs.  Upon return, the var parameter regions_to_xfer holds the
+  // number of regions to transfer from young to old.
+  bool top_off_collection_set(size_t &add_regions_to_old);
+
+  // Having added all eligible mixed-evacuation candidates to the collection set, this function updates the total count
+  // of how much old-gen memory remains to be evacuated and adjusts the representation of old-gen regions that remain to
+  // be evacuated, giving special attention to regions that are currently pinned.  It outputs relevant log messages and
+  // returns true iff the collection set holds at least one unpinned mixed evacuation candidate.
+  bool finalize_mixed_evacs();
 
   // How many old-collection candidates have not yet been processed?
   uint unprocessed_old_collection_candidates() const;

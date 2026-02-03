@@ -34,7 +34,15 @@ import java.util.stream.Stream;
 @FunctionalInterface
 interface Validator<T, U extends Exception> {
 
-    List<U> validate(OptionName optionName, ParsedValue<T> optionValue);
+    /**
+     * Validates the given option value.
+     *
+     * @param optionName  the name of an option to validate
+     * @param optionValue the value of an option to validate
+     * @return the list of validation errors
+     * @throws ValidatorException if internal validator error occurs
+     */
+    List<U> validate(OptionName optionName, ParsedValue<T> optionValue) throws ValidatorException;
 
     default Validator<T, ? extends Exception> and(Validator<T, ? extends Exception> after) {
         Objects.requireNonNull(after);
