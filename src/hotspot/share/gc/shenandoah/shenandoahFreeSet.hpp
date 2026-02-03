@@ -32,7 +32,7 @@
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "logging/logStream.hpp"
 
-typedef ShenandoahLock                           ShenandoahRebuildLock;
+typedef ShenandoahReentrantLock<ShenandoahLock>  ShenandoahRebuildLock;
 typedef ShenandoahLocker<ShenandoahRebuildLock>  ShenandoahRebuildLocker;
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
