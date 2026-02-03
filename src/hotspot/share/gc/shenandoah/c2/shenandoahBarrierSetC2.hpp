@@ -82,6 +82,10 @@ private:
 
   static bool clone_needs_barrier(Node* src, PhaseGVN& gvn);
 
+  static const TypeFunc* _write_barrier_pre_Type;
+  static const TypeFunc* _clone_barrier_Type;
+  static const TypeFunc* _load_reference_barrier_Type;
+
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
@@ -103,15 +107,12 @@ public:
 
   ShenandoahBarrierSetC2State* state() const;
 
-  static const TypeFunc* _write_barrier_pre_Type;
   static const TypeFunc* write_barrier_pre_Type();
   static void make_write_barrier_pre_Type();
 
-  static const TypeFunc* _clone_barrier_Type;
   static const TypeFunc* clone_barrier_Type();
   static void make_clone_barrier_Type();
 
-  static const TypeFunc* _load_reference_barrier_Type;
   static const TypeFunc* load_reference_barrier_Type();
   static void make_load_reference_barrier_Type();
 
