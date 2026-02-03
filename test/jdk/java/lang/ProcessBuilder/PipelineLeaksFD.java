@@ -242,10 +242,6 @@ public class PipelineLeaksFD {
             boolean status = p.waitFor(Utils.adjustTimeout(120), TimeUnit.SECONDS);
             if (!status) {
                 p.destroyForcibly();
-                Thread.sleep(100);
-                if (p.isAlive()) {
-                    p.destroyForcibly();
-                }
             }
             assertTrue(status, "Process 'lsof' failed");
 
