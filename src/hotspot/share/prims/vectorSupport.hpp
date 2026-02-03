@@ -137,6 +137,7 @@ class VectorSupport : AllStatic {
     NUM_VEC_SIZES = 5
   };
 
+  // Values in this enum correspond to the jdk.incubator.vector.LaneType ordinal values.
   enum LaneType {
     LT_FLOAT     = 0,
     LT_DOUBLE    = 1,
