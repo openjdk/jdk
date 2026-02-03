@@ -5848,6 +5848,19 @@ void Assembler::evpopcntq(XMMRegister dst, KRegister mask, XMMRegister src, bool
   emit_int16(0x55, (0xC0 | encode));
 }
 
+void Assembler::evpbitrev(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
+  assert(VM_Version::supports_avx512bmm(), "must support avx512bmm feature");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_is_evex_instruction();
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_MAP6, &attributes);
+  emit_int16(0x81, (0xC0 | encode));
+}
+
 void Assembler::popf() {
   emit_int8((unsigned char)0x9D);
 }

@@ -391,6 +391,17 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi,12), rdx);
 
     //
+    // Extended cpuid(0x80000021)
+    //
+    __ movl(rax, 0x80000021);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid21_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
+    //
     // Extended cpuid(0x80000008)
     //
     __ bind(ext_cpuid8);
@@ -2985,7 +2996,13 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
         vm_features.set_feature(CPU_AVX512_VBMI);
       if (sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
         vm_features.set_feature(CPU_AVX512_VBMI2);
+      if (is_amd()) {
+        if (ext_cpuid21_eax.bits.avx512_bmm != 0) {
+          vm_features.set_feature(CPU_AVX512_BMM);
+        }
+      }
     }
+
     if (is_intel()) {
       if (sefsl1_cpuid7_edx.bits.avx10 != 0 &&
           std_cpuid24_ebx.bits.avx10_vlen_512 !=0 &&

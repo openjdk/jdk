@@ -3125,6 +3125,10 @@ private:
   void gf2p8affineqb(XMMRegister dst, XMMRegister src, int imm8);
   void vgf2p8affineqb(XMMRegister dst, XMMRegister src2, XMMRegister src3, int imm8, int vector_len);
 
+  // Vector bit reverse
+  void evpbitrev(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
+
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
   // They should be called only from corresponding MacroAssembler instructions.
