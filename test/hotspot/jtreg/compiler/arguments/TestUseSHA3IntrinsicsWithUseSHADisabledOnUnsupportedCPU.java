@@ -46,19 +46,19 @@ import jdk.test.lib.process.ExitCode;
 public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
     private static final String OPTION_NAME = "UseSHA3Intrinsics";
     private static final String MASTER_OPTION = "UseSHA";
-    private static final String WARNING_MESSAGE = 
+    private static final String WARNING_MESSAGE =
         "Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU\\.";
     private static final String UNLOCK_DIAGNOSTIC = "-XX:+UnlockDiagnosticVMOptions";
 
     public static void main(String[] args) throws Throwable {
-        
+
         // Verify that UseSHA3Intrinsics remains false when UseSHA is enabled
         // but CPU doesn't support the instructions
         testRemainsDisabledWithUseSHAEnabled();
-        
+
         // Verify that explicitly disabling UseSHA3Intrinsics works without warnings
         testExplicitDisableWithoutWarning();
-        
+
         // Verify behavior with both -XX:-UseSHA and +XX:+UseSHA3Intrinsics
         testWithUseSHADisabled();
     }
@@ -72,7 +72,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
             UNLOCK_DIAGNOSTIC,
             CommandLineOptionTest.prepareBooleanFlag(MASTER_OPTION, true)
         );
-        
+
         // Trying to enable both should still produce a warning
         CommandLineOptionTest.verifySameJVMStartup(
             new String[] { WARNING_MESSAGE },
@@ -97,7 +97,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
             UNLOCK_DIAGNOSTIC,
             CommandLineOptionTest.prepareBooleanFlag(OPTION_NAME, false)
         );
-        
+
         // Verify the flag value is false
         CommandLineOptionTest.verifyOptionValueForSameVM(
             OPTION_NAME,
@@ -123,7 +123,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
             CommandLineOptionTest.prepareBooleanFlag(MASTER_OPTION, false),
             CommandLineOptionTest.prepareBooleanFlag(OPTION_NAME, true)
         );
-        
+
         // Verify the flag is forced to false
         CommandLineOptionTest.verifyOptionValueForSameVM(
             OPTION_NAME,
@@ -134,7 +134,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
             CommandLineOptionTest.prepareBooleanFlag(MASTER_OPTION, false),
             CommandLineOptionTest.prepareBooleanFlag(OPTION_NAME, true)
         );
-        
+
         // Test that with both flags disabled, no warning appears
         CommandLineOptionTest.verifySameJVMStartup(
             null,
