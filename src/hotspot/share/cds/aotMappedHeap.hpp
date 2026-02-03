@@ -85,6 +85,7 @@ public:
   AOTMappedHeapHeader create_header();
 };
 
+#if INCLUDE_CDS_JAVA_HEAP
 class AOTMappedHeapOopIterator : public AOTMapLogger::OopDataIterator {
 protected:
   address _current;
@@ -162,5 +163,6 @@ public:
     return new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
   }
 };
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 #endif // SHARE_CDS_AOTMAPPEDHEAP_HPP

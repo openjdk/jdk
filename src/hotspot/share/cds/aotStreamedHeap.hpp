@@ -95,6 +95,7 @@ public:
   AOTStreamedHeapHeader create_header();
 };
 
+#if INCLUDE_CDS_JAVA_HEAP
 class AOTStreamedHeapOopIterator : public AOTMapLogger::OopDataIterator {
 protected:
   int _current;
@@ -141,5 +142,6 @@ public:
     }
   }
 };
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 #endif // SHARE_CDS_AOTSTREAMEDHEAP_HPP
