@@ -67,8 +67,6 @@ import java.util.zip.ZipFile;
 /// specified with local path to the test.
 /// The test looks for test data files in the archive listed with `TEST_FILES`.
 ///
-/// These tests are currently compatible with ACVP version 1.1.0.38.
-///
 /// By default, the test uses system-preferred implementations.
 /// If you want to test a specific provider, set the
 /// `test.acvp.provider` test property. The provider must be
