@@ -2844,8 +2844,12 @@ void ShenandoahHeap::log_heap_status(const char* msg) const {
 }
 
 ShenandoahHeapLocker::ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_block_for_safepoint) : _lock(lock) {
+#ifdef ASSERT
   ShenandoahFreeSet* free_set = ShenandoahHeap::heap()->free_set();
+  // free_set is nullptr only at pre-initilization state
   assert(free_set == nullptr || !free_set->rebuild_lock()->owned_by_self(), "Dead lock, can't acquire heap lock while holding free-set rebuild lock");
+  assert(_lock != nullptr, "Must not");
+#endif
   if (_lock != nullptr) {
     _lock->lock(allow_block_for_safepoint);
   }

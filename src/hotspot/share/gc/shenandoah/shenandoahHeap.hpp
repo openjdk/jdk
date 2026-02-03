@@ -118,7 +118,10 @@ public:
 };
 
 typedef ShenandoahLock                       ShenandoahHeapLock;
-// ShenandoahHeapLocker checks potential deadlock and asserts
+// ShenandoahHeapLocker implements locker to assure mutually exclusive access to the global heap data structures.
+// Asserts in the implementation detect potential deadlock usage with regards the rebuild lock that is present
+// in ShenandoahFreeSet.  Whenever both locks are acquired, this lock should be acquired before the
+// ShenandoahFreeSet rebuild lock.
 class ShenandoahHeapLocker : public StackObj {
 private:
   ShenandoahHeapLock* _lock;
