@@ -346,42 +346,33 @@ public class SecureDS {
         assertThrows(NullPointerException.class, () -> {
             stream.getFileAttributeView(null, BasicFileAttributeView.class);
         });
-        try {
+        assertThrows(NullPointerException.class, () -> {
             stream.getFileAttributeView(file, null);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.newByteChannel(null, EnumSet.of(CREATE,WRITE));
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.newByteChannel(null, EnumSet.of(CREATE,WRITE,null));
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.newByteChannel(file, null);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.move(null, stream, file);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.move(file, stream, null);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.newDirectoryStream(null);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.deleteFile(null);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.deleteDirectory(null);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
+        });
 
         // close stream
         stream.close();
