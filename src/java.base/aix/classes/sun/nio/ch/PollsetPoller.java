@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,6 +50,12 @@ class PollsetPoller extends Poller {
         this.event = (read) ? Net.POLLIN : Net.POLLOUT;
         this.setid = Pollset.pollsetCreate();
         this.pollBuffer = Pollset.allocatePollArray(MAX_EVENTS_TO_POLL);
+    }
+
+    @Override
+    void close() {
+        Pollset.pollsetDestroy(pollset);
+        Pollset.freePollArray(pollBuffer);
     }
 
     @Override
