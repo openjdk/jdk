@@ -321,10 +321,9 @@ public class SecureDS {
                     // re-throw if move between same volume
                     throw e;
                 }
-                if (!TEXT.equals(Files.readString(result)))
-                    throw new RuntimeException(result + " content incorrect");
+                assertEquals(TEXT, Files.readString(result), result + " content incorrect");
             } else {
-                throw new RuntimeException("Not a SecureDirectoryStream");
+                fail("Not a SecureDirectoryStream");
             }
         } finally {
             boolean fileDeleted = Files.deleteIfExists(filepath);
