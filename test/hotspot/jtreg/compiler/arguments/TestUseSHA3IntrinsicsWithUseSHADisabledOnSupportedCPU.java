@@ -35,7 +35,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   compiler.arguments.TestUseSHA3IntrinsicsWithUseSHADisabled
+ *                   compiler.arguments.TestUseSHA3IntrinsicsWithUseSHADisabledOnSupportedCPU
  */
 
 package compiler.arguments;
@@ -43,7 +43,7 @@ package compiler.arguments;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.process.ExitCode;
 
-public class TestUseSHA3IntrinsicsWithUseSHADisabled {
+public class TestUseSHA3IntrinsicsWithUseSHADisabledOnSupportedCPU {
     private static final String OPTION_NAME = "UseSHA3Intrinsics";
     private static final String MASTER_OPTION = "UseSHA";
     private static final String WARNING_MESSAGE =
