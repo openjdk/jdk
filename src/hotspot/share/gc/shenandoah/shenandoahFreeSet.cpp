@@ -909,7 +909,7 @@ idx_t ShenandoahRegionPartitions::rightmost_empty(ShenandoahFreeSetPartitionId w
 #ifdef ASSERT
 void ShenandoahRegionPartitions::assert_bounds() {
   shenandoah_assert_heaplocked();
-  ShenandoahHeapUsageAccountingLocker locker(_free_set->usage_accounting_lock());
+  ShenandoahRebuildLocker locker(_free_set->rebuild_lock());
 
   size_t capacities[UIntNumPartitions];
   size_t used[UIntNumPartitions];
@@ -2559,8 +2559,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t &old_trashed_regions,
                                            size_t &first_old_region, size_t &last_old_region, size_t &old_region_count) {
   shenandoah_assert_heaplocked();
-  assert(usage_accounting_lock() != nullptr, "sanity");
-  usage_accounting_lock()->lock(false);
+  assert(rebuild_lock() != nullptr, "sanity");
+  rebuild_lock()->lock(false);
   // This resets all state information, removing all regions from all sets.
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");
@@ -2593,7 +2593,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_cset_regions, size_t old_cse
   establish_old_collector_alloc_bias();
 
   // Release the rebuild lock now.  What remains in this function is read-only
-  usage_accounting_lock()->unlock();
+  rebuild_lock()->unlock();
   _partitions.assert_bounds();
   log_status();
   if (_heap->mode()->is_generational()) {
