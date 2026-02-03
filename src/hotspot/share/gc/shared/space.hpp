@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -53,7 +54,7 @@ class ContiguousSpace: public CHeapObj<mtGC> {
 private:
   HeapWord* _bottom;
   HeapWord* _end;
-  HeapWord* _top;
+  Atomic<HeapWord*> _top;
 
   // Allocation helpers (return null if full).
   inline HeapWord* allocate_impl(size_t word_size);
@@ -64,12 +65,12 @@ public:
 
   // Accessors
   HeapWord* bottom() const         { return _bottom; }
-  HeapWord* end() const            { return _end;    }
-  HeapWord* top() const            { return _top;    }
+  HeapWord* end() const            { return _end; }
+  HeapWord* top() const            { return _top.load_relaxed();    }
 
   void set_bottom(HeapWord* value) { _bottom = value; }
   void set_end(HeapWord* value)    { _end = value; }
-  void set_top(HeapWord* value)    { _top = value; }
+  void set_top(HeapWord* value)    { _top.store_relaxed(value); }
 
   // Testers
   bool is_empty() const              { return used() == 0; }
@@ -120,9 +121,6 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
-
-  // Addresses for inlined allocation
-  HeapWord** top_addr() { return &_top; }
 
   // Debugging
   void verify() const;

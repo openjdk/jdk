@@ -69,7 +69,15 @@ class ConnectionRefusedMessage {
             sc.register(selector, SelectionKey.OP_CONNECT);
 
             System.err.println("establishing connection to " + destAddr);
-            boolean connected = sc.connect(destAddr);
+            boolean connected;
+            try {
+                connected = sc.connect(destAddr);
+            } catch (ConnectException ce) {
+                // Connect failed immediately, which is OK.
+                System.err.println("SocketChannel.connect() threw ConnectException - " + ce);
+                assertExceptionMessage(ce);
+                return; // nothing more to test
+            }
             // this test checks the exception message of a ConnectException, so it's
             // OK to skip the test if something unexpectedly accepted the connection
             assumeFalse(connected, "unexpectedly connected to " + destAddr);
@@ -90,14 +98,19 @@ class ConnectionRefusedMessage {
                     // with a return value of false
                     fail("ConnectException was not thrown");
                 } catch (ConnectException ce) {
-                    System.err.println("got (expected) ConnectException - " + ce);
+                    System.err.println("got (expected) ConnectException from " +
+                            "SocketChannel.finishConnect() - " + ce);
                     // verify exception message
-                    if (!"Connection refused".equals(ce.getMessage())) {
-                        // propagate the original exception
-                        fail("unexpected exception message: " + ce.getMessage(), ce);
-                    }
+                    assertExceptionMessage(ce);
                 }
             }
+        }
+    }
+
+    private static void assertExceptionMessage(final ConnectException ce) {
+        if (!"Connection refused".equals(ce.getMessage())) {
+            // propagate the original exception
+            fail("unexpected exception message: " + ce.getMessage(), ce);
         }
     }
 
