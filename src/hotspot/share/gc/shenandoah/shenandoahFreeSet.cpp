@@ -908,8 +908,6 @@ idx_t ShenandoahRegionPartitions::rightmost_empty(ShenandoahFreeSetPartitionId w
 
 #ifdef ASSERT
 void ShenandoahRegionPartitions::assert_bounds() {
-  shenandoah_assert_heaplocked();
-  ShenandoahRebuildLocker locker(_free_set->rebuild_lock());
 
   size_t capacities[UIntNumPartitions];
   size_t used[UIntNumPartitions];
