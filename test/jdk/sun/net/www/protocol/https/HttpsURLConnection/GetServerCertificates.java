@@ -148,7 +148,7 @@ public class GetServerCertificates {
         check(resp == code, "Unexpected response code. Expected %s, got %s"
                 .formatted(code, resp));
 
-        uc.getServerCertificates();
+        check(uc.getServerCertificates());
         if (test == TESTS.S200) {
             byte[] bytes = uc.getInputStream().readAllBytes();
             String body = new String(bytes, StandardCharsets.UTF_8);
@@ -176,7 +176,7 @@ public class GetServerCertificates {
         check(resp == code, "Unexpected response code. Expected %s, got %s"
                 .formatted(code, resp));
 
-        uc.getServerCertificates();
+        check(uc.getServerCertificates());
         if (test == TESTS.S200) {
             byte[] bytes = uc.getInputStream().readAllBytes();
             String body = new String(bytes, StandardCharsets.UTF_8);
@@ -214,7 +214,7 @@ public class GetServerCertificates {
         resp = uc.getResponseCode();
         check(resp == code, "Unexpected response code. Expected %s, got %s"
                 .formatted(code, resp));
-        uc.getServerCertificates();
+        check(uc.getServerCertificates());
         uc.disconnect();
         try {
             uc.getServerCertificates();
@@ -284,6 +284,12 @@ public class GetServerCertificates {
     void unexpected(Throwable t) {failed++; t.printStackTrace();}
     void debug(String message) { if (debug) System.out.println(message); }
     void check(boolean cond, String failMessage) {if (cond) pass(); else fail(failMessage);}
+    void check(java.security.cert.Certificate[] certs) {
+        // Use List.of to check that certs is not null and does not
+        // contain null. NullPointerException will be thrown here
+        // if that happens, which will make the test fail.
+        check(!List.of(certs).isEmpty(), "no certificates returned");
+    }
     public static void main(String[] args) throws Throwable {
         Class<?> k = new Object(){}.getClass().getEnclosingClass();
         try {k.getMethod("instanceMain",String[].class)
