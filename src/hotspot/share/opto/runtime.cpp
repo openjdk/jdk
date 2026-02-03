@@ -35,7 +35,6 @@
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecode.hpp"
