@@ -57,80 +57,59 @@ import jdk.test.lib.security.CertificateBuilder;
 
 public class CompressedCertMsgCache extends SSLSocketTemplate {
 
-    private final String protocol;
-    private final String keyAlg;
-    private final String certSigAlg;
-    private X509Certificate trustedCert;
-    private X509Certificate serverCert;
-    private X509Certificate clientCert;
-    private KeyPair serverKeys;
-    private KeyPair clientKeys;
-
-    protected CompressedCertMsgCache(
-            String protocol, String keyAlg,
-            String certSigAlg) throws Exception {
-        super();
-        this.protocol = protocol;
-        this.keyAlg = keyAlg;
-        this.certSigAlg = certSigAlg;
-        setupCertificates();
-    }
+    private static X509Certificate trustedCert;
+    private static X509Certificate serverCert;
+    private static X509Certificate clientCert;
+    private static KeyPair serverKeys;
+    private static KeyPair clientKeys;
+    private static SSLContext serverSslContext;
+    private static SSLContext clientSslContext;
 
     public static void main(String[] args) throws Exception {
 
-        // Complete 2 handshakes with the same certificate.
-        String log = runAndGetLog(() -> {
-            try {
-                new SSLSocketTemplate().run();
-                new SSLSocketTemplate().run();
-            } catch (Exception _) {
-            }
-        });
+        // Use 2 different SSLContext instances.
+        for (int i = 0; i < 2; i++) {
 
-        // Make sure the same CompressedCertificate message is cached only once
-        assertEquals(1, countSubstringOccurrences(log,
-                "Caching CompressedCertificate message"));
+            // Complete 3 handshakes with the same SSLContext.
+            String log = runAndGetLog(() -> {
+                try {
+                    setupCertificates();
+                    serverSslContext = getSSLContext(
+                            trustedCert, serverCert, serverKeys.getPrivate(),
+                            "TLSv1.3");
+                    clientSslContext = getSSLContext(
+                            trustedCert, clientCert, clientKeys.getPrivate(),
+                            "TLSv1.3");
 
-        // Complete 92 handshakes, all with different certificates.
-        log = runAndGetLog(() -> {
-            try {
-                for (int i = 0; i < 92; i++) {
-                    new CompressedCertMsgCache(
-                            "TLSv1.3", "EC", "SHA256withECDSA").run();
+                    new CompressedCertMsgCache().run();
+                    new CompressedCertMsgCache().run();
+                    new CompressedCertMsgCache().run();
+                } catch (Exception _) {
                 }
-            } catch (Exception _) {
-            }
-        });
+            });
 
-        // Make sure all 92 CompressedCertificate messages are cached.
-        assertEquals(92, countSubstringOccurrences(log,
-                "Caching CompressedCertificate message"));
+            // The same CompressedCertificate message must be cached only once.
+            assertEquals(1, countSubstringOccurrences(log,
+                    "Caching CompressedCertificate message"));
 
-        // Complete 1 handshake with the same certificate as the very first one.
-        log = runAndGetLog(() -> {
-            try {
-                new SSLSocketTemplate().run();
-            } catch (Exception _) {
-            }
-        });
+            // Make sure CompressedCertificate message is produced 3 times.
+            assertEquals(3, countSubstringOccurrences(log,
+                    "Produced CompressedCertificate handshake message"));
 
-        // Make sure the same CompressedCertificate message is cached again
-        // because it was removed from cache due to LRU policy.
-        assertEquals(1, countSubstringOccurrences(log,
-                "Caching CompressedCertificate message"));
-
+            // Make sure CompressedCertificate message is consumed 3 times.
+            assertEquals(3, countSubstringOccurrences(log,
+                    "Consuming CompressedCertificate handshake message"));
+        }
     }
 
     @Override
     public SSLContext createServerSSLContext() throws Exception {
-        return getSSLContext(
-                trustedCert, serverCert, serverKeys.getPrivate(), protocol);
+        return serverSslContext;
     }
 
     @Override
     public SSLContext createClientSSLContext() throws Exception {
-        return getSSLContext(
-                trustedCert, clientCert, clientKeys.getPrivate(), protocol);
+        return clientSslContext;
     }
 
     private static SSLContext getSSLContext(
@@ -170,34 +149,34 @@ public class CompressedCertMsgCache extends SSLSocketTemplate {
 
     // Certificate-building helper methods.
 
-    private void setupCertificates() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlg);
+    private static void setupCertificates() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
         KeyPair caKeys = kpg.generateKeyPair();
-        this.serverKeys = kpg.generateKeyPair();
-        this.clientKeys = kpg.generateKeyPair();
+        serverKeys = kpg.generateKeyPair();
+        clientKeys = kpg.generateKeyPair();
 
-        this.trustedCert = createTrustedCert(caKeys, certSigAlg);
+        trustedCert = createTrustedCert(caKeys);
 
-        this.serverCert = customCertificateBuilder(
+        serverCert = customCertificateBuilder(
                 "O=Some-Org, L=Some-City, ST=Some-State, C=US",
                 serverKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(false, false, -1)
-                .build(trustedCert, caKeys.getPrivate(), certSigAlg);
+                .build(trustedCert, caKeys.getPrivate(), "SHA256withECDSA");
 
-        this.clientCert = customCertificateBuilder(
+        clientCert = customCertificateBuilder(
                 "CN=localhost, OU=SSL-Client, ST=Some-State, C=US",
                 clientKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(false, false, -1)
-                .build(trustedCert, caKeys.getPrivate(), certSigAlg);
+                .build(trustedCert, caKeys.getPrivate(), "SHA256withECDSA");
     }
 
-    private static X509Certificate createTrustedCert(
-            KeyPair caKeys, String certSigAlg) throws Exception {
+    private static X509Certificate createTrustedCert(KeyPair caKeys)
+            throws Exception {
         return customCertificateBuilder(
                 "O=CA-Org, L=Some-City, ST=Some-State, C=US",
                 caKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(true, true, 1)
-                .build(null, caKeys.getPrivate(), certSigAlg);
+                .build(null, caKeys.getPrivate(), "SHA256withECDSA");
     }
 
     private static CertificateBuilder customCertificateBuilder(

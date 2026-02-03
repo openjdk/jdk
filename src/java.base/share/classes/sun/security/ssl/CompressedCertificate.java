@@ -47,6 +47,8 @@ final class CompressedCertificate {
     static final HandshakeProducer handshakeProducer =
             new CompressedCertProducer();
 
+    record CompCertCacheKey(EqualByteArray eba, int algId) {}
+
     /**
      * The CompressedCertificate handshake message for TLS 1.3.
      */
@@ -140,14 +142,6 @@ final class CompressedCertificate {
     private static final
     class CompressedCertProducer implements HandshakeProducer {
 
-        private record CompCertCacheKey(EqualByteArray eba, int algId) {}
-
-        // Only local certificates are compressed, so it makes sense to store
-        // the deflated certificate data in a memory cache statically and avoid
-        // compressing local certificates repeatedly for every handshake.
-        private static final Cache<CompCertCacheKey, byte[]> CACHE =
-                Cache.newSoftMemoryCache(92);
-
         // Prevent instantiation of this class.
         private CompressedCertProducer() {
             // blank
@@ -167,9 +161,11 @@ final class CompressedCertificate {
             message.send(hos);
             byte[] certMsg = hos.toByteArray();
 
+            Cache<CompCertCacheKey, byte[]> cache =
+                    hc.sslContext.getCompCertCache();
             CompCertCacheKey key = new CompCertCacheKey(
                     new EqualByteArray(certMsg), hc.certDeflater.getKey());
-            byte[] compressedCertMsg = CACHE.get(key);
+            byte[] compressedCertMsg = cache.get(key);
 
             if (compressedCertMsg == null) {
                 compressedCertMsg = hc.certDeflater.getValue().apply(certMsg);
@@ -183,7 +179,7 @@ final class CompressedCertificate {
                         SSLLogger.fine("Caching CompressedCertificate message");
                     }
 
-                    CACHE.put(key, compressedCertMsg);
+                    cache.put(key, compressedCertMsg);
                 }
             }
 
