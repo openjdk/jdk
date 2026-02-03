@@ -58,11 +58,11 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
 
   // The _thread field is a link to the JavaThread associated with JvmtiThreadState.
-  // The _thread_saved field is used for carrier threads only when a virtual thread,
+  // The _thread_saved field is used for carrier threads only when a virtual thread
   // is mounted. Otherwise, it must be set to nullptr.
   // Carrier and virtual threads can temporarily share same JavaThread. In such a case,
   // only virtual _thread should have a link from JvmtiThreadState to JavaThread.
-  // The carrier thread _thread filed is set to nullptr if a virtual thread is monted.
+  // The carrier thread _thread field is set to nullptr if a virtual thread is monted.
   // This is important for interp-only mechanism.
   if (JvmtiEnvBase::is_thread_carrying_vthread(thread, thread_oop)) {
     _thread = nullptr;
