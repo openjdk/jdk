@@ -693,16 +693,6 @@ static const char* get_exploded_module_path(const char* module_name, bool c_heap
   return path;
 }
 
-// Gets a preview path for a given class path as a resource.
-static const char* get_preview_path(const char* path) {
-  const char file_sep = os::file_separator()[0];
-  // 18 represents the length of "META-INF" (8) + "preview" (7) + 2 file separators + \0
-  size_t len = strlen(path) + 18;
-  char *preview_path = NEW_RESOURCE_ARRAY(char, len);
-  jio_snprintf(preview_path, len, "%s%cMETA-INF%cpreview", path, file_sep, file_sep);
-  return preview_path;
-}
-
 // During an exploded modules build, each module defined to the boot loader
 // will be added to the ClassLoader::_exploded_entries array.
 void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module_sym) {
@@ -725,26 +715,12 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
     // This is checked at module definition time in Modules::define_module.
     if (new_entry != nullptr) {
       ModuleClassPathList* module_cpl = new ModuleClassPathList(module_sym);
-      log_info(class, load)("path: %s", path);
-
-      // If we are in preview mode, attempt to add a preview entry *before* the
-      // new class path entry if a preview path exists.
-      if (is_preview_enabled()) {
-        const char* preview_path = get_preview_path(path);
-        if (os::stat(preview_path, &st) == 0) {
-          ClassPathEntry* preview_entry = create_class_path_entry(current, preview_path, &st);
-          if (preview_entry != nullptr) {
-            module_cpl->add_to_list(preview_entry);
-            log_info(class, load)("preview path: %s", preview_path);
-          }
-        }
-      }
-
       module_cpl->add_to_list(new_entry);
       {
         MutexLocker ml(current, Module_lock);
         _exploded_entries->push(module_cpl);
       }
+      log_info(class, load)("path: %s", path);
     }
   }
 }
