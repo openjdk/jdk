@@ -154,6 +154,7 @@ public class MainTest extends JUnitAdapter {
 
         JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
+                .ignoreDefaultRuntime(true)
                 .useToolProvider(jpackageToolProviderMock)
                 .execute(jpackageExitCode);
     }
