@@ -25,7 +25,6 @@
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -52,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @summary Validate that Zip/JarFile::getInputStream will throw a NullPointerException
  * @run junit/othervm GetInputStreamNPETest
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class GetInputStreamNPETest {
     // Name used to create a JAR with an invalid entry name
     public static final Path INVALID_ENTRY_NAME_JAR =
@@ -762,7 +760,7 @@ public class GetInputStreamNPETest {
      *
      * @return Entry object indicating the jar file and whether it will be verified
      */
-    public Stream<Arguments> validJars() {
+    public static Stream<Arguments> validJars() {
         return Stream.of(
                 Arguments.of(SIGNED_VALID_ENTRY_NAME_JAR, true),
                 Arguments.of(SIGNED_VALID_ENTRY_NAME_JAR, false),
@@ -776,7 +774,7 @@ public class GetInputStreamNPETest {
      *
      * @return Entry object indicating the jar file and whether it will be verified
      */
-    public Stream<Arguments> inValidJars() {
+    public static Stream<Arguments> inValidJars() {
         return Stream.of(
                 Arguments.of(SIGNED_INVALID_ENTRY_NAME_JAR, true),
                 Arguments.of(SIGNED_INVALID_ENTRY_NAME_JAR, false),

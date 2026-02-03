@@ -24,7 +24,6 @@
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -43,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verify Deflater.setDictionary(dictionary, offset, length) uses the offset
  * @run junit/othervm DeflaterDictionaryTests
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DeflaterDictionaryTests {
     // Output buffer size
     private static final int RESULT_SIZE = 1024;
@@ -59,7 +57,7 @@ public class DeflaterDictionaryTests {
      *
      * @return valid offset values
      */
-    protected IntStream validDictionaryOffsets() {
+    protected static IntStream validDictionaryOffsets() {
         return IntStream.of(0, DICTIONARY_OFFSET, DICTIONARY_LENGTH);
     }
 
@@ -68,7 +66,7 @@ public class DeflaterDictionaryTests {
      *
      * @return invalid offset values
      */
-    protected IntStream invalidDictionaryOffsets() {
+    protected static IntStream invalidDictionaryOffsets() {
         return IntStream.of(-1, DICTIONARY_LENGTH + 2, DICTIONARY.length());
     }
 

@@ -26,7 +26,6 @@
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -48,7 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * comment length field contains an incorrect value
  * @run junit/othervm InvalidCommentLengthTest
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class InvalidCommentLengthTest {
 
     // Name used to create a JAR with an invalid comment length
@@ -270,7 +268,7 @@ public class InvalidCommentLengthTest {
      * @throws IOException If an error occurs
      */
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         Files.deleteIfExists(VALID_CEN_COMMENT_LENGTH_JAR);
         Files.deleteIfExists(INVALID_CEN_COMMENT_LENGTH_JAR);
         // Create the valid jar

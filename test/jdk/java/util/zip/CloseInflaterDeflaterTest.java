@@ -31,7 +31,6 @@
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -50,8 +49,6 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CloseInflaterDeflaterTest {
 
     // Number of bytes to write/read from Deflater/Inflater
@@ -88,7 +85,7 @@ public class CloseInflaterDeflaterTest {
      *
      * @return Entry object indicating which method to use for closing OutputStream
      */
-    public Stream<Boolean> testOutputStreams() {
+    public static Stream<Boolean> testOutputStreams() {
         return Stream.of(true, false);
     }
 
@@ -97,7 +94,7 @@ public class CloseInflaterDeflaterTest {
      *
      * @return Entry object returning either JarOutputStream or ZipOutputStream
      */
-    public Stream<ZipOutputStream> testZipAndJar() throws IOException{
+    public static Stream<ZipOutputStream> testZipAndJar() throws IOException{
         return Stream.of(new JarOutputStream(outStream), new ZipOutputStream(outStream));
     }
 
@@ -105,7 +102,7 @@ public class CloseInflaterDeflaterTest {
      * Add inputBytes array with random bytes to write into OutputStream
      */
     @BeforeAll
-    public void before_test()
+    public static void before_test()
     {
        rand.nextBytes(inputBytes);
     }

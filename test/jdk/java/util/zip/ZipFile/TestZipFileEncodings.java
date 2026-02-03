@@ -31,7 +31,6 @@
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -65,7 +64,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZipFileEncodings {
 
     private static int NUM_ENTRIES = 100;
@@ -80,7 +78,7 @@ public class TestZipFileEncodings {
         return ThreadLocalRandom.current();
     }
 
-    public Stream<String> nonUnicodeCharsets() {
+    public static Stream<String> nonUnicodeCharsets() {
         return Stream.of(
                 "ISO-8859-1",
                 "IBM01149",
@@ -89,7 +87,7 @@ public class TestZipFileEncodings {
         );
     }
 
-    public Stream<String> unicodeCharsets() {
+    public static Stream<String> unicodeCharsets() {
         return Stream.of(
                 "UTF-8",
                 "UTF-16",
@@ -99,7 +97,7 @@ public class TestZipFileEncodings {
         );
     }
 
-    public Stream<String> allCharsets() {
+    public static Stream<String> allCharsets() {
         return Stream.concat(nonUnicodeCharsets(), unicodeCharsets());
     }
 
@@ -199,7 +197,7 @@ public class TestZipFileEncodings {
     }
 
     @AfterAll
-    public void tearDown() {
+    public static void tearDown() {
         for (Path path : paths) {
             path.toFile().deleteOnExit();
         }

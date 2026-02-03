@@ -53,16 +53,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @modules jdk.zipfs
  * @run junit/othervm ZipFileInputStreamSkipTest
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ZipFileInputStreamSkipTest {
 
     // Stored and Deflated Zip File paths used by the tests
-    private final Path STORED_ZIPFILE = Path.of("skipStoredEntries.zip");
-    private final Path DEFLATED_ZIPFILE = Path.of("skipDeflatedEntries.zip");
+    private static final Path STORED_ZIPFILE = Path.of("skipStoredEntries.zip");
+    private static final Path DEFLATED_ZIPFILE = Path.of("skipDeflatedEntries.zip");
 
     // Saved Entries added to the relevant Zip file
-    private final HashMap<String, Entry> STORED_ZIP_ENTRIES = new HashMap<>();
-    private final HashMap<String, Entry> DEFLATED_ZIP_ENTRIES = new HashMap<>();
+    private static final HashMap<String, Entry> STORED_ZIP_ENTRIES = new HashMap<>();
+    private static final HashMap<String, Entry> DEFLATED_ZIP_ENTRIES = new HashMap<>();
 
     /**
      * Create the Zip Files used by the tests
@@ -70,7 +69,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws IOException If an error occurs creating the Zip Files
      */
     @BeforeAll
-    private void createZip() throws IOException {
+    private static void createZip() throws IOException {
         Entry e0 = Entry.of("Entry-0", ZipEntry.STORED, "Tennis Pro");
         Entry e1 = Entry.of("Entry-1", ZipEntry.STORED,
                 "United States Tennis Association");
@@ -99,7 +98,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws IOException If an error occurs during cleanup
      */
     @AfterAll
-    private void cleanUp() throws IOException {
+    private static void cleanUp() throws IOException {
         Files.deleteIfExists(STORED_ZIPFILE);
         Files.deleteIfExists(DEFLATED_ZIPFILE);
     }
@@ -254,7 +253,7 @@ public class ZipFileInputStreamSkipTest {
      * @param entries The entries to add to the Zip File
      * @throws IOException If an error occurs while creating the Zip file
      */
-    private void createZipFile(Path zipFile, Map<String, String> env,
+    private static void createZipFile(Path zipFile, Map<String, String> env,
                                Entry... entries) throws IOException {
         try (FileSystem zipfs =
                      FileSystems.newFileSystem(zipFile, env)) {
