@@ -243,6 +243,10 @@ static bool jimage_open(const char* modules_path) {
   // Currently 'error' is not set to anything useful, so ignore it here.
   jint error;
   JImage_file = (*JImageOpen)(modules_path, &error);
+  if (Arguments::has_jimage() && JImage_file == nullptr) {
+    // The modules file exists but is unreadable or corrupt
+    vm_exit_during_initialization(err_msg("Unable to load %s", modules_path));
+  }
   return JImage_file != nullptr;
 }
 
