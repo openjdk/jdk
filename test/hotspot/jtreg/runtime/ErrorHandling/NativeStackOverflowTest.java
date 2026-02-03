@@ -61,7 +61,7 @@ public class NativeStackOverflowTest {
         assertTrue(Files.exists(hsErrPath));
 
         Pattern[] positivePatterns = {
-                Pattern.compile(".*SIGSEGV.*"),
+                Pattern.compile(".*(SIGSEGV|SIGBUS).*"),
                 Pattern.compile(".*irrecoverable stack overflow.*")
         };
         HsErrFileUtils.checkHsErrFileContent(hsErrFile, positivePatterns, null, true /* check end marker */, false /* verbose */, true /* print on error */);

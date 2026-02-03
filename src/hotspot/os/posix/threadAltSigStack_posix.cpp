@@ -39,17 +39,20 @@
 static size_t get_alternate_signal_stack_size() {
   static size_t value = 0;
   if (value == 0) {
+    assert(UseAltSigStacks, "invariant");
+
     // Note: the first thread initializing this would be the main thread which
     // still runs single-threaded. It is invoked after initial argument parsing.
     assert(StackOverflow::is_initialized(), "Too early?");
 
-    constexpr size_t stacksize_mincap = 128 * K;
-    const size_t os_minstk = MINSIGSTKSZ; // may be a sysconf value, not a constant
-    value = MAX3(os_minstk, stacksize_mincap, StackOverflow::stack_shadow_zone_size());
+    constexpr size_t stacksize_mincap = (MINSIGSTKSZ) + (128 * K); // very generous
+    value = MAX2(stacksize_mincap, StackOverflow::stack_shadow_zone_size());
     value = align_up(value, os::vm_page_size());
 
     // Guard page
     value += os::vm_page_size();
+
+    log_info(os, thread)("Alternative signal stack size %zu", value);
   }
   return value;
 }
@@ -64,21 +67,32 @@ static void describe_stack_t(outputStream* st, const stack_t* ss) {
 
 static void sigaltstack_and_log(const stack_t* ss, stack_t* oss) {
   const int rc = ::sigaltstack(ss, oss);
+
+  LogTarget(Debug, os, thread) lt;
+  if (lt.is_enabled()) {
+    if (rc == 0) {
+      LogStream ls(lt);
+      ls.print("Thread %zu alternate signal stack: %s (",
+          os::current_thread_id(), (ss->ss_flags == SS_DISABLE) ? "disabled" : "enabled");
+      describe_stack_t(&ls, ss);
+      ls.print_raw(", was: ");
+      describe_stack_t(&ls, oss);
+      ls.print_raw(")");
+    } else {
+      LogStream ls(lt);
+      ls.print("Thread %zu failed to %s alternative signal stack (%s) (",
+          os::current_thread_id(), (ss->ss_flags == SS_DISABLE) ? "disable" : "enable",
+          os::errno_name(errno));
+      describe_stack_t(&ls, ss);
+      ls.print_raw(")");
+    }
+  }
+
   // All possible errors are programmer errors and should not happen at runtime.
   assert(rc == 0,
          "sigaltstack failed (%s)%s",
          os::errno_name(errno),
          (oss->ss_flags == SS_ONSTACK) ? " (called from signal handler?)" : "");
-  LogTarget(Debug, os, thread) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Thread %zu alternate signal stack: %s (",
-        os::current_thread_id(), (ss->ss_flags == SS_DISABLE) ? "disabled" : "enabled");
-    describe_stack_t(&ls, ss);
-    ls.print_raw(", was: ");
-    describe_stack_t(&ls, oss);
-    ls.print_raw(")");
-  }
 }
 
 static void release_and_check(char* p, size_t sz) {
@@ -136,6 +150,8 @@ void Thread::enable_alternate_signal_stack() {
 }
 
 void Thread::disable_alternate_signal_stack() {
+  const size_t stacksize = get_alternate_signal_stack_size();
+
   if (!UseAltSigStacks) {
     return;
   }
@@ -152,13 +168,12 @@ void Thread::disable_alternate_signal_stack() {
   stack_t ss;
   ss.ss_flags = SS_DISABLE;
   ss.ss_sp = nullptr;
-  ss.ss_size = 0;
+  ss.ss_size = stacksize; // needed on MacOS to prevent ENOMEM, even though it spec says otherwise
   stack_t oss;
   sigaltstack_and_log(&ss, &oss);
 
   // --- From here on, if we receive a signal, we'll run on the original stack ----
 
-  const size_t stacksize = get_alternate_signal_stack_size();
   assert(oss.ss_sp == _altsigstack, "Different stack? " PTR_FORMAT " vs " PTR_FORMAT, p2i(oss.ss_sp), p2i(_altsigstack));
   assert(oss.ss_size == stacksize, "Different size?");
 
