@@ -45,7 +45,7 @@ static size_t get_alternate_signal_stack_size() {
     // still runs single-threaded. It is invoked after initial argument parsing.
     assert(StackOverflow::is_initialized(), "Too early?");
 
-    constexpr size_t stacksize_mincap = (MINSIGSTKSZ) + (128 * K); // very generous
+    const size_t stacksize_mincap = (MINSIGSTKSZ) + (128 * K); // very generous
     value = MAX2(stacksize_mincap, StackOverflow::stack_shadow_zone_size());
     value = align_up(value, os::vm_page_size());
 
