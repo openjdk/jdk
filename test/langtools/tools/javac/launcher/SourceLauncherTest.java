@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -888,6 +888,57 @@ public class SourceLauncherTest extends TestRunner {
                           """);
         testSuccess(base.resolve("WrongMainReturnType.java"),
                     "correct\n");
+    }
+
+    @Test
+    public void testInheritedMain(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            """
+            class Sub extends Super {}
+            """,
+            """
+            class Super {
+                void main() {
+                    System.out.println(getClass().getName());
+                }
+            }
+            """);
+        testSuccess(base.resolve("Sub.java"),
+                    "Sub\n");
+    }
+
+    @Test
+    public void testInheritedMainFromAbstract(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            """
+            class Sub extends Super {}
+            """,
+            """
+            abstract class Super {
+                void main() {
+                    System.out.println(getClass().getName());
+                }
+            }
+            """);
+        testSuccess(base.resolve("Sub.java"),
+                    "Sub\n");
+    }
+
+    @Test
+    public void testInheritedMainFromInterface(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            """
+            public class Sub implements Super {}
+            """,
+            """
+            public interface Super {
+                default void main() {
+                    System.out.println(getClass().getName());
+                }
+            }
+            """);
+        testSuccess(base.resolve("Sub.java"),
+                    "Sub\n");
     }
 
     Result run(Path file, List<String> runtimeArgs, List<String> appArgs) {
