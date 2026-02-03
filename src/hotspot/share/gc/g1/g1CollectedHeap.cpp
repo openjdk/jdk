@@ -1320,7 +1320,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
   _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungRegionId),
   _cm(nullptr),
-  _cm_thread(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
   _partial_array_state_manager(nullptr),
@@ -1564,7 +1563,6 @@ jint G1CollectedHeap::initialize() {
   // Create the G1ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_[reserved_]regions" is defined.)
   _cm = new G1ConcurrentMark(this, bitmap_storage);
-  _cm_thread = _cm->cm_thread();
 
   // Now expand into the initial heap size.
   if (!expand(init_byte_size, _workers)) {
@@ -1636,7 +1634,9 @@ jint G1CollectedHeap::initialize() {
 }
 
 bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  return _cm_thread->should_terminate();
+  assert(_cm != nullptr, "_cm must have been created");
+  assert(_cm->is_fully_initialized(), "thread must exist in order to check if mark is terminating");
+  return _cm->cm_thread()->should_terminate();
 }
 
 void G1CollectedHeap::stop() {
@@ -1645,7 +1645,9 @@ void G1CollectedHeap::stop() {
   // that are destroyed during shutdown.
   _cr->stop();
   _service_thread->stop();
-  _cm_thread->stop();
+  if (_cm->is_fully_initialized()) {
+    _cm->cm_thread()->stop();
+  }
 }
 
 void G1CollectedHeap::safepoint_synchronize_begin() {
@@ -1842,7 +1844,7 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cycle is still in progress.
   if (concurrent) {
-    _cm_thread->set_idle();
+    _cm->cm_thread()->set_idle();
   }
 
   // Notify threads waiting in System.gc() (with ExplicitGCInvokesConcurrent)
@@ -2421,7 +2423,6 @@ void G1CollectedHeap::print_gc_on(outputStream* st) const {
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
-  tc->do_thread(_cm_thread);
   _cm->threads_do(tc);
   _cr->threads_do(tc);
   tc->do_thread(_service_thread);
@@ -2542,15 +2543,15 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 }
 
 void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_mark) {
-  assert(!_cm_thread->in_progress(), "Can not start concurrent operation while in progress");
-
+  assert(_cm->is_fully_initialized(), "sanity");
+  assert(!_cm->in_progress(), "Can not start concurrent operation while in progress");
   MutexLocker x(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   if (concurrent_operation_is_full_mark) {
     _cm->post_concurrent_mark_start();
-    _cm_thread->start_full_mark();
+    _cm->cm_thread()->start_full_mark();
   } else {
     _cm->post_concurrent_undo_start();
-    _cm_thread->start_undo_mark();
+    _cm->cm_thread()->start_undo_mark();
   }
   G1CGC_lock->notify();
 }
@@ -2725,6 +2726,8 @@ void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_si
   GCTraceCPUTime tcpu(_gc_tracer_stw);
 
   _bytes_used_during_gc = 0;
+
+  _cm->fully_initialize();
 
   policy()->decide_on_concurrent_start_pause();
   // Record whether this pause may need to trigger a concurrent operation. Later,
