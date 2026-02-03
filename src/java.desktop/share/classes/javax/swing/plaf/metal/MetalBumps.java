@@ -49,7 +49,7 @@ class MetalBumps implements Icon {
     protected Color shadowColor;
     protected Color backColor;
 
-    private static final List<BumpBuffer> BUMPS_LIST = new ArrayList<BumpBuffer>();
+    private static final List<BumpBuffer> bumpsList = new ArrayList<BumpBuffer>();
     protected BumpBuffer buffer;
 
     /**
@@ -66,13 +66,13 @@ class MetalBumps implements Icon {
     private static BumpBuffer createBuffer(GraphicsConfiguration gc,
                                            Color topColor, Color shadowColor, Color backColor) {
 
-        for (BumpBuffer buffer : BUMPS_LIST) {
+        for (BumpBuffer buffer : bumpsList) {
             if (buffer.hasSameConfiguration(gc, topColor, shadowColor, backColor)) {
                 return buffer;
             }
         }
         BumpBuffer buffer = new BumpBuffer(gc, topColor, shadowColor, backColor);
-        BUMPS_LIST.add(buffer);
+        bumpsList.add(buffer);
         return buffer;
     }
 
