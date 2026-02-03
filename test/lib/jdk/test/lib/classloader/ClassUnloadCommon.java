@@ -30,9 +30,12 @@
 
 package jdk.test.lib.classloader;
 import jdk.test.whitebox.WhiteBox;
+import nsk.share.CustomClassLoader;
+import nsk.share.Failure;
 
 import java.io.File;
 import java.io.Serial;
+import java.lang.ref.PhantomReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -42,9 +45,25 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import java.util.stream.Stream;
 
 public class ClassUnloadCommon {
+
+    /**
+     * Phantom reference to the class loader.
+     */
+    private PhantomReference<Object> customClassLoaderPhantomRef = null;
+
+    /**
+     * Current class loader used for loading classes.
+     */
+    private CustomClassLoader customClassLoader = null;
+
+    /**
+     * List of classes loaded with current class loader.
+     */
+    private Vector<Class<?>> classObjects = new Vector<Class<?>>();
     public static class TestFailure extends RuntimeException {
         @Serial
         private static final long serialVersionUID = -8108935949624559549L;
@@ -159,5 +178,132 @@ public class ClassUnloadCommon {
         } catch (Exception e) {
               return null;
         }
+    }
+
+    /**
+     * Class object of the first class been loaded with current class loader.
+     * To get the rest loaded classes use <code>getLoadedClass(int)</code>.
+     * The call <code>getLoadedClass()</code> is effectively equivalent to the call
+     * <code>getLoadedClass(0)</code>
+     *
+     * @return class object of the first loaded class.
+     *
+     * @see #getLoadedClass(int)
+     */
+    public Class<?> getLoadedClass() {
+        return classObjects.get(0);
+    }
+
+    /**
+     * Returns class objects at the specified index in the list of classes loaded
+     * with current class loader.
+     *
+     * @return class objects at the specified index.
+     */
+    public Class<?> getLoadedClass(int index) {
+        return classObjects.get(index);
+    }
+
+    /**
+     * Creates new instance of <code>CustomClassLoader</code> class as the current
+     * class loader and clears the list of loaded classes.
+     *
+     * @return created instance of <code>CustomClassLoader</code> class.
+     *
+     * @see #getClassLoader()
+     * @see #setClassLoader(CustomClassLoader)
+     */
+    public CustomClassLoader createClassLoader() {
+        customClassLoader = new CustomClassLoader();
+        classObjects.removeAllElements();
+
+        customClassLoaderPhantomRef = new PhantomReference<>(customClassLoader, null);
+
+        return customClassLoader;
+    }
+
+    /**
+     * Sets new current class loader and clears the list of loaded classes.
+     *
+     * @see #getClassLoader()
+     * @see #createClassLoader()
+     */
+    public void setClassLoader(CustomClassLoader customClassLoader) {
+        this.customClassLoader = customClassLoader;
+        classObjects.removeAllElements();
+
+        customClassLoaderPhantomRef = new PhantomReference<>(customClassLoader, null);
+    }
+
+    /**
+     * Returns current class loader or <i>null</i> if not yet created or set.
+     *
+     * @return class loader object or null.
+     *
+     * @see #createClassLoader()
+     * @see #setClassLoader(CustomClassLoader)
+     */
+    public CustomClassLoader getClassLoader() {
+        return customClassLoader;
+    }
+
+    /**
+     * Loads class for specified class name using current class loader.
+     *
+     * <p>Current class loader should be set and capable to load class using only
+     * given class name. No other information such a location of .class files
+     * is passed to class loader.
+     *
+     * @param className name of class to load
+     *
+     * @throws ClassNotFoundException if no bytecode found for specified class name
+     * @throws Failure if current class loader is not specified;
+     *                 or if class was actually loaded with different class loader
+     *
+     * @see #loadClass(String, String)
+     */
+    public void loadClass(String className) throws ClassNotFoundException {
+
+        if (customClassLoader == null) {
+            throw new Failure("No current class loader defined");
+        }
+
+        Class<?> cls = Class.forName(className, true, customClassLoader);
+
+        // ensure that class was loaded by current class loader
+        if (cls.getClassLoader() != customClassLoader) {
+            throw new Failure("Class was loaded by unexpected class loader: " + cls.getClassLoader());
+        }
+
+        classObjects.add(cls);
+    }
+
+    /**
+     * Loads class from .class file located into specified directory using
+     * current class loader.
+     *
+     * <p>If there is no current class loader, then default class loader
+     * is created using <code>createClassLoader()</code>. Parameter <i>classDir</i>
+     * is passed to class loader using <code>CustomClassLoader.setClassPath()</code>
+     * method before loading class.
+     *
+     * @param className name of class to load
+     * @param classDir path to .class file location
+     *
+     * @throws ClassNotFoundException if no .class file found
+     *          for specified class name
+     * @throws Failure if class was actually loaded with different class loader
+     *
+     * @see #loadClass(String)
+     * @see CustomClassLoader#setClassPath(String)
+     */
+    public void loadClass(String className, String classDir) throws ClassNotFoundException {
+
+        if (customClassLoader == null) {
+            createClassLoader();
+        }
+
+        customClassLoader.setClassPath(classDir);
+        loadClass(className);
     }
 }
