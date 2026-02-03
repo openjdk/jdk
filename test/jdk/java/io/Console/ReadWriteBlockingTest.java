@@ -27,27 +27,27 @@
  * @summary Check if writing to Console is not blocked by other thread's read.
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "mac")
- * @run junit/othervm -Djdk.console=java.base ReadWriteBlockingTest
- * @run junit/othervm -Djdk.console=jdk.internal.le ReadWriteBlockingTest
+ * @run junit ReadWriteBlockingTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.CountDownLatch;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ReadWriteBlockingTest {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"java.base", "jdk.internal.le"})
     @EnabledOnOs({OS.LINUX, OS.MAC})
-    public void testReadWriteBlocking() throws Exception {
+    public void testReadWriteBlocking(String consoleModule) throws Exception {
         // check "expect" command availability
         var expect = Path.of("/usr/bin/expect");
         if (!Files.exists(expect) || !Files.isExecutable(expect)) {
@@ -58,14 +58,13 @@ public class ReadWriteBlockingTest {
         var testSrc = System.getProperty("test.src", ".");
         var testClasses = System.getProperty("test.classes", ".");
         var jdkDir = System.getProperty("test.jdk");
-        var modConsole = System.getProperty("jdk.console");
         OutputAnalyzer output = ProcessTools.executeProcess(
             "/usr/bin/expect",
             "-n",
             testSrc + "/readWriteBlocking.exp",
             jdkDir + "/bin/java",
             "-classpath", testClasses,
-            "-Djdk.console=" + modConsole,
+            "-Djdk.console=" + consoleModule,
             "ReadWriteBlockingTest");
         output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
@@ -73,25 +72,10 @@ public class ReadWriteBlockingTest {
 
     public static void main(String... args) {
         var con = System.console();
-        CountDownLatch latch = new CountDownLatch(2);
-
         Thread.ofVirtual().start(() -> {
-            try {
-                latch.countDown(); // announce our arrival
-                try {
-                    latch.await(); // wait for other thread to arrive
-                } catch (InterruptedException _) {}
-                con.printf("printf() invoked");
-            } catch (Throwable t) {
-                t.printStackTrace();
-                throw t;
-            }
+            con.printf("printf() invoked");
         });
 
-        latch.countDown(); // announce our arrival
-        try {
-            latch.await(); // wait for other thread to arrive
-        } catch (InterruptedException _) {}
         con.readLine("");
     }
 }
