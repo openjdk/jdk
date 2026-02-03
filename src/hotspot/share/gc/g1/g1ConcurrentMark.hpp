@@ -844,8 +844,10 @@ private:
   // Apply the closure to the given range of elements in the objArray.
   inline void process_array_chunk(objArrayOop obj, size_t start, size_t end);
 public:
-  // Resets the task; should be called right at the beginning of a marking phase.
+  // Resets the task completely for a new marking; should be called right at the beginning of a marking phase.
   void reset(G1CMBitMap* mark_bitmap);
+  // Minimal reset of the task, making it ready for continuing to mark.
+  void reset_for_restart();
   // Register/unregister Partial Array Splitter Allocator with the PartialArrayStateManager.
   // This allows us to discard memory arenas used for partial object array states at the end
   // of a concurrent mark cycle.
