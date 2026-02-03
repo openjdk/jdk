@@ -31,6 +31,7 @@ import nsk.share.log.Log;
 import nsk.share.test.*;
 import nsk.share.Consts;
 import nsk.monitoring.share.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * The test checks up <code>getAllClasses()</code>,

@@ -50,6 +50,8 @@ import java.util.stream.Stream;
 
 public class ClassUnloadCommon {
 
+    private static final int MAX_UNLOAD_ATTEMPS = 20;
+
     /**
      * Phantom reference to the class loader.
      */
@@ -109,7 +111,7 @@ public class ClassUnloadCommon {
         WhiteBox wb = WhiteBox.getWhiteBox();
         Set<String> aliveClasses = new HashSet<>(classNames);
         int attempt = 0;
-        while (!aliveClasses.isEmpty() && attempt < 20) {
+        while (!aliveClasses.isEmpty() && attempt < MAX_UNLOAD_ATTEMPS) {
             ClassUnloadCommon.triggerUnloading();
             for (String className : classNames) {
                 if (aliveClasses.contains(className)) {
@@ -305,5 +307,57 @@ public class ClassUnloadCommon {
 
         customClassLoader.setClassPath(classDir);
         loadClass(className);
+    }
+
+    /**
+     * Forces GC to unload previously loaded classes by cleaning all references
+     * to class loader with its loaded classes.
+     *
+     * @return  <i>true</i> if classes unloading has been detected
+             or <i>false</i> otherwise
+     *
+     * @throws  Failure if exception other than OutOfMemoryError
+     *           is thrown while triggering full GC
+     *
+     * @see WhiteBox.getWhiteBox().fullGC()
+     */
+
+    public boolean unloadClass() {
+
+        // free references to class and class loader to be able for collecting by GC
+        classObjects.removeAllElements();
+        customClassLoader = null;
+
+        // force class unloading by triggering full GC
+        WhiteBox.getWhiteBox().fullGC();
+        int attempt = 0;
+        while (attempt < MAX_UNLOAD_ATTEMPS && !isClassLoaderReclaimed()) {
+            System.out.println("ClassUnloader: waiting for class loader reclaiming... " + attempt);
+            WhiteBox.getWhiteBox().fullGC();
+            try {
+                // small delay to give more changes to process objects
+                // inside VM like jvmti deferred queue
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+        }
+
+        // force GC to unload marked class loader and its classes
+        if (isClassLoaderReclaimed()) {
+            System.out.println("ClassUnloader: class loader has been reclaimed.");
+            return true;
+        }
+
+        // class loader has not been reclaimed
+        System.out.println("ClassUnloader: class loader is still reachable.");
+        return false;
+    }
+
+    /**
+     * Has class loader been reclaimed or not.
+     */
+    private boolean isClassLoaderReclaimed() {
+        return customClassLoaderPhantomRef != null
+            && customClassLoaderPhantomRef.refersTo(null);
     }
 }

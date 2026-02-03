@@ -25,7 +25,7 @@ package nsk.monitoring.share;
 
 import java.util.*;
 import nsk.share.log.Log;
-import nsk.share.ClassUnloader;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 import nsk.share.CustomClassLoader;
 import nsk.share.test.Stresser;
 
@@ -42,7 +42,7 @@ public class ClassLoadingController extends StateControllerBase {
         private boolean singleClass = true;
         private String classDir;
         private Hashtable<String, String[]> classesTable = new Hashtable<String, String[]>();
-        private ClassUnloader[] unloaders;
+        private ClassUnloadCommon[] unloaders;
 
         private Stresser stresser;
 
@@ -135,7 +135,7 @@ public class ClassLoadingController extends StateControllerBase {
         }
 
         // Load classes
-        private boolean loadClasses(ClassUnloader unloader, int classCount, boolean doKeep) {
+        private boolean loadClasses(ClassUnloadCommon unloader, int classCount, boolean doKeep) {
                 String newClassName;
                 String[] classNames = new String[classCount + 1];
                 classNames[0] = unloader.getClassLoader().getClass().getName()
@@ -228,10 +228,10 @@ public class ClassLoadingController extends StateControllerBase {
 
         private void createUnloaders(int count) {
                 CustomClassLoader loader;
-                unloaders = new ClassUnloader[count];
+                unloaders = new ClassUnloadCommon[count];
 
                 for (int i = 0; i < count; i++) {
-                        unloaders[i] = new ClassUnloader();
+                        unloaders[i] = new ClassUnloadCommon();
                         if (singleClass) {
                                 loader = unloaders[i].createClassLoader();
                         } else {
