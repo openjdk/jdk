@@ -106,18 +106,54 @@ public class ML_KEM_Test {
                 }
                 System.out.println();
             } else if (function.equals("decapsulation")) {
-                var dk = new PrivateKey() {
-                    public String getAlgorithm() { return pname; }
-                    public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return oct(toByteArray(t.get("dk").asString())); }
-                };
                 for (var c : t.get("tests").asArray()) {
+                    var dk = new PrivateKey() {
+                        public String getAlgorithm() { return pname; }
+                        public String getFormat() { return "RAW"; }
+                        public byte[] getEncoded() { return oct(toByteArray(c.get("dk").asString())); }
+                    };
                     System.out.print(c.get("tcId").asString() + " ");
                     var d = g.newDecapsulator(dk);
                     var k = d.decapsulate(toByteArray(c.get("c").asString()));
                     Asserts.assertEqualsByteArray(toByteArray(c.get("k").asString()), k.getEncoded());
                 }
                 System.out.println();
+            } else if (function.equals("decapsulationKeyCheck")) {
+                for (var c : t.get("tests").asArray()) {
+                    var dk = new PrivateKey() {
+                        public String getAlgorithm() { return pname; }
+                        public String getFormat() { return "RAW"; }
+                        public byte[] getEncoded() { return oct(toByteArray(c.get("dk").asString())); }
+                    };
+                    System.out.print(c.get("tcId").asString() + " ");
+                    String actual = "true";
+                    try {
+                        g.newDecapsulator(dk);
+                    } catch (Exception e) {
+                        actual = "false";
+                    }
+                    Asserts.assertEquals(c.get("testPassed").asString(), actual);
+                }
+                System.out.println();
+            } else if (function.equals("encapsulationKeyCheck")) {
+                for (var c : t.get("tests").asArray()) {
+                    var ek = new PublicKey() {
+                        public String getAlgorithm() { return pname; }
+                        public String getFormat() { return "RAW"; }
+                        public byte[] getEncoded() { return toByteArray(c.get("ek").asString()); }
+                    };
+                    System.out.print(c.get("tcId").asString() + " ");
+                    String actual = "true";
+                    try {
+                        g.newEncapsulator(ek);
+                    } catch (Exception e) {
+                        actual = "false";
+                    }
+                    Asserts.assertEquals(c.get("testPassed").asString(), actual);
+                }
+                System.out.println();
+            } else {
+                throw new UnsupportedOperationException("Unknown function: " + function);
             }
         }
     }

@@ -92,7 +92,7 @@ public class Launcher {
 
     private static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
     private static final String ACVP_BUNDLE_NAME = "ACVP-Server";
-    private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
+    private static final String ACVP_BUNDLE_VERSION = "1.1.0.41";
     // Zip archive entry name, do not update to use File.separator
     private static final String[] TEST_FILES = {
             "gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
