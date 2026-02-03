@@ -2792,7 +2792,7 @@ public final class Math {
      * Returns the inverse hyperbolic cosine of a {@code double} value.
      * The inverse hyperbolic cosine of <i>x</i> is defined to be a function such that
      *  acosh({@linkplain Math#cosh cosh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
-     *  Note that range of the exact acosh is >= 1.
+     *  Note that range of the exact acosh(x) is >= 0.
      * <p>Special cases:
      * <ul>
      *
@@ -2802,6 +2802,8 @@ public final class Math {
      * <li>If the argument less than 1, then the result is NaN.
      *
      * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is {@code 1.0}, then the result is positive zero.
      *
      * <p>The computed result must be within 2.5 ulps of the exact result.
      *

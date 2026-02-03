@@ -2203,16 +2203,18 @@ public final class StrictMath {
      * Returns the inverse hyperbolic cosine of a {@code double} value.
      * The inverse hyperbolic cosine of <i>x</i> is defined to be a function such that
      *  acosh({@linkplain Math#cosh cosh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
-     *  Note that range of the exact acosh is >= 1.
+     *  Note that range of the exact acosh(x) is >= 0.
      * <p>Special cases:
      * <ul>
      *
      * <li>If the argument is positive infinity, then the result is
      * positive infinity
      *
-     * <li>If the argument less than 1, then the result is NaN.
+     * <li>If the argument less than {@code 1.0}, then the result is NaN.
      *
      * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is {@code 1.0}, then the result is positive zero.
      *
      * </ul>
      * @param   x The number whose inverse hyperbolic cosine is to be returned.

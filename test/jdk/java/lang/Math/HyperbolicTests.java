@@ -1940,6 +1940,7 @@ public class HyperbolicTests {
         double [][] specialTestCases = {
                 {0.0,                       NaNd},
                 {-0.0,                      NaNd},
+                {1.0,                       0.0},
                 {Double.POSITIVE_INFINITY,  Double.POSITIVE_INFINITY},
                 {Double.NEGATIVE_INFINITY,  NaNd}
         };
