@@ -6372,7 +6372,6 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == mark, "should be the same here");
     } else {
-      const Register cache_addr = tmp2;
       const Register tmp1_bucket = tmp1;
       const Register hash  = Z_R0_scratch;
       NearLabel monitor_found;
@@ -6382,15 +6381,14 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
 
       // Look for the monitor in the om_cache.
 
-      // load cache address
-      z_la(cache_addr, Address(Z_thread, JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = 2;
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        z_lg(tmp1_monitor, Address(cache_addr, OMCache::oop_to_monitor_difference()));
-        z_cg(obj, Address(cache_addr));
+        z_lg(tmp1_monitor, Address(Z_thread, cache_offset + monitor_offset));
+        z_cg(obj, Address(Z_thread, cache_offset));
         z_bre(monitor_found);
-        add2reg(cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
       // Get the hash code.
@@ -6399,9 +6397,8 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       // Get the table and calculate the bucket's address.
       load_const_optimized(tmp2, ObjectMonitorTable::current_table_address());
       z_lg(tmp2, Address(tmp2));
-      z_lg(tmp1, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
-      z_ngr(hash, tmp1);
-      z_lg(tmp1, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
+      z_ng(hash, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
+      z_lg(tmp1_bucket, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
       z_sllg(hash, hash, LogBytesPerWord);
       z_agr(tmp1_bucket, hash);
 
@@ -6409,7 +6406,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       z_lg(tmp1_monitor, Address(tmp1_bucket));
 
       // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      z_cghi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      z_clgfi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
       z_brl(slow_path);
 
       // Check if object matches.

@@ -226,26 +226,25 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
       Label monitor_found;
 
       // Save the mark, we might need it to extract the hash.
-      mov(rscratch2, t1_mark);
+      mov(t3, t1_mark);
 
       // Look for the monitor in the om_cache.
 
-      // Load cache address
-      lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = OMCache::CAPACITY;
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        ldr(t2, Address(t3_t));
-        ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
+        ldr(t1_monitor, Address(rthread, cache_offset + monitor_offset));
+        ldr(t2, Address(rthread, cache_offset));
         cmp(obj, t2);
         br(Assembler::EQ, monitor_found);
-        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
       // Look for the monitor in the table.
 
       // Get the hash code.
-      ubfx(t1_hash, rscratch2, markWord::hash_shift, markWord::hash_bits);
+      ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
 
       // Get the table and calculate the bucket's address
       lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
@@ -255,12 +254,11 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
       ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
       // Read the monitor from the bucket.
-      lsl(t1_hash, t1_hash, LogBytesPerWord);
-      ldr(t1_monitor, Address(t3, t1_hash));
+      ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
 
       // Check if the monitor in the bucket is special (empty, tombstone or removed).
       cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      br(Assembler::LT, slow_path);
+      br(Assembler::LO, slow_path);
 
       // Check if object matches.
       ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));

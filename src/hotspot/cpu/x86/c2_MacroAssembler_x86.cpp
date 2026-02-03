@@ -302,15 +302,14 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
 
       // Look for the monitor in the om_cache.
 
-      // Load cache address
-      lea(rax_reg, Address(thread, JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = OMCache::CAPACITY;
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        movptr(monitor, Address(rax_reg, OMCache::oop_to_monitor_difference()));
-        cmpptr(obj, Address(rax_reg));
+        movptr(monitor, Address(thread,  cache_offset + monitor_offset));
+        cmpptr(obj, Address(thread, cache_offset));
         jccb(Assembler::equal, monitor_found);
-        increment(rax_reg, in_bytes(OMCache::oop_to_oop_difference()));
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
       // Look for the monitor in the table.

@@ -133,15 +133,14 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
 
       // Look for the monitor in the om_cache.
 
-      // Load cache address
-      la(tmp3_t, Address(xthread, JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = OMCache::CAPACITY;
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        ld(t0, Address(tmp3_t));
-        ld(tmp1_monitor, Address(tmp3_t, OMCache::oop_to_monitor_difference()));
-        beq(obj, t0, monitor_found);
-        add(tmp3_t, tmp3_t, in_bytes(OMCache::oop_to_oop_difference()));
+        ld(tmp1_monitor, Address(xthread, cache_offset + monitor_offset));
+        ld(tmp4, Address(xthread, cache_offset));
+        beq(obj, tmp4, monitor_found);
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
       // Look for the monitor in the table.
@@ -155,14 +154,13 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       ld(tmp1, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
       andr(tmp2_hash, tmp2_hash, tmp1);
       ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
-      slli(tmp2_hash, tmp2_hash, LogBytesPerWord);
-      add(tmp3_bucket, tmp3_t, tmp2_hash);
 
       // Read the monitor from the bucket.
+      shadd(tmp3_bucket, tmp2_hash, tmp3_t, tmp4, LogBytesPerWord);
       ld(tmp1_monitor, Address(tmp3_bucket));
 
       // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      li(tmp2, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      mv(tmp2, ObjectMonitorTable::SpecialPointerValues::below_is_special);
       bltu(tmp1_monitor, tmp2, slow_path);
 
       // Check if object matches.
