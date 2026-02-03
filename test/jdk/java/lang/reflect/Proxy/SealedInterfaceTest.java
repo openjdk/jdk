@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
 /*
  * @test
  * @bug 8269351
- * @run testng SealedInterfaceTest
+ * @run junit SealedInterfaceTest
  */
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class SealedInterfaceTest {
     sealed interface Intf permits NonSealedInterface {
@@ -43,16 +43,17 @@ public class SealedInterfaceTest {
         void m2();
     }
 
-    @Test(expectedExceptions = { IllegalArgumentException.class })
+    @Test
     public void testSealedInterface() {
-        Proxy.newProxyInstance(SealedInterfaceTest.class.getClassLoader(),
+        assertThrows(IllegalArgumentException.class, () -> Proxy.newProxyInstance(
+                SealedInterfaceTest.class.getClassLoader(),
                 new Class<?>[]{ Intf.class },
                 new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         return null;
                     }
-                });
+                }));
     }
 
     @Test
