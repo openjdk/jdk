@@ -1574,15 +1574,6 @@ abstract class Constraint {
         return "Constraint " + getClass().getSimpleName() + ", " + errorPrefix();
     }
 
-    public String toDetailedString() {
-        return getClass().getSimpleName() + " " +
-                "klass=" + klass + "; " +
-                "ruleIdx=" + ruleIdx + "; " +
-                "methodPattern=" + methodPattern + "; " +
-                "methodName=" + methodName + "; " +
-                "matched=" + matched;
-    }
-
     public Class<?> getKlass() {
         return klass;
     }
