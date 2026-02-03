@@ -293,10 +293,9 @@ public class SecureDS {
                 SecureDirectoryStream<Path> ts =
                     (SecureDirectoryStream<Path>)newDirectoryStream(testDir);
                 createFile(dir1.resolve(fileEntry));
-                try {
+                assertThrows(AtomicMoveNotSupportedException.class, () -> {
                     stream1.move(fileEntry, ts, target);
-                    fail("Should not reach here");
-                } catch (AtomicMoveNotSupportedException x) { }
+                });
                 ts.close();
                 stream1.deleteFile(fileEntry);
             }
@@ -341,14 +340,12 @@ public class SecureDS {
             (SecureDirectoryStream<Path>)newDirectoryStream(dir);
 
         // NullPointerException
-        try {
+        assertThrows(NullPointerException.class, () -> {
             stream.getFileAttributeView(null);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
-        try {
+        });
+        assertThrows(NullPointerException.class, () -> {
             stream.getFileAttributeView(null, BasicFileAttributeView.class);
-            fail("Should not reach here");
-        } catch (NullPointerException x) { }
+        });
         try {
             stream.getFileAttributeView(file, null);
             fail("Should not reach here");
