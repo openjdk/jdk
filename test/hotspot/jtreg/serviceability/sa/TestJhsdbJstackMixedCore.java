@@ -61,13 +61,17 @@ public class TestJhsdbJstackMixedCore {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        out.shouldContain("<signal handler called>");
+        out.shouldContain("__restore_rt <signal trampoline>");
         out.shouldContain("Java_jdk_test_lib_apps_LingeredApp_crash");
     }
 
     public static void main(String... args) throws Throwable {
         // Check whether the symbol of signal trampoline is available.
         var libc = SATestUtils.getLibCPath();
+
+        // SA distinguishes the frame is signal trampoline if the function
+        // is named "__restore_rt".
+        // SA cannot unwind problematic frame from it if the symbol not found.
         if (!SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
             throw new SkippedException("Signal trampoline (__restore_rt) not found in libc.");
         }
