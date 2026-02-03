@@ -33,6 +33,7 @@ import java.util.List;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 
 // This class is the debugger application in the test
