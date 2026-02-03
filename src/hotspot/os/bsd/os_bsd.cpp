@@ -2612,6 +2612,6 @@ void os::print_open_file_descriptors(outputStream* st) {
 
   st->print_cr("Open File Descriptors: %d", nfiles);
 #else
-    st->print_cr("Open File Descriptors: unknown");
+  st->print_cr("Open File Descriptors: unknown");
 #endif
 }
