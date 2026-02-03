@@ -41,8 +41,9 @@ import java.util.*;
 import jdk.test.lib.Platform;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.ParameterizedTest;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -155,13 +156,12 @@ public class SecureDS {
         stream.newByteChannel(fileEntry, opts).close();
         if (supportsSymbolicLinks) {
             stream.newByteChannel(link1Entry, opts).close();
-            try {
+            assertThrows(IOException.class, () -> {
                 Set<OpenOption> mixed = new HashSet<>();
                 mixed.add(READ);
                 mixed.add(NOFOLLOW_LINKS);
                 stream.newByteChannel(link1Entry, mixed).close();
-                fail("Should not reach here");
-            } catch (IOException x) { }
+            });
         }
 
         // Test: newDirectoryStream
@@ -169,11 +169,10 @@ public class SecureDS {
         stream.newDirectoryStream(dirEntry, LinkOption.NOFOLLOW_LINKS).close();
         if (supportsSymbolicLinks) {
             stream.newDirectoryStream(link2Entry).close();
-            try {
+            assertThrows(IOException.class, () -> {
                 stream.newDirectoryStream(link2Entry, LinkOption.NOFOLLOW_LINKS)
                     .close();
-                fail("Should not reach here");
-            } catch (IOException x) { }
+            });
         }
 
         // Test: delete
