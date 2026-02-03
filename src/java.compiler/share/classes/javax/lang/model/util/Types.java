@@ -75,6 +75,7 @@ public interface Types {
      * <ul>
      * <li>{@linkplain TypeKind#isPrimitive() primitive types}
      * <li>{@linkplain TypeKind#EXECUTABLE executable types}
+     * <li>{@linkplain TypeKind#ARRAY array types}
      * <li>{@linkplain TypeKind#NONE "none"} pseudo-types
      * <li>{@linkplain TypeKind#NULL null types}
      * <li>{@link TypeKind#VOID void}

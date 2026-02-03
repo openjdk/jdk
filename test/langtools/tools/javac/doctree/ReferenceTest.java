@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8278373 8164094 8371248
+ * @bug 7021614 8278373 8164094 8371248 8284315
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @summary check references in at-see and {at-link} tags
  * @modules jdk.compiler
@@ -56,6 +56,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 
@@ -84,11 +85,14 @@ import javax.tools.Diagnostic.Kind;
  * {@link #trees Field}
  * {@link #getSupportedSourceVersion Method}
  * {@link #init(ProcessingEnvironment Method}
- * {@link double Class}
+ * {@link double type-only:double}
+ * {@link int type-only:int}
+ * {@link void type-only:void}
  * {@link double.NAN Bad}
  * {@link double#NAN Bad}
  * {@link double#double Bad}
  * {@link java.base/double Bad}
+ * {@link jdk.javadoc/double Bad}
  *
  * {@link List<String> Interface}
  * {@link List<String>.add Bad}
@@ -100,15 +104,20 @@ import javax.tools.Diagnostic.Kind;
  * {@link Map<String, String>.Entry<String, String>#getKey Method}
  * {@link Map<String, String>.Entry<String, String>#setValue(Object) Method}
  *
- * {@link java.base/java.util.List<String> Bad}
+ * {@link java.lang.String[] type-only:array}
+ * {@link java.lang.String[].length Bad}
+ * {@link java.lang.String[]#length type-only:int}
+ * {@link java.lang.String[]#length() Bad}
+ *
+ * {@link java.base/java.util.List<String> Interface}
  * {@link java.base/java.util.List<String>.add Bad}
- * {@link java.base/java.util.List<String>#add Bad}
- * {@link java.base/java.util.List<String>#add(Object) Bad}
- * {@link java.base/java.util.Map<String, String>.Entry Bad}
- * {@link java.base/java.util.Map<String, String>.Entry<String, String> Bad}
+ * {@link java.base/java.util.List<String>#add Method}
+ * {@link java.base/java.util.List<String>#add(Object) Method}
+ * {@link java.base/java.util.Map<String, String>.Entry Interface}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String> Interface}
  * {@link java.base/java.util.Map<String, String>.Entry<String, String>.getKey Bad}
- * {@link java.base/java.util.Map<String, String>.Entry<String, String>#getKey Bad}
- * {@link java.base/java.util.Map<String, String>.Entry<String, String>#setValue(Object) Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#getKey Method}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#setValue(Object) Method}
  *
  * @see java.lang        Package
  * @see java.lang.ERROR  Bad
@@ -126,6 +135,14 @@ import javax.tools.Diagnostic.Kind;
  * @see java.lang.String#isEmpty() Method
  * @see java.lang.String#ERROR Bad
  * @see java.lang.String#equals(Object) Method
+ *
+ * @see java.lang.String[] type-only:array
+ * @see java.lang.String[].length Bad
+ * @see java.lang.String[]#length type-only:int
+ * @see java.lang.String[]#length() Bad
+ *
+ * @see jdk.javadoc/jdk.javadoc.doclet.Doclet Interface
+ * @see jdk.compiler/jdk.javadoc.doclet.Doclet Bad
  *
  * @see AbstractProcessor Class
  *
@@ -200,15 +217,23 @@ public class ReferenceTest extends AbstractProcessor {
             String sig = tree.getSignature();
 
             Element found = trees.getElement(new DocTreePath(getCurrentPath(), tree));
+            TypeMirror type = trees.getType(new DocTreePath(getCurrentPath(), tree));
+
             if (found == null) {
                 System.err.println(sig + " NOT FOUND");
             } else {
                 System.err.println(sig + " found " + found.getKind() + " " + found);
+                if (type == null) {
+                    error(tree, "Did not find type for element " + found);
+                } else if (!erasure(type).equals(erasure(found.asType()))) {
+                    error(tree, "Type " + erasure(type) + " does not match element " + erasure(found.asType()));
+                }
             }
 
             String expect = "UNKNOWN";
-            if (label.size() > 0 && label.get(0) instanceof TextTree)
-                expect = ((TextTree) label.get(0)).getBody();
+            if (!label.isEmpty() && label.getFirst() instanceof TextTree) {
+                expect = ((TextTree) label.getFirst()).getBody();
+            }
 
             if (expect.startsWith("signature:")) {
                 expect = expect.substring("signature:".length());
@@ -216,11 +241,24 @@ public class ReferenceTest extends AbstractProcessor {
                 String signature = found.getKind().name() + ":" + elementSignature(found);
 
                 if (!expect.equalsIgnoreCase(signature)) {
-                    error(tree, "Unexpected value found: " + signature +", expected: " + expect);
+                    error(tree, "Unexpected value found: " + signature + ", expected: " + expect);
+                }
+            } else if (expect.startsWith("type-only:")) {
+                expect = expect.substring("type-only:".length());
+                if (found != null) {
+                    error(tree, "Found element for type-only reference: " + found);
+                }
+                if (type == null) {
+                    error(tree, "Found no type, expected: " + expect);
+                } else if (!expect.equalsIgnoreCase(type.getKind().name())) {
+                    error(tree, "Found unexpected type: " + type + ", expected: " + expect);
                 }
             } else {
                 if (!expect.equalsIgnoreCase(found == null ? "bad" : found.getKind().name())) {
                     error(tree, "Unexpected value found: " + found +", expected: " + expect);
+                }
+                if (expect.equalsIgnoreCase("bad") && type != null) {
+                    error(tree, "Found unexpected type: " + type + ", expected none");
                 }
             }
         }
@@ -251,6 +289,12 @@ public class ReferenceTest extends AbstractProcessor {
             case INT, LONG -> type.toString();
             default -> throw new AssertionError("Unhandled type kind: " + type.getKind());
         };
+    }
+
+    TypeMirror erasure(TypeMirror type) {
+        return type.getKind() == TypeKind.DECLARED
+                ? processingEnv.getTypeUtils().erasure(type)
+                : type;
     }
 }
 
@@ -317,11 +361,12 @@ class ReferenceTestExtras {
      * @see #X         Field
      * @see #X()       Method
      * @see #m         Method
+     * @see X          Type_Parameter
      * @see Inner#X    Bad
      * @see Inner#X()  Bad
      * @see Inner#m    Bad
      */
-    interface Inner {}
+    interface Inner<X> {}
 }
 
 
