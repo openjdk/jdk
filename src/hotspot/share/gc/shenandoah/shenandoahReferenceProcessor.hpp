@@ -126,6 +126,9 @@ public:
   void inc_enqueued(ReferenceType type) {
     _enqueued_count[type]++;
   }
+
+  template <typename T>
+  void mark_discovered_list();
 };
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
@@ -216,6 +219,8 @@ public:
   // complete. It will replace any forwarded entries in the discovered list with the
   // forwardee.
   void heal_discovered_lists(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
+
+  void mark_discovered_lists();
 
   bool discover_reference(oop obj, ReferenceType type) override;
 

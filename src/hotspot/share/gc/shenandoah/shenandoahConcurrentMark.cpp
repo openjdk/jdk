@@ -274,6 +274,18 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
+  // We may have young references with old referents on the discovered lists of the
+  // old generation reference processor. Since these references were "discovered",
+  // none of them were marked. However, they also cannot be "processed" until old
+  // marking is complete. We therefore have the unappetizing duty to keep these young
+  // references alive until old marking is done. This is a form of nepotism. Note that
+  // here we are only marking the references, not the referents.
+  if (heap->is_concurrent_old_mark_in_progress()) {
+    ShenandoahReferenceProcessor* old_rp = heap->old_generation()->ref_processor();
+    log_info(gc)("Marking young references on old reference lists");
+    old_rp->mark_discovered_lists();
+  }
+
   TaskTerminator terminator(nworkers, task_queues());
 
   switch (_generation->type()) {

@@ -292,6 +292,37 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
   *discovered_list_addr<oop>() = head;
 }
 
+template <typename T>
+void ShenandoahRefProcThreadLocal::mark_discovered_list() {
+  if (_discovered_list == nullptr) {
+    return;
+  }
+
+  bool ignore_was_updated;
+  T* list = reinterpret_cast<T*>(&_discovered_list);
+  while (list != nullptr) {
+    const oop discovered_ref = CompressedOops::decode(*list);
+    if (discovered_ref == nullptr) {
+      break;
+    }
+
+    // We have discovered this reference, and it has an old referent. We must keep this young
+    // reference itself alive until old reference processing is complete. If we don't do this,
+    // an unreachable young reference will simply disappear, leaving e a dangling pointer
+    // in the list. Note that we cannot also simply remove young references from the list at the
+    // end of young marking even if they are unreachable. If the reference has a queue associated
+    // with it, we _must_ wait until old marking is complete before enqueueing the reference.
+    ShenandoahHeap::heap()->marking_context()->mark_strong(discovered_ref, ignore_was_updated);
+
+    // Discovered list terminates with a self-loop
+    const oop discovered = reference_discovered<T>(discovered_ref);
+    if (discovered_ref == discovered) {
+      break;
+    }
+    list = reference_discovered_addr<T>(discovered_ref);
+  }
+}
+
 AlwaysClearPolicy ShenandoahReferenceProcessor::_always_clear_policy;
 
 ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(ShenandoahGeneration* generation, uint max_workers) :
@@ -334,18 +365,30 @@ void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
 }
 
 void ShenandoahReferenceProcessor::heal_discovered_lists(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
-    ShenandoahReferenceProcessorTask heal_lists_task(phase, concurrent, _ref_proc_thread_locals,
+  assert(_generation->is_old(), "This is only for old reference processing");
+  ShenandoahReferenceProcessorTask heal_lists_task(phase, concurrent, _ref_proc_thread_locals,
 [&](ShenandoahRefProcThreadLocal& ref_proc_data, uint worker_id) {
-         if (UseCompressedOops) {
-           ref_proc_data.heal_discovered_list<narrowOop>();
-         } else {
-           ref_proc_data.heal_discovered_list<oop>();
-         }
+       if (UseCompressedOops) {
+         ref_proc_data.heal_discovered_list<narrowOop>();
+       } else {
+         ref_proc_data.heal_discovered_list<oop>();
        }
-    );
+     }
+  );
   workers->run_task(&heal_lists_task);
 }
 
+void ShenandoahReferenceProcessor::mark_discovered_lists() {
+  assert(_generation->is_old(), "This is only for old reference processing");
+  uint max_workers = ShenandoahHeap::heap()->max_workers();
+  for (uint i = 0; i < max_workers; i++) {
+    if (UseCompressedOops) {
+      _ref_proc_thread_locals[i].mark_discovered_list<narrowOop>();
+    } else {
+      _ref_proc_thread_locals[i].mark_discovered_list<oop>();
+    }
+  }
+}
 
 template <typename T>
 bool ShenandoahReferenceProcessor::is_inactive(oop reference, oop referent, ReferenceType type) const {
