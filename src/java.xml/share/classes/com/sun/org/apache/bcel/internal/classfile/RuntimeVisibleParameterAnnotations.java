@@ -34,6 +34,8 @@ import com.sun.org.apache.bcel.internal.Const;
 public class RuntimeVisibleParameterAnnotations extends ParameterAnnotations {
 
     /**
+     * Constructs a new instance.
+     *
      * @param nameIndex Index pointing to the name <em>Code</em>
      * @param length Content length in bytes
      * @param input Input stream

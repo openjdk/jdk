@@ -50,7 +50,7 @@ import jdk.test.whitebox.WhiteBox;
 public class TestCodeCacheConfig {
     private final static String EVENT_NAME = EventNames.CodeCacheConfiguration;
 
-    private static final long CodeCacheExpectedSize = WhiteBox.getWhiteBox().getUintxVMFlag("ReservedCodeCacheSize");
+    private static final long CodeCacheExpectedSize = WhiteBox.getWhiteBox().getSizeTVMFlag("ReservedCodeCacheSize");
 
     public static void main(String[] args) throws Exception {
         Recording recording = new Recording();

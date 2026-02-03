@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.stream.IntStream;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.SPIResolutionException;
@@ -335,10 +338,15 @@ public class DirectExecutionControl implements ExecutionControl {
      * @throws ExecutionControl.InternalException for internal problems
      */
     protected String throwConvertedInvocationException(Throwable cause) throws RunException, InternalException {
-        throw asRunException(cause);
+        // Guard against recursive cause chains by
+        // using a Set with identity equality semantics.
+        Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
+        dejaVu.add(cause);
+
+        throw asRunException(cause, dejaVu);
     }
 
-    private RunException asRunException(Throwable ex) {
+    private RunException asRunException(Throwable ex, Set<Throwable> dejaVu) {
         if (ex instanceof SPIResolutionException) {
             SPIResolutionException spire = (SPIResolutionException) ex;
             return new ResolutionException(spire.id(), spire.getStackTrace());
@@ -347,7 +355,14 @@ public class DirectExecutionControl implements ExecutionControl {
                     ex.getClass().getName(),
                     ex.getStackTrace());
             Throwable cause = ex.getCause();
-            ue.initCause(cause == null ? null : asRunException(cause));
+            if (cause != null) {
+                Throwable throwable = dejaVu.add(cause)
+                        ? asRunException(cause, dejaVu)
+                        : new UserException("CIRCULAR REFERENCE!",
+                            cause.getClass().getName(),
+                            cause.getStackTrace());
+                ue.initCause(throwable);
+            }
             return ue;
         }
     }

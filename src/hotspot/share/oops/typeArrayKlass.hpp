@@ -33,6 +33,8 @@ class ClassLoaderData;
 // It contains the type and size of the elements
 
 class TypeArrayKlass : public ArrayKlass {
+  friend class Deoptimization;
+  friend class oopFactory;
   friend class VMStructs;
 
  public:
@@ -43,7 +45,10 @@ class TypeArrayKlass : public ArrayKlass {
 
   // Constructor
   TypeArrayKlass(BasicType type, Symbol* name);
-  static TypeArrayKlass* allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
+  static TypeArrayKlass* allocate_klass(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
+
+  typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
+  typeArrayOop allocate_instance(int length, TRAPS) { return allocate_common(length, true, THREAD); }
  public:
   TypeArrayKlass() {} // For dummy objects.
 
@@ -51,10 +56,10 @@ class TypeArrayKlass : public ArrayKlass {
   jint max_length()                     { return _max_length; }
   void set_max_length(jint m)           { _max_length = m;    }
 
-  u2 compute_modifier_flags() const;
+  u2 compute_modifier_flags() const override;
 
   // testers
-  DEBUG_ONLY(bool is_typeArray_klass_slow() const  { return true; })
+  DEBUG_ONLY(bool is_typeArray_klass_slow() const override { return true; })
 
   // klass allocation
   static TypeArrayKlass* create_klass(BasicType type, const char* name_str,
@@ -63,17 +68,15 @@ class TypeArrayKlass : public ArrayKlass {
     return create_klass(type, external_name(type), THREAD);
   }
 
-  size_t oop_size(oop obj) const;
+  size_t oop_size(oop obj) const override;
 
   // Allocation
-  typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
-  typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
-  oop multi_allocate(int rank, jint* sizes, TRAPS);
+  oop multi_allocate(int rank, jint* sizes, TRAPS) override;
 
-  oop protection_domain() const { return nullptr; }
+  oop protection_domain() const override { return nullptr; }
 
   // Copying
-  void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
+  void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) override;
 
   // Oop iterators. Since there are no oops in TypeArrayKlasses,
   // these functions only return the size of the object.
@@ -110,23 +113,23 @@ class TypeArrayKlass : public ArrayKlass {
 
   // Sizing
   static int header_size()  { return sizeof(TypeArrayKlass)/wordSize; }
-  int size() const          { return ArrayKlass::static_size(header_size()); }
+  int size() const override { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)
-  void initialize(TRAPS);
+  void initialize(TRAPS) override;
 
  public:
   // Printing
-  void oop_print_on(oop obj, outputStream* st);
+  void oop_print_on(oop obj, outputStream* st) override;
   void oop_print_elements_on(typeArrayOop ta, outputStream* st);
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 
  public:
-  const char* internal_name() const;
+  const char* internal_name() const override;
 
-  ModuleEntry* module() const;
-  PackageEntry* package() const;
+  ModuleEntry* module() const override;
+  PackageEntry* package() const override;
 };
 
 #endif // SHARE_OOPS_TYPEARRAYKLASS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,18 @@ import jdk.test.lib.StringArrayUtils;
  */
 public class SimpleCDSAppTester {
     private String name;
+    private BiConsumer<OutputAnalyzer, RunMode> trainingChecker;
     private BiConsumer<OutputAnalyzer, RunMode> assemblyChecker;
     private BiConsumer<OutputAnalyzer, RunMode> productionChecker;
     private String classpath;
     private String modulepath;
     private String[] appCommandLine;
     private String[] vmArgs = new String[] {};
+    private Tester tester;
 
     private SimpleCDSAppTester(String name) {
         this.name = name;
+        this.tester = new Tester(name);
     }
 
     public static SimpleCDSAppTester of(String name) {
@@ -100,6 +103,21 @@ public class SimpleCDSAppTester {
         return this;
     }
 
+    public SimpleCDSAppTester setGenerateBaseArchive(boolean b) {
+        tester.setGenerateBaseArchive(b);
+        return this;
+    }
+
+    public SimpleCDSAppTester setBaseArchiveOptions(String... opts) {
+        tester.setBaseArchiveOptions(opts);
+        return this;
+    }
+
+    public SimpleCDSAppTester setTrainingChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
+        this.trainingChecker = checker;
+        return this;
+    }
+
     public SimpleCDSAppTester setAssemblyChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
         this.assemblyChecker = checker;
         return this;
@@ -110,6 +128,12 @@ public class SimpleCDSAppTester {
         return this;
     }
 
+    public SimpleCDSAppTester setTrainingChecker(Consumer<OutputAnalyzer> checker) {
+        this.trainingChecker = (OutputAnalyzer out, RunMode runMode) -> {
+            checker.accept(out);
+        };
+        return this;
+    }
 
     public SimpleCDSAppTester setAssemblyChecker(Consumer<OutputAnalyzer> checker) {
         this.assemblyChecker = (OutputAnalyzer out, RunMode runMode) -> {
@@ -152,7 +176,11 @@ public class SimpleCDSAppTester {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            if (isDumping(runMode) && runMode != RunMode.TRAINING) {
+            if (runMode == RunMode.TRAINING) {
+                if (trainingChecker != null) {
+                    trainingChecker.accept(out, runMode);
+                }
+            } else if (isDumping(runMode)) {
                 if (assemblyChecker != null) {
                     assemblyChecker.accept(out, runMode);
                 }
@@ -165,17 +193,22 @@ public class SimpleCDSAppTester {
     }
 
     public SimpleCDSAppTester runStaticWorkflow() throws Exception {
-        (new Tester(name)).runStaticWorkflow();
+        tester.runStaticWorkflow();
+        return this;
+    }
+
+    public SimpleCDSAppTester runDynamicWorkflow() throws Exception {
+        tester.runDynamicWorkflow();
         return this;
     }
 
     public SimpleCDSAppTester runAOTWorkflow() throws Exception {
-        (new Tester(name)).runAOTWorkflow();
+        tester.runAOTWorkflow();
         return this;
     }
 
     public SimpleCDSAppTester run(String args[])  throws Exception {
-        (new Tester(name)).run(args);
+        tester.run(args);
         return this;
     }
 }

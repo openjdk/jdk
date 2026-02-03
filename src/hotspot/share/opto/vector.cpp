@@ -44,6 +44,10 @@ void PhaseVector::optimize_vector_boxes() {
 
   C->igvn_worklist()->ensure_empty(); // should be done with igvn
 
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
+  }
+
   expand_vunbox_nodes();
   scalarize_vbox_nodes();
 
@@ -67,7 +71,7 @@ void PhaseVector::do_cleanup() {
   }
   {
     Compile::TracePhase tp(_t_vector_igvn);
-    _igvn.reset_from_gvn(C->initial_gvn());
+    _igvn.reset();
     _igvn.optimize();
     if (C->failing())  return;
   }
@@ -311,7 +315,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
                                            VectorSet &visited) {
   // JDK-8304948 shows an example that there may be a cycle in the graph.
   if (visited.test_set(vbox->_idx)) {
-    assert(vbox->is_Phi(), "should be phi");
+    assert(vbox->is_Phi() || vbox->is_CheckCastPP(), "either phi or expanded");
     return vbox; // already visited
   }
 
@@ -322,18 +326,15 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     return expand_vbox_alloc_node(vbox_alloc, vect, box_type, vect_type);
   }
 
-  // Handle the case when both the allocation input and vector input to
-  // VectorBoxNode are Phi. This case is generated after the transformation of
-  // Phi: Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2).
-  // With this optimization, the relative two allocation inputs of VectorBox1 and
-  // VectorBox2 are gathered into Phi1 now. Similarly, the original vector
-  // inputs of two VectorBox nodes are in Phi2.
-  //
-  // See PhiNode::merge_through_phi in cfg.cpp for more details.
-  if (vbox->is_Phi() && vect->is_Phi()) {
-    assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
+  // Handle the case when the allocation input to VectorBoxNode is a Phi.
+  // This is generated after the transformation in PhiNode::merge_through_phi:
+  //   Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2)
+  // The vector input may also be a Phi (Phi2 above), or it may have been
+  // value-numbered to a single node if all inputs were identical.
+  if (vbox->is_Phi()) {
+    bool same_region = vect->is_Phi() && vbox->as_Phi()->region() == vect->as_Phi()->region();
     for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i),
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), same_region ? vect->in(i) : vect,
                                               box_type, vect_type, visited);
       if (!new_box->is_Phi()) {
         C->initial_gvn()->hash_delete(vbox);
@@ -343,26 +344,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     return C->initial_gvn()->transform(vbox);
   }
 
-  // Handle the case when the allocation input to VectorBoxNode is a phi
-  // but the vector input is not, which can definitely be the case if the
-  // vector input has been value-numbered. It seems to be safe to do by
-  // construction because VectorBoxNode and VectorBoxAllocate come in a
-  // specific order as a result of expanding an intrinsic call. After that, if
-  // any of the inputs to VectorBoxNode are value-numbered they can only
-  // move up and are guaranteed to dominate.
-  if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
-    for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect,
-                                              box_type, vect_type, visited);
-      if (!new_box->is_Phi()) {
-        C->initial_gvn()->hash_delete(vbox);
-        vbox->set_req(i, new_box);
-      }
-    }
-    return C->initial_gvn()->transform(vbox);
-  }
-
-  assert(!vbox->is_Phi(), "should be expanded");
+  assert(vbox->is_CheckCastPP(), "should be expanded");
   // TODO: assert that expanded vbox is initialized with the same value (vect).
   return vbox; // already expanded
 }

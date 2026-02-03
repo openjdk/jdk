@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,10 +306,7 @@ public class SystemTray {
     /**
      * Returns an array of all icons added to the tray by this
      * application.  You can't access the icons added by another
-     * application.  Some browsers partition applets in different
-     * code bases into separate contexts, and establish walls between
-     * these contexts.  In such a scenario, only the tray icons added
-     * from this context will be returned.
+     * application.
      *
      * <p> The returned array is a copy of the actual array and may be
      * modified in any way without affecting the system tray.  To

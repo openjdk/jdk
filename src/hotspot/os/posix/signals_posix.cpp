@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -42,6 +42,7 @@
 #include "signals_posix.hpp"
 #include "suspendResume_posix.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/parseInteger.hpp"
@@ -167,9 +168,9 @@ static get_signal_t get_signal_action = nullptr;
 
 // suspend/resume support
 #if defined(__APPLE__)
-  static OSXSemaphore sr_semaphore;
+static DeferredStatic<OSXSemaphore> sr_semaphore;
 #else
-  static PosixSemaphore sr_semaphore;
+static DeferredStatic<PosixSemaphore> sr_semaphore;
 #endif
 
 // Signal number used to suspend/resume a thread
@@ -177,7 +178,7 @@ static get_signal_t get_signal_action = nullptr;
 int PosixSignals::SR_signum = SIGUSR2;
 
 // sun.misc.Signal support
-static Semaphore* sig_semaphore = nullptr;
+static DeferredStatic<Semaphore> sig_semaphore;
 // a counter for each possible signal value
 static volatile jint pending_signals[NSIG+1] = { 0 };
 
@@ -351,17 +352,16 @@ static void jdk_misc_signal_init() {
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
   // Initialize signal semaphore
-  sig_semaphore = new Semaphore();
+  int sem_count = 0;
+  sig_semaphore.initialize(sem_count);
 }
 
 void os::signal_notify(int sig) {
-  if (sig_semaphore != nullptr) {
-    Atomic::inc(&pending_signals[sig]);
+  // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
+  // initialization isn't called.
+  if (!ReduceSignalUsage) {
+    AtomicAccess::inc(&pending_signals[sig]);
     sig_semaphore->signal();
-  } else {
-    // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
-    // initialization isn't called.
-    assert(ReduceSignalUsage, "signal semaphore should be created");
   }
 }
 
@@ -369,7 +369,7 @@ static int check_pending_signals() {
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
+      if (n > 0 && n == AtomicAccess::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -621,9 +621,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       if (cb != nullptr && cb->is_nmethod()) {
         nmethod* nm = cb->as_nmethod();
         assert(nm->insts_contains_inclusive(pc), "");
-        address deopt = nm->is_method_handle_return(pc) ?
-          nm->deopt_mh_handler_begin() :
-          nm->deopt_handler_begin();
+        address deopt = nm->deopt_handler_entry();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
@@ -953,6 +951,32 @@ struct enum_sigcode_desc_t {
   const char* s_desc;
 };
 
+#if defined(LINUX)
+// Additional kernel si_code definitions that are only exported by
+// more recent glibc distributions, so we have to hard-code the values.
+#ifndef BUS_MCEERR_AR // glibc 2.17
+#define BUS_MCEERR_AR 4
+#define BUS_MCEERR_AO 5
+#endif
+
+#ifndef SEGV_PKUERR // glibc 2.27
+#define SEGV_PKUERR 4
+#endif
+
+#ifndef SYS_SECCOMP // glibc 2.28
+#define SYS_SECCOMP 1
+#endif
+
+#ifndef TRAP_BRANCH // glibc 2.30
+#define TRAP_BRANCH 3
+#endif
+
+#ifndef TRAP_HWBKPT // not glibc version specific - gdb related
+#define TRAP_HWBKPT 4
+#endif
+
+#endif // LINUX
+
 static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t* out) {
 
   const struct {
@@ -978,6 +1002,7 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGSEGV, SEGV_ACCERR,  "SEGV_ACCERR",  "Invalid permissions for mapped object." },
 #if defined(LINUX)
     { SIGSEGV, SEGV_BNDERR,  "SEGV_BNDERR",  "Failed address bound checks." },
+    { SIGSEGV, SEGV_PKUERR,  "SEGV_PKUERR",  "Protection key checking failure." },
 #endif
 #if defined(AIX)
     // no explanation found what keyerr would be
@@ -986,8 +1011,18 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGBUS,  BUS_ADRALN,   "BUS_ADRALN",   "Invalid address alignment." },
     { SIGBUS,  BUS_ADRERR,   "BUS_ADRERR",   "Nonexistent physical address." },
     { SIGBUS,  BUS_OBJERR,   "BUS_OBJERR",   "Object-specific hardware error." },
+#if defined(LINUX)
+    { SIGBUS,  BUS_MCEERR_AR,"BUS_MCEERR_AR","Hardware memory error consumed on a machine check: action required." },
+    { SIGBUS,  BUS_MCEERR_AO,"BUS_MCEERR_AO","Hardware memory error detected in process but not consumed: action optional." },
+
+    { SIGSYS,  SYS_SECCOMP,  "SYS_SECCOMP",  "Secure computing (seccomp) filter failure." },
+#endif
     { SIGTRAP, TRAP_BRKPT,   "TRAP_BRKPT",   "Process breakpoint." },
     { SIGTRAP, TRAP_TRACE,   "TRAP_TRACE",   "Process trace trap." },
+#if defined(LINUX)
+    { SIGTRAP, TRAP_BRANCH,  "TRAP_BRANCH",  "Process taken branch trap." },
+    { SIGTRAP, TRAP_HWBKPT,  "TRAP_HWBKPT",  "Hardware breakpoint/watchpoint." },
+#endif
     { SIGCHLD, CLD_EXITED,   "CLD_EXITED",   "Child has exited." },
     { SIGCHLD, CLD_KILLED,   "CLD_KILLED",   "Child has terminated abnormally and did not create a core file." },
     { SIGCHLD, CLD_DUMPED,   "CLD_DUMPED",   "Child has terminated abnormally and created a core file." },
@@ -995,6 +1030,7 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGCHLD, CLD_STOPPED,  "CLD_STOPPED",  "Child has stopped." },
     { SIGCHLD, CLD_CONTINUED,"CLD_CONTINUED","Stopped child has continued." },
 #ifdef SIGPOLL
+    { SIGPOLL, POLL_IN,      "POLL_IN",      "Data input available." },
     { SIGPOLL, POLL_OUT,     "POLL_OUT",     "Output buffers available." },
     { SIGPOLL, POLL_MSG,     "POLL_MSG",     "Input message available." },
     { SIGPOLL, POLL_ERR,     "POLL_ERR",     "I/O error." },
@@ -1505,6 +1541,14 @@ bool PosixSignals::is_sig_ignored(int sig) {
   }
 }
 
+void* PosixSignals::get_signal_handler_for_signal(int sig) {
+  struct sigaction oact;
+  if (sigaction(sig, (struct sigaction*)nullptr, &oact) == -1) {
+    return nullptr;
+  }
+  return get_signal_handler(&oact);
+}
+
 static void signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 
@@ -1639,7 +1683,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
 
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
-  int old_errno = errno;
+  ErrnoPreserver ep;
 
   PosixSignals::unblock_error_signals();
 
@@ -1663,21 +1707,21 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
 
   // On some systems we have seen signal delivery get "stuck" until the signal
   // mask is changed as part of thread termination. Check that the current thread
-  // has not already terminated - else the following assertion
-  // will fail because the thread is no longer a JavaThread as the ~JavaThread
-  // destructor has completed.
-
+  // has not already terminated, else the osthread may already have been freed.
   if (thread->has_terminated()) {
     return;
   }
-
-  assert(thread->is_VM_thread() || thread->is_Java_thread(), "Must be VMThread or JavaThread");
 
   OSThread* osthread = thread->osthread();
 
   SuspendResume::State current = osthread->sr.state();
 
   if (current == SuspendResume::SR_SUSPEND_REQUEST) {
+    // Only check this on an active suspend request. It is possible to get a late delivered
+    // signal from a cancelled suspend request that hits after the JavaThread destructor
+    // completes, but before the Thread destructor causes `is_terminated()` to be true.
+    assert(thread->is_VM_thread() || thread->is_Java_thread(), "Must be VMThread or JavaThread");
+
     suspend_save_context(osthread, siginfo, context);
 
     // attempt to switch the state, we assume we had a SUSPEND_REQUEST
@@ -1690,7 +1734,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
       pthread_sigmask(SIG_BLOCK, nullptr, &suspend_set);
       sigdelset(&suspend_set, PosixSignals::SR_signum);
 
-      sr_semaphore.signal();
+      sr_semaphore->signal();
 
       // wait here until we are resumed
       while (1) {
@@ -1699,7 +1743,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
         SuspendResume::State result = osthread->sr.running();
         if (result == SuspendResume::SR_RUNNING) {
           // double check AIX doesn't need this!
-          sr_semaphore.signal();
+          sr_semaphore->signal();
           break;
         } else if (result != SuspendResume::SR_SUSPENDED) {
           ShouldNotReachHere();
@@ -1721,10 +1765,12 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
     // ignore
   }
 
-  errno = old_errno;
 }
 
 static int SR_initialize() {
+  int sem_count = 0;
+  sr_semaphore.initialize(sem_count);
+
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
@@ -1772,7 +1818,7 @@ static int sr_notify(OSThread* osthread) {
 // but this seems the normal response to library errors
 bool PosixSignals::do_suspend(OSThread* osthread) {
   assert(osthread->sr.is_running(), "thread should be running");
-  assert(!sr_semaphore.trywait(), "semaphore has invalid state");
+  assert(!sr_semaphore->trywait(), "semaphore has invalid state");
 
   // mark as suspended and send signal
   if (osthread->sr.request_suspend() != SuspendResume::SR_SUSPEND_REQUEST) {
@@ -1787,7 +1833,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(2)) {
+    if (sr_semaphore->timedwait(2)) {
       break;
     } else {
       // timeout
@@ -1796,7 +1842,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
         return false;
       } else if (cancelled == SuspendResume::SR_SUSPENDED) {
         // make sure that we consume the signal on the semaphore as well
-        sr_semaphore.wait();
+        sr_semaphore->wait();
         break;
       } else {
         ShouldNotReachHere();
@@ -1811,7 +1857,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
 
 void PosixSignals::do_resume(OSThread* osthread) {
   assert(osthread->sr.is_suspended(), "thread should be suspended");
-  assert(!sr_semaphore.trywait(), "invalid semaphore state");
+  assert(!sr_semaphore->trywait(), "invalid semaphore state");
 
   if (osthread->sr.request_wakeup() != SuspendResume::SR_WAKEUP_REQUEST) {
     // failed to switch to WAKEUP_REQUEST
@@ -1821,7 +1867,7 @@ void PosixSignals::do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(2)) {
+      if (sr_semaphore->timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }

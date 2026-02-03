@@ -52,6 +52,7 @@ import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
@@ -70,7 +71,7 @@ import org.xml.sax.SAXParseException;
  *
  * @author Kohsuke Kawaguchi
  *
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public final class XMLSchemaFactory extends SchemaFactory {
 
@@ -152,19 +153,19 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fXMLSchemaLoader.setErrorHandler(fErrorHandlerWrapper);
         fUseGrammarPoolOnly = true;
 
-        // Enable secure processing feature by default
-        fSecurityManager = new XMLSecurityManager(true);
-        fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+        // security (property) managers updated with current system properties
+        JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+        fXmlFeatures = config.getXMLFeatures(true);
 
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
-        fXMLSchemaLoader.setProperty(XML_SECURITY_PROPERTY_MANAGER,
-                fSecurityPropertyMgr);
+        fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+        fXMLSchemaLoader.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         // use catalog
         fXMLSchemaLoader.setFeature(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
 
         fXMLSchemaLoader.setProperty(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
-        fXmlFeatures = new JdkXmlFeatures(fSecurityManager.isSecureProcessing());
         fOverrideDefaultParser = fXmlFeatures.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
         fXMLSchemaLoader.setFeature(JdkConstants.OVERRIDE_PARSER, fOverrideDefaultParser);
@@ -500,7 +501,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
             return;
         } else if (name.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (object == null) {
-                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+                fSecurityPropertyMgr = JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(true);
             } else {
                 fSecurityPropertyMgr = (XMLSecurityPropertyManager)object;
             }

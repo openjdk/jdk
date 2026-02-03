@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public final class JVM {
     /**
      * Begin recording events
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      */
     public static native void beginRecording();
 
@@ -83,7 +83,7 @@ public final class JVM {
     /**
      * End recording events, which includes flushing data in thread buffers
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      */
     public static native void endRecording();
@@ -144,7 +144,7 @@ public final class JVM {
     /**
      * Return unique identifier for stack trace.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @param skipCount number of frames to skip, or 0 if no frames should be
      *                  skipped
@@ -271,9 +271,31 @@ public final class JVM {
     public static native void setMethodSamplingPeriod(long type, long periodMillis);
 
     /**
+     * Set the maximum event emission rate for the CPU time sampler
+     *
+     * Use {@link #setCPUPeriod(long)} if you want a fixed sampling period instead.
+     *
+     * Setting rate to 0 turns off the CPU time sampler.
+     *
+     * @param rate the new rate in events per second
+     */
+    public static native void setCPURate(double rate);
+
+    /**
+     * Set the fixed CPU time sampler period.
+     *
+     * Use {@link #setCPURate(double)} if you want a fixed rate with an auto-adjusted period instead.
+     *
+     * Setting period to 0 turns off the CPU time sampler.
+     *
+     * @param periodNanos the new fixed period in nanoseconds
+     */
+    public static native void setCPUPeriod(long periodNanos);
+
+    /**
      * Sets the file where data should be written.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * <pre>
      * Recording  Previous  Current  Action
@@ -358,7 +380,7 @@ public final class JVM {
      * chunk, data should be written after GMT offset and size of metadata event
      * should be adjusted
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @param bytes binary representation of metadata descriptor
      */
@@ -387,7 +409,7 @@ public final class JVM {
     /**
      * Destroys native part of JFR. If already destroy, call is ignored.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @return if an instance was actually destroyed.
      *
@@ -682,4 +704,68 @@ public final class JVM {
      * @return {@code true} if this is a product build, {@code false} otherwise.
      */
     public static native boolean isProduct();
+
+    /**
+     * Sets method tracing filters.
+     *
+     * A filter can be a class, a method, or an annotation.
+     *
+     * For example, the following three filters:
+     * <ul>
+     * <li>Method timing on all methods in class com.foo.Bar</li>
+     * <li>Method tracing on the method com.foo.Bar::baz</li>
+     * <li>Method timing and tracing on all methods or classes with the annotation @com.foo.Foo</li>
+     * </ul>
+     * can be set using the following code:
+     * <pre>
+     * String[] classes = new String[3];
+     * classes[0] = "com/foo/Bar";
+     * classes[1] = "com/foo/Bar";
+     * classes[2] = null;
+     *
+     * String[] methods = new String[3];
+     * methods[0] = null;
+     * methods[1] = "baz";
+     * methods[2] = null;
+     *
+     * String[] annotations = new String[3];
+     * annotations[0] = null;
+     * annotations[1] = null;
+     * annotations[2] = "com/foo/Foo";
+     *
+     * int[] modifications = new int[3];
+     * modifications[0] = 1; // filter should apply to timing
+     * modifications[1] = 2; // filter should apply to tracing
+     * modifications[2] = 1 | 2; // filter should apply to both timing and tracing
+     *
+     * JVM.setMethodTraceFilters(classes, methods, annotations, modifications);
+     * </pre>
+     * The filter will be applied to currently and future loaded classes.
+     * <p>
+     * If a method is overloaded, the filter matches against all methods. It's not possible
+     * to match specific method parameters or annotation values.
+     * <p>
+     * Only one type of a filter - class, method, or annotation - can be used per array index.
+     * <p>
+     * If the filter is matched, JVMUpcalls::onMethodTrace will be invoked with
+     * the bytecode. If a filter is replaced, and method no longer requires instrumentation,
+     * the method will also be called with modification = 0;
+     *
+     * @param classes, not {@code null}, array of class names
+     * @param methods, not {@code null}, array of method names
+     * @param annotations, not {@code null}, array of annotation names
+     * @param modifications, not {@code null}, array of modification flags
+     * @return the published IDs, or null if no classes has been published.
+     */
+    public static native long[] setMethodTraceFilters(
+            String[] classes,
+            String[] methods,
+            String[] annotations,
+            int[] modification);
+    /**
+     * Returns IDs for method-traced classes that have been unloaded.
+     *
+     * @return the unloaded IDs, or null if no unloading has occurred.
+     */
+    public static native long[] drainStaleMethodTracerIds();
 }

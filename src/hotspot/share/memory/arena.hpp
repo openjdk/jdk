@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,18 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <new>
-
 // The byte alignment to be used by Arena::Amalloc.
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
+class ChunkPoolLocker : public StackObj {
+  bool _locked;
+ public:
+  enum class LockStrategy { Lock, Try };
+
+  ChunkPoolLocker(LockStrategy ls = LockStrategy::Lock);
+  ~ChunkPoolLocker();
+};
 
 // Linked list of raw memory chunks
 class Chunk {
@@ -95,10 +101,12 @@ public:
   FN(ra,          Resource areas) \
   FN(node,        C2 Node arena) \
   FN(comp,        C2 Compile arena) \
+  FN(idealloop,   C2 Ideal Loop arena) \
   FN(type,        C2 Type arena) \
   FN(states,      C2 Matcher States Arena) \
   FN(reglive,     C2 Register Allocation Live Arenas) \
   FN(regsplit,    C2 Register Allocation Split Arena) \
+  FN(regmask,     C2 Short-Lived Register Mask Arena) \
   FN(superword,   C2 SuperWord Arenas) \
   FN(cienv,       CI Env Arena) \
   FN(ha,          Handle area) \
@@ -150,6 +158,8 @@ protected:
   }
 
  public:
+  static void initialize_chunk_pool();
+
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
   Arena(MemTag mem_tag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);
@@ -208,6 +218,13 @@ protected:
 
   MemTag get_mem_tag() const { return _mem_tag; }
   Tag get_tag() const { return _tag; }
+
+  char* strdup(const char* s) {
+    const size_t sz = strlen(s) + 1;
+    char* ptr = (char*)Amalloc(sz);
+    memcpy(ptr, s, sz);
+    return ptr;
+  }
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary

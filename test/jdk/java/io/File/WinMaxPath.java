@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
    @bug 6384833
    @summary Check if appropriate exception FileNotFoundException gets
             thrown when the pathlengh exceeds the limit.
+   @requires (os.family == "windows")
  */
 
 import java.io.*;
 public class WinMaxPath {
     public static void main(String[] args) throws Exception {
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("Windows")) {
-            return;
-        }
         try {
             char[] as = new char[65000];
             java.util.Arrays.fill(as, 'a');

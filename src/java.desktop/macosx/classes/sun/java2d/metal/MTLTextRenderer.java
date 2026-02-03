@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,11 @@ class MTLTextRenderer extends BufferedTextPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends MTLTextRenderer {
+    private static final class Tracer extends MTLTextRenderer {
         Tracer(MTLTextRenderer mtltr) {
             super(mtltr.rq);
         }
+        @Override
         protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
             GraphicsPrimitive.tracePrimitive("MTLDrawGlyphs");
             super.drawGlyphList(sg2d, gl);

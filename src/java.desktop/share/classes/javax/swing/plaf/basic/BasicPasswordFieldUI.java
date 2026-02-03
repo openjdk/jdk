@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,23 +91,4 @@ public class BasicPasswordFieldUI extends BasicTextFieldUI {
     public View create(Element elem) {
         return new PasswordView(elem);
     }
-
-    /**
-     * Create the action map for Password Field.  This map provides
-     * same actions for double mouse click and
-     * and for triple mouse click (see bug 4231444).
-     */
-
-    ActionMap createActionMap() {
-        ActionMap map = super.createActionMap();
-        if (map.get(DefaultEditorKit.selectWordAction) != null) {
-            Action a = map.get(DefaultEditorKit.selectLineAction);
-            if (a != null) {
-                map.remove(DefaultEditorKit.selectWordAction);
-                map.put(DefaultEditorKit.selectWordAction, a);
-            }
-        }
-        return map;
-    }
-
 }

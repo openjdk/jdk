@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,17 @@
 /*
  * @test
  * @summary Basic test for shared strings
- * @requires vm.cds.write.archived.java.heap
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @build HelloString
  * @run driver SharedStringsBasic
  */
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+
+// This test requires the vm.cds.write.mapped.java.heap specifically as it has expectations
+// about using the mechanism for dumping the entire string table, which the streaming solution
+// does not do.
 
 // This test does not use SharedStringsUtils.dumpXXX()
 // and SharedStringsUtils.runWithXXX() intentionally:
@@ -54,7 +58,7 @@ public class SharedStringsBasic {
             .addPrefix(vmOptionsPrefix,
             "-cp", appJar,
             "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
-            "-Xlog:cds,cds+hashtables")
+            "-Xlog:cds,aot+hashtables")
             .setArchiveName("./SharedStringsBasic.jsa");
         CDSTestUtils.createArchiveAndCheck(opts)
             .shouldContain("Shared string table stats");

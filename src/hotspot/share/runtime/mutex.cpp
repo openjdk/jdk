@@ -119,6 +119,7 @@ void Mutex::lock(Thread* self) {
   check_safepoint_state(self);
   check_rank(self);
 
+  OrderAccess::fence();
   if (!_lock.try_lock()) {
     // The lock is contended, use contended slow-path function to lock
     lock_contended(self);
@@ -144,6 +145,7 @@ void Mutex::lock_without_safepoint_check(Thread * self) {
   check_no_safepoint_state(self);
   check_rank(self);
 
+  OrderAccess::fence();
   _lock.lock();
   assert_owner(nullptr);
   set_owner(self);
@@ -170,6 +172,7 @@ bool Mutex::try_lock_inner(bool do_rank_checks) {
   // safepoint state, but can check blocking state.
   check_block_state(self);
 
+  OrderAccess::fence();
   if (_lock.try_lock()) {
     assert_owner(nullptr);
     set_owner(self);

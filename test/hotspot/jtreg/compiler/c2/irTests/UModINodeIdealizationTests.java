@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8332268
+ * @key randomness
  * @summary Test that Ideal transformations of UModINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UModINodeIdealizationTests

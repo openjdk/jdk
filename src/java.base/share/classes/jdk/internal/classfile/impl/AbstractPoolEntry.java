@@ -35,6 +35,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ModifiedUtf;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.util.Objects.requireNonNull;
@@ -141,7 +142,7 @@ public abstract sealed class AbstractPoolEntry {
         @Stable TypeDescriptor typeSym;
 
         Utf8EntryImpl(ConstantPool cpm, int index,
-                          byte[] rawBytes, int offset, int rawLen) {
+                      byte[] rawBytes, int offset, int rawLen) {
             super(cpm, index, 0);
             this.rawBytes = rawBytes;
             this.offset = offset;
@@ -154,6 +155,10 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
+            // Prevent creation of unwritable entries
+            if (!ModifiedUtf.isValidLengthInConstantPool(s)) {
+                throw new IllegalArgumentException("utf8 length out of range of u2: " + ModifiedUtf.utfLen(s));
+            }
             super(cpm, index, 0);
             this.rawBytes = null;
             this.offset = 0;
@@ -295,9 +300,13 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public Utf8EntryImpl clone(ConstantPoolBuilder cp) {
-            return (state == State.STRING && rawBytes == null)
+            var ret = (state == State.STRING && rawBytes == null)
                    ? (Utf8EntryImpl) cp.utf8Entry(stringValue)
                    : ((SplitConstantPool) cp).maybeCloneUtf8Entry(this);
+            var mySym = this.typeSym;
+            if (ret.typeSym == null && mySym != null)
+                ret.typeSym = mySym;
+            return ret;
         }
 
         @Override
@@ -939,6 +948,8 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractDynamicConstantPoolEntry
             implements InvokeDynamicEntry {
 
+        public @Stable DynamicCallSiteDesc sym;
+
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                    NameAndTypeEntryImpl nameAndType) {
             super(cpm, index, hash, bootstrapMethod, nameAndType);
@@ -957,12 +968,26 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public InvokeDynamicEntry clone(ConstantPoolBuilder cp) {
-            return cp.invokeDynamicEntry(bootstrap(), nameAndType());
+            var ret = (InvokeDynamicEntryImpl) cp.invokeDynamicEntry(bootstrap(), nameAndType());
+            var mySym = this.sym;
+            if (ret.sym == null && mySym != null)
+                ret.sym = mySym;
+            return ret;
+        }
+
+        @Override
+        public DynamicCallSiteDesc asSymbol() {
+            var cache = this.sym;
+            if (cache != null)
+                return cache;
+            return this.sym = InvokeDynamicEntry.super.asSymbol();
         }
     }
 
     public static final class ConstantDynamicEntryImpl extends AbstractDynamicConstantPoolEntry
             implements ConstantDynamicEntry {
+
+        public @Stable DynamicConstantDesc<?> sym;
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                      NameAndTypeEntryImpl nameAndType) {
@@ -982,7 +1007,19 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public ConstantDynamicEntry clone(ConstantPoolBuilder cp) {
-            return cp.constantDynamicEntry(bootstrap(), nameAndType());
+            var ret = (ConstantDynamicEntryImpl) cp.constantDynamicEntry(bootstrap(), nameAndType());
+            var mySym = this.sym;
+            if (ret.sym == null && mySym != null)
+                ret.sym = mySym;
+            return ret;
+        }
+
+        @Override
+        public DynamicConstantDesc<?> asSymbol() {
+            var cache = this.sym;
+            if (cache != null)
+                return cache;
+            return this.sym = ConstantDynamicEntry.super.asSymbol();
         }
     }
 
@@ -991,6 +1028,7 @@ public abstract sealed class AbstractPoolEntry {
 
         private final int refKind;
         private final AbstractPoolEntry.AbstractMemberRefEntry reference;
+        public @Stable DirectMethodHandleDesc sym;
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
@@ -1023,7 +1061,14 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public DirectMethodHandleDesc asSymbol() {
-            return MethodHandleDesc.of(
+            var cache = this.sym;
+            if (cache != null)
+                return cache;
+            return computeSymbol();
+        }
+
+        private DirectMethodHandleDesc computeSymbol() {
+            return this.sym = MethodHandleDesc.of(
                     DirectMethodHandleDesc.Kind.valueOf(kind(), reference() instanceof InterfaceMethodRefEntry),
                     ((MemberRefEntry) reference()).owner().asSymbol(),
                     ((MemberRefEntry) reference()).nameAndType().name().stringValue(),
@@ -1037,7 +1082,11 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public MethodHandleEntry clone(ConstantPoolBuilder cp) {
-            return cp.methodHandleEntry(refKind, reference);
+            var ret = (MethodHandleEntryImpl) cp.methodHandleEntry(refKind, reference);
+            var mySym = this.sym;
+            if (ret.sym == null && mySym != null)
+                ret.sym = mySym;
+            return ret;
         }
 
         @Override

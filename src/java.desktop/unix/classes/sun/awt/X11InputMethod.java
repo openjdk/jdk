@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * Reset the composition state to the current composition state.
      */
+    @Override
     protected void resetCompositionState() {
         if (compositionEnableSupported && haveActiveClient()) {
             try {
@@ -69,6 +70,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * Activate input method.
      */
+    @Override
     public synchronized void activate() {
         clientComponentWindow = getClientComponentWindow();
         if (clientComponentWindow == null)
@@ -120,6 +122,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * Deactivate input method.
      */
+    @Override
     public synchronized void deactivate(boolean isTemporary) {
         boolean   isAc =  haveActiveClient();
         /* Usually as the client component, let's call it component A,
@@ -157,6 +160,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     }
 
     // implements java.awt.im.spi.InputMethod.hideWindows
+    @Override
     public void hideWindows() {
         // ??? need real implementation
     }
@@ -174,6 +178,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     //       This functionality is implemented in a package-private method
     //       to insure that it cannot be overridden by client subclasses.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
+    @Override
     void dispatchComposedText(String chgText,
                                            int[] chgStyles,
                                            int chgOffset,
@@ -326,6 +331,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
      * Subclasses should override disposeImpl() instead of dispose(). Client
      * code should always invoke dispose(), never disposeImpl().
      */
+    @Override
     protected synchronized void disposeImpl() {
         disposeXIC();
         awtLock();
@@ -340,6 +346,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     /**
      * @see java.awt.im.spi.InputMethod#setCompositionEnabled(boolean)
      */
+    @Override
     public void setCompositionEnabled(boolean enable) {
         /* If the composition state is successfully changed, set
            the savedCompositionState to 'enable'. Otherwise, simply

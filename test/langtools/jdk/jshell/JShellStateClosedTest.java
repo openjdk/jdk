@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test 8164277
  * @summary Testing IllegalStateException.
  * @build KullaTesting TestingInputStream JShellStateClosedTest
- * @run testng JShellStateClosedTest
+ * @run junit JShellStateClosedTest
  */
 
 import java.util.function.Consumer;
@@ -36,11 +36,9 @@ import jdk.jshell.MethodSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.fail;
-
-@Test
 public class JShellStateClosedTest extends KullaTesting {
 
     private void testStateClosedException(Runnable action) {
@@ -53,6 +51,7 @@ public class JShellStateClosedTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testClasses() {
         TypeDeclSnippet sc = classKey(assertEval("class C { }"));
         TypeDeclSnippet si = classKey(assertEval("interface I { }"));
@@ -60,6 +59,7 @@ public class JShellStateClosedTest extends KullaTesting {
         assertStreamMatch(getState().types(), sc, si);
     }
 
+    @Test
     public void testVariables() {
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         VarSnippet sfoo = varKey(assertEval("String foo;"));
@@ -67,6 +67,7 @@ public class JShellStateClosedTest extends KullaTesting {
         assertStreamMatch(getState().variables(), sx, sfoo);
     }
 
+    @Test
     public void testMethods() {
         MethodSnippet smm = methodKey(assertEval("int mm() { return 6; }"));
         MethodSnippet svv = methodKey(assertEval("void vv() { }"));
@@ -74,12 +75,14 @@ public class JShellStateClosedTest extends KullaTesting {
         assertStreamMatch(getState().methods(), smm, svv);
     }
 
+    @Test
     public void testImports() {
         ImportSnippet simp = importKey(assertEval("import java.lang.reflect.*;"));
         getState().close();
         assertStreamMatch(getState().imports(), simp);
     }
 
+    @Test
     public void testSnippets() {
         VarSnippet sx = varKey(assertEval("int x = 5;"));
         VarSnippet sfoo = varKey(assertEval("String foo;"));
@@ -92,6 +95,7 @@ public class JShellStateClosedTest extends KullaTesting {
         assertStreamMatch(getState().snippets(), sx, sfoo, smm, svv, sc, si, simp);
     }
 
+    @Test
     public void testEval() {
         testStateClosedException(() -> getState().eval("int a;"));
     }
@@ -117,22 +121,27 @@ public class JShellStateClosedTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testStatus() {
         testStateClosedWithoutException((key) -> getState().status(key));
     }
 
+    @Test
     public void testVarValue() {
         testStateClosedException((key) -> getState().varValue((VarSnippet) key));
     }
 
+    @Test
     public void testDrop() {
         testStateClosedException((key) -> getState().drop(key));
     }
 
+    @Test
     public void testUnresolved() {
         testStateClosedWithoutException((key) -> getState().unresolvedDependencies((DeclarationSnippet) key));
     }
 
+    @Test
     public void testDiagnostics() {
         testStateClosedWithoutException((key) -> getState().diagnostics(key));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @bug 6344646
  * @summary tests that WinNTFileSystem.hashCode() uses
  *    locale independent case mapping.
+ * @requires (os.family == "windows")
  */
 
 import java.io.*;
@@ -34,11 +35,6 @@ public class bug6344646 {
     public static void main(String[] s) {
         Locale reservedLocale = Locale.getDefault();
         try {
-            /* This test is only valid on win32 systems */
-            if (File.separatorChar != '\\') {
-                return;
-            }
-
             Locale.setDefault(Locale.of("lt"));
             File f1 = new File("J\u0301");
             File f2 = new File("j\u0301");

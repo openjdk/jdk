@@ -165,9 +165,9 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
 bool EscapeBarrier::_deoptimizing_objects_for_all_threads = false;
 bool EscapeBarrier::_self_deoptimization_in_progress      = false;
 
-class EscapeBarrierSuspendHandshake : public HandshakeClosure {
+class EscapeBarrierSuspendHandshakeClosure : public HandshakeClosure {
  public:
-  EscapeBarrierSuspendHandshake(const char* name) :
+  EscapeBarrierSuspendHandshakeClosure(const char* name) :
     HandshakeClosure(name) { }
   void do_thread(Thread* th) { }
 };
@@ -196,7 +196,7 @@ void EscapeBarrier::sync_and_suspend_one() {
   }
 
   // Use a handshake to synchronize with the target thread.
-  EscapeBarrierSuspendHandshake sh("EscapeBarrierSuspendOne");
+  EscapeBarrierSuspendHandshakeClosure sh("EscapeBarrierSuspendOne");
   Handshake::execute(&sh, _deoptee_thread);
   assert(!_deoptee_thread->has_last_Java_frame() || _deoptee_thread->frame_anchor()->walkable(),
          "stack should be walkable now");
@@ -242,7 +242,7 @@ void EscapeBarrier::sync_and_suspend_all() {
   }
 
   // Use a handshake to synchronize with the other threads.
-  EscapeBarrierSuspendHandshake sh("EscapeBarrierSuspendAll");
+  EscapeBarrierSuspendHandshakeClosure sh("EscapeBarrierSuspendAll");
   Handshake::execute(&sh);
 #ifdef ASSERT
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {

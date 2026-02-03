@@ -37,7 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,7 +52,6 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
 import com.sun.source.tree.ModuleTree.ModuleKind;
-import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
 import com.sun.tools.javac.code.Directive.ExportsFlag;
@@ -62,7 +61,7 @@ import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Directive.UsesDirective;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Flags.Flag;
+import com.sun.tools.javac.code.FlagsEnum;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
@@ -141,7 +140,6 @@ public class Modules extends JCTree.Visitor {
     private final Attr attr;
     private final Check chk;
     private final Preview preview;
-    private final DeferredLintHandler deferredLintHandler;
     private final TypeEnvs typeEnvs;
     private final Types types;
     private final JavaFileManager fileManager;
@@ -169,8 +167,6 @@ public class Modules extends JCTree.Visitor {
     private final String moduleVersionOpt;
     private final boolean sourceLauncher;
 
-    private final boolean lintOptions;
-
     private Set<ModuleSymbol> rootModules = null;
     private final Set<ModuleSymbol> warnedMissing = new HashSet<>();
 
@@ -193,7 +189,6 @@ public class Modules extends JCTree.Visitor {
         attr = Attr.instance(context);
         chk = Check.instance(context);
         preview = Preview.instance(context);
-        deferredLintHandler = DeferredLintHandler.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         moduleFinder = ModuleFinder.instance(context);
         types = Types.instance(context);
@@ -204,8 +199,6 @@ public class Modules extends JCTree.Visitor {
         Options options = Options.instance(context);
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);
-
-        lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         ClassWriter classWriter = ClassWriter.instance(context);
@@ -243,6 +236,7 @@ public class Modules extends JCTree.Visitor {
                 setupAllModules(); //initialize the module graph
                 Assert.checkNonNull(allModules);
                 inInitModules = false;
+                return allModules;
             }, null);
         } finally {
             inInitModules = false;
@@ -256,10 +250,11 @@ public class Modules extends JCTree.Visitor {
             //the next steps may query if the current module participates in preview,
             //and that requires a completed java.base:
             syms.java_base.complete();
+            return modules;
         }, c);
     }
 
-    private boolean enter(List<JCCompilationUnit> trees, Consumer<Set<ModuleSymbol>> init, ClassSymbol c) {
+    private boolean enter(List<JCCompilationUnit> trees, Function<Set<ModuleSymbol>, Set<ModuleSymbol>> init, ClassSymbol c) {
         if (!allowModules) {
             for (JCCompilationUnit tree: trees) {
                 tree.modle = syms.noModule;
@@ -277,10 +272,13 @@ public class Modules extends JCTree.Visitor {
 
             setCompilationUnitModules(trees, roots, c);
 
-            init.accept(roots);
+            Set<ModuleSymbol> initialized = init.apply(roots);
 
-            for (ModuleSymbol msym: roots) {
-                msym.complete();
+            for (ModuleSymbol msym : initialized) {
+                if (msym != syms.unnamedModule ||
+                    roots.contains(syms.unnamedModule)) {
+                    msym.complete();
+                }
             }
         } catch (CompletionFailure ex) {
             chk.completionError(null, ex);
@@ -746,7 +744,6 @@ public class Modules extends JCTree.Visitor {
                 ModuleVisitor v = new ModuleVisitor();
                 JavaFileObject prev = log.useSource(tree.sourcefile);
                 JCModuleDecl moduleDecl = tree.getModuleDecl();
-                deferredLintHandler.push(moduleDecl);
 
                 try {
                     moduleDecl.accept(v);
@@ -754,7 +751,6 @@ public class Modules extends JCTree.Visitor {
                     checkCyclicDependencies(moduleDecl);
                 } finally {
                     log.useSource(prev);
-                    deferredLintHandler.pop();
                     msym.flags_field &= ~UNATTRIBUTED;
                 }
             }
@@ -825,7 +821,7 @@ public class Modules extends JCTree.Visitor {
                 }
                 if (tree.isStaticPhase) {
                     if (msym == syms.java_base && source.compareTo(Source.JDK10) >= 0) {
-                        log.error(tree.pos(), Errors.ModNotAllowedHere(EnumSet.of(Flag.STATIC)));
+                        log.error(tree.pos(), Errors.ModNotAllowedHere(EnumSet.of(FlagsEnum.STATIC)));
                     } else {
                         flags.add(RequiresFlag.STATIC_PHASE);
                     }
@@ -991,13 +987,11 @@ public class Modules extends JCTree.Visitor {
             UsesProvidesVisitor v = new UsesProvidesVisitor(msym, env);
             JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
             JCModuleDecl decl = env.toplevel.getModuleDecl();
-            deferredLintHandler.push(decl);
 
             try {
                 decl.accept(v);
             } finally {
                 log.useSource(prev);
-                deferredLintHandler.pop();
             }
         };
     }
@@ -1263,12 +1257,9 @@ public class Modules extends JCTree.Visitor {
             }
             observable = computeTransitiveClosure(limitMods, rootModules, null);
             observable.addAll(rootModules);
-            if (lintOptions) {
-                for (ModuleSymbol msym : limitMods) {
-                    if (!observable.contains(msym)) {
-                        log.warning(
-                                LintWarnings.ModuleForOptionNotFound(Option.LIMIT_MODULES, msym));
-                    }
+            for (ModuleSymbol msym : limitMods) {
+                if (!observable.contains(msym)) {
+                    log.warning(LintWarnings.ModuleForOptionNotFound(Option.LIMIT_MODULES, msym));
                 }
             }
         }
@@ -1721,10 +1712,7 @@ public class Modules extends JCTree.Visitor {
         }
 
         if (!unknownModules.contains(msym)) {
-            if (lintOptions) {
-                log.warning(
-                        LintWarnings.ModuleForOptionNotFound(Option.ADD_EXPORTS, msym));
-            }
+            log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_EXPORTS, msym));
             unknownModules.add(msym);
         }
         return false;
@@ -1760,9 +1748,7 @@ public class Modules extends JCTree.Visitor {
 
             ModuleSymbol msym = syms.enterModule(names.fromString(sourceName));
             if (!allModules.contains(msym)) {
-                if (lintOptions) {
-                    log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
-                }
+                log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
                 continue;
             }
 
@@ -1780,9 +1766,7 @@ public class Modules extends JCTree.Visitor {
                         continue;
                     targetModule = syms.enterModule(names.fromString(targetName));
                     if (!allModules.contains(targetModule)) {
-                        if (lintOptions) {
-                            log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule));
-                        }
+                        log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule));
                         continue;
                     }
                 }

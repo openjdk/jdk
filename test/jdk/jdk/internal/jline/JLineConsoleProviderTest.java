@@ -23,20 +23,25 @@
 
 /**
  * @test
- * @bug 8331535 8351435
+ * @bug 8331535 8351435 8347050 8361613
  * @summary Verify the jdk.internal.le's console provider works properly.
- * @modules jdk.internal.le
+ * @modules java.base/jdk.internal.io
+ *          jdk.internal.le/jdk.internal.org.jline
  * @library /test/lib
- * @run main/othervm -Djdk.console=jdk.internal.le JLineConsoleProviderTest
+ * @run main JLineConsoleProviderTest
  */
 
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import jdk.internal.org.jline.JdkConsoleProviderImpl;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class JLineConsoleProviderTest {
+
+    private static final String NL = System.getProperty("line.separator");
 
     public static void main(String... args) throws Throwable {
         for (Method m : JLineConsoleProviderTest.class.getDeclaredMethods()) {
@@ -54,12 +59,23 @@ public class JLineConsoleProviderTest {
         doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s");
     }
 
+    void testEvenExpansionDisabled() throws Exception {
+        doRunConsoleTest("readAndPrint", "a\\b\n", "'a\\b'" + NL);
+        doRunConsoleTest("readAndPrint2", "a\n!!\n", "1: 'a'" + NL +
+                                                     "2: '!!'" + NL);
+    }
+
     void doRunConsoleTest(String testName,
                           String input,
                           String expectedOut) throws Exception {
         ProcessBuilder builder =
-                ProcessTools.createTestJavaProcessBuilder("-Djdk.console=jdk.internal.le", ConsoleTest.class.getName(),
-                                                          testName);
+                ProcessTools.createTestJavaProcessBuilder(
+                    "--add-exports",
+                    "java.base/jdk.internal.io=ALL-UNNAMED",
+                    "--add-exports",
+                    "jdk.internal.le/jdk.internal.org.jline=ALL-UNNAMED",
+                    ConsoleTest.class.getName(),
+                    testName);
         OutputAnalyzer output = ProcessTools.executeProcess(builder, input);
 
         output.waitFor();
@@ -90,11 +106,19 @@ public class JLineConsoleProviderTest {
 
     public static class ConsoleTest {
         public static void main(String... args) {
+            // directly instantiate JLine JdkConsole, simulating isTTY=true
+            var impl = new JdkConsoleProviderImpl().console(true, StandardCharsets.UTF_8, StandardCharsets.UTF_8);
             switch (args[0]) {
                 case "testCorrectOutputReadLine" ->
-                    System.console().readLine("%%s");
+                    impl.readLine(null, "%%s");
                 case "testCorrectOutputReadPassword" ->
-                    System.console().readPassword("%%s");
+                    impl.readPassword(null, "%%s");
+                case "readAndPrint" ->
+                    System.out.println("'" + impl.readLine() + "'");
+                case "readAndPrint2" -> {
+                    System.out.println("1: '" + impl.readLine() + "'");
+                    System.out.println("2: '" + impl.readLine() + "'");
+                }
                 default -> throw new UnsupportedOperationException(args[0]);
             }
 

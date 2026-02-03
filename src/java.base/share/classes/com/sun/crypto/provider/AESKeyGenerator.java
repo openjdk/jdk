@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public final class AESKeyGenerator extends KeyGeneratorSpi {
      */
     protected void engineInit(int keysize, SecureRandom random) {
         if (((keysize % 8) != 0) ||
-            (!AESCrypt.isKeySizeValid(keysize/8))) {
+            (!AES_Crypt.isKeySizeValid(keysize/8))) {
             throw new InvalidParameterException
                 ("Wrong keysize: must be equal to 128, 192 or 256");
         }

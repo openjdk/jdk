@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class AttributeClass {
+public final class AttributeClass {
     private String myName;
     private int myType;
     private int nameLen;
@@ -175,6 +175,30 @@ public class AttributeClass {
     }
 
     /**
+     * Returns 3 int values.
+     * xres, yres, resolution as either dpi or dpcm
+     * The resolution is just a single byte of data.
+     */
+    public int[] getIntResolutionValue() {
+        int[] res = {0, 0, 0};
+        byte[] bufArray = (byte[])myValue;
+        if (bufArray != null) {
+            int nBytes = 4; // 32-bit signed integer
+            for (int j=0; j<2; j++) { // 2 set of integers
+                byte[] intBytes = new byte[nBytes];
+                // REMIND: # bytes should be 8
+                for (int i=0; i< nBytes; i++) {
+                    //+ 1 because the 1st byte is length
+                    intBytes[i] = bufArray[i+(4*j)+1];
+                }
+                res[j] = convertToInt(intBytes);
+            }
+            res[2] = (int)bufArray[9];
+        }
+        return res;
+    }
+
+    /**
      * Returns String value.
      */
     public String getStringValue() {
@@ -266,6 +290,7 @@ public class AttributeClass {
         return Objects.hash(myType, myName, myValue);
     }
 
+    @Override
     public String toString() {
         return myName;
     }

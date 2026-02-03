@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
 class ParkEvent;
 class BasicLock;
 class ContinuationWrapper;
-
 
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
@@ -51,10 +51,11 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   uint64_t  _notifier_tid;
   int         _recursions;
   volatile TStates TState;
-  volatile bool _notified;
   bool           _is_wait;
   bool        _at_reenter;
   bool       _interrupted;
+  bool     _interruptible;
+  bool     _do_timed_park;
   bool            _active;    // Contention monitoring is enabled
  public:
   ObjectWaiter(JavaThread* current);
@@ -65,27 +66,25 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   uint8_t state()           const { return TState; }
   ObjectMonitor* monitor()  const { return _monitor; }
   bool is_wait()            const { return _is_wait; }
-  bool notified()           const { return _notified; }
   bool at_reenter()         const { return _at_reenter; }
-  bool at_monitorenter()    const { return !_is_wait || _at_reenter || _notified; }
+  bool at_monitorenter()    const { return !_is_wait || TState != TS_WAIT; }
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
-
-  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
+  const char* getTStateName(TStates state);
   void set_bad_pointers() {
 #ifdef ASSERT
-    this->_prev  = badObjectWaiterPtr;
-    this->_next  = badObjectWaiterPtr;
+    this->_prev  = (ObjectWaiter*) badAddressVal;
+    this->_next  = (ObjectWaiter*) badAddressVal;
     this->TState = ObjectWaiter::TS_RUN;
 #endif
   }
   ObjectWaiter* next() {
-    assert (_next != badObjectWaiterPtr, "corrupted list!");
+    assert (_next != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _next;
   }
   ObjectWaiter* prev() {
-    assert (_prev != badObjectWaiterPtr, "corrupted list!");
+    assert (_prev != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _prev;
   }
 };
@@ -160,10 +159,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Because of frequent access, the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
-  // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
-  // Contains the _object's hashCode.
-  // * LM_LEGACY, LM_MONITOR, LM_LIGHTWEIGHT without UseObjectMonitorTable:
-  // Contains the displaced object header word - mark
+  // * Locking with UseObjectMonitorTable:
+  //   Contains the _object's hashCode.
+  // * Locking without UseObjectMonitorTable:
+  //   Contains the displaced object header word - mark
   volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
   // Separate _metadata and _owner on different cache lines since both can
@@ -199,13 +198,14 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
+  int64_t _unmounted_vthreads;      // Number of nodes in the _entry_list associated with unmounted vthreads.
+                                    // It might be temporarily more than the actual number but never less.
+  OopHandle _object_strong;         // Used to protect object during preemption on class initialization
 
   ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
   volatile int _wait_set_lock;      // protects wait set queue - simple spinlock
-
-  // Used in LM_LEGACY mode to store BasicLock* in case of inflation by contending thread.
-  BasicLock* volatile _stack_locker;
+  volatile int _object_strong_lock; // protects setting of _object_strong
 
  public:
 
@@ -284,7 +284,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Same as above but uses owner_id of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
-  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
+  // old_value, using AtomicAccess::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   int64_t   try_set_owner_from_raw(int64_t old_value, int64_t new_value);
   // Same as above but uses owner_id of current as new_value.
@@ -318,10 +318,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     set_owner_from(ANONYMOUS_OWNER, owner);
   }
 
-  // Get and set _stack_locker.
-  BasicLock* stack_locker() const;
-  void set_stack_locker(BasicLock* locker);
-
   // Simply get _next_om field.
   ObjectMonitor* next_om() const;
   // Simply set _next_om field to new_value.
@@ -332,6 +328,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
   void      increment_recursions(JavaThread* current);
+  void      inc_unmounted_vthreads();
+  void      dec_unmounted_vthreads();
+  bool      has_unmounted_vthreads() const;
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;
@@ -346,12 +345,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   oop       object_peek() const;
   bool      object_is_dead() const;
   bool      object_refers_to(oop obj) const;
+  void      set_object_strong();
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
 
- private:
   class ExitOnSuspend {
    protected:
     ObjectMonitor* _om;
@@ -361,23 +360,16 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     void operator()(JavaThread* current);
     bool exited() { return _om_exited; }
   };
-  class ClearSuccOnSuspend {
-   protected:
-    ObjectMonitor* _om;
-   public:
-    ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
-    void operator()(JavaThread* current);
-  };
 
   bool      enter_is_async_deflating();
-  void      notify_contended_enter(JavaThread *current);
+  void      notify_contended_enter(JavaThread *current, bool post_jvmti_events = true);
  public:
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);
-  bool      enter(JavaThread* current);
+  bool      enter(JavaThread* current, bool post_jvmti_events = true);
   bool      try_enter(JavaThread* current, bool check_for_recursion = true);
   bool      spin_enter(JavaThread* current);
-  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
+  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark, bool post_jvmti_events = true);
   void      exit(JavaThread* current, bool not_suspended = true);
   bool      resume_operation(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      wait(jlong millis, bool interruptible, TRAPS);
@@ -408,7 +400,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   ObjectWaiter* entry_list_tail(JavaThread* current);
 
   bool      vthread_monitor_enter(JavaThread* current, ObjectWaiter* node = nullptr);
-  void      vthread_wait(JavaThread* current, jlong millis);
+  void      vthread_wait(JavaThread* current, jlong millis, bool interruptible);
   bool      vthread_wait_reenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      vthread_epilog(JavaThread* current, ObjectWaiter* node);
 

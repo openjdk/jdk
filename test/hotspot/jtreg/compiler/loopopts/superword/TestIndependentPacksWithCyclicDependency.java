@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,10 +82,10 @@ public class TestIndependentPacksWithCyclicDependency {
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::init",
                            "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
         switch (args[0]) {
-            case "nCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "nCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
-            case "yCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "yCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "nCOH_nAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "nCOH_yAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "yCOH_nAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "yCOH_yAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();

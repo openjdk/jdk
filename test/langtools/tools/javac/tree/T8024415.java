@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,15 @@
  * @modules jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @run testng T8024415
+ * @run junit T8024415
  */
 
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.StringWriter;
 
-import org.testng.annotations.Test;
 
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
@@ -47,13 +46,13 @@ import com.sun.tools.javac.tree.Pretty;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
+import org.junit.jupiter.api.Test;
 
 
 /*
  * Test verifies that the precedence rules of conditional expressions
  * (JCConditional) are correct.
  */
-@Test
 public class T8024415 {
 
     TreeMaker maker;
@@ -72,6 +71,7 @@ public class T8024415 {
     // JLS 15.25: The conditional operator is syntactically right-associative
     // (it groups right-to-left). Thus, a?b:c?d:e?f:g means the same as
     // a?b:(c?d:(e?f:g)).
+    @Test
     public void testAssociativity() throws IOException {
 
         JCTree left   = maker.Conditional(maker.Conditional(x, x, x), x, x);
@@ -80,8 +80,8 @@ public class T8024415 {
         String prettyLeft   = prettyPrint(left);
         String prettyRight  = prettyPrint(right);
 
-        assertEquals(prettyLeft.replaceAll("\\s", ""),  "(x?x:x)?x:x");
-        assertEquals(prettyRight.replaceAll("\\s", ""), "x?x:x?x:x");
+        assertEquals("(x?x:x)?x:x", prettyLeft.replaceAll("\\s", ""));
+        assertEquals("x?x:x?x:x", prettyRight.replaceAll("\\s", ""));
 
     }
 
@@ -89,6 +89,7 @@ public class T8024415 {
     // The true-part of a conditional expression is surrounded by ? and :
     // and can thus always be parsed unambiguously without surrounding
     // parentheses.
+    @Test
     public void testPrecedence() throws IOException {
 
         JCTree left   = maker.Conditional(maker.Assign(x, x), x, x);
@@ -99,9 +100,9 @@ public class T8024415 {
         String prettyMiddle = prettyPrint(middle);
         String prettyRight  = prettyPrint(right);
 
-        assertEquals(prettyLeft.replaceAll("\\s", ""),   "(x=x)?x:x");
-        assertEquals(prettyMiddle.replaceAll("\\s", ""), "x?x=x:x");
-        assertEquals(prettyRight.replaceAll("\\s", ""),  "x?x:(x=x)");
+        assertEquals("(x=x)?x:x", prettyLeft.replaceAll("\\s", ""));
+        assertEquals("x?x=x:x", prettyMiddle.replaceAll("\\s", ""));
+        assertEquals("x?x:(x=x)", prettyRight.replaceAll("\\s", ""));
 
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 #define VM_STRUCTS_G1GC(nonstatic_field,                                      \
@@ -39,16 +40,16 @@
                                                                               \
   nonstatic_field(G1HeapRegion, _type,           G1HeapRegionType)            \
   nonstatic_field(G1HeapRegion, _bottom,         HeapWord* const)             \
-  nonstatic_field(G1HeapRegion, _top,            HeapWord* volatile)          \
+  nonstatic_field(G1HeapRegion, _top,            Atomic<HeapWord*>)           \
   nonstatic_field(G1HeapRegion, _end,            HeapWord* const)             \
-  volatile_nonstatic_field(G1HeapRegion, _pinned_object_count, size_t)        \
+  volatile_nonstatic_field(G1HeapRegion, _pinned_object_count, Atomic<size_t>)\
                                                                               \
   nonstatic_field(G1HeapRegionType, _tag,   G1HeapRegionType::Tag volatile)   \
                                                                               \
                                                                               \
   nonstatic_field(G1HeapRegionTable, _base,             address)              \
   nonstatic_field(G1HeapRegionTable, _length,           size_t)               \
-  nonstatic_field(G1HeapRegionTable, _biased_base,      address)              \
+  nonstatic_field(G1HeapRegionTable, _biased_base,      uintptr_t)            \
   nonstatic_field(G1HeapRegionTable, _bias,             size_t)               \
   nonstatic_field(G1HeapRegionTable, _shift_by,         uint)                 \
                                                                               \
@@ -70,8 +71,8 @@
   nonstatic_field(G1HeapRegionSetBase,   _length,       uint)                 \
                                                                               \
   nonstatic_field(SATBMarkQueue,       _active,         bool)                 \
-  nonstatic_field(PtrQueue,            _buf,            void**)               \
-  nonstatic_field(PtrQueue,            _index,          size_t)
+  nonstatic_field(SATBMarkQueue,       _buf,            void**)               \
+  nonstatic_field(SATBMarkQueue,       _index,          size_t)
 
 #define VM_INT_CONSTANTS_G1GC(declare_constant, declare_constant_with_value)  \
   declare_constant(G1HeapRegionType::FreeTag)                                 \
@@ -82,8 +83,7 @@
   declare_constant(G1HeapRegionType::StartsHumongousTag)                      \
   declare_constant(G1HeapRegionType::ContinuesHumongousTag)                   \
   declare_constant(G1HeapRegionType::OldMask)                                 \
-  declare_constant(BarrierSet::G1BarrierSet)                                  \
-  declare_constant(G1CardTable::g1_young_gen)
+  declare_constant(BarrierSet::G1BarrierSet)
 
 #define VM_TYPES_G1GC(declare_type,                                           \
                       declare_toplevel_type,                                  \
@@ -97,10 +97,8 @@
   declare_toplevel_type(G1HeapRegionManager)                                  \
   declare_toplevel_type(G1HeapRegionSetBase)                                  \
   declare_toplevel_type(G1MonitoringSupport)                                  \
-  declare_toplevel_type(PtrQueue)                                             \
   declare_toplevel_type(G1HeapRegionType)                                     \
   declare_toplevel_type(SATBMarkQueue)                                        \
-  declare_toplevel_type(G1DirtyCardQueue)                                     \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
   declare_toplevel_type(G1HeapRegion*)                                        \

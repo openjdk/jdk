@@ -61,7 +61,13 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
         this.kind = kind;
     }
 
-    static HotSpotResolvedPrimitiveType forKind(JavaKind kind) {
+    /**
+     * Returns a primitive type instance corresponding to the given {@link JavaKind}.
+     *
+     * @param kind the Java kind of the primitive type
+     * @return the primitive type instance for the given Java kind
+     */
+    public static HotSpotResolvedPrimitiveType forKind(JavaKind kind) {
         HotSpotResolvedPrimitiveType primitive = primitives[kind.getBasicType()];
         assert primitive != null : kind;
         return primitive;
@@ -84,7 +90,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    HotSpotResolvedObjectTypeImpl getArrayType() {
+    protected HotSpotResolvedObjectType getArrayType() {
         if (kind == JavaKind.Void) {
             return null;
         }
@@ -292,8 +298,23 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public ResolvedJavaMethod[] getDeclaredConstructors(boolean forceLink) {
+        return new ResolvedJavaMethod[0];
+    }
+
+    @Override
+    public ResolvedJavaMethod[] getDeclaredMethods(boolean forceLink) {
+        return new ResolvedJavaMethod[0];
+    }
+
+    @Override
     public ResolvedJavaMethod[] getDeclaredMethods() {
         return new ResolvedJavaMethod[0];
+    }
+
+    @Override
+    public List<ResolvedJavaMethod> getAllMethods(boolean forceLink) {
+        return List.of();
     }
 
     @Override
@@ -316,18 +337,21 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    JavaConstant getJavaMirror() {
+    public JavaConstant getJavaMirror() {
         return mirror;
     }
 
     @Override
     public AnnotationData getAnnotationData(ResolvedJavaType type) {
+        checkIsAnnotation(type);
         return null;
     }
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        return Collections.emptyList();
+        checkIsAnnotation(type1);
+        checkIsAnnotation(type2);
+        checkAreAnnotations(types);
+        return List.of();
     }
-
 }

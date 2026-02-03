@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,54 +26,63 @@
 #define SHARE_GC_G1_G1CONCURRENTREFINESTATS_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
 
 // Collection of statistics for concurrent refinement processing.
 // Used for collecting per-thread statistics and for summaries over a
 // collection of threads.
 class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
-  Tickspan _refinement_time;
-  size_t _refined_cards;
-  size_t _precleaned_cards;
-  size_t _dirtied_cards;
+  Atomic<jlong> _sweep_duration;              // Time spent sweeping the table finding non-clean cards
+                                              // and refining them.
+  Atomic<jlong> _yield_during_sweep_duration; // Time spent yielding during the sweep (not doing the sweep).
+
+  Atomic<size_t> _cards_scanned;              // Total number of cards scanned.
+  Atomic<size_t> _cards_clean;                // Number of cards found clean.
+  Atomic<size_t> _cards_not_parsable;         // Number of cards we could not parse and left unrefined.
+  Atomic<size_t> _cards_already_refer_to_cset;// Number of cards marked found to be already young.
+  Atomic<size_t> _cards_refer_to_cset;        // Number of dirty cards that were recently found to contain a to-cset reference.
+  Atomic<size_t> _cards_no_cross_region;      // Number of dirty cards that were dirtied, but then cleaned again by the mutator.
+
+  Atomic<jlong> _refine_duration;             // Time spent during actual refinement.
 
 public:
   G1ConcurrentRefineStats();
 
-  // Time spent performing concurrent refinement.
-  Tickspan refinement_time() const { return _refinement_time; }
+  // Time spent performing sweeping the refinement table (includes actual refinement,
+  // but not yield time).
+  inline jlong sweep_duration() const;
+  inline jlong yield_during_sweep_duration() const;
+  inline jlong refine_duration() const;
 
   // Number of refined cards.
-  size_t refined_cards() const { return _refined_cards; }
+  inline size_t refined_cards() const;
 
-  // Refinement rate, in cards per ms.
-  double refinement_rate_ms() const;
+  inline size_t cards_scanned() const;
+  inline size_t cards_clean() const;
+  inline size_t cards_not_clean() const;
+  inline size_t cards_not_parsable() const;
+  inline size_t cards_already_refer_to_cset() const;
+  inline size_t cards_refer_to_cset() const;
+  inline size_t cards_no_cross_region() const;
+  // Number of cards that were marked dirty and in need of refinement. This includes cards recently
+  // found to refer to the collection set as they originally were dirty.
+  inline size_t cards_pending() const;
 
-  // Number of cards for which refinement was skipped because some other
-  // thread had already refined them.
-  size_t precleaned_cards() const { return _precleaned_cards; }
+  inline size_t cards_to_cset() const;
 
-  // Number of cards marked dirty and in need of refinement.
-  size_t dirtied_cards() const { return _dirtied_cards; }
+  inline void inc_sweep_time(jlong t);
+  inline void inc_yield_during_sweep_duration(jlong t);
+  inline void inc_refine_duration(jlong t);
 
-  void inc_refinement_time(Tickspan t) { _refinement_time += t; }
-  void inc_refined_cards(size_t cards) { _refined_cards += cards; }
-  void inc_precleaned_cards(size_t cards) { _precleaned_cards += cards; }
-  void inc_dirtied_cards(size_t cards) { _dirtied_cards += cards; }
+  inline void inc_cards_scanned(size_t increment);
+  inline void inc_cards_clean(size_t increment);
+  inline void inc_cards_not_parsable();
+  inline void inc_cards_already_refer_to_cset();
+  inline void inc_cards_refer_to_cset();
+  inline void inc_cards_no_cross_region();
 
-  G1ConcurrentRefineStats& operator+=(const G1ConcurrentRefineStats& other);
-  G1ConcurrentRefineStats& operator-=(const G1ConcurrentRefineStats& other);
-
-  friend G1ConcurrentRefineStats operator+(G1ConcurrentRefineStats x,
-                                           const G1ConcurrentRefineStats& y) {
-    return x += y;
-  }
-
-  friend G1ConcurrentRefineStats operator-(G1ConcurrentRefineStats x,
-                                           const G1ConcurrentRefineStats& y) {
-    return x -= y;
-  }
+  void add_atomic(G1ConcurrentRefineStats* other);
 
   void reset();
 };

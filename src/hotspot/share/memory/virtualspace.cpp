@@ -424,7 +424,7 @@ void VirtualSpace::check_for_contiguity() {
 void VirtualSpace::print_on(outputStream* out) const {
   out->print_cr("Virtual space:%s", special() ? " (pinned in memory)" : "");
 
-  StreamAutoIndentor indentor(out, 1);
+  StreamIndentor si(out, 1);
   out->print_cr("- committed: %zu", committed_size());
   out->print_cr("- reserved:  %zu", reserved_size());
   out->print_cr("- [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));

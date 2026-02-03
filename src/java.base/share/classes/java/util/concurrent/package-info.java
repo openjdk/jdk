@@ -222,7 +222,9 @@
  * <li>they are guaranteed to traverse elements as they existed upon
  * construction exactly once, and may (but are not guaranteed to)
  * reflect any modifications subsequent to construction.
- * </ul>
+ * <li> These properties extend to other iteration-based
+ * operations. In particular, {@link Object#equals} is almost never
+ * useful unless both collections are known to be quiescent.  </ul>
  *
  * <h2 id="MemoryVisibility">Memory Consistency Properties</h2>
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,6 +54,7 @@ class CallDynamicJavaNode;
 class CallJavaNode;
 class CallLeafNode;
 class CallLeafNoFPNode;
+class CallLeafPureNode;
 class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
@@ -129,10 +130,12 @@ class MemBarNode;
 class MemBarStoreStoreNode;
 class MemNode;
 class MergeMemNode;
+class MinMaxNode;
 class MoveNode;
 class MulNode;
 class MultiNode;
 class MultiBranchNode;
+class NarrowMemProjNode;
 class NegNode;
 class NegVNode;
 class NeverBranchNode;
@@ -221,7 +224,7 @@ typedef Node** DUIterator_Fast;
 typedef Node** DUIterator_Last;
 #endif
 
-typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
+typedef ResizeableHashTable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
 
 // Node Sentinel
 #define NodeSentinel (Node*)-1
@@ -421,6 +424,13 @@ public:
   Node* raw_out(uint i) const { assert(i < _outcnt,"oob"); return _out[i]; }
   // Return the unique out edge.
   Node* unique_out() const { assert(_outcnt==1,"not unique"); return _out[0]; }
+
+  // In some cases, a node n is only used by a single use, but the use may use
+  // n once or multiple times:
+  //   use = ConvF2I(this)
+  //   use = AddI(this, this)
+  Node* unique_multiple_edges_out_or_null() const;
+
   // Delete out edge at position 'i' by moving last out edge to position 'i'
   void  raw_del_out(uint i) {
     assert(i < _outcnt,"oob");
@@ -673,6 +683,7 @@ public:
           DEFINE_CLASS_ID(CallRuntime,      Call, 1)
             DEFINE_CLASS_ID(CallLeaf,         CallRuntime, 0)
               DEFINE_CLASS_ID(CallLeafNoFP,     CallLeaf, 0)
+              DEFINE_CLASS_ID(CallLeafPure,     CallLeaf, 1)
           DEFINE_CLASS_ID(Allocate,         Call, 2)
             DEFINE_CLASS_ID(AllocateArray,    Allocate, 0)
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
@@ -762,6 +773,7 @@ public:
         DEFINE_CLASS_ID(IfFalse,   IfProj, 1)
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
+      DEFINE_CLASS_ID(NarrowMemProj, Proj, 6)
 
     DEFINE_CLASS_ID(Mem, Node, 4)
       DEFINE_CLASS_ID(Load, Mem, 0)
@@ -798,6 +810,7 @@ public:
     DEFINE_CLASS_ID(AddP,     Node, 9)
     DEFINE_CLASS_ID(BoxLock,  Node, 10)
     DEFINE_CLASS_ID(Add,      Node, 11)
+      DEFINE_CLASS_ID(MinMax,      Add, 0)
     DEFINE_CLASS_ID(Mul,      Node, 12)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
@@ -817,26 +830,27 @@ public:
   #undef DEFINE_CLASS_ID
 
   // Flags are sorted by usage frequency.
-  enum NodeFlags {
-    Flag_is_Copy                     = 1 << 0, // should be first bit to avoid shift
-    Flag_rematerialize               = 1 << 1,
-    Flag_needs_anti_dependence_check = 1 << 2,
-    Flag_is_macro                    = 1 << 3,
-    Flag_is_Con                      = 1 << 4,
-    Flag_is_cisc_alternate           = 1 << 5,
-    Flag_is_dead_loop_safe           = 1 << 6,
-    Flag_may_be_short_branch         = 1 << 7,
-    Flag_avoid_back_to_back_before   = 1 << 8,
-    Flag_avoid_back_to_back_after    = 1 << 9,
-    Flag_has_call                    = 1 << 10,
-    Flag_has_swapped_edges           = 1 << 11,
-    Flag_is_scheduled                = 1 << 12,
-    Flag_is_expensive                = 1 << 13,
-    Flag_is_predicated_vector        = 1 << 14,
-    Flag_for_post_loop_opts_igvn     = 1 << 15,
-    Flag_for_merge_stores_igvn       = 1 << 16,
-    Flag_is_removed_by_peephole      = 1 << 17,
-    Flag_is_predicated_using_blend   = 1 << 18,
+  enum NodeFlags : uint64_t {
+    Flag_is_Copy                     = 1ULL << 0, // should be first bit to avoid shift
+    Flag_rematerialize               = 1ULL << 1,
+    Flag_needs_anti_dependence_check = 1ULL << 2,
+    Flag_is_macro                    = 1ULL << 3,
+    Flag_is_Con                      = 1ULL << 4,
+    Flag_is_cisc_alternate           = 1ULL << 5,
+    Flag_is_dead_loop_safe           = 1ULL << 6,
+    Flag_may_be_short_branch         = 1ULL << 7,
+    Flag_avoid_back_to_back_before   = 1ULL << 8,
+    Flag_avoid_back_to_back_after    = 1ULL << 9,
+    Flag_has_call                    = 1ULL << 10,
+    Flag_has_swapped_edges           = 1ULL << 11,
+    Flag_is_scheduled                = 1ULL << 12,
+    Flag_is_expensive                = 1ULL << 13,
+    Flag_is_predicated_vector        = 1ULL << 14, // Marked on a vector node that has an additional
+                                                   // mask input controlling the lane operations.
+    Flag_for_post_loop_opts_igvn     = 1ULL << 15,
+    Flag_for_merge_stores_igvn       = 1ULL << 16,
+    Flag_is_removed_by_peephole      = 1ULL << 17,
+    Flag_is_predicated_using_blend   = 1ULL << 18,
     _last_flag                       = Flag_is_predicated_using_blend
   };
 
@@ -907,6 +921,7 @@ public:
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
   DEFINE_CLASS_QUERY(CallLeafNoFP)
+  DEFINE_CLASS_QUERY(CallLeafPure)
   DEFINE_CLASS_QUERY(CallRuntime)
   DEFINE_CLASS_QUERY(CallStaticJava)
   DEFINE_CLASS_QUERY(Catch)
@@ -974,11 +989,13 @@ public:
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MemBarStoreStore)
   DEFINE_CLASS_QUERY(MergeMem)
+  DEFINE_CLASS_QUERY(MinMax)
   DEFINE_CLASS_QUERY(Move)
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
   DEFINE_CLASS_QUERY(MulVL)
+  DEFINE_CLASS_QUERY(NarrowMemProj)
   DEFINE_CLASS_QUERY(Neg)
   DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
@@ -1166,6 +1183,7 @@ public:
   // Return a node with opcode "opc" and same inputs as "this" if one can
   // be found; Otherwise return null;
   Node* find_similar(int opc);
+  bool has_same_inputs_as(const Node* other) const;
 
   // Return the unique control out if only one. Null if none or more than one.
   Node* unique_ctrl_out_or_null() const;
@@ -1289,8 +1307,6 @@ public:
 
   bool is_div_or_mod(BasicType bt) const;
 
-  bool is_pure_function() const;
-
   bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
 
 //----------------- Printing, etc
@@ -1298,9 +1314,10 @@ public:
  public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const;
+  void dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st, const frame* fr = nullptr) const;
   void dump_bfs(const int max_distance, Node* target, const char* options) const; // directly to tty
   void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
+  void dump_bfs(const int max_distance, Node* target, const char* options, void* sp, void* fp, void* pc) const;
   class DumpConfig {
    public:
     // overridden to implement coloring of node idx
@@ -1632,6 +1649,7 @@ protected:
 
   // Grow array to required capacity
   void maybe_grow(uint i) {
+    _nesting.check(_a); // Check if a potential reallocation in the arena is safe
     if (i >= _max) {
       grow(i);
     }
@@ -1883,7 +1901,15 @@ protected:
   INode *_inodes;    // Array storage for the stack
   Arena *_a;         // Arena to allocate in
   ReallocMark _nesting; // Safety checks for arena reallocation
+
+  void maybe_grow() {
+    _nesting.check(_a); // Check if a potential reallocation in the arena is safe
+    if (_inode_top >= _inode_max) {
+      grow();
+    }
+  }
   void grow();
+
 public:
   Node_Stack(int size) {
     size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
@@ -1906,7 +1932,7 @@ public:
   }
   void push(Node *n, uint i) {
     ++_inode_top;
-    grow();
+    maybe_grow();
     INode *top = _inode_top; // optimization
     top->node = n;
     top->indx = i;
@@ -2075,6 +2101,7 @@ Op_IL(Sub)
 Op_IL(Mul)
 Op_IL(URShift)
 Op_IL(LShift)
+Op_IL(RShift)
 Op_IL(Xor)
 Op_IL(Cmp)
 Op_IL(Div)
@@ -2154,7 +2181,10 @@ class BFSActions : public StackObj {
   virtual bool is_target_node(Node* node) const = 0;
 
   // Defines an action that should be taken when we visit a target node in the BFS traversal.
-  virtual void target_node_action(Node* target_node) = 0;
+  // To give more freedom, we pass the direct child node to the target node such that
+  // child->in(i) == target node. This allows to also directly replace the target node instead
+  // of only updating its inputs.
+  virtual void target_node_action(Node* child, uint i) = 0;
 };
 
 // Class to perform a BFS traversal on the data nodes from a given start node. The provided BFSActions guide which
@@ -2176,7 +2206,7 @@ class DataNodeBFS : public StackObj {
         Node* input = next->in(j);
         if (_bfs_actions.is_target_node(input)) {
           assert(_bfs_actions.should_visit(input), "must also pass node filter");
-          _bfs_actions.target_node_action(input);
+          _bfs_actions.target_node_action(next, j);
         } else if (_bfs_actions.should_visit(input)) {
           _nodes_to_visit.push(input);
         }

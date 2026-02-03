@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -793,6 +793,22 @@ void MacroAssembler::push_d(XMMRegister r) {
 void MacroAssembler::pop_d(XMMRegister r) {
   movdbl(r, Address(rsp, 0));
   addptr(rsp, 2 * Interpreter::stackElementSize);
+}
+
+void MacroAssembler::push_ppx(Register src) {
+  if (VM_Version::supports_apx_f()) {
+    pushp(src);
+  } else {
+    Assembler::push(src);
+  }
+}
+
+void MacroAssembler::pop_ppx(Register dst) {
+  if (VM_Version::supports_apx_f()) {
+    popp(dst);
+  } else {
+    Assembler::pop(dst);
+  }
 }
 
 void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
@@ -1621,19 +1637,6 @@ void MacroAssembler::post_call_nop() {
   emit_int32(0x00);
 }
 
-// A 5 byte nop that is safe for patching (see patch_verified_entry)
-void MacroAssembler::fat_nop() {
-  if (UseAddressNop) {
-    addr_nop_5();
-  } else {
-    emit_int8((uint8_t)0x26); // es:
-    emit_int8((uint8_t)0x2e); // cs:
-    emit_int8((uint8_t)0x64); // fs:
-    emit_int8((uint8_t)0x65); // gs:
-    emit_int8((uint8_t)0x90);
-  }
-}
-
 void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
   if (reachable(src)) {
@@ -2250,6 +2253,16 @@ void MacroAssembler::evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_l
   }
 }
 
+void MacroAssembler::movapd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::movapd(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::movapd(dst, Address(rscratch, 0));
+  }
+}
 
 void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
@@ -2416,14 +2429,6 @@ void MacroAssembler::pop_cont_fastpath() {
   jccb(Assembler::below, L_done);
   movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
   bind(L_done);
-}
-
-void MacroAssembler::inc_held_monitor_count() {
-  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-}
-
-void MacroAssembler::dec_held_monitor_count() {
-  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 }
 
 #ifdef ASSERT
@@ -2884,7 +2889,8 @@ void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vecto
 // vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
 void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
   // WARN: Allow dst == (src1|src2), mask == scratch
-  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1 &&
+                         !(VM_Version::is_intel_darkmont() && (dst == src1)); // partially fixed on Darkmont
   bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst;
   bool dst_available = dst != mask && (dst != src1 || dst != src2);
   if (blend_emulation && scratch_available && dst_available) {
@@ -2908,7 +2914,8 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
 // vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
 void MacroAssembler::vblendvpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
   // WARN: Allow dst == (src1|src2), mask == scratch
-  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1 &&
+                         !(VM_Version::is_intel_darkmont() && (dst == src1)); // partially fixed on Darkmont
   bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst && (!compute_mask || scratch != mask);
   bool dst_available = dst != mask && (dst != src1 || dst != src2);
   if (blend_emulation && scratch_available && dst_available) {
@@ -4742,6 +4749,203 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
+  assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+  // Scale down to optimize encoding. Slots are pointer-sized.
+  assert(is_aligned(base_receiver_offset,   BytesPerWord), "sanity");
+  assert(is_aligned(end_receiver_offset,    BytesPerWord), "sanity");
+  assert(is_aligned(poly_count_offset,      BytesPerWord), "sanity");
+  assert(is_aligned(receiver_step,          BytesPerWord), "sanity");
+  assert(is_aligned(receiver_to_count_step, BytesPerWord), "sanity");
+  base_receiver_offset   >>= LogBytesPerWord;
+  end_receiver_offset    >>= LogBytesPerWord;
+  poly_count_offset      >>= LogBytesPerWord;
+  receiver_step          >>= LogBytesPerWord;
+  receiver_to_count_step >>= LogBytesPerWord;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert((offset << LogBytesPerWord) == real_recv_offset, "receiver slot math");
+    assert((count_offset << LogBytesPerWord) == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset << LogBytesPerWord == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    addptr(Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
+    return;
+  }
+
+  Register offset = rscratch1;
+
+  Label L_loop_search_receiver, L_loop_search_empty;
+  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  movptr(offset, base_receiver_offset);
+  bind(L_loop_search_receiver);
+    cmpptr(recv, Address(mdp, offset, Address::times_ptr));
+    jccb(Assembler::equal, L_found_recv);
+  addptr(offset, receiver_step);
+  cmpptr(offset, end_receiver_offset);
+  jccb(Assembler::notEqual, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is full
+  movptr(offset, base_receiver_offset);
+  bind(L_loop_search_empty);
+    cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
+    jccb(Assembler::equal, L_found_empty);
+  addptr(offset, receiver_step);
+  cmpptr(offset, end_receiver_offset);
+  jccb(Assembler::notEqual, L_loop_search_empty);
+  jmpb(L_polymorphic);
+
+  // Slow: try to install receiver
+  bind(L_found_empty);
+
+  // Atomically swing receiver slot: null -> recv.
+  //
+  // The update code uses CAS, which wants RAX register specifically, *and* it needs
+  // other important registers untouched, as they form the address. Therefore, we need
+  // to shift any important registers from RAX into some other spare register. If we
+  // have a spare register, we are forced to save it on stack here.
+
+  Register spare_reg = noreg;
+  Register shifted_mdp = mdp;
+  Register shifted_recv = recv;
+  if (recv == rax || mdp == rax) {
+    spare_reg = (recv != rbx && mdp != rbx) ? rbx :
+                (recv != rcx && mdp != rcx) ? rcx :
+                rdx;
+    assert_different_registers(mdp, recv, offset, spare_reg);
+
+    push(spare_reg);
+    if (recv == rax) {
+      movptr(spare_reg, recv);
+      shifted_recv = spare_reg;
+    } else {
+      assert(mdp == rax, "Remaining case");
+      movptr(spare_reg, mdp);
+      shifted_mdp = spare_reg;
+    }
+  } else {
+    push(rax);
+  }
+
+  // None of the important registers are in RAX after this shuffle.
+  assert_different_registers(rax, shifted_mdp, shifted_recv, offset);
+
+  xorptr(rax, rax);
+  cmpxchgptr(shifted_recv, Address(shifted_mdp, offset, Address::times_ptr));
+
+  // Unshift registers.
+  if (recv == rax || mdp == rax) {
+    movptr(rax, spare_reg);
+    pop(spare_reg);
+  } else {
+    pop(rax);
+  }
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  jmpb(L_restart);
+
+  // Counter updates:
+
+  // Increment polymorphic counter instead of receiver slot.
+  bind(L_polymorphic);
+  movptr(offset, poly_count_offset);
+  jmpb(L_count_update);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  addptr(offset, receiver_to_count_step);
+
+  bind(L_count_update);
+  addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
+}
+
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
@@ -5402,20 +5606,27 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
+  BLOCK_COMMENT("encode_klass_not_null {");
   assert_different_registers(r, tmp);
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    if (AOTCodeCache::is_on_for_dump()) {
+      movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    } else {
+      movptr(tmp, (intptr_t)CompressedKlassPointers::base());
+    }
     subq(r, tmp);
   }
   if (CompressedKlassPointers::shift() != 0) {
     shrq(r, CompressedKlassPointers::shift());
   }
+  BLOCK_COMMENT("} encode_klass_not_null");
 }
 
 void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) {
+  BLOCK_COMMENT("encode_and_move_klass_not_null {");
   assert_different_registers(src, dst);
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(dst, -(int64_t)CompressedKlassPointers::base());
+    movptr(dst, -(intptr_t)CompressedKlassPointers::base());
     addq(dst, src);
   } else {
     movptr(dst, src);
@@ -5423,9 +5634,11 @@ void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) 
   if (CompressedKlassPointers::shift() != 0) {
     shrq(dst, CompressedKlassPointers::shift());
   }
+  BLOCK_COMMENT("} encode_and_move_klass_not_null");
 }
 
 void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
+  BLOCK_COMMENT("decode_klass_not_null {");
   assert_different_registers(r, tmp);
   // Note: it will change flags
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
@@ -5436,12 +5649,18 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
     shlq(r, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    if (AOTCodeCache::is_on_for_dump()) {
+      movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    } else {
+      movptr(tmp, (intptr_t)CompressedKlassPointers::base());
+    }
     addq(r, tmp);
   }
+  BLOCK_COMMENT("} decode_klass_not_null");
 }
 
 void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src) {
+  BLOCK_COMMENT("decode_and_move_klass_not_null {");
   assert_different_registers(src, dst);
   // Note: it will change flags
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
@@ -5457,7 +5676,7 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
   } else {
     if (CompressedKlassPointers::shift() <= Address::times_8) {
       if (CompressedKlassPointers::base() != nullptr) {
-        mov64(dst, (int64_t)CompressedKlassPointers::base());
+        movptr(dst, (intptr_t)CompressedKlassPointers::base());
       } else {
         xorq(dst, dst);
       }
@@ -5469,9 +5688,9 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
       }
     } else {
       if (CompressedKlassPointers::base() != nullptr) {
-        const uint64_t base_right_shifted =
-            (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
-        mov64(dst, base_right_shifted);
+        const intptr_t base_right_shifted =
+            (intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+        movptr(dst, base_right_shifted);
       } else {
         xorq(dst, dst);
       }
@@ -5479,6 +5698,7 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
       shlq(dst, CompressedKlassPointers::shift());
     }
   }
+  BLOCK_COMMENT("} decode_and_move_klass_not_null");
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
@@ -5816,7 +6036,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     orl(value, rtmp);
   }
 
-  cmpptr(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
+  cmpptr(count, 8 << shift); // Short arrays (< 32 bytes) fill by element
   jcc(Assembler::below, L_fill_4_bytes); // use unsigned cmp
   if (!UseUnalignedLoadStores && !aligned && (t == T_BYTE || t == T_SHORT)) {
     Label L_skip_align2;
@@ -5866,7 +6086,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
           vpbroadcastd(xtmp, xtmp, Assembler::AVX_512bit);
 
           subptr(count, 16 << shift);
-          jccb(Assembler::less, L_check_fill_32_bytes);
+          jcc(Assembler::less, L_check_fill_32_bytes);
           align(16);
 
           BIND(L_fill_64_bytes_loop_avx3);
@@ -5879,13 +6099,36 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
           BIND(L_check_fill_64_bytes_avx2);
         }
         // Fill 64-byte chunks
-        Label L_fill_64_bytes_loop;
         vpbroadcastd(xtmp, xtmp, Assembler::AVX_256bit);
 
         subptr(count, 16 << shift);
         jcc(Assembler::less, L_check_fill_32_bytes);
-        align(16);
 
+        // align data for 64-byte chunks
+        Label L_fill_64_bytes_loop, L_align_64_bytes_loop;
+        if (EnableX86ECoreOpts) {
+            // align 'big' arrays to cache lines to minimize split_stores
+            cmpptr(count, 96 << shift);
+            jcc(Assembler::below, L_fill_64_bytes_loop);
+
+            // Find the bytes needed for alignment
+            movptr(rtmp, to);
+            andptr(rtmp, 0x1c);
+            jcc(Assembler::zero, L_fill_64_bytes_loop);
+            negptr(rtmp);           // number of bytes to fill 32-rtmp. it filled by 2 mov by 32
+            addptr(rtmp, 32);
+            shrptr(rtmp, 2 - shift);// get number of elements from bytes
+            subptr(count, rtmp);    // adjust count by number of elements
+
+            align(16);
+            BIND(L_align_64_bytes_loop);
+            movdl(Address(to, 0), xtmp);
+            addptr(to, 4);
+            subptr(rtmp, 1 << shift);
+            jcc(Assembler::greater, L_align_64_bytes_loop);
+        }
+
+        align(16);
         BIND(L_fill_64_bytes_loop);
         vmovdqu(Address(to, 0), xtmp);
         vmovdqu(Address(to, 32), xtmp);
@@ -5893,6 +6136,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
         subptr(count, 16 << shift);
         jcc(Assembler::greaterEqual, L_fill_64_bytes_loop);
 
+        align(16);
         BIND(L_check_fill_32_bytes);
         addptr(count, 8 << shift);
         jccb(Assembler::less, L_check_fill_8_bytes);
@@ -5937,6 +6181,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
       //
       // length is too short, just fill qwords
       //
+      align(16);
       BIND(L_fill_8_bytes_loop);
       movq(Address(to, 0), xtmp);
       addptr(to, 8);
@@ -5945,14 +6190,22 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
       jcc(Assembler::greaterEqual, L_fill_8_bytes_loop);
     }
   }
-  // fill trailing 4 bytes
-  BIND(L_fill_4_bytes);
-  testl(count, 1<<shift);
+
+  Label L_fill_4_bytes_loop;
+  testl(count, 1 << shift);
   jccb(Assembler::zero, L_fill_2_bytes);
+
+  align(16);
+  BIND(L_fill_4_bytes_loop);
   movl(Address(to, 0), value);
+  addptr(to, 4);
+
+  BIND(L_fill_4_bytes);
+  subptr(count, 1 << shift);
+  jccb(Assembler::greaterEqual, L_fill_4_bytes_loop);
+
   if (t == T_BYTE || t == T_SHORT) {
     Label L_fill_byte;
-    addptr(to, 4);
     BIND(L_fill_2_bytes);
     // fill trailing 2 bytes
     testl(count, 1<<(shift-1));
@@ -8828,6 +9081,10 @@ void MacroAssembler::evpmins(BasicType type, XMMRegister dst, KRegister mask, XM
       evpminsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpminsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxpd(dst, mask, nds, src, merge, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -8843,6 +9100,10 @@ void MacroAssembler::evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XM
       evpmaxsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpmaxsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxpd(dst, mask, nds, src, merge, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -8858,6 +9119,10 @@ void MacroAssembler::evpmins(BasicType type, XMMRegister dst, KRegister mask, XM
       evpminsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpminsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxpd(dst, mask, nds, src, merge, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -8873,6 +9138,10 @@ void MacroAssembler::evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XM
       evpmaxsd(dst, mask, nds, src, merge, vector_len); break;
     case T_LONG:
       evpmaxsq(dst, mask, nds, src, merge, vector_len); break;
+    case T_FLOAT:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
+    case T_DOUBLE:
+      evminmaxps(dst, mask, nds, src, merge, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -9567,13 +9836,13 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
-// Implements lightweight-locking.
+// Implements fast-locking.
 //
 // obj: the object to be locked
 // reg_rax: rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow) {
+void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow) {
   Register thread = r15_thread;
 
   assert(reg_rax == rax, "");
@@ -9629,13 +9898,13 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   movl(Address(thread, JavaThread::lock_stack_top_offset()), top);
 }
 
-// Implements lightweight-unlocking.
+// Implements fast-unlocking.
 //
 // obj: the object to be unlocked
 // reg_rax: rax
 // thread: the thread
 // tmp: a temporary register
-void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register tmp, Label& slow) {
+void MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register tmp, Label& slow) {
   Register thread = r15_thread;
 
   assert(reg_rax == rax, "");
@@ -9667,7 +9936,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
   Label not_unlocked;
   testptr(reg_rax, markWord::unlocked_value);
   jcc(Assembler::zero, not_unlocked);
-  stop("lightweight_unlock already unlocked");
+  stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif
 

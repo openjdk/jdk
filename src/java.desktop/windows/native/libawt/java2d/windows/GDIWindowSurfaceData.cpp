@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,9 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         info = new ThreadGraphicsInfo;
         ZeroMemory(info, sizeof(ThreadGraphicsInfo));
         TlsSetValue(threadInfoIndex, (LPVOID)info);
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "  current batch limit for thread 0x%x is %d",
-                     GetCurrentThreadId(), ::GdiGetBatchLimit());
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  current batch limit for thread 0x%x is %d",
+                   GetCurrentThreadId(), ::GdiGetBatchLimit());
         J2dTraceLn(J2D_TRACE_VERBOSE, "  setting to the limit to 1");
         // Fix for bug 4374079
         ::GdiSetBatchLimit(1);
@@ -403,8 +403,8 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initOps(JNIEnv *env, jobject wsd,
     // GDIWindowSurfaceData_GetWindow will throw NullPointerException
     // if wsdo->window is NULL
     wsdo->window = GDIWindowSurfaceData_GetWindow(env, wsdo);
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  wsdo=0x%x wsdo->window=0x%x",
-                wsdo, wsdo->window);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  wsdo=0x%x wsdo->window=0x%x",
+               wsdo, wsdo->window);
 
     {
         Devices::InstanceAccess devices;
@@ -414,15 +414,15 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initOps(JNIEnv *env, jobject wsd,
         !SurfaceDepthsCompatible(depth, wsdo->device->GetBitDepth()))
     {
         if (wsdo->device != NULL) {
-            J2dTraceLn2(J2D_TRACE_WARNING,
-                        "GDIWindowSurfaceData_initOps: Surface depth mismatch: "\
-                        "wsdo->depth=%d device depth=%d. Surface invalidated.",
-                        wsdo->depth, wsdo->device->GetBitDepth());
+            J2dTraceLn(J2D_TRACE_WARNING,
+                       "GDIWindowSurfaceData_initOps: Surface depth mismatch: "\
+                       "wsdo->depth=%d device depth=%d. Surface invalidated.",
+                       wsdo->depth, wsdo->device->GetBitDepth());
         } else {
-            J2dTraceLn1(J2D_TRACE_WARNING,
-                        "GDIWindowSurfaceData_initOps: Incorrect "\
-                        "screen number (screen=%d). Surface invalidated.",
-                        screen);
+            J2dTraceLn(J2D_TRACE_WARNING,
+                       "GDIWindowSurfaceData_initOps: Incorrect "\
+                       "screen number (screen=%d). Surface invalidated.",
+                       screen);
         }
 
         wsdo->invalid = JNI_TRUE;
@@ -461,9 +461,9 @@ GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo)
     jobject localObj = env->NewLocalRef(wsdo->peer);
 
     if (localObj == NULL || (pData = JNI_GET_PDATA(localObj)) == NULL) {
-        J2dTraceLn1(J2D_TRACE_WARNING,
-                    "GDIWindowSurfaceData_GetComp: Null pData? pData=0x%x",
-                    pData);
+        J2dTraceLn(J2D_TRACE_WARNING,
+                   "GDIWindowSurfaceData_GetComp: Null pData? pData=0x%x",
+                   pData);
         if (beingShutdown == JNI_TRUE) {
             wsdo->invalid = JNI_TRUE;
             return (AwtComponent *) NULL;
@@ -1057,8 +1057,8 @@ static void GDIWinSD_ReleaseDC(JNIEnv *env, GDIWinSDOps *wsdo, HDC hDC)
 static void GDIWinSD_InvalidateSD(JNIEnv *env, GDIWinSDOps *wsdo)
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIWinSD_InvalidateSD");
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  wsdo=0x%x wsdo->window=0x%x",
-                wsdo, wsdo->window);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  wsdo=0x%x wsdo->window=0x%x",
+               wsdo, wsdo->window);
 
     wsdo->invalid = JNI_TRUE;
 }

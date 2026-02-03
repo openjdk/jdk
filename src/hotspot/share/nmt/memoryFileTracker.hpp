@@ -31,6 +31,7 @@
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/os.inline.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
@@ -91,7 +92,7 @@ public:
   const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
 
   class Instance : public AllStatic {
-    static MemoryFileTracker* _tracker;
+    static DeferredStatic<MemoryFileTracker> _tracker;
 
   public:
 

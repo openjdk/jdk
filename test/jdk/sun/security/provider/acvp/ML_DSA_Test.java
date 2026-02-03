@@ -23,11 +23,13 @@
 import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
 import jdk.test.lib.security.FixedSecureRandom;
+import sun.security.provider.ML_DSA_Impls;
+import sun.security.util.DerOutputStream;
+import sun.security.util.SignatureParameterSpec;
 
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
-import sun.security.util.SignatureParameterSpec;
 import java.util.HashSet;
 
 import static jdk.test.lib.Utils.toByteArray;
@@ -69,12 +71,13 @@ public class ML_DSA_Test {
             System.out.println(">> " + pname);
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
-                g.initialize(np, new FixedSecureRandom(toByteArray(c.get("seed").asString())));
+                var seed = toByteArray(c.get("seed").asString());
+                g.initialize(np, new FixedSecureRandom(seed));
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
-                var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
                 Asserts.assertEqualsByteArray(toByteArray(c.get("pk").asString()), pk);
-                Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()), sk);
+                Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()),
+                        ML_DSA_Impls.seedToExpanded(pname, seed));
             }
             System.out.println();
         }
@@ -112,16 +115,16 @@ public class ML_DSA_Test {
                 features.add("externalMu");
             }
             for (var c : t.get("tests").asArray()) {
-                System.out.print(Integer.parseInt(c.get("tcId").asString()) + " ");
                 var cstr = c.get("context");
                 var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
                 var hashAlg = c.get("hashAlg").asString();
                 var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
+                System.out.print(Integer.parseInt(c.get("tcId").asString()) + " ");
                 var sps = new SignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
                 var sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return toByteArray(c.get("sk").asString()); }
+                    public byte[] getEncoded() { return oct(toByteArray(c.get("sk").asString())); }
                 };
                 var sr = sps.hasFeature("deterministic")
                         ? null
@@ -134,6 +137,10 @@ public class ML_DSA_Test {
             }
             System.out.println();
         }
+    }
+
+    static byte[] oct(byte[] in) {
+        return new DerOutputStream().putOctetString(in).toByteArray();
     }
 
     static void sigVerTest(JSONValue kat, Provider p) throws Exception {

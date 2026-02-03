@@ -124,10 +124,19 @@ public final class System {
      *
      * @apiNote
      * The typical approach to read character data is to wrap {@code System.in}
-     * within an {@link java.io.InputStreamReader InputStreamReader} or other object
-     * that handles character encoding. After this is done, subsequent reading should
-     * use only the wrapper object; operating directly on {@code System.in} results
-     * in unspecified behavior.
+     * within the object that handles character encoding. After this is done,
+     * subsequent reading should use only the wrapper object; continuing to
+     * operate directly on {@code System.in} results in unspecified behavior.
+     * <p>
+     * Here are two common examples. Using an {@link java.io.InputStreamReader
+     * InputStreamReader}:
+     * {@snippet lang=java :
+     *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+     * }
+     * Or using a {@link java.util.Scanner Scanner}:
+     * {@snippet lang=java :
+     *     new Scanner(System.in, System.getProperty("stdin.encoding"));
+     * }
      * <p>
      * For handling interactive input, consider using {@link Console}.
      *
@@ -229,10 +238,11 @@ public final class System {
     private static volatile Console cons;
 
     /**
-     * Returns the unique {@link java.io.Console Console} object associated
+     * Returns the unique {@link Console Console} object associated
      * with the current Java virtual machine, if any.
      *
      * @return  The system console, if any, otherwise {@code null}.
+     * @see Console
      *
      * @since   1.6
      */
@@ -2013,6 +2023,9 @@ public final class System {
             public byte[] getRawExecutableTypeAnnotations(Executable executable) {
                 return Class.getExecutableTypeAnnotationBytes(executable);
             }
+            public int getClassFileAccessFlags(Class<?> klass) {
+                return klass.getClassFileAccessFlags();
+            }
             public <E extends Enum<E>>
             E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
@@ -2084,17 +2097,32 @@ public final class System {
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
             }
-            public Module addEnableNativeAccess(Module m) {
-                return m.implAddEnableNativeAccess();
+            public void addEnableNativeAccess(Module m) {
+                m.implAddEnableNativeAccess();
             }
             public boolean addEnableNativeAccess(ModuleLayer layer, String name) {
                 return layer.addEnableNativeAccess(name);
             }
             public void addEnableNativeAccessToAllUnnamed() {
-                Module.implAddEnableNativeAccessToAllUnnamed();
+                Module.addEnableNativeAccessToAllUnnamed();
             }
             public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
                 m.ensureNativeAccess(owner, methodName, currentClass, jni);
+            }
+            public boolean isStaticallyExported(Module m, String pn, Module other) {
+                return m.isStaticallyExported(pn, other);
+            }
+            public boolean isStaticallyOpened(Module m, String pn, Module other) {
+                return m.isStaticallyOpened(pn, other);
+            }
+            public boolean isFinalMutationEnabled(Module m) {
+                return m.isFinalMutationEnabled();
+            }
+            public boolean tryEnableFinalMutation(Module m) {
+                return m.tryEnableFinalMutation();
+            }
+            public void addEnableFinalMutationToAllUnnamed() {
+                Module.addEnableFinalMutationToAllUnnamed();
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
@@ -2112,28 +2140,33 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
-            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringNoRepl(bytes, cs);
+
+            public String uncheckedNewStringWithLatin1Bytes(byte[] bytes) {
+                return String.newStringWithLatin1Bytes(bytes);
             }
-            public char getUTF16Char(byte[] bytes, int index) {
+
+            public String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newStringOrThrow(bytes, cs);
+            }
+
+            public char uncheckedGetUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-            public void putCharUTF16(byte[] bytes, int index, int ch) {
+
+            public void uncheckedPutCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
-            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesNoRepl(s, cs);
+
+            public byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesOrThrow(s, cs);
             }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len, true);
-            }
-
-            public byte[] getBytesUTF8NoRepl(String s) {
-                return String.getBytesUTF8NoRepl(s);
+            public byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
+                return String.getBytesUTF8OrThrow(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
@@ -2144,7 +2177,7 @@ public final class System {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
-            public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+            public int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
                 return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
             }
 
@@ -2168,19 +2201,7 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatInitialCoder() {
-                return StringConcatHelper.initialCoder();
-            }
-
-            public long stringConcatMix(long lengthCoder, String constant) {
-                return StringConcatHelper.mix(lengthCoder, constant);
-            }
-
-            public long stringConcatMix(long lengthCoder, char value) {
-                return StringConcatHelper.mix(lengthCoder, value);
-            }
-
-            public Object stringConcat1(String[] constants) {
+            public Object uncheckedStringConcat1(String[] constants) {
                 return new StringConcatHelper.Concat1(constants);
             }
 
@@ -2243,10 +2264,6 @@ public final class System {
 
             public void removeCarrierThreadLocal(CarrierThreadLocal<?> local) {
                 ((ThreadLocal<?>)local).removeCarrierThreadLocal();
-            }
-
-            public boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local) {
-                return ((ThreadLocal<?>)local).isCarrierThreadLocalPresent();
             }
 
             public Object[] scopedValueCache() {
@@ -2314,13 +2331,13 @@ public final class System {
             }
 
             @Override
-            public void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
-                string.copyToSegmentRaw(segment, offset);
+            public void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
+                string.copyToSegmentRaw(segment, offset, srcIndex, srcLength);
             }
 
             @Override
-            public boolean bytesCompatible(String string, Charset charset) {
-                return string.bytesCompatible(charset);
+            public boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
+                return string.bytesCompatible(charset, srcIndex, numChars);
             }
         });
     }

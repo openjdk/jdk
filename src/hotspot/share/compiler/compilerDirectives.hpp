@@ -83,7 +83,8 @@ NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
-NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLevel)) \
+NOT_PRODUCT(cflags(PhasePrintLevel, intx, PrintPhaseLevel, PhasePrintLevel)) \
+NOT_PRODUCT(cflags(IGVPrintLevel,   intx, PrintIdealGraphLevel, IGVPrintLevel)) \
     cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #define compilerdirectives_c2_string_flags(cflags) \
@@ -141,6 +142,7 @@ public:
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
   bool should_not_inline(ciMethod* inlinee);
+  bool should_delay_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
   bool is_exclusive_copy() { return _directive == nullptr; }
@@ -202,7 +204,7 @@ void set_##name(void* value) {                                      \
   void set_ideal_phase_name_set(const BitMap& set) {
     _ideal_phase_name_set.set_from(set);
   };
-  bool should_print_phase(const CompilerPhaseType cpt) const {
+  bool should_print_ideal_phase(const CompilerPhaseType cpt) const {
     return _ideal_phase_name_set.at(cpt);
   };
   void set_trace_auto_vectorization_tags(const CHeapBitMap& tags) {

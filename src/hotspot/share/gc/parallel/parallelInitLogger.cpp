@@ -29,10 +29,8 @@
 void ParallelInitLogger::print_heap() {
   log_info_p(gc, init)("Alignments:"
                        " Space " EXACTFMT ","
-                       " Generation " EXACTFMT ","
                        " Heap " EXACTFMT,
                        EXACTFMTARGS(SpaceAlignment),
-                       EXACTFMTARGS(GenAlignment),
                        EXACTFMTARGS(HeapAlignment));
   GCInitLogger::print_heap();
 }

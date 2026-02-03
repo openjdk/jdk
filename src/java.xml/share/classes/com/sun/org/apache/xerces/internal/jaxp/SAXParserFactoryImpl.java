@@ -28,6 +28,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.validation.Schema;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.SAXException;
@@ -42,7 +43,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public class SAXParserFactoryImpl extends SAXParserFactory {
 
@@ -68,8 +69,14 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
     private boolean fSecureProcess = true;
 
     // Security Managers
-    XMLSecurityManager fSecurityManager = new XMLSecurityManager(true);
-    XMLSecurityPropertyManager fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+    XMLSecurityManager fSecurityManager;
+    XMLSecurityPropertyManager fSecurityPropertyMgr;
+
+    public SAXParserFactoryImpl() {
+        JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+    }
 
     /**
      * Creates a new instance of <code>SAXParser</code> using the currently

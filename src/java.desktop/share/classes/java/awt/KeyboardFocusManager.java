@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,16 +70,6 @@ import sun.awt.AWTAccessor;
  * query for the focus owner and initiate focus changes, and an event
  * dispatcher for all FocusEvents, WindowEvents related to focus, and
  * KeyEvents.
- * <p>
- * Some browsers partition applets in different code bases into separate
- * contexts, and establish walls between these contexts. In such a scenario,
- * there will be one KeyboardFocusManager per context. Other browsers place all
- * applets into the same context, implying that there will be only a single,
- * global KeyboardFocusManager for all applets. This behavior is
- * implementation-dependent. Consult your browser's documentation for more
- * information. No matter how many contexts there may be, however, there can
- * never be more than one focus owner, focused Window, or active Window, per
- * ClassLoader.
  * <p>
  * Please see
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
@@ -1177,7 +1167,7 @@ public abstract class KeyboardFocusManager
      * following:
      * <ul>
      *    <li>whether the KeyboardFocusManager is currently managing focus
-     *        for this application or applet's browser context
+     *        for this application
      *        ("managingFocus")</li>
      *    <li>the focus owner ("focusOwner")</li>
      *    <li>the permanent focus owner ("permanentFocusOwner")</li>
@@ -1262,7 +1252,7 @@ public abstract class KeyboardFocusManager
      * following:
      * <ul>
      *    <li>whether the KeyboardFocusManager is currently managing focus
-     *        for this application or applet's browser context
+     *        for this application
      *        ("managingFocus")</li>
      *    <li>the focus owner ("focusOwner")</li>
      *    <li>the permanent focus owner ("permanentFocusOwner")</li>

@@ -1,5 +1,8 @@
 root = true
 
+[*]
+charset = utf-8
+
 [*.{cpp,hpp,c,h,java,cc,hh,m,mm,S,md,properties,gmk,m4,ac}]
 trim_trailing_whitespace = true
 

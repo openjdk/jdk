@@ -352,7 +352,6 @@ public class Head extends Content {
 
         if (syntaxHighlight) {
             addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.HIGHLIGHT_CSS));
-            addScriptElement(head, DocPaths.HIGHLIGHT_JS);
         }
 
         for (DocPath path : localStylesheets) {
@@ -367,6 +366,9 @@ public class Head extends Content {
     }
 
     private void addScripts(HtmlTree head) {
+        if (syntaxHighlight) {
+            addScriptElement(head, DocPaths.HIGHLIGHT_JS);
+        }
         if (addDefaultScript) {
             addScriptElement(head, DocPaths.SCRIPT_JS);
         }
@@ -376,7 +378,8 @@ public class Head extends Content {
                 mainBodyScript.append("const pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
-                        .append("loadScripts(document, 'script');");
+                        .append("loadScripts();\n")
+                        .append("initTheme();\n");
             }
             addScriptElement(head, DocPaths.JQUERY_JS);
             addScriptElement(head, DocPaths.JQUERY_UI_JS);

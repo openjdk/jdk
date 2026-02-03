@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package jdk.jfr.internal.jfc.model;
 
+import jdk.jfr.internal.tracing.Filter;
+
 // Corresponds to <text>
 final class XmlText extends XmlInput {
 
@@ -35,7 +37,7 @@ final class XmlText extends XmlInput {
         sb.append(getContentType().orElse("text"));
         sb.append(">");
         sb.append("  (");
-        String content = getContent();
+        String content = getContentOrEmptyQuote();
         if (isTimespan()) {
             // "20 ms" becomes "20ms"
             content = content.replaceAll("\\s", "");
@@ -57,7 +59,7 @@ final class XmlText extends XmlInput {
     @Override
     public void configure(UserInterface ui) throws AbortException {
         ui.println();
-        ui.println(getLabel() + ": " + getContent() + "  (default)");
+        ui.println(getLabel() + ": " + getContentOrEmptyQuote() + "  (default)");
         while (!readInput(ui)) {
             ;
         }
@@ -71,8 +73,20 @@ final class XmlText extends XmlInput {
     private boolean readInput(UserInterface ui) throws AbortException {
         String line = ui.readLine();
         if (line.isBlank()) {
-            ui.println("Using default: " + getContent());
+            ui.println("Using default: " + getContentOrEmptyQuote());
             return true;
+        }
+        if (isMethodFilter()) {
+            if (!Filter.isValid(line)) {
+                ui.println("""
+                Not a valid method filter. A filter can be an annotation \
+                (@jakarta.ws.rs.GET), a full qualified class name (com.example.Foo), \
+                a fully qualified method reference (java.lang.HashMap::resize) or a \
+                class initializer (::<clinit>). Use <init> for constructors. \
+                Separate multiple filters with semicolon.\
+                """);
+                return false;
+            }
         }
         if (isTimespan()) {
             try {
@@ -89,5 +103,9 @@ final class XmlText extends XmlInput {
 
     private boolean isTimespan() {
         return getContentType().orElse("text").equals("timespan");
+    }
+
+    private boolean isMethodFilter() {
+        return getContentType().orElse("text").equals("method-filter");
     }
 }

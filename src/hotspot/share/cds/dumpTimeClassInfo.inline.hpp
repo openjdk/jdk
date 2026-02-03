@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,8 +28,8 @@
 #include "cds/dumpTimeClassInfo.hpp"
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -46,14 +45,14 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
     if (CDSConfig::is_dumping_final_static_archive() && !k->is_loaded()) {
-      assert(k->is_shared_unregistered_class(), "must be");
+      assert(k->defined_by_other_loaders(), "must be");
       function(k, info);
     } else if (k->is_loader_alive()) {
       function(k, info);
       assert(k->is_loader_alive(), "must not change");
     } else {
       if (!SystemDictionaryShared::is_excluded_class(k)) {
-        SystemDictionaryShared::warn_excluded(k, "Class loader not alive");
+        SystemDictionaryShared::log_exclusion(k, "Class loader not alive");
         SystemDictionaryShared::set_excluded_locked(k);
       }
     }

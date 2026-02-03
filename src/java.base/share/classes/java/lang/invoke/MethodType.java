@@ -1194,10 +1194,6 @@ class MethodType
     static MethodType fromDescriptor(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
-        if (!descriptor.startsWith("(") ||  // also generates NPE if needed
-            descriptor.indexOf(')') < 0 ||
-            descriptor.indexOf('.') >= 0)
-            throw newIllegalArgumentException("not a method descriptor: "+descriptor);
         List<Class<?>> types = BytecodeDescriptor.parseMethod(descriptor, loader);
         Class<?> rtype = types.remove(types.size() - 1);
         Class<?>[] ptypes = listToArray(types);

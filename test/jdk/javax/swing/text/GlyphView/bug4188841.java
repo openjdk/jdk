@@ -69,7 +69,7 @@ public class bug4188841 {
         JFrame frame = new JFrame("bug4188841");
 
         NoWrapTextPane nwp = new NoWrapTextPane();
-        nwp.setText("the\tslow\tbrown\tfox\tjumps\tover\tthe\tlazy\tdog!");
+        nwp.setText("the\tquick\tbrown\tfox\tjumps\tover\tthe\tlazy\tdog!");
         nwp.setCaretPosition(nwp.getText().length());
 
         JScrollPane scrollPane = new JScrollPane(nwp,

@@ -38,7 +38,7 @@ import jdk.jfr.consumer.RecordingStream;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -Xlog:jfr+streaming+system=trace jdk.jfr.api.consumer.recordingstream.TestClose
+ * @run main/othervm/timeout=480 -Xlog:jfr+streaming+system=trace jdk.jfr.api.consumer.recordingstream.TestClose
  */
 public class TestClose {
 

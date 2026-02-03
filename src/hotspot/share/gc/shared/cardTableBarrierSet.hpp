@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 #ifndef SHARE_GC_SHARED_CARDTABLEBARRIERSET_HPP
 #define SHARE_GC_SHARED_CARDTABLEBARRIERSET_HPP
 
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
@@ -41,16 +44,13 @@
 // Closures used to scan dirty cards should take these
 // considerations into account.
 
-class CardTableBarrierSet: public ModRefBarrierSet {
+class CardTableBarrierSet: public BarrierSet {
   // Some classes get to look at some private stuff.
   friend class VMStructs;
 
 protected:
   typedef CardTable::CardValue CardValue;
-  // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2
-  // or INCLUDE_JVMCI is being used
-  bool       _defer_initial_card_mark;
-  CardTable* _card_table;
+  Atomic<CardTable*> _card_table;
 
   CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
                       BarrierSetC1* barrier_set_c1,
@@ -62,52 +62,78 @@ public:
   CardTableBarrierSet(CardTable* card_table);
   virtual ~CardTableBarrierSet();
 
-  CardTable* card_table() const { return _card_table; }
-
-  void initialize();
-
-  void write_region(JavaThread* thread, MemRegion mr) {
-    write_region(mr);
+  inline static CardTableBarrierSet* barrier_set() {
+    return barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   }
 
- public:
+  template <DecoratorSet decorators, typename T>
+  inline void write_ref_field_pre(T* addr) {}
+
   // Record a reference update. Note that these versions are precise!
   // The scanning code has to handle the fact that the write barrier may be
   // either precise or imprecise. We make non-virtual inline variants of
   // these functions here for performance.
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field);
+  inline void write_ref_field_post(T *addr);
 
+  // Causes all refs in "mr" to be assumed to be modified (by this JavaThread).
   virtual void write_region(MemRegion mr);
 
-  // ReduceInitialCardMarks
-  void initialize_deferred_card_mark_barriers();
+  // Operations on arrays, or general regions (e.g., for "clone") may be
+  // optimized by some barriers.
 
-  // If the CollectedHeap was asked to defer a store barrier above,
-  // this informs it to flush such a deferred store barrier to the
-  // remembered set.
-  void flush_deferred_card_mark_barrier(JavaThread* thread);
+  // Below length is the # array elements being written
+  virtual void write_ref_array_pre(oop* dst, size_t length,
+                                   bool dest_uninitialized) {}
+  virtual void write_ref_array_pre(narrowOop* dst, size_t length,
+                                   bool dest_uninitialized) {}
+  // Below count is the # array elements being written, starting
+  // at the address "start", which may not necessarily be HeapWord-aligned
+  inline void write_ref_array(HeapWord* start, size_t count);
 
-  // If a compiler is eliding store barriers for TLAB-allocated objects,
-  // we will be informed of a slow-path allocation by a call
-  // to on_slowpath_allocation_exit() below. Such a call precedes the
-  // initialization of the object itself, and no post-store-barriers will
-  // be issued. Some heap types require that the barrier strictly follows
-  // the initializing stores. (This is currently implemented by deferring the
-  // barrier until the next slow-path allocation or gc-related safepoint.)
-  // This interface answers whether a particular barrier type needs the card
-  // mark to be thus strictly sequenced after the stores.
-  virtual bool card_mark_must_follow_store() const;
+  CardTable* card_table() { return _card_table.load_relaxed(); }
+  CardTable* card_table() const { return _card_table.load_relaxed(); }
+
+  CardValue* card_table_base_const() const {
+    assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
+    return card_table()->byte_map_base();
+  }
 
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
-  virtual void on_thread_detach(Thread* thread);
-
-  virtual void make_parsable(JavaThread* thread) { flush_deferred_card_mark_barrier(thread); }
 
   virtual void print_on(outputStream* st) const;
 
   template <DecoratorSet decorators, typename BarrierSetT = CardTableBarrierSet>
-  class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {};
+  class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
+    typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
+
+  public:
+    template <typename T>
+    static void oop_store_in_heap(T* addr, oop value);
+    template <typename T>
+    static oop oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value);
+    template <typename T>
+    static oop oop_atomic_xchg_in_heap(T* addr, oop new_value);
+
+    template <typename T>
+    static OopCopyResult oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                               size_t length);
+
+    static void clone_in_heap(oop src, oop dst, size_t size);
+
+    static void oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value) {
+      oop_store_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), value);
+    }
+
+    static oop oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value) {
+      return oop_atomic_xchg_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), new_value);
+    }
+
+    static oop oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value) {
+      return oop_atomic_cmpxchg_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), compare_value, new_value);
+    }
+  };
 };
 
 template<>

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,10 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     @Override
     protected String[] testVMFlags(String[] args) {
         return switch (args[0]) {
-            case "nCOH_nAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"};
-            case "nCOH_yAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"};
-            case "yCOH_nAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"};
-            case "yCOH_yAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"};
+            case "nCOH_nAV" -> new String[]{"-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "nCOH_yAV" -> new String[]{"-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"};
+            case "yCOH_nAV" -> new String[]{"-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "yCOH_yAV" -> new String[]{"-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"};
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
     }

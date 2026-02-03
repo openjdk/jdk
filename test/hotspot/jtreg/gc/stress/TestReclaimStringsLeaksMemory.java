@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,58 @@
 package gc.stress;
 
 /*
- * @test TestReclaimStringsLeaksMemory
+ * @test id=Serial
  * @bug 8180048
- * @summary Ensure that during a Full GC interned string memory is reclaimed completely.
- * @requires vm.gc == "null"
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with SerialGC.
+ * @requires vm.gc.Serial
  * @requires !vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver gc.stress.TestReclaimStringsLeaksMemory
- * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
- * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
- * @run driver gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
+ */
+
+/*
+ * @test id=Parallel
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with ParallelGC.
+ * @requires vm.gc.Parallel
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
+ */
+
+/*
+ * @test id=G1
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with G1GC.
+ * @requires vm.gc.G1
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
+ */
+
+/*
+ * @test id=Shenandoah
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with ShenandoahGC.
+ * @requires vm.gc.Shenandoah
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseShenandoahGC
+ */
+
+/*
+ * @test id=Z
+ * @bug 8180048
+ * @summary Ensure that during a Full GC interned string memory is reclaimed completely with ZGC.
+ * @requires vm.gc.Z
+ * @requires !vm.debug
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseZGC
  */
 
 import java.util.Arrays;

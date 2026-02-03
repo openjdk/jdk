@@ -27,8 +27,6 @@
  * @test
  * @summary Sanity test for AOTCache
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build HelloAOTCache
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloAOTCacheApp

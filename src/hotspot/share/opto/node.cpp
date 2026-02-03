@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -549,6 +549,14 @@ Node *Node::clone() const {
       to[i] = from[i]->clone();
     }
   }
+  if (this->is_MachProj()) {
+    // MachProjNodes contain register masks that may contain pointers to
+    // externally allocated memory. Make sure to use a proper constructor
+    // instead of just shallowly copying.
+    MachProjNode* mach = n->as_MachProj();
+    MachProjNode* mthis = this->as_MachProj();
+    new (&mach->_rout) RegMask(mthis->_rout);
+  }
   if (n->is_Call()) {
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
@@ -991,18 +999,22 @@ bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p, bool keep_deps) {
 #ifdef ASSERT
+  // If we end up traversing more nodes than we actually have,
+  // it is definitely an infinite loop.
+  uint max_depth = Compile::current()->unique();
   uint depth_count = 0;
   const Node* orig_p = p;
 #endif
 
   while (true) {
 #ifdef ASSERT
-    if (depth_count >= K) {
+    if (depth_count++ >= max_depth) {
       orig_p->dump(4);
-      if (p != orig_p)
+      if (p != orig_p) {
         p->dump(1);
+      }
+      fatal("infinite loop in Node::uncast_helper");
     }
-    assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
 #endif
     if (p == nullptr || p->req() != 2) {
       break;
@@ -1201,9 +1213,12 @@ bool Node::has_special_unique_user() const {
   if (this->is_Store()) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
-  } else if (this->is_Load() || this->is_DecodeN() || this->is_Phi()) {
+  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi() || this->is_Con()) && n->Opcode() == Op_MemBarAcquire) {
     // Condition for removing an unused LoadNode or DecodeNNode from the MemBarAcquire precedence input
-    return n->Opcode() == Op_MemBarAcquire;
+    return true;
+  } else if (this->is_Load() && n->is_Move()) {
+    // Condition for MoveX2Y (LoadX mem) => LoadY mem
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -1215,6 +1230,9 @@ bool Node::has_special_unique_user() const {
     return true;
   } else if ((is_IfFalse() || is_IfTrue()) && n->is_If()) {
     // See IfNode::fold_compares
+    return true;
+  } else if (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) {
+    // Condition for XorVMask(VectorMaskCmp(x,y,cond), MaskAll(true)) ==> VectorMaskCmp(x,y,ncond)
     return true;
   } else {
     return false;
@@ -1774,8 +1792,8 @@ Node* Node::find(const int idx, bool only_ctrl) {
 
 class PrintBFS {
 public:
-  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st)
-  : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st),
+  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st, const frame* fr)
+    : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st), _frame(fr),
     _dcc(this), _info_uid(cmpkey, hashkey) {}
 
   void run();
@@ -1796,6 +1814,7 @@ private:
   const Node* _target;
   const char* _options;
   outputStream* _output;
+  const frame* _frame;
 
   // options
   bool _traverse_inputs = false;
@@ -2057,7 +2076,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       C->init_igv();
-      C->igv_print_graph_to_network("PrintBFS", _print_list);
+      C->igv_print_graph_to_network(nullptr, _print_list, _frame);
     }
   } else {
     _output->print_cr("No nodes to print.");
@@ -2102,6 +2121,8 @@ void PrintBFS::print_options_help(bool print_examples) {
   _output->print_cr("      B: print scheduling blocks (if available)");
   _output->print_cr("      $: dump only, no header, no other columns");
   _output->print_cr("      !: show nodes on IGV (sent over network stream)");
+  _output->print_cr("        (use preferably with dump_bfs(int, Node*, char*, void*, void*, void*)");
+  _output->print_cr("         to produce a C2 stack trace along with the graph dump, see examples below)");
   _output->print_cr("");
   _output->print_cr("recursively follow edges to nodes with permitted visit types,");
   _output->print_cr("on the boundary additionally display nodes allowed in boundary types");
@@ -2151,6 +2172,9 @@ void PrintBFS::print_options_help(bool print_examples) {
     _output->print_cr("    find all paths (A) between two nodes of length at most 8");
     _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")");
     _output->print_cr("    find all control loops for this node");
+    _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A!\", $sp, $fp, $pc)");
+    _output->print_cr("    same as above, but printing the resulting subgraph");
+    _output->print_cr("    along with a C2 stack trace on IGV");
   }
 }
 
@@ -2409,14 +2433,21 @@ void Node::dump_bfs(const int max_distance, Node* target, const char* options) c
 }
 
 // Used to dump to stream.
-void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const {
-  PrintBFS bfs(this, max_distance, target, options, st);
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st, const frame* fr) const {
+  PrintBFS bfs(this, max_distance, target, options, st, fr);
   bfs.run();
 }
 
 // Call this from debugger, with default arguments
 void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
+}
+
+// Call this from debugger, with stack handling register arguments for IGV dumps.
+// Example: p find_node(741)->dump_bfs(7, find_node(741), "c+A!", $sp, $fp, $pc).
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, void* sp, void* fp, void* pc) const {
+  frame fr(sp, fp, pc);
+  dump_bfs(max_distance, target, options, tty, &fr);
 }
 
 // -----------------------------dump_idx---------------------------------------
@@ -2578,7 +2609,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     t->dump_on(st);
   } else if (t == Type::MEMORY) {
     st->print("  Memory:");
-    MemNode::dump_adr_type(this, adr_type(), st);
+    MemNode::dump_adr_type(adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
     if (t) {
@@ -2776,16 +2807,15 @@ uint Node::match_edge(uint idx) const {
 // Register classes are defined for specific machines
 const RegMask &Node::out_RegMask() const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 const RegMask &Node::in_RegMask(uint) const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 void Node_Array::grow(uint i) {
-  _nesting.check(_a); // Check if a potential reallocation in the arena is safe
   assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
@@ -2849,16 +2879,9 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req()) {
-          uint j;
-          for (j = 0; j < use->req(); j++) {
-            if (use->in(j) != in(j)) {
-              break;
-            }
-          }
-          if (j == use->req()) {
-            return use;
-          }
+            use->req() == req() &&
+            has_same_inputs_as(use)) {
+          return use;
         }
       }
     }
@@ -2866,6 +2889,30 @@ Node* Node::find_similar(int opc) {
   return nullptr;
 }
 
+bool Node::has_same_inputs_as(const Node* other) const {
+  assert(req() == other->req(), "should have same number of inputs");
+  for (uint j = 0; j < other->req(); j++) {
+    if (in(j) != other->in(j)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+Node* Node::unique_multiple_edges_out_or_null() const {
+  Node* use = nullptr;
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    Node* u = fast_out(k);
+    if (use == nullptr) {
+      use = u; // first use
+    } else if (u != use) {
+      return nullptr; // not unique
+    } else {
+      // secondary use
+    }
+  }
+  return use;
+}
 
 //--------------------------unique_ctrl_out_or_null-------------------------
 // Return the unique control out if only one. Null if none or more than one.
@@ -2934,23 +2981,13 @@ bool Node::is_dead_loop_safe() const {
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
 
-bool Node::is_pure_function() const {
-  switch (Opcode()) {
-  case Op_ModD:
-  case Op_ModF:
-    return true;
-  default:
-    return false;
-  }
-}
-
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
 // but we already have and need maybe_pure_function in all the call sites, so
 // it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
 // while it takes more thinking to realize that a locally computed in(0) must be equal to
 // the local in the caller.
 bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
-  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
+  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
 }
 
 //=============================================================================
@@ -3025,10 +3062,6 @@ void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
 
 //=============================================================================
 void Node_Stack::grow() {
-  _nesting.check(_a); // Check if a potential reallocation in the arena is safe
-  if (_inode_top < _inode_max) {
-    return; // No need to grow
-  }
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
   size_t max = old_max << 1;             // max * 2
@@ -3107,7 +3140,7 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
         assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
         if (r->is_Region()) {
           for (uint j = 1; j < u->req(); ++j) {
-            if (u->in(j) == n) {
+            if (u->in(j) == n && r->in(j) != nullptr) {
               make_path_dead(igvn, loop, r, j, phase_str);
             }
           }

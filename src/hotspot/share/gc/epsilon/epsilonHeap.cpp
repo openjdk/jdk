@@ -30,12 +30,11 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
 
@@ -53,7 +52,7 @@ jint EpsilonHeap::initialize() {
   initialize_reserved_region(heap_rs);
 
   _space = new ContiguousSpace();
-  _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
+  _space->initialize(committed_region, /* clear_space = */ true);
 
   // Precompute hot fields
   _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(EpsilonMaxTLABSize / HeapWordSize));
@@ -63,8 +62,6 @@ jint EpsilonHeap::initialize() {
 
   // Enable monitoring
   _monitoring_support = new EpsilonMonitoringSupport(this);
-  _last_counter_update = 0;
-  _last_heap_print = 0;
 
   // Install barrier set
   BarrierSet::set_barrier_set(new EpsilonBarrierSet());
@@ -78,6 +75,7 @@ jint EpsilonHeap::initialize() {
 void EpsilonHeap::initialize_serviceability() {
   _pool = new EpsilonMemoryPool(this);
   _memory_manager.add_pool(_pool);
+  _monitoring_support->mark_ready();
 }
 
 GrowableArray<GCMemoryManager*> EpsilonHeap::memory_managers() {
@@ -92,7 +90,7 @@ GrowableArray<MemoryPool*> EpsilonHeap::memory_pools() {
   return memory_pools;
 }
 
-size_t EpsilonHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t EpsilonHeap::unsafe_max_tlab_alloc() const {
   // Return max allocatable TLAB size, and let allocation path figure out
   // the actual allocation size. Note: result should be in bytes.
   return _max_tlab_size * HeapWordSize;
@@ -102,7 +100,7 @@ EpsilonHeap* EpsilonHeap::heap() {
   return named_heap<EpsilonHeap>(CollectedHeap::Epsilon);
 }
 
-HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
+HeapWord* EpsilonHeap::allocate_work(size_t size) {
   assert(is_object_aligned(size), "Allocation size should be aligned: %zu", size);
 
   HeapWord* res = nullptr;
@@ -152,19 +150,23 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
 
   size_t used = _space->used();
 
-  // Allocation successful, update counters
-  if (verbose) {
-    size_t last = _last_counter_update;
-    if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
+  // Allocation successful, update counters and print status.
+  // At this point, some diagnostic subsystems might not yet be initialized.
+  // We pretend the printout happened either way. This keeps allocation path
+  // from obsessively checking the subsystems' status on every allocation.
+  size_t last_counter = _last_counter_update.load_relaxed();
+  if ((used - last_counter >= _step_counter_update) &&
+      _last_counter_update.compare_set(last_counter, used)) {
+    if (_monitoring_support->is_ready()) {
       _monitoring_support->update_counters();
     }
   }
 
-  // ...and print the occupancy line, if needed
-  if (verbose) {
-    size_t last = _last_heap_print;
-    if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
-      print_heap_info(used);
+  size_t last_heap = _last_heap_print.load_relaxed();
+  if ((used - last_heap >= _step_heap_print) &&
+      _last_heap_print.compare_set(last_heap, used)) {
+    print_heap_info(used);
+    if (Metaspace::initialized()) {
       print_metaspace_info();
     }
   }
@@ -261,14 +263,12 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   return res;
 }
 
-HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
-  *gc_overhead_limit_was_exceeded = false;
+HeapWord* EpsilonHeap::mem_allocate(size_t size) {
   return allocate_work(size);
 }
 
 HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
-  // Cannot use verbose=true because Metaspace is not initialized
-  return allocate_work(size, /* verbose = */false);
+  return allocate_work(size);
 }
 
 void EpsilonHeap::collect(GCCause::Cause cause) {
@@ -301,14 +301,14 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
 void EpsilonHeap::print_heap_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
 
   _virtual_space.print_on(st);
 
   if (_space != nullptr) {
     st->print_cr("Allocation space:");
 
-    StreamAutoIndentor indentor(st, 1);
+    StreamIndentor si(st, 1);
     _space->print_on(st, "");
   }
 }

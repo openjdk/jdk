@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
 package jdk.internal.net.http.hpack;
 
 import jdk.internal.net.http.hpack.SimpleHeaderTable.HeaderField;
-import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.AssertJUnit.assertTrue;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class HeaderTableTest extends SimpleHeaderTableTest {
 
@@ -61,8 +61,8 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
         staticHeaderFields.forEach((key, expectedHeaderField) -> {
             // lookup
             HeaderField actualHeaderField = table.get(key);
-            assertEquals(actualHeaderField.name, expectedHeaderField.name);
-            assertEquals(actualHeaderField.value, expectedHeaderField.value);
+            assertEquals(expectedHeaderField.name, actualHeaderField.name);
+            assertEquals(expectedHeaderField.value, actualHeaderField.value);
 
             // reverse lookup (name, value)
             String hName = expectedHeaderField.name;
@@ -70,13 +70,13 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
             int expectedIndex = key;
             int actualIndex = table.indexOf(hName, hValue);
 
-            assertEquals(actualIndex, expectedIndex);
+            assertEquals(expectedIndex, actualIndex);
 
             // reverse lookup (name)
             Set<Integer> expectedIndexes = indexes.get(hName);
             int actualMinimalIndex = table.indexOf(hName, "blah-blah");
 
-            assertTrue(expectedIndexes.contains(-actualMinimalIndex));
+            Assertions.assertTrue(expectedIndexes.contains(-actualMinimalIndex));
         });
     }
 
@@ -88,9 +88,9 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
         table.put("bender", "rodriguez");
         table.put("bender", "rodriguez");
 
-        assertEquals(table.length(), oldLength + 3); // more like an assumption
+        assertEquals(oldLength + 3, table.length()); // more like an assumption
         int i = table.indexOf("bender", "rodriguez");
-        assertEquals(i, oldLength + 1);
+        assertEquals(oldLength + 1, i);
     }
 
     @Test
@@ -98,13 +98,13 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
         HeaderTable table = createHeaderTable(256);
         int oldLength = table.length();
         table.put("bender", "rodriguez");
-        assertEquals(table.indexOf("bender", "rodriguez"), oldLength + 1);
+        assertEquals(oldLength + 1, table.indexOf("bender", "rodriguez"));
         table.put("bender", "rodriguez");
-        assertEquals(table.indexOf("bender", "rodriguez"), oldLength + 1);
+        assertEquals(oldLength + 1, table.indexOf("bender", "rodriguez"));
         table.evictEntry();
-        assertEquals(table.indexOf("bender", "rodriguez"), oldLength + 1);
+        assertEquals(oldLength + 1, table.indexOf("bender", "rodriguez"));
         table.evictEntry();
-        assertEquals(table.indexOf("bender", "rodriguez"), 0);
+        assertEquals(0, table.indexOf("bender", "rodriguez"));
     }
 
     @Test
@@ -114,9 +114,9 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
         int idx = rnd.nextInt(oldLength) + 1;
         HeaderField f = table.get(idx);
         table.put(f.name, f.value);
-        assertEquals(table.length(), oldLength + 1);
+        assertEquals(oldLength + 1, table.length());
         int i = table.indexOf(f.name, f.value);
-        assertEquals(i, idx);
+        assertEquals(idx, i);
     }
 
     @Test
@@ -137,16 +137,16 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
             String s = String.valueOf(j);
             int actualIndex = table.indexOf(s, s);
             int expectedIndex = STATIC_TABLE_LENGTH + NUM_HEADERS - j + 1;
-            assertEquals(actualIndex, expectedIndex);
+            assertEquals(expectedIndex, actualIndex);
         }
         // as well as for just a name lookup
         for (int j = 1; j <= NUM_HEADERS; j++) {
             String s = String.valueOf(j);
             int actualIndex = table.indexOf(s, "blah");
             int expectedIndex = -(STATIC_TABLE_LENGTH + NUM_HEADERS - j + 1);
-            assertEquals(actualIndex, expectedIndex);
+            assertEquals(expectedIndex, actualIndex);
         }
         // lookup for non-existent name returns 0
-        assertEquals(table.indexOf("chupacabra", "1"), 0);
+        assertEquals(0, table.indexOf("chupacabra", "1"));
     }
 }

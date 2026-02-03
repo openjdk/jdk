@@ -297,6 +297,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">Bafia</language>
 			<language type="ksh">Dialek Kolsch</language>
 			<language type="ku">Kurdi</language>
+			<language type="ku" menu="core">Kurdi</language>
+			<language type="ku" menu="extension">Kurmanji</language>
 			<language type="kum">Kumyk</language>
 			<language type="kut">Kutenai</language>
 			<language type="kv">Komi</language>
@@ -892,6 +894,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">Tiongkok</territory>
 			<territory type="CO">Kolombia</territory>
 			<territory type="CP">Pulau Clipperton</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR">Kosta Rika</territory>
 			<territory type="CU">Kuba</territory>
 			<territory type="CV">Tanjung Verde</territory>
@@ -1195,35 +1198,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNumeric">Pengurutan Numerik</key>
 			<key type="colStrength">Kekuatan Pengurutan</key>
 			<key type="currency">Mata Uang</key>
+			<key type="em">Tampilan Emoji</key>
 			<key type="hc">Siklus Jam (12 vs 24)</key>
 			<key type="lb">Gaya Pemisah Baris</key>
+			<key type="lw">Pemisah Baris di antara Kata</key>
 			<key type="ms">Sistem Pengukuran</key>
 			<key type="numbers">Angka</key>
+			<key type="ss">Pemisah Kalimat Setelah Singkatan</key>
 			<key type="timezone">Zona Waktu</key>
 			<key type="va">Varian Lokal</key>
 			<key type="x">Penggunaan Pribadi</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Kalender Buddha</type>
+			<type key="calendar" type="buddhist" scope="core">Buddha</type>
 			<type key="calendar" type="chinese">Kalender Tionghoa</type>
+			<type key="calendar" type="chinese" scope="core">Tiongkok</type>
 			<type key="calendar" type="coptic">Kalender Koptik</type>
+			<type key="calendar" type="coptic" scope="core">Koptik</type>
 			<type key="calendar" type="dangi">Kalender Dangi</type>
+			<type key="calendar" type="dangi" scope="core">Dangi</type>
 			<type key="calendar" type="ethiopic">Kalender Etiopia</type>
+			<type key="calendar" type="ethiopic" scope="core">Etiopia</type>
 			<type key="calendar" type="ethiopic-amete-alem">Kalender Amete Alem Etiopia</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Amete Alem Etiopia</type>
 			<type key="calendar" type="gregorian">Kalender Gregorian</type>
+			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
 			<type key="calendar" type="hebrew">Kalender Ibrani</type>
+			<type key="calendar" type="hebrew" scope="core">Ibrani</type>
 			<type key="calendar" type="indian">Kalender Nasional India</type>
 			<type key="calendar" type="islamic">Kalender Islam</type>
+			<type key="calendar" type="islamic" scope="core">Hijriah</type>
 			<type key="calendar" type="islamic-civil">Kalender Sipil Islam</type>
+			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, epoch sipil)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">Kalender Islam (Arab Saudi, penglihatan)</type>
 			<type key="calendar" type="islamic-tbla">Kalender Astronomi Islam</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijriah (tabular, epoch astronomi)</type>
 			<type key="calendar" type="islamic-umalqura">Kalender Islam (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Hijriah (tabular, Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalender ISO-8601</type>
 			<type key="calendar" type="japanese">Kalender Jepang</type>
+			<type key="calendar" type="japanese" scope="core">Jepang</type>
 			<type key="calendar" type="persian">Kalender Persia</type>
+			<type key="calendar" type="persian" scope="core">Persia</type>
 			<type key="calendar" type="roc">Kalender Min-guo</type>
+			<type key="calendar" type="roc" scope="core">Min-guo</type>
 			<type key="cf" type="account">Format Mata Uang Akuntansi</type>
+			<type key="cf" type="account" scope="core">Akuntansi</type>
 			<type key="cf" type="standard">Format Mata Uang Standar</type>
+			<type key="cf" type="standard" scope="core">Standar</type>
 			<type key="colAlternate" type="non-ignorable">Sortir Simbol</type>
 			<type key="colAlternate" type="shifted">Sortir Abaikan Simbol</type>
 			<type key="colBackwards" type="no">Sortir Aksen Secara Normal</type>
@@ -1233,23 +1256,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Sortir Huruf Besar Dahulu</type>
 			<type key="colCaseLevel" type="no">Sortir Tidak Peka Huruf Besar</type>
 			<type key="colCaseLevel" type="yes">Sortir Peka Huruf Besar</type>
-			<type key="collation" type="big5han">Aturan Pengurutan Tionghoa Tradisional - Big5</type>
 			<type key="collation" type="compat">Aturan Pengurutan Sebelumnya, untuk kompatibilitas</type>
+			<type key="collation" type="compat" scope="core">Kompatibilitas</type>
 			<type key="collation" type="dictionary">Aturan Pengurutan Kamus</type>
+			<type key="collation" type="dictionary" scope="core">Kamus</type>
 			<type key="collation" type="ducet">Aturan Pengurutan Unicode Default</type>
+			<type key="collation" type="ducet" scope="core">Unicode Default</type>
 			<type key="collation" type="emoji" draft="contributed">Urutan Sortir Emoji</type>
 			<type key="collation" type="eor">Aturan Pengurutan Eropa</type>
-			<type key="collation" type="gb2312han">Aturan Pengurutan Tionghoa (Sederhana) - GB2312</type>
 			<type key="collation" type="phonebook">Aturan Pengurutan Buku Telepon</type>
+			<type key="collation" type="phonebook" scope="core">Buku Telepon</type>
 			<type key="collation" type="phonetic">Aturan Pengurutan Fonetik</type>
+			<type key="collation" type="phonetic" scope="core">Fonetik</type>
 			<type key="collation" type="pinyin">Aturan Pengurutan Pinyin</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Pencarian Tujuan Umum</type>
+			<type key="collation" type="search" scope="core">Pencarian</type>
 			<type key="collation" type="searchjl">Pencarian Menurut Konsonan Awal Hangul</type>
 			<type key="collation" type="standard">Aturan Pengurutan Standar</type>
+			<type key="collation" type="standard" scope="core">Standar</type>
 			<type key="collation" type="stroke">Aturan Pengurutan Guratan</type>
+			<type key="collation" type="stroke" scope="core">Guratan</type>
 			<type key="collation" type="traditional">Aturan Pengurutan Tradisional</type>
+			<type key="collation" type="traditional" scope="core">Tradisional</type>
 			<type key="collation" type="unihan">Aturan Pengurutan Guratan Radikal</type>
+			<type key="collation" type="unihan" scope="core">Guratan Tradisional</type>
 			<type key="collation" type="zhuyin">Aturan Pengurutan Zhuyin</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no">Sortir Tanpa Normalisasi</type>
 			<type key="colNormalization" type="yes">Sortir Unicode Dinormalisasi</type>
 			<type key="colNumeric" type="no">Sortir Digit Satu Per Satu</type>
@@ -1262,18 +1295,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="d0" type="fwidth">Lebar penuh</type>
 			<type key="d0" type="hwidth">Lebar separuh</type>
 			<type key="d0" type="npinyin">Angka</type>
+			<type key="em" type="default" scope="core">Bawaan</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text" scope="core">Teks</type>
 			<type key="hc" type="h11">Sistem 12 Jam (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">Sistem 12 Jam (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">Sistem 24 Jam (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">Sistem 24 Jam (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">Gaya Pemisah Baris Renggang</type>
+			<type key="lb" type="loose" scope="core">Renggang</type>
 			<type key="lb" type="normal">Gaya Pemisah Baris Normal</type>
+			<type key="lb" type="normal" scope="core">Normal</type>
 			<type key="lb" type="strict">Gaya Pemisah Baris Rapat</type>
+			<type key="lb" type="strict" scope="core">Rapat</type>
+			<type key="lw" type="breakall" scope="core">Pisah semua</type>
+			<type key="lw" type="keepall" scope="core">Pertahankan semua</type>
+			<type key="lw" type="normal" scope="core">Normal</type>
+			<type key="lw" type="phrase" scope="core">Pertahankan frasa</type>
 			<type key="m0" type="bgn">Transliterasi BGN AS</type>
 			<type key="m0" type="ungegn">Transliterasi GEGN PBB</type>
 			<type key="ms" type="metric">Sistem Metrik</type>
+			<type key="ms" type="metric" scope="core">Metrik</type>
 			<type key="ms" type="uksystem">Sistem Pengukuran Imperial</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
 			<type key="ms" type="ussystem">Sistem Pengukuran AS</type>
+			<type key="ms" type="ussystem" scope="core">AS</type>
 			<type key="numbers" type="ahom" draft="contributed">Angka Ahom</type>
 			<type key="numbers" type="arab">Angka Arab Timur</type>
 			<type key="numbers" type="arabext">Angka Arab Timur Diperluas</type>
@@ -1356,6 +1406,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="vaii">Angka Vai</type>
 			<type key="numbers" type="wara" draft="contributed">Angka Warang Citi</type>
 			<type key="numbers" type="wcho" draft="contributed">Angka Wancho</type>
+			<type key="ss" type="none" scope="core">Nonaktif</type>
+			<type key="ss" type="standard" scope="core">Aktif</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrik</measurementSystemName>
@@ -1385,11 +1437,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£￡ ₤]</parseLenient>
-		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
@@ -1452,14 +1500,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<intervalFormats>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="B" draft="contributed">h B – h B</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d – d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="h" draft="contributed">h.mm – h.mm a</greatestDifference>
@@ -1476,9 +1518,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH.mm – HH.mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH.mm – HH.mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M – M</greatestDifference>
@@ -1615,12 +1654,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'pukul' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'pukul' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'pukul' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'pukul' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1645,15 +1690,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH.mm.ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
 						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
+						<dateFormatItem id="Hv">HH'j' v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1988,12 +2035,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'pukul' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'pukul' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'pukul' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'pukul' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2004,12 +2057,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2024,11 +2083,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH.mm.ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
 						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
@@ -2103,10 +2163,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h.mm a – h.mm a</greatestDifference>
 							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
@@ -2124,10 +2180,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
 							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -2281,6 +2333,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
+					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d – d</greatestDifference>
@@ -2829,7 +2885,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Kota Tidak Dikenal</exemplarCity>
+				<exemplarCity>Lokasi Tidak Dikenal</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
 				<exemplarCity>Anguila</exemplarCity>
@@ -2890,7 +2946,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Roma</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
+				<exemplarCity>Pulau Canton</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komoro</exemplarCity>
@@ -2964,6 +3020,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>Pulau Wake</exemplarCity>
+			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Dakota Utara</exemplarCity>
 			</zone>
@@ -3005,9 +3064,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Waktu Afrika Barat</generic>
-					<standard>Waktu Standar Afrika Barat</standard>
-					<daylight>Waktu Musim Panas Afrika Barat</daylight>
+					<standard>Waktu Afrika Barat</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3434,6 +3491,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>Waktu Guyana</standard>
 				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Waktu Standar Hawaii-Aleutian</standard>
+				</long>
+				<short>
+					<standard draft="contributed">HAST</standard>
+				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
@@ -3909,6 +3974,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Waktu Turki</generic>
+					<standard>Waktu Standar Turki</standard>
+					<daylight>Waktu Musim Panas Turki</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Waktu Turkmenistan</generic>
@@ -4041,36 +4113,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
-					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">¤0 rb</pattern>
-					<pattern type="1000" count="other" alt="alphaNextToNumber">0 rb ¤</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 rb</pattern>
 					<pattern type="10000" count="other">¤00 rb</pattern>
-					<pattern type="10000" count="other" alt="alphaNextToNumber">00 rb ¤</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 rb</pattern>
 					<pattern type="100000" count="other">¤000 rb</pattern>
-					<pattern type="100000" count="other" alt="alphaNextToNumber">000 rb ¤</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000 rb</pattern>
 					<pattern type="1000000" count="other">¤0 jt</pattern>
-					<pattern type="1000000" count="other" alt="alphaNextToNumber">0 jt ¤</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0 jt</pattern>
 					<pattern type="10000000" count="other">¤00 jt</pattern>
-					<pattern type="10000000" count="other" alt="alphaNextToNumber">00 jt ¤</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00 jt</pattern>
 					<pattern type="100000000" count="other">¤000 jt</pattern>
-					<pattern type="100000000" count="other" alt="alphaNextToNumber">000 jt ¤</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000 jt</pattern>
 					<pattern type="1000000000" count="other">¤0 M</pattern>
-					<pattern type="1000000000" count="other" alt="alphaNextToNumber">0 M ¤</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0 M</pattern>
 					<pattern type="10000000000" count="other">¤00 M</pattern>
-					<pattern type="10000000000" count="other" alt="alphaNextToNumber">00 M ¤</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00 M</pattern>
 					<pattern type="100000000000" count="other">¤000 M</pattern>
-					<pattern type="100000000000" count="other" alt="alphaNextToNumber">000 M ¤</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000 M</pattern>
 					<pattern type="1000000000000" count="other">¤0 T</pattern>
-					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">0 T ¤</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0 T</pattern>
 					<pattern type="10000000000000" count="other">¤00 T</pattern>
-					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">00 T ¤</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00 T</pattern>
 					<pattern type="100000000000000" count="other">¤000 T</pattern>
-					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">000 T ¤</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4903,6 +4973,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XCD">
 				<displayName>Dolar Karibia Timur</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>Guilder Karibia</displayName>
+				<displayName count="other">Guilder Karibia</displayName>
+			</currency>
 			<currency type="XDR">
 				<displayName>Hak Khusus Menggambar</displayName>
 			</currency>
@@ -4977,6 +5051,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWD">
 				<displayName>Dolar Zimbabwe (1980–2008)</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>Emas Zimbabwe</displayName>
+				<displayName count="other">emas Zimbabwe</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Dolar Zimbabwe (2009)</displayName>
@@ -5172,7 +5250,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>millimol per liter</displayName>
 				<unitPattern count="other">{0} millimol per liter</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>bagian</displayName>
+				<unitPattern count="other">{0} bagian</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>bagian per juta</displayName>
 				<unitPattern count="other">{0} bagian per juta</unitPattern>
 			</unit>
@@ -5184,6 +5266,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<unitPattern count="other">{0} permyriad</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>glukosa</displayName>
+				<unitPattern count="other">{0} glukosa</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liter per kilometer</displayName>
@@ -5559,6 +5645,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>milimeter raksa</displayName>
 				<unitPattern count="other">{0} milimeter raksa</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>raksa</displayName>
+				<unitPattern count="other">{0} raksa</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pound per inci persegi</displayName>
 				<unitPattern count="other">{0} pound per inci persegi</unitPattern>
@@ -5693,6 +5783,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>metric cup</displayName>
 				<unitPattern count="other">{0} metric cup</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>metric fluid ounce</displayName>
+				<unitPattern count="other">{0} metric fluid ounce</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ekar kaki</displayName>
 				<unitPattern count="other">{0} ekar kaki</unitPattern>
@@ -5758,17 +5852,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>quart Imp.</displayName>
 				<unitPattern count="other">{0} quart Imp.</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>cahaya</displayName>
-				<unitPattern count="other">{0} cahaya</unitPattern>
+			<unit type="angle-steradian">
+				<displayName>steradian</displayName>
+				<unitPattern count="other">{0} steradian</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-katal">
+				<displayName>katal</displayName>
+				<unitPattern count="other">{0} katal</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>coulomb</displayName>
+				<unitPattern count="other">{0} coulomb</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>farad</displayName>
+				<unitPattern count="other">{0} farad</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>henry</displayName>
+				<unitPattern count="other">{0} henry</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>siemen</displayName>
+				<unitPattern count="other">{0} siemen</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>kalori [IT]</displayName>
+				<unitPattern count="other">{0} kalori [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>becquerel</displayName>
+				<unitPattern count="other">{0} becquerel</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>sievert</displayName>
+				<unitPattern count="other">{0} sievert</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>gray</displayName>
+				<unitPattern count="other">{0} gray</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kilogram gaya</displayName>
+				<unitPattern count="other">{0} kilogram gaya</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>tesla</displayName>
+				<unitPattern count="other">{0} tesla</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>weber</displayName>
+				<unitPattern count="other">{0} weber</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>bagian per miliar</displayName>
 				<unitPattern count="other">{0} bagian per miliar</unitPattern>
 			</unit>
 			<unit type="duration-night">
-				<displayName>malam</displayName>
-				<unitPattern count="other">{0} malam</unitPattern>
 				<perUnitPattern>{0} per malam</perUnitPattern>
 			</unit>
 			<coordinateUnit>
@@ -5825,8 +5965,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol/liter</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>bagian</displayName>
+				<unitPattern count="other">{0} bagian</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>bagian/juta</displayName>
+				<unitPattern count="other">{0} bpj</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>persen</displayName>
@@ -5836,6 +5981,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>permyriad</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liter/km</displayName>
@@ -6068,6 +6217,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mmHg</displayName>
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<unitPattern count="other">{0} Hg</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>in Hg</displayName>
 			</unit>
@@ -6139,12 +6291,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>qt Imp.</displayName>
 			</unit>
+			<unit type="angle-steradian">
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<unitPattern count="other">{0} H</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<unitPattern count="other">{0} S</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>kal-IT</displayName>
+				<unitPattern count="other">{0} kal-IT</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>cahaya</displayName>
 				<unitPattern count="other">{0} cahaya</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bagian/miliar</displayName>
+				<unitPattern count="other">{0} bpm</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<displayName>malam</displayName>
@@ -6188,8 +6372,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/L</displayName>
 			</unit>
-			<unit type="concentr-permillion">
-				<displayName>ppm</displayName>
+			<unit type="concentr-part">
+				<displayName>bagian</displayName>
+				<unitPattern count="other">{0} bagian</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>bpj</displayName>
+				<unitPattern count="other">{0}bpj</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
@@ -6199,6 +6388,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -6326,6 +6518,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>gr</displayName>
 				<unitPattern count="other">{0} gr</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<unitPattern count="other">{0} Hg</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>″ Hg</displayName>
 				<unitPattern count="other">{0}″ Hg</unitPattern>
@@ -6379,14 +6574,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>qt Imp</displayName>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>cahaya</displayName>
-				<unitPattern count="other">{0} cahaya</unitPattern>
+			<unit type="angle-steradian">
+				<unitPattern count="other">{0} sr</unitPattern>
 			</unit>
-			<unit type="duration-night">
-				<displayName>malam</displayName>
-				<unitPattern count="other">{0} malam</unitPattern>
-				<perUnitPattern>{0}/malam</perUnitPattern>
+			<unit type="energy-calorie-it">
+				<displayName>kal-IT</displayName>
+				<unitPattern count="other">{0} kal-IT</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
+				<displayName>bpm</displayName>
+				<unitPattern count="other">{0}bpm</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}T</coordinateUnitPattern>

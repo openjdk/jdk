@@ -26,7 +26,7 @@
  * @bug 8145136 8202537 8221432 8251317 8258794 8265315 8306116 8346948
  * @modules jdk.localedata
  * @summary Tests LikelySubtags is correctly reflected in Locale.getAvailableLocales().
- * @run junit/othervm -Djava.locale.providers=CLDR LikelySubtagLocalesTest
+ * @run junit LikelySubtagLocalesTest
  */
 import java.util.Arrays;
 import java.util.List;

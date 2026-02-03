@@ -36,6 +36,7 @@ import java.lang.invoke.MethodHandleInfo;
 import java.util.List;
 import java.util.function.Consumer;
 
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
@@ -385,21 +386,25 @@ public sealed interface ConstantPoolBuilder
     default MethodHandleEntry methodHandleEntry(DirectMethodHandleDesc descriptor) {
         var owner = classEntry(descriptor.owner());
         var nat = nameAndTypeEntry(utf8Entry(descriptor.methodName()), utf8Entry(descriptor.lookupDescriptor()));
-        return methodHandleEntry(descriptor.refKind(), switch (descriptor.kind()) {
+        var ret = methodHandleEntry(descriptor.refKind(), switch (descriptor.kind()) {
             case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER -> fieldRefEntry(owner, nat);
             case INTERFACE_STATIC, INTERFACE_VIRTUAL, INTERFACE_SPECIAL -> interfaceMethodRefEntry(owner, nat);
             case STATIC, VIRTUAL, SPECIAL, CONSTRUCTOR -> methodRefEntry(owner, nat);
         });
+        ((AbstractPoolEntry.MethodHandleEntryImpl) ret).sym = descriptor;
+        return ret;
     }
 
     /**
      * {@return a {@link MethodHandleEntry} encoding a reference kind and
-     * referring to a {@link MemberRefEntry}}  The reference kind must be
+     * referring to a {@link MemberRefEntry}}  The reference kind is
      * in {@code [1, 9]}, and the {@code MemberRefEntry} is subject to
      * various restrictions based on the reference kind (JVMS {@jvms 4.4.8}).
      *
      * @param refKind the reference kind of the method handle
      * @param reference the {@code MemberRefEntry}
+     * @throws IllegalArgumentException if {@code refKind} is not {@link
+     *         java.lang.classfile##u1 u1}
      * @see MethodHandleInfo##refkinds Reference kinds
      * @see MethodHandleEntry#kind() MethodHandleEntry::kind
      * @see MethodHandleEntry#reference() MethodHandleEntry::reference
@@ -414,7 +419,9 @@ public sealed interface ConstantPoolBuilder
      * @see InvokeDynamicEntry#asSymbol() InvokeDynamicEntry::asSymbol
      */
     default InvokeDynamicEntry invokeDynamicEntry(DynamicCallSiteDesc dcsd) {
-        return invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
+        var ret = invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
+        ((AbstractPoolEntry.InvokeDynamicEntryImpl) ret).sym = dcsd;
+        return ret;
     }
 
     /**
@@ -440,7 +447,9 @@ public sealed interface ConstantPoolBuilder
      * @see ConstantDynamicEntry#asSymbol() ConstantDynamicEntry::asSymbol
      */
     default ConstantDynamicEntry constantDynamicEntry(DynamicConstantDesc<?> dcd) {
-        return constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), nameAndTypeEntry(dcd.constantName(), dcd.constantType()));
+        var ret = constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), nameAndTypeEntry(dcd.constantName(), dcd.constantType()));
+        ((AbstractPoolEntry.ConstantDynamicEntryImpl) ret).sym = dcd;
+        return ret;
     }
 
     /**
@@ -533,7 +542,7 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof Long l) return longEntry(l);
         if (c instanceof Float f) return floatEntry(f);
         if (c instanceof Double d) return doubleEntry(d);
-        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
+        throw new IllegalArgumentException("Illegal type: " + c.getClass()); // implicit null check
     }
 
     /**
@@ -552,7 +561,8 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof MethodTypeDesc mtd) return methodTypeEntry(mtd);
         if (c instanceof DirectMethodHandleDesc dmhd) return methodHandleEntry(dmhd);
         if (c instanceof DynamicConstantDesc<?> dcd) return constantDynamicEntry(dcd);
-        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
+        // Shouldn't reach here
+        throw new IllegalArgumentException("Illegal type: " + c.getClass()); // implicit null check
     }
 
     /**
@@ -561,6 +571,8 @@ public sealed interface ConstantPoolBuilder
      *
      * @param methodReference the bootstrap method
      * @param arguments the arguments
+     * @throws IllegalArgumentException if the number of arguments exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      */
     default BootstrapMethodEntry bsmEntry(DirectMethodHandleDesc methodReference,
                                           List<ConstantDesc> arguments) {
@@ -576,6 +588,8 @@ public sealed interface ConstantPoolBuilder
      *
      * @param methodReference the {@code MethodHandleEntry}
      * @param arguments the list of {@code LoadableConstantEntry}
+     * @throws IllegalArgumentException if the number of arguments exceeds the
+     *         limit of {@link java.lang.classfile##u2 u2}
      * @see BootstrapMethodEntry#bootstrapMethod()
      *      BootstrapMethodEntry::bootstrapMethod
      * @see BootstrapMethodEntry#arguments() BootstrapMethodEntry::arguments

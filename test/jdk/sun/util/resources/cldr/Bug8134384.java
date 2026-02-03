@@ -25,7 +25,7 @@
  * @test
  * @bug 8134384 8234347 8236548 8347841
  * @summary Tests CLDR TimeZoneNames has English names for all tzids
- * @run main/othervm -Djava.locale.providers=CLDR Bug8134384
+ * @run main Bug8134384
  */
 
 import java.text.*;

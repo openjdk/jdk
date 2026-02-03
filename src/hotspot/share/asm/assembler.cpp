@@ -23,7 +23,6 @@
  */
 
 #include "asm/codeBuffer.hpp"
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"

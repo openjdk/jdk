@@ -44,7 +44,7 @@ import java.util.List;
  * by the message digest algorithm, and only the resulting hash is signed.
  * <li> The message can be concatenated with a context string to enable
  * (application-level) domain separation.
- * <li> More fine-tuned features, represented as case-sensitive strings, can be
+ * <li> More fine-tuned features, represented as case-insensitive strings, can be
  * specified.
  * <ul>
  * <li><code>deterministic</code>: signature generation uses constant byte
@@ -59,8 +59,6 @@ import java.util.List;
  * Call {@link java.security.Signature#setParameter(AlgorithmParameterSpec)}
  * to configure parameters before calling {@link java.security.Signature#initSign(PrivateKey)}
  * or {@link java.security.Signature#initVerify(PublicKey)}.
- *
- * @since 25
  */
 public final class SignatureParameterSpec implements AlgorithmParameterSpec {
 

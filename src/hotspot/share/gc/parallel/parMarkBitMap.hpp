@@ -61,7 +61,7 @@ public:
   void print_on(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
 
-    StreamAutoIndentor indentor(st, 1);
+    StreamIndentor si(st, 1);
     _beg_bits.print_range_on(st, "Begin Bits: ");
   }
 

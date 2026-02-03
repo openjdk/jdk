@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // Handling of java.lang.ref.Reference objects in the AOT cache
 // ============================================================
@@ -92,7 +92,7 @@
 
 #if INCLUDE_CDS_JAVA_HEAP
 
-class KeepAliveObjectsTable : public ResourceHashtable<oop, bool,
+class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,
@@ -153,6 +153,9 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
 
       _keep_alive_objs_array = OopHandle(Universe::vm_global(), result.get_oop());
     }
+
+    // Trigger a GC to prune eligible referents that were not kept alive
+    Universe::heap()->collect(GCCause::_java_lang_system_gc);
   }
 }
 
@@ -174,12 +177,17 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
 
 // Returns true IFF obj is an instance of java.lang.ref.Reference. If so, perform extra eligibility checks.
 bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
-  // We have a single Java thread. This means java.lang.ref.Reference$ReferenceHandler thread
-  // is not running. Otherwise the checks for next/discovered may not work.
-  precond(CDSConfig::allow_only_single_java_thread());
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
 
   if (obj->klass()->is_subclass_of(vmClasses::Reference_klass())) {
+    // The following check works only if the java.lang.ref.Reference$ReferenceHandler thread
+    // is not running.
+    //
+    // This code is called on every object found by AOTArtifactFinder. When dumping the
+    // preimage archive, AOTArtifactFinder should not find any Reference objects.
+    precond(!CDSConfig::is_dumping_preimage_static_archive());
+    precond(CDSConfig::allow_only_single_java_thread());
+
     precond(AOTReferenceObjSupport::is_enabled());
     precond(JavaClasses::is_supported_for_archiving(obj));
     precond(_keep_alive_objs_table != nullptr);
@@ -197,24 +205,24 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
     if (needs_special_cleanup && (referent == nullptr || !_keep_alive_objs_table->contains(referent))) {
       ResourceMark rm;
 
-      log_error(cds, heap)("Cannot archive reference object " PTR_FORMAT " of class %s",
+      log_error(aot, heap)("Cannot archive reference object " PTR_FORMAT " of class %s",
                            p2i(obj), obj->klass()->external_name());
-      log_error(cds, heap)("referent = " PTR_FORMAT
+      log_error(aot, heap)("referent = " PTR_FORMAT
                            ", queue = " PTR_FORMAT
                            ", next = " PTR_FORMAT
                            ", discovered = " PTR_FORMAT,
                            p2i(referent), p2i(queue), p2i(next), p2i(discovered));
-      log_error(cds, heap)("This object requires special clean up as its queue is not ReferenceQueue::N" "ULL ("
+      log_error(aot, heap)("This object requires special clean up as its queue is not ReferenceQueue::N" "ULL ("
                            PTR_FORMAT ")", p2i(_null_queue.resolve()));
-      log_error(cds, heap)("%s", (referent == nullptr) ?
+      log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
       HeapShared::debug_trace();
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
 
-    if (log_is_enabled(Info, cds, ref)) {
+    if (log_is_enabled(Info, aot, ref)) {
       ResourceMark rm;
-      log_info(cds, ref)("Reference obj:"
+      log_info(aot, ref)("Reference obj:"
                          " r=" PTR_FORMAT
                          " q=" PTR_FORMAT
                          " n=" PTR_FORMAT

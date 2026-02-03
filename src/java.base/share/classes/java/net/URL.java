@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,11 @@ import java.util.ServiceLoader;
 
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import sun.net.util.IPAddressUtil;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Class {@code URL} represents a Uniform Resource
@@ -212,6 +214,7 @@ import sun.net.util.IPAddressUtil;
  * @author  James Gosling
  * @since 1.0
  */
+@AOTSafeClassInitializer
 public final class URL implements java.io.Serializable {
 
     static final String BUILTIN_HANDLERS_PREFIX = "sun.net.www.protocol";
@@ -1168,7 +1171,8 @@ public final class URL implements java.io.Serializable {
         URI uri = new URI(toString());
         if (authority != null && isBuiltinStreamHandler(handler)) {
             String s = IPAddressUtil.checkAuthority(this);
-            if (s != null) throw new URISyntaxException(authority, s);
+            if (s != null)
+                throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(authority)), s);
         }
         return uri;
     }
@@ -1388,24 +1392,13 @@ public final class URL implements java.io.Serializable {
         return handler;
     }
 
-    private static class ThreadTrackHolder {
-        static final ThreadTracker TRACKER = new ThreadTracker();
-    }
-
-    private static Object tryBeginLookup() {
-        return ThreadTrackHolder.TRACKER.tryBegin();
-    }
-
-    private static void endLookup(Object key) {
-        ThreadTrackHolder.TRACKER.end(key);
-    }
+    private static final ScopedValue<Boolean> IN_LOOKUP = ScopedValue.newInstance();
 
     private static URLStreamHandler lookupViaProviders(final String protocol) {
-        Object key = tryBeginLookup();
-        if (key == null) {
+        if (IN_LOOKUP.isBound()) {
             throw new Error("Circular loading of URL stream handler providers detected");
         }
-        try {
+        return ScopedValue.where(IN_LOOKUP, true).call(() -> {
             final ClassLoader cl = ClassLoader.getSystemClassLoader();
             final ServiceLoader<URLStreamHandlerProvider> sl =
                     ServiceLoader.load(URLStreamHandlerProvider.class, cl);
@@ -1417,9 +1410,7 @@ public final class URL implements java.io.Serializable {
                     return h;
             }
             return null;
-        } finally {
-            endLookup(key);
-        }
+        });
     }
 
     /**

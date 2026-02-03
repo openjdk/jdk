@@ -41,7 +41,12 @@ import static java.util.stream.Collectors.*;
 // This program is executed by make/RunTests.gmk to support running HotSpot tests
 // in the "AOT mode", for example:
 //
-//     make test JTREG=AOT_JDK=true TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+//     make test JTREG=AOT_JDK=onestep TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+//     make test JTREG=AOT_JDK=twostep TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+//
+// The onestep and twostep options specify whether the AOT cache is created with
+// a single JVM command (java -XX:AOTMode=record -XX:AOTCacheOutput=jdk.aotcache ...) or
+// two JVM commands (java -XX:AOTMode=record ...; java -XX:AOTMode=create -XX:AOTCache=jdk.aotcache ...)
 //
 // All JDK classes touched by this program will be stored into a customized AOT cache.
 // This is a larger set of classes than those stored in the JDK's default CDS archive.
@@ -132,7 +137,7 @@ public class TestSetupAOT {
         String jlinkOutput = tmpDir + File.separator + "jlinkOutput";
 
         execTool("jlink", "--help")
-            .shouldContain("Compression to use in compressing resources");
+            .shouldContain("Compress all resources in the output image");
         execTool("jlink", "--list-plugins")
             .shouldContain("List of available plugins",
                            "--generate-cds-archive ");

@@ -53,7 +53,7 @@ static void* _zip_handle = nullptr;
 static bool _loaded = false;
 
 static inline bool is_loaded() {
-  return Atomic::load_acquire(&_loaded);
+  return AtomicAccess::load_acquire(&_loaded);
 }
 
 static inline bool not_loaded() {
@@ -111,7 +111,7 @@ static void load_zip_library(bool vm_exit_on_failure) {
   }
 
   store_function_pointers(&path[0], vm_exit_on_failure);
-  Atomic::release_store(&_loaded, true);
+  AtomicAccess::release_store(&_loaded, true);
   assert(is_loaded(), "invariant");
 }
 

@@ -26,6 +26,7 @@
 package sun.security.provider;
 
 import sun.security.pkcs.NamedPKCS8Key;
+import sun.security.util.SignatureParameterSpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.AlgorithmParameters;
@@ -40,7 +41,6 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
-import sun.security.util.SignatureParameterSpec;
 
 /// A base class for all `Signature` implementations that can be
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
@@ -50,7 +50,7 @@ import sun.security.util.SignatureParameterSpec;
 public abstract class NamedSignature extends SignatureSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // allowed parameter set name (at least one)
+    private final NamedKeyFactory fac;
 
     // Default value; never null
     protected SignatureParameterSpec sps = SignatureParameterSpec.PURE;
@@ -59,7 +59,7 @@ public abstract class NamedSignature extends SignatureSpi {
     private SignatureMessageAccumulator accu = new SignatureMessageAccumulator();
 
     // init with...
-    private String name;
+    private String pname;
     private byte[] secKey;
     private byte[] pubKey;
 
@@ -69,26 +69,23 @@ public abstract class NamedSignature extends SignatureSpi {
     /// Creates a new `NamedSignature` object.
     ///
     /// @param fname the family name
-    /// @param pnames the standard parameter set names, at least one is needed.
-    protected NamedSignature(String fname, String... pnames) {
+    /// @param fac the `KeyFactory` used to translate foreign keys and
+    ///         perform key validation
+    protected NamedSignature(String fname, NamedKeyFactory fac) {
         if (fname == null) {
             throw new AssertionError("fname cannot be null");
         }
-        if (pnames == null || pnames.length == 0) {
-            throw new AssertionError("pnames cannot be null or empty");
-        }
         this.fname = fname;
-        this.pnames = pnames;
+        this.fac = fac;
     }
 
     @Override
     protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
         // translate also check the key
-        var nk = (NamedX509Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(publicKey);
-        name = nk.getParams().getName();
+        var nk = (NamedX509Key) fac.toNamedKey(publicKey);
+        pname = nk.getParams().getName();
         pubKey = nk.getRawBytes();
-        pk2 = implCheckPublicKey(name, pubKey);
+        pk2 = implCheckPublicKey(pname, pubKey);
         secKey = null;
         accu.reset();
     }
@@ -96,11 +93,10 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
         // translate also check the key
-        var nk = (NamedPKCS8Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(privateKey);
-        name = nk.getParams().getName();
-        secKey = nk.getRawBytes();
-        sk2 = implCheckPrivateKey(name, secKey);
+        var nk = (NamedPKCS8Key) fac.toNamedKey(privateKey);
+        pname = nk.getParams().getName();
+        secKey = nk.getExpanded();
+        sk2 = implCheckPrivateKey(pname, secKey);
         pubKey = null;
         accu.reset();
     }
@@ -119,7 +115,7 @@ public abstract class NamedSignature extends SignatureSpi {
     protected byte[] engineSign() throws SignatureException {
         if (secKey != null) {
             var msg = accu.toByteArray();
-            return implSign(name, secKey, sk2, msg, appRandom);
+            return implSign(pname, secKey, sk2, msg, appRandom);
         } else {
             throw new SignatureException("No private key");
         }
@@ -129,21 +125,21 @@ public abstract class NamedSignature extends SignatureSpi {
     protected boolean engineVerify(byte[] sig) throws SignatureException {
         if (pubKey != null) {
             var msg = accu.toByteArray();
-            return implVerify(name, pubKey, pk2, msg, sig);
+            return implVerify(pname, pubKey, pk2, msg, sig);
         } else {
             throw new SignatureException("No public key");
         }
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @Deprecated
     protected void engineSetParameter(String param, Object value)
             throws InvalidParameterException {
         throw new InvalidParameterException("setParameter() not supported");
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @Deprecated
     protected Object engineGetParameter(String param) throws InvalidParameterException {
         throw new InvalidParameterException("getParameter() not supported");
     }
@@ -176,7 +172,7 @@ public abstract class NamedSignature extends SignatureSpi {
 
     /// User-defined sign function.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param sk private key in raw bytes
     /// @param sk2 parsed private key, `null` if none. See [#implCheckPrivateKey].
     /// @param msg the message; might be preHashed
@@ -184,12 +180,12 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @return the signature
     /// @throws ProviderException if there is an internal error
     /// @throws SignatureException if there is another error
-    protected abstract byte[] implSign(String name, byte[] sk, Object sk2,
+    protected abstract byte[] implSign(String pname, byte[] sk, Object sk2,
             byte[] msg, SecureRandom sr) throws SignatureException;
 
     /// User-defined verify function.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param pk public key in raw bytes
     /// @param pk2 parsed public key, `null` if none. See [#implCheckPublicKey].
     /// @param msg the message; might be preHashed
@@ -197,7 +193,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @return true if verified
     /// @throws ProviderException if there is an internal error
     /// @throws SignatureException if there is another error
-    protected abstract boolean implVerify(String name, byte[] pk, Object pk2,
+    protected abstract boolean implVerify(String pname, byte[] pk, Object pk2,
             byte[] msg, byte[] sig) throws SignatureException;
 
     /// User-defined function to validate a public key.
@@ -209,11 +205,11 @@ public abstract class NamedSignature extends SignatureSpi {
     ///
     /// The default implementation returns `null`.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param pk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+    protected Object implCheckPublicKey(String pname, byte[] pk) throws InvalidKeyException {
         return null;
     }
 
@@ -226,11 +222,11 @@ public abstract class NamedSignature extends SignatureSpi {
     ///
     /// The default implementation returns `null`.
     ///
-    /// @param name parameter name
+    /// @param pname parameter name
     /// @param sk private key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+    protected Object implCheckPrivateKey(String pname, byte[] sk) throws InvalidKeyException {
         return null;
     }
 }

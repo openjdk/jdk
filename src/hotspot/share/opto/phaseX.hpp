@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,13 @@ public:
 // 3) NodeHash table, to find identical nodes (and remove/update the hash of a node on modification).
 class PhaseValues : public PhaseTransform {
 protected:
-  bool      _iterGVN;
+  enum class PhaseValuesType {
+    gvn,
+    iter_gvn,
+    ccp
+  };
+
+  PhaseValuesType _phase;
 
   // Hash table for value-numbering. Reference to "C->node_hash()",
   NodeHash &_table;
@@ -247,7 +253,7 @@ protected:
   void init_con_caches();
 
 public:
-  PhaseValues() : PhaseTransform(GVN), _iterGVN(false),
+  PhaseValues() : PhaseTransform(GVN), _phase(PhaseValuesType::gvn),
                   _table(*C->node_hash()), _types(*C->types())
   {
     NOT_PRODUCT( clear_new_values(); )
@@ -256,7 +262,7 @@ public:
     init_con_caches();
   }
   NOT_PRODUCT(~PhaseValues();)
-  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : nullptr; }
+  PhaseIterGVN* is_IterGVN();
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
@@ -459,16 +465,12 @@ protected:
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
-  PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
+  PhaseIterGVN();
 
-  // Reset IGVN from GVN: call deconstructor, and placement new.
-  // Achieves the same as the following (but without move constructors):
-  // igvn = PhaseIterGVN(gvn);
-  void reset_from_gvn(PhaseGVN* gvn) {
-    if (this != gvn) {
-      this->~PhaseIterGVN();
-      ::new (static_cast<void*>(this)) PhaseIterGVN(gvn);
-    }
+  // Reset IGVN: call deconstructor, and placement new.
+  void reset() {
+    this->~PhaseIterGVN();
+    ::new (static_cast<void*>(this)) PhaseIterGVN();
   }
 
   // Reset IGVN with another: call deconstructor, and placement new.
@@ -494,7 +496,11 @@ public:
   void optimize();
 #ifdef ASSERT
   void verify_optimize();
-  bool verify_node_value(Node* n);
+  void verify_Value_for(const Node* n, bool strict = false);
+  void verify_Ideal_for(Node* n, bool can_reshape);
+  void verify_Identity_for(Node* n);
+  void verify_node_invariants_for(const Node* n);
+  void verify_empty_worklist(Node* n);
 #endif
 
 #ifndef PRODUCT
@@ -529,7 +535,23 @@ public:
 
   // Add users of 'n' to worklist
   static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
+
+  // Add one or more users of 'use' to the worklist if it appears that a
+  // known optimization could be applied to those users.
+  // Node 'n' is a node that was modified or is about to get replaced,
+  // and 'use' is one use of 'n'.
+  // Certain optimizations have dependencies that extend beyond a node's
+  // direct inputs, so it is necessary to ensure the appropriate
+  // notifications are made here.
   static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist);
+
+  // Add users of 'n', and any other nodes that could be directly
+  // affected by changes to 'n', to the worklist.
+  // Node 'n' may be a node that is about to get replaced. In this
+  // case, 'n' should not be considered part of the new graph.
+  // Passing the old node (as 'n'), rather than the new node,
+  // prevents unnecessary notifications when the new node already
+  // has other users.
   void add_users_to_worklist(Node* n);
 
   // Replace old node with new one.
@@ -593,6 +615,18 @@ public:
     // '-XX:VerifyIterativeGVN=10'
     return ((VerifyIterativeGVN % 100) / 10) == 1;
   }
+  static bool is_verify_Ideal() {
+    // '-XX:VerifyIterativeGVN=100'
+    return ((VerifyIterativeGVN % 1000) / 100) == 1;
+  }
+  static bool is_verify_Identity() {
+    // '-XX:VerifyIterativeGVN=1000'
+    return ((VerifyIterativeGVN % 10000) / 1000) == 1;
+  }
+  static bool is_verify_invariants() {
+    // '-XX:VerifyIterativeGVN=10000'
+    return ((VerifyIterativeGVN % 100000) / 10000) == 1;
+  }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
@@ -627,6 +661,8 @@ class PhaseCCP : public PhaseIterGVN {
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
+  void push_bool_with_cmpu_and_mask(Unique_Node_List& worklist, const Node* use) const;
+  void push_bool_matching_case1b(Unique_Node_List& worklist, const Node* cmpu) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
@@ -634,6 +670,8 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
+  void analyze_step(Unique_Node_List& worklist, Node* n);
+  bool needs_revisit(Node* n) const;
 #ifdef ASSERT
   void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()

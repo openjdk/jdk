@@ -64,12 +64,10 @@
     return true;
   }
 
-  // Use conditional move (CMOVL) on Power7.
   static constexpr int long_cmove_cost() { return 0; } // this only makes long cmoves more expensive than int cmoves
 
-  // Suppress CMOVF. Conditional move available (sort of) on PPC64 only from P7 onwards. Not exploited yet.
-  // fsel doesn't accept a condition register as input, so this would be slightly different.
-  static int float_cmove_cost() { return ConditionalMoveLimit; }
+  // Suppress CMOVF for Power8 because there are no fast nodes.
+  static int float_cmove_cost() { return (PowerArchitecturePPC64 >= 9) ? 0 : ConditionalMoveLimit; }
 
   // This affects two different things:
   //  - how Decode nodes are matched
@@ -158,11 +156,10 @@
   }
 
   // true means we have fast l2f conversion
-  // false means that conversion is done by runtime call
-  static bool convL2FSupported(void) {
+  static constexpr bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
-    return VM_Version::has_fcfids();
+    return true;
   }
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only

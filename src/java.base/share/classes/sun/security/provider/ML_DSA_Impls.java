@@ -26,9 +26,12 @@
 package sun.security.provider;
 
 import sun.security.jca.JCAUtil;
+import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.util.DerOutputStream;
+import sun.security.util.KeyChoices;
 import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
+import sun.security.x509.NamedX509Key;
 
 import java.security.*;
 import java.security.SecureRandom;
@@ -37,16 +40,35 @@ import java.util.Arrays;
 
 public class ML_DSA_Impls {
 
-    static int name2int(String name) {
-        if (name.endsWith("44")) {
+    private static final int SEED_LEN = 32;
+
+    public static byte[] seedToExpanded(String pname, byte[] seed) {
+        var impl = new ML_DSA(name2int(pname));
+        var sk = impl.generateKeyPairInternal(seed).privateKey();
+        try {
+            return impl.skEncode(sk);
+        } finally {
+            sk.destroy();
+        }
+    }
+
+    public static NamedX509Key privKeyToPubKey(NamedPKCS8Key npk) {
+        var dsa = new ML_DSA(name2int(npk.getParams().getName()));
+        return new NamedX509Key(npk.getAlgorithm(),
+                npk.getParams().getName(),
+                dsa.pkEncode(dsa.privKeyToPubKey(dsa.skDecode(npk.getExpanded()))));
+    }
+
+    static int name2int(String pname) {
+        if (pname.endsWith("44")) {
             return 2;
-        } else if (name.endsWith("65")) {
+        } else if (pname.endsWith("65")) {
             return 3;
-        } else if (name.endsWith("87")) {
+        } else if (pname.endsWith("87")) {
             return 5;
         } else {
             // should not happen
-            throw new ProviderException("Unknown name " + name);
+            throw new ProviderException("Unknown name " + pname);
         }
     }
 
@@ -63,20 +85,26 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        protected byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
-            byte[] seed = new byte[32];
-            var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
+        protected byte[][] implGenerateKeyPair(String pname, SecureRandom random) {
+            byte[] seed = new byte[SEED_LEN];
+            var r = random != null ? random : JCAUtil.getDefSecureRandom();
             r.nextBytes(seed);
-            ML_DSA mlDsa = new ML_DSA(name2int(name));
+
+            ML_DSA mlDsa = new ML_DSA(name2int(pname));
             ML_DSA.ML_DSA_KeyPair kp = mlDsa.generateKeyPairInternal(seed);
+            var expanded = mlDsa.skEncode(kp.privateKey());
+
             try {
                 return new byte[][]{
                         mlDsa.pkEncode(kp.publicKey()),
-                        mlDsa.skEncode(kp.privateKey())
+                        KeyChoices.writeToChoice(
+                                KeyChoices.getPreferred("mldsa"),
+                                seed, expanded),
+                        expanded
                 };
             } finally {
                 kp.privateKey().destroy();
-                Arrays.fill(seed, (byte)0);
+                Arrays.fill(seed, (byte) 0);
             }
         }
     }
@@ -103,8 +131,39 @@ public class ML_DSA_Impls {
         public KF() {
             super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
-        public KF(String name) {
-            super("ML-DSA", name);
+        public KF(String pname) {
+            super("ML-DSA", pname);
+        }
+
+        @Override
+        protected byte[] implExpand(String pname, byte[] input)
+                throws InvalidKeyException {
+            return KeyChoices.choiceToExpanded(pname, SEED_LEN, input,
+                    ML_DSA_Impls::seedToExpanded);
+        }
+
+        @Override
+        protected Key engineTranslateKey(Key key) throws InvalidKeyException {
+            var nk = toNamedKey(key);
+            if (nk instanceof NamedPKCS8Key npk) {
+                var type = KeyChoices.getPreferred("mldsa");
+                if (KeyChoices.typeOfChoice(npk.getRawBytes()) != type) {
+                    var encoding = KeyChoices.choiceToChoice(
+                            type,
+                            npk.getParams().getName(),
+                            SEED_LEN, npk.getRawBytes(),
+                            ML_DSA_Impls::seedToExpanded);
+                    nk = NamedPKCS8Key.internalCreate(
+                            npk.getAlgorithm(),
+                            npk.getParams().getName(),
+                            encoding,
+                            npk.getExpanded().clone());
+                    if (npk != key) { // npk is neither input or output
+                        npk.destroy();
+                    }
+                }
+            }
+            return nk;
         }
     }
 
@@ -134,11 +193,11 @@ public class ML_DSA_Impls {
         private boolean useExternalMu = false;
 
         public SIG() {
-            super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
+            super("ML-DSA", new KF());
         }
 
-        public SIG(String name) {
-            super("ML-DSA", name);
+        public SIG(String pname) {
+            super("ML-DSA", new KF(pname));
         }
 
         @Override
@@ -185,7 +244,7 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        protected byte[] implSign(String name, byte[] skBytes, Object sk2,
+        protected byte[] implSign(String pname, byte[] skBytes, Object sk2,
                 byte[] msg, SecureRandom sr) throws SignatureException {
             byte[] rnd = new byte[32];
             if (!isDeterministic) {
@@ -196,7 +255,7 @@ public class ML_DSA_Impls {
                 throw new SignatureException(
                         "input must be 64 bytes in externalMu mode");
             }
-            var size = name2int(name);
+            var size = name2int(pname);
             var mlDsa = new ML_DSA(size);
             ML_DSA.ML_DSA_Signature sig = mlDsa.signInternal(
                     useExternalMu, m(msg), rnd, skBytes);
@@ -204,31 +263,31 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        protected boolean implVerify(String name, byte[] pkBytes,
-                                     Object pk2, byte[] msg, byte[] sigBytes)
+        protected boolean implVerify(String pname, byte[] pkBytes,
+                Object pk2, byte[] msg, byte[] sigBytes)
                 throws SignatureException {
             if (useExternalMu && msg.length != 64) {
                 throw new SignatureException(
                         "input must be 64 bytes in externalMu mode");
             }
-            var size = name2int(name);
+            var size = name2int(pname);
             var mlDsa = new ML_DSA(size);
             return mlDsa.verifyInternal(pkBytes, useExternalMu, m(msg), sigBytes);
         }
 
         @Override
-        protected Object implCheckPublicKey(String name, byte[] pk)
+        protected Object implCheckPublicKey(String pname, byte[] pk)
             throws InvalidKeyException {
 
-            ML_DSA mlDsa = new ML_DSA(name2int(name));
+            ML_DSA mlDsa = new ML_DSA(name2int(pname));
             return mlDsa.checkPublicKey(pk);
         }
 
         @Override
-        protected Object implCheckPrivateKey(String name, byte[] sk)
+        protected Object implCheckPrivateKey(String pname, byte[] sk)
             throws InvalidKeyException {
 
-            ML_DSA mlDsa = new ML_DSA(name2int(name));
+            ML_DSA mlDsa = new ML_DSA(name2int(pname));
             return mlDsa.checkPrivateKey(sk);
         }
     }

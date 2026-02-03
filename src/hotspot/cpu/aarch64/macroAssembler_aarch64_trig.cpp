@@ -543,7 +543,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
 //  }
 //
 //  /* compute n */
-//  z  = scalbnA(z,q0);           /* actual value of z */
+//  z  = scalbn(z,q0);                    /* actual value of z */
 //  z -= 8.0*floor(z*0.125);              /* trim off integer >= 8 */
 //  n  = (int) z;
 //  z -= (double)n;
@@ -576,7 +576,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
 //    }
 //    if(ih==2) {
 //      z = one - z;
-//      if(carry!=0) z -= scalbnA(one,q0);
+//      if(carry!=0) z -= scalbn(one,q0);
 //    }
 //  }
 //
@@ -602,7 +602,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
 //    jz -= 1; q0 -= 24;
 //    while(iq[jz]==0) { jz--; q0-=24;}
 //  } else { /* break z into 24-bit if necessary */
-//    z = scalbnA(z,-q0);
+//    z = scalbn(z,-q0);
 //    if(z>=two24B) {
 //      fw = (double)((int)(twon24*z));
 //      iq[jz] = (int)(z-two24B*fw);
@@ -612,7 +612,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
 //  }
 //
 //  /* convert integer "bit" chunk to floating-point value */
-//  fw = scalbnA(one,q0);
+//  fw = scalbn(one,q0);
 //  for(i=jz;i>=0;i--) {
 //    q[i] = fw*(double)iq[i]; fw*=twon24;
 //  }
@@ -925,7 +925,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
           fmovd(v25, 1.0);
           fsubd(v18, v25, v18);                            // z = one - z;
           cbzw(rscratch2, IH_HANDLED);
-          fsubd(v18, v18, v30);                            // z -= scalbnA(one,q0);
+          fsubd(v18, v18, v30);                            // z -= scalbn(one,q0);
         }
     }
     bind(IH_HANDLED);
@@ -1026,7 +1026,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
       bind(Z_ZERO_CHECK_DONE);
         // convert integer "bit" chunk to floating-point value
         // v17 = twon24
-        // update v30, which was scalbnA(1.0, <old q0>);
+        // update v30, which was scalbn(1.0, <old q0>);
         addw(tmp2, rscratch1, 1023); // biased exponent
         lsl(tmp2, tmp2, 52); // put at correct position
         mov(i, jz);

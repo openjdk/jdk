@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ D3DMaskFill_MaskFill(D3DContext *d3dc,
 
     RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
-                maskoff, maskscan);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
+               maskoff, maskscan);
 
     {
         D3DMaskCache *maskCache = d3dc->GetMaskCache();

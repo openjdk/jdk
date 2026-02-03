@@ -33,19 +33,23 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Collator;
+import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.TreeSet;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.lang.model.SourceVersion;
@@ -146,13 +150,7 @@ public enum Option {
         }
     },
 
-    // -nowarn is retained for command-line backward compatibility
-    NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC) {
-        @Override
-        public void process(OptionHelper helper, String option) {
-            helper.put("-Xlint:none", option);
-        }
-    },
+    NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC),
 
     VERBOSE("-verbose", "opt.verbose", STANDARD, BASIC),
 
@@ -326,12 +324,13 @@ public enum Option {
 
         @Override
         protected void help(Log log) {
-            StringJoiner sj = new StringJoiner(", ");
+            List<String> releases = new ArrayList<>();
             for(Source source :  Source.values()) {
                 if (source.isSupported())
-                    sj.add(source.name);
+                    releases.add(source.name);
             }
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
+            String formatted = formatAbbreviatedList(releases);
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
         }
     },
 
@@ -347,12 +346,13 @@ public enum Option {
 
         @Override
         protected void help(Log log) {
-            StringJoiner sj = new StringJoiner(", ");
+            List<String> releases = new ArrayList<>();
             for(Target target :  Target.values()) {
                 if (target.isSupported())
-                    sj.add(target.name);
+                    releases.add(target.name);
             }
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
+            String formatted = formatAbbreviatedList(releases);
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
         }
     },
 
@@ -367,15 +367,8 @@ public enum Option {
                                                                                            false))
                                                  .collect(Collectors.toCollection(LinkedHashSet :: new));
 
-            StringBuilder targets = new StringBuilder();
-            String delim = "";
-            for (String platform : platforms) {
-                targets.append(delim);
-                targets.append(platform);
-                delim = ", ";
-            }
-
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, targets.toString()));
+            String formatted = formatAbbreviatedList(platforms);
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
         }
     },
 
@@ -489,27 +482,54 @@ public enum Option {
     },
 
     HELP_LINT("--help-lint", "opt.help.lint", EXTENDED, INFO) {
-        private final String LINT_KEY_FORMAT = SMALL_INDENT + SMALL_INDENT + "%-" +
+        private final String HELP_INDENT = SMALL_INDENT + SMALL_INDENT;
+        private final String LINT_KEY_FORMAT = HELP_INDENT + "%-" +
                 (DEFAULT_SYNOPSIS_WIDTH - LARGE_INDENT.length()) + "s %s";
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
             Log log = helper.getLog();
+
+            // Print header
             log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.header"));
+
+            // Print "all" option
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "all",
+                                            LINT_CUSTOM_ALL,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
-            for (LintCategory lc : LintCategory.values()) {
-                log.printRawLines(WriterKind.STDOUT,
-                                  String.format(LINT_KEY_FORMAT,
-                                                lc.option,
-                                                log.localize(PrefixKind.JAVAC,
-                                                             "opt.Xlint.desc." + lc.option)));
-            }
+
+            // Alphabetize all the category names and their aliases together, and then list them with their descriptions
+            TreeMap<String, String> keyMap = new TreeMap<>();
+            Stream.of(LintCategory.values()).forEach(lc ->
+              lc.optionList.stream()
+                .forEach(key -> keyMap.put(key,
+                  String.format(LINT_KEY_FORMAT,
+                                key,
+                                key.equals(lc.option) ?
+                                  log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + key) :
+                                  log.localize(PrefixKind.JAVAC, "opt.Xlint.alias.of", lc.option, key)))));
+            keyMap.values().forEach(desc -> log.printRawLines(WriterKind.STDOUT, desc));
+
+            // Print "none" option
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "none",
+                                            LINT_CUSTOM_NONE,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
+
+            // Show which lint categories are enabled by default
+            log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.enabled.by.default"));
+            String defaults = Stream.of(LintCategory.values())
+              .filter(lc -> lc.enabledByDefault)
+              .map(lc -> lc.option)
+              .sorted()
+              .collect(Collectors.joining(", "));
+            log.printRawLines(WriterKind.STDOUT,
+                              String.format("%s%s.", HELP_INDENT, defaults));
+
+            // Add trailing blurb about aliases
+            List<String> aliasExample = LintCategory.IDENTITY.optionList;
+            log.printRawLines(WriterKind.STDOUT,
+                              log.localize(PrefixKind.JAVAC, "opt.help.lint.footer", aliasExample.get(0), aliasExample.get(1)));
             super.process(helper, option);
         }
     },
@@ -538,6 +558,8 @@ public enum Option {
 
     // treat warnings as errors
     WERROR("-Werror", "opt.Werror", STANDARD, BASIC),
+
+    WERROR_CUSTOM("-Werror:", "opt.arg.Werror", "opt.Werror.custom", STANDARD, BASIC, ANYOF, getXLintChoices()),
 
     // prompt after each error
     // new Option("-prompt",                                        "opt.prompt"),
@@ -842,6 +864,16 @@ public enum Option {
     };
 
     /**
+     * Special lint category key meaning "all lint categories".
+     */
+    public static final String LINT_CUSTOM_ALL = "all";
+
+    /**
+     * Special lint category key meaning "no lint categories".
+     */
+    public static final String LINT_CUSTOM_NONE = "none";
+
+    /**
      * This exception is thrown when an invalid value is given for an option.
      * The detail string gives a detailed, localized message, suitable for use
      * in error messages reported to the user.
@@ -1087,6 +1119,33 @@ public enum Option {
         return kind;
     }
 
+    /**
+     * If this option is named {@code FOO}, obtain the option named {@code FOO_CUSTOM}.
+     *
+     * @param option regular option
+     * @return corresponding custom option
+     * @throws IllegalArgumentException if no such option exists
+     */
+    public Option getCustom() {
+        return Option.valueOf(name() + "_CUSTOM");
+    }
+
+    /**
+     * Like {@link #getCustom} but also requires that the custom option supports lint categories.
+     *
+     * <p>
+     * In practice, that means {@code option} must be {@link Option#LINT} or {@link Option#WERROR}.
+     *
+     * @param option regular option
+     * @return corresponding lint custom option
+     * @throws IllegalArgumentException if no such option exists
+     */
+    public Option getLintCustom() {
+        if (this == XLINT || this == WERROR)
+            return getCustom();
+        throw new IllegalArgumentException();
+    }
+
     public boolean isInBasicOptionGroup() {
         return group == BASIC;
     }
@@ -1307,6 +1366,41 @@ public enum Option {
     }
 
     /**
+     * Formats a collection of values as an abbreviated, comma separated list
+     * for use in javac help output.
+     *
+     * This helper assumes that the supported values form a dense sequence
+     * between the fourth and the (n - 3)rd entries.
+     * That matches the current policy for these values but is not
+     * guaranteed, and should be reconsidered if the structure of the values changes.
+     *
+     * @param values the values to format
+     * @return a comma separated representation of the values
+     */
+    private static String formatAbbreviatedList(Collection<String> values) {
+        List<String> list = (values instanceof List)
+                ? (List<String>) values
+                : new ArrayList<>(values);
+
+        int size = list.size();
+        if (size == 0) {
+            return "";
+        }
+        if (size <= 6) {
+            return String.join(", ", list);
+        }
+        StringJoiner sj = new StringJoiner(", ");
+        for (int i = 0; i < 3; i++) {
+            sj.add(list.get(i));
+        }
+        sj.add("...");
+        for (int i = size - 3; i < size; i++) {
+            sj.add(list.get(i));
+        }
+        return sj.toString();
+    }
+
+    /**
      * Composes the initial synopsis of one of the forms for this option.
      * @param name the name of this form of the option
      * @param log the log used to localize the description of the arguments
@@ -1370,12 +1464,11 @@ public enum Option {
 
     private static Set<String> getXLintChoices() {
         Set<String> choices = new LinkedHashSet<>();
-        choices.add("all");
-        for (Lint.LintCategory c : Lint.LintCategory.values()) {
-            choices.add(c.option);
-            choices.add("-" + c.option);
-        }
-        choices.add("none");
+        choices.add(LINT_CUSTOM_ALL);
+        Lint.LintCategory.options().stream()
+          .flatMap(ident -> Stream.of(ident, "-" + ident))
+          .forEach(choices::add);
+        choices.add(LINT_CUSTOM_NONE);
         return choices;
     }
 

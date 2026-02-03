@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef CPU_S390_ASSEMBLER_S390_INLINE_HPP
 #define CPU_S390_ASSEMBLER_S390_INLINE_HPP
 
-#include "asm/assembler.inline.hpp"
+#include "asm/assembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 

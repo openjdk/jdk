@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,9 @@ public class ResolvedPutField {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
-                       "-Xlog:cds+resolve=trace");
+                       "-Xlog:aot+resolve=trace");
         CDSTestUtils.createArchiveAndCheck(opts)
-            .shouldMatch("cds,resolve.*Failed to resolve putfield .*ResolvedPutFieldHelper -> ResolvedPutFieldHelper.x:I");
+            .shouldMatch(",resolve.*Failed to resolve putfield .*ResolvedPutFieldHelper -> ResolvedPutFieldHelper.x:I");
     }
 }
 

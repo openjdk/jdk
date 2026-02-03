@@ -23,7 +23,6 @@
  */
 
 #include "prims/jvmtiUtil.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"

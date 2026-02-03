@@ -31,16 +31,21 @@
 
 package compiler.loopopts.superword;
 
-import compiler.lib.ir_framework.*;
-import jdk.test.lib.Utils;
+import compiler.lib.generators.Generator;
+import compiler.lib.generators.Generators;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.RunMode;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 
 import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.LongStream;
 
 public class MinMaxRed_Long {
 
-    private static final Random random = Utils.getRandomInstance();
+    private static final int SIZE = 1024;
+    private static final Generator<Long> GEN_LONG = Generators.G.longs();
 
     public static void main(String[] args) throws Exception {
         TestFramework framework = new TestFramework();
@@ -53,95 +58,39 @@ public class MinMaxRed_Long {
     @Run(test = {"maxReductionImplement"},
          mode = RunMode.STANDALONE)
     public void runMaxTest() {
-        runMaxTest(50);
-        runMaxTest(80);
-        runMaxTest(100);
-    }
+        long[] longs = new long[SIZE];
+        Generators.G.fill(GEN_LONG, longs);
 
-    private static void runMaxTest(int probability) {
-        long[] longs = reductionInit(probability);
         long res = 0;
         for (int j = 0; j < 2000; j++) {
             res = maxReductionImplement(longs, res);
         }
-        if (res == 11 * Arrays.stream(longs).max().getAsLong()) {
+
+        final long expected = Arrays.stream(longs).map(l -> l * 11).max().getAsLong();
+        if (res == expected) {
             System.out.println("Success");
         } else {
-            throw new AssertionError("Failed");
+            throw new AssertionError("Failed, got result " + res + " but expected " + expected);
         }
     }
 
     @Run(test = {"minReductionImplement"},
          mode = RunMode.STANDALONE)
     public void runMinTest() {
-        runMinTest(50);
-        runMinTest(80);
-        runMinTest(100);
-    }
+        long[] longs = new long[SIZE];
+        Generators.G.fill(GEN_LONG, longs);
 
-    private static void runMinTest(int probability) {
-        long[] longs = reductionInit(probability);
-        // Negating the values generated for controlling max branching
-        // allows same logic to be used for min tests.
-        longs = negate(longs);
         long res = 0;
         for (int j = 0; j < 2000; j++) {
             res = minReductionImplement(longs, res);
         }
-        if (res == 11 * Arrays.stream(longs).min().getAsLong()) {
+
+        final long expected = Arrays.stream(longs).map(l -> l * 11).min().getAsLong();
+        if (res == expected) {
             System.out.println("Success");
         } else {
-            throw new AssertionError("Failed");
+            throw new AssertionError("Failed, got result " + res + " but expected " + expected);
         }
-    }
-
-    static long[] negate(long[] nums) {
-        return LongStream.of(nums).map(l -> -l).toArray();
-    }
-
-    public static long[] reductionInit(int probability) {
-        int aboveCount, abovePercent;
-        long[] longs = new long[1024];
-
-        // Generates an array of numbers such that as the array is iterated
-        // there is P probability of finding a new max value,
-        // and 100-P probability of not finding a new max value.
-        // The algorithm loops around if the distribution does not match the probability,
-        // but it approximates the probability as the array sizes increase.
-        // The worst case of this algorithm is when the desired array size is 100
-        // and the aim is to get 50% of probability, which can only be satisfied
-        // with 50 elements being a new max. This situation can take 15 rounds.
-        // As sizes increase, say 10'000 elements,
-        // the number of elements that have to satisfy 50% increases,
-        // so the algorithm will stop as an example when 5027 elements are a new max values.
-        // Also, probability values in the edges will achieve their objective quicker,
-        // with 0% or 100% probability doing it in a single loop.
-        // To support the same algorithm for min calculations,
-        // negating the array elements achieves the same objective.
-        do {
-            long max = random.nextLong(10);
-            longs[0] = max;
-
-            aboveCount = 0;
-            for (int i = 1; i < longs.length; i++) {
-                long value;
-                if (random.nextLong(101) <= probability) {
-                    long increment = random.nextLong(10);
-                    value = max + increment;
-                    aboveCount++;
-                } else {
-                    // Decrement by at least 1
-                    long diffToMax = random.nextLong(10) + 1;
-                    value = max - diffToMax;
-                }
-                longs[i] = value;
-                max = Math.max(max, value);
-            }
-
-            abovePercent = ((aboveCount + 1) * 100) / longs.length;
-        } while (abovePercent != probability);
-
-        return longs;
     }
 
     @Test

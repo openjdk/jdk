@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ class G1ServiceThread: public ConcurrentGCThread {
   void schedule(G1ServiceTask* task, jlong delay, bool notify);
 
   // Update the perf data counter for service thread.
-  void update_thread_cpu_time();
+  void update_perf_counter_cpu_time();
 
 public:
   G1ServiceThread();

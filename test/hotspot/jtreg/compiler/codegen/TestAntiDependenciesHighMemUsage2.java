@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,9 +25,12 @@
 /*
  * @test
  * @bug 8333258
- * @summary C2: high memory usage in PhaseCFG::insert_anti_dependences()
- * @run main/othervm -XX:CompileOnly=TestAntiDependenciesHighMemUsage2::test1 -XX:-ClipInlining
- *                   -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement TestAntiDependenciesHighMemUsage2
+ * @summary C2: high memory usage in PhaseCFG::raise_above_anti_dependences()
+ * @run main/othervm/timeout=480 -XX:CompileOnly=TestAntiDependenciesHighMemUsage2::test1
+ *                               -XX:-ClipInlining -XX:-BackgroundCompilation
+ *                               -XX:-TieredCompilation -XX:-UseOnStackReplacement
+ *                               -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=0
+ *                               TestAntiDependenciesHighMemUsage2
  */
 
 public class TestAntiDependenciesHighMemUsage2 {

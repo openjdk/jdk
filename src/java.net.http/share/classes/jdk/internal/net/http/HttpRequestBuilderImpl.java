@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,18 @@
 package jdk.internal.net.http;
 
 import java.net.URI;
+import java.net.http.HttpRequest.Builder;
+import java.net.http.HttpOption;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
+import java.util.Set;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
@@ -39,6 +45,8 @@ import static java.util.Objects.requireNonNull;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.isValidValue;
 import static jdk.internal.net.http.common.Utils.newIAE;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
@@ -49,6 +57,10 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     private BodyPublisher bodyPublisher;
     private volatile Optional<HttpClient.Version> version;
     private Duration duration;
+    private final Map<HttpOption<?>, Object> options = new HashMap<>();
+
+    private static final Set<HttpOption<?>> supportedOptions =
+            Set.of(HttpOption.H3_DISCOVERY);
 
     public HttpRequestBuilderImpl(URI uri) {
         requireNonNull(uri, "uri must be non-null");
@@ -82,7 +94,8 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
             throw newIAE("invalid URI scheme %s", scheme);
         }
         if (uri.getHost() == null) {
-            throw newIAE("unsupported URI %s", uri);
+            throw new IllegalArgumentException(
+                formatMsg("unsupported URI %s", filterNonSocketInfo(uri.toString())));
         }
     }
 
@@ -97,6 +110,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         b.uri = uri;
         b.duration = duration;
         b.version = version;
+        b.options.putAll(Map.copyOf(options));
         return b;
     }
 
@@ -155,6 +169,19 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         return this;
     }
 
+    @Override
+    public <T> Builder setOption(HttpOption<T> option, T value) {
+        Objects.requireNonNull(option, "option");
+        if (value == null) options.remove(option);
+        else if (supportedOptions.contains(option)) {
+            if (!option.type().isInstance(value)) {
+                throw newIAE("Illegal value type %s for %s", value, option);
+            }
+            options.put(option, value);
+        } // otherwise just ignore the option
+        return this;
+    }
+
     HttpHeadersBuilder headersBuilder() {  return headersBuilder; }
 
     URI uri() { return uri; }
@@ -167,6 +194,8 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     Optional<HttpClient.Version> version() { return version; }
 
+    Map<HttpOption<?>, Object> options() { return options; }
+
     @Override
     public HttpRequest.Builder GET() {
         return method0("GET", null);
@@ -174,7 +203,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest.Builder POST(BodyPublisher body) {
-        return method0("POST", requireNonNull(body));
+        return method0("POST", requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     @Override
@@ -189,12 +218,12 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest.Builder PUT(BodyPublisher body) {
-        return method0("PUT", requireNonNull(body));
+        return method0("PUT", requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     @Override
     public HttpRequest.Builder method(String method, BodyPublisher body) {
-        requireNonNull(method);
+        requireNonNull(method, "HTTP method must be non-null");
         if (method.isEmpty())
             throw newIAE("illegal method <empty string>");
         if (method.equals("CONNECT"))
@@ -205,7 +234,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
                     .replace("\r", "\\r")
                     .replace("\t", "\\t")
                     + "\"");
-        return method0(method, requireNonNull(body));
+        return method0(method, requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     private HttpRequest.Builder method0(String method, BodyPublisher body) {
@@ -241,5 +270,31 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     }
 
     Duration timeout() { return duration; }
+
+    public static Map<HttpOption<?>, Object> copySupportedOptions(HttpRequest request) {
+        Objects.requireNonNull(request, "request");
+        if (request instanceof ImmutableHttpRequest ihr) {
+            // already checked and immutable
+            return ihr.options();
+        }
+        Map<HttpOption<?>, Object> options = new HashMap<>();
+        for (HttpOption<?> option : supportedOptions) {
+            var val =  request.getOption(option);
+            if (!val.isPresent()) continue;
+            options.put(option, option.type().cast(val.get()));
+        }
+        return Map.copyOf(options);
+    }
+
+    public static Map<HttpOption<?>, Object> copySupportedOptions(Map<HttpOption<?>, Object> options) {
+        Objects.requireNonNull(options, "option");
+        Map<HttpOption<?>, Object> result = new HashMap<>();
+        for (HttpOption<?> option : supportedOptions) {
+            var val =  options.get(option);
+            if (val == null) continue;
+            result.put(option, option.type().cast(val));
+        }
+        return Map.copyOf(result);
+    }
 
 }

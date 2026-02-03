@@ -25,18 +25,17 @@
 #ifndef SHARE_RUNTIME_ARGUMENTS_HPP
 #define SHARE_RUNTIME_ARGUMENTS_HPP
 
-#include "logging/logLevel.hpp"
-#include "logging/logTag.hpp"
-#include "memory/allStatic.hpp"
+#include "jni.h"
 #include "memory/allocation.hpp"
-#include "runtime/globals.hpp"
+#include "memory/allStatic.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/vmEnums.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Arguments parses the command line and recognizes options
 
+template <typename E>
+class GrowableArray;
 class JVMFlag;
 
 // Invocation API hook typedefs (these should really be defined in jni.h)
@@ -148,6 +147,9 @@ class SystemProperty : public PathString {
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
+struct VMInitArgsGroup;
+template <typename E, MemTag MT> class GrowableArrayCHeap;
+
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
@@ -197,6 +199,10 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
+#if INCLUDE_JVMCI
+  // was jdk.internal.vm.ci module specified in the --add-modules option?
+  static bool _jvmci_module_added;
+#endif
 
   // Property list
   static SystemProperty* _system_properties;
@@ -306,6 +312,8 @@ class Arguments : AllStatic {
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
   static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
+  static jint parse_jdk_aot_vm_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
+                                                            ScopedVMInitArgs* jdk_aot_vm_options_args);
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
   static jint parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize);
@@ -323,10 +331,7 @@ class Arguments : AllStatic {
 
   static bool handle_deprecated_print_gc_flags();
 
-  static jint parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
-                                 const JavaVMInitArgs *java_tool_options_args,
-                                 const JavaVMInitArgs *java_options_args,
-                                 const JavaVMInitArgs *cmd_line_args);
+  static jint parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args);
   static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin origin);
   static jint finalize_vm_init_args();
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
@@ -406,12 +411,8 @@ class Arguments : AllStatic {
 
   // convenient methods to get and set jvm_flags_file
   static const char* get_jvm_flags_file()  { return _jvm_flags_file; }
-  static void set_jvm_flags_file(const char *value) {
-    if (_jvm_flags_file != nullptr) {
-      os::free(_jvm_flags_file);
-    }
-    _jvm_flags_file = os::strdup_check_oom(value);
-  }
+  static void set_jvm_flags_file(const char *value);
+
   // convenient methods to obtain / print jvm_flags and jvm_args
   static const char* jvm_flags()           { return build_resource_string(_jvm_flags_array, _num_jvm_flags); }
   static const char* jvm_args()            { return build_resource_string(_jvm_args_array, _num_jvm_args); }
@@ -473,7 +474,7 @@ class Arguments : AllStatic {
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
   static void set_java_home(const char *value) { _java_home->set_value(value); }
   static void set_library_path(const char *value) { _java_library_path->set_value(value); }
-  static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
+  static void set_ext_dirs(char *value);
 
   // Set up the underlying pieces of the boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path);

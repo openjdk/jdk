@@ -72,27 +72,49 @@ void ShenandoahBarrierSet::print_on(outputStream* st) const {
 
 bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahLoadRefBarrier) return false;
-  // Only needed for references
   return is_reference_type(type);
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahSATBBarrier) return false;
-  // Only needed for references
   if (!is_reference_type(type)) return false;
-
   bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
   return (on_weak_ref || unknown) && keep_alive;
 }
 
+bool ShenandoahBarrierSet::need_satb_barrier(DecoratorSet decorators, BasicType type) {
+  if (!ShenandoahSATBBarrier) return false;
+  if (!is_reference_type(type)) return false;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+  return as_normal && !dest_uninitialized;
+}
+
+bool ShenandoahBarrierSet::need_card_barrier(DecoratorSet decorators, BasicType type) {
+  if (!ShenandoahCardBarrier) return false;
+  if (!is_reference_type(type)) return false;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  return in_heap;
+}
+
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
 #if COMPILER2_OR_JVMCI
-  assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
-         "Allocating new object outside of young generation: " INTPTR_FORMAT, p2i(new_obj));
+  if (ReduceInitialCardMarks && ShenandoahCardBarrier && !ShenandoahHeap::heap()->is_in_young(new_obj)) {
+    log_debug(gc)("Newly allocated object (" PTR_FORMAT ") is not in the young generation", p2i(new_obj));
+    // This can happen when an object is newly allocated, but we come to a safepoint before returning
+    // the object. If the safepoint runs a degenerated cycle that is upgraded to a full GC, this object
+    // will have survived two GC cycles. If the tenuring age is very low (1), this object may be promoted.
+    // In this case, we have an allocated object, but it has received no stores yet. If card marking barriers
+    // have been elided, we could end up with an object in old holding pointers to young that won't be in
+    // the remembered set. The solution here is conservative, but this problem should be rare, and it will
+    // correct itself on subsequent cycles when the remembered set is updated.
+    ShenandoahGenerationalHeap::heap()->old_generation()->card_scan()->mark_range_as_dirty(
+      cast_from_oop<HeapWord*>(new_obj), new_obj->size()
+    );
+  }
 #endif // COMPILER2_OR_JVMCI
-  assert(thread->deferred_card_mark().is_empty(), "We don't use this");
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {

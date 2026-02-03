@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.java2d.xr.*;
  * @author Clemens Eisserer
  */
 
-public class XRGlyphCache implements GlyphDisposedListener {
+public final class XRGlyphCache implements GlyphDisposedListener {
     XRBackend con;
     XRCompositeManager maskBuffer;
     HashMap<MutableInteger, XRGlyphCacheEntry> cacheMap = new HashMap<MutableInteger, XRGlyphCacheEntry>(256);
@@ -66,6 +66,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
         StrikeCache.addGlyphDisposedListener(this);
     }
 
+    @Override
     public void glyphDisposed(ArrayList<Long> glyphPtrList) {
         try {
             SunToolkit.awtLock();
