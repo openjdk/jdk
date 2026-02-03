@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomicAccess.hpp"
 
 #define ASSERT_REF_TYPE(ref_type) assert((ref_type) >= REF_SOFT && (ref_type) <= REF_PHANTOM, \
                                          "Invariant (%d)", (int)ref_type)
@@ -196,7 +195,7 @@ void ReferenceProcessorPhaseTimes::reset() {
   _soft_weak_final_refs_phase_worker_time_sec->reset();
 
   for (int i = 0; i < number_of_subclasses_of_ref; i++) {
-    _ref_dropped[i] = 0;
+    _ref_dropped[i].store_relaxed(0);
     _ref_discovered[i] = 0;
   }
 
@@ -214,7 +213,7 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
 
 void ReferenceProcessorPhaseTimes::add_ref_dropped(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
-  AtomicAccess::add(&_ref_dropped[ref_type_2_index(ref_type)], count, memory_order_relaxed);
+  _ref_dropped[ref_type_2_index(ref_type)].add_then_fetch(count, memory_order_relaxed);
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
@@ -271,7 +270,7 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
     int const ref_type_index = ref_type_2_index(ref_type);
 
     size_t discovered = _ref_discovered[ref_type_index];
-    size_t dropped = _ref_dropped[ref_type_index];
+    size_t dropped = _ref_dropped[ref_type_index].load_relaxed();
     assert(discovered >= dropped, "invariant");
     size_t processed = discovered - dropped;
 

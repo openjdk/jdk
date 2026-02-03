@@ -47,7 +47,7 @@
 #include "utilities/events.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
-  _control_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true),
+  _control_lock(CONTROL_LOCK_RANK, "ShenandoahGCRequest_lock", true),
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
   _gc_mode(none),

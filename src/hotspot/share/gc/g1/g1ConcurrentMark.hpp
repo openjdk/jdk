@@ -210,17 +210,17 @@ private:
   ChunkAllocator _chunk_allocator;
 
   char _pad0[DEFAULT_PADDING_SIZE];
-  TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
+  Atomic<TaskQueueEntryChunk*> _free_list;  // Linked list of free chunks that can be allocated by users.
   char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
-  TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
+  Atomic<TaskQueueEntryChunk*> _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
   char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   // Atomically add the given chunk to the list.
-  void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
+  void add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem);
   // Atomically remove and return a chunk from the given list. Returns null if the
   // list is empty.
-  TaskQueueEntryChunk* remove_chunk_from_list(TaskQueueEntryChunk* volatile* list);
+  TaskQueueEntryChunk* remove_chunk_from_list(Atomic<TaskQueueEntryChunk*>* list);
 
   void add_chunk_to_chunk_list(TaskQueueEntryChunk* elem);
   void add_chunk_to_free_list(TaskQueueEntryChunk* elem);
@@ -252,7 +252,7 @@ private:
 
   // Return whether the chunk list is empty. Racy due to unsynchronized access to
   // _chunk_list.
-  bool is_empty() const { return _chunk_list == nullptr; }
+  bool is_empty() const { return _chunk_list.load_relaxed() == nullptr; }
 
   size_t capacity() const  { return _chunk_allocator.capacity(); }
 
@@ -290,12 +290,12 @@ class G1CMRootMemRegions {
   MemRegion* _root_regions;
   size_t const _max_regions;
 
-  volatile size_t _num_root_regions; // Actual number of root regions.
+  Atomic<size_t> _num_root_regions;  // Actual number of root regions.
 
-  volatile size_t _claimed_root_regions; // Number of root regions currently claimed.
+  Atomic<size_t> _claimed_root_regions; // Number of root regions currently claimed.
 
-  volatile bool _scan_in_progress;
-  volatile bool _should_abort;
+  Atomic<bool> _scan_in_progress;
+  Atomic<bool> _should_abort;
 
   void notify_scan_done();
 
@@ -312,11 +312,11 @@ public:
   void prepare_for_scan();
 
   // Forces get_next() to return null so that the iteration aborts early.
-  void abort() { _should_abort = true; }
+  void abort() { _should_abort.store_relaxed(true); }
 
   // Return true if the CM thread are actively scanning root regions,
   // false otherwise.
-  bool scan_in_progress() { return _scan_in_progress; }
+  bool scan_in_progress() { return _scan_in_progress.load_relaxed(); }
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
@@ -555,6 +555,9 @@ public:
 
   uint worker_id_offset() const { return _worker_id_offset; }
 
+  void fully_initialize();
+  bool is_fully_initialized() const { return _cm_thread != nullptr; }
+  bool in_progress() const;
   uint max_num_tasks() const {return _max_num_tasks; }
 
   // Clear statistics gathered during the concurrent cycle for the given region after
