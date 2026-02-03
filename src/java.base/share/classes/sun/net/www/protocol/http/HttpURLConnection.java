@@ -1678,10 +1678,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     respCode == HTTP_NOT_MODIFIED ||
                     respCode == HTTP_NO_CONTENT) {
                     noResponseBody();
-                    http.finished();
-                    http = null;
-                    inputStream = new EmptyInputStream();
-                    connected = false;
                 }
 
                 if (respCode == 200 || respCode == 203 || respCode == 206 ||
@@ -1765,12 +1761,20 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     /**
      * This method is called when a response with no response
-     * body is received, and before {@link #http} is set to
-     * null.
+     * body is received, and arrange for the http client to
+     * be returned to the pool (or released) immediately when
+     * possible.
      * @apiNote Used by {@link sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection}
      * to preserve the TLS information after receiving an empty body.
+     * @implSpec
+     * Subclasses that override this method should call the super class
+     * implementation.
      */
     protected void noResponseBody() {
+        http.finished();
+        http = null;
+        inputStream = new EmptyInputStream();
+        connected = false;
     }
 
     /*

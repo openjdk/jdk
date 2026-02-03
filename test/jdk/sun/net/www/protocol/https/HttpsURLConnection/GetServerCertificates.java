@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8376308
+ * @bug 8376031
  * @modules jdk.httpserver
  * @library /test/lib
  * @summary Ensure HttpsURLConnection::getServerCertificates does not
@@ -226,7 +226,7 @@ public class GetServerCertificates {
 
     // HTTP Server
     HttpServer startHttpServer() throws IOException {
-        InetAddress localhost = InetAddress.getLocalHost();
+        InetAddress localhost = InetAddress.getLoopbackAddress();
         HttpsServer httpServer = HttpsServer
                 .create(new InetSocketAddress(localhost, 0), 0);
         var configurator = new HttpsConfigurator(SimpleSSLContext.findSSLContext());

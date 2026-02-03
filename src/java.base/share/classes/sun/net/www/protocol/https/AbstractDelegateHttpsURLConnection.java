@@ -178,7 +178,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
     public void connect() throws IOException {
         if (connected)
             return;
-        super.connect();
+        plainConnect();
         if (cachedResponse != null) {
             // using cached response
             return;
@@ -210,6 +210,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
     @Override
     protected void noResponseBody() {
         savedSession = ((HttpsClient)http).getSSLSession();
+        super.noResponseBody();
     }
 
     private SSLSession session() {
