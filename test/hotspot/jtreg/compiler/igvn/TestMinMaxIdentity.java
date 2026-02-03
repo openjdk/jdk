@@ -70,7 +70,7 @@ public class TestMinMaxIdentity {
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
         Stream.of(MinMaxOp.values())
-            .flatMap(TestMinMaxIdentity::generate)
+            .flatMap(MinMaxOp::generate)
             .forEach(testTemplateTokens::add);
 
         // Note that for floating point Min/Max these cases below don't hold
@@ -125,48 +125,6 @@ public class TestMinMaxIdentity {
         ));
     }
 
-    static Stream<TemplateToken> generate(MinMaxOp op) {
-        return Stream.of(template("a", "b", op), template("b", "a", op)).
-            map(Template.ZeroArgs::asToken);
-    }
-
-    static Template.ZeroArgs template(String arg1, String arg2, MinMaxOp op) {
-        return Template.make(() -> scope(
-            let("boxedTypeName", op.type.boxedTypeName()),
-            let("op", op.name()),
-            let("type", op.type.name()),
-            let("functionName", op.functionName),
-            let("arg1", arg1),
-            let("arg2", arg2),
-            """
-            @Test
-            """,
-            op.type.isFloating() ?
-                """
-                @IR(counts = {IRNode.#op, "= 1"},
-                    phase = CompilePhase.BEFORE_MACRO_EXPANSION,
-                    applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
-                @IR(counts = {IRNode.#op, "= 1"},
-                    phase = CompilePhase.BEFORE_MACRO_EXPANSION,
-                    applyIfPlatform = {"riscv64", "true"})
-                """ :
-                """
-                @IR(counts = {IRNode.#op, "= 1"},
-                    phase = CompilePhase.BEFORE_MACRO_EXPANSION)
-                """,
-            """
-            @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
-            public #type $test(#type #arg1, #type #arg2) {
-                int i;
-                for (i = -10; i < 1; i++) {
-                }
-                #type c = a * i;
-                return #boxedTypeName.#functionName(a, #boxedTypeName.#functionName(b, c));
-            }
-            """
-        ));
-    }
-
     enum MinMaxOp {
         MIN_D("min", CodeGenerationDataNameType.doubles()),
         MAX_D("max", CodeGenerationDataNameType.doubles()),
@@ -183,6 +141,48 @@ public class TestMinMaxIdentity {
         MinMaxOp(String functionName, PrimitiveType type) {
             this.functionName = functionName;
             this.type = type;
+        }
+
+        Stream<TemplateToken> generate() {
+            return Stream.of(template("a", "b"), template("b", "a")).
+                map(Template.ZeroArgs::asToken);
+        }
+
+        private Template.ZeroArgs template(String arg1, String arg2) {
+            return Template.make(() -> scope(
+                let("boxedTypeName", type.boxedTypeName()),
+                let("op", name()),
+                let("type", type.name()),
+                let("functionName", functionName),
+                let("arg1", arg1),
+                let("arg2", arg2),
+                """
+                @Test
+                """,
+                type.isFloating() ?
+                    """
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                        applyIfPlatform = {"riscv64", "true"})
+                    """ :
+                    """
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+                    """,
+                """
+                @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+                public #type $test(#type #arg1, #type #arg2) {
+                    int i;
+                    for (i = -10; i < 1; i++) {
+                    }
+                    #type c = a * i;
+                    return #boxedTypeName.#functionName(a, #boxedTypeName.#functionName(b, c));
+                }
+                """
+            ));
         }
     }
 
