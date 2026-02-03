@@ -426,7 +426,9 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
       for (int i = 1; i < count; i++) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
+        phase->set_type(next_src, next_src->Value(phase));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
+        phase->set_type(next_dest, next_dest->Value(phase));
         v = load(bs, phase, forward_ctl, mm, next_src, atp_src, value_type, copy_type);
         store(bs, phase, forward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
@@ -464,7 +466,9 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
       for (int i = count-1; i >= 1; i--) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
+        phase->set_type(next_src, next_src->Value(phase));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
+        phase->set_type(next_dest, next_dest->Value(phase));
         Node* v = load(bs, phase, backward_ctl, mm, next_src, atp_src, value_type, copy_type);
         store(bs, phase, backward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
@@ -592,6 +596,13 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type* value_type = nullptr;
   bool disjoint_bases = false;
 
+  Node* src = in(ArrayCopyNode::Src);
+  Node* dest = in(ArrayCopyNode::Dest);
+  const TypePtr* atp_src = get_address_type(phase, _src_type, src);
+  const TypePtr* atp_dest = get_address_type(phase, _dest_type, dest);
+  phase->set_type(src, phase->type(src)->join(atp_src));
+  phase->set_type(dest, phase->type(dest)->join(atp_dest));
+
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
                           copy_type, value_type, disjoint_bases)) {
@@ -600,10 +611,6 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return nullptr;
   }
 
-  Node* src = in(ArrayCopyNode::Src);
-  Node* dest = in(ArrayCopyNode::Dest);
-  const TypePtr* atp_src = get_address_type(phase, _src_type, src);
-  const TypePtr* atp_dest = get_address_type(phase, _dest_type, dest);
   Node* in_mem = in(TypeFunc::Memory);
 
   if (can_reshape) {
