@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_NATIVE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.fromOptionName;
 import static jdk.jpackage.internal.cli.StandardOptionContext.createOptionSpecBuilderMutator;
-import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITHOUT_CONTEXT;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITH_VALUE;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITH_VALUE_AND_OPTION_NAME;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.forMessageWithOptionValueAndName;
 import static jdk.jpackage.internal.cli.StandardValueConverter.addLauncherShortcutConv;
 import static jdk.jpackage.internal.cli.StandardValueConverter.booleanConv;
+import static jdk.jpackage.internal.cli.StandardValueConverter.explodedPathConverter;
 import static jdk.jpackage.internal.cli.StandardValueConverter.identityConv;
 import static jdk.jpackage.internal.cli.StandardValueConverter.mainLauncherShortcutConv;
 import static jdk.jpackage.internal.cli.StandardValueConverter.pathConv;
@@ -45,22 +45,27 @@ import static jdk.jpackage.internal.cli.StandardValueConverter.uuidConv;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.AppImageBundleType;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.SetBuilder;
 
 /**
@@ -104,23 +109,26 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
 
-    public static final OptionValue<PackageType> TYPE = option("type", PackageType.class).addAliases("t")
+    public static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
             .converterExceptionFactory(ERROR_WITH_VALUE).converterExceptionFormatString("ERR_InvalidInstallerType")
             .converter(str -> {
-                Objects.requireNonNull(str);
-                return Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
-                    return bundlingOperation.packageTypeValue().equals(str);
-                }).map(StandardBundlingOperation::packageType).findFirst().orElseThrow(IllegalArgumentException::new);
+                return parseBundleType(str, OperatingSystem.current());
             })
             .description("help.option.type" + resourceKeySuffix(OperatingSystem.current()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 b.description("help.option.type" + resourceKeySuffix(context.os()));
+                b.converter(str -> {
+                    return parseBundleType(str, context.os());
+                });
             })).create();
 
-    public static final OptionValue<Path> INPUT = directoryOption("input").addAliases("i")
+    public static final OptionValue<? extends Collection<RootedPath>> INPUT = directoryOption("input").addAliases("i")
             .outOfScope(NOT_BUILDING_APP_IMAGE)
-            .create();
+            .map(explodedPathOptionMapper(explodedPathConverter().create()))
+            .create(optionValueBuilder -> {
+                return optionValueBuilder.to(List::of).create();
+            });
 
     public static final OptionValue<Path> DEST = directoryOption("dest").addAliases("d")
             .valuePattern("destination path")
@@ -177,10 +185,7 @@ public final class StandardOption {
 
     public static final OptionValue<String> COPYRIGHT = stringOption("copyright").valuePattern("copyright string").create();
 
-    public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file")
-            .validatorExceptionFormatString("ERR_LicenseFileNotExit")
-            .validatorExceptionFactory(ERROR_WITHOUT_CONTEXT)
-            .create();
+    public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file").create();
 
     public static final OptionValue<String> APP_VERSION = stringOption("app-version").create();
 
@@ -194,16 +199,17 @@ public final class StandardOption {
             .inScope(LauncherProperty.VALUE)
             .createArray(toList());
 
-    public static final OptionValue<List<Path>> APP_CONTENT = pathOption("app-content")
+    public static final OptionValue<List<Collection<RootedPath>>> APP_CONTENT = existingPathOption("app-content")
             .tokenizer(",")
             .valuePattern("additional content")
             .outOfScope(NOT_BUILDING_APP_IMAGE)
+            .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
                     b.description("help.option.app-content" + resourceKeySuffix(context.os()));
                 }
             }))
-            .createArray(toList());
+            .createArray(toExplodedPathList());
 
     static final OptionValue<Path[]> FILE_ASSOCIATIONS_INTERNAL = fileOption("file-associations")
             .tokenizer(pathSeparator())
@@ -216,12 +222,10 @@ public final class StandardOption {
             .validatorExceptionFactory((optionName, optionValue, formatString, cause) -> {
                 if (cause.orElseThrow() instanceof StandardValidator.DirectoryListingIOException) {
                     formatString = "error.path-parameter-ioexception";
-                    return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName, optionValue, formatString, cause);
-                } else {
-                    return ERROR_WITH_VALUE.create(optionName, optionValue, formatString, cause);
                 }
+                return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName, optionValue, formatString, cause);
             })
-            .validatorExceptionFormatString("ERR_BuildRootInvalid")
+            .validatorExceptionFormatString("error.parameter-not-empty-directory")
             .validator(StandardValidator.IS_DIRECTORY_EMPTY_OR_NON_EXISTENT)
             .create();
 
@@ -236,11 +240,15 @@ public final class StandardOption {
 
     public static final OptionValue<Path> PREDEFINED_APP_IMAGE = directoryOption("app-image")
             .scope(CREATE_NATIVE).inScope(SIGN_MAC_APP_IMAGE).inScope(BundlingOperationModifier.BUNDLE_PREDEFINED_APP_IMAGE)
-            .validatorExceptionFactory(ERROR_WITH_VALUE)
-            .validatorExceptionFormatString("ERR_AppImageNotExist")
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
                     b.description("help.option.app-image" + resourceKeySuffix(context.os()));
+                    var directoryValidator = b.createValidator().orElseThrow();
+                    var macBundleValidator = b
+                            .validatorExceptionFormatString("error.parameter-not-mac-bundle")
+                            .validator(StandardValidator.IS_VALID_MAC_BUNDLE)
+                            .createValidator().orElseThrow();
+                    b.validator(Validator.and(directoryValidator, macBundleValidator));
                 }
             }))
             .create();
@@ -323,10 +331,11 @@ public final class StandardOption {
     // MacOS-specific
     //
 
-    public static final OptionValue<List<Path>> MAC_DMG_CONTENT = pathOption("mac-dmg-content")
+    public static final OptionValue<List<Collection<RootedPath>>> MAC_DMG_CONTENT = existingPathOption("mac-dmg-content")
             .valuePattern("additional content path")
             .tokenizer(",")
-            .createArray(toList());
+            .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
+            .createArray(toExplodedPathList());
 
     public static final OptionValue<Boolean> MAC_SIGN = booleanOption("mac-sign").scope(MAC_SIGNING).addAliases("s").create();
 
@@ -512,10 +521,55 @@ public final class StandardOption {
     static Consumer<OptionSpecBuilder<Path>> directoryOptionMutator() {
         return builder -> {
             builder.mutate(pathOptionMutator())
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.asFileSource().ifPresent(propertyFile -> {
+                    b.validatorExceptionFactory(forMessageWithOptionValueAndName(propertyFile));
+                    b.validatorExceptionFormatString("error.properties-parameter-not-directory");
+                });
+            }))
             .validator(StandardValidator.IS_DIRECTORY)
             .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
             .validatorExceptionFormatString("error.parameter-not-directory");
         };
+    }
+
+    static Consumer<OptionSpecBuilder<Path>> existingPathOptionMutator() {
+
+        return builder -> {
+            builder.mutate(pathOptionMutator())
+            .validator(createExistingPathValidator(Validator.<Path, RuntimeException>build().exceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME), true))
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.asFileSource().ifPresent(propertyFile -> {
+                    var validatorBuilder = Validator.<Path, RuntimeException>build();
+                    validatorBuilder.exceptionFactory(forMessageWithOptionValueAndName(propertyFile));
+                    b.validator(createExistingPathValidator(validatorBuilder, false));
+                });
+            }));
+        };
+    }
+
+    private static Validator<Path, RuntimeException> createExistingPathValidator(Validator.Builder<Path, RuntimeException> builder, boolean cmdline) {
+
+        if (cmdline) {
+            builder.formatString("error.parameter-not-directory");
+        } else {
+            builder.formatString("error.properties-parameter-not-directory");
+        }
+
+        var isDirectoryValidator = builder.predicate(StandardValidator.IS_DIRECTORY).create();
+
+        if (cmdline) {
+            builder.formatString("error.parameter-not-file");
+        } else {
+            builder.formatString("error.properties-parameter-not-file");
+        }
+
+        var isFileValidator = builder.predicate(StandardValidator.IS_FILE_OR_SYMLINK).create();
+
+        @SuppressWarnings("unchecked")
+        var validator = (Validator<Path, RuntimeException>)isDirectoryValidator.or(isFileValidator);
+
+        return validator;
     }
 
     static Consumer<OptionSpecBuilder<Boolean>> booleanOptionMutator() {
@@ -538,10 +592,34 @@ public final class StandardOption {
                 });
             }))
             .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-            .converterExceptionFormatString("error.invalid-option-value")
+            .converterExceptionFormatString("error.parameter-not-launcher-shortcut-dir")
             .converter(mainLauncherShortcutConv())
             .defaultOptionalValue(new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT))
             .valuePattern("shortcut startup directory");
+        };
+    }
+
+    static Function<OptionSpecBuilder<Path>, OptionSpecBuilder<RootedPath[]>> explodedPathOptionMapper(ValueConverter<Path, RootedPath[]> conv) {
+        Objects.requireNonNull(conv);
+        return builder -> {
+            return builder.map(conv)
+                    .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+                    .converterExceptionFormatString("error.path-parameter-ioexception")
+                    // Add empty mutator to OptionSpecMapperOptionScope to make
+                    // mapped option spec have `RootedPath[]` type.
+                    // Otherwise, it will have `Path` type.
+                    .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                    }));
+        };
+    }
+
+    private static <T> Function<OptionValue.Builder<RootedPath[][]>, OptionValue<List<Collection<RootedPath>>>> toExplodedPathList() {
+        return builder -> {
+            return builder.to((RootedPath[][] v) -> {
+                return Stream.of(v).map(arr -> {
+                    return (Collection<RootedPath>)List.of(arr);
+                }).toList();
+            }).create();
         };
     }
 
@@ -551,7 +629,7 @@ public final class StandardOption {
                 .description("help.option." + name)
                 .scope(fromOptionName(name))
                 .scope(scope -> {
-                    return SetBuilder.build(OptionScope.class)
+                    return SetBuilder.<OptionScope>build()
                             .add(scope)
                             .add(BundlingOperationModifier.values())
                             .create();
@@ -571,6 +649,10 @@ public final class StandardOption {
 
     private static OptionSpecBuilder<Path> pathOption(String name) {
         return option(name, Path.class).mutate(pathOptionMutator());
+    }
+
+    private static OptionSpecBuilder<Path> existingPathOption(String name) {
+        return option(name, Path.class).mutate(existingPathOptionMutator());
     }
 
     private static OptionSpecBuilder<Path> fileOption(String name) {
@@ -623,8 +705,7 @@ public final class StandardOption {
     }
 
     private static OptionValue<AdditionalLauncher[]> createAddLauncherOption(String name) {
-        OptionValueConverter<Path> propertyFileConverter = fileOption(name)
-                .create().getSpec().converter().orElseThrow();
+        var propertyFileSpec = fileOption(name).create().getSpec();
 
         return option(name, AdditionalLauncher.class)
                 .valuePattern("<launcher name>=<file path>")
@@ -637,8 +718,8 @@ public final class StandardOption {
                 .converterExceptionFactory((optionName, optionValue, formatString, cause) -> {
                     final var theCause = cause.orElseThrow();
                     if (theCause instanceof AddLauncherSyntaxException) {
-                        return ERROR_WITHOUT_CONTEXT.create(optionName,
-                                optionValue, "ERR_NoAddLauncherName", cause);
+                        return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName,
+                                optionValue, "error.parameter-add-launcher-malformed", cause);
                     } else {
                         return (RuntimeException)theCause;
                     }
@@ -656,7 +737,7 @@ public final class StandardOption {
 
                     final Path propertyFile;
                     try {
-                        propertyFile = propertyFileConverter.convert(OptionName.of(name),
+                        propertyFile = propertyFileSpec.convert(OptionName.of(name),
                                 StringToken.of(value, components[1])).orElseThrow();
                     } catch (JPackageException ex) {
                         throw new AddLauncherInvalidPropertyFileException(I18N.format(
@@ -665,6 +746,23 @@ public final class StandardOption {
 
                     return new AdditionalLauncher(launcherName, propertyFile);
                 }).defaultArrayValue(new AdditionalLauncher[0]).createArray();
+    }
+
+    private static BundleType parseBundleType(String str, OperatingSystem appImageOS) {
+        Objects.requireNonNull(str);
+        Objects.requireNonNull(appImageOS);
+
+        return Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
+            return bundlingOperation.bundleTypeValue().equals(str);
+        })
+        .filter(bundlingOperation -> {
+            // Skip app image bundle type if it is from another platform.
+            return !(bundlingOperation.bundleType() instanceof AppImageBundleType)
+                    || (bundlingOperation.os() == appImageOS);
+        })
+        .map(StandardBundlingOperation::bundleType)
+        .findFirst()
+        .orElseThrow(IllegalArgumentException::new);
     }
 
     private static String resourceKeySuffix(OperatingSystem os) {
@@ -685,6 +783,7 @@ public final class StandardOption {
     }
 
 
+    @SelfContainedException
     static class AddLauncherIllegalArgumentException extends IllegalArgumentException {
 
         AddLauncherIllegalArgumentException(String message) {
@@ -735,8 +834,15 @@ public final class StandardOption {
         //
 
         // regexp for parsing args (for example, for additional launchers)
-        private static Pattern pattern = Pattern.compile(
-              "(?:(?:([\"'])(?:\\\\\\1|.)*?(?:\\1|$))|(?:\\\\[\"'\\s]|[^\\s]))++");
+        private static Pattern PATTERN = Pattern.compile(String.format(
+                "(?:(?:%s|%s)|(?:\\\\[\"'\\s]|\\S))++",
+                createPatternComponent('\''),
+                createPatternComponent('\"')));
+
+        private static String createPatternComponent(char quoteChar) {
+            var str = Character.toString(quoteChar);
+            return String.format("(?:%s(?:\\\\%s|[^%s])*+(?:%s|$))", str, str, str, str);
+        }
 
         static List<String> getArgumentList(String inputString) {
             Objects.requireNonNull(inputString);
@@ -749,7 +855,7 @@ public final class StandardOption {
             // The "pattern" regexp attempts to abide to the rule that
             // strings are delimited by whitespace unless surrounded by
             // quotes, then it is anything (including spaces) in the quotes.
-            Matcher m = pattern.matcher(inputString);
+            Matcher m = PATTERN.matcher(inputString);
             while (m.find()) {
                 String s = inputString.substring(m.start(), m.end()).trim();
                 // Ensure we do not have an empty string. trim() will take care of

@@ -568,6 +568,9 @@ class Assembler : public AbstractAssembler {
     XSCVDPHP_OPCODE= (60u << OPCODE_SHIFT |  347u << 2 | 17u << 16), // XX2-FORM
     XXPERM_OPCODE  = (60u << OPCODE_SHIFT |   26u << 3),
     XXSEL_OPCODE   = (60u << OPCODE_SHIFT |    3u << 4),
+    XSCMPEQDP_OPCODE=(60u << OPCODE_SHIFT |   3u <<  3),
+    XSCMPGEDP_OPCODE=(60u << OPCODE_SHIFT |  19u <<  3),
+    XSCMPGTDP_OPCODE=(60u << OPCODE_SHIFT |  11u <<  3),
     XXSPLTIB_OPCODE= (60u << OPCODE_SHIFT |  360u << 1),
     XVDIVDP_OPCODE = (60u << OPCODE_SHIFT |  120u << 3),
     XVABSSP_OPCODE = (60u << OPCODE_SHIFT |  409u << 2),
@@ -2424,6 +2427,9 @@ class Assembler : public AbstractAssembler {
   inline void xscvdphp( VectorSRegister d, VectorSRegister b);
   inline void xxland(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxsel(    VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c);
+  inline void xscmpeqdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgedp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgtdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
   inline void xxspltib( VectorSRegister d, int ui8);
   inline void xvdivsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvdivdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);

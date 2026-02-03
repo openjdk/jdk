@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -83,7 +83,6 @@ class RegisterSaver {
   static OopMap* push_frame_reg_args_and_save_live_registers(MacroAssembler* masm,
                          int* out_frame_size_in_bytes,
                          bool generate_oop_map,
-                         int return_pc_adjustment,
                          ReturnPCLocation return_pc_location,
                          bool save_vectors = false);
   static void    restore_live_registers_and_pop_frame(MacroAssembler* masm,
@@ -262,7 +261,6 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveVecRegs[] = {
 OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssembler* masm,
                          int* out_frame_size_in_bytes,
                          bool generate_oop_map,
-                         int return_pc_adjustment,
                          ReturnPCLocation return_pc_location,
                          bool save_vectors) {
   // Push an abi_reg_args-frame and store all registers which may be live.
@@ -271,7 +269,6 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   // propagated to the RegisterMap of the caller frame during
   // StackFrameStream construction (needed for deoptimization; see
   // compiledVFrame::create_stack_value).
-  // If return_pc_adjustment != 0 adjust the return pc by return_pc_adjustment.
   // Updated return pc is returned in R31 (if not return_pc_is_pre_saved).
 
   // calculate frame size
@@ -305,14 +302,11 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   // Do the save_LR by hand and adjust the return pc if requested.
   switch (return_pc_location) {
     case return_pc_is_lr: __ mflr(R31); break;
-    case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
+    case return_pc_is_pre_saved: break;
     case return_pc_is_thread_saved_exception_pc: __ ld(R31, thread_(saved_exception_pc)); break;
     default: ShouldNotReachHere();
   }
   if (return_pc_location != return_pc_is_pre_saved) {
-    if (return_pc_adjustment != 0) {
-      __ addi(R31, R31, return_pc_adjustment);
-    }
     __ std(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
   }
 
@@ -1243,26 +1237,24 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   // Class initialization barrier for static methods
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
-      __ andi_(R0, R0, JVM_ACC_STATIC);
-      __ beq(CR0, L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
+  __ andi_(R0, R0, JVM_ACC_STATIC);
+  __ beq(CR0, L_skip_barrier); // non-static
 
-    Register klass = R11_scratch1;
-    __ load_method_holder(klass, R19_method);
-    __ clinit_barrier(klass, R16_thread, &L_skip_barrier /*L_fast_path*/);
+  Register klass = R11_scratch1;
+  __ load_method_holder(klass, R19_method);
+  __ clinit_barrier(klass, R16_thread, &L_skip_barrier /*L_fast_path*/);
 
-    __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub(), R0);
-    __ mtctr(klass);
-    __ bctr();
+  __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub(), R0);
+  __ mtctr(klass);
+  __ bctr();
 
-    __ bind(L_skip_barrier);
-    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm, /* tmp register*/ ic_klass, /* tmp register*/ receiver_klass, /* tmp register*/ code);
@@ -2216,7 +2208,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
   vep_start_pc = (intptr_t)__ pc();
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = r_temp_1;
     // Notify OOP recorder (don't need the relocation)
@@ -2907,22 +2900,15 @@ void SharedRuntime::generate_deopt_blob() {
   //  deopt_handler:      call_deopt_stub
   //  cur. return pc  --> ...
   //
-  // So currently SR_LR points behind the call in the deopt handler.
-  // We adjust it such that it points to the start of the deopt handler.
   // The return_pc has been stored in the frame of the deoptee and
   // will replace the address of the deopt_handler in the call
   // to Deoptimization::fetch_unroll_info below.
-  // We can't grab a free register here, because all registers may
-  // contain live values, so let the RegisterSaver do the adjustment
-  // of the return pc.
-  const int return_pc_adjustment_no_exception = -MacroAssembler::bl64_patchable_size;
 
   // Push the "unpack frame"
   // Save everything in sight.
   map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                                    &first_frame_size_in_bytes,
                                                                    /*generate_oop_map=*/ true,
-                                                                   return_pc_adjustment_no_exception,
                                                                    RegisterSaver::return_pc_is_lr);
   assert(map != nullptr, "OopMap must have been created");
 
@@ -2957,7 +2943,6 @@ void SharedRuntime::generate_deopt_blob() {
   RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                              &first_frame_size_in_bytes,
                                                              /*generate_oop_map=*/ false,
-                                                             /*return_pc_adjustment_exception=*/ 0,
                                                              RegisterSaver::return_pc_is_pre_saved);
 
   // Deopt during an exception. Save exec mode for unpack_frames.
@@ -2975,7 +2960,6 @@ void SharedRuntime::generate_deopt_blob() {
   RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                              &first_frame_size_in_bytes,
                                                              /*generate_oop_map=*/ false,
-                                                             /*return_pc_adjustment_reexecute=*/ 0,
                                                              RegisterSaver::return_pc_is_pre_saved);
   __ li(exec_mode_reg, Deoptimization::Unpack_reexecute);
 #endif
@@ -3266,7 +3250,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
   map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                                    &frame_size_in_bytes,
                                                                    /*generate_oop_map=*/ true,
-                                                                   /*return_pc_adjustment=*/0,
                                                                    return_pc_location, save_vectors);
 
   // The following is basically a call_VM. However, we need the precise
@@ -3367,7 +3350,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                                    &frame_size_in_bytes,
                                                                    /*generate_oop_map*/ true,
-                                                                   /*return_pc_adjustment*/ 0,
                                                                    RegisterSaver::return_pc_is_lr);
 
   // Use noreg as last_Java_pc, the return pc will be reconstructed

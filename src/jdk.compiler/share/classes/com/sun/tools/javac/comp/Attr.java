@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4000,7 +4000,10 @@ public class Attr extends JCTree.Visitor {
             chk.checkCastable(tree.rhs.pos(),
                               operator.type.getReturnType(),
                               owntype);
-            chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            switch (tree.getTag()) {
+            case SL_ASG, SR_ASG, USR_ASG -> { }     // we only use (at most) the lower 6 bits, so any integral type is OK
+            default -> chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            }
             chk.checkOutOfRangeShift(tree.rhs.pos(), operator, operand);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
@@ -4266,7 +4269,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         List<Type> expectedRecordTypes;
-        if (site.tsym.kind == Kind.TYP && ((ClassSymbol) site.tsym).isRecord()) {
+        if (site.tsym instanceof ClassSymbol clazz && clazz.isRecord()) {
             ClassSymbol record = (ClassSymbol) site.tsym;
             expectedRecordTypes = record.getRecordComponents()
                                         .stream()
@@ -5634,12 +5637,16 @@ public class Attr extends JCTree.Visitor {
                 chk.validateRepeatable(c, repeatable, cbPos);
             }
         } else {
-            // Check that all extended classes and interfaces
-            // are compatible (i.e. no two define methods with same arguments
-            // yet different return types).  (JLS 8.4.8.3)
-            chk.checkCompatibleSupertypes(tree.pos(), c.type);
-            chk.checkDefaultMethodClashes(tree.pos(), c.type);
-            chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            try {
+                // Check that all extended classes and interfaces
+                // are compatible (i.e. no two define methods with same arguments
+                // yet different return types).  (JLS 8.4.8.3)
+                chk.checkCompatibleSupertypes(tree.pos(), c.type);
+                chk.checkDefaultMethodClashes(tree.pos(), c.type);
+                chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            } catch (CompletionFailure cf) {
+                chk.completionError(tree.pos(), cf);
+            }
         }
 
         // Check that class does not import the same parameterized interface

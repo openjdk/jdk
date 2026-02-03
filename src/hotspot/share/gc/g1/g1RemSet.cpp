@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -107,46 +107,48 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 // Set of (unique) regions that can be added to concurrently.
   class G1DirtyRegions : public CHeapObj<mtGC> {
     uint* _buffer;
-    uint _cur_idx;
+    Atomic<uint> _cur_idx;
     size_t _max_reserved_regions;
 
-    bool* _contains;
+    Atomic<bool>* _contains;
 
   public:
     G1DirtyRegions(size_t max_reserved_regions) :
       _buffer(NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC)),
       _cur_idx(0),
       _max_reserved_regions(max_reserved_regions),
-      _contains(NEW_C_HEAP_ARRAY(bool, max_reserved_regions, mtGC)) {
+      _contains(NEW_C_HEAP_ARRAY(Atomic<bool>, max_reserved_regions, mtGC)) {
 
       reset();
     }
 
     ~G1DirtyRegions() {
       FREE_C_HEAP_ARRAY(uint, _buffer);
-      FREE_C_HEAP_ARRAY(bool, _contains);
+      FREE_C_HEAP_ARRAY(Atomic<bool>, _contains);
     }
 
     void reset() {
-      _cur_idx = 0;
-      ::memset(_contains, false, _max_reserved_regions * sizeof(bool));
+      _cur_idx.store_relaxed(0);
+      for (uint i = 0; i < _max_reserved_regions; i++) {
+        _contains[i].store_relaxed(false);
+      }
     }
 
-    uint size() const { return _cur_idx; }
+    uint size() const { return _cur_idx.load_relaxed(); }
 
     uint at(uint idx) const {
-      assert(idx < _cur_idx, "Index %u beyond valid regions", idx);
+      assert(idx < size(), "Index %u beyond valid regions", idx);
       return _buffer[idx];
     }
 
     void add_dirty_region(uint region) {
-      if (_contains[region]) {
+      if (_contains[region].load_relaxed()) {
         return;
       }
 
-      bool marked_as_dirty = AtomicAccess::cmpxchg(&_contains[region], false, true) == false;
+      bool marked_as_dirty = _contains[region].compare_set(false, true);
       if (marked_as_dirty) {
-        uint allocated = AtomicAccess::fetch_then_add(&_cur_idx, 1u);
+        uint allocated = _cur_idx.fetch_then_add(1u);
         _buffer[allocated] = region;
       }
     }
@@ -155,9 +157,11 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     void merge(const G1DirtyRegions* other) {
       for (uint i = 0; i < other->size(); i++) {
         uint region = other->at(i);
-        if (!_contains[region]) {
-          _buffer[_cur_idx++] = region;
-          _contains[region] = true;
+        if (!_contains[region].load_relaxed()) {
+          uint cur = _cur_idx.load_relaxed();
+          _buffer[cur] = region;
+          _cur_idx.store_relaxed(cur + 1);
+          _contains[region].store_relaxed(true);
         }
       }
     }
@@ -173,7 +177,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 class G1ClearCardTableTask : public G1AbstractSubTask {
     G1CollectedHeap* _g1h;
     G1DirtyRegions* _regions;
-    uint volatile _cur_dirty_regions;
+    Atomic<uint> _cur_dirty_regions;
 
     G1RemSetScanState* _scan_state;
 
@@ -210,8 +214,9 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
     void do_work(uint worker_id) override {
       const uint num_regions_per_worker = num_cards_per_worker / (uint)G1HeapRegion::CardsPerRegion;
 
-      while (_cur_dirty_regions < _regions->size()) {
-        uint next = AtomicAccess::fetch_then_add(&_cur_dirty_regions, num_regions_per_worker);
+      uint cur = _cur_dirty_regions.load_relaxed();
+      while (cur < _regions->size()) {
+        uint next = _cur_dirty_regions.fetch_then_add(num_regions_per_worker);
         uint max = MIN2(next + num_regions_per_worker, _regions->size());
 
         for (uint i = next; i < max; i++) {
@@ -226,6 +231,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
           // old regions use it for old->collection set candidates, so they should not be cleared
           // either.
         }
+        cur = max;
       }
     }
   };
@@ -611,22 +617,23 @@ void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
                                               G1GCPhaseTimes::GCParPhases coderoots_phase,
                                               G1GCPhaseTimes::GCParPhases objcopy_phase) {
   EventGCPhaseParallel event;
-
   Tickspan code_root_scan_time;
   Tickspan code_root_trim_partially_time;
-  G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
 
   G1GCPhaseTimes* p = _g1h->phase_times();
+  {
+    G1EvacPhaseWithTrimTimeTracker timer(pss, code_root_scan_time, code_root_trim_partially_time);
 
-  G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
-  // Code roots work distribution occurs inside the iteration method. So scan all collection
-  // set regions for all threads.
-  _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+    G1ScanCodeRootsClosure cl(_scan_state, pss, worker_id);
+    // Code roots work distribution occurs inside the iteration method. So scan all collection
+    // set regions for all threads.
+    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+
+    p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
+  }
 
   p->record_or_add_time_secs(coderoots_phase, worker_id, code_root_scan_time.seconds());
   p->add_time_secs(objcopy_phase, worker_id, code_root_trim_partially_time.seconds());
-
-  p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
 
   event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(coderoots_phase));
 }
@@ -992,10 +999,11 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
   };
 
-  // Closure to make sure that the marking bitmap is clear for any old region in
-  // the collection set.
-  // This is needed to be able to use the bitmap for evacuation failure handling.
-  class G1ClearBitmapClosure : public G1HeapRegionClosure {
+  // Closure to prepare the collection set regions for evacuation failure, i.e. make
+  // sure that the mark bitmap is clear for any old region in the collection set.
+  //
+  // These mark bitmaps record the evacuation failed objects.
+  class G1PrepareRegionsForEvacFailClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1RemSetScanState* _scan_state;
     bool _initial_evacuation;
@@ -1023,7 +1031,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
   public:
-    G1ClearBitmapClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state, bool initial_evacuation) :
+    G1PrepareRegionsForEvacFailClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state, bool initial_evacuation) :
       _g1h(g1h),
       _scan_state(scan_state),
       _initial_evacuation(initial_evacuation)
@@ -1113,7 +1121,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   bool _initial_evacuation;
 
-  volatile bool _fast_reclaim_handled;
+  Atomic<bool> _fast_reclaim_handled;
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
@@ -1141,8 +1149,8 @@ public:
         // 1. eager-reclaim candidates
         if (_initial_evacuation &&
             g1h->has_humongous_reclaim_candidates() &&
-            !_fast_reclaim_handled &&
-            !AtomicAccess::cmpxchg(&_fast_reclaim_handled, false, true)) {
+            !_fast_reclaim_handled.load_relaxed() &&
+            _fast_reclaim_handled.compare_set(false, true)) {
 
           G1GCParPhaseTimesTracker subphase_x(p, G1GCPhaseTimes::MergeER, worker_id);
 
@@ -1172,8 +1180,8 @@ public:
 
     // Preparation for evacuation failure handling.
     {
-      G1ClearBitmapClosure clear(g1h, _scan_state, _initial_evacuation);
-      g1h->collection_set_iterate_increment_from(&clear, &_hr_claimer, worker_id);
+      G1PrepareRegionsForEvacFailClosure prepare_evac_failure(g1h, _scan_state, _initial_evacuation);
+      g1h->collection_set_iterate_increment_from(&prepare_evac_failure, &_hr_claimer, worker_id);
     }
   }
 };

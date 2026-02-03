@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ on:
 jobs:
   build-linux:
     name: build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -115,9 +115,21 @@ jobs:
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
             sudo dpkg --add-architecture ${{ inputs.apt-architecture }}
           fi
-          sudo apt-get update
-          sudo apt-get install --only-upgrade apt
-          sudo apt-get install gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
+          sudo apt update
+          sudo apt install --only-upgrade apt
+          sudo apt install \
+            gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
+            g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
+            libasound2-dev${{ steps.arch.outputs.suffix }} \
+            libcups2-dev${{ steps.arch.outputs.suffix }} \
+            libfontconfig1-dev${{ steps.arch.outputs.suffix }} \
+            libx11-dev${{ steps.arch.outputs.suffix }} \
+            libxext-dev${{ steps.arch.outputs.suffix }} \
+            libxrandr-dev${{ steps.arch.outputs.suffix }} \
+            libxrender-dev${{ steps.arch.outputs.suffix }} \
+            libxt-dev${{ steps.arch.outputs.suffix }} \
+            libxtst-dev${{ steps.arch.outputs.suffix }} \
+            ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Configure'
@@ -131,6 +143,8 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
+          --with-external-symbols-in-bundles=none
+          --with-native-debug-symbols-level=1
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "code/vmreg.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
-#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stubInfo.hpp"
@@ -38,6 +37,7 @@
 
 class AdapterHandlerEntry;
 class AdapterFingerPrint;
+class MetaspaceClosure;
 class vframeStream;
 
 // Runtime is the base class for various runtime interfaces
@@ -316,14 +316,6 @@ class SharedRuntime: AllStatic {
   // Helper routine for full-speed JVMTI exception throwing support
   static void throw_and_post_jvmti_exception(JavaThread* current, Handle h_exception);
   static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = nullptr);
-
-#if INCLUDE_JVMTI
-  // Functions for JVMTI notifications
-  static void notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current);
-  static void notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current);
-  static void notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current);
-  static void notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current);
-#endif
 
   // RedefineClasses() tracing support for obsolete method entry
   static int rc_trace_method_entry(JavaThread* thread, Method* m);

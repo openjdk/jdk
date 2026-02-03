@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jimage.hpp"
@@ -81,7 +82,6 @@
 #include "utilities/utf8.hpp"
 
 #include <ctype.h>
-#include <stdlib.h>
 
 // Entry point in java.dll for path canonicalization
 
@@ -1418,6 +1418,10 @@ char* ClassLoader::lookup_vm_options() {
   jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%slib%smodules", Arguments::get_java_home(), fileSep, fileSep);
   JImage_file =(*JImageOpen)(modules_path, &error);
   if (JImage_file == nullptr) {
+    if (Arguments::has_jimage()) {
+      // The modules file exists but is unreadable or corrupt
+      vm_exit_during_initialization(err_msg("Unable to load %s", modules_path));
+    }
     return nullptr;
   }
 

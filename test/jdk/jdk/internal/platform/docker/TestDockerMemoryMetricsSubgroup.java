@@ -58,10 +58,7 @@ public class TestDockerMemoryMetricsSubgroup {
             System.out.println("Cgroup not configured.");
             return;
         }
-        if (!DockerTestUtils.canTestDocker()) {
-            System.out.println("Unable to run docker tests.");
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
 
@@ -94,7 +91,8 @@ public class TestDockerMemoryMetricsSubgroup {
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
-            .addDockerOpts("--memory", outerGroupMemorySize);
+            .addDockerOpts("--memory", outerGroupMemorySize)
+            .addDockerOpts("-e", "LANG=C.UTF-8");
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo " + innerSize + " > /sys/fs/cgroup/memory/test/memory.limit_in_bytes ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
@@ -115,6 +113,7 @@ public class TestDockerMemoryMetricsSubgroup {
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
+            .addDockerOpts("-e", "LANG=C.UTF-8")
             .addDockerOpts("--memory", outerGroupMemorySize);
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +

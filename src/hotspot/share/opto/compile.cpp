@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -581,7 +581,7 @@ void Compile::print_phase(const char* phase_name) {
   tty->print_cr("%u.\t%s", ++_phase_counter, phase_name);
 }
 
-void Compile::print_ideal_ir(const char* phase_name) {
+void Compile::print_ideal_ir(const char* compile_phase_name) const {
   // keep the following output all in one block
   // This output goes directly to the tty, not the compiler log.
   // To enable tools to match it up with the compilation activity,
@@ -593,9 +593,11 @@ void Compile::print_ideal_ir(const char* phase_name) {
   stringStream ss;
 
   if (_output == nullptr) {
-    ss.print_cr("AFTER: %s", phase_name);
+    ss.print_cr("AFTER: %s", compile_phase_name);
     // Print out all nodes in ascending order of index.
-    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$", &ss);
+    // It is important that we traverse both inputs and outputs of nodes,
+    // so that we reach all nodes that are connected to Root.
+    root()->dump_bfs(MaxNodeLimit, nullptr, "-+S$", &ss);
   } else {
     // Dump the node blockwise if we have a scheduling
     _output->print_scheduling(&ss);
@@ -608,7 +610,7 @@ void Compile::print_ideal_ir(const char* phase_name) {
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
-               phase_name);
+               compile_phase_name);
   }
 
   tty->print("%s", ss.as_string());
@@ -669,7 +671,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
-          _unique(0),
+      _unique(0),
       _dead_node_count(0),
       _dead_node_list(comp_arena()),
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
@@ -686,7 +688,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
       _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
       _late_inlines_pos(0),
-      _number_of_mh_late_inlines(0),
+      _has_mh_late_inlines(false),
       _oom(false),
       _replay_inline_data(nullptr),
       _inline_printer(this),
@@ -863,7 +865,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
 
 #ifndef PRODUCT
   if (should_print_ideal()) {
-    print_ideal_ir("print_ideal");
+    print_ideal_ir("PrintIdeal");
   }
 #endif
 
@@ -936,7 +938,7 @@ Compile::Compile(ciEnv* ci_env,
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
-          _unique(0),
+      _unique(0),
       _dead_node_count(0),
       _dead_node_list(comp_arena()),
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
@@ -948,7 +950,7 @@ Compile::Compile(ciEnv* ci_env,
       _igvn_worklist(nullptr),
       _types(nullptr),
       _node_hash(nullptr),
-      _number_of_mh_late_inlines(0),
+      _has_mh_late_inlines(false),
       _oom(false),
       _replay_inline_data(nullptr),
       _inline_printer(this),
@@ -1726,14 +1728,18 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       }
       if (flat->offset() == in_bytes(Klass::super_check_offset_offset()))
         alias_type(idx)->set_rewritable(false);
-      if (flat->offset() == in_bytes(Klass::access_flags_offset()))
-        alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::misc_flags_offset()))
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::java_mirror_offset()))
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::secondary_super_cache_offset()))
         alias_type(idx)->set_rewritable(false);
+    }
+
+    if (flat->isa_instklassptr()) {
+      if (flat->offset() == in_bytes(InstanceKlass::access_flags_offset())) {
+        alias_type(idx)->set_rewritable(false);
+      }
     }
     // %%% (We would like to finalize JavaThread::threadObj_offset(),
     // but the base pointer type is not distinctive enough to identify
@@ -1870,7 +1876,7 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);
 
-  if (has_loops() || _loop_opts_cnt > 0) {
+  if (_print_phase_loop_opts) {
     print_method(PHASE_AFTER_LOOP_OPTS, 2);
   }
   C->set_post_loop_opts_phase(); // no more loop opts allowed
@@ -2092,6 +2098,7 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
 
 bool Compile::inline_incrementally_one() {
   assert(IncrementalInline, "incremental inlining should be on");
+  assert(_late_inlines.length() > 0, "should have been checked by caller");
 
   TracePhase tp(_t_incrInline_inline);
 
@@ -2203,6 +2210,10 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
+    if (_late_inlines.length() == 0) {
+      break; // no more progress
+    }
+
     while (inline_incrementally_one()) {
       assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
@@ -2213,10 +2224,6 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
 
     if (failing())  return;
-
-    if (_late_inlines.length() == 0) {
-      break; // no more progress
-    }
   }
 
   igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -2398,7 +2405,8 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  if (has_loops()) {
+  _print_phase_loop_opts = has_loops();
+  if (_print_phase_loop_opts) {
     print_method(PHASE_BEFORE_LOOP_OPTS, 2);
   }
 
@@ -3414,10 +3422,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_AddP: {               // Assert sane base pointers
     Node *addp = n->in(AddPNode::Address);
-    assert( !addp->is_AddP() ||
-            addp->in(AddPNode::Base)->is_top() || // Top OK for allocation
-            addp->in(AddPNode::Base) == n->in(AddPNode::Base),
-            "Base pointers must match (addp %u)", addp->_idx );
+    assert(n->as_AddP()->address_input_has_same_base(), "Base pointers must match (addp %u)", addp->_idx );
 #ifdef _LP64
     if ((UseCompressedOops || UseCompressedClassPointers) &&
         addp->Opcode() == Op_ConP &&
@@ -4578,7 +4583,7 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
     // node from floating above the range check during loop optimizations. Otherwise, the
     // ConvI2L node may be eliminated independently of the range check, causing the data path
     // to become TOP while the control path is still there (although it's unreachable).
-    value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
+    value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::DependencyType::NonFloatingNarrowing : ConstraintCastNode::DependencyType::FloatingNarrowing, true /* range check dependency */);
     value = phase->transform(value);
   }
   const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);
@@ -5162,17 +5167,17 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
+void Compile::print_method(CompilerPhaseType compile_phase, int level, Node* n) {
   if (failing_internal()) { return; } // failing_internal to not stress bailouts from printing code.
   EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
-    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
+    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, compile_phase, C->_compile_id, level);
   }
 #ifndef PRODUCT
   ResourceMark rm;
   stringStream ss;
-  ss.print_raw(CompilerPhaseTypeHelper::to_description(cpt));
-  int iter = ++_igv_phase_iter[cpt];
+  ss.print_raw(CompilerPhaseTypeHelper::to_description(compile_phase));
+  int iter = ++_igv_phase_iter[compile_phase];
   if (iter > 1) {
     ss.print(" %d", iter);
   }
@@ -5200,8 +5205,8 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (should_print_phase(level)) {
     print_phase(name);
   }
-  if (should_print_ideal_phase(cpt)) {
-    print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
+  if (should_print_ideal_phase(compile_phase)) {
+    print_ideal_ir(CompilerPhaseTypeHelper::to_name(compile_phase));
   }
 #endif
   C->_latest_stage_start_counter.stamp();

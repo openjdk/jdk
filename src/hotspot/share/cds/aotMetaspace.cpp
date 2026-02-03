@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
+#include "services/management.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/defaultStream.hpp"
@@ -114,6 +115,7 @@ intx AOTMetaspace::_relocation_delta;
 char* AOTMetaspace::_requested_base_address;
 Array<Method*>* AOTMetaspace::_archived_method_handle_intrinsics = nullptr;
 bool AOTMetaspace::_use_optimized_module_handling = true;
+int volatile AOTMetaspace::_preimage_static_archive_dumped = 0;
 FileMapInfo* AOTMetaspace::_output_mapinfo = nullptr;
 
 // The CDS archive is divided into the following regions:
@@ -696,6 +698,9 @@ public:
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
     TrainingData::iterate_roots(it);
+    if (CDSConfig::is_dumping_full_module_graph()) {
+      ClassLoaderDataShared::iterate_roots(it);
+    }
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -792,6 +797,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   log_info(aot)("Make classes shareable");
   _builder.make_klasses_shareable();
   AOTMetaspace::make_method_handle_intrinsics_shareable();
+
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    ClassLoaderDataShared::remove_unshareable_info();
+  }
 
   dump_java_heap_objects();
   dump_shared_symbol_table(_builder.symbols());
@@ -1056,7 +1065,21 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
+bool AOTMetaspace::preimage_static_archive_dumped() {
+  assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
+  return AtomicAccess::load_acquire(&_preimage_static_archive_dumped) == 1;
+}
+
 void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    // When dumping to the AOT configuration file ensure this function is only executed once.
+    // Multiple invocations may happen via JCmd, during VM exit or other means (in the future)
+    // from different threads and possibly concurrently.
+    if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
+      return;
+    }
+  }
+
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // We are running with -Xshare:dump
     load_classes(CHECK);
@@ -1081,7 +1104,12 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    if (!CDSConfig::is_dumping_preimage_static_archive()) {
+      // A single thread is required for Reference handling and deterministic CDS archive.
+      // Its's not required for dumping preimage, where References won't be archived and
+      // determinism is not needed.
+      assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    }
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       report_loading_error("archivedBootLayer not available, disabling full module graph");
       CDSConfig::stop_dumping_full_module_graph();
@@ -1119,13 +1147,14 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     HeapShared::init_heap_writer();
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
+      ClassLoaderDataShared::build_tables(CHECK);
       HeapShared::reset_archived_object_states(CHECK);
     }
 
     AOTReferenceObjSupport::initialize(CHECK);
     AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
 
-    if (CDSConfig::is_initing_classes_at_dump_time()) {
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.
       log_debug(aot)("Resetting Class::reflectionFactory");
@@ -1137,12 +1166,6 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
       // Perhaps there is a way to avoid hard-coding these names here.
       // See discussion in JDK-8342481.
-    }
-
-    if (HeapShared::is_writing_mapping_mode()) {
-      // Do this at the very end, when no Java code will be executed. Otherwise
-      // some new strings may be added to the intern table.
-      StringTable::allocate_shared_strings_array(CHECK);
     }
   } else {
     log_info(aot)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
@@ -1355,8 +1378,11 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
     ik->link_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       ResourceMark rm(THREAD);
-      aot_log_warning(aot)("Preload Warning: Verification failed for %s",
-                    ik->external_name());
+      oop message = java_lang_Throwable::message(current->pending_exception());
+      aot_log_warning(aot)("Preload Warning: Verification failed for %s because a %s was thrown: %s",
+                            ik->external_name(),
+                            current->pending_exception()->klass()->external_name(),
+                            message == nullptr ? "(no message)" : java_lang_String::as_utf8_string(message));
       CLEAR_PENDING_EXCEPTION;
       SystemDictionaryShared::set_class_has_failed_verification(ik);
     } else {
@@ -2140,7 +2166,6 @@ void AOTMetaspace::initialize_shared_spaces() {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     DynamicArchive::serialize(&rc);
-    DynamicArchive::setup_array_klasses();
   }
 
   LogStreamHandle(Info, aot) lsh;
@@ -2186,7 +2211,7 @@ void AOTMetaspace::initialize_shared_spaces() {
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
     tty->print_cr("Number of shared symbols: %zu", cl.total());
-    if (HeapShared::is_loading_mapping_mode()) {
+    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
       tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     }
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());

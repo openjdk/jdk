@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,8 +375,8 @@ class java_lang_Class : AllStatic {
 
 #define THREAD_INJECTED_FIELDS(macro)                                  \
   macro(java_lang_Thread, jvmti_thread_state, intptr_signature, false) \
-  macro(java_lang_Thread, jvmti_VTMS_transition_disable_count, int_signature, false) \
-  macro(java_lang_Thread, jvmti_is_in_VTMS_transition, bool_signature, false) \
+  macro(java_lang_Thread, vthread_transition_disable_count, int_signature, false) \
+  macro(java_lang_Thread, is_in_vthread_transition, bool_signature, false) \
   JFR_ONLY(macro(java_lang_Thread, jfr_epoch, short_signature, false))
 
 class java_lang_Thread : AllStatic {
@@ -390,8 +390,8 @@ class java_lang_Thread : AllStatic {
   static int _contextClassLoader_offset;
   static int _eetop_offset;
   static int _jvmti_thread_state_offset;
-  static int _jvmti_VTMS_transition_disable_count_offset;
-  static int _jvmti_is_in_VTMS_transition_offset;
+  static int _vthread_transition_disable_count_offset;
+  static int _is_in_vthread_transition_offset;
   static int _interrupted_offset;
   static int _interruptLock_offset;
   static int _tid_offset;
@@ -444,12 +444,15 @@ class java_lang_Thread : AllStatic {
 
   static JvmtiThreadState* jvmti_thread_state(oop java_thread);
   static void set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state);
-  static int  VTMS_transition_disable_count(oop java_thread);
-  static void inc_VTMS_transition_disable_count(oop java_thread);
-  static void dec_VTMS_transition_disable_count(oop java_thread);
-  static bool is_in_VTMS_transition(oop java_thread);
-  static void set_is_in_VTMS_transition(oop java_thread, bool val);
-  static int  is_in_VTMS_transition_offset();
+
+  static int  vthread_transition_disable_count(oop java_thread);
+  static void inc_vthread_transition_disable_count(oop java_thread);
+  static void dec_vthread_transition_disable_count(oop java_thread);
+  static int  vthread_transition_disable_count_offset() { return _vthread_transition_disable_count_offset; }
+
+  static bool is_in_vthread_transition(oop java_thread);
+  static void set_is_in_vthread_transition(oop java_thread, bool val);
+  static int  is_in_vthread_transition_offset() { return _is_in_vthread_transition_offset; }
 
   // Clear all scoped value bindings on error
   static void clear_scopedValueBindings(oop java_thread);
@@ -1176,13 +1179,6 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
   static oop        method_type(oop entry);
   static jlong      downcall_stub_address(oop entry);
 
-  // Testers
-  static bool is_subclass(Klass* klass) {
-    return vmClasses::NativeEntryPoint_klass() != nullptr &&
-      klass->is_subclass_of(vmClasses::NativeEntryPoint_klass());
-  }
-  static bool is_instance(oop obj);
-
   // Accessors for code generation:
   static int method_type_offset_in_bytes()           { return _method_type_offset; }
   static int downcall_stub_address_offset_in_bytes() { return _downcall_stub_address_offset; }
@@ -1213,13 +1209,6 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static jint        shadowSpace(oop entry);
   static oop         scratch1(oop entry);
   static oop         scratch2(oop entry);
-
-  // Testers
-  static bool is_subclass(Klass* klass) {
-    return vmClasses::ABIDescriptor_klass() != nullptr &&
-      klass->is_subclass_of(vmClasses::ABIDescriptor_klass());
-  }
-  static bool is_instance(oop obj);
 };
 
 class jdk_internal_foreign_abi_VMStorage: AllStatic {

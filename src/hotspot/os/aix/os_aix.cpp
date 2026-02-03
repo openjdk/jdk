@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -258,7 +258,15 @@ bool os::free_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
+bool os::Machine::free_memory(physical_memory_size_type& value) {
+  return Aix::available_memory(value);
+}
+
 bool os::available_memory(physical_memory_size_type& value) {
+  return Aix::available_memory(value);
+}
+
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
@@ -273,6 +281,10 @@ bool os::Aix::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
@@ -282,6 +294,10 @@ bool os::total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
@@ -291,6 +307,10 @@ bool os::free_swap_space(physical_memory_size_type& value) {
 }
 
 physical_memory_size_type os::physical_memory() {
+  return Aix::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return Aix::physical_memory();
 }
 
@@ -1038,6 +1058,8 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
     dflags |= RTLD_MEMBER;
   }
 
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", filename);
+
   void* result;
   const char* error_report = nullptr;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
@@ -1747,6 +1769,9 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
 }
 
+void os::numa_set_thread_affinity(Thread *thread, int node) {
+}
+
 void os::numa_make_global(char *addr, size_t bytes) {
 }
 
@@ -2259,6 +2284,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
   assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
   return online_cpus;
@@ -2328,8 +2357,8 @@ int os::open(const char *path, int oflag, int mode) {
 
     if (ret != -1) {
       if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
         ::close(fd);
+        errno = EISDIR;
         return -1;
       }
     } else {

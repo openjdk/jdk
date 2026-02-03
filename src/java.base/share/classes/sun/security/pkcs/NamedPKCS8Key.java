@@ -64,9 +64,11 @@ import java.util.Objects;
 /// arise if they happen to be the same object. To avoid ambiguity, always set
 /// `expanded` to `null`.
 ///
-/// A `NamedPKCS8Key`, when created, must include `expanded` if required, its
-/// `privKeyMaterial` must have already been validated for internal consistency.
-/// For example, seed and expanded key should match.
+/// If the `expanded` field is required by the algorithm, it is either
+/// [calculated from the PKCS #8 encoding][#NamedPKCS8Key(String, byte\[\], Expander)],
+/// or [provided directly][#internalCreate(String, String, byte\[\], byte\[\])].
+/// In the latter case, the caller must ensure the consistency of the `encoded`
+/// and `expanded` arguments. For example, seed and expanded key must match.
 ///
 /// @see sun.security.provider.NamedKeyPairGenerator
 public final class NamedPKCS8Key extends PKCS8Key {
@@ -190,6 +192,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
     }
 
     /// Expands from encoding format to expanded format.
+    @FunctionalInterface
     public interface Expander {
         /// The expand method
         ///
