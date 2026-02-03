@@ -58,3 +58,15 @@ jdk/jfr/jcmd/TestJcmdStartPathToGCRoots.java            8342951     generic-all
 jdk/jfr/jvm/TestWaste.java                              8342951     generic-all
 jdk/jfr/startupargs/TestOldObjectQueueSize.java         8342951     generic-all
 
+#############################################################################
+
+# Preview project specific failures go here at the end of the file.
+#
+# These are NOT failures that occur with the '--enable-preview' option
+# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# These are failures that occur WITHOUT the '--enable-preview' option
+# specified AND occur because of some issue with preview project code,
+# in either implementation or test code.
+
+#############################################################################
+

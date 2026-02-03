@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -845,7 +845,8 @@ public:
     Flag_has_swapped_edges           = 1ULL << 11,
     Flag_is_scheduled                = 1ULL << 12,
     Flag_is_expensive                = 1ULL << 13,
-    Flag_is_predicated_vector        = 1ULL << 14,
+    Flag_is_predicated_vector        = 1ULL << 14, // Marked on a vector node that has an additional
+                                                   // mask input controlling the lane operations.
     Flag_for_post_loop_opts_igvn     = 1ULL << 15,
     Flag_for_merge_stores_igvn       = 1ULL << 16,
     Flag_is_removed_by_peephole      = 1ULL << 17,
