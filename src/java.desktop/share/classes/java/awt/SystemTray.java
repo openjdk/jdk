@@ -314,10 +314,12 @@ public class SystemTray {
      * @see TrayIcon
      */
     public TrayIcon[] getTrayIcons() {
-        if (icons != null) {
-            return icons.toArray(EMPTY_TRAY_ARRAY);
+        synchronized (this) {
+            if (icons != null) {
+                return icons.toArray(EMPTY_TRAY_ARRAY);
+            }
+            return EMPTY_TRAY_ARRAY;
         }
-        return EMPTY_TRAY_ARRAY;
     }
 
     /**
