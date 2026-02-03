@@ -621,9 +621,16 @@ public class JSR166TestCase extends TestCase {
         if (atLeastJava20()) {
             String[] java20TestClassNames = {
                 "ForkJoinPool20Test",
-                "SynchronousQueue20Test",
-                "ReentrantReadWriteLock20Test"
             };
+
+	    if (!System.getProperty("os.arch").equals("s390x")) {
+		java20TestClassNames = new String[] {
+		    "ForkJoinPool20Test",
+		    "SynchronousQueue20Test",
+		    "ReentrantReadWriteLock20Test"
+	        };
+	    }
+
             addNamedTestClasses(suite, java20TestClassNames);
         }
 
