@@ -12324,6 +12324,7 @@ instruct minF(regF dst, regF src1, regF src2) %{
   predicate(PowerArchitecturePPC64 >= 9);
   ins_cost(DEFAULT_COST);
 
+  format %{ "MinF $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
     __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
@@ -12336,6 +12337,7 @@ instruct minD(regD dst, regD src1, regD src2) %{
   predicate(PowerArchitecturePPC64 >= 9);
   ins_cost(DEFAULT_COST);
 
+  format %{ "MinD $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
     __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
@@ -12348,6 +12350,7 @@ instruct maxF(regF dst, regF src1, regF src2) %{
   predicate(PowerArchitecturePPC64 >= 9);
   ins_cost(DEFAULT_COST);
 
+  format %{ "MaxF $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
     __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
@@ -12360,6 +12363,7 @@ instruct maxD(regD dst, regD src1, regD src2) %{
   predicate(PowerArchitecturePPC64 >= 9);
   ins_cost(DEFAULT_COST);
 
+  format %{ "MaxD $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
     __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
