@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -166,25 +167,21 @@ public class PipelineLeaksFD {
             final Set<PipeRecord> pipes = pipesFromLSOF(lsofLines, MY_PID, p.pid());
             printPipes(pipes, "Parent and child pipes");
 
-            for (PipeRecord c : pipes) {
-                if (c.pid() == p.pid()) {
-                    // Check that child pipes are matched up with the correct number of parent pipes.
-                    // if stderr is redirected to stderr, then the count is 1 higher
-                    switch (c.fd()) {
-                        case 0:
-                            assertEquals(2, c.myKey().count, "stdin count mismatch");
-                            break;
-                        case 1:
-                        case 2:
-                            long expected = redirectError ? 3 : 2;
-                            assertEquals(expected, c.myKey().count, "stdout/stderr count mismatch");
-                            break;
-                        default:
-                            // ignore other child pipes
-                            break;
-                    }
-                }
-            }
+            // For each of the child standard pipes, check the parent and child uses of the pipe
+            var pIn = PipeRecord.pipeFor(pipes, p.pid(), 0).orElseThrow();
+            Set<PipeRecord> pIns = PipeRecord.allSamePipes(pipes, pIn);
+            assertEquals(2, pIns.size(), "StdIn pipe count");
+
+            // Number of pipe references depending on whether stderr is redirected to stdout
+            long expected = redirectError ? 3 : 2;
+
+            var pOut = PipeRecord.pipeFor(pipes, p.pid(), 1).orElseThrow();
+            Set<PipeRecord> pOuts = PipeRecord.allSamePipes(pipes, pOut);
+            assertEquals(expected, pOuts.size(), "StdOut pipe count");
+
+            var pErr = PipeRecord.pipeFor(pipes, p.pid(), 2).orElseThrow();
+            Set<PipeRecord> pErrs = PipeRecord.allSamePipes(pipes, pErr);
+            assertEquals(expected, pErrs.size(), "StdErr pipe count");
 
             String expectedTypeName = redirectError
                     ? "java.lang.ProcessBuilder$NullInputStream"
@@ -274,8 +271,8 @@ public class PipelineLeaksFD {
     }
 
     // Return Pipe from lsof output put, or null (on Mac OS X)
-    // lsof      55221 rriggs    0      PIPE 0xc76402237956a5cb      16384  ->0xfcb0c07ae447908c
-    // lsof      55221 rriggs    1      PIPE 0xb486e02f86da463e      16384  ->0xf94eacc85896b4e6
+    // lsof      55221 xxxx    0      PIPE 0xc76402237956a5cb      16384  ->0xfcb0c07ae447908c
+    // lsof      55221 xxxx    1      PIPE 0xb486e02f86da463e      16384  ->0xf94eacc85896b4e6
     static PipeRecord pipeFromMacLSOF(String s) {
         String[] fields = s.split("\\s+");
         if ("PIPE".equals(fields[4])) {
@@ -288,8 +285,8 @@ public class PipelineLeaksFD {
     }
 
     // Return Pipe from lsof output put, or null (on Linux)
-    // java    7612 rriggs   14w  FIFO   0,12       0t0   117662267 pipe
-    // java    7612 rriggs   15r  FIFO   0,12       0t0   117662268 pipe
+    // java    7612 xxxx   14w  FIFO   0,12       0t0   117662267 pipe
+    // java    7612 xxxx   15r  FIFO   0,12       0t0   117662268 pipe
     static PipeRecord pipeFromLinuxLSOF(String s) {
         String[] fields = s.split("\\s+");
         if ("FIFO".equals(fields[4])) {
@@ -306,6 +303,20 @@ public class PipelineLeaksFD {
     record PipeRecord(long pid, int fd, KeyedString myKey) {
         static PipeRecord lookup(int fd, String myKey, String otherKey, int pid) {
             return new PipeRecord(pid, fd, KeyedString.getKey(myKey, otherKey));
+        }
+
+        // Return the PipeRecord matching the fd and pid
+        static Optional<PipeRecord> pipeFor(Set<PipeRecord> pipes, long pid, int fd) {
+            return pipes.stream()
+                    .filter(p -> p.fd() == fd && p.pid() == pid)
+                    .findFirst();
+        }
+
+        // Return all the PipeRecords with the same key (the same OS pipe identification)
+        static Set<PipeRecord> allSamePipes(Set<PipeRecord> pipes, PipeRecord p) {
+            return pipes.stream()
+                    .filter(p1 -> p1.myKey().key.equals(p.myKey().key))
+                    .collect(Collectors.toSet());
         }
     }
 
@@ -338,7 +349,7 @@ public class PipelineLeaksFD {
         }
 
         public String toString() {
-            return name + "(" + count + ")";
+            return name + "(" + count + "), osInfo: " + key;
         }
     }
 }
