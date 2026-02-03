@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacDmgPackageMixin;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class MacDmgPackageBuilder {
 
@@ -37,8 +39,8 @@ final class MacDmgPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    MacDmgPackageBuilder dmgContent(List<Path> v) {
-        dmgContent = v;
+    MacDmgPackageBuilder dmgRootDirSources(Collection<RootedPath> v) {
+        dmgRootDirSources = v;
         return this;
     }
 
@@ -47,8 +49,8 @@ final class MacDmgPackageBuilder {
         return this;
     }
 
-    List<Path> validatedDmgContent() {
-        return Optional.ofNullable(dmgContent).orElseGet(List::of);
+    private Collection<RootedPath> validatedDmgRootDirSources() {
+        return Optional.ofNullable(dmgRootDirSources).orElseGet(List::of);
     }
 
     MacDmgPackage create() {
@@ -56,10 +58,10 @@ final class MacDmgPackageBuilder {
 
         return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(
                 Optional.ofNullable(icon).or((pkg.app())::icon),
-                validatedDmgContent()));
+                validatedDmgRootDirSources()));
     }
 
     private Path icon;
-    private List<Path> dmgContent;
+    private Collection<RootedPath> dmgRootDirSources;
     private final MacPackageBuilder pkgBuilder;
 }

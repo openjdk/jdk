@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import javax.swing.JComponent;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 
-import sun.awt.AppContext;
-
 /**
  * MotifCheckBox implementation
  *
@@ -39,7 +37,7 @@ import sun.awt.AppContext;
  */
 public class MotifCheckBoxUI extends MotifRadioButtonUI {
 
-    private static final Object MOTIF_CHECK_BOX_UI_KEY = new Object();
+    private static final ComponentUI UI = new MotifCheckBoxUI();
 
     private static final String propertyPrefix = "CheckBox" + ".";
 
@@ -50,16 +48,10 @@ public class MotifCheckBoxUI extends MotifRadioButtonUI {
     //         Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        MotifCheckBoxUI motifCheckBoxUI =
-                (MotifCheckBoxUI) appContext.get(MOTIF_CHECK_BOX_UI_KEY);
-        if (motifCheckBoxUI == null) {
-            motifCheckBoxUI = new MotifCheckBoxUI();
-            appContext.put(MOTIF_CHECK_BOX_UI_KEY, motifCheckBoxUI);
-        }
-        return motifCheckBoxUI;
+        return UI;
     }
 
+    @Override
     public String getPropertyPrefix() {
         return propertyPrefix;
     }
@@ -67,6 +59,7 @@ public class MotifCheckBoxUI extends MotifRadioButtonUI {
     // ********************************
     //          Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -75,6 +68,7 @@ public class MotifCheckBoxUI extends MotifRadioButtonUI {
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;

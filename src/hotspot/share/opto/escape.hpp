@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,7 +539,8 @@ private:
   }
 
   // Helper functions
-  bool   is_oop_field(Node* n, int offset, bool* unsafe);
+  bool is_oop_field(Node* n, int offset, bool* unsafe);
+  bool has_oop_node_outs(Node* n);
   static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
   int address_offset(Node* adr, PhaseValues* phase);
