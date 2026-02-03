@@ -147,6 +147,7 @@ public class AOTCodeFlags {
 
         public List<String> getGCArgs() {
             List<String> args = new ArrayList<String>();
+            args.add("-Xmx100M");
             if (gcName == null) {
                 return args;
             }
