@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ class AOTStreamedHeapWriter : AllStatic {
   static void copy_forwarding_to_buffer();
   static void copy_roots_max_dfs_to_buffer(int roots_length);
 
-  static void map_embedded_oops(ArchiveStreamedHeapInfo* info);
+  static void map_embedded_oops(AOTStreamedHeapInfo* info);
   static bool is_in_requested_range(oop o);
   static oop requested_obj_from_buffer_offset(size_t offset);
 
@@ -131,14 +131,14 @@ class AOTStreamedHeapWriter : AllStatic {
 
   static void update_header_for_buffered_addr(address buffered_addr, oop src_obj, Klass* src_klass);
 
-  static void populate_archive_heap_info(ArchiveStreamedHeapInfo* info);
+  static void populate_archive_heap_info(AOTStreamedHeapInfo* info);
 
 public:
   static void init() NOT_CDS_JAVA_HEAP_RETURN;
 
   static void delete_tables_with_raw_oops();
   static void add_source_obj(oop src_obj);
-  static void write(GrowableArrayCHeap<oop, mtClassShared>*, ArchiveStreamedHeapInfo* heap_info);
+  static void write(GrowableArrayCHeap<oop, mtClassShared>*, AOTStreamedHeapInfo* heap_info);
   static address buffered_heap_roots_addr() {
     return offset_to_buffered_address<address>(_roots_offset);
   }
@@ -156,7 +156,7 @@ public:
   static oop buffered_offset_to_source_obj(size_t buffered_offset);
   static oop buffered_addr_to_source_obj(address buffered_addr);
 
-  static AOTMapLogger::OopDataIterator* oop_iterator(ArchiveStreamedHeapInfo* heap_info);
+  static AOTMapLogger::OopDataIterator* oop_iterator(AOTStreamedHeapInfo* heap_info);
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 #endif // SHARE_CDS_AOTSTREAMEDHEAPWRITER_HPP

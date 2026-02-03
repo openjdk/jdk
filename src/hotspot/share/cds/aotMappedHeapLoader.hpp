@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
+struct AOTMappedHeapRegion;
 class  FileMapInfo;
-struct LoadedArchiveHeapRegion;
 
 class AOTMappedHeapLoader : AllStatic {
   friend class AOTMapLogger;
@@ -93,7 +93,7 @@ public:
   // function instead.
   inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
-  // More efficient version, but works only when ArchiveHeap is mapped.
+  // More efficient version, but works only when is_mapped()
   inline static oop decode_from_mapped_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
   static void patch_compressed_embedded_pointers(BitMapView bm,
@@ -113,7 +113,7 @@ private:
   static bool _is_loaded;
 
   // Support for loaded archived heap. These are cached values from
-  // LoadedArchiveHeapRegion's.
+  // AOTMappedHeapRegion's.
   static uintptr_t _dumptime_base;
   static uintptr_t _dumptime_top;
   static intx _runtime_offset;
@@ -141,10 +141,10 @@ private:
   static bool _heap_pointers_need_patching;
 
   static void init_narrow_oop_decoding(address base, int shift);
-  static bool init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_region,
+  static bool init_loaded_region(FileMapInfo* mapinfo, AOTMappedHeapRegion* loaded_region,
                                  MemRegion& archive_space);
-  static bool load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_region, uintptr_t buffer);
-  static void init_loaded_heap_relocation(LoadedArchiveHeapRegion* reloc_info);
+  static bool load_heap_region_impl(FileMapInfo* mapinfo, AOTMappedHeapRegion* loaded_region, uintptr_t buffer);
+  static void init_loaded_heap_relocation(AOTMappedHeapRegion* reloc_info);
   static void patch_native_pointers();
   static void finish_loaded_heap();
   static void verify_loaded_heap();

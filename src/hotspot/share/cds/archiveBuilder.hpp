@@ -39,8 +39,8 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/resizableHashTable.hpp"
 
-class ArchiveMappedHeapInfo;
-class ArchiveStreamedHeapInfo;
+class AOTMappedHeapInfo;
+class AOTStreamedHeapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -247,8 +247,8 @@ private:
   } _relocated_ptr_info;
 
   void print_region_stats(FileMapInfo *map_info,
-                          ArchiveMappedHeapInfo* mapped_heap_info,
-                          ArchiveStreamedHeapInfo* streamed_heap_info);
+                          AOTMappedHeapInfo* mapped_heap_info,
+                          AOTStreamedHeapInfo* streamed_heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
   void print_heap_region_stats(char* start, size_t size, size_t total_size);
 
@@ -438,8 +438,8 @@ public:
   void make_training_data_shareable();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo,
-                     ArchiveMappedHeapInfo* mapped_heap_info,
-                     ArchiveStreamedHeapInfo* streamed_heap_info);
+                     AOTMappedHeapInfo* mapped_heap_info,
+                     AOTStreamedHeapInfo* streamed_heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
