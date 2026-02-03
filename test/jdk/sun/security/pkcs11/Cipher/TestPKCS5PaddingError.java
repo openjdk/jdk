@@ -71,7 +71,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
     public void main(Provider p) throws Exception {
 
         // Checking for SunJCE first
-        System.out.println("Checking SunJCE provider");
+        System.out.println("Checking " + sunJCEProvider + " provider");
         doTest(Security.getProvider(sunJCEProvider));
 
         System.out.printf("Checking %s provider%n", p.getName());
@@ -89,7 +89,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                             KeyGenerator.getInstance(currTest.keyAlgo, p);
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation,
-                            System.getProperty("test.provider.name", "SunJCE"));
+                            sunJCEProvider);
                     c1.init(Cipher.ENCRYPT_MODE, key);
                     byte[] cipherText = c1.doFinal(plainText);
                     AlgorithmParameters params = c1.getParameters();
