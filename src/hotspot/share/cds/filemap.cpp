@@ -313,7 +313,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- mapped_heap_header");
   st->print_cr("  - root_segments");
   st->print_cr("    - roots_count:                          %d", _mapped_heap_header.root_segments().roots_count());
-  st->print_cr("    - base_offset:                          0x%zx", _mapped_heap_header.root_segments().base_offset());
   st->print_cr("    - count:                                %zu", _mapped_heap_header.root_segments().count());
   st->print_cr("    - max_size_elems:                       %d", _mapped_heap_header.root_segments().max_size_in_elems());
   st->print_cr("    - max_size_bytes:                       %zu", _mapped_heap_header.root_segments().max_size_in_bytes());

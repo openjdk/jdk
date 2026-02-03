@@ -456,11 +456,10 @@ void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
 
     // The heap roots are stored in one or more segments that are laid out consecutively.
     // The size of each segment (except for the last one) is max_size_in_{elems,bytes}.
-    HeapRootSegments segments = FileMapInfo::current_info()->mapped_heap()->root_segments();
+    AOTMappedHeapRootSegments segments = FileMapInfo::current_info()->mapped_heap()->root_segments();
     init_root_segment_sizes(segments.max_size_in_elems());
-    intptr_t first_segment_addr = bottom + segments.base_offset();
-    for (size_t c = 0; c < segments.count(); c++) {
-      oop segment_oop = cast_to_oop(first_segment_addr + (c * segments.max_size_in_bytes()));
+    for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
+      oop segment_oop = cast_to_oop(bottom + segments.segment_offset(seg_idx));
       assert(segment_oop->is_objArray(), "Must be");
       add_root_segment((objArrayOop)segment_oop);
     }
@@ -741,13 +740,13 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                             address requested_base,
                             address requested_start,
                             int requested_shift,
-                            size_t num_root_segments) :
+                            AOTMappedHeapRootSegments root_segments) :
       AOTMappedHeapOopIterator(buffer_start,
                                buffer_end,
                                requested_base,
                                requested_start,
                                requested_shift,
-                               num_root_segments) {}
+                               root_segments) {}
 
     AOTMapLogger::OopData capture(address buffered_addr) override {
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
@@ -779,7 +778,7 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                                      requested_base,
                                      requested_start,
                                      requested_shift,
-                                     info->mapped_heap()->root_segments().count());
+                                     info->mapped_heap()->root_segments());
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

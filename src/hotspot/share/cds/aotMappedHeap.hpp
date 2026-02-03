@@ -26,23 +26,72 @@
 #define SHARE_CDS_AOTMAPPEDHEAP_HPP
 
 #include "cds/aotMapLogger.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
+class AOTMappedHeapRootSegments {
+private:
+  size_t _count;
+  int _roots_count;
+  size_t _max_size_in_bytes;
+  int _max_size_in_elems;
+  size_t _first_segment_offset_in_bytes;
+  size_t _first_segment_size_in_bytes;
+  int _first_segment_size_in_elems;
+
+public:
+  size_t count() { return _count; }
+  int roots_count() { return _roots_count; }
+  size_t max_size_in_bytes() { return _max_size_in_bytes; }
+  int max_size_in_elems() { return _max_size_in_elems; }
+
+  size_t size_in_bytes(size_t seg_idx);
+  int size_in_elems(size_t seg_idx);
+  size_t segment_offset(size_t seg_idx);
+
+  // Trivial copy assignments are allowed to copy the entire object representation.
+  // We also inline this class into archive header. Therefore, it is important to make
+  // sure any gaps in object representation are initialized to zeroes. This is why
+  // constructors memset before doing field assignments.
+  AOTMappedHeapRootSegments() {
+    memset(this, 0, sizeof(*this));
+  }
+  AOTMappedHeapRootSegments(int roots_count,
+                            int max_size_in_bytes,
+                            int max_size_in_elems,
+                            int first_segment_offset_in_bytes,
+                            int first_segment_size_in_bytes,
+                            int first_segment_size_in_elems) {
+    memset(this, 0, sizeof(*this));
+    _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;
+    _roots_count = roots_count;
+    _max_size_in_bytes = max_size_in_bytes;
+    _max_size_in_elems = max_size_in_elems;
+    _first_segment_offset_in_bytes = first_segment_offset_in_bytes;
+    _first_segment_size_in_bytes = first_segment_size_in_bytes;
+    _first_segment_size_in_elems = first_segment_size_in_elems;
+  }
+
+  // This class is trivially copyable and assignable.
+  AOTMappedHeapRootSegments(const AOTMappedHeapRootSegments&) = default;
+  AOTMappedHeapRootSegments& operator=(const AOTMappedHeapRootSegments&) = default;
+};
+
 class AOTMappedHeapHeader {
-  size_t           _ptrmap_start_pos; // The first bit in the ptrmap corresponds to this position in the heap.
-  size_t           _oopmap_start_pos; // The first bit in the oopmap corresponds to this position in the heap.
-  HeapRootSegments _root_segments;    // Heap root segments info
+  size_t  _ptrmap_start_pos; // The first bit in the ptrmap corresponds to this position in the heap.
+  size_t  _oopmap_start_pos; // The first bit in the oopmap corresponds to this position in the heap.
+  AOTMappedHeapRootSegments _root_segments;    // Heap root segments info
 
 public:
   AOTMappedHeapHeader();
   AOTMappedHeapHeader(size_t ptrmap_start_pos,
                       size_t oopmap_start_pos,
-                      HeapRootSegments root_segments);
+                      AOTMappedHeapRootSegments root_segments);
 
   size_t ptrmap_start_pos() const { return _ptrmap_start_pos; }
   size_t oopmap_start_pos() const { return _oopmap_start_pos; }
-  HeapRootSegments root_segments() const { return _root_segments; }
+  AOTMappedHeapRootSegments root_segments() const { return _root_segments; }
 
   // This class is trivially copyable and assignable.
   AOTMappedHeapHeader(const AOTMappedHeapHeader&) = default;
@@ -53,7 +102,7 @@ class AOTMappedHeapInfo {
   MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
   CHeapBitMap _oopmap;
   CHeapBitMap _ptrmap;
-  HeapRootSegments _root_segments;
+  AOTMappedHeapRootSegments _root_segments;
   size_t _oopmap_start_pos;             // How many zeros were removed from the beginning of the bit map?
   size_t _ptrmap_start_pos;             // How many zeros were removed from the beginning of the bit map?
 
@@ -79,8 +128,8 @@ public:
   void set_oopmap_start_pos(size_t start_pos) { _oopmap_start_pos = start_pos; }
   void set_ptrmap_start_pos(size_t start_pos) { _ptrmap_start_pos = start_pos; }
 
-  void set_root_segments(HeapRootSegments segments) { _root_segments = segments; };
-  HeapRootSegments root_segments() { return _root_segments; }
+  void set_root_segments(AOTMappedHeapRootSegments segments) { _root_segments = segments; };
+  AOTMappedHeapRootSegments root_segments() { return _root_segments; }
 
   AOTMappedHeapHeader create_header();
 };
@@ -96,9 +145,7 @@ protected:
   uint64_t _buffer_start_narrow_oop;
   intptr_t _buffer_to_requested_delta;
   int _requested_shift;
-
-  size_t _num_root_segments;
-  size_t _num_obj_arrays_logged;
+  size_t _first_root_segment_offset;
 
 public:
   AOTMappedHeapOopIterator(address buffer_start,
@@ -106,14 +153,13 @@ public:
                            address requested_base,
                            address requested_start,
                            int requested_shift,
-                           size_t num_root_segments)
+                           AOTMappedHeapRootSegments root_segments)
     : _current(nullptr),
       _next(buffer_start),
       _buffer_start(buffer_start),
       _buffer_end(buffer_end),
       _requested_shift(requested_shift),
-      _num_root_segments(num_root_segments),
-      _num_obj_arrays_logged(0) {
+      _first_root_segment_offset(root_segments.segment_offset(0)) {
     _buffer_to_requested_delta = requested_start - buffer_start;
     _buffer_start_narrow_oop = 0xdeadbeed;
     if (UseCompressedOops) {
@@ -132,7 +178,7 @@ public:
     _current = _next;
     AOTMapLogger::OopData result = capture(_current);
     if (result._klass->is_objArray_klass()) {
-      result._is_root_segment = _num_obj_arrays_logged++ < _num_root_segments;
+      result._is_root_segment = (pointer_delta(_current, _buffer_start, 1) >= _first_root_segment_offset);
     }
     _next = _current + result._size * BytesPerWord;
     return result;

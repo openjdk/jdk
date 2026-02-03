@@ -852,7 +852,8 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
 
   if (HeapShared::is_writing_mapping_mode()) {
     StringTable::write_shared_table();
-    AOTMappedHeapWriter::write(_pending_roots, mapped_heap_info);
+    AOTMappedHeapWriter::write_objects(mapped_heap_info);
+    AOTMappedHeapWriter::write_roots(_pending_roots, mapped_heap_info);
   } else {
     assert(HeapShared::is_writing_streaming_mode(), "are there more modes?");
     AOTStreamedHeapWriter::write(_pending_roots, streamed_heap_info);
