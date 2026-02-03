@@ -24,6 +24,7 @@
 /* @test
  * @bug 4313887 6838333 8343020 8357425
  * @summary Unit test for java.nio.file.SecureDirectoryStream
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
  * @run junit SecureDS
@@ -40,14 +41,11 @@ import java.util.*;
 import jdk.test.lib.Platform;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@EnabledOnOs({OS.LINUX, OS.MAC, OS.AIX})
 public class SecureDS {
     static boolean supportsSymbolicLinks;
 
