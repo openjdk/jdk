@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class hs201t001 extends DebugeeClass {
 
@@ -147,7 +148,7 @@ class hs201t001Thread extends Thread {
 
     void throwException() throws Exception {
 
-        ClassUnloader unloader = new ClassUnloader();
+        ClassUnloadCommon unloader = new ClassUnloadCommon();
         Class cls = null;
         String path = argHandler.findOptionValue(PATH_TO_NEW_BYTECODE)
                             + "/newclass";

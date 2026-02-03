@@ -54,7 +54,7 @@ public class classname001 {
     static final String PREFIX = "nsk.jdi.ClassUnloadEvent.className";
     static final String DEBUGGEE_NAME = PREFIX + ".classname001a";
     static final String CHECKED_CLASS = PREFIX + ".classname001b";
-    static final String KLASSLOADER   = ClassUnloader.INTERNAL_CLASS_LOADER_NAME;
+    static final String KLASSLOADER   = ClassUnloadCommon.INTERNAL_CLASS_LOADER_NAME;
 
     static private Debugee debuggee;
     static private VirtualMachine vm;

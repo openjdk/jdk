@@ -30,7 +30,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import nsk.share.ClassUnloader;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 import nsk.share.TestFailure;
 import nsk.share.gc.ThreadedGCTest;
 import nsk.share.gc.gp.GarbageUtils;
@@ -43,7 +43,7 @@ import nsk.share.test.LocalRandom;
 public abstract class SysDictTest extends ThreadedGCTest {
 
     static String PACKAGE_PREFIX = "nsk.sysdict.share.";
-    // Should we additionally use ClassUnloader.unload to stress GC
+    // Should we additionally use ClassUnloadCommon.unload to stress GC
     private boolean isHeapStressed = false;
     // Should we use one JarLoader or a lot of them
     private boolean useSingleLoader = true;

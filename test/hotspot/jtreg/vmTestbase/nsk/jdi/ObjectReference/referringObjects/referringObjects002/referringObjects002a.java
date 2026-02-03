@@ -22,7 +22,7 @@
  */
 package nsk.jdi.ObjectReference.referringObjects.referringObjects002;
 
-import nsk.share.ClassUnloader;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 import nsk.share.ObjectInstancesManager;
 import nsk.share.ReferringObject;
 import nsk.share.TestBug;
@@ -65,7 +65,7 @@ public class referringObjects002a extends HeapwalkingDebuggee {
 
     // create references of all possible types to class object
     public void createClassObjectReferrers(String className, int instanceCount) {
-        ClassUnloader unloader = loadedClasses.get(className);
+        ClassUnloadCommon unloader = loadedClasses.get(className);
 
         if (unloader == null)
             throw new TestBug("Unloader is null for class: " + className);

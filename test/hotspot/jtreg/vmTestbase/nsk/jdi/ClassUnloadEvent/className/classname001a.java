@@ -27,6 +27,7 @@ import java.io.*;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 
 // This class is the debugged application in the test
@@ -62,7 +63,7 @@ class classname001a {
         }
 
         // load class for further unloading
-        ClassUnloader classUnloader = new ClassUnloader();
+        ClassUnloadCommon classUnloader = new ClassUnloadCommon();
         try {
             classUnloader.loadClass(CHECKED_CLASS, loadClassDir);
         } catch (Exception ex) {

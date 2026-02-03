@@ -53,6 +53,11 @@ public class ClassUnloadCommon {
     private static final int MAX_UNLOAD_ATTEMPS = 20;
 
     /**
+     * Class name of default class loader.
+     */
+    public static final String INTERNAL_CLASS_LOADER_NAME = "nsk.share.CustomClassLoader";
+
+    /**
      * Phantom reference to the class loader.
      */
     private PhantomReference<Object> customClassLoaderPhantomRef = null;
@@ -332,7 +337,7 @@ public class ClassUnloadCommon {
         WhiteBox.getWhiteBox().fullGC();
         int attempt = 0;
         while (attempt < MAX_UNLOAD_ATTEMPS && !isClassLoaderReclaimed()) {
-            System.out.println("ClassUnloader: waiting for class loader reclaiming... " + attempt);
+            System.out.println("ClassUnloadCommon: waiting for class loader reclaiming... " + attempt);
             WhiteBox.getWhiteBox().fullGC();
             try {
                 // small delay to give more changes to process objects
@@ -344,12 +349,12 @@ public class ClassUnloadCommon {
 
         // force GC to unload marked class loader and its classes
         if (isClassLoaderReclaimed()) {
-            System.out.println("ClassUnloader: class loader has been reclaimed.");
+            System.out.println("ClassUnloadCommon: class loader has been reclaimed.");
             return true;
         }
 
         // class loader has not been reclaimed
-        System.out.println("ClassUnloader: class loader is still reachable.");
+        System.out.println("ClassUnloadCommon: class loader is still reachable.");
         return false;
     }
 

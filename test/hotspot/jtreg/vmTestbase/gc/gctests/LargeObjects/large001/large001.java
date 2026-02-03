@@ -132,7 +132,7 @@ public class large001 extends ThreadedGCTest {
 
         public void run() {
             try {
-                // Use special ClassUnloader to load/unload classes
+                // Use special ClassUnloadCommon to load/unload classes
                 ClassUnloadCommon unloader = new ClassUnloadCommon();
                 String[] classes = isOverLimitFields ? LCLASSES : SCLASSES;
 

@@ -23,7 +23,7 @@
 
 package nsk.jdi.ClassUnloadRequest.addClassExclusionFilter;
 
-// These classes will be loaded by ClassUnloader
+// These classes will be loaded by ClassUnloadCommon
 
 class Superexclfilter001b {
     static String name = "Superexclfilter001b";

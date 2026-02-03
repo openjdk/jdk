@@ -26,6 +26,7 @@ package nsk.jdi.ReferenceType.classLoader;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 import java.io.*;
 
@@ -106,7 +107,7 @@ public class classloader001a {
                                 String checkedClassDir = (argHandler.getArguments())[0] + File.separator + "loadclass";
 
                                 // Load class by custom class loader
-                                ClassUnloader classUnloader = new ClassUnloader();
+                                ClassUnloadCommon classUnloader = new ClassUnloadCommon();
                                 try {
                                     classUnloader.loadClass(testedClassName0, checkedClassDir);
                                     Class loadedClass = classUnloader.getLoadedClass();

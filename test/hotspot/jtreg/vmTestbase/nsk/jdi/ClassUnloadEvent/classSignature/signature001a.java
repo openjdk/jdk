@@ -27,6 +27,7 @@ import java.io.*;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 import java.lang.reflect.Method;
 
@@ -69,7 +70,7 @@ class signature001a {
         }
 
         // load checked class for further unloading
-        ClassUnloader checkedClassUnloader = new ClassUnloader();
+        ClassUnloadCommon checkedClassUnloader = new ClassUnloadCommon();
         try {
             checkedClassUnloader.loadClass(CHECKED_CLASS, loadClassDir);
         } catch (Exception ex) {
@@ -79,7 +80,7 @@ class signature001a {
         }
 
         // load checked interface for further unloading
-        ClassUnloader checkedInterfaceUnloader = new ClassUnloader();
+        ClassUnloadCommon checkedInterfaceUnloader = new ClassUnloadCommon();
         try {
             checkedInterfaceUnloader.loadClass(CHECKED_INTFACE, loadClassDir);
         } catch (Exception ex) {

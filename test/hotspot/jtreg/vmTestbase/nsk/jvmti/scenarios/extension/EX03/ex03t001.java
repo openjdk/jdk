@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class ex03t001 extends DebugeeClass {
 
@@ -68,7 +69,7 @@ public class ex03t001 extends DebugeeClass {
         String path = argv[0];
 
         log.display("CASE #1:");
-        ClassUnloader unloader = new ClassUnloader();
+        ClassUnloadCommon unloader = new ClassUnloadCommon();
         Class loadedClass = loadClass(unloader, TESTED_CLASS_NAME1, path);
 
         status = checkStatus(status);
@@ -87,7 +88,7 @@ public class ex03t001 extends DebugeeClass {
         }
 
         log.display("CASE #2:");
-        unloader = new ClassUnloader();
+        unloader = new ClassUnloadCommon();
         loadedClass = loadClass(unloader, TESTED_CLASS_NAME2, path);
 
         status = checkStatus(status);
@@ -107,7 +108,7 @@ public class ex03t001 extends DebugeeClass {
     }
 
 
-    Class loadClass (ClassUnloader unloader, String className, String path) {
+    Class loadClass (ClassUnloadCommon unloader, String className, String path) {
         try {
             unloader.loadClass(className, path);
         } catch(ClassNotFoundException e) {

@@ -70,7 +70,7 @@
  *       to have separate directory for precompiled classes:
  *         - classname003b class was moved in 'loadclass' subdirectory;
  *         - ${COMMON_CLASSES_LOCATION} instead of ${TESTDIR} in .cfg file;
- *         - ClassUnloader seekes for classname003b class in
+ *         - ClassUnloadCommon seekes for classname003b class in
  *           ${COMMON_CLASSES_LOCATION}/loadclass directory.
  *       Standard method Debugee.endDebugee() is used instead of cleaning
  *         event queue on debuggee VM exit.

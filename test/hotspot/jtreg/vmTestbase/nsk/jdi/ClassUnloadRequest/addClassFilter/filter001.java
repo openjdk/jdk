@@ -39,7 +39,7 @@ import java.util.*;
  *
  * <p>
  * To excite a class loading/unloading onto debugee, debugeer uses
- * <code>nsk.share.ClassUnloader</code> and performs it twice : <br>
+ * <code>jdk.test.lib.classloader.ClassUnloadCommon</code> and performs it twice : <br>
  *      1. for pattern that ends with '*'   <br>
  *      2. for pattern that begins with '*' <br>
  * It is expected:  <br>

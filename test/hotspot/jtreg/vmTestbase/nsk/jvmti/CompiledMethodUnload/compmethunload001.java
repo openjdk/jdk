@@ -29,6 +29,7 @@ import java.util.*;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * This test exercises the JVMTI event <code>CompiledMethodUnload</code>.
@@ -77,7 +78,7 @@ public class compmethunload001 {
     public static void callHotClass(String location) throws Exception {
         String clsDir = location + File.separator + "loadclass";
 
-        ClassUnloader clsUnLoader = new ClassUnloader();
+        ClassUnloadCommon clsUnLoader = new ClassUnloadCommon();
         // load the class
         System.out.println("\nTrying to load class from "
                 + clsDir + " ...");
