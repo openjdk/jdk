@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 import nsk.share.*;
 import nsk.share.test.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 /*
@@ -63,7 +64,7 @@ public class AbstractDebuggeeTest {
         log.display("In breakpoint method: 'AbstractDebuggeeTest.breakpointMethod()'"); // DEFAULT_BREAKPOINT_LINE
     }
 
-    protected Map<String, ClassUnloader> loadedClasses = new TreeMap<String, ClassUnloader>();
+    protected Map<String, ClassUnloadCommon> loadedClasses = new TreeMap<String, ClassUnloadCommon>();
 
     public final static String COMMAND_FORCE_BREAKPOINT = "forceBreakpoint";
 
@@ -137,7 +138,7 @@ public class AbstractDebuggeeTest {
         }
 
         try {
-            ClassUnloader classUnloader = new ClassUnloader();
+            ClassUnloadCommon classUnloader = new ClassUnloadCommon();
 
             classUnloader.setClassLoader(new TestClassLoader());
             classUnloader.loadClass(className, classpath);
@@ -150,7 +151,7 @@ public class AbstractDebuggeeTest {
     }
 
     public void unloadTestClass(String className, boolean expectedUnloadingResult) {
-        ClassUnloader classUnloader = loadedClasses.get(className);
+        ClassUnloadCommon classUnloader = loadedClasses.get(className);
 
         if (classUnloader != null) {
             boolean wasUnloaded = classUnloader.unloadClass();
@@ -170,8 +171,8 @@ public class AbstractDebuggeeTest {
                     log.complain("Class " + className + " wasn't unloaded!");
             }
         } else {
-            log.complain("Invalid command 'unloadClass' is requested: class " + className + " was not loaded via ClassUnloader");
-            throw new TestBug("Invalid command 'unloadClass' is requested: class " + className + " was not loaded via ClassUnloader");
+            log.complain("Invalid command 'unloadClass' is requested: class " + className + " was not loaded via ClassUnloadCommon");
+            throw new TestBug("Invalid command 'unloadClass' is requested: class " + className + " was not loaded via ClassUnloadCommon");
         }
     }
 
