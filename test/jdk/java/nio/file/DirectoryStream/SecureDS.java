@@ -21,20 +21,12 @@
  * questions.
  */
 
-/* @test id=tmp
+/* @test
  * @bug 4313887 6838333 8343020 8357425
  * @summary Unit test for java.nio.file.SecureDirectoryStream
- * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @library .. /test/lib
  * @build jdk.test.lib.Platform jtreg.SkippedException
- * @run main SecureDS
- */
-
-/* @test id=cwd
- * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
- * @library .. /test/lib
- * @build jdk.test.lib.Platform jtreg.SkippedException
- * @run main SecureDS cwd
+ * @run junit SecureDS
  */
 
 import java.nio.file.*;
@@ -47,13 +39,20 @@ import java.util.*;
 
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
+@EnabledOnOs({OS.LINUX, OS.MAC, OS.AIX})
 public class SecureDS {
     static boolean supportsSymbolicLinks;
 
-    public static void main(String[] args) throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {"tmp","cwd"})
+    public void testSecureDS(String mode) throws IOException {
         Path dir;
-        if (args.length > 0 && args[0].equals("cwd")) {
+        if (mode.equals("cwd")) {
             dir = TestUtil.createTemporaryDirectory(System.getProperty("user.dir"));
         } else {
             dir = TestUtil.createTemporaryDirectory();
