@@ -365,7 +365,7 @@ public:
   }
 
   // Returns true iff this region was promoted in place subsequent to the most recent start of concurrent old marking.
-  inline bool was_promoted_in_place() {
+  bool was_promoted_in_place() const {
     return _promoted_in_place;
   }
   inline void restore_top_before_promote();

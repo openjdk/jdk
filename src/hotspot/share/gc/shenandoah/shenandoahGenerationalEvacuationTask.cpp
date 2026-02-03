@@ -237,6 +237,9 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
     // is_collector_free range.  We'll add it to that range below.
     region->restore_top_before_promote();
+
+    // We also need to record where those allocations begin so that we can later update the remembered set.
+    region->record_top_at_evac_start();
 #ifdef ASSERT
     size_t region_to_be_used_in_old = region->used();
     assert(region_to_be_used_in_old + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
