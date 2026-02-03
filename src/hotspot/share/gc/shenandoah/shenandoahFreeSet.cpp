@@ -1654,6 +1654,12 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // Not old collector alloc, so this is a young collector gclab or shared allocation
     orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
+  DEBUG_ONLY(bool should_assert_bounds = false;)
+  if ((result != nullptr) && in_new_region) {
+    _partitions.one_region_is_no_longer_empty(orig_partition);
+    DEBUG_ONLY(should_assert_bounds = true;)
+  }
+
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
     // Note that retire_from_partition() increases used to account for waste.
@@ -1662,15 +1668,11 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // then retire the region so that subsequent searches can find available memory more quickly.
 
     size_t idx = r->index();
-    if ((result != nullptr) && in_new_region) {
-      _partitions.one_region_is_no_longer_empty(orig_partition);
-    }
     size_t waste_bytes = _partitions.retire_from_partition(orig_partition, idx, r->used());
+    DEBUG_ONLY(should_assert_bounds = true;)
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
       increase_bytes_allocated(waste_bytes);
     }
-  } else if ((result != nullptr) && in_new_region) {
-    _partitions.one_region_is_no_longer_empty(orig_partition);
   }
 
   switch (orig_partition) {
@@ -1711,7 +1713,11 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   default:
     assert(false, "won't happen");
   }
-  _partitions.assert_bounds();
+#ifdef ASSERT
+  if (should_assert_bounds) {
+    _partitions.assert_bounds();
+  }
+#endif
   return result;
 }
 
