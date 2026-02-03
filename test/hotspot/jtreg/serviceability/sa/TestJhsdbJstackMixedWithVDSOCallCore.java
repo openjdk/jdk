@@ -22,6 +22,10 @@
  * questions.
  */
 
+import java.nio.file.Path;
+
+import jtreg.SkippedException;
+
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.SA.SATestUtils;
@@ -62,7 +66,20 @@ public class TestJhsdbJstackMixedWithVDSOCallCore {
         out.shouldContain("vdso_gettimeofday");
     }
 
+    private static void checkVDSODebugInfo() {
+        var kernelVersion = System.getProperty("os.version");
+        var vdso = Path.of("/lib", "modules", kernelVersion, "vdso", "vdso64.so");
+        if (SATestUtils.getDebugInfo(vdso.toString()) == null) {
+            // Skip this test if debuginfo of vDSO not found because internal
+            // function of gettimeofday() would not be exported, and vDSO
+            // binary might be stripped.
+            throw new SkippedException("vDSO debuginfo not found (" + vdso.toString() + ")");
+        }
+    }
+
     public static void main(String... args) throws Throwable {
+        checkVDSODebugInfo();
+
         var app = new LingeredAppWithVDSOCall();
         app.setForceCrash(true);
         LingeredApp.startApp(app, CoreUtils.getAlwaysPretouchArg(true));
