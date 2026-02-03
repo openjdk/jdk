@@ -54,7 +54,7 @@ class PollsetPoller extends Poller {
 
     @Override
     void close() {
-        Pollset.pollsetDestroy(pollset);
+        Pollset.pollsetDestroy(setid);
         Pollset.freePollArray(pollBuffer);
     }
 
