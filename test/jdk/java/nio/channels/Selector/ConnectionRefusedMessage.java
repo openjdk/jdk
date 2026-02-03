@@ -73,10 +73,7 @@ class ConnectionRefusedMessage {
             try {
                 connected = sc.connect(destAddr);
             } catch (ConnectException ce) {
-                // On some operating systems (like AIX),
-                // SocketChannel.connect() throws a ConnectException
-                // even when the channel is non-blocking. Here we verify
-                // that it contains the expected exception message.
+                // Connect failed immediately, which is OK.
                 System.err.println("SocketChannel.connect() threw ConnectException - " + ce);
                 assertExceptionMessage(ce);
                 return; // nothing more to test
