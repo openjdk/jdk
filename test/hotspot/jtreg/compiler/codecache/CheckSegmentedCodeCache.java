@@ -248,13 +248,11 @@ public class CheckSegmentedCodeCache {
                                                               "-version");
         verifyCodeHeapSize(pb, "NonNMethodCodeHeapSize", 83886080);
 
-        // JDK-8375598: On x86/x64, a too large code cache may exceed the reach of 32-bit relative branches.
+        // A large NonNMethodCodeHeapSize can make the total code cache exceed the platform limit.
         // The VM should fail fast during initialization.
-        if (Platform.isX86() || Platform.isX64()) {
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
-                                                                  "-XX:NonNMethodCodeHeapSize=3G",
-                                                                  "-version");
-            failsWith(pb, "Invalid code cache sizes");
-        }
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                              "-XX:NonNMethodCodeHeapSize=3G",
+                                                              "-version");
+        failsWith(pb, "Code cache size exceeds platform limit");
     }
 }

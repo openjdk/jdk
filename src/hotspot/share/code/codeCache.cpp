@@ -191,11 +191,6 @@ struct CodeHeapInfo {
   bool enabled;
 };
 
-struct HeapShrinkSpec {
-  CodeHeapInfo* heap;
-  size_t min_allowed; // already aligned
-};
-
 static void set_size_of_unset_code_heap(CodeHeapInfo* heap, size_t available_size, size_t used_size, size_t min_size) {
   assert(!heap->set, "sanity");
   heap->size = (available_size > (used_size + min_size)) ? (available_size - used_size) : min_size;
@@ -261,6 +256,17 @@ void CodeCache::initialize_heaps() {
 
   size_t aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
   if (!cache_size_set) {
+    // If ReservedCodeCacheSize is explicitly set and exceeds CODE_CACHE_SIZE_LIMIT,
+    // it is rejected by flag validation elsewhere. Here we only handle the case
+    // where ReservedCodeCacheSize is not set explicitly, but the computed segmented
+    // sizes (after alignment) exceed the platform limit.
+    if (aligned_total > CODE_CACHE_SIZE_LIMIT) {
+      err_msg message("ReservedCodeCacheSize (%zuK), Max (%zuK)."
+                      "Segments: NonNMethod (%zuK), NonProfiled (%zuK), Profiled (%zuK).",
+                      aligned_total/K, CODE_CACHE_SIZE_LIMIT/K,
+                      non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
+      vm_exit_during_initialization("Code cache size exceeds platform limit", message);
+    }
     if (aligned_total != cache_size) {
       log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
                           "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
@@ -279,26 +285,19 @@ void CodeCache::initialize_heaps() {
     // only validate the sizes.
     if (aligned_total > cache_size) {
       size_t delta = (aligned_total - cache_size) / min_size;
-      const size_t nn_min_size = align_up(non_nmethod_min_size, min_size);
-      HeapShrinkSpec specs[] = {
-        {&non_profiled, min_size},
-        {&profiled, min_size},
-        {&non_nmethod, nn_min_size}
-      };
-      const size_t specs_len = ARRAY_SIZE(specs);
       while (delta > 0) {
-        bool shrunk = false;
-        // Spread the shrink across eligible segments (unset, enabled, above minimum)
-        // to avoid concentrating the entire reduction in a single segment.
-        for (size_t i = 0; i < specs_len && delta > 0; i++) {
-          HeapShrinkSpec& spec = specs[i];
-          if (spec.heap->enabled && !spec.heap->set && spec.heap->size > spec.min_allowed) {
-            spec.heap->size -= min_size;
-            delta--;
-            shrunk = true;
-          }
+        size_t start_delta = delta;
+        // Do not shrink the non-nmethod heap here: running out of non-nmethod space
+        // is more critical and may lead to unrecoverable VM errors.
+        if (non_profiled.enabled && !non_profiled.set && non_profiled.size > min_size) {
+          non_profiled.size -= min_size;
+          if (--delta == 0) break;
         }
-        if (!shrunk) {
+        if (profiled.enabled && !profiled.set && profiled.size > min_size) {
+          profiled.size -= min_size;
+          delta--;
+        }
+        if (delta == start_delta) {
           break;
         }
       }
@@ -335,18 +334,6 @@ void CodeCache::initialize_heaps() {
 
     vm_exit_during_initialization("Invalid code heap sizes", message);
   }
-
-#ifdef X86
-  const size_t max_reachable = (size_t)max_jint;
-  if (cache_size > max_reachable) {
-    err_msg message("Code cache size (%zuK) exceeds the maximum supported on x86 (%zuK) due to "
-                    "32-bit relative branch reach. "
-                    "Segments: NonNMethod=%zuK NonProfiled=%zuK Profiled=%zuK.",
-                    cache_size/K, max_reachable/K,
-                    non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
-    vm_exit_during_initialization("Invalid code cache sizes", message);
-  }
-#endif
 
   // Compatibility. Print warning if using large pages but not able to use the size given
   if (UseLargePages) {
