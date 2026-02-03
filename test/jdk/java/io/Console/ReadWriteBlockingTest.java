@@ -25,6 +25,8 @@
  * @test
  * @bug 8340830
  * @summary Check if writing to Console is not blocked by other thread's read.
+ *          This test relies on sleep(1000) to ensure that readLine() is
+ *          invoked before printf(), which may not always occur.
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "mac")
  * @run junit ReadWriteBlockingTest
@@ -73,9 +75,12 @@ public class ReadWriteBlockingTest {
     public static void main(String... args) {
         var con = System.console();
         Thread.ofVirtual().start(() -> {
+            try {
+                // give some time for main thread to invoke readLine()
+                Thread.sleep(1000);
+            } catch (InterruptedException _) {}
             con.printf("printf() invoked");
         });
-
         con.readLine("");
     }
 }
