@@ -27,12 +27,13 @@
  * @summary Check if writing to Console is not blocked by other thread's read.
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "mac")
- * @run junit ReadWriteBlockingTest
+ * @run junit/othervm -Djdk.console=java.base ReadWriteBlockingTest
  * @run junit/othervm -Djdk.console=jdk.internal.le ReadWriteBlockingTest
  */
 
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.util.concurrent.CountDownLatch;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -48,7 +49,7 @@ public class ReadWriteBlockingTest {
     @EnabledOnOs({OS.LINUX, OS.MAC})
     public void testReadWriteBlocking() throws Exception {
         // check "expect" command availability
-        var expect = Paths.get("/usr/bin/expect");
+        var expect = Path.of("/usr/bin/expect");
         if (!Files.exists(expect) || !Files.isExecutable(expect)) {
             Assumptions.abort("'" + expect + "' not found");
         }
@@ -57,12 +58,14 @@ public class ReadWriteBlockingTest {
         var testSrc = System.getProperty("test.src", ".");
         var testClasses = System.getProperty("test.classes", ".");
         var jdkDir = System.getProperty("test.jdk");
+        var modConsole = System.getProperty("jdk.console");
         OutputAnalyzer output = ProcessTools.executeProcess(
-            "expect",
+            "/usr/bin/expect",
             "-n",
             testSrc + "/readWriteBlocking.exp",
             jdkDir + "/bin/java",
             "-classpath", testClasses,
+            "-Djdk.console=" + modConsole,
             "ReadWriteBlockingTest");
         output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
@@ -70,13 +73,25 @@ public class ReadWriteBlockingTest {
 
     public static void main(String... args) {
         var con = System.console();
+        CountDownLatch latch = new CountDownLatch(2);
+
         Thread.ofVirtual().start(() -> {
             try {
-                // give some time for main thread to invoke readLine()
-                Thread.sleep(1000);
-            } catch (InterruptedException _) {}
-            con.printf("printf() invoked");
+                latch.countDown(); // announce our arrival
+                try {
+                    latch.await(); // wait for other thread to arrive
+                } catch (InterruptedException _) {}
+                con.printf("printf() invoked");
+            } catch (Throwable t) {
+                t.printStackTrace();
+                throw t;
+            }
         });
+
+        latch.countDown(); // announce our arrival
+        try {
+            latch.await(); // wait for other thread to arrive
+        } catch (InterruptedException _) {}
         con.readLine("");
     }
 }
