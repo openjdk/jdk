@@ -235,7 +235,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
       fi
-      CFLAGS_CONVERSION_WARNINGS="-Wconversion"
+      CFLAGS_CONVERSION_WARNINGS="-Wconversion -Wno-float-conversion"
       ;;
 
     clang)
@@ -251,7 +251,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       # These warnings will never be turned on, since they generate too many
       # false positives.
       DISABLED_WARNINGS="unknown-warning-option unused-parameter"
-      CFLAGS_CONVERSION_WARNINGS="-Wconversion -Wno-sign-conversion"
+      CFLAGS_CONVERSION_WARNINGS="-Wimplicit-int-conversion"
       ;;
   esac
   AC_SUBST(DISABLE_WARNING_PREFIX)

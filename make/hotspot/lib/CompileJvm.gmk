@@ -189,7 +189,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
-    $(call overrideFlags,$(TOPDIR)/src/hotspot/share/gc/g1,g1ConcurrentMark.cpp,_CXXFLAGS,$(CFLAGS_CONVERSION_WARNINGS)), \
+    $(call extendingFlags,$(TOPDIR)/src/hotspot/share/gc/g1,g1ConcurrentMark.cpp,_CXXFLAGS,$(CFLAGS_CONVERSION_WARNINGS)), \
     whitebox.cpp_CXXFLAGS := $(CFLAGS_SHIP_DEBUGINFO), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
