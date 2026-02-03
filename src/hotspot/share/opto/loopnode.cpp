@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3752,6 +3752,20 @@ void CountedLoopEndNode::dump_spec(outputStream *st) const {
 }
 #endif
 
+IdealLoopTree::IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail): _parent(nullptr), _next(nullptr), _child(nullptr),
+                                                                             _head(head), _tail(tail),
+                                                                             _phase(phase),
+                                                                             _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
+                                                                             _body(phase->arena()),
+                                                                             _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
+                                                                             _has_range_checks(0), _has_range_checks_computed(0),
+                                                                             _safepts(nullptr),
+                                                                             _required_safept(nullptr),
+                                                                             _allow_optimizations(true) {
+  precond(_head != nullptr);
+  precond(_tail != nullptr);
+}
+
 //=============================================================================
 //------------------------------is_member--------------------------------------
 // Is 'l' a member of 'this'?
@@ -5089,8 +5103,8 @@ void PhaseIdealLoop::build_and_optimize() {
   // Since nodes do not have a slot for immediate dominator, make
   // a persistent side array for that info indexed on node->_idx.
   _idom_size = C->unique();
-  _idom      = NEW_RESOURCE_ARRAY( Node*, _idom_size );
-  _dom_depth = NEW_RESOURCE_ARRAY( uint,  _idom_size );
+  _idom      = NEW_ARENA_ARRAY(&_arena, Node*, _idom_size);
+  _dom_depth = NEW_ARENA_ARRAY(&_arena, uint,  _idom_size);
   _dom_stk   = nullptr; // Allocated on demand in recompute_dom_depth
   memset( _dom_depth, 0, _idom_size * sizeof(uint) );
 
@@ -5691,8 +5705,8 @@ void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
   uint idx = d->_idx;
   if (idx >= _idom_size) {
     uint newsize = next_power_of_2(idx);
-    _idom      = REALLOC_RESOURCE_ARRAY( Node*,     _idom,_idom_size,newsize);
-    _dom_depth = REALLOC_RESOURCE_ARRAY( uint, _dom_depth,_idom_size,newsize);
+    _idom      = REALLOC_ARENA_ARRAY(&_arena, Node*,     _idom,_idom_size,newsize);
+    _dom_depth = REALLOC_ARENA_ARRAY(&_arena,  uint, _dom_depth,_idom_size,newsize);
     memset( _dom_depth + _idom_size, 0, (newsize - _idom_size) * sizeof(uint) );
     _idom_size = newsize;
   }
