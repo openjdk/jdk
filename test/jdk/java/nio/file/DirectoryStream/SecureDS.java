@@ -25,7 +25,7 @@
  * @bug 4313887 6838333 8343020 8357425
  * @summary Unit test for java.nio.file.SecureDirectoryStream
  * @library .. /test/lib
- * @build jdk.test.lib.Platform jtreg.SkippedException
+ * @build jdk.test.lib.Platform
  * @run junit SecureDS
  */
 
@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.util.*;
 
 import jdk.test.lib.Platform;
-import jtreg.SkippedException;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -46,6 +45,7 @@ import org.junit.jupiter.api.condition.OS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @EnabledOnOs({OS.LINUX, OS.MAC, OS.AIX})
 public class SecureDS {
@@ -317,13 +317,9 @@ public class SecureDS {
                 try {
                     sds.move(file, null, file);
                 } catch (AtomicMoveNotSupportedException e) {
-                    if (Files.getFileStore(cwd).equals(Files.getFileStore(dir))) {
-                        // re-throw if move between same volume
-                        throw e;
-                    } else {
-                        throw new SkippedException(
-                            "java.nio.file.AtomicMoveNotSupportedException");
-                    }
+                    assumeTrue(Files.getFileStore(cwd).equals(Files.getFileStore(dir)));
+                    // re-throw if move between same volume
+                    throw e;
                 }
                 if (!TEXT.equals(Files.readString(result)))
                     throw new RuntimeException(result + " content incorrect");
