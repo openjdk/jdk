@@ -23,6 +23,7 @@
 
 import java.io.ByteArrayOutputStream;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -42,8 +43,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public final class EmptyComment {
 
-    Object[][] longLengths() {
-        return new Object[][]{{0xFFFF + 1}, {0xFFFF + 2}, {0xFFFF * 2}};
+    IntStream longLengths() {
+        return IntStream.of(0xFFFF + 1, 0xFFFF + 2, 0xFFFF * 2);
     }
 
     /**

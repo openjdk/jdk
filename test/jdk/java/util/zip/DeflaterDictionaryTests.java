@@ -24,6 +24,7 @@
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -58,12 +59,8 @@ public class DeflaterDictionaryTests {
      *
      * @return valid offset values
      */
-    protected Object[][] validDictionaryOffsets() {
-        return new Object[][]{
-                {0},
-                {DICTIONARY_OFFSET},
-                {DICTIONARY_LENGTH}
-        };
+    protected IntStream validDictionaryOffsets() {
+        return IntStream.of(0, DICTIONARY_OFFSET, DICTIONARY_LENGTH);
     }
 
     /**
@@ -71,12 +68,8 @@ public class DeflaterDictionaryTests {
      *
      * @return invalid offset values
      */
-    protected Object[][] invalidDictionaryOffsets() {
-        return new Object[][]{
-                {-1},
-                {DICTIONARY_LENGTH + 2},
-                {DICTIONARY.length()}
-        };
+    protected IntStream invalidDictionaryOffsets() {
+        return IntStream.of(-1, DICTIONARY_LENGTH + 2, DICTIONARY.length());
     }
 
     /**

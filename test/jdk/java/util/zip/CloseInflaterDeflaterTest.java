@@ -30,6 +30,7 @@
 import java.io.*;
 import java.util.Random;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Stream;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
@@ -83,11 +84,8 @@ public class CloseInflaterDeflaterTest {
      *
      * @return Entry object indicating which method to use for closing OutputStream
      */
-    public Object[][] testOutputStreams() {
-     return new Object[][] {
-      { true },
-      { false },
-     };
+    public Stream<Boolean> testOutputStreams() {
+        return Stream.of(true, false);
     }
 
     /**
@@ -95,11 +93,8 @@ public class CloseInflaterDeflaterTest {
      *
      * @return Entry object returning either JarOutputStream or ZipOutputStream
      */
-    public Object[][] testZipAndJar() throws IOException{
-     return new Object[][] {
-      { new JarOutputStream(outStream)},
-      { new ZipOutputStream(outStream)},
-     };
+    public Stream<ZipOutputStream> testZipAndJar() throws IOException{
+        return Stream.of(new JarOutputStream(outStream), new ZipOutputStream(outStream));
     }
 
     /**

@@ -41,6 +41,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -225,11 +226,8 @@ public class ZipFileDuplicateEntryTest {
      *
      * @return The Entry to use within the test
      */
-    public Object[][] entries() {
-        return new Object[][]{
-                {FILE_ENTRY},
-                {DIR_ENTRY}
-        };
+    public Stream<Entry> entries() {
+        return Stream.of(FILE_ENTRY, DIR_ENTRY);
     }
 
     /**

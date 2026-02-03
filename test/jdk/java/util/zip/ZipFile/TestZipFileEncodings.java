@@ -79,29 +79,27 @@ public class TestZipFileEncodings {
         return ThreadLocalRandom.current();
     }
 
-    public Object[][] nonUnicodeCharsets() {
-        return new Object[][] {
-                { "ISO-8859-1" },
-                { "IBM01149" },
-                { "IBM037" },
-                { "IBM-Thai" }
-        };
+    public Stream<String> nonUnicodeCharsets() {
+        return Stream.of(
+                "ISO-8859-1",
+                "IBM01149",
+                "IBM037",
+                "IBM-Thai"
+        );
     }
 
-    public Object[][] unicodeCharsets() {
-        return new Object[][] {
-                { "UTF-8" },
-                { "UTF-16" },
-                { "UTF-16LE" },
-                { "UTF-16BE" },
-                { "UTF-32" }
-        };
+    public Stream<String> unicodeCharsets() {
+        return Stream.of(
+                "UTF-8",
+                "UTF-16",
+                "UTF-16LE",
+                "UTF-16BE",
+                "UTF-32"
+        );
     }
 
-    public Object[][] allCharsets() {
-        return Stream.concat(Stream.of(nonUnicodeCharsets()),
-                        Stream.of(unicodeCharsets()))
-                .toArray(Object[][]::new);
+    public Stream<String> allCharsets() {
+        return Stream.concat(nonUnicodeCharsets(), unicodeCharsets());
     }
 
     @ParameterizedTest

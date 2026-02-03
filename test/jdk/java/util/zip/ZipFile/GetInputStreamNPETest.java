@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -38,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
@@ -756,13 +758,13 @@ public class GetInputStreamNPETest {
      *
      * @return Entry object indicating the jar file and whether it will be verified
      */
-    public Object[][] validJars() {
-        return new Object[][]{
-                {SIGNED_VALID_ENTRY_NAME_JAR, true},
-                {SIGNED_VALID_ENTRY_NAME_JAR, false},
-                {VALID_ENTRY_NAME_JAR, true},
-                {VALID_ENTRY_NAME_JAR, false},
-        };
+    public Stream<Arguments> validJars() {
+        return Stream.of(
+                Arguments.of(SIGNED_VALID_ENTRY_NAME_JAR, true),
+                Arguments.of(SIGNED_VALID_ENTRY_NAME_JAR, false),
+                Arguments.of(VALID_ENTRY_NAME_JAR, true),
+                Arguments.of(VALID_ENTRY_NAME_JAR, false)
+        );
     }
 
     /**
@@ -770,13 +772,13 @@ public class GetInputStreamNPETest {
      *
      * @return Entry object indicating the jar file and whether it will be verified
      */
-    public Object[][] inValidJars() {
-        return new Object[][]{
-                {SIGNED_INVALID_ENTRY_NAME_JAR, true},
-                {SIGNED_INVALID_ENTRY_NAME_JAR, false},
-                {INVALID_ENTRY_NAME_JAR, true},
-                {INVALID_ENTRY_NAME_JAR, false},
-        };
+    public Stream<Arguments> inValidJars() {
+        return Stream.of(
+                Arguments.of(SIGNED_INVALID_ENTRY_NAME_JAR, true),
+                Arguments.of(SIGNED_INVALID_ENTRY_NAME_JAR, false),
+                Arguments.of(INVALID_ENTRY_NAME_JAR, true),
+                Arguments.of(INVALID_ENTRY_NAME_JAR, false)
+        );
     }
 
     /**
