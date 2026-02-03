@@ -190,7 +190,7 @@ public class ReferenceParser {
         String s = sig.substring(beginIndex, endIndex);
         JavaFileObject prev = fac.log.useSource(null);
         try {
-            JavacParser p = fac.newParser(s, false, false);
+            JavacParser p = fac.newParser(s, false, false, false);
             JCTree.JCExpression expr = p.qualident(false);
             if (p.token().kind != TokenKind.EOF) {
                 throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
@@ -206,7 +206,7 @@ public class ReferenceParser {
         String s = sig.substring(beginIndex, endIndex);
         JavaFileObject prev = fac.log.useSource(null);
         try {
-            JavacParser p = fac.newParser(s, false, false);
+            JavacParser p = fac.newParser(s, false, false, false);
             JCTree tree = p.parseType();
             if (p.token().kind != TokenKind.EOF) {
                 throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
@@ -227,7 +227,7 @@ public class ReferenceParser {
         String s = sig.substring(beginIndex, endIndex);
         JavaFileObject prev = fac.log.useSource(null);
         try {
-            JavacParser p = fac.newParser(s, false, false);
+            JavacParser p = fac.newParser(s, false, false, false);
             Name name = p.ident();
             if (p.token().kind != TokenKind.EOF) {
                 throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
@@ -247,7 +247,7 @@ public class ReferenceParser {
 
         JavaFileObject prev = fac.log.useSource(null);
         try {
-            JavacParser p = fac.newParser(s.replace("...", "[]"), false, false);
+            JavacParser p = fac.newParser(s.replace("...", "[]"), false, false, false);
             ListBuffer<JCTree> paramTypes = new ListBuffer<>();
             paramTypes.add(p.parseType());
 

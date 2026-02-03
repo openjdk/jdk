@@ -550,7 +550,7 @@ public class JavacTaskImpl extends BasicJavacTask {
         Attr attr = Attr.instance(context);
         try {
             CharBuffer buf = CharBuffer.wrap((expr+"\u0000").toCharArray(), 0, expr.length());
-            Parser parser = parserFactory.newParser(buf, false, false);
+            Parser parser = parserFactory.newParser(buf, false, false, false);
             JCTree tree = parser.parseType();
             return attr.attribType(tree, (Symbol.TypeSymbol)scope);
         } finally {
