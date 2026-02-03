@@ -64,13 +64,15 @@ public class TestPKCS5PaddingError extends PKCS11Test {
     };
 
     private static StringBuffer debugBuf = new StringBuffer();
+    private static final String sunJCEProvider =
+            System.getProperty("test.provider.name", "SunJCE");
 
     @Override
     public void main(Provider p) throws Exception {
 
         // Checking for SunJCE first
         System.out.println("Checking SunJCE provider");
-        doTest(Security.getProvider("SunJCE"));
+        doTest(Security.getProvider(sunJCEProvider));
 
         System.out.printf("Checking %s provider%n", p.getName());
         doTest(p);
@@ -103,6 +105,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                         try {
                             System.out.println("Testing with wrong cipherText length");
                             c2.doFinal(cipherText, 0, cipherText.length - 2);
+                            throw new RuntimeException("Expected IBSE thrown");
                         } catch (IllegalBlockSizeException ibe) {
                             // expected
                         } catch (Exception ex) {
@@ -115,6 +118,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                         System.out.println("Testing with wrong padding bytes");
                         cipherText[cipherText.length - 1]++;
                         c2.doFinal(cipherText);
+                        throw new RuntimeException("Expected BPE thrown");
                     } catch (BadPaddingException bpe) {
                         // expected
                     } catch (Exception ex) {
@@ -124,7 +128,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                     System.out.println("DONE");
                 } catch (NoSuchAlgorithmException nsae) {
                     System.out.println("Skipping unsupported algorithm: " +
-                                       nsae);
+                            nsae);
                 }
             }
         } catch (Exception ex) {
