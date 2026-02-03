@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,13 +68,14 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
-    if (!msg) {
-        msg = "no further information";
-    }
     switch(errorNumber) {
     case EBADF:
-        jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
+        if (msg == NULL) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
+        }
         break;
     default:
         errno = errorNumber;
