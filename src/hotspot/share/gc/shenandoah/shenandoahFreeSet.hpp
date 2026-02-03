@@ -644,7 +644,7 @@ private:
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
-    ShenandoahRebuildLock* rebuild_lock() {
+  ShenandoahRebuildLock* rebuild_lock() {
     return &_rebuild_lock;
   }
 
