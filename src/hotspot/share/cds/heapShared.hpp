@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,7 +478,6 @@ private:
 
   static bool has_been_archived(oop orig_obj);
   static void prepare_resolved_references();
-  static void archive_strings();
   static void archive_subgraphs();
   static void copy_java_mirror(oop orig_mirror, oop scratch_m);
 
