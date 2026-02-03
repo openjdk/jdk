@@ -251,7 +251,7 @@ private:
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
-  HeapWord* volatile _atomic_top; // for atomic alloc functions, always set to nullprt if a region is not an active alloc region.
+  HeapWord* volatile _atomic_top; // for atomic alloc functions, always set to nullptr if a region is not an active alloc region.
   HeapWord* volatile _top;
 
   size_t volatile _tlab_allocs;
@@ -488,8 +488,15 @@ public:
     _top = v;
   }
 
-  HeapWord* new_top() const     { return _new_top; }
-  void set_new_top(HeapWord* v) { _new_top = v;    }
+  HeapWord* new_top() const {
+    assert(atomic_top() == nullptr, "Must be");
+    return _new_top;
+  }
+
+  void set_new_top(HeapWord* v) {
+    assert(atomic_top() == nullptr, "Must be");
+    _new_top = v;
+  }
 
   HeapWord* bottom() const      { return _bottom;  }
   HeapWord* end() const         { return _end;     }
