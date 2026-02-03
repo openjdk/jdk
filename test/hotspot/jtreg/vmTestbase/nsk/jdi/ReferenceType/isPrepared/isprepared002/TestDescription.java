@@ -45,7 +45,7 @@
  *           - isprepared002b class was moved in 'loadclass' subdirectory;
  *           - package name was added in isprepared002b class;
  *           - ${COMMON_CLASSES_LOCATION} instead of ${TESTDIR} in .cfg file;
- *           - ClassUnloader seekes for isprepared002b class in
+ *           - ClassUnloadCommon seekes for isprepared002b class in
  *             ${COMMON_CLASSES_LOCATION}/loadclass directory.
  *   4505735 equals002 and other tests fail with merlin
  *
