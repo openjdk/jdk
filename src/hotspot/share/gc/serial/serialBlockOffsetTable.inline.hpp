@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@
 
 #include "gc/serial/serialBlockOffsetTable.hpp"
 
-inline Atomic<uint8_t>* SerialBlockOffsetTable::entry_for_addr(const void* const p) const {
+inline uint8_t* SerialBlockOffsetTable::entry_for_addr(const void* const p) const {
   assert(_reserved.contains(p),
          "out of bounds access to block offset array");
-  Atomic<uint8_t>* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
+  uint8_t* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
   return result;
 }
 
-inline HeapWord* SerialBlockOffsetTable::addr_for_entry(const Atomic<uint8_t>* const p) const {
+inline HeapWord* SerialBlockOffsetTable::addr_for_entry(const uint8_t* const p) const {
   // _offset_base can be "negative", so can't use pointer_delta().
   size_t delta = p - _offset_base;
   HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());

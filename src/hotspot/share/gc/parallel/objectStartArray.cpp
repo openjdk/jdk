@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "memory/memoryReserver.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -61,7 +60,7 @@ ObjectStartArray::ObjectStartArray(MemRegion covered_region)
 
   assert(_virtual_space->low_boundary() != nullptr, "set from the backing_store");
 
-  _offset_base = (Atomic<uint8_t>*)(_virtual_space->low_boundary() - (uintptr_t(covered_region.start()) >> CardTable::card_shift()));
+  _offset_base = (uint8_t*)(_virtual_space->low_boundary() - (uintptr_t(covered_region.start()) >> CardTable::card_shift()));
 }
 
 void ObjectStartArray::set_covered_region(MemRegion mr) {
@@ -90,31 +89,30 @@ void ObjectStartArray::set_covered_region(MemRegion mr) {
   }
 }
 
-static void fill_range(Atomic<uint8_t>* start, Atomic<uint8_t>* end, uint8_t v) {
-  assert(start <= end, "indexes out of order");
-  size_t num_cards = end - start + 1;   // + 1 for inclusive.
-  memset_with_concurrent_readers(start, v, num_cards);
+static void fill_range(uint8_t* start, uint8_t* end, uint8_t v) {
+  // + 1 for inclusive
+  memset(start, v, pointer_delta(end, start, sizeof(uint8_t)) + 1);
 }
 
 void ObjectStartArray::update_for_block_work(HeapWord* blk_start,
                                              HeapWord* blk_end) {
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
-  Atomic<uint8_t>* const offset_entry = entry_for_addr(cur_card_boundary);
+  uint8_t* const offset_entry = entry_for_addr(cur_card_boundary);
 
   // The first card holds the actual offset.
-  offset_entry->store_relaxed(checked_cast<uint8_t>(pointer_delta(cur_card_boundary, blk_start)));
+  *offset_entry = checked_cast<uint8_t>(pointer_delta(cur_card_boundary, blk_start));
 
   // Check if this block spans over other cards.
-  Atomic<uint8_t>* const end_entry = entry_for_addr(blk_end - 1);
+  uint8_t* const end_entry = entry_for_addr(blk_end - 1);
   assert(offset_entry <= end_entry, "inv");
 
   if (offset_entry != end_entry) {
     // Handling remaining entries.
-    Atomic<uint8_t>* start_entry_for_region = offset_entry + 1;
+    uint8_t* start_entry_for_region = offset_entry + 1;
     for (uint i = 0; i < BOTConstants::N_powers; i++) {
       // -1 so that the reach ends in this region and not at the start
       // of the next.
-      Atomic<uint8_t>* reach = offset_entry + BOTConstants::power_to_cards_back(i + 1) - 1;
+      uint8_t* reach = offset_entry + BOTConstants::power_to_cards_back(i + 1) - 1;
       uint8_t value = checked_cast<uint8_t>(CardTable::card_size_in_words() + i);
 
       fill_range(start_entry_for_region, MIN2(reach, end_entry), value);
@@ -133,14 +131,14 @@ void ObjectStartArray::update_for_block_work(HeapWord* blk_start,
 void ObjectStartArray::verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const {
   assert(is_crossing_card_boundary(blk_start, blk_end), "precondition");
 
-  const Atomic<uint8_t>* const start_entry = entry_for_addr(align_up_by_card_size(blk_start));
-  const Atomic<uint8_t>* const end_entry = entry_for_addr(blk_end - 1);
+  const uint8_t* const start_entry = entry_for_addr(align_up_by_card_size(blk_start));
+  const uint8_t* const end_entry = entry_for_addr(blk_end - 1);
   // Check entries in [start_entry, end_entry]
-  assert(start_entry->load_relaxed() < CardTable::card_size_in_words(), "offset entry");
+  assert(*start_entry < CardTable::card_size_in_words(), "offset entry");
 
-  for (const Atomic<uint8_t>* i = start_entry + 1; i <= end_entry; ++i) {
-    const uint8_t prev  = (i-1)->load_relaxed();
-    const uint8_t value = i->load_relaxed();
+  for (const uint8_t* i = start_entry + 1; i <= end_entry; ++i) {
+    const uint8_t prev  = *(i-1);
+    const uint8_t value = *i;
     if (prev != value) {
       assert(value >= prev, "monotonic");
       size_t n_cards_back = BOTConstants::entry_to_cards_back(value);
