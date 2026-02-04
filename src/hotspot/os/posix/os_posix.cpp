@@ -1273,7 +1273,6 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
                                       const siginfo_t* info, const void* ucVoid, address* stub) {
   // stack overflow
   StackOverflow* overflow_state = thread->stack_overflow_state();
-
   if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
     if (thread->thread_state() == _thread_in_Java) {
 #ifndef ARM

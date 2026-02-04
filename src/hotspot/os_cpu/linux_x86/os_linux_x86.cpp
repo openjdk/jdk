@@ -203,8 +203,7 @@ enum {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-
-  /*
+/*
   NOTE: does not seem to work on linux.
   if (info == nullptr || info->si_code <= 0 || info->si_code == SI_NOINFO) {
     // can't decode this kind of signal
