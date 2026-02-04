@@ -38,15 +38,12 @@ G1FullGCJFRTracerMark::~G1FullGCJFRTracerMark() {
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              bool clear_soft,
                              bool do_maximal_compaction,
-                             G1FullGCTracer* tracer) :
-    _rm(),
+                             GCTracer* tracer) :
     _should_clear_soft_refs(clear_soft),
     _do_maximal_compaction(do_maximal_compaction),
     _g1h(G1CollectedHeap::heap()),
-    _svc_marker(SvcGCMarker::FULL),
     _timer(),
     _tracer(tracer),
-    _active(),
     _tracer_mark(&_timer, _tracer),
     _monitoring_scope(monitoring_support),
     _heap_printer(_g1h),
@@ -58,7 +55,7 @@ STWGCTimer* G1FullGCScope::timer() {
   return &_timer;
 }
 
-G1FullGCTracer* G1FullGCScope::tracer() {
+GCTracer* G1FullGCScope::tracer() {
   return _tracer;
 }
 
