@@ -61,10 +61,10 @@ public:
     memset(this, 0, sizeof(*this));
   }
   AOTMappedHeapRootSegments(int roots_count,
-                            int max_size_in_bytes,
+                            size_t max_size_in_bytes,
                             int max_size_in_elems,
-                            int first_segment_offset_in_bytes,
-                            int first_segment_size_in_bytes,
+                            size_t first_segment_offset_in_bytes,
+                            size_t first_segment_size_in_bytes,
                             int first_segment_size_in_elems) {
     memset(this, 0, sizeof(*this));
 
