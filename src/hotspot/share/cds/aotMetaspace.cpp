@@ -1221,6 +1221,13 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder,
     return false;
   }
   map_info->prepare_for_writing();
+
+#if 0
+  if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
+    AOTMappedHeapWrite::xxx();
+  }
+#endif
+
   builder->write_archive(map_info, mapped_heap_info, streamed_heap_info);
   return true;
 }

@@ -939,13 +939,16 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapIn
     }
 
     GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
-      GrowableArrayCHeap<oop, mtClassShared>* pending_roots = HeapShared::pending_roots();
+      //GrowableArrayCHeap<oop, mtClassShared>* pending_roots = HeapShared::pending_roots();
       GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* result = new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
+
+#if 0
       for (int i = 0; i < pending_roots->length(); ++i) {
         HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(pending_roots->at(i));
         address buffered_addr = _buffer_start + p->buffer_offset();
         result->append(capture(buffered_addr));
       }
+#endif
 
       return result;
     }
