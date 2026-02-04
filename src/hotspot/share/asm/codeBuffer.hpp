@@ -33,8 +33,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 template <typename T>
 static inline void put_native(address p, T x) {
@@ -57,7 +57,6 @@ public:
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
                  Deopt,          // Offset where deopt handler lives
-                 DeoptMH,        // Offset where MethodHandle deopt handler lives
                  UnwindHandler,  // Offset to default unwind handler
                  max_Entries };
 
@@ -77,7 +76,6 @@ public:
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
     _values[Deopt         ] = -1;
-    _values[DeoptMH       ] = -1;
     _values[UnwindHandler ] = -1;
   }
 
@@ -541,7 +539,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
+  typedef ResizeableHashTable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
   enum {
@@ -674,7 +672,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
-  CodeBuffer(CodeBlob* blob);
+  CodeBuffer(const CodeBlob* blob);
 
   // (3) code buffer allocating codeBlob memory for code & relocation
   // info but with lazy initialization.  The name must be something

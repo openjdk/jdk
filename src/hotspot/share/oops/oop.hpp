@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_OOP_HPP
 #define SHARE_OOPS_OOP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/accessDecorators.hpp"
@@ -32,11 +33,9 @@
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/objLayout.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#include <type_traits>
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
 // the format of Java objects so the fields can be accessed from C++.
@@ -65,9 +64,11 @@ class oopDesc {
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
 
+  inline void* base_addr();
+  inline const void* base_addr() const;
+
   inline markWord  mark()          const;
   inline markWord  mark_acquire()  const;
-  inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
   static inline void set_mark(HeapWord* mem, markWord m);
@@ -259,8 +260,8 @@ class oopDesc {
   inline bool is_unlocked() const;
 
   // asserts and guarantees
-  static bool is_oop(oop obj, bool ignore_mark_word = false);
-  static bool is_oop_or_null(oop obj, bool ignore_mark_word = false);
+  static bool is_oop(oop obj);
+  static bool is_oop_or_null(oop obj);
 
   // garbage collection
   inline bool is_gc_marked() const;

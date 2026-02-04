@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,15 @@ import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NotLinkException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 public final class FileUtils {
@@ -64,32 +66,50 @@ public final class FileUtils {
 
         List<CopyAction> copyActions = new ArrayList<>();
 
-        Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(final Path dir,
-                    final BasicFileAttributes attrs) {
-                if (isPathMatch(dir, excludes)) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                } else {
-                    copyActions.add(new CopyAction(null, dest.resolve(src.
-                            relativize(dir))));
+        if (Files.isDirectory(src)) {
+            Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir,
+                        final BasicFileAttributes attrs) {
+                    if (isPathMatch(dir, excludes)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    } else {
+                        copyActions.add(new CopyAction(null, dest.resolve(src.relativize(dir))));
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+
+                @Override
+                public FileVisitResult visitFile(final Path file,
+                        final BasicFileAttributes attrs) {
+                    if (!isPathMatch(file, excludes)) {
+                        copyActions.add(new CopyAction(file, dest.resolve(src.relativize(file))));
+                    }
                     return FileVisitResult.CONTINUE;
                 }
-            }
-
-            @Override
-            public FileVisitResult visitFile(final Path file,
-                    final BasicFileAttributes attrs) {
-                if (!isPathMatch(file, excludes)) {
-                    copyActions.add(new CopyAction(file, dest.resolve(src.
-                            relativize(file))));
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
+            });
+        } else if (!isPathMatch(src, excludes)) {
+            Optional.ofNullable(dest.getParent()).ifPresent(dstDir -> {
+                copyActions.add(new CopyAction(null, dstDir));
+            });
+            copyActions.add(new CopyAction(src, dest));
+        }
 
         for (var copyAction : copyActions) {
             copyAction.apply(options);
+        }
+    }
+
+    public static Path readSymlinkTargetRecursive(Path symlink) throws IOException, NotLinkException {
+        try {
+            var target = Files.readSymbolicLink(symlink);
+            if (Files.isSymbolicLink(target)) {
+                return readSymlinkTargetRecursive(target);
+            } else {
+                return target;
+            }
+        } catch (NotLinkException ex) {
+            throw ex;
         }
     }
 
@@ -100,6 +120,17 @@ public final class FileUtils {
     private static record CopyAction(Path src, Path dest) {
 
         void apply(CopyOption... options) throws IOException {
+            if (List.of(options).contains(StandardCopyOption.REPLACE_EXISTING)) {
+                // They requested copying with replacing the existing content.
+                if (src == null && Files.isRegularFile(dest)) {
+                    // This copy action creates a directory, but a file at the same path already exists, so delete it.
+                    Files.deleteIfExists(dest);
+                } else if (src != null && Files.isDirectory(dest)) {
+                    // This copy action copies a file, but a directory at the same path exists already, so delete it.
+                    deleteRecursive(dest);
+                }
+            }
+
             if (src == null) {
                 Files.createDirectories(dest);
             } else {
@@ -138,15 +169,13 @@ public final class FileUtils {
             }
         }
 
-        private void runActionOnPath(ThrowingConsumer<Path> action, Path path) {
+        private void runActionOnPath(ThrowingConsumer<Path, IOException> action, Path path) {
             try {
                 action.accept(path);
             } catch (IOException ex) {
                 if (this.ex == null) {
                     this.ex = ex;
                 }
-            } catch (Throwable t) {
-                throw ExceptionBox.rethrowUnchecked(t);
             }
         }
 

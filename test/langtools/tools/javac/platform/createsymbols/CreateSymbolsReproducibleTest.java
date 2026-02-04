@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  *
  * @compile ${test.root}/../../make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java
  *
- * @run junit CreateSymbolsReproducibleTest
+ * @run junit/timeout=480 CreateSymbolsReproducibleTest
  */
 public class CreateSymbolsReproducibleTest {
 

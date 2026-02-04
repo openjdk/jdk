@@ -42,6 +42,7 @@
   f(int,    ContendedPaddingWidthConstraintFunc)      \
   f(size_t, VMPageSizeConstraintFunc)                 \
   f(size_t, NUMAInterleaveGranularityConstraintFunc)  \
+  f(size_t, LargePageSizeInBytesConstraintFunc)       \
   f(ccstr,  OnSpinWaitInstNameConstraintFunc)
 
 RUNTIME_CONSTRAINTS(DECLARE_CONSTRAINT)

@@ -103,7 +103,7 @@ public:
 
   ShenandoahBarrierSetC2State* state() const;
 
-  static const TypeFunc* write_ref_field_pre_Type();
+  static const TypeFunc* write_barrier_pre_Type();
   static const TypeFunc* clone_barrier_Type();
   static const TypeFunc* load_reference_barrier_Type();
   virtual bool has_load_barrier_nodes() const { return true; }

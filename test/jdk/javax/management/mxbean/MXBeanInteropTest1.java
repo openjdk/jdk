@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,8 @@ public class MXBeanInteropTest1 {
                     + memory.getNonHeapMemoryUsage());
             System.out.println("getObjectPendingFinalizationCount\t\t"
                     + memory.getObjectPendingFinalizationCount());
+            System.out.println("getTotalGcCpuTime\t\t"
+                    + memory.getTotalGcCpuTime());
             System.out.println("isVerbose\t\t"
                     + memory.isVerbose());
 

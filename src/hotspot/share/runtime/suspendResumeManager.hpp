@@ -59,8 +59,13 @@ class SuspendResumeManager {
 
   void set_suspended(bool to, bool register_vthread_SR);
 
+  // The specific 'set_suspended' implementation only for self suspend.
+  // It is called when the thread is already blocked, and it is not possible to
+  // read oop for vthread from the _target.
+  void set_suspended_current_thread(int64_t vthread_id, bool register_vthread_SR);
+
   bool is_suspended() {
-    return Atomic::load(&_suspended);
+    return AtomicAccess::load(&_suspended);
   }
 
   bool has_async_suspend_handshake() { return _async_suspend_handshake; }

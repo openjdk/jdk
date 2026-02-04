@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jshell
  * @build Compiler KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng VariablesTest
+ * @run junit/timeout=480 VariablesTest
  */
 
 import java.nio.file.Path;
@@ -44,18 +44,19 @@ import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
 import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.SnippetEvent;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Snippet.Status.*;
 import static jdk.jshell.Snippet.SubKind.VAR_DECLARATION_SUBKIND;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class VariablesTest extends KullaTesting {
 
+    @Test
     public void noVariables() {
         assertNumberOfActiveVariables(0);
     }
@@ -69,6 +70,7 @@ public class VariablesTest extends KullaTesting {
         }
     }
 
+    @Test
     public void testVarValue1() {
         VarSnippet v1 = varKey(assertEval("und1 a;", added(RECOVERABLE_NOT_DEFINED)));
         badVarValue(v1);
@@ -89,6 +91,7 @@ public class VariablesTest extends KullaTesting {
         badVarValue(v2);
     }
 
+    @Test
     public void testVarValue2() {
         VarSnippet v1 = (VarSnippet) assertDeclareFail("int a = 0.0;", "compiler.err.prob.found.req");
         badVarValue(v1);
@@ -97,6 +100,7 @@ public class VariablesTest extends KullaTesting {
         badVarValue(v2);
     }
 
+    @Test
     public void testSignature1() {
         VarSnippet v1 = varKey(assertEval("und1 a;", added(RECOVERABLE_NOT_DEFINED)));
         assertVariableDeclSnippet(v1, "a", "und1", RECOVERABLE_NOT_DEFINED, VAR_DECLARATION_SUBKIND, 1, 0);
@@ -116,6 +120,7 @@ public class VariablesTest extends KullaTesting {
         assertVariableDeclSnippet(v2, "a", "und2", RECOVERABLE_NOT_DEFINED, VAR_DECLARATION_SUBKIND, 1, 0);
     }
 
+    @Test
     public void testSignature2() {
         VarSnippet v1 = (VarSnippet) assertDeclareFail("int a = 0.0;", "compiler.err.prob.found.req");
         assertVariableDeclSnippet(v1, "a", "int", REJECTED, SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND, 0, 1);
@@ -126,6 +131,7 @@ public class VariablesTest extends KullaTesting {
         assertVariableDeclSnippet(v2, "a", "int", DROPPED, SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND, 0, 0);
     }
 
+    @Test
     public void variables() {
         VarSnippet snx = varKey(assertEval("int x = 10;"));
         VarSnippet sny = varKey(assertEval("String y = \"hi\";"));
@@ -137,22 +143,25 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void variablesArray() {
         VarSnippet sn = varKey(assertEval("int[] a = new int[12];"));
-        assertEquals(sn.typeName(), "int[]");
+        assertEquals("int[]", sn.typeName());
         assertEval("int len = a.length;", "12");
         assertVariables(variable("int[]", "a"), variable("int", "len"));
         assertActiveKeys();
     }
 
+    @Test
     public void variablesArrayOld() {
         VarSnippet sn = varKey(assertEval("int a[] = new int[12];"));
-        assertEquals(sn.typeName(), "int[]");
+        assertEquals("int[]", sn.typeName());
         assertEval("int len = a.length;", "12");
         assertVariables(variable("int[]", "a"), variable("int", "len"));
         assertActiveKeys();
     }
 
+    @Test
     public void variablesRedefinition() {
         Snippet x = varKey(assertEval("int x = 10;"));
         Snippet y = varKey(assertEval("String y = \"\";", added(VALID)));
@@ -170,6 +179,7 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void variablesTemporary() {
         assertEval("int $1 = 10;", added(VALID));
         assertEval("2 * $1;", added(VALID));
@@ -180,6 +190,7 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void variablesTemporaryNull() {
         assertEval("null;", added(VALID));
         assertVariables(variable("Object", "$1"));
@@ -194,6 +205,7 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void variablesTemporaryArrayOfCapturedType() {
         assertEval("class Test<T> { T[][] get() { return null; } }", added(VALID));
         assertEval("Test<? extends String> test() { return new Test<>(); }", added(VALID));
@@ -204,6 +216,7 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void variablesClassReplace() {
         assertEval("import java.util.*;", added(VALID));
         Snippet var = varKey(assertEval("List<Integer> list = new ArrayList<>();", "[]",
@@ -223,12 +236,14 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void variablesErrors() {
         assertDeclareFail("String;", new ExpectedDiagnostic("compiler.err.cant.resolve.location", 0, 6, 0, -1, -1, Diagnostic.Kind.ERROR));
         assertNumberOfActiveVariables(0);
         assertActiveKeys();
     }
 
+    @Test
     public void variablesUnresolvedActiveFailed() {
         VarSnippet key = varKey(assertEval("und x;", added(RECOVERABLE_NOT_DEFINED)));
         assertVariableDeclSnippet(key, "x", "und", RECOVERABLE_NOT_DEFINED, VAR_DECLARATION_SUBKIND, 1, 0);
@@ -237,12 +252,14 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void variablesUnresolvedError() {
         assertDeclareFail("und y = null;", new ExpectedDiagnostic("compiler.err.cant.resolve.location", 0, 3, 0, -1, -1, Diagnostic.Kind.ERROR));
         assertNumberOfActiveVariables(0);
         assertActiveKeys();
     }
 
+    @Test
     public void variablesMultiByteCharacterType() {
         assertEval("class \u3042 {}");
         assertEval("\u3042 \u3042 = null;", added(VALID));
@@ -261,7 +278,8 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test(enabled = false) // TODO 8081689
+    @Test // TODO 8081689
+    @Disabled
     public void methodVariablesAreNotVisible() {
         Snippet foo = varKey(assertEval("int foo() {" +
                         "int x = 10;" +
@@ -283,7 +301,8 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test(enabled = false) // TODO 8081689
+    @Test // TODO 8081689
+    @Disabled
     public void classFieldsAreNotVisible() {
         Snippet key = classKey(assertEval("class clazz {" +
                         "int x = 10;" +
@@ -303,6 +322,7 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void multiVariables() {
         List<SnippetEvent> abc = assertEval("int a, b, c = 10;",
                 DiagCheck.DIAG_OK, DiagCheck.DIAG_OK,
@@ -324,12 +344,14 @@ public class VariablesTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void syntheticVariables() {
         assertEval("assert false;");
         assertNumberOfActiveVariables(0);
         assertActiveKeys();
     }
 
+    @Test
     public void undefinedReplaceVariable() {
         Snippet key = varKey(assertEval("int d = 234;", "234"));
         assertVariables(variable("int", "d"));
@@ -339,13 +361,14 @@ public class VariablesTest extends KullaTesting {
                 ste(key, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
         //assertEquals(getState().source(snippet), src);
         //assertEquals(snippet, undefKey);
-        assertEquals(getState().status(undefKey), RECOVERABLE_NOT_DEFINED);
+        assertEquals(RECOVERABLE_NOT_DEFINED, getState().status(undefKey));
         List<String> unr = getState().unresolvedDependencies((VarSnippet) undefKey).collect(toList());
-        assertEquals(unr.size(), 1);
-        assertEquals(unr.get(0), "class undefined");
+        assertEquals(1, unr.size());
+        assertEquals("class undefined", unr.get(0));
         assertVariables(variable("undefined", "d"));
     }
 
+    @Test
     public void lvti() {
         assertEval("var d = 234;", "234");
         assertEval("class Test<T> { T[][] get() { return null; } }", added(VALID));
@@ -410,12 +433,14 @@ public class VariablesTest extends KullaTesting {
         assertEval("var r16d = r16d();");
     }
 
+    @Test
     public void test8191842() {
         assertEval("import java.util.stream.*;");
         assertEval("var list = Stream.of(1, 2, 3).map(j -> new Object() { int i = j; }).collect(Collectors.toList());");
         assertEval("list.stream().map(a -> String.valueOf(a.i)).collect(Collectors.joining(\", \"));", "\"1, 2, 3\"");
     }
 
+    @Test
     public void lvtiRecompileDependentsWithIntersectionTypes() {
         assertEval("<Z extends Runnable & CharSequence> Z get1() { return null; }", added(VALID));
         assertEval("var i1 = get1();", added(VALID));
@@ -428,27 +453,32 @@ public class VariablesTest extends KullaTesting {
         assertEval("void t2() { i2.run(); i2.count(); }", added(VALID));
     }
 
+    @Test
     public void arrayInit() {
         assertEval("int[] d = {1, 2, 3};");
     }
 
+    @Test
     public void testAnonymousVar() {
         assertEval("new Object() { public String get() { return \"a\"; } }");
         assertEval("$1.get()", "\"a\"");
     }
 
+    @Test
     public void testIntersectionVar() {
         assertEval("<Z extends Runnable & CharSequence> Z get() { return null; }", added(VALID));
         assertEval("get();", added(VALID));
         assertEval("void t1() { $1.run(); $1.length(); }", added(VALID));
     }
 
+    @Test
     public void multipleCaptures() {
         assertEval("class D { D(int foo, String bar) { this.foo = foo; this.bar = bar; } int foo; String bar; } ");
         assertEval("var d = new D(34, \"hi\") { String z = foo + bar; };");
         assertEval("d.z", "\"34hi\"");
     }
 
+    @Test
     public void multipleAnonymous() {
         VarSnippet v1 = varKey(assertEval("new Object() { public int i = 42; public int i1 = i; public int m1() { return i1; } };"));
         VarSnippet v2 = varKey(assertEval("new Object() { public int i = 42; public int i2 = i; public int m2() { return i2; } };"));
@@ -466,6 +496,7 @@ public class VariablesTest extends KullaTesting {
                                                  -1, -1, Diagnostic.Kind.ERROR));
     }
 
+    @Test
     public void displayName() {
         assertVarDisplayName("var v1 = 234;", "int");
         assertVarDisplayName("var v2 = new int[] {234};", "int[]");
@@ -478,6 +509,7 @@ public class VariablesTest extends KullaTesting {
         assertVarDisplayName("var v6 = new Runnable() { public void run() { } };", "<anonymous class implementing Runnable>");
     }
 
+    @Test
     public void varType() {
         assertEval("import java.util.*;");
         var firstVar = varKey(assertEval("var v1 = List.of(1);", added(VALID)));
@@ -487,6 +519,7 @@ public class VariablesTest extends KullaTesting {
         assertEval("v2", "[1]");
     }
 
+    @Test
     public void varDeclNoInit() {
         assertVarDeclNoInit("byte", "b",  "0");
         assertVarDeclNoInit("short", "h",  "0");
@@ -500,6 +533,7 @@ public class VariablesTest extends KullaTesting {
         assertVarDeclNoInit("String", "s", "null");
     }
 
+    @Test
     public void varDeclRedefNoInit() {
         assertVarDeclRedefNoInit("byte", "b", "1", "0");
         assertVarDeclRedefNoInit("short", "h", "2", "0");
@@ -513,6 +547,7 @@ public class VariablesTest extends KullaTesting {
         assertVarDeclRedefNoInit("String", "s", "\"hi\"", "null");
     }
 
+    @Test
     public void badPkgVarDecl() {
         Compiler compiler = new Compiler();
         Path nopkgdirpath = Paths.get("cp", "xyz");
@@ -545,16 +580,16 @@ public class VariablesTest extends KullaTesting {
 
     private VarSnippet assertVarDeclNoInit(String typeName, String name, String dvalue, STEInfo mainInfo, STEInfo... updates) {
         VarSnippet vs = varKey(assertEval(typeName + " " + name + ";", dvalue, mainInfo, updates));
-        assertEquals(vs.typeName(), typeName);
+        assertEquals(typeName, vs.typeName());
         assertEval(name, dvalue, added(VALID));
         return vs;
     }
 
     private void assertVarDisplayName(String var, String typeName) {
-        assertEquals(varKey(assertEval(var)).typeName(), typeName);
+        assertEquals(typeName, varKey(assertEval(var)).typeName());
     }
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         Path path = Paths.get("cp");
@@ -611,22 +646,26 @@ public class VariablesTest extends KullaTesting {
                 .compilerOptions("--class-path", tpath));
     }
 
+    @Test
     public void varIntersection() {
         assertEval("interface Marker {}");
         assertEval("var v = (Marker & Runnable) () -> {};", added(VALID));
         assertEval("v.run()");
     }
 
+    @Test
     public void varAnonymousClassAndStaticField() { //JDK-8294431
         assertEval("var obj = new Object() { public static final String msg = \"hello\"; };");
     }
 
+    @Test
     public void underscoreAsLambdaParameter() { //JDK-8322532
         assertAnalyze("Func f = _ -> 0; int i;",
                       "Func f = _ -> 0;",
                       " int i;", true);
     }
 
+    @Test
     public void intersectionTypeAsTypeArgument() { //JDK-8322003
         assertEval("interface Shape {}");
         assertEval("record Square(int edge) implements Shape {}");

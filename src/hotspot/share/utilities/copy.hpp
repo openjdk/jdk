@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_COPY_HPP
 
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
@@ -303,18 +303,18 @@ class Copy : AllStatic {
                                                   HeapWord* to, size_t count) {
 
     switch (count) {
-    case 8:  Atomic::store(&to[7], Atomic::load(&from[7]));
-    case 7:  Atomic::store(&to[6], Atomic::load(&from[6]));
-    case 6:  Atomic::store(&to[5], Atomic::load(&from[5]));
-    case 5:  Atomic::store(&to[4], Atomic::load(&from[4]));
-    case 4:  Atomic::store(&to[3], Atomic::load(&from[3]));
-    case 3:  Atomic::store(&to[2], Atomic::load(&from[2]));
-    case 2:  Atomic::store(&to[1], Atomic::load(&from[1]));
-    case 1:  Atomic::store(&to[0], Atomic::load(&from[0]));
+    case 8:  AtomicAccess::store(&to[7], AtomicAccess::load(&from[7]));
+    case 7:  AtomicAccess::store(&to[6], AtomicAccess::load(&from[6]));
+    case 6:  AtomicAccess::store(&to[5], AtomicAccess::load(&from[5]));
+    case 5:  AtomicAccess::store(&to[4], AtomicAccess::load(&from[4]));
+    case 4:  AtomicAccess::store(&to[3], AtomicAccess::load(&from[3]));
+    case 3:  AtomicAccess::store(&to[2], AtomicAccess::load(&from[2]));
+    case 2:  AtomicAccess::store(&to[1], AtomicAccess::load(&from[1]));
+    case 1:  AtomicAccess::store(&to[0], AtomicAccess::load(&from[0]));
     case 0:  break;
     default:
       while (count-- > 0) {
-        Atomic::store(to++, Atomic::load(from++));
+        AtomicAccess::store(to++, AtomicAccess::load(from++));
       }
       break;
     }

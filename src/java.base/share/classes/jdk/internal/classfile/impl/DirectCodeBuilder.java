@@ -185,14 +185,14 @@ public final class DirectCodeBuilder
     private void writeExceptionHandlers(BufWriterImpl buf) {
         int pos = buf.size();
         int handlersSize = handlers.size();
+        Util.checkU2(handlersSize, "exception handlers");
         buf.writeU2(handlersSize);
         if (handlersSize > 0) {
-            writeExceptionHandlers(buf, pos);
+            writeExceptionHandlers(buf, pos, handlersSize);
         }
     }
 
-    private void writeExceptionHandlers(BufWriterImpl buf, int pos) {
-        int handlersSize = handlers.size();
+    private void writeExceptionHandlers(BufWriterImpl buf, int pos, int handlersSize) {
         for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
             int startPc = labelToBci(h.tryStart());
             int endPc = labelToBci(h.tryEnd());
@@ -227,6 +227,7 @@ public final class DirectCodeBuilder
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
                         int crSize = characterRangesCount;
+                        Util.checkU2(crSize, "character range count");
                         b.writeU2(crSize);
                         for (int i = 0; i < characterRangesCount; i++) {
                             CharacterRange cr = characterRanges[i];
@@ -262,6 +263,7 @@ public final class DirectCodeBuilder
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
                         int lvSize = localVariablesCount;
+                        Util.checkU2(lvSize, "local variable count");
                         b.writeU2(lvSize);
                         for (int i = 0; i < localVariablesCount; i++) {
                             LocalVariable l = localVariables[i];
@@ -291,6 +293,7 @@ public final class DirectCodeBuilder
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
                         int lvtSize = localVariableTypesCount;
+                        Util.checkU2(lvtSize, "local variable type count");
                         b.writeU2(lvtSize);
                         for (int i = 0; i < localVariableTypesCount; i++) {
                             LocalVariableType l = localVariableTypes[i];
@@ -441,7 +444,7 @@ public final class DirectCodeBuilder
             b.writeIndex(b.constantPool().utf8Entry(Attributes.NAME_LINE_NUMBER_TABLE));
             push();
             b.writeInt(buf.size() + 2);
-            b.writeU2(buf.size() / 4);
+            b.writeU2(Util.checkU2(buf.size() / 4, "line number count"));
             b.writeBytes(buf);
         }
 

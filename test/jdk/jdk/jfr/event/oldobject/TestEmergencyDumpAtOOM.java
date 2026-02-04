@@ -51,6 +51,7 @@ public class TestEmergencyDumpAtOOM {
     public static List<String> DEFAULT_LEAKER_ARGS = List.of(
         "-Xmx64m",
         "-XX:TLABSize=2k",
+        "-XX:-CreateCoredumpOnCrash",
         "-XX:StartFlightRecording:dumponexit=true,filename=oom.jfr",
         Leaker.class.getName()
     );

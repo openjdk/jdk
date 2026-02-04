@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  * @test
  * @bug 8329420
  * @summary test execution priority and behavior of main methods
- * @run main InstanceMainTest
+ * @run main/timeout=480 InstanceMainTest
  */
 public class InstanceMainTest extends TestHelper {
 

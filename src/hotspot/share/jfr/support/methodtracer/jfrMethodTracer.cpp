@@ -51,7 +51,7 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 ModuleEntry*                         JfrMethodTracer::_jdk_jfr_module = nullptr;
 GrowableArray<JfrInstrumentedClass>* JfrMethodTracer::_instrumented_classes = nullptr;

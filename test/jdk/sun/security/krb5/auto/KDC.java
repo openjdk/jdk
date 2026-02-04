@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1547,65 +1547,65 @@ public class KDC {
         this.port = port;
 
         // The UDP consumer
-        thread1 = new Thread() {
-            public void run() {
-                udpConsumerReady = true;
-                while (true) {
-                    try {
-                        byte[] inbuf = new byte[8192];
-                        DatagramPacket p = new DatagramPacket(inbuf, inbuf.length);
-                        udp.receive(p);
-                        System.out.println("-----------------------------------------------");
-                        System.out.println(">>>>> UDP packet received");
-                        q.put(new Job(processMessage(Arrays.copyOf(inbuf, p.getLength())), udp, p));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        thread1 = new Thread(() -> {
+            udpConsumerReady = true;
+            while (true) {
+                try {
+                    byte[] inbuf = new byte[8192];
+                    DatagramPacket p = new DatagramPacket(inbuf, inbuf.length);
+                    udp.receive(p);
+                    System.out.println("-----------------------------------------------");
+                    System.out.println(">>>>> UDP packet received");
+                    q.put(new Job(processMessage(Arrays.copyOf(inbuf, p.getLength())), udp, p));
+                } catch (InterruptedException e){
+                    break; // Thread was stopped, so stopping the loop
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-        };
+        });
         thread1.setDaemon(asDaemon);
         thread1.start();
 
         // The TCP consumer
-        thread2 = new Thread() {
-            public void run() {
-                tcpConsumerReady = true;
-                while (true) {
-                    try {
-                        Socket socket = tcp.accept();
-                        System.out.println("-----------------------------------------------");
-                        System.out.println(">>>>> TCP connection established");
-                        DataInputStream in = new DataInputStream(socket.getInputStream());
-                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                        int len = in.readInt();
-                        if (len > 65535) {
-                            throw new Exception("Huge request not supported");
-                        }
-                        byte[] token = new byte[len];
-                        in.readFully(token);
-                        q.put(new Job(processMessage(token), socket, out));
-                    } catch (Exception e) {
-                        e.printStackTrace();
+        thread2 = new Thread(() -> {
+            tcpConsumerReady = true;
+            while (true) {
+                try {
+                    Socket socket = tcp.accept();
+                    System.out.println("-----------------------------------------------");
+                    System.out.println(">>>>> TCP connection established");
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                    int len = in.readInt();
+                    if (len > 65535) {
+                        throw new Exception("Huge request not supported");
                     }
+                    byte[] token = new byte[len];
+                    in.readFully(token);
+                    q.put(new Job(processMessage(token), socket, out));
+                } catch (InterruptedException e){
+                    break; // Thread was stopped, so stopping the loop
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-        };
+        });
         thread2.setDaemon(asDaemon);
         thread2.start();
 
         // The dispatcher
-        thread3 = new Thread() {
-            public void run() {
-                dispatcherReady = true;
-                while (true) {
-                    try {
-                        q.take().send();
-                    } catch (Exception e) {
-                    }
+        thread3 = new Thread(() -> {
+            dispatcherReady = true;
+            while (true) {
+                try {
+                    q.take().send();
+                } catch (InterruptedException e){
+                    break; // Thread was stopped, so stopping the loop
+                } catch (Exception e) {
                 }
             }
-        };
+        });
         thread3.setDaemon(true);
         thread3.start();
 
@@ -1646,9 +1646,9 @@ public class KDC {
             System.out.println("Done");
         } else {
             try {
-                thread1.stop();
-                thread2.stop();
-                thread3.stop();
+                thread1.interrupt();
+                thread2.interrupt();
+                thread3.interrupt();
                 u1.close();
                 t1.close();
             } catch (Exception e) {

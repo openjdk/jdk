@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,18 +44,25 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq _concurrent_mark_cleanup_times_ms;
 
   TruncatedSeq _alloc_rate_ms_seq;
-  double        _prev_collection_pause_end_ms;
+  double       _prev_collection_pause_end_ms;
+
+  // Records the total GC CPU time (in ms) at the end of the last GC pause.
+  // Used as a baseline to calculate CPU time spent in GC threads between pauses.
+  double _gc_cpu_time_at_pause_end_ms;
+
+  // CPU time (ms) spent by GC threads between the end of the last pause
+  // and the start of the current pause; calculated at start of a GC pause.
+  double _concurrent_gc_cpu_time_ms;
 
   TruncatedSeq _concurrent_refine_rate_ms_seq;
   TruncatedSeq _dirtied_cards_rate_ms_seq;
-  TruncatedSeq _dirtied_cards_in_thread_buffers_seq;
-  // The ratio between the number of scanned cards and actually merged cards, for
-  // young-only and mixed gcs.
-  G1PhaseDependentSeq _card_scan_to_merge_ratio_seq;
+  // The ratio between the number of merged cards to actually scanned cards for
+  // card based remembered sets, for young-only and mixed gcs.
+  G1PhaseDependentSeq _card_merge_to_scan_ratio_seq;
 
   // The cost to scan a card during young-only and mixed gcs in ms.
   G1PhaseDependentSeq _cost_per_card_scan_ms_seq;
-  // The cost to merge a card during young-only and mixed gcs in ms.
+  // The cost to merge a card from the remembered sets for non-young regions in ms.
   G1PhaseDependentSeq _cost_per_card_merge_ms_seq;
   // The cost to scan entries in the code root remembered set in ms.
   G1PhaseDependentSeq _cost_per_code_root_ms_seq;
@@ -66,6 +73,8 @@ class G1Analytics: public CHeapObj<mtGC> {
   G1PhaseDependentSeq _card_rs_length_seq;
   G1PhaseDependentSeq _code_root_rs_length_seq;
 
+  // Prediction for merging the refinement table to the card table during GC.
+  TruncatedSeq _merge_refinement_table_ms_seq;
   TruncatedSeq _constant_other_time_ms_seq;
   TruncatedSeq _young_other_cost_per_region_ms_seq;
   TruncatedSeq _non_young_other_cost_per_region_ms_seq;
@@ -75,10 +84,10 @@ class G1Analytics: public CHeapObj<mtGC> {
   // Statistics kept per GC stoppage, pause or full.
   TruncatedSeq _recent_prev_end_times_for_all_gcs_sec;
 
-  // Cached values for long and short term pause time ratios. See
-  // compute_pause_time_ratios() for how they are computed.
-  double _long_term_pause_time_ratio;
-  double _short_term_pause_time_ratio;
+  // Cached values for long and short term gc time ratios. See
+  // update_gc_time_ratios() for how they are computed.
+  double _long_term_gc_time_ratio;
+  double _short_term_gc_time_ratio;
 
   double predict_in_unit_interval(TruncatedSeq const* seq) const;
   size_t predict_size(TruncatedSeq const* seq) const;
@@ -102,12 +111,12 @@ public:
     return _prev_collection_pause_end_ms;
   }
 
-  double long_term_pause_time_ratio() const {
-    return _long_term_pause_time_ratio;
+  double long_term_gc_time_ratio() const {
+    return _long_term_gc_time_ratio;
   }
 
-  double short_term_pause_time_ratio() const {
-    return _short_term_pause_time_ratio;
+  double short_term_gc_time_ratio() const {
+    return _short_term_gc_time_ratio;
   }
 
   static constexpr uint max_num_of_recorded_pause_times() {
@@ -122,19 +131,33 @@ public:
     _prev_collection_pause_end_ms = ms;
   }
 
+  void set_gc_cpu_time_at_pause_end_ms(double ms) {
+    _gc_cpu_time_at_pause_end_ms = ms;
+  }
+
+  double gc_cpu_time_at_pause_end_ms() const {
+    return _gc_cpu_time_at_pause_end_ms;
+  }
+
+  void set_concurrent_gc_cpu_time_ms(double ms) {
+    _concurrent_gc_cpu_time_ms = ms;
+  }
+
+  double gc_cpu_time_ms() const;
+
   void report_concurrent_mark_remark_times_ms(double ms);
   void report_concurrent_mark_cleanup_times_ms(double ms);
   void report_alloc_rate_ms(double alloc_rate);
   void report_concurrent_refine_rate_ms(double cards_per_ms);
   void report_dirtied_cards_rate_ms(double cards_per_ms);
-  void report_dirtied_cards_in_thread_buffers(size_t num_cards);
   void report_cost_per_card_scan_ms(double cost_per_remset_card_ms, bool for_young_only_phase);
   void report_cost_per_card_merge_ms(double cost_per_card_ms, bool for_young_only_phase);
   void report_cost_per_code_root_scan_ms(double cost_per_code_root_ms, bool for_young_only_phase);
-  void report_card_scan_to_merge_ratio(double cards_per_entry_ratio, bool for_young_only_phase);
+  void report_card_merge_to_scan_ratio(double merge_to_scan_ratio, bool for_young_only_phase);
   void report_cost_per_byte_ms(double cost_per_byte_ms, bool for_young_only_phase);
   void report_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_non_young_other_cost_per_region_ms(double other_cost_per_region_ms);
+  void report_merge_refinement_table_time_ms(double pending_card_merge_time_ms);
   void report_constant_other_time_ms(double constant_other_time_ms);
   void report_pending_cards(double pending_cards, bool for_young_only_phase);
   void report_card_rs_length(double card_rs_length, bool for_young_only_phase);
@@ -145,7 +168,6 @@ public:
 
   double predict_concurrent_refine_rate_ms() const;
   double predict_dirtied_cards_rate_ms() const;
-  size_t predict_dirtied_cards_in_thread_buffers() const;
 
   // Predict how many of the given remembered set of length card_rs_length will add to
   // the number of total cards scanned.
@@ -158,6 +180,7 @@ public:
 
   double predict_object_copy_time_ms(size_t bytes_to_copy, bool for_young_only_phase) const;
 
+  double predict_merge_refinement_table_time_ms() const;
   double predict_constant_other_time_ms() const;
 
   double predict_young_other_time_ms(size_t young_num) const;
@@ -173,8 +196,8 @@ public:
   size_t predict_pending_cards(bool for_young_only_phase) const;
 
   // Add a new GC of the given duration and end time to the record.
-  void update_recent_gc_times(double end_time_sec, double elapsed_ms);
-  void compute_pause_time_ratios(double end_time_sec, double pause_time_ms);
+  void update_recent_gc_times(double end_time_sec, double gc_time_ms);
+  void update_gc_time_ratios(double end_time_sec, double pause_time_ms);
 };
 
 #endif // SHARE_GC_G1_G1ANALYTICS_HPP

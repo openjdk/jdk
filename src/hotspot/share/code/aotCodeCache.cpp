@@ -25,10 +25,10 @@
 
 #include "asm/macroAssembler.hpp"
 #include "cds/aotCacheAccess.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
@@ -96,7 +96,7 @@ static void report_store_failure() {
 // where we set number of compiler threads for AOT assembly phase.
 //
 // 3. We determine presence of AOT code in AOT Cache in
-// MetaspaceShared::open_static_archive() which is calles
+// AOTMetaspace::open_static_archive() which is calles
 // after compilationPolicy_init() but before codeCache_init().
 //
 // 4. AOTCodeCache::initialize() is called during universe_init()
@@ -165,7 +165,7 @@ uint AOTCodeCache::max_aot_code_size() {
   return _max_aot_code_size;
 }
 
-// It is called from MetaspaceShared::initialize_shared_spaces()
+// It is called from AOTMetaspace::initialize_shared_spaces()
 // which is called from universe_init().
 // At this point all AOT class linking seetings are finilized
 // and AOT cache is open so we can map AOT code region.
@@ -1346,18 +1346,16 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, OptoRuntime::multianewarray4_C);
     SET_ADDRESS(_extrs, OptoRuntime::multianewarray5_C);
     SET_ADDRESS(_extrs, OptoRuntime::multianewarrayN_C);
-#if INCLUDE_JVMTI
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_start);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_end);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_mount);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_unmount);
-#endif
     SET_ADDRESS(_extrs, OptoRuntime::complete_monitor_locking_C);
     SET_ADDRESS(_extrs, OptoRuntime::monitor_notify_C);
     SET_ADDRESS(_extrs, OptoRuntime::monitor_notifyAll_C);
     SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
     SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
     SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_first_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_final_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_transition_C);
 #if defined(AARCH64)
     SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
 #endif // AARCH64
@@ -1365,11 +1363,10 @@ void AOTCodeAddressTable::init_extrs() {
 #endif // COMPILER2
 
 #if INCLUDE_G1GC
-  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_field_post_entry);
   SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_field_pre_entry);
 #endif
 #if INCLUDE_SHENANDOAHGC
-  SET_ADDRESS(_extrs, ShenandoahRuntime::write_ref_field_pre);
+  SET_ADDRESS(_extrs, ShenandoahRuntime::write_barrier_pre);
   SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom);
   SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
 #endif

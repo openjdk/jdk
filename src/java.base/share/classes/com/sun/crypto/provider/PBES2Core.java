@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ abstract class PBES2Core extends CipherSpi {
 
         if (cipherAlgo.equals("AES")) {
             blkSize = AESConstants.AES_BLOCK_SIZE;
-            cipher = new CipherCore(new AESCrypt(), blkSize);
+            cipher = new CipherCore(new AES_Crypt(), blkSize);
 
             switch(kdfAlgo) {
             case "HmacSHA1":

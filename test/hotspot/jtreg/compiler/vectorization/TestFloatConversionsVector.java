@@ -27,13 +27,12 @@
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @run driver compiler.vectorization.TestFloatConversionsVector nCOH_nAV
- * @run driver compiler.vectorization.TestFloatConversionsVector nCOH_yAV
- * @run driver compiler.vectorization.TestFloatConversionsVector yCOH_nAV
- * @run driver compiler.vectorization.TestFloatConversionsVector yCOH_yAV
+ * @run driver compiler.vectorization.TestFloatConversionsVector
  */
 
 package compiler.vectorization;
+
+import java.util.Set;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
@@ -49,13 +48,8 @@ public class TestFloatConversionsVector {
     public static void main(String args[]) {
         TestFramework framework = new TestFramework(TestFloatConversionsVector.class);
         framework.addFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
-        switch (args[0]) {
-            case "nCOH_nAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "nCOH_yAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
-            case "yCOH_nAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "yCOH_yAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
-            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
-        };
+        framework.addCrossProductScenarios(Set.of("-XX:-UseCompactObjectHeaders", "-XX:+UseCompactObjectHeaders"),
+                                           Set.of("-XX:-AlignVector", "-XX:+AlignVector"));
         framework.start();
         System.out.println("PASSED");
     }

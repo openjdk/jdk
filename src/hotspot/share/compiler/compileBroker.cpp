@@ -53,7 +53,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -218,11 +218,16 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
+  thread->timeout()->arm();
   if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
 }
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
+
+  // First, disarm the timeout. This still relies on the underlying task.
+  thread->timeout()->disarm();
+
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
@@ -371,6 +376,7 @@ void CompileQueue::delete_all() {
 
   // Iterate over all tasks in the compile queue
   while (current != nullptr) {
+    CompileTask* next = current->next();
     if (!current->is_blocking()) {
       // Non-blocking task. No one is waiting for it, delete it now.
       delete current;
@@ -379,7 +385,7 @@ void CompileQueue::delete_all() {
       // to delete the task. We cannot delete it here, because we do not
       // coordinate with waiters. We will notify the waiters later.
     }
-    current = current->next();
+    current = next;
   }
   _first = nullptr;
   _last = nullptr;
@@ -479,6 +485,7 @@ void CompileQueue::purge_stale_tasks() {
       MutexUnlocker ul(MethodCompileQueue_lock);
       for (CompileTask* task = head; task != nullptr; ) {
         CompileTask* next_task = task->next();
+        task->set_next(nullptr);
         CompileTaskWrapper ctw(task); // Frees the task
         task->set_failure_reason("stale task");
         task = next_task;
@@ -504,6 +511,8 @@ void CompileQueue::remove(CompileTask* task) {
     assert(task == _last, "Sanity");
     _last = task->prev();
   }
+  task->set_next(nullptr);
+  task->set_prev(nullptr);
   --_size;
   ++_total_removed;
 }
@@ -1055,7 +1064,9 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
 
   // Now, we do the more expensive operations.
-  julong free_memory = os::free_memory();
+  physical_memory_size_type free_memory = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::free_memory(free_memory);
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
   size_t available_cc_np = CodeCache::unallocated_capacity(CodeBlobType::MethodNonProfiled),
          available_cc_p  = CodeCache::unallocated_capacity(CodeBlobType::MethodProfiled);
@@ -1579,14 +1590,14 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
     assert(!is_osr, "can't be osr");
     // Adapters, native wrappers and method handle intrinsics
     // should be generated always.
-    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
+    return AtomicAccess::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
   } else if (CICountOSR && is_osr) {
-    id = Atomic::add(&_osr_compilation_id, 1);
+    id = AtomicAccess::add(&_osr_compilation_id, 1);
     if (CIStartOSR <= id && id < CIStopOSR) {
       return id;
     }
   } else {
-    id = Atomic::add(&_compilation_id, 1);
+    id = AtomicAccess::add(&_compilation_id, 1);
     if (CIStart <= id && id < CIStop) {
       return id;
     }
@@ -1598,7 +1609,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 #else
   // CICountOSR is a develop flag and set to 'false' by default. In a product built,
   // only _compilation_id is incremented.
-  return Atomic::add(&_compilation_id, 1);
+  return AtomicAccess::add(&_compilation_id, 1);
 #endif
 }
 
@@ -1728,17 +1739,22 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 
   // It is harmless to check this status without the lock, because
   // completion is a stable property.
-  if (!task->is_complete() && is_compilation_disabled_forever()) {
-    // Task is not complete, and we are exiting for compilation shutdown.
-    // The task can still be executed by some compiler thread, therefore
-    // we cannot delete it. This will leave task allocated, which leaks it.
-    // At this (degraded) point, it is less risky to abandon the task,
-    // rather than attempting a more complicated deletion protocol.
+  if (!task->is_complete()) {
+    // Task is not complete, likely because we are exiting for compilation
+    // shutdown. The task can still be reached through the queue, or executed
+    // by some compiler thread. There is no coordination with either MCQ lock
+    // holders or compilers, therefore we cannot delete the task.
+    //
+    // This will leave task allocated, which leaks it. At this (degraded) point,
+    // it is less risky to abandon the task, rather than attempting a more
+    // complicated deletion protocol.
     free_task = false;
   }
 
   if (free_task) {
     assert(task->is_complete(), "Compilation should have completed");
+    assert(task->next() == nullptr && task->prev() == nullptr,
+           "Completed task should not be in the queue");
 
     // By convention, the waiter is responsible for deleting a
     // blocking CompileTask. Since there is only one waiter ever
@@ -1915,6 +1931,10 @@ void CompileBroker::compiler_thread_loop() {
                     os::current_process_id());
     log->stamp();
     log->end_elem();
+  }
+
+  if (!thread->init_compilation_timeout()) {
+    return;
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread
@@ -2329,6 +2349,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       while (repeat_compilation_count > 0) {
         ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
+        thread->timeout()->reset();
         comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }

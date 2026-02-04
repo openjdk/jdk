@@ -96,7 +96,7 @@ void SuspendibleThreadSet::synchronize() {
   {
     MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
     assert(!should_yield(), "Only one at a time");
-    Atomic::store(&_suspend_all, true);
+    AtomicAccess::store(&_suspend_all, true);
     if (is_synchronized()) {
       return;
     }
@@ -127,6 +127,6 @@ void SuspendibleThreadSet::desynchronize() {
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(should_yield(), "STS not synchronizing");
   assert(is_synchronized(), "STS not synchronized");
-  Atomic::store(&_suspend_all, false);
+  AtomicAccess::store(&_suspend_all, false);
   ml.notify_all();
 }

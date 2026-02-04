@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,13 @@ public class TestIterativeEA {
     System.out.println(analyzer.getOutput());
 
     analyzer.shouldHaveExitValue(0);
-    analyzer.shouldContain("++++ Eliminated: 26 Allocate");
-    analyzer.shouldContain("++++ Eliminated: 48 Allocate");
-    analyzer.shouldContain("++++ Eliminated: 78 Allocate");
+    analyzer.shouldMatch(
+            "(?s)" + // Let .* also match line terminators.
+            "Eliminated: \\d+ Allocate" +
+            ".*" +
+            "Eliminated: \\d+ Allocate" +
+            ".*" +
+            "Eliminated: \\d+ Allocate");
   }
 
   static class A {

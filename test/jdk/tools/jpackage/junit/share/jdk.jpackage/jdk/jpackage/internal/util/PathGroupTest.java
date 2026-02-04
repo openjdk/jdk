@@ -66,6 +66,14 @@ public class PathGroupTest {
     }
 
     @Test
+    public void equals() {
+        assertEquals(new PathGroup(Map.of()), new PathGroup(Map.of()));
+        assertEquals(new PathGroup(Map.of("foo", Path.of("bar"))), new PathGroup(Map.of("foo", Path.of("bar"))));
+        assertNotEquals(new PathGroup(Map.of("foo", Path.of("bar"))), new PathGroup(Map.of("foo", Path.of("rab"))));
+        assertNotEquals(new PathGroup(Map.of("foo", Path.of("bar"))), new PathGroup(Map.of("Foo", Path.of("bar"))));
+    }
+
+    @Test
     public void testEmptyPathGroup() {
         PathGroup pg = new PathGroup(Map.of());
 
