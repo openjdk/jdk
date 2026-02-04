@@ -164,6 +164,7 @@ public class TestRedundantSafepointElimination {
     // There should be two safepoints in the loop tree.
     @Test
     @IR(counts = {IRNode.SAFEPOINT, "2"},
+        applyIf = {"LoopPeeling", "true"},
         phase = CompilePhase.AFTER_LOOP_OPTS)
     public void testLoopNeedsToPreserveSafepoint() {
         int i = 0, stop;

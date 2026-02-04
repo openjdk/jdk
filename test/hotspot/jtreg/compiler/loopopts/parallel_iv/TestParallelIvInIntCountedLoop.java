@@ -179,7 +179,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP }, applyIf = { "LoopPeeling", "true" })
     private static int testIntCountedLoopWithIntIVWithStrideMinusOne(int stop) {
         int a = 0;
         for (int i = stop; i > 0; i += -1) {
@@ -336,7 +336,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP }, applyIf = { "LoopPeeling", "true" })
     private static long testIntCountedLoopWithLongIVWithStrideMinusOne(int stop) {
         long a = 0;
         for (int i = stop; i > 0; i += -1) {

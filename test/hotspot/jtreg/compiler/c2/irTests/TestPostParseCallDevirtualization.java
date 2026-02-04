@@ -75,7 +75,8 @@ public class TestPostParseCallDevirtualization {
 
     @Test
     @IR(failOn = {IRNode.DYNAMIC_CALL_OF_METHOD, "method"},
-        counts = {IRNode.STATIC_CALL_OF_METHOD, "method", "= 1"})
+        counts = {IRNode.STATIC_CALL_OF_METHOD, "method", "= 1"},
+        applyIf = {"LoopPeeling", "true"})
     public int testDynamicCallWithLoop(B val) {
         // Make sure val is non-null below
         if (val == null) {
@@ -154,7 +155,8 @@ public class TestPostParseCallDevirtualization {
 
     @Test
     @IR(failOn = {IRNode.STATIC_CALL_OF_METHOD, "invokeBasic"},
-        counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"})
+        counts = {IRNode.STATIC_CALL_OF_METHOD, "invokeStatic", "= 1"},
+        applyIf = {"LoopPeeling", "true"})
     public int testMethodHandleCallWithLoop() throws Throwable {
         MethodHandle mh = mh1;
         for (int i = 0; i < 3; ++i) {

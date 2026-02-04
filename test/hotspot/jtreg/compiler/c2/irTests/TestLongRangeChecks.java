@@ -48,7 +48,7 @@ public class TestLongRangeChecks {
 
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
     @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScalePos(long start, long stop, long length, long offset) {
@@ -70,9 +70,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScalePosInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = 2;
         final int stride = 1;
@@ -89,9 +89,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScalePosInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = 2;
         final int stride = 1;
@@ -108,7 +108,7 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
     @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScaleNeg(long start, long stop, long length, long offset) {
@@ -125,9 +125,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScaleNegInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = -2;
         final int stride = 1;
@@ -143,9 +143,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScaleNegInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = -2;
         final int stride = 1;
@@ -161,7 +161,7 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
     @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScalePos(long start, long stop, long length, long offset) {
@@ -178,9 +178,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScalePosInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = 2;
         final int stride = 1;
@@ -195,9 +195,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScalePosInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = 2;
         final int stride = 1;
@@ -212,7 +212,7 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
     @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScaleNeg(long start, long stop, long length, long offset) {
@@ -229,9 +229,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScaleNegInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = -2;
         final int stride = 1;
@@ -246,9 +246,9 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIfAnd = { "ShortRunningLongLoop", "false", "LoopPeeling", "true" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIf = { "LoopPeeling", "true" }, failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScaleNegInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = -2;
         final int stride = 1;

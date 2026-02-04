@@ -66,7 +66,7 @@ public class TestMemorySegment_SubOfShift {
                   ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
+        applyIfAnd = {"AlignVector", "false", "LoopPeeling", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test1(MemorySegment b, int ivLo, int ivHi, int invar) {
         for (int i = ivLo; i < ivHi; i++) {
@@ -82,7 +82,7 @@ public class TestMemorySegment_SubOfShift {
                   ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
+        applyIfAnd = {"AlignVector", "false", "LoopPeeling", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     // Is fully RFE'd and vectorized
     public static void test2(MemorySegment b, int ivLo, int ivHi, int invar) {

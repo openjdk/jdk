@@ -71,7 +71,7 @@ public class TestMemorySegment_ReassociateInvariants2 {
                   ".*multiversion.*",  "= 0"}, // Good: The AutoVectorization predicate suffices.
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
-        applyIfAnd = {"AlignVector", "false", "ShortRunningLongLoop", "false"},
+        applyIfAnd = {"AlignVector", "false", "ShortRunningLongLoop", "false", "LoopPeeling", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     //
     @IR(counts = {IRNode.STORE_VECTOR, "> 0",

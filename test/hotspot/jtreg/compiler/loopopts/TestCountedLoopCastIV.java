@@ -156,8 +156,8 @@ public class TestCountedLoopCastIV {
     // Similar to test3, but the type of induction variable
     // is long.
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "1" }, applyIf = {"LoopUnrollLimit", "0"})
-    @IR(counts = {IRNode.COUNTED_LOOP, ">0" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" }, applyIfAnd = {"LoopUnrollLimit", "0", "LoopPeeling", "true"})
+    @IR(counts = {IRNode.COUNTED_LOOP, ">0" }, applyIf = {"LoopPeeling", "true"})
     static void test4(long start, long limit) {
         for (long i = start; i < limit; i++) {
             Objects.checkIndex(i, LEN);

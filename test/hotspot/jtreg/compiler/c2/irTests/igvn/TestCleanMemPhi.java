@@ -56,7 +56,7 @@ public class TestCleanMemPhi {
 
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"}, applyIf = {"LoopPeeling", "true"})
     static void testCountedLoop() {
         int zero = 34;
 
@@ -90,7 +90,7 @@ public class TestCleanMemPhi {
     }
 
     @Test
-    @IR(failOn = IRNode.LOOP)
+    @IR(failOn = IRNode.LOOP, applyIf = {"LoopPeeling", "true"})
     static void testRemoveLoop() {
         int zero = 34;
 

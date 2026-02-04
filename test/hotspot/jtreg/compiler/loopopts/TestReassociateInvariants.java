@@ -71,8 +71,10 @@ public class TestReassociateInvariants {
     // transformed into a loop nest with an inner int counted
     // loop. That one is empty and is removed.
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LONG_COUNTED_LOOP })
-    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LONG_COUNTED_LOOP },
+        applyIf = { "LoopPeeling", "true" })
+    @IR(counts = { IRNode.LOOP, "1" },
+        applyIf = { "LoopPeeling", "true" })
     @Arguments(values = { Argument.NUMBER_42, Argument.NUMBER_42 })
     public void test2(long a, long b) {
         for (long i = longStart; i < longStop; i++) {
@@ -82,8 +84,10 @@ public class TestReassociateInvariants {
 
     // Same here for an int counted loop with long range checks
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTED_LOOP },
+        applyIf = { "LoopPeeling", "true" })
+    @IR(counts = { IRNode.LOOP, "1" },
+        applyIf = { "LoopPeeling", "true" })
     @Arguments(values = { Argument.NUMBER_42, Argument.NUMBER_42 })
     public void test3(long a, long b) {
         for (int i = intStart; i < intStop; i++) {
