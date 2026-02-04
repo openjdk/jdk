@@ -31,7 +31,6 @@
 
 package jdk.test.lib.classloader;
 import jdk.test.whitebox.WhiteBox;
-import jdk.test.lib.Failure;
 
 import java.io.File;
 import java.io.Serial;
@@ -272,7 +271,7 @@ public class ClassUnloadCommon {
      * @param className name of class to load
      *
      * @throws ClassNotFoundException if no bytecode found for specified class name
-     * @throws Failure if current class loader is not specified;
+     * @throws TestFailure if current class loader is not specified;
      *                 or if class was actually loaded with different class loader
      *
      * @see #loadClass(String, String)
@@ -280,14 +279,14 @@ public class ClassUnloadCommon {
     public void loadClass(String className) throws ClassNotFoundException {
 
         if (customClassLoader == null) {
-            throw new Failure("No current class loader defined");
+            throw new TestFailure("No current class loader defined");
         }
 
         Class<?> cls = Class.forName(className, true, customClassLoader);
 
         // ensure that class was loaded by current class loader
         if (cls.getClassLoader() != customClassLoader) {
-            throw new Failure("Class was loaded by unexpected class loader: " + cls.getClassLoader());
+            throw new TestFailure("Class was loaded by unexpected class loader: " + cls.getClassLoader());
         }
 
         classObjects.add(cls);
@@ -307,7 +306,7 @@ public class ClassUnloadCommon {
      *
      * @throws ClassNotFoundException if no .class file found
      *          for specified class name
-     * @throws Failure if class was actually loaded with different class loader
+     * @throws TestFailure if class was actually loaded with different class loader
      *
      * @see #loadClass(String)
      * @see CustomClassLoader#setClassPath(String)
@@ -329,7 +328,7 @@ public class ClassUnloadCommon {
      * @return  <i>true</i> if classes unloading has been detected
              or <i>false</i> otherwise
      *
-     * @throws  Failure if exception other than OutOfMemoryError
+     * @throws  TestFailure if exception other than OutOfMemoryError
      *           is thrown while triggering full GC
      *
      * @see WhiteBox.getWhiteBox().fullGC()

@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib;
+package nsk.share;
 
 /**
  * Thrown to indicate failure caused by some occasional reason,
