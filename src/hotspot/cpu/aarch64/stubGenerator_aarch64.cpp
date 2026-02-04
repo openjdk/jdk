@@ -7189,6 +7189,17 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Multiply each 32-bit value in bs by the 32-bit values in as[lane_lo] and as[lane_lo + 2]
+  // and store in vs.
+  void neon_partial_mult_64(const VSeq<4>& vs, FloatRegister bs, FloatRegister as, int lane_lo) {
+
+    __ umullv(vs[0], __ T2D, bs, __ T2S, as, __ S, lane_lo);
+    __ umull2v(vs[1], __ T2D, bs, __ T4S, as, __ S, lane_lo);
+    __ umullv(vs[2], __ T2D, bs, __ T2S, as, __ S, lane_lo + 2);
+    __ umull2v(vs[3], __ T2D, bs, __ T4S, as, __ S, lane_lo + 2);
+
+  }
+
   address generate_intpoly_montgomeryMult_P256() {
 
     __ align(CodeEntryAlignment);
@@ -7279,10 +7290,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(sp, sp, 128);
     __ mov(mul_ptr, sp);
 
-    __ umullv(A[0], __ T2D, b_lows, __ T2S, a_vals, __ S, 0);
-    __ umull2v(A[1], __ T2D, b_lows, __ T4S, a_vals, __ S, 0);
-    __ umullv(A[2], __ T2D, b_lows, __ T2S, a_vals, __ S, 2);
-    __ umull2v(A[3], __ T2D, b_lows, __ T4S, a_vals, __ S, 2);
+    neon_partial_mult_64(A, b_lows, a_vals, 0);
 
     // Limb 0
     __ ldr(a_i, __ post(a, 8));
@@ -7294,10 +7302,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(low, low, limb_mask);
     __ andr(n, low, limb_mask);
 
-    __ umullv(B[0], __ T2D, b_highs, __ T2S, a_vals, __ S, 0);
-    __ umull2v(B[1], __ T2D, b_highs, __ T4S, a_vals, __ S, 0);
-    __ umullv(B[2], __ T2D, b_highs, __ T2S, a_vals, __ S, 2);
-    __ umull2v(B[3], __ T2D, b_highs, __ T4S, a_vals, __ S, 2);
+    neon_partial_mult_64(B, b_highs, a_vals, 0);
 
     // Limb 0 cont
     __ umulh(mod_high, n, mod_0);
@@ -7311,10 +7316,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lsr(c_i, low, shift2);
     __ add(c_i, c_i, high);
 
-    __ umullv(C[0], __ T2D, b_lows, __ T2S, a_vals, __ S, 1);
-    __ umull2v(C[1], __ T2D, b_lows, __ T4S, a_vals, __ S, 1);
-    __ umullv(C[2], __ T2D, b_lows, __ T2S, a_vals, __ S, 3);
-    __ umull2v(C[3], __ T2D, b_lows, __ T4S, a_vals, __ S, 3);
+    neon_partial_mult_64(C, b_lows, a_vals, 1);
 
     // Limb 1
     __ umulh(high, a_i, b_1);
@@ -7324,10 +7326,7 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(high, high, tmp);
     __ andr(low, low, limb_mask);
 
-    __ umullv(D[0], __ T2D, b_highs, __ T2S, a_vals, __ S, 1);
-    __ umull2v(D[1], __ T2D, b_highs, __ T4S, a_vals, __ S, 1);
-    __ umullv(D[2], __ T2D, b_highs, __ T2S, a_vals, __ S, 3);
-    __ umull2v(D[3], __ T2D, b_highs, __ T4S, a_vals, __ S, 3);
+    neon_partial_mult_64(D, b_highs, a_vals, 1);
 
     __ umulh(mod_high, n, mod_1);
     __ mul(mod_low, n, mod_1);
