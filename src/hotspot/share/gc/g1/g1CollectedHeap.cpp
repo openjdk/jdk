@@ -145,14 +145,14 @@ class G1GCMark : StackObj {
   GCIdMark _gc_id_mark;
   SvcGCMarker _sgcm;
   GCTraceCPUTime _tcpu;
-    
+
 public:
   G1GCMark(GCTracer* tracer, bool is_full_gc) :
     _rm(),
     _active_gc_mark(),
     _gc_id_mark(),
     _sgcm(is_full_gc ? SvcGCMarker::FULL : SvcGCMarker::MINOR),
-    _tcpu(tracer) {     
+    _tcpu(tracer) {
 
     assert_at_safepoint_on_vm_thread();
   }
@@ -2732,7 +2732,7 @@ void G1CollectedHeap::flush_region_pin_cache() {
   }
 }
 
-void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_size) { 
+void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_size) {
   G1GCMark gcm(_gc_tracer_stw, false /* is_full_gc */);
 
   _bytes_used_during_gc = 0;
