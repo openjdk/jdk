@@ -216,9 +216,10 @@ ciField::ciField(fieldDescriptor *fd) :
 static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   if (holder == nullptr)
     return false;
-  if (holder->name() == ciSymbols::java_lang_System())
-    // Never trust strangely unstable finals:  System.out, etc.
-    return false;
+  if (holder->trust_final_fields()) {
+    // Explicit opt-in from system classes
+    return true;
+  }
   // Even if general trusting is disabled, trust system-built closures in these packages.
   if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke") ||
       holder->is_in_package("java/lang/reflect") || holder->is_in_package("jdk/internal/reflect") ||
@@ -230,23 +231,9 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   // can't be serialized, so there is no hacking of finals going on with them.
   if (holder->is_hidden())
     return true;
-  // Trust final fields in all boxed classes
-  if (holder->is_box_klass())
-    return true;
   // Trust final fields in records
   if (holder->is_record())
     return true;
-  // Trust final fields in String
-  if (holder->name() == ciSymbols::java_lang_String())
-    return true;
-  // Trust Atomic*FieldUpdaters: they are very important for performance, and make up one
-  // more reason not to use Unsafe, if their final fields are trusted. See more in JDK-8140483.
-  if (holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl() ||
-      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater() ||
-      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater() ||
-      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl()) {
-    return true;
-  }
   return TrustFinalNonStaticFields;
 }
 
@@ -267,17 +254,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // not be constant is when the field is a *special* static & final field
       // whose value may change.  The three examples are java.lang.System.in,
       // java.lang.System.out, and java.lang.System.err.
-      assert(vmClasses::System_klass() != nullptr, "Check once per vm");
-      if (k == vmClasses::System_klass()) {
-        // Check offsets for case 2: System.in, System.out, or System.err
-        if (_offset == java_lang_System::in_offset()  ||
-            _offset == java_lang_System::out_offset() ||
-            _offset == java_lang_System::err_offset()) {
-          _is_constant = false;
-          return;
-        }
-      }
-      _is_constant = true;
+      _is_constant = !fd->is_mutable_static_final();
     } else {
       // An instance field can be constant if it's a final static field or if
       // it's a final non-static field of a trusted class (classes in

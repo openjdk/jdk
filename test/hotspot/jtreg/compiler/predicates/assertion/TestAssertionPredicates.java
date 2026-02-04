@@ -145,6 +145,19 @@
  */
 
 /*
+ * @test id=DataUpdateZGC
+ * @key randomness
+ * @bug 8288981 8350577 0360510
+ * @requires vm.compiler2.enabled
+ * @requires vm.gc.Z
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+AbortVMOnCompilationFailure -XX:+UseZGC
+ *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
+ *                   compiler.predicates.assertion.TestAssertionPredicates DataUpdate
+ */
+
+/*
  * @test id=CloneDown
  * @bug 8288981 8350577
  * @requires vm.compiler2.enabled

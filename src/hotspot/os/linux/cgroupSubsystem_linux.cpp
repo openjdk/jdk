@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -612,7 +612,6 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  *
  * cpu affinity
  * cgroup cpu quota & cpu period
- * cgroup cpu shares
  *
  * Algorithm:
  *
@@ -623,58 +622,67 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  *
  * All results of division are rounded up to the next whole number.
  *
- * If quotas have not been specified, return the
- * number of active processors in the system.
+ * If quotas have not been specified, sets the result reference to
+ * the number of active processors in the system.
  *
- * If quotas have been specified, the resulting number
- * returned will never exceed the number of active processors.
+ * If quotas have been specified, the number set in the result
+ * reference will never exceed the number of active processors.
  *
  * return:
- *    number of CPUs
+ *    true if there were no errors. false otherwise.
  */
-int CgroupSubsystem::active_processor_count() {
-  int quota_count = 0;
-  int cpu_count;
-  int result;
-
+bool CgroupSubsystem::active_processor_count(double& value) {
   // We use a cache with a timeout to avoid performing expensive
   // computations in the event this function is called frequently.
   // [See 8227006].
-  CachingCgroupController<CgroupCpuController>* contrl = cpu_controller();
-  CachedMetric* cpu_limit = contrl->metrics_cache();
+  CachingCgroupController<CgroupCpuController, double>* contrl = cpu_controller();
+  CachedMetric<double>* cpu_limit = contrl->metrics_cache();
   if (!cpu_limit->should_check_metric()) {
-    int val = (int)cpu_limit->value();
-    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %d", val);
-    return val;
+    value = cpu_limit->value();
+    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %.2f", value);
+    return true;
   }
 
-  cpu_count = os::Linux::active_processor_count();
-  result = CgroupUtil::processor_count(contrl->controller(), cpu_count);
+  int cpu_count = os::Linux::active_processor_count();
+  double result = -1;
+  if (!CgroupUtil::processor_count(contrl->controller(), cpu_count, result)) {
+    return false;
+  }
+  assert(result > 0 && result <= cpu_count, "must be");
   // Update cached metric to avoid re-reading container settings too often
   cpu_limit->set_value(result, OSCONTAINER_CACHE_TIMEOUT);
+  value = result;
 
-  return result;
+  return true;
 }
 
 /* memory_limit_in_bytes
  *
- * Return the limit of available memory for this process.
+ * Return the limit of available memory for this process in the provided
+ * physical_memory_size_type reference. If there was no limit value set in the underlying
+ * interface files 'value_unlimited' is returned.
  *
  * return:
- *    memory limit in bytes or
- *    -1 for unlimited
- *    OSCONTAINER_ERROR for not supported
+ *    false if retrieving the value failed
+ *    true if retrieving the value was successfull and the value was
+ *    set in the 'value' reference.
  */
-jlong CgroupSubsystem::memory_limit_in_bytes(julong upper_bound) {
-  CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
-  CachedMetric* memory_limit = contrl->metrics_cache();
+bool CgroupSubsystem::memory_limit_in_bytes(physical_memory_size_type upper_bound,
+                                            physical_memory_size_type& value) {
+  CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* contrl = memory_controller();
+  CachedMetric<physical_memory_size_type>* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
-    return memory_limit->value();
+    value = memory_limit->value();
+    return true;
   }
-  jlong mem_limit = contrl->controller()->read_memory_limit_in_bytes(upper_bound);
+  physical_memory_size_type mem_limit = 0;
+  if (!contrl->controller()->read_memory_limit_in_bytes(upper_bound, mem_limit)) {
+    return false;
+  }
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
-  return mem_limit;
+  value = mem_limit;
+  return true;
 }
 
 bool CgroupController::read_string(const char* filename, char* buf, size_t buf_size) {
@@ -719,36 +727,35 @@ bool CgroupController::read_string(const char* filename, char* buf, size_t buf_s
   return true;
 }
 
-bool CgroupController::read_number(const char* filename, julong* result) {
+bool CgroupController::read_number(const char* filename, uint64_t& result) {
   char buf[1024];
   bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
-  int matched = sscanf(buf, JULONG_FORMAT, result);
+  int matched = sscanf(buf, UINT64_FORMAT, &result);
   if (matched == 1) {
     return true;
   }
   return false;
 }
 
-bool CgroupController::read_number_handle_max(const char* filename, jlong* result) {
+bool CgroupController::read_number_handle_max(const char* filename, uint64_t& result) {
   char buf[1024];
   bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
     return false;
   }
-  jlong val = limit_from_str(buf);
-  if (val == OSCONTAINER_ERROR) {
+  uint64_t val = 0;
+  if (!limit_from_str(buf, val)) {
     return false;
   }
-  *result = val;
+  result = val;
   return true;
 }
 
-bool CgroupController::read_numerical_key_value(const char* filename, const char* key, julong* result) {
+bool CgroupController::read_numerical_key_value(const char* filename, const char* key, uint64_t& result) {
   assert(key != nullptr, "key must be given");
-  assert(result != nullptr, "result pointer must not be null");
   assert(filename != nullptr, "file to search in must be given");
   const char* s_path = subsystem_path();
   if (s_path == nullptr) {
@@ -786,7 +793,7 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
           && after_key != '\n') {
       // Skip key, skip space
       const char* value_substr = line + key_len + 1;
-      int matched = sscanf(value_substr, JULONG_FORMAT, result);
+      int matched = sscanf(value_substr, UINT64_FORMAT, &result);
       found_match = matched == 1;
       if (found_match) {
         break;
@@ -797,12 +804,12 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   if (found_match) {
     return true;
   }
-  log_debug(os, container)("Type %s (key == %s) not found in file %s", JULONG_FORMAT,
+  log_debug(os, container)("Type %s (key == %s) not found in file %s", UINT64_FORMAT,
                            key, absolute_path);
   return false;
 }
 
-bool CgroupController::read_numerical_tuple_value(const char* filename, bool use_first, jlong* result) {
+bool CgroupController::read_numerical_tuple_value(const char* filename, bool use_first, uint64_t& result) {
   char buf[1024];
   bool is_ok = read_string(filename, buf, 1024);
   if (!is_ok) {
@@ -813,80 +820,90 @@ bool CgroupController::read_numerical_tuple_value(const char* filename, bool use
   if (matched != 1) {
     return false;
   }
-  jlong val = limit_from_str(token);
-  if (val == OSCONTAINER_ERROR) {
+  uint64_t val = 0;
+  if (!limit_from_str(token, val)) {
     return false;
   }
-  *result = val;
+  result = val;
   return true;
 }
 
-jlong CgroupController::limit_from_str(char* limit_str) {
+bool CgroupController::limit_from_str(char* limit_str, uint64_t& value) {
   if (limit_str == nullptr) {
-    return OSCONTAINER_ERROR;
+    return false;
   }
   // Unlimited memory in cgroups is the literal string 'max' for
   // some controllers, for example the pids controller.
   if (strcmp("max", limit_str) == 0) {
-    return (jlong)-1;
+    value = value_unlimited;
+    return true;
   }
-  julong limit;
-  if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
-    return OSCONTAINER_ERROR;
+  uint64_t limit;
+  if (sscanf(limit_str, UINT64_FORMAT, &limit) != 1) {
+    return false;
   }
-  return (jlong)limit;
+  value = limit;
+  return true;
 }
 
 // CgroupSubsystem implementations
-
-jlong CgroupSubsystem::memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
-  return memory_controller()->controller()->memory_and_swap_limit_in_bytes(upper_mem_bound, upper_swap_bound);
+bool CgroupSubsystem::memory_and_swap_limit_in_bytes(physical_memory_size_type upper_mem_bound,
+                                                     physical_memory_size_type upper_swap_bound,
+                                                     physical_memory_size_type& value) {
+  return memory_controller()->controller()->memory_and_swap_limit_in_bytes(upper_mem_bound,
+                                                                           upper_swap_bound,
+                                                                           value);
 }
 
-jlong CgroupSubsystem::memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
-  return memory_controller()->controller()->memory_and_swap_usage_in_bytes(upper_mem_bound, upper_swap_bound);
+bool CgroupSubsystem::memory_and_swap_usage_in_bytes(physical_memory_size_type upper_mem_bound,
+                                                     physical_memory_size_type upper_swap_bound,
+                                                     physical_memory_size_type& value) {
+  return memory_controller()->controller()->memory_and_swap_usage_in_bytes(upper_mem_bound,
+                                                                           upper_swap_bound,
+                                                                           value);
 }
 
-jlong CgroupSubsystem::memory_soft_limit_in_bytes(julong upper_bound) {
-  return memory_controller()->controller()->memory_soft_limit_in_bytes(upper_bound);
+bool CgroupSubsystem::memory_soft_limit_in_bytes(physical_memory_size_type upper_bound,
+                                                 physical_memory_size_type& value) {
+  return memory_controller()->controller()->memory_soft_limit_in_bytes(upper_bound, value);
 }
 
-jlong CgroupSubsystem::memory_throttle_limit_in_bytes() {
-  return memory_controller()->controller()->memory_throttle_limit_in_bytes();
+bool CgroupSubsystem::memory_throttle_limit_in_bytes(physical_memory_size_type& value) {
+  return memory_controller()->controller()->memory_throttle_limit_in_bytes(value);
 }
 
-jlong CgroupSubsystem::memory_usage_in_bytes() {
-  return memory_controller()->controller()->memory_usage_in_bytes();
+bool CgroupSubsystem::memory_usage_in_bytes(physical_memory_size_type& value) {
+  return memory_controller()->controller()->memory_usage_in_bytes(value);
 }
 
-jlong CgroupSubsystem::memory_max_usage_in_bytes() {
-  return memory_controller()->controller()->memory_max_usage_in_bytes();
+bool CgroupSubsystem::memory_max_usage_in_bytes(physical_memory_size_type& value) {
+  return memory_controller()->controller()->memory_max_usage_in_bytes(value);
 }
 
-jlong CgroupSubsystem::rss_usage_in_bytes() {
-  return memory_controller()->controller()->rss_usage_in_bytes();
+bool CgroupSubsystem::rss_usage_in_bytes(physical_memory_size_type& value) {
+  return memory_controller()->controller()->rss_usage_in_bytes(value);
 }
 
-jlong CgroupSubsystem::cache_usage_in_bytes() {
-  return memory_controller()->controller()->cache_usage_in_bytes();
+bool CgroupSubsystem::cache_usage_in_bytes(physical_memory_size_type& value) {
+  return memory_controller()->controller()->cache_usage_in_bytes(value);
 }
 
-int CgroupSubsystem::cpu_quota() {
-  return cpu_controller()->controller()->cpu_quota();
+bool CgroupSubsystem::cpu_quota(int& value) {
+  return cpu_controller()->controller()->cpu_quota(value);
 }
 
-int CgroupSubsystem::cpu_period() {
-  return cpu_controller()->controller()->cpu_period();
+bool CgroupSubsystem::cpu_period(int& value) {
+  return cpu_controller()->controller()->cpu_period(value);
 }
 
-int CgroupSubsystem::cpu_shares() {
-  return cpu_controller()->controller()->cpu_shares();
+bool CgroupSubsystem::cpu_shares(int& value) {
+  return cpu_controller()->controller()->cpu_shares(value);
 }
 
-jlong CgroupSubsystem::cpu_usage_in_micros() {
-  return cpuacct_controller()->cpu_usage_in_micros();
+bool CgroupSubsystem::cpu_usage_in_micros(uint64_t& value) {
+  return cpuacct_controller()->cpu_usage_in_micros(value);
 }
 
-void CgroupSubsystem::print_version_specific_info(outputStream* st, julong upper_mem_bound) {
+void CgroupSubsystem::print_version_specific_info(outputStream* st, physical_memory_size_type upper_mem_bound) {
   memory_controller()->controller()->print_version_specific_info(st, upper_mem_bound);
 }

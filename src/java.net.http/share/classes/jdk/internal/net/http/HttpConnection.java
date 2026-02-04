@@ -32,7 +32,6 @@ import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -43,8 +42,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
-import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 
@@ -285,23 +282,6 @@ abstract class HttpConnection implements Closeable {
      */
     abstract HttpPublisher publisher();
 
-    // HTTP/2 MUST use TLS version 1.2 or higher for HTTP/2 over TLS
-    private static final Predicate<String> testRequiredHTTP2TLSVersion = proto ->
-            proto.equals("TLSv1.2") || proto.equals("TLSv1.3");
-
-   /**
-    * Returns true if the given client's SSL parameter protocols contains at
-    * least one TLS version that HTTP/2 requires.
-    */
-   private static final boolean hasRequiredHTTP2TLSVersion(HttpClient client) {
-       String[] protos = client.sslParameters().getProtocols();
-       if (protos != null) {
-           return Arrays.stream(protos).filter(testRequiredHTTP2TLSVersion).findAny().isPresent();
-       } else {
-           return false;
-       }
-   }
-
     /**
      * Factory for retrieving HttpConnections. A connection can be retrieved
      * from the connection pool, or a new one created if none available.
@@ -359,7 +339,7 @@ abstract class HttpConnection implements Closeable {
             } else {
                 assert !request.isHttp3Only(version); // should have failed before
                 String[] alpn = null;
-                if (version == HTTP_2 && hasRequiredHTTP2TLSVersion(client)) {
+                if (version == HTTP_2 && client.hasRequiredHTTP2TLSVersion()) {
                     // We only come here after we have checked the HTTP/2 connection pool.
                     // We will not negotiate HTTP/2 if we don't have the appropriate TLS version
                     alpn = new String[] { Alpns.H2, Alpns.HTTP_1_1 };
@@ -540,9 +520,7 @@ abstract class HttpConnection implements Closeable {
      * Closes this connection due to the given cause.
      * @param cause the cause for which the connection is closed, may be null
      */
-    void close(Throwable cause) {
-        close();
-    }
+    abstract void close(Throwable cause);
 
     /**
      * {@return the underlying connection flow, if applicable}

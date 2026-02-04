@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -130,6 +130,7 @@ class MemBarNode;
 class MemBarStoreStoreNode;
 class MemNode;
 class MergeMemNode;
+class MinMaxNode;
 class MoveNode;
 class MulNode;
 class MultiNode;
@@ -809,6 +810,7 @@ public:
     DEFINE_CLASS_ID(AddP,     Node, 9)
     DEFINE_CLASS_ID(BoxLock,  Node, 10)
     DEFINE_CLASS_ID(Add,      Node, 11)
+      DEFINE_CLASS_ID(MinMax,      Add, 0)
     DEFINE_CLASS_ID(Mul,      Node, 12)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
@@ -828,26 +830,27 @@ public:
   #undef DEFINE_CLASS_ID
 
   // Flags are sorted by usage frequency.
-  enum NodeFlags {
-    Flag_is_Copy                     = 1 << 0, // should be first bit to avoid shift
-    Flag_rematerialize               = 1 << 1,
-    Flag_needs_anti_dependence_check = 1 << 2,
-    Flag_is_macro                    = 1 << 3,
-    Flag_is_Con                      = 1 << 4,
-    Flag_is_cisc_alternate           = 1 << 5,
-    Flag_is_dead_loop_safe           = 1 << 6,
-    Flag_may_be_short_branch         = 1 << 7,
-    Flag_avoid_back_to_back_before   = 1 << 8,
-    Flag_avoid_back_to_back_after    = 1 << 9,
-    Flag_has_call                    = 1 << 10,
-    Flag_has_swapped_edges           = 1 << 11,
-    Flag_is_scheduled                = 1 << 12,
-    Flag_is_expensive                = 1 << 13,
-    Flag_is_predicated_vector        = 1 << 14,
-    Flag_for_post_loop_opts_igvn     = 1 << 15,
-    Flag_for_merge_stores_igvn       = 1 << 16,
-    Flag_is_removed_by_peephole      = 1 << 17,
-    Flag_is_predicated_using_blend   = 1 << 18,
+  enum NodeFlags : uint64_t {
+    Flag_is_Copy                     = 1ULL << 0, // should be first bit to avoid shift
+    Flag_rematerialize               = 1ULL << 1,
+    Flag_needs_anti_dependence_check = 1ULL << 2,
+    Flag_is_macro                    = 1ULL << 3,
+    Flag_is_Con                      = 1ULL << 4,
+    Flag_is_cisc_alternate           = 1ULL << 5,
+    Flag_is_dead_loop_safe           = 1ULL << 6,
+    Flag_may_be_short_branch         = 1ULL << 7,
+    Flag_avoid_back_to_back_before   = 1ULL << 8,
+    Flag_avoid_back_to_back_after    = 1ULL << 9,
+    Flag_has_call                    = 1ULL << 10,
+    Flag_has_swapped_edges           = 1ULL << 11,
+    Flag_is_scheduled                = 1ULL << 12,
+    Flag_is_expensive                = 1ULL << 13,
+    Flag_is_predicated_vector        = 1ULL << 14, // Marked on a vector node that has an additional
+                                                   // mask input controlling the lane operations.
+    Flag_for_post_loop_opts_igvn     = 1ULL << 15,
+    Flag_for_merge_stores_igvn       = 1ULL << 16,
+    Flag_is_removed_by_peephole      = 1ULL << 17,
+    Flag_is_predicated_using_blend   = 1ULL << 18,
     _last_flag                       = Flag_is_predicated_using_blend
   };
 
@@ -986,6 +989,7 @@ public:
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MemBarStoreStore)
   DEFINE_CLASS_QUERY(MergeMem)
+  DEFINE_CLASS_QUERY(MinMax)
   DEFINE_CLASS_QUERY(Move)
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
@@ -1179,6 +1183,7 @@ public:
   // Return a node with opcode "opc" and same inputs as "this" if one can
   // be found; Otherwise return null;
   Node* find_similar(int opc);
+  bool has_same_inputs_as(const Node* other) const;
 
   // Return the unique control out if only one. Null if none or more than one.
   Node* unique_ctrl_out_or_null() const;
@@ -2176,7 +2181,10 @@ class BFSActions : public StackObj {
   virtual bool is_target_node(Node* node) const = 0;
 
   // Defines an action that should be taken when we visit a target node in the BFS traversal.
-  virtual void target_node_action(Node* target_node) = 0;
+  // To give more freedom, we pass the direct child node to the target node such that
+  // child->in(i) == target node. This allows to also directly replace the target node instead
+  // of only updating its inputs.
+  virtual void target_node_action(Node* child, uint i) = 0;
 };
 
 // Class to perform a BFS traversal on the data nodes from a given start node. The provided BFSActions guide which
@@ -2198,7 +2206,7 @@ class DataNodeBFS : public StackObj {
         Node* input = next->in(j);
         if (_bfs_actions.is_target_node(input)) {
           assert(_bfs_actions.should_visit(input), "must also pass node filter");
-          _bfs_actions.target_node_action(input);
+          _bfs_actions.target_node_action(next, j);
         } else if (_bfs_actions.should_visit(input)) {
           _nodes_to_visit.push(input);
         }

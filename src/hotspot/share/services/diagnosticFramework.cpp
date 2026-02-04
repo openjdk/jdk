@@ -563,10 +563,6 @@ DCmd* DCmdFactory::create_local_DCmd(DCmdSource source, CmdLine &line,
                                      outputStream* out, TRAPS) {
   DCmdFactory* f = factory(source, line.cmd_addr(), line.cmd_len());
   if (f != nullptr) {
-    if (!f->is_enabled()) {
-      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-                     f->disabled_message());
-    }
     return f->create_resource_instance(out);
   }
   THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
@@ -594,8 +590,7 @@ GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
     if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(new DCmdInfo(factory->name(),
                     factory->description(), factory->impact(),
-                    factory->num_arguments(),
-                    factory->is_enabled()));
+                    factory->num_arguments()));
     }
     factory = factory->next();
   }

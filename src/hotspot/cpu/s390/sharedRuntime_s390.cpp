@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1567,7 +1567,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //---------------------------------------------------------------------
   wrapper_VEPStart = __ offset();
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = Z_R1_scratch;
     // Notify OOP recorder (don't need the relocation)
@@ -2378,24 +2379,22 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   // Class initialization barrier for static methods
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
-      __ z_bfalse(L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
+  __ z_bfalse(L_skip_barrier); // non-static
 
-    Register klass = Z_R11;
-    __ load_method_holder(klass, Z_method);
-    __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
+  Register klass = Z_R11;
+  __ load_method_holder(klass, Z_method);
+  __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
 
-    __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub());
-    __ z_br(klass);
+  __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub());
+  __ z_br(klass);
 
-    __ bind(L_skip_barrier);
-    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
   return;
@@ -2544,14 +2543,10 @@ void SharedRuntime::generate_deopt_blob() {
   // Normal entry (non-exception case)
   //
   // We have been called from the deopt handler of the deoptee.
-  // Z_R14 points behind the call in the deopt handler. We adjust
-  // it such that it points to the start of the deopt handler.
+  // Z_R14 points to the entry point of the deopt handler.
   // The return_pc has been stored in the frame of the deoptee and
   // will replace the address of the deopt_handler in the call
   // to Deoptimization::fetch_unroll_info below.
-  // The (int) cast is necessary, because -((unsigned int)14)
-  // is an unsigned int.
-  __ add2reg(Z_R14, -(int)NativeCall::max_instruction_size());
 
   const Register   exec_mode_reg = Z_tmp_1;
 

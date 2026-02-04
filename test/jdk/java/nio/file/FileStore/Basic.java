@@ -38,6 +38,7 @@ import java.io.IOException;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
+import static jdk.test.lib.Asserts.*;
 
 public class Basic {
 
@@ -50,11 +51,6 @@ public class Basic {
         } finally {
             TestUtil.removeAll(dir);
         }
-    }
-
-    static void assertTrue(boolean okay) {
-        if (!okay)
-            throw new RuntimeException("Assertion failed");
     }
 
     static void checkWithin1GB(String space, long expected, long actual) {
@@ -73,8 +69,11 @@ public class Basic {
         FileStore store = Files.getFileStore(file);
         boolean supported = store.supportsFileAttributeView(viewClass);
         assertTrue(store.supportsFileAttributeView(viewName) == supported);
-        boolean haveView = Files.getFileAttributeView(file, viewClass) != null;
-        assertTrue(haveView == supported);
+        // If the file attribute view is supported by the FileStore then
+        // Files.getFileAttributeView should return that view
+        if (supported) {
+            assertNotNull(Files.getFileAttributeView(file, viewClass));
+        }
     }
 
     static void doTests(Path dir) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,7 +564,8 @@ public final class LinuxHelper {
         for (var e : List.of(
                 Map.entry("Type", "Application"),
                 Map.entry("Terminal", "false"),
-                Map.entry("Comment", launcherDescription)
+                Map.entry("Comment", launcherDescription),
+                Map.entry("Categories", Optional.ofNullable(cmd.getArgumentValue("--linux-menu-group")).orElse("Utility"))
         )) {
             String key = e.getKey();
             TKit.assertEquals(e.getValue(), data.find(key).orElseThrow(), String.format(
@@ -644,7 +645,7 @@ public final class LinuxHelper {
     }
 
     private static void withTestFileAssociationsFile(FileAssociations fa,
-            ThrowingConsumer<Path> consumer) {
+            ThrowingConsumer<Path, ? extends Exception> consumer) {
         boolean iterated[] = new boolean[] { false };
         PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
             if (!iterated[0]) {
@@ -722,7 +723,9 @@ public final class LinuxHelper {
 
     private static Optional<String> queryMimeTypeDefaultHandler(String mimeType) {
         return Executor.of("xdg-mime", "query", "default", mimeType)
-                .discardStderr().saveFirstLineOfOutput().execute().findFirstLineOfOutput();
+                .discardStderr()
+                .saveFirstLineOfOutput()
+                .execute().getOutput().stream().findFirst();
     }
 
     private static void verifyIconInScriptlet(Scriptlet scriptletType,

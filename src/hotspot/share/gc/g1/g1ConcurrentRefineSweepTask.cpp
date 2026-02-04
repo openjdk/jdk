@@ -24,6 +24,7 @@
 
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
 
 class G1RefineRegionClosure : public G1HeapRegionClosure {

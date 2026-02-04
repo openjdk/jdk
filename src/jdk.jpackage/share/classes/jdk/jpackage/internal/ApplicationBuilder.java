@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -38,39 +39,27 @@ import java.util.function.Predicate;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
-import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
 import jdk.jpackage.internal.model.RuntimeBuilder;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class ApplicationBuilder {
 
-    Application create() throws ConfigException {
+    Application create() {
         Objects.requireNonNull(appImageLayout);
 
         final var launchersAsList = Optional.ofNullable(launchers).map(
                 ApplicationLaunchers::asList).orElseGet(List::of);
 
-        final var launcherCount = launchersAsList.size();
-
-        if (launcherCount != launchersAsList.stream().map(Launcher::name).distinct().count()) {
-            throw buildConfigException("ERR_NoUniqueName").create();
-        }
-
-        final String effectiveName;
-        if (name != null) {
-            effectiveName = name;
-        } else if (!launchersAsList.isEmpty()) {
-            effectiveName = launchers.mainLauncher().name();
-        } else {
-            throw buildConfigException("error.no.name").advice("error.no.name.advice").create();
-        }
-
-        Objects.requireNonNull(launchersAsList);
+        final String effectiveName = Optional.ofNullable(name).or(() -> {
+            return Optional.ofNullable(launchers).map(ApplicationLaunchers::mainLauncher).map(Launcher::name);
+        }).orElseThrow(() -> {
+            return buildConfigException("error.no.name").advice("error.no.name.advice").create();
+        });
 
         return new Application.Stub(
                 effectiveName,
@@ -78,9 +67,12 @@ final class ApplicationBuilder {
                 Optional.ofNullable(version).orElseGet(DEFAULTS::version),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
-                Optional.ofNullable(srcDir),
-                Optional.ofNullable(contentDirs).orElseGet(List::of),
-                appImageLayout, Optional.ofNullable(runtimeBuilder), launchersAsList, Map.of());
+                Optional.ofNullable(appDirSources).orElseGet(List::of),
+                Optional.ofNullable(contentDirSources).orElseGet(List::of),
+                appImageLayout,
+                Optional.ofNullable(runtimeBuilder),
+                launchersAsList,
+                Map.of());
     }
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {
@@ -88,25 +80,8 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder initFromExternalApplication(ExternalApplication app,
-            Function<LauncherInfo, Launcher> mapper) {
-
-        externalApp = Objects.requireNonNull(app);
-
-        if (version == null) {
-            version = app.getAppVersion();
-        }
-        if (name == null) {
-            name = app.getAppName();
-        }
-        runtimeBuilder = null;
-
-        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false, Map.of());
-
-        launchers = new ApplicationLaunchers(
-                mapper.apply(mainLauncherInfo),
-                app.getAddLaunchers().stream().map(mapper).toList());
-
+    ApplicationBuilder externalApplication(ExternalApplication v) {
+        externalApp = v;
         return this;
     }
 
@@ -121,15 +96,6 @@ final class ApplicationBuilder {
 
     Optional<ExternalApplication> externalApplication() {
         return Optional.ofNullable(externalApp);
-    }
-
-    Optional<String> mainLauncherClassName() {
-        return launchers()
-                .map(ApplicationLaunchers::mainLauncher)
-                .flatMap(Launcher::startupInfo)
-                .map(LauncherStartupInfo::qualifiedClassName).or(() -> {
-                    return externalApplication().map(ExternalApplication::getMainClass);
-                });
     }
 
     ApplicationBuilder appImageLayout(AppImageLayout v) {
@@ -162,13 +128,13 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder srcDir(Path v) {
-        srcDir = v;
+    ApplicationBuilder appDirSources(Collection<RootedPath> v) {
+        appDirSources = v;
         return this;
     }
 
-    ApplicationBuilder contentDirs(List<Path> v) {
-        contentDirs = v;
+    ApplicationBuilder contentDirSources(Collection<RootedPath> v) {
+        contentDirSources = v;
         return this;
     }
 
@@ -282,8 +248,8 @@ final class ApplicationBuilder {
                 app.version(),
                 app.vendor(),
                 app.copyright(),
-                app.srcDir(),
-                app.contentDirs(),
+                app.appDirSources(),
+                app.contentDirSources(),
                 Objects.requireNonNull(appImageLayout),
                 app.runtimeBuilder(),
                 app.launchers(),
@@ -330,9 +296,9 @@ final class ApplicationBuilder {
     private String version;
     private String vendor;
     private String copyright;
-    private Path srcDir;
+    private Collection<RootedPath> appDirSources;
     private ExternalApplication externalApp;
-    private List<Path> contentDirs;
+    private Collection<RootedPath> contentDirSources;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;

@@ -65,6 +65,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
   _is_hidden = ik->is_hidden();
   _is_record = ik->is_record();
+  _trust_final_fields = ik->trust_final_fields();
   _nonstatic_fields = nullptr; // initialized lazily by compute_nonstatic_fields:
   _has_injected_fields = -1;
   _implementor = nullptr; // we will fill these lazily
@@ -605,7 +606,7 @@ bool ciInstanceKlass::is_leaf_type() {
   if (is_shared()) {
     return is_final();  // approximately correct
   } else {
-    return !has_subklass() && (nof_implementors() == 0);
+    return !has_subklass() && (!is_interface() || nof_implementors() == 0);
   }
 }
 
@@ -619,6 +620,7 @@ bool ciInstanceKlass::is_leaf_type() {
 // This is OK, since any dependencies we decide to assert
 // will be checked later under the Compile_lock.
 ciInstanceKlass* ciInstanceKlass::implementor() {
+  assert(is_interface(), "required");
   ciInstanceKlass* impl = _implementor;
   if (impl == nullptr) {
     if (is_shared()) {

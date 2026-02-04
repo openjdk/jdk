@@ -1854,14 +1854,17 @@ public class Code {
             } else {
                 t1 = types.skipTypeVars(t1, false);
                 t2 = types.skipTypeVars(t2, false);
-                List<Type> intersection = types.intersect(
-                        t1.hasTag(ARRAY) ?
-                                List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
-                                types.erasedSupertypes(t1),
-                        t2.hasTag(ARRAY) ?
-                                List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
-                                types.erasedSupertypes(t2));
-                return intersection.head;
+                List<Type> result = types.closureMin(
+                        types.intersect(
+                            t1.hasTag(ARRAY) ?
+                                    List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                                    types.erasedSupertypes(t1),
+                            t2.hasTag(ARRAY) ?
+                                    List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                                    types.erasedSupertypes(t2)
+                        )
+                );
+                return result.head;
             }
         }
 
