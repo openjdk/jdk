@@ -230,8 +230,10 @@ private:
   CHeapBitMap _rw_ptrmap;   // marks pointers in the RW region
   CHeapBitMap _ro_ptrmap;   // marks pointers in the RO region
 
-  SourceObjList _rw_src_objs;                 // objs to put in rw region
+  SourceObjList _klass_src_objs;              // Klass objects (must be at start of rw region for encoding)
+  SourceObjList _rw_src_objs;                 // non-Klass objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
+  size_t _klass_region_size;                  // size of Klass region (must fit in narrow klass encoding range)
   ResizeableHashTable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
   ResizeableHashTable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
@@ -473,6 +475,9 @@ public:
   // All klasses and symbols that will be copied into the archive
   GrowableArray<Klass*>*  klasses() const { return _klasses; }
   GrowableArray<Symbol*>* symbols() const { return _symbols; }
+
+  // Size of the Klass region (must fit within narrow klass encoding range)
+  size_t klass_region_size() const { return _klass_region_size; }
 
   static bool is_active() {
     CDS_ONLY(return (_current != nullptr));

@@ -27,10 +27,17 @@
 
 #include "oops/klass.hpp"
 
+#include "cds/aotLogging.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
+#include "oops/markWord.inline.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/rotate_bits.hpp"
+
+#if INCLUDE_CDS
+#include "cds/narrowKlassRemapper.hpp"
+#endif
 
 // This loads and keeps the klass's loader alive.
 inline oop Klass::klass_holder() const {
@@ -71,6 +78,25 @@ inline markWord Klass::prototype_header() const {
   // class space and have no narrow Klass ID. But in that case we should not need the prototype.
   assert(_prototype_header.narrow_klass() > 0, "Klass " PTR_FORMAT ": invalid prototype (" PTR_FORMAT ")",
          p2i(this), _prototype_header.value());
+
+  // For archived Klasses, if the narrow Klass encoding changed at runtime
+  // (e.g., due to split encoding mode), we need to remap the narrow Klass ID
+  // in the prototype header. This handles the case where objects are allocated
+  // before restore_unshareable_info() is called for this class.
+  // IMPORTANT: We must update the field in memory, not just return a remapped value,
+  // because the template interpreter reads _prototype_header directly from memory
+  // at a fixed offset, bypassing this C++ accessor.
+  if (CDS_ONLY(in_aot_cache() && NarrowKlassRemapper::needs_remapping()) NOT_CDS(false)) {
+    narrowKlass nk = _prototype_header.narrow_klass();
+    if (NarrowKlassRemapper::is_dump_time_value(nk)) {
+      narrowKlass runtime_nk = NarrowKlassRemapper::remap(nk);
+      markWord remapped = _prototype_header.set_narrow_klass(runtime_nk);
+      // Update the field in memory (cast away const - this is safe because
+      // the Klass is in the mapped archive which is writeable for this purpose)
+      const_cast<Klass*>(this)->_prototype_header = remapped;
+      return remapped;
+    }
+  }
 #endif
   return _prototype_header;
 }

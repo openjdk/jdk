@@ -47,7 +47,13 @@ public class LargeArchive {
 
     // Mega classes with many fields contribute most to archive size (~1MB+ each).
     // Simple classes are much smaller (~1-2KB each) but take time to generate/load.
-    // Defaults tuned for >2GB archives with fast test execution (fewer classes to load).
+    //
+    // Archive size constraints with UseCompactObjectHeaders:
+    // - The narrow klass encoding range is 4GB (22-bit narrowKlass + 10-bit shift)
+    // - Both the archive (Klass region) and Class Space must fit within this 4GB range
+    // - With CompressedClassSpaceSize=256m, archive can be up to ~3.7GB
+    // - For larger archives, split mapping would be needed (not yet implemented)
+    //
     // Note: Java class file format limits fields to 65,535 per class.
     private static final int SIMPLE_CLASSES = Integer.getInteger("test.archive.large.simple", 1_000);
     private static final int MEGA_CLASSES = Integer.getInteger("test.archive.large.mega", 2_500);
@@ -63,10 +69,14 @@ public class LargeArchive {
             LargeArchiveUtil.createGeneratedJar(jar, SIMPLE_CLASSES, MEGA_CLASSES, MEGA_FIELDS);
 
             SimpleCDSAppTester tester = SimpleCDSAppTester.of("LargeArchive")
-                    .addVmArgs("-Xmx4G",
-                               "-XX:CompressedClassSpaceSize=4g",
-                               "-XX:MaxMetaspaceSize=12G",
-                               "-Xlog:aot=info")
+                    .addVmArgs("-Xmx8G",
+                               "-XX:+UnlockExperimentalVMOptions",
+                               "-XX:+UseCompactObjectHeaders",
+                               // With UseCompactObjectHeaders, archive + class space must fit in 4GB encoding range.
+                               // Reduce class space size to fit within limit with ~3.5GB archive.
+                               "-XX:CompressedClassSpaceSize=256m",
+                               "-XX:MaxMetaspaceSize=20G",
+                               "-Xlog:aot=debug")
                     .classpath("app.jar", jar.toString())
                     .appCommandLine("LargeArchiveApp",
                                     Integer.toString(SIMPLE_CLASSES),

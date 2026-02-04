@@ -34,6 +34,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/narrowKlassRemapper.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
@@ -1768,10 +1769,42 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
       // Set up ccs in metaspace.
       Metaspace::initialize_class_space(class_space_rs);
 
+      // With UseCompactObjectHeaders and large archives, only the Klass region (at the start
+      // of the archive) needs to be within the encoding range. The non-Klass metadata can
+      // extend beyond since it's accessed via 64-bit pointers.
+      const size_t klass_region_size = static_mapinfo->header()->klass_region_size();
+      const size_t archive_size = archive_space_rs.size();
+
+      // Detect split encoding mode: class_space is BEFORE archive
+      // Normal layout: [archive][gap][class_space]  -> class_space_rs.base() > archive_space_rs.base()
+      // Split layout:  [class_space][gap][archive]  -> class_space_rs.base() < archive_space_rs.base()
+      const bool use_split_encoding = UseCompactObjectHeaders && klass_region_size > 0
+                                        && (address)class_space_rs.base() < (address)archive_space_rs.base();
+
       // Set up compressed Klass pointer encoding: the encoding range must
-      //  cover both archive and class space.
-      const address klass_range_start = (address)mapped_base_address;
-      const size_t klass_range_size = (address)class_space_rs.end() - klass_range_start;
+      //  cover both archive Klass region and class space.
+      address klass_range_start;
+      size_t klass_range_size;
+
+      if (use_split_encoding) {
+        // Layout: [class_space][gap][archive]
+        // Encoding base is class_space start, encoding must cover class_space + gap + klass_region
+        klass_range_start = (address)class_space_rs.base();
+        // Klass region starts at archive_base (after protection zone offset, but the protection zone
+        // is at the start of archive_space_rs already).
+        const address klass_region_end = (address)archive_space_rs.base() + klass_region_size;
+        klass_range_size = klass_region_end - klass_range_start;
+        aot_log_info(aot)("Split encoding mode: class_space at " PTR_FORMAT ", archive at " PTR_FORMAT,
+                          p2i(class_space_rs.base()), p2i(archive_space_rs.base()));
+        aot_log_info(aot)("Split encoding mode: klass range = [" PTR_FORMAT ", " PTR_FORMAT "), size = %zu bytes",
+                          p2i(klass_range_start), p2i(klass_range_start + klass_range_size), klass_range_size);
+      } else {
+        // Normal layout: [archive][gap][class_space]
+        // Encoding base is archive start
+        klass_range_start = (address)mapped_base_address;
+        klass_range_size = (address)class_space_rs.end() - klass_range_start;
+      }
+
       if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
         // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
         // - every archived java object header (only if INCLUDE_CDS_JAVA_HEAP)
@@ -1784,15 +1817,41 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
           klass_range_start, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
         );
         assert(CompressedKlassPointers::base() == klass_range_start, "must be");
+
+        // Initialize narrow Klass ID remapper if the dump-time encoding differs from runtime.
+        // This happens when the archive is mapped at a different address than requested,
+        // or when split encoding is used (runtime base is class_space, not archive).
+        if (UseCompactObjectHeaders) {
+          address dump_base = static_mapinfo->header()->narrow_klass_base();
+          int dump_shift = static_mapinfo->header()->narrow_klass_shift();
+
+          // Calculate relocation delta: how much Klasses have moved relative to the encoding base.
+          // For regular CDS archives, dump_base (narrow_klass_base) equals the archive base.
+          // The formula is: runtime_klass_addr = dump_klass_addr + relocation_delta
+          // where dump_klass_addr = dump_base + (dump_nk << dump_shift)
+          // and runtime_klass_addr is in the mapped archive at archive_space_rs.base() + offset.
+          intx relocation_delta = (intx)((char*)archive_space_rs.base()) - (intx)dump_base;
+
+          NarrowKlassRemapper::initialize(dump_base, dump_shift,
+                                          CompressedKlassPointers::base(),
+                                          CompressedKlassPointers::shift(),
+                                          relocation_delta);
+        }
       } else {
         // Let JVM freely choose encoding base and shift
         CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
         assert(CompressedKlassPointers::base() == nullptr ||
                CompressedKlassPointers::base() == klass_range_start, "must be");
       }
-      // Establish protection zone, but only if we need one
+      // Establish protection zone. In normal mode, the protection zone is at the
+      // archive base (klass_range_start). In split encoding mode, we still establish
+      // the protection zone at the archive base (where the archive file's protection
+      // zone is located), but the narrow klass encoding base is at class_space_rs.
+      // The Metaspace will later establish its own protection zone at the start of
+      // the class_space when allocating new Klasses.
+      address protection_zone_base = use_split_encoding ? (address)archive_space_rs.base() : klass_range_start;
       if (CompressedKlassPointers::base() == klass_range_start) {
-        CompressedKlassPointers::establish_protection_zone(klass_range_start, prot_zone_size);
+        CompressedKlassPointers::establish_protection_zone(protection_zone_base, prot_zone_size);
       }
 
       if (static_mapinfo->can_use_heap_region()) {
@@ -1947,32 +2006,105 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
          is_aligned(CompressedClassSpaceSize, class_space_alignment),
          "CompressedClassSpaceSize malformed: %zu", CompressedClassSpaceSize);
 
-  const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
-  const size_t gap_size = ccs_begin_offset - archive_space_size;
-
   // Reduce class space size if it would not fit into the Klass encoding range
   constexpr size_t max_encoding_range_size = 4 * G;
-  guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
-  if ((archive_space_size + gap_size + class_space_size) > max_encoding_range_size) {
-    class_space_size = align_down(max_encoding_range_size - archive_space_size - gap_size, class_space_alignment);
+
+  // With UseCompactObjectHeaders, only Klass objects need to be within the narrow klass
+  // encoding range. The Klass region is placed at the start of the archive, so we check
+  // that klass_region_size fits. Other metadata (Methods, ConstantPools, etc.) can extend
+  // beyond the encoding range since they're accessed via 64-bit pointers.
+  // Without compact headers, the entire archive must fit within the encoding range.
+  size_t klass_region_size = static_mapinfo->header()->klass_region_size();
+  const bool use_split_encoding = UseCompactObjectHeaders && klass_region_size > 0
+                                    && archive_space_size > max_encoding_range_size / 2;
+
+  if (use_split_encoding) {
+    guarantee(klass_region_size < max_encoding_range_size - class_space_alignment,
+              "Klass region too large: %zu bytes (max %zu)",
+              klass_region_size, max_encoding_range_size - class_space_alignment);
+    aot_log_info(aot)("Klass region size: %zu bytes, archive size: %zu bytes (split encoding mode)",
+                      klass_region_size, archive_space_size);
+
+    // For split encoding mode, we can't use the archive's requested base address because
+    // we need to place class_space BEFORE the archive. Return nullptr to trigger fallback
+    // to use_archive_base_addr=false path.
+    if (use_archive_base_addr) {
+      aot_log_info(aot)("Split encoding mode: cannot use archive base address, will relocate");
+      return nullptr;
+    }
+  } else if (UseCompactObjectHeaders && klass_region_size > 0) {
+    aot_log_info(aot)("Klass region size: %zu bytes, archive size: %zu bytes",
+                      klass_region_size, archive_space_size);
+    guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
+  } else {
+    guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
+  }
+
+  // For split encoding mode: layout is [class_space][gap][archive]
+  // For normal mode: layout is [archive][gap][class_space]
+  size_t gap_size;
+  size_t total_range_size;
+  size_t archive_offset;  // Offset of archive within total_space_rs
+  size_t ccs_offset;      // Offset of class_space within total_space_rs
+
+  if (use_split_encoding) {
+    // Layout: [class_space][gap][archive]
+    // The gap aligns archive to archive_space_alignment
+    const size_t archive_begin_offset = align_up(class_space_size, archive_space_alignment);
+    gap_size = archive_begin_offset - class_space_size;
+    total_range_size = class_space_size + gap_size + archive_space_size;
+    ccs_offset = 0;
+    archive_offset = archive_begin_offset;
+  } else {
+    // Layout: [archive][gap][class_space]
+    const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
+    gap_size = ccs_begin_offset - archive_space_size;
+    total_range_size = archive_space_size + gap_size + class_space_size;
+    archive_offset = 0;
+    ccs_offset = ccs_begin_offset;
+  }
+
+  // Calculate class space size based on what must fit in encoding range
+  // With split encoding, only klass_region needs to fit alongside class space
+  size_t required_in_encoding_range = use_split_encoding ? klass_region_size : archive_space_size;
+  const size_t required_gap = use_split_encoding
+      ? align_up(class_space_size, archive_space_alignment) - class_space_size
+      : align_up(required_in_encoding_range, class_space_alignment) - required_in_encoding_range;
+
+  if ((required_in_encoding_range + required_gap + class_space_size) > max_encoding_range_size) {
+    class_space_size = align_down(max_encoding_range_size - required_in_encoding_range - required_gap, class_space_alignment);
     log_info(metaspace)("CDS initialization: reducing class space size from %zu to %zu",
         CompressedClassSpaceSize, class_space_size);
     FLAG_SET_ERGO(CompressedClassSpaceSize, class_space_size);
+
+    // Recalculate total_range_size with adjusted class_space_size
+    if (use_split_encoding) {
+      const size_t archive_begin_offset = align_up(class_space_size, archive_space_alignment);
+      gap_size = archive_begin_offset - class_space_size;
+      total_range_size = class_space_size + gap_size + archive_space_size;
+      archive_offset = archive_begin_offset;
+    } else {
+      const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
+      total_range_size = archive_space_size + gap_size + class_space_size;
+      ccs_offset = ccs_begin_offset;
+    }
   }
 
-  const size_t total_range_size =
-      archive_space_size + gap_size + class_space_size;
+  // For split encoding mode, the encoding range only needs to cover class_space + gap + klass_region.
+  // We calculate this for the decode mode check.
+  const size_t encoding_range_size = use_split_encoding
+      ? (class_space_size + gap_size + klass_region_size)
+      : total_range_size;
 
   // Test that class space base address plus shift can be decoded by aarch64, when restored.
   const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
+  if (!use_split_encoding && !CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
                                                         total_range_size)) {
     aot_log_info(aot)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
                   p2i(base_address), precomputed_narrow_klass_shift);
     use_archive_base_addr = false;
   }
 
-  assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
       // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
@@ -1980,6 +2112,7 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
       // do this for use_archive_base_addr=true since for use_archive_base_addr=false case
       // caller will not split the combined space for mapping, instead read the archive data
       // via sequential file IO.
+      // Note: split encoding mode already returned nullptr above for use_archive_base_addr=true
       address ccs_base = base_address + archive_space_size + gap_size;
       archive_space_rs = MemoryReserver::reserve((char*)base_address,
                                                  archive_space_size,
@@ -2024,13 +2157,22 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
     assert(is_aligned(total_space_rs.base(), base_address_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");
 
-    // Now split up the space into ccs and cds archive. For simplicity, just leave
-    //  the gap reserved at the end of the archive space. Do not do real splitting.
-    archive_space_rs = total_space_rs.first_part(ccs_begin_offset,
-                                                 (size_t)archive_space_alignment);
-    class_space_rs = total_space_rs.last_part(ccs_begin_offset);
-    MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
-                                                     ccs_begin_offset, mtClassShared, mtClass);
+    // Now split up the space into ccs and cds archive based on the layout.
+    if (use_split_encoding) {
+      // Layout: [class_space][gap][archive]
+      // The gap remains as unused reserved memory in the middle.
+      class_space_rs = total_space_rs.first_part(class_space_size, class_space_alignment);
+      archive_space_rs = total_space_rs.last_part(archive_offset);
+      MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
+                                                       archive_offset, mtClass, mtClassShared);
+    } else {
+      // Layout: [archive][gap][class_space]
+      archive_space_rs = total_space_rs.first_part(ccs_offset,
+                                                   (size_t)archive_space_alignment);
+      class_space_rs = total_space_rs.last_part(ccs_offset);
+      MemTracker::record_virtual_memory_split_reserved(total_space_rs.base(), total_space_rs.size(),
+                                                       ccs_offset, mtClassShared, mtClass);
+    }
   }
   assert(is_aligned(archive_space_rs.base(), archive_space_alignment), "Sanity");
   assert(is_aligned(archive_space_rs.size(), archive_space_alignment), "Sanity");

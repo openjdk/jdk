@@ -28,6 +28,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
+#include "cds/narrowKlassRemapper.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -39,6 +40,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/markWord.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
@@ -197,6 +199,15 @@ oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mar
     int length = archive_array_length(archive_object);
     bool do_zero = klass->is_objArray_klass();
     heap_object = Universe::heap()->array_allocate(klass, size, length, do_zero, CHECK_NULL);
+  }
+
+  // With UseCompactObjectHeaders, the mark word contains a narrow Klass ID that was
+  // pre-computed at dump time. If the dump-time encoding differs from runtime encoding,
+  // we need to remap the narrow Klass ID.
+  if (UseCompactObjectHeaders && NarrowKlassRemapper::needs_remapping()) {
+    narrowKlass dump_nk = mark.narrow_klass();
+    narrowKlass runtime_nk = NarrowKlassRemapper::remap(dump_nk);
+    mark = mark.set_narrow_klass(runtime_nk);
   }
 
   heap_object->set_mark(mark);

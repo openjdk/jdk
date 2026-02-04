@@ -120,6 +120,8 @@ private:
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
   int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
+  address _narrow_klass_base;                     // encoding base used to pre-compute narrowKlass IDs
+  size_t  _klass_region_size;                     // size of the Klass region (must fit in narrow klass encoding range)
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
   size_t  _early_serialized_data_offset;          // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
@@ -204,6 +206,8 @@ public:
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
   int narrow_klass_shift()                 const { return _narrow_klass_shift; }
+  address narrow_klass_base()              const { return _narrow_klass_base; }
+  size_t klass_region_size()               const { return _klass_region_size; }
   bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }

@@ -24,6 +24,7 @@
 
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.inline.hpp"
+#include "cds/narrowKlassRemapper.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -855,6 +856,23 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
+
+#ifdef _LP64
+  // Remap narrow Klass ID in prototype header if encoding changed between dump and runtime.
+  // This must be done before any objects of this class are allocated.
+  // Note: The prototype_header() accessor may have already remapped the value on-the-fly,
+  // so we check is_dump_time_value() to avoid double-remapping.
+  if (UseCompactObjectHeaders && NarrowKlassRemapper::needs_remapping()) {
+    narrowKlass nk = _prototype_header.narrow_klass();
+    if (nk != 0 && NarrowKlassRemapper::is_dump_time_value(nk)) {
+      narrowKlass runtime_nk = NarrowKlassRemapper::remap(nk);
+      _prototype_header = _prototype_header.set_narrow_klass(runtime_nk);
+      log_debug(aot)("Remapped prototype_header for %s: dump_nk=0x%x -> runtime_nk=0x%x",
+                     external_name(), nk, runtime_nk);
+    }
+  }
+#endif
+
   if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();

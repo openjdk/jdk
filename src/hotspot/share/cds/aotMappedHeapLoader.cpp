@@ -28,6 +28,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.inline.hpp"
+#include "cds/narrowKlassRemapper.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -40,6 +41,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/markWord.inline.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -442,6 +444,11 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
 };
 
 void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
+  // Patch narrow Klass IDs first, before any archived heap objects are accessed.
+  // This must be done after vtables are initialized (in serialize()), which is
+  // why it's called here rather than in map_or_load_heap_region().
+  patch_narrow_klass_ids();
+
   patch_heap_embedded_pointers(info);
 
   if (is_loaded()) {
@@ -533,6 +540,53 @@ void AOTMappedHeapLoader::patch_native_pointers() {
     PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->mapped_heap()->ptrmap_start_pos());
     bm.iterate(&patcher);
   }
+}
+
+// With UseCompactObjectHeaders, each object's mark word contains a narrow Klass ID
+// that was pre-computed at dump time. If the narrow klass encoding changed at runtime
+// (e.g., due to ASLR mapping the archive at a different address), we need to remap
+// these IDs.
+void AOTMappedHeapLoader::patch_narrow_klass_ids() {
+  if (!UseCompactObjectHeaders || !NarrowKlassRemapper::needs_remapping()) {
+    log_debug(aot, heap)("Skip patch_narrow_klass_ids: UseCompactObjectHeaders=%d, needs_remapping=%d",
+                         UseCompactObjectHeaders, NarrowKlassRemapper::needs_remapping());
+    return;
+  }
+
+  log_info(aot, heap)("Patching narrow Klass IDs in mapped heap region");
+
+  HeapWord* bottom;
+  HeapWord* top;
+
+  if (is_loaded()) {
+    bottom = (HeapWord*)_loaded_heap_bottom;
+    top = (HeapWord*)_loaded_heap_top;
+  } else if (is_mapped()) {
+    bottom = (HeapWord*)_mapped_heap_memregion.start();
+    top = (HeapWord*)_mapped_heap_memregion.end();
+  } else {
+    return; // No heap to patch
+  }
+
+  // Iterate through all objects in the heap region and update their mark words
+  size_t patched_count = 0;
+  for (HeapWord* p = bottom; p < top; ) {
+    oop obj = cast_to_oop(p);
+    markWord mark = obj->mark();
+
+    narrowKlass dump_nk = mark.narrow_klass();
+    narrowKlass runtime_nk = NarrowKlassRemapper::remap(dump_nk);
+
+    if (dump_nk != runtime_nk) {
+      markWord new_mark = mark.set_narrow_klass(runtime_nk);
+      obj->set_mark(new_mark);
+      patched_count++;
+    }
+
+    p += obj->size();
+  }
+
+  log_info(aot, heap)("Patched %zu narrow Klass IDs in mapped heap", patched_count);
 }
 
 // The actual address of this region during dump time.

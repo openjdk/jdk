@@ -230,9 +230,16 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 #ifdef _LP64
     _narrow_klass_pointer_bits = CompressedKlassPointers::narrow_klass_pointer_bits();
     _narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+    // The narrow klass base at dump time is the requested archive bottom address.
+    // This is used to pre-compute narrow Klass IDs for archived heap objects.
+    _narrow_klass_base = ArchiveBuilder::current()->requested_static_archive_bottom();
+    // Size of the Klass region - only this needs to fit within the encoding range
+    _klass_region_size = ArchiveBuilder::current()->klass_region_size();
 #endif
   } else {
     _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
+    _narrow_klass_base = nullptr;
+    _klass_region_size = 0;
   }
   // Which JIT compier is used
   _compiler_type = (u1)CompilerConfig::compiler_type();
@@ -298,6 +305,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- compressed_class_ptrs:                    %d", _compressed_class_ptrs);
   st->print_cr("- narrow_klass_pointer_bits:                %d", _narrow_klass_pointer_bits);
   st->print_cr("- narrow_klass_shift:                       %d", _narrow_klass_shift);
+  st->print_cr("- narrow_klass_base:                        " INTPTR_FORMAT, p2i(_narrow_klass_base));
+  st->print_cr("- klass_region_size:                        %zu", _klass_region_size);
   st->print_cr("- cloned_vtables_offset:                    0x%zx", _cloned_vtables_offset);
   st->print_cr("- early_serialized_data_offset:             0x%zx", _early_serialized_data_offset);
   st->print_cr("- serialized_data_offset:                   0x%zx", _serialized_data_offset);
@@ -1531,6 +1540,8 @@ void FileMapInfo::map_or_load_heap_region() {
   if (!success) {
     on_heap_region_loading_error();
   }
+  // Note: patch_narrow_klass_ids() is called later in
+  // AOTMappedHeapLoader::finish_initialization() after vtables are initialized.
 }
 
 bool FileMapInfo::can_use_heap_region() {

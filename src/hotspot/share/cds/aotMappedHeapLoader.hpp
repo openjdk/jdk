@@ -106,6 +106,11 @@ public:
 
   static void fixup_region() NOT_CDS_JAVA_HEAP_RETURN;
 
+  // Patch narrow Klass IDs in archived heap objects. This must be called
+  // immediately after the heap is mapped, before any archived heap objects
+  // are accessed.
+  static void patch_narrow_klass_ids() NOT_CDS_JAVA_HEAP_RETURN;
+
 #if INCLUDE_CDS_JAVA_HEAP
   static void init_mapped_heap_info(address mapped_heap_bottom, ptrdiff_t delta, int dumptime_oop_shift);
 private:

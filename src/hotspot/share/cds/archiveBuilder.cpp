@@ -182,8 +182,10 @@ ArchiveBuilder::ArchiveBuilder() :
   _ptrmap(mtClassShared),
   _rw_ptrmap(mtClassShared),
   _ro_ptrmap(mtClassShared),
+  _klass_src_objs(),
   _rw_src_objs(),
   _ro_src_objs(),
+  _klass_region_size(0),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _total_heap_region_size(0)
@@ -460,6 +462,10 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   if (created && src_info.should_copy()) {
     if (read_only) {
       _ro_src_objs.append(p);
+    } else if (ref->type() == MetaspaceClosureType::ClassType) {
+      // Klass objects must be placed at the start of the RW region to ensure
+      // they fit within the narrow klass encoding range (4GB with UseCompactObjectHeaders).
+      _klass_src_objs.append(p);
     } else {
       _rw_src_objs.append(p);
     }
@@ -514,6 +520,8 @@ void ArchiveBuilder::remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure
   } else {
     if (src_info->read_only()) {
       _ro_src_objs.remember_embedded_pointer(src_info, ref);
+    } else if (src_info->type() == MetaspaceClosureType::ClassType) {
+      _klass_src_objs.remember_embedded_pointer(src_info, ref);
     } else {
       _rw_src_objs.remember_embedded_pointer(src_info, ref);
     }
@@ -609,6 +617,7 @@ int ArchiveBuilder::compare_src_objs(SourceObjInfo** a, SourceObjInfo** b) {
 }
 
 void ArchiveBuilder::sort_metadata_objs() {
+  _klass_src_objs.objs()->sort(compare_src_objs);
   _rw_src_objs.objs()->sort(compare_src_objs);
   _ro_src_objs.objs()->sort(compare_src_objs);
 }
@@ -616,6 +625,19 @@ void ArchiveBuilder::sort_metadata_objs() {
 void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
   aot_log_info(aot)("Allocating RW objects ... ");
+
+  // Copy Klass objects first to ensure they are at the start of the RW region.
+  // This is critical for narrow klass encoding - all Klasses must be within
+  // the encoding range (4GB with UseCompactObjectHeaders).
+  char* klass_start = _rw_region.top();
+  make_shallow_copies(&_rw_region, &_klass_src_objs);
+  char* klass_end = _rw_region.top();
+  _klass_region_size = klass_end - klass_start;
+
+  aot_log_info(aot)("Klass region: %zu bytes (%d Klass objects)",
+                    _klass_region_size, _klass_src_objs.objs()->length());
+
+  // Copy non-Klass RW objects after Klasses
   make_shallow_copies(&_rw_region, &_rw_src_objs);
 }
 
@@ -769,6 +791,7 @@ void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* s
 
 void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
   aot_log_info(aot)("Relocating embedded pointers in core regions ... ");
+  relocate_embedded_pointers(&_klass_src_objs);
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
   log_info(cds)("Relocating %zu pointers, %zu tagged, %zu nulled",
