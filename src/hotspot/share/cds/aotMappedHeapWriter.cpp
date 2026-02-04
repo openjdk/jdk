@@ -60,7 +60,6 @@ size_t AOTMappedHeapWriter::_buffer_used;
 
 // Heap root segments
 AOTMappedHeapRootSegments AOTMappedHeapWriter::_heap_root_segments;
-GrowableArrayCHeap<address, mtClassShared>* AOTMappedHeapWriter::_copied_roots;
 
 address AOTMappedHeapWriter::_requested_bottom;
 address AOTMappedHeapWriter::_requested_top;
@@ -159,7 +158,7 @@ void AOTMappedHeapWriter::write_objects(AOTMappedHeapInfo* heap_info) {
   relocate_embedded_oops(heap_info);
 }
 
-void AOTMappedHeapWriter::write_roots(GrowableArrayCHeap<oop, mtClassShared>* roots, AOTMappedHeapInfo* heap_info) {
+void AOTMappedHeapWriter::write_roots(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info) {
   copy_roots_to_buffer(roots, heap_info);
 
   size_t total_bytes = (size_t)_buffer->length();
@@ -170,8 +169,9 @@ void AOTMappedHeapWriter::write_roots(GrowableArrayCHeap<oop, mtClassShared>* ro
                                          offset_to_buffered_address<HeapWord*>(_buffer_used)));
   heap_info->set_root_segments(_heap_root_segments);
 
-  log_info(aot)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
-                _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
+  log_info(aot)("Size of heap region = %zu bytes, %d + %zu objects, %d roots, %d native ptrs",
+                _buffer_used, HeapShared::archived_object_cache()->number_of_entries(),
+                heap_info->root_segments().count(), roots->length(), _num_native_ptrs);
 }
 
 bool AOTMappedHeapWriter::is_too_large_to_archive(oop o) {
@@ -330,7 +330,7 @@ void AOTMappedHeapWriter::root_segment_at_put(objArrayOop segment, int index, oo
   }
 }
 
-void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots, AOTMappedHeapInfo* heap_info) {
+void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info) {
   // Depending on the number of classes we are archiving, a single roots array may be
   // larger than MIN_GC_REGION_ALIGNMENT. Roots are allocated first in the buffer, which
   // allows us to chop the large array into a series of "segments". Current layout
@@ -386,7 +386,8 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
 
     objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
     for (int i = 0; i < size_elems; i++) {
-      root_segment_at_put(seg_oop, i, roots->at(root_index++), heap_info->oopmap());
+      oop root = roots->at(root_index++).resolve();
+      root_segment_at_put(seg_oop, i, root, heap_info->oopmap());
     }
 
     objArrayOop requested_obj = (objArrayOop)requested_obj_from_buffer_offset(oop_offset);
@@ -444,6 +445,7 @@ void AOTMappedHeapWriter::sort_source_objs() {
 
   for (int i = 0; i < len; i++) {
     oop o = _source_objs->at(i);
+    mark_native_pointers(o);
     int rank = oop_sorting_rank(o);
     HeapObjOrder os = {i, rank};
     _source_objs_order->append(os);
@@ -831,7 +833,6 @@ void AOTMappedHeapWriter::relocate_embedded_oops(AOTMappedHeapInfo* heap_info) {
     address buffered_obj = offset_to_buffered_address<address>(info->buffer_offset());
     EmbeddedOopRelocator relocator(src_obj, buffered_obj, heap_info->oopmap());
     src_obj->oop_iterate(&relocator);
-    mark_native_pointers(src_obj);
   };
 
   compute_ptrmap(heap_info);

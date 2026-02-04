@@ -1222,11 +1222,9 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder,
   }
   map_info->prepare_for_writing();
 
-#if 0
-  if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
-    AOTMappedHeapWrite::xxx();
+  if (CDSConfig::is_dumping_heap()) {
+    HeapShared::write_roots(mapped_heap_info, streamed_heap_info);
   }
-#endif
 
   builder->write_archive(map_info, mapped_heap_info, streamed_heap_info);
   return true;

@@ -893,7 +893,6 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
 
   if (HeapShared::is_writing_mapping_mode()) {
     AOTMappedHeapWriter::write_objects(mapped_heap_info);
-    AOTMappedHeapWriter::write_roots(roots, mapped_heap_info);
   } else {
     assert(HeapShared::is_writing_streaming_mode(), "are there more modes?");
     AOTStreamedHeapWriter::write(roots, streamed_heap_info);
@@ -905,6 +904,12 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
   write_subgraph_info_table();
 
   make_archived_object_cache_gc_safe();
+}
+
+void HeapShared::write_roots(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) {
+  if (HeapShared::is_writing_mapping_mode()) {
+    AOTMappedHeapWriter::write_roots(HeapShared::pending_roots(), mapped_heap_info);
+  }
 }
 
 void HeapShared::scan_java_mirror(oop orig_mirror) {

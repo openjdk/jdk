@@ -41,12 +41,13 @@ private:
   int _first_segment_size_in_elems;
 
 public:
-  size_t count() { return _count; }
-  int roots_count() { return _roots_count; }
-  size_t max_size_in_bytes() { return _max_size_in_bytes; }
-  int max_size_in_elems() { return _max_size_in_elems; }
-  int first_segment_size_in_elems() { return _first_segment_size_in_elems; }
-
+  size_t count() const { return _count; }
+  int roots_count() const { return _roots_count; }
+  size_t max_size_in_bytes() const { return _max_size_in_bytes; }
+  int max_size_in_elems() const { return _max_size_in_elems; }
+  size_t first_segment_offset_in_bytes() const { return _first_segment_offset_in_bytes; }
+  size_t first_segment_size_in_bytes() const { return _first_segment_size_in_bytes; }
+  int first_segment_size_in_elems() const { return _first_segment_size_in_elems; }
 
   size_t size_in_bytes(size_t seg_idx);
   int size_in_elems(size_t seg_idx);

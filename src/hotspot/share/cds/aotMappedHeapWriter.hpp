@@ -119,7 +119,6 @@ private:
 
   static bool _is_writing_deterministic_heap;
   static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
-  static GrowableArrayCHeap<address, mtClassShared>* _copied_roots;
 
   // The number of bytes that have written into _buffer (may be smaller than _buffer->length()).
   static size_t _buffer_used;
@@ -189,7 +188,7 @@ private:
 
   static void root_segment_at_put(objArrayOop segment, int index, oop root, CHeapBitMap* oopmap);
   static objArrayOop allocate_root_segment(size_t offset, int element_count);
-  static void copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots, AOTMappedHeapInfo* heap_info);
+  static void copy_roots_to_buffer(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info);
   static void copy_source_objs_to_buffer();
   static size_t copy_one_source_obj_to_buffer(oop src_obj);
 
@@ -233,7 +232,7 @@ public:
   static bool is_dumped_interned_string(oop o);
   static void add_to_dumped_interned_strings(oop string);
   static void write_objects(AOTMappedHeapInfo* heap_info);
-  static void write_roots(GrowableArrayCHeap<oop, mtClassShared>* roots, AOTMappedHeapInfo* heap_info);
+  static void write_roots(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info);
   static address requested_address();  // requested address of the lowest achived heap object
   static size_t get_filler_size_at(address buffered_addr);
 

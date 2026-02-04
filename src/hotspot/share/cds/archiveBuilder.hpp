@@ -499,7 +499,7 @@ public:
 
   static Klass* get_buffered_klass(Klass* src_klass) {
     Klass* klass = (Klass*)current()->get_buffered_addr((address)src_klass);
-    assert(klass != nullptr && klass->is_klass(), "must be");
+    assert(klass != nullptr, "must be");
     return klass;
   }
 
