@@ -4429,29 +4429,38 @@ public final class Arrays {
     }
 
     /**
-     * Computes a hash code for a specified sub-range of the given {@code byte} array.
-     * The sub-range is defined by the indices from {@code fromIndex} (inclusive)
-     * to {@code toIndex} (exclusive).
+     * Returns a hash code based on the contents of the specified range of the
+     * specified {@code byte} array.
+     * For any two {@code byte} arrays {@code a} and {@code b} and ranges
+     * {@code aFromIndex}..{@code aToIndex} and {@code bFromIndex}..{@code bToIndex}
+     * such that
+     * {@link #equals(byte[], int, int, byte[], int, int)
+     * Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex)}
+     * returns {@code true}, it is also the case that
+     * {@code hashCodeOfRange(a, aFromIndex, aToIndex) ==
+     * hashCodeOfRange(b, bFromIndex, bToIndex)}.
      *
-     * <p>The computed hash code is based on the content of the sub-range. Specifically,
-     * it is equivalent to the hash code that would be produced by a {@code List} of
-     * {@code Byte} objects representing the elements in the sub-range, in the same order.
-     * Thus, if two sub-ranges (within the same array) are equal as determined by
-     * {@link #equals(byte[], int, int, byte[], int, int)}, they will yield the same hash code.
-     * If the array {@code a} is {@code null}, this method returns {@code 0}.
+     * <p>The value returned by this method is the same value that would be
+     * obtained by invoking the {@link List#hashCode() hashCode}
+     * method on a {@link List} containing a sequence of {@link Byte}
+     * instances representing the elements of the specified range in the same
+     * order. If {@code a} is {@code null}, this method treats the array as
+     * having length {@code 0} for range checking and returns {@code 0} only
+     * for the empty range {@code [0,0)}.
      *
-     * @param a the array from which to compute the sub-range hash code
-     * @param fromIndex the starting index (inclusive) of the sub-range
-     * @param toIndex the ending index (exclusive) of the sub-range
-     * @return a content-based hash code for the specified sub-range of the array,
-     *         or {@code 0} if {@code a} is {@code null}
-     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex} or {@code toIndex}
-     *         are not valid indices for the array {@code a}
-     * @throws IllegalArgumentException if {@code fromIndex} is greater than {@code toIndex}
-     * @since 25
+     * @param a the array from which to compute the range hash code
+     * @param fromIndex the initial index of the range to be hashed, inclusive
+     * @param toIndex the final index of the range to be hashed, exclusive
+     * @return a content-based hash code for the specified range of the array,
+     *         or {@code 0} if {@code a} is {@code null} and the range is empty
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex} is greater than the array length
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @since 27
      */
-    public static int hashCode(byte[] a, int fromIndex, int toIndex) {
+    public static int hashCodeOfRange(byte[] a, int fromIndex, int toIndex) {
         if (a == null) {
+            rangeCheck(0, fromIndex, toIndex);
             return 0;
         }
         rangeCheck(a.length, fromIndex, toIndex);
