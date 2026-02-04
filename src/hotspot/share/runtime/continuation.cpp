@@ -86,10 +86,8 @@ class UnmountBeginMark : public StackObj {
     }
   }
   ~UnmountBeginMark() {
-#if INCLUDE_JVMTI
-    assert(!_current->is_suspended() ||
-           (_current->is_vthread_transition_disabler() && _result != freeze_ok), "must be");
-#endif
+    assert(!_current->is_suspended()
+           JVMTI_ONLY(|| (_current->is_vthread_transition_disabler() && _result != freeze_ok)), "must be");
     assert(_current->is_in_vthread_transition(), "must be");
 
     if (_result != freeze_ok) {
