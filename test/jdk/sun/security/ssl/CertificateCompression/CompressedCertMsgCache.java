@@ -67,39 +67,33 @@ public class CompressedCertMsgCache extends SSLSocketTemplate {
 
     public static void main(String[] args) throws Exception {
 
-        // Use 2 different SSLContext instances.
-        for (int i = 0; i < 2; i++) {
+        // Complete 3 handshakes with the same SSLContext.
+        String log = runAndGetLog(() -> {
+            try {
+                setupCertificates();
+                serverSslContext = getSSLContext(trustedCert, serverCert,
+                        serverKeys.getPrivate(), "TLSv1.3");
+                clientSslContext = getSSLContext(trustedCert, clientCert,
+                        clientKeys.getPrivate(), "TLSv1.3");
 
-            // Complete 3 handshakes with the same SSLContext.
-            String log = runAndGetLog(() -> {
-                try {
-                    setupCertificates();
-                    serverSslContext = getSSLContext(
-                            trustedCert, serverCert, serverKeys.getPrivate(),
-                            "TLSv1.3");
-                    clientSslContext = getSSLContext(
-                            trustedCert, clientCert, clientKeys.getPrivate(),
-                            "TLSv1.3");
+                new CompressedCertMsgCache().run();
+                new CompressedCertMsgCache().run();
+                new CompressedCertMsgCache().run();
+            } catch (Exception _) {
+            }
+        });
 
-                    new CompressedCertMsgCache().run();
-                    new CompressedCertMsgCache().run();
-                    new CompressedCertMsgCache().run();
-                } catch (Exception _) {
-                }
-            });
+        // The same CompressedCertificate message must be cached only once.
+        assertEquals(1, countSubstringOccurrences(log,
+                "Caching CompressedCertificate message"));
 
-            // The same CompressedCertificate message must be cached only once.
-            assertEquals(1, countSubstringOccurrences(log,
-                    "Caching CompressedCertificate message"));
+        // Make sure CompressedCertificate message is produced 3 times.
+        assertEquals(3, countSubstringOccurrences(log,
+                "Produced CompressedCertificate handshake message"));
 
-            // Make sure CompressedCertificate message is produced 3 times.
-            assertEquals(3, countSubstringOccurrences(log,
-                    "Produced CompressedCertificate handshake message"));
-
-            // Make sure CompressedCertificate message is consumed 3 times.
-            assertEquals(3, countSubstringOccurrences(log,
-                    "Consuming CompressedCertificate handshake message"));
-        }
+        // Make sure CompressedCertificate message is consumed 3 times.
+        assertEquals(3, countSubstringOccurrences(log,
+                "Consuming CompressedCertificate handshake message"));
     }
 
     @Override

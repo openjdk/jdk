@@ -774,14 +774,6 @@ final class CertificateMessage {
         }
 
         T13CertificateMessage(HandshakeContext handshakeContext,
-                byte[] requestContext, List<CertificateEntry> certificates) {
-            super(handshakeContext);
-
-            this.requestContext = requestContext.clone();
-            this.certEntries = certificates;
-        }
-
-        T13CertificateMessage(HandshakeContext handshakeContext,
                 ByteBuffer m) throws IOException {
             super(handshakeContext);
 

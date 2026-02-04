@@ -160,21 +160,22 @@ final class CompressedCertificate {
             HandshakeOutStream hos = new HandshakeOutStream(null);
             message.send(hos);
             byte[] certMsg = hos.toByteArray();
+            byte[] compressedCertMsg;
 
-            Cache<CompCertCacheKey, byte[]> cache =
-                    hc.sslContext.getCompCertCache();
-            CompCertCacheKey key = new CompCertCacheKey(
-                    new EqualByteArray(certMsg), hc.certDeflater.getKey());
-            byte[] compressedCertMsg = cache.get(key);
-
-            if (compressedCertMsg == null) {
+            // Don't use cache if certificate_request_context is present.
+            if (certMsg[0] != 0) {
                 compressedCertMsg = hc.certDeflater.getValue().apply(certMsg);
+            } else {
+                Cache<CompCertCacheKey, byte[]> cache =
+                        hc.sslContext.getCompCertCache();
+                CompCertCacheKey key = new CompCertCacheKey(
+                        new EqualByteArray(certMsg), hc.certDeflater.getKey());
+                compressedCertMsg = cache.get(key);
 
-                // Don't cache when in PostHandshakeContext because
-                // certificate_request_context can be randomized (should only
-                // happen during post-handshake authentication and only on the
-                // client side).
-                if (!(hc instanceof PostHandshakeContext)) {
+                if (compressedCertMsg == null) {
+                    compressedCertMsg =
+                            hc.certDeflater.getValue().apply(certMsg);
+
                     if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Caching CompressedCertificate message");
                     }
