@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,7 @@ public class Expression extends Statement {
         this.value = value;
     }
 
+    @Override
     /*pp*/ String instanceName(Object instance) {
         return instance == unbound ? "<unbound>" : super.instanceName(instance);
     }
@@ -176,6 +177,7 @@ public class Expression extends Statement {
     /**
      * Prints the value of this expression using a Java-style syntax.
      */
+    @Override
     public String toString() {
         return instanceName(value) + "=" + super.toString();
     }
