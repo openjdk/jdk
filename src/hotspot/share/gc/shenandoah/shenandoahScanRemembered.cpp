@@ -232,10 +232,17 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
 
     const oop obj = cast_to_oop(address);
     if (!_rs->is_write_card_dirty(object_card_index)) {
+      // The card is not dirty, check this object for pointers to young.
       address += obj->oop_iterate_size(&make_cards_dirty);
     } else {
-      // card is already dirty, we don't need to visit pointers for this object
-      address += obj->size();
+      // The card is dirty, but does this object span onto the next card?
+      HeapWord* object_end_address = address + obj->size();
+      HeapWord* card_end_address = _rs->addr_for_card_index(object_card_index + 1);
+      if (object_end_address >= card_end_address) {
+        // We must iterate over the fields of this object because it spans into the next card.
+        obj->oop_iterate(&make_cards_dirty);
+      }
+      address = object_end_address;
     }
   }
 
