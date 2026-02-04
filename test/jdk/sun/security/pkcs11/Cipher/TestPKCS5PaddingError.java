@@ -98,14 +98,16 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                     c2.doFinal(cipherText);
 
                     // 1st test: wrong output length
-                    // NOTE: Skip NSS since it reports CKR_DEVICE_ERROR when
-                    // the data passed to its EncryptUpdate/DecryptUpdate is
-                    // not multiple of blocks
+                    // NOTE: Skip NSS since it reports CKR_DEVICE_ERROR when the
+                    // data passed to its EncryptUpdate and
+                    // CKR_ENCRYPTED_DATA_LEN_RANGE when passed through
+                    // DecryptUpdate are not multiple of blocks
                     if (!p.getName().equals("SunPKCS11-NSS")) {
                         try {
                             System.out.println("Testing with wrong cipherText length");
                             c2.doFinal(cipherText, 0, cipherText.length - 2);
-                            throw new RuntimeException("Expected IBSE thrown");
+                            throw new RuntimeException(
+                                    "Expected IBSE NOT thrown");
                         } catch (IllegalBlockSizeException ibe) {
                             // expected
                         } catch (Exception ex) {
@@ -118,7 +120,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                         System.out.println("Testing with wrong padding bytes");
                         cipherText[cipherText.length - 1]++;
                         c2.doFinal(cipherText);
-                        throw new RuntimeException("Expected BPE thrown");
+                        throw new RuntimeException("Expected BPE NOT thrown");
                     } catch (BadPaddingException bpe) {
                         // expected
                     } catch (Exception ex) {
