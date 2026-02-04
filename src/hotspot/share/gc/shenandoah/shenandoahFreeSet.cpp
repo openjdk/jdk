@@ -1539,7 +1539,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   // We must call try_recycle_under_lock() even if !r->is_trash().  The reason is that if r is being recycled at this
   // moment by a GC worker thread, it may appear to be not trash even though it has not yet been fully recycled.  If
   // we proceed without waiting for the worker to finish recycling the region, the worker thread may overwrite the
-  // region's affiliation with FREE after we set the region's affiliation to req.afiliation() below
+  // region's affiliation with FREE after we set the region's affiliation to req.affiliation() below
   r->try_recycle_under_lock();
   in_new_region = r->is_empty();
   if (in_new_region) {
@@ -1555,7 +1555,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
-      _heap->old_generation()->clear_cards_for(r);
     }
 #ifdef ASSERT
     ShenandoahMarkingContext* const ctx = _heap->marking_context();

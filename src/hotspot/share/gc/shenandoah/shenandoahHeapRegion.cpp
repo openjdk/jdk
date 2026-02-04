@@ -574,6 +574,10 @@ void ShenandoahHeapRegion::recycle_internal() {
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
   set_update_watermark(bottom());
+  if (is_old()) {
+    heap->old_generation()->clear_cards_for(this);
+  }
+
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
   }
