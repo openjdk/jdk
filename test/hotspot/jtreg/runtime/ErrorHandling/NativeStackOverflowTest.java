@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @enablePreview
+ * @requires os.family != "windows" & os.family != "aix"
  * @library /test/lib
  * @run testng NativeStackOverflowTest
  */

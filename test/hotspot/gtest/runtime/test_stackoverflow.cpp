@@ -96,9 +96,7 @@ TEST_VM(StackOverflow, basics) {
 
 // (relies on VMError::controlled_crash which is only available in debug builds)
 #ifdef ASSERT
-
-// Not available on Windows
-#ifndef WINDOWS
+#if !defined(_WINDOWS) && !defined(AIX)
 
 static void cause_native_stack_overflow() {
   tty->print_cr("Will trigger a deliberate stack overflow. "
@@ -147,5 +145,5 @@ TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInJavaThread, "SIGSEGV") 
   // Gtests get invoked on the "main" java thread, so its a java thread.
   cause_native_stack_overflow();
 }
-#endif // WINDOWS
-#endif // ASSERT
+#endif
+#endif

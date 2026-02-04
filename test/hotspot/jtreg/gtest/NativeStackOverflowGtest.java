@@ -24,7 +24,7 @@
 
 /* @test
  * @summary Run death tests that test native stackoverflow handling, with -XX:+UseAltSigStacks
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
