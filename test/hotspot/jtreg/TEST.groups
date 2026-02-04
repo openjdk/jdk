@@ -65,10 +65,6 @@ hotspot_serviceability = \
 hotspot_resourcehogs = \
   resourcehogs
 
-hotspot_resourcehogs_no_cds = \
-  :hotspot_resourcehogs \
-  -resourcehogs/runtime/aot
-
 hotspot_misc = \
   / \
  -applications \
