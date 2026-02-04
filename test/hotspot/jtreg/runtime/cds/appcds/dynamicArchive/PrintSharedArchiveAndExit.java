@@ -30,6 +30,7 @@
  * @build HelloUnload CustomLoadee jdk.test.lib.classloader.ClassUnloadCommon
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloUnload
+ *                 jdk.test.lib.classloader.CustomClassLoader
  *                 jdk.test.lib.classloader.ClassUnloadCommon
  *                 jdk.test.lib.classloader.ClassUnloadCommon$1
  *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure

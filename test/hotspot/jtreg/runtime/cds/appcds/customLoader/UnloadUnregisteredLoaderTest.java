@@ -37,6 +37,7 @@
  *                 jdk.test.lib.classloader.ClassUnloadCommon
  *                 jdk.test.lib.classloader.ClassUnloadCommon$1
  *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
+ *                 jdk.test.lib.classloader.CustomClassLoader
  * @run driver UnloadUnregisteredLoaderTest
  */
 
@@ -56,6 +57,7 @@ public class UnloadUnregisteredLoaderTest {
                                           "CustomLoadee5",
                                           "Util");
         String appJar2 = JarBuilder.build(true, "UnloadUnregisteredLoader_app2",
+                                          "jdk/test/lib/classloader/CustomClassLoader",
                                           "jdk/test/lib/classloader/ClassUnloadCommon",
                                           "jdk/test/lib/classloader/ClassUnloadCommon$1",
                                           "jdk/test/lib/classloader/ClassUnloadCommon$TestFailure");
@@ -69,6 +71,7 @@ public class UnloadUnregisteredLoaderTest {
         String classpath = TestCommon.concatPaths(appJar1, appJar2);
         String classlist[] = new String[] {
             "UnloadUnregisteredLoader",
+            "jdk/test/lib/classloader/CustomClassLoader",
             "jdk/test/lib/classloader/ClassUnloadCommon",
             "jdk/test/lib/classloader/ClassUnloadCommon$1",
             "jdk/test/lib/classloader/ClassUnloadCommon$TestFailure",
