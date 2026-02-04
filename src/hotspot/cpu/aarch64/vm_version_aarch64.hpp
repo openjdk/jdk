@@ -30,6 +30,8 @@
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/sizes.hpp"
 
+#include <initializer_list>
+
 class stringStream;
 
 #define BIT_MASK(flag) (1ULL<<(flag))
@@ -112,14 +114,26 @@ public:
     CPU_APPLE     = 'a',
   };
 
-enum Ampere_CPU_Model {
+  enum Ampere_CPU_Model {
     CPU_MODEL_EMAG      = 0x0,   /* CPU implementer is CPU_AMCC */
     CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
     CPU_MODEL_AMPERE_1A = 0xac4, /* CPU implementer is CPU_AMPERE */
     CPU_MODEL_AMPERE_1B = 0xac5  /* AMPERE_1B core Implements ARMv8.7 with CSSC, MTE, SM3/SM4 extensions */
-};
+  };
+
+  enum ARM_CPU_Model {
+    CPU_MODEL_ARM_CORTEX_A53    = 0xd03,
+    CPU_MODEL_ARM_CORTEX_A73    = 0xd09,
+    CPU_MODEL_ARM_NEOVERSE_N1   = 0xd0c,
+    CPU_MODEL_ARM_NEOVERSE_V1   = 0xd40,
+    CPU_MODEL_ARM_NEOVERSE_N2   = 0xd49,
+    CPU_MODEL_ARM_NEOVERSE_V2   = 0xd4f,
+    CPU_MODEL_ARM_NEOVERSE_V3AE = 0xd83,
+    CPU_MODEL_ARM_NEOVERSE_V3   = 0xd84,
+    CPU_MODEL_ARM_NEOVERSE_N3   = 0xd8e,
+  };
 
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(FP,            fp,            0)     \
@@ -179,6 +193,15 @@ enum Ampere_CPU_Model {
 
   static bool model_is(int cpu_model) {
     return _model == cpu_model || _model2 == cpu_model;
+  }
+
+  static bool model_is_in(std::initializer_list<int> cpu_models) {
+    for (const int& cpu_model : cpu_models) {
+      if (_model == cpu_model || _model2 == cpu_model) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static bool is_zva_enabled() { return 0 <= _zva_length; }

@@ -201,16 +201,14 @@ void VM_Version::initialize() {
     }
   }
 
-  // Cortex A53
-  if (_cpu == CPU_ARM && model_is(0xd03)) {
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A53)) {
     set_feature(CPU_A53MAC);
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
     }
   }
 
-  // Cortex A73
-  if (_cpu == CPU_ARM && model_is(0xd09)) {
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A73)) {
     if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance)) {
       FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, -1);
     }
@@ -220,16 +218,11 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse
-  //   N1: 0xd0c
-  //   N2: 0xd49
-  //   N3: 0xd8e
-  //   V1: 0xd40
-  //   V2: 0xd4f
-  //   V3: 0xd84
-  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
-                          model_is(0xd40) || model_is(0xd4f) ||
-                          model_is(0xd8e) || model_is(0xd84))) {
+  if (_cpu == CPU_ARM &&
+      model_is_in({ CPU_MODEL_ARM_NEOVERSE_N1, CPU_MODEL_ARM_NEOVERSE_V1,
+                    CPU_MODEL_ARM_NEOVERSE_N2, CPU_MODEL_ARM_NEOVERSE_V2,
+                    CPU_MODEL_ARM_NEOVERSE_N3, CPU_MODEL_ARM_NEOVERSE_V3,
+                    CPU_MODEL_ARM_NEOVERSE_V3AE })) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -261,12 +254,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
-  // Neoverse
-  //   V1: 0xd40
-  //   V2: 0xd4f
-  //   V3: 0xd84
   if (_cpu == CPU_ARM &&
-      (model_is(0xd40) || model_is(0xd4f) || model_is(0xd84))) {
+      model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
+                    CPU_MODEL_ARM_NEOVERSE_V3, CPU_MODEL_ARM_NEOVERSE_V3AE })) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
