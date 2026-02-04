@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public:
   static const Type* int_type_xmeet(const CT* i1, const Type* t2);
 
   template <class CTP>
-  static CTP int_type_union(CTP t1, CTP t2) {
+  static auto int_type_union(CTP t1, CTP t2) {
     using CT = std::conditional_t<std::is_pointer_v<CTP>, std::remove_pointer_t<CTP>, CTP>;
     using S = std::remove_const_t<decltype(CT::_lo)>;
     using U = std::remove_const_t<decltype(CT::_ulo)>;
@@ -209,7 +209,7 @@ public:
   KnownBits<U> _bits;
   int _widen = 0; // dummy field to mimic the same field in TypeInt, useful in testing
 
-  static TypeIntMirror make(const TypeIntPrototype<S, U>& t, int widen) {
+  static TypeIntMirror make(const TypeIntPrototype<S, U>& t, int widen = 0) {
     auto canonicalized_t = t.canonicalize_constraints();
     assert(!canonicalized_t.empty(), "must not be empty");
     return TypeIntMirror{canonicalized_t._data._srange._lo, canonicalized_t._data._srange._hi,
@@ -217,11 +217,15 @@ public:
                          canonicalized_t._data._bits};
   }
 
+  TypeIntMirror meet(const TypeIntMirror& o) const {
+    return TypeIntHelper::int_type_union(this, &o);
+  }
+
   // These allow TypeIntMirror to mimick the behaviors of TypeInt* and TypeLong*, so they can be
   // passed into RangeInference methods. These are only used in testing, so they are implemented in
   // the test file.
+  static TypeIntMirror make(const TypeIntMirror& t, int widen);
   const TypeIntMirror* operator->() const;
-  TypeIntMirror meet(const TypeIntMirror& o) const;
   bool contains(U u) const;
   bool contains(const TypeIntMirror& o) const;
   bool operator==(const TypeIntMirror& o) const;
@@ -322,7 +326,7 @@ private:
   // Infer a result given the input types of a binary operation
   template <class CTP, class Inference>
   static CTP infer_binary(CTP t1, CTP t2, Inference infer) {
-    CTP res;
+    TypeIntMirror<S<CTP>, U<CTP>> res;
     bool is_init = false;
 
     SimpleIntervalIterable<CTP> t1_simple_intervals(t1);
@@ -330,10 +334,10 @@ private:
 
     for (auto& st1 : t1_simple_intervals) {
       for (auto& st2 : t2_simple_intervals) {
-        CTP current = infer(st1, st2);
+        TypeIntMirror<S<CTP>, U<CTP>> current = infer(st1, st2);
 
         if (is_init) {
-          res = res->meet(current)->template cast<CT<CTP>>();
+          res = res.meet(current);
         } else {
           is_init = true;
           res = current;
@@ -342,7 +346,22 @@ private:
     }
 
     assert(is_init, "must be initialized");
-    return res;
+    // It is important that widen is computed on the whole result instead of during each step. This
+    // is because we normalize the widen of small Type instances to 0, so computing the widen value
+    // for each step and taking the union of them may return a widen value that conflicts with
+    // other computations, trigerring the monotonicity assert during CCP.
+    //
+    // For example, let us consider the operation r = x ^ y:
+    // - During the first step of CCP, type(x) = {0}, type(y) = [-2, 2], w = 3.
+    //   Since x is a constant that is the identity element of the xor operation, type(r) = type(y) = [-2, 2], w = 3
+    // - During the second step, type(x) is widened to [0, 2], w = 0.
+    //   We then compute the range for:
+    //   r1 = x ^ y1, type(x) = [0, 2], w = 0, type(y1) = [0, 2], w = 0
+    //   r2 = x ^ y2, type(x) = [0, 2], w = 0, type(y2) = [-2, -1], w = 0
+    //   This results in type(r1) = [0, 3], w = 0, and type(r2) = [-4, -1], w = 0
+    //   So the union of type(r1) and type(r2) is [-4, 3], w = 0. This widen value is smaller than
+    //   that of the previous step, triggering the monotonicity assert.
+    return CT<CTP>::make(res, MAX2(t1->_widen, t2->_widen));
   }
 
 public:
@@ -357,7 +376,7 @@ public:
       U<CTP> uhi = MIN2(st1._uhi, st2._uhi);
       U<CTP> zeros = st1._bits._zeros | st2._bits._zeros;
       U<CTP> ones = st1._bits._ones & st2._bits._ones;
-      return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
+      return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
     });
   }
 
@@ -372,7 +391,7 @@ public:
       U<CTP> uhi = std::numeric_limits<U<CTP>>::max();
       U<CTP> zeros = st1._bits._zeros & st2._bits._zeros;
       U<CTP> ones = st1._bits._ones | st2._bits._ones;
-      return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
+      return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
     });
   }
 
@@ -385,7 +404,7 @@ public:
       U<CTP> uhi = std::numeric_limits<U<CTP>>::max();
       U<CTP> zeros = (st1._bits._zeros & st2._bits._zeros) | (st1._bits._ones & st2._bits._ones);
       U<CTP> ones = (st1._bits._zeros & st2._bits._ones) | (st1._bits._ones & st2._bits._zeros);
-      return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
+      return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
     });
   }
 };
