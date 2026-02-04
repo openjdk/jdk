@@ -286,7 +286,7 @@ public class ZipFileDuplicateEntryTest {
                     System.out.printf("name: %s, isDirectory: %s, payload= %s%n",
                             ze.getName(), ze.isDirectory(), new String(bytes));
                 }
-                assertArrayEquals(bytes, entry.bytes,
+                assertArrayEquals(entry.bytes, bytes,
                         String.format("Expected payload: %s", new String(entry.bytes)));
             }
         }
@@ -362,7 +362,7 @@ public class ZipFileDuplicateEntryTest {
         System.out.printf("%n%n**** ZipFileStreamTest ***%n");
         try (ZipFile zf = new ZipFile(ZIP_FILE.toFile())) {
             List<? extends ZipEntry> entries = zf.stream().collect(Collectors.toList());
-            assertEquals(entries.size(), EXPECTED_ENTRIES.size());
+            assertEquals(EXPECTED_ENTRIES.size(), entries.size());
             for (ZipEntry e : entries) {
                 assertTrue(EXPECTED_ENTRIES.contains(e.getName()));
             }
@@ -387,7 +387,7 @@ public class ZipFileDuplicateEntryTest {
                 System.out.printf("Entry Name: %s, method: %s, Expected Method: %s%n",
                         entry.name, je.getMethod(), entry.method);
             }
-            assertEquals(je.getMethod(), entry.method);
+            assertEquals(entry.method, je.getMethod());
             try (InputStream in = jarFile.getInputStream(je)) {
                 byte[] bytes = in.readAllBytes();
                 if (DEBUG) {
@@ -487,7 +487,7 @@ public class ZipFileDuplicateEntryTest {
         System.out.printf("%n%n**** JarFileStreamTest ***%n");
         try (JarFile jf = new JarFile(TEST_JAR.toFile())) {
             List<? extends JarEntry> entries = jf.stream().collect(Collectors.toList());
-            assertEquals(jf.size(), EXPECTED_ENTRIES.size());
+            assertEquals(EXPECTED_ENTRIES.size(), jf.size());
             for (JarEntry e : entries) {
                 assertTrue(EXPECTED_ENTRIES.contains(e.getName()));
             }

@@ -109,8 +109,8 @@ public class DeflaterDictionaryTests {
             System.out.printf("Inflater::getAdler:%d, length: %d%n",
                     inflater.getAdler(), resultLength);
 
-            assertEquals(resultLength, SRC_DATA.length());
-            assertArrayEquals(Arrays.copyOf(result, resultLength), input);
+            assertEquals(SRC_DATA.length(), resultLength);
+            assertArrayEquals(input, Arrays.copyOf(result, resultLength));
         } finally {
             // Release Resources
             deflater.end();
