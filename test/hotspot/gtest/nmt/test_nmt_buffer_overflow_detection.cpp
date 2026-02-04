@@ -36,26 +36,26 @@
 // come, just use this one.
 #define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT has detected a memory corruption bug."
 
+#define REGEXP_UNION(x, y) ::testing::AnyOf(x, y)
+#define REGEXP_CONTAINS(x) ::testing::ContainsRegex(x)
+// Since gtest regular expressions do not support unions (a|b), AnyOf() matcher is used.
+#define DEFINE_TEST_REGEX(test_function, x, y)                                            \
+TEST_VM_FATAL_ERROR_MSG(NMT,                                                              \
+                        test_function,                                                    \
+                        (REGEXP_UNION(REGEXP_CONTAINS(x),                                 \
+                                      REGEXP_CONTAINS(y)))) {                             \
+  if (MemTracker::tracking_level() > NMT_off) {                                           \
+    tty->print_cr("NMT overwrite death test, please ignore subsequent error dump.");      \
+    test_function ();                                                                     \
+  } else {                                                                                \
+    /* overflow detection requires NMT to be on. If off, fake assert. */                  \
+    guarantee(false,                                                                      \
+              "fake message ignore this - " x " or " y " " );                             \
+  }                                                                                       \
+}
+
 #define DEFINE_TEST(test_function, expected_assertion_message)                            \
-  TEST_VM_FATAL_ERROR_MSG(NMT, test_function, ".*" expected_assertion_message ".*") {     \
-    if (MemTracker::tracking_level() > NMT_off) {                                         \
-      tty->print_cr("NMT overwrite death test, please ignore subsequent error dump.");    \
-      test_function ();                                                                   \
-    } else {                                                                              \
-      /* overflow detection requires NMT to be on. If off, fake assert. */                \
-      guarantee(false,                                                                    \
-                "fake message ignore this - " expected_assertion_message);                \
-    }                                                                                     \
-  }
-
-  #define DEFINE_TEST_REGEX(test_function, expected_assertion_message)                    \
-  TEST_VM_FATAL_ERROR_MSG(NMT, test_function, expected_assertion_message) {               \
-    if (MemTracker::tracking_level() > NMT_off) {                                         \
-      tty->print_cr("NMT overwrite death test, please ignore subsequent error dump.");    \
-      test_function ();                                                                   \
-    }                                                                                     \
-  }
-
+  DEFINE_TEST_REGEX(test_function, expected_assertion_message, "")
 ///////
 
 #if !INCLUDE_ASAN
@@ -113,9 +113,8 @@ static void test_double_free() {
 // The message would be either
 // - "header canary broken" or
 // - "header canary dead (double free?)".
-// In case of concurrent access, we may see a SIGSEGV instead.
-// Since gtest regex expressions do not support unions (a|b), AnyOf() matcher is used.
-DEFINE_TEST_REGEX(test_double_free, ::testing::AnyOf(::testing::ContainsRegex("header canary"), ::testing::ContainsRegex("SIG")))
+// In case of concurrent access, we may exit with signal instead.
+DEFINE_TEST_REGEX(test_double_free, "header canary", "SIG")
 
 
 ///////
