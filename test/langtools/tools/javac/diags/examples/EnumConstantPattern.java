@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,17 @@
  * questions.
  */
 
-// key: compiler.err.not.exhaustive.statement
-// options: -XDexhaustivityMaxBaseChecks=0
+// key: compiler.err.not.exhaustive.details
+// key: compiler.misc.enum.constant.pattern
 
-class NotExhaustive {
-    void t(Object o) {
-        switch (o) {
-            case String s -> System.err.println("String of length: " + s.length());
+class NotExhaustiveDetails {
+    int t(I i) {
+        return switch (i) {
+            case R r -> -1;
+            case E.A -> -1;
         };
     }
+    sealed interface I {}
+    enum E implements I {A, B}
+    record R(E e) implements I {}
 }
