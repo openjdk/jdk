@@ -244,14 +244,15 @@ VStatus VLoopMemorySlices::find_memory_slices() {
         }
         _inputs.at_put(alias_idx, load->in(1));
       } // else: the load belongs to a slice with a phi that already set heads and inputs.
-#ifdef ASSERT
     } else if (n->is_Store()) {
-      // Found a store. Make sure it is in a slice with a Phi.
+      // Vectorization requires a memory Phi at the loop header to build the memory chain
+      // for this slice. Late-inlined stores may lack one.
       StoreNode* store = n->as_Store();
       int alias_idx = C->get_alias_index(store->adr_type());
       PhiNode* head = _heads.at(alias_idx);
-      assert(head != nullptr, "should have found a mem phi for this slice");
-#endif
+      if (head == nullptr) {
+        return VStatus::make_failure(FAILURE_NO_MEM_PHI_FOR_STORE);
+      }
     }
   }
   NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
