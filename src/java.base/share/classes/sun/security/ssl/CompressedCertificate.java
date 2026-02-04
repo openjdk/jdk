@@ -137,7 +137,7 @@ final class CompressedCertificate {
     }
 
     /**
-     * The "Certificate" handshake message producer for TLS 1.3.
+     * The "CompressedCertificate" handshake message producer for TLS 1.3.
      */
     private static final
     class CompressedCertProducer implements HandshakeProducer {
@@ -208,7 +208,7 @@ final class CompressedCertificate {
     }
 
     /**
-     * The "Certificate" handshake message consumer for TLS 1.3.
+     * The "CompressedCertificate" handshake message consumer for TLS 1.3.
      */
     private static final class CompressedCertConsumer implements SSLConsumer {
 
