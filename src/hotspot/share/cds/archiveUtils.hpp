@@ -265,9 +265,11 @@ public:
   // regions using a 32-bit offset from the bottom of the "rw" region. Since the metadata
   // objects are 8-byte aligned, we can encode with a 3-bit shift on 64-bit platforms
   // to accommodate a maximum of 32GB of metadata objects. There's no need for shifts on
-  // 32-bit builds as the size of the AOT cache is limited.
+  // 32-bit builds as the size of the AOT cache is limited. The maximum archive size is
+  // limited to 3.5GB to leave headroom within the 4GB Klass encoding range for the
+  // compressed class space.
   static constexpr int MetadataOffsetShift = LP64_ONLY(3) NOT_LP64(0);
-  static constexpr uintx MaxMetadataOffsetBytes = LP64_ONLY(0x100000000ULL << MetadataOffsetShift) NOT_LP64(0x7FFFFFFF);
+  static constexpr uintx MaxMetadataOffsetBytes = LP64_ONLY(3584ULL * M) NOT_LP64(0x7FFFFFFF);
 
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
   static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
@@ -282,16 +284,21 @@ public:
     return archive_ptr_array(tmp_array);
   }
 
-  // The following functions translate between a u4 offset and an address in the
+  // ========== Encoded offset functions ==========
+  // The following functions translate between an encoded offset (u4) and an address in
   // the range of the mapped CDS archive (e.g., Metaspace::in_aot_cache()).
+  //
+  // Encoded offsets are scaled by MetadataOffsetShift to allow larger archives to fit
+  // in 32 bits: encoded_offset = raw_byte_offset >> MetadataOffsetShift.
+  //
   // Since the first 16 bytes in this range are dummy data (see ArchiveBuilder::reserve_buffer()),
   // we know that offset 0 never represents a valid object. As a result, an offset of 0
   // is used to encode a nullptr.
   //
   // Use the "archived_address_or_null" variants if a nullptr may be encoded.
 
-  // offset must represent an object of type T in the mapped shared space. Return
-  // a direct pointer to this object.
+  // offset_units is an encoded offset representing an object of type T in the mapped
+  // shared space. Return a direct pointer to this object.
   template <typename T> T static offset_to_archived_address(u4 offset_units) {
     assert(offset_units != 0, "sanity");
     uintx offset_bytes = ((uintx)offset_units) << MetadataOffsetShift;
@@ -308,7 +315,7 @@ public:
     }
   }
 
-  // p must be an archived object. Get its offset from SharedBaseAddress
+  // p must be an archived object. Get its encoded offset from SharedBaseAddress.
   template <typename T> static u4 archived_address_to_offset(T p) {
     uintx pn = (uintx)p;
     uintx base = (uintx)SharedBaseAddress;

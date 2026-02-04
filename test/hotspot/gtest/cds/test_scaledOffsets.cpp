@@ -33,7 +33,7 @@ TEST_VM(ScaledOffsetsTest, constants) {
 #ifdef _LP64
   ASSERT_EQ(3, ArchiveUtils::MetadataOffsetShift);
   ASSERT_TRUE(is_aligned(ArchiveUtils::MaxMetadataOffsetBytes, (uintx)1 << ArchiveUtils::MetadataOffsetShift));
-  ASSERT_EQ((uintx)(32ULL * G), ArchiveUtils::MaxMetadataOffsetBytes);
+  ASSERT_EQ((uintx)(3584ULL * M), ArchiveUtils::MaxMetadataOffsetBytes);
 #else
   ASSERT_EQ(0, ArchiveUtils::MetadataOffsetShift);
   ASSERT_EQ((uintx)0x7FFFFFFF, ArchiveUtils::MaxMetadataOffsetBytes);

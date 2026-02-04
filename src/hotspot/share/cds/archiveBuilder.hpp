@@ -330,6 +330,8 @@ public:
     return current()->buffer_to_requested_delta();
   }
 
+  // Convert a raw byte offset to an encoded offset (scaled u4).
+  // Encoded offsets are shifted by MetadataOffsetShift to fit larger archives in 32 bits.
   inline static u4 to_offset_u4(uintx offset_bytes) {
     guarantee(is_aligned(offset_bytes, (size_t)1 << ArchiveUtils::MetadataOffsetShift),
               "offset not aligned for scaled encoding");
@@ -338,15 +340,23 @@ public:
   }
 
 public:
+  // ========== Raw byte offset functions ==========
+  // These return uintx values representing actual byte distances from the archive base.
+
   // The address p points to an object inside the output buffer. When the archive is mapped
-  // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
+  // at the requested address, what's the raw byte offset of this object from
+  // _requested_static_archive_bottom?
   uintx buffer_to_offset(address p) const;
 
   // Same as buffer_to_offset, except that the address p points to either (a) an object
   // inside the output buffer, or (b), an object in the currently mapped static archive.
   uintx any_to_offset(address p) const;
 
-  // The reverse of buffer_to_offset()
+  // ========== Encoded offset functions ==========
+  // These use u4 values that are scaled by MetadataOffsetShift (raw_bytes >> shift).
+  // Use encoded offsets for compact storage in archive data structures.
+
+  // The reverse of buffer_to_offset_u4()
   address offset_to_buffered_address(u4 offset_units) const;
 
   template <typename T>
