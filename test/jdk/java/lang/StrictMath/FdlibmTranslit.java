@@ -2757,18 +2757,18 @@ public class FdlibmTranslit {
         }
     }
 
-    /**
-    * Return the Inverse Hyperbolic Sine of x
+    /*
+    *  Return the Inverse Hyperbolic Sine of x
     *
-    * Method :
+    *  Method :
     *
-    *  Based on
-    *    asinh(x) = sign(x) * log [ |x| + sqrt(x*x+1) ]
-    *   we have
-    *   asinh(x) := x  if  1+x*x=1,
-    *            := sign(x)*(log(x)+ln2)) for large |x|, else
-    *            := sign(x)*log(2|x|+1/(|x|+sqrt(x*x+1))) if|x|>2, else
-    *            := sign(x)*log1p(|x| + x^2/(1 + sqrt(1+x^2)))
+    *   Based on
+    *     asinh(x) = sign(x) * log [ |x| + sqrt(x*x+1) ]
+    *    we have
+    *    asinh(x) := x  if  1+x*x=1,
+    *             := sign(x)*(log(x)+ln2)) for large |x|, else
+    *             := sign(x)*log(2|x|+1/(|x|+sqrt(x*x+1))) if|x|>2, else
+    *             := sign(x)*log1p(|x| + x^2/(1 + sqrt(1+x^2)))
     */
     private static final class Asinh {
         private static final double one = 1.0;

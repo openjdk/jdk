@@ -1410,9 +1410,7 @@ public class HyperbolicTests {
      *
      * Therefore,
      *
-     * 1. For large values of x asinh(x) ~= signum(x)
-     *
-     * 2. For small values of x, asinh(x) ~= x.
+     * 1. For small values of x, asinh(x) ~= x.
      *
      * Additionally, asinh is an odd function; asinh(-x) = -asinh(x).
      *

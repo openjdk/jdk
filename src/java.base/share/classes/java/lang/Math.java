@@ -2760,9 +2760,9 @@ public final class Math {
 
     /**
      * Returns the inverse hyperbolic sine of a {@code double} value.
-     * The inverse hyperbolic sine of <i>x</i> is defined to be a function such that
-     *  asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
-     *  Note that both range and domain of the exact asinh are unrestricted.
+     * The inverse hyperbolic sine of <i>x</i> is defined to be the function such that
+     * asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that both domain and range of the exact asinh are unrestricted.
      * <p>Special cases:
      * <ul>
      *
@@ -2770,13 +2770,13 @@ public final class Math {
      * same sign as the argument.
      *
      * <li>If the argument is infinity, then the result is
-     * negative infinity with the same sign as the argument.
+     * infinity with the same sign as the argument.
      *
      * <li>If the argument is NaN, then the result is NaN.
      *
-     * <p>The computed result must be within 2.5 ulps of the exact result.
      *
      * </ul>
+     * <p>The computed result must be within 2.5 ulps of the exact result.
      * @param   x The number whose inverse hyperbolic sine is to be returned.
      * @return  The inverse hyperbolic sine of {@code x}.
      * @since 27

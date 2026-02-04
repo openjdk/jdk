@@ -3517,7 +3517,7 @@ final class FdLibm {
      *
      *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
      *      and sinh(asinh(x)) = x, -&infin; &lt; x &lt; &infin;
-     *      It can be written as asinh(x) = ln(|x| + sqrt(x^2 + 1)), -&infin; &lt; x &lt; &infin;
+     *      It can be written as asinh(x) = sign(x) * ln(|x| + sqrt(x^2 + 1)), -&infin; &lt; x &lt; &infin;
      *      1. Replace x by |x| as the function is odd.
      *      2.
      *          asinh(x) := x, if 1+x^2 = 1,
@@ -3544,14 +3544,14 @@ final class FdLibm {
             if (ix >= 0x7ff0_0000) {
                 return x + x;                       // x is inf or NaN
             }
-            if (ix < 0x3e300000) {                   // |x| < 2**-28
+            if (ix < 0x3e30_0000) {                 // |x| < 2**-28
                 if (huge + x > 1.0) {
                     return x;                       // return x inexact except 0
                 }
             }
-            if (ix > 0x41b0_0000) {                   // |x| > 2**28
+            if (ix > 0x41b0_0000) {                 // |x| > 2**28
                 w = Log.compute(Math.abs(x)) + ln2;
-            } else if (ix > 0x4000_0000) {           // 2**28 > |x| > 2.0
+            } else if (ix > 0x4000_0000) {          // 2**28 > |x| > 2.0
                 t = Math.abs(x);
                 w = Log.compute(2.0 * t + 1.0 / (Sqrt.compute(x * x + 1.0) + t));
             } else {                                // 2.0 > |x| > 2**-28
