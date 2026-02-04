@@ -195,7 +195,19 @@ public class TestArrayCopyEliminationUncRematerialization {
                 runTestConst.asToken(testName),
                 """
                 @Test
-                @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" })
+                @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" },
+                    applyIf = { "TieredCompilation", "true"})
+                """,
+                testMethodConst.asToken(testName, templates)
+            ));
+
+            var testCaseConstX64Only = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(let("ptyShort", pty.abbrev()),
+                runTestConst.asToken(testName),
+                """
+                @Test
+                @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" },
+                    applyIf = { "TieredCompilation", "true" },
+                    applyIfPlatform = { "x64", "true" })
                 """,
                 testMethodConst.asToken(testName, templates)
             ));
@@ -291,9 +303,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                         private static final VarHandle #handle = MethodHandles.arrayElementVarHandle(#type[].class);
                         """
                     )),
-                    testCaseConst.asToken("ConstGetAndSet" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(getAndSetStoreConst, unstableTrap)),
+                    testCaseConstX64Only.asToken("ConstGetAndSet" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(getAndSetStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreIdx, unstableTrap)),
-                    testCaseConst.asToken("ConstCompareAndSet" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(casStoreConst, unstableTrap)),
+                    testCaseConstX64Only.asToken("ConstCompareAndSet" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(casStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxCompareAndSet" + pty.abbrev(), new TestTemplates(casStoreIdx, unstableTrap))
                 );
             });
