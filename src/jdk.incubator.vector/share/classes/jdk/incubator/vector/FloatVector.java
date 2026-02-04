@@ -3562,6 +3562,18 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return this;
     }
 
+    @Override
+    @ForceInline
+    final
+    FloatVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<Float> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (FloatVector) this.rearrange(shuffle);
+    }
+
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_FLOAT_INDEX_SCALE);
     static final long ARRAY_BASE =
