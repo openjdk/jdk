@@ -1597,11 +1597,7 @@ bool os::write(int fd, const void *buf, size_t nBytes) {
   ssize_t res;
 
   while (nBytes > 0) {
-    size_t bytes_to_write = nBytes;
-    if (bytes_to_write > (size_t)INT_MAX) {
-      bytes_to_write = (size_t)INT_MAX;
-    }
-    res = pd_write(fd, buf, bytes_to_write);
+    res = pd_write(fd, buf, nBytes);
     if (res == OS_ERR) {
       return false;
     }
