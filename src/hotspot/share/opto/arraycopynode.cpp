@@ -600,8 +600,8 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* dest = in(ArrayCopyNode::Dest);
   const TypePtr* atp_src = get_address_type(phase, _src_type, src);
   const TypePtr* atp_dest = get_address_type(phase, _dest_type, dest);
-  phase->set_type(src, phase->type(src)->join(atp_src));
-  phase->set_type(dest, phase->type(dest)->join(atp_dest));
+  phase->set_type(src, phase->type(src)->join_speculative(atp_src));
+  phase->set_type(dest, phase->type(dest)->join_speculative(atp_dest));
 
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
