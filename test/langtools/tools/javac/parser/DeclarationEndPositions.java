@@ -87,7 +87,7 @@ public class DeclarationEndPositions {
                     // For variable declarations using "var", verify the "var" position
                     if (tree instanceof JCVariableDecl varDecl && varDecl.declaredUsingVar()) {
                         int varStart = varDecl.vartype.getStartPosition();
-                        int varEnd = varDecl.vartype.getEndPosition(unit.endPositions);
+                        int varEnd = varDecl.vartype.getEndPosition();
 
                         if (!input.substring(varStart, varEnd).startsWith("var")) {
                             throw new AssertionError(String.format(

@@ -3835,13 +3835,11 @@ public class JavacParser implements Parser {
     }
 
     JCExpression replaceTypeWithVar(JCExpression type) {
-        int savedErrorPos = endPosTable.errorEndPos;
+        JCVarType varType = F.at(type).VarType();
 
-        endPosTable.errorEndPos = Position.NOPOS;
-        endPosTable.replaceTree(type, type = F.at(type).VarType());
-        endPosTable.setErrorEndPos(savedErrorPos);
+        varType.endpos = type.endpos;
 
-        return type;
+        return varType;
     }
 
     Name restrictedTypeName(JCExpression e, boolean shouldWarn) {
