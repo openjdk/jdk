@@ -181,16 +181,24 @@ unsigned HeapShared::oop_hash(oop const& p) {
   return primitive_hash(cast_from_oop<intptr_t>(p));
 }
 
-unsigned int HeapShared::oop_handle_hash_raw(const OopHandle& oh) {
+unsigned HeapShared::oop_handle_hash_raw(const OopHandle& oh) {
   return oop_hash(oh.resolve());
 }
 
-unsigned int HeapShared::oop_handle_hash(const OopHandle& oh) {
+unsigned HeapShared::oop_handle_hash(const OopHandle& oh) {
   oop o = oh.resolve();
   if (o == nullptr) {
     return 0;
   } else {
     return o->identity_hash();
+  }
+}
+
+unsigned HeapShared::archived_object_cache_hash(OopHandle const& oh) {
+  if (_use_identity_cache_for_archived_object_cache) {
+    return oop_handle_hash(oh);
+  } else {
+    return oop_handle_hash_raw(oh);
   }
 }
 
@@ -245,6 +253,7 @@ void HeapShared::reset_archived_object_states(TRAPS) {
   reset_states(boot_loader(), CHECK);
 }
 
+bool HeapShared::_use_identity_cache_for_archived_object_cache = false;
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
 
 bool HeapShared::is_archived_heap_in_use() {
@@ -380,6 +389,20 @@ void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
   }
 }
 
+void HeapShared::make_archived_object_cache_gc_safe() {
+  ArchivedObjectCache* new_cache = new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
+
+  // It's safe to change the behavior of the hash function now, because iterate_all() doesn't call
+  // the hash function.
+  _use_identity_cache_for_archived_object_cache = true;
+  archived_object_cache()->iterate_all([&] (OopHandle oh, CachedOopInfo info) {
+      new_cache->put_when_absent(oh, info);
+    });
+
+  destroy_archived_object_cache();
+  _archived_object_cache = new_cache;
+}
+
 HeapShared::CachedOopInfo* HeapShared::get_cached_oop_info(oop obj) {
   OopHandle oh(Universe::vm_global(), obj);
   CachedOopInfo* result = _archived_object_cache->get(oh);
@@ -396,6 +419,7 @@ int HeapShared::append_root(oop obj) {
   assert(SafepointSynchronize::is_at_safepoint() , "todo: need a lock when access outside of safepoint");
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
   if (obj == nullptr) {
+    assert(0, "huh");
     assert(_pending_roots->at(0).is_empty(), "root index 1 is always null");
     return 0;
   }
@@ -588,7 +612,7 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
  void HeapShared::init_dumping() {
    _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
    _pending_roots = new GrowableArrayCHeap<OopHandle, mtClassShared>(500);
-   _pending_roots->append(OopHandle());
+   //_pending_roots->append(OopHandle());
 }
 
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
@@ -880,6 +904,8 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
 
   ArchiveBuilder::OtherROAllocMark mark;
   write_subgraph_info_table();
+
+  make_archived_object_cache_gc_safe();
 }
 
 void HeapShared::scan_java_mirror(oop orig_mirror) {

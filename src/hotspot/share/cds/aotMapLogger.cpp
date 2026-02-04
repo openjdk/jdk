@@ -882,14 +882,11 @@ void AOTMapLogger::log_archived_objects(OopDataIterator* iter) {
 
   _roots = new GrowableArrayCHeap<FakeOop, mtClass>();
 
-  // Roots that are not segmented
   GrowableArrayCHeap<OopData, mtClass>* normal_roots = iter->roots();
   for (int i = 0; i < normal_roots->length(); ++i) {
     OopData data = normal_roots->at(i);
     FakeOop fop(iter, data);
     _roots->append(fop);
-    st.print(" root[%4d]: ", i);
-    print_oop_info_cr(&st, fop);
   }
 
   while (iter->has_next()) {
@@ -962,8 +959,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
     for (int i = 0; i < fake_obj_array.length(); i++) {
       FakeOop elm = fake_obj_array.obj_at(i);
       if (is_logging_root_segment) {
-        st->print(" root[%4d]: ", _roots->length());
-        _roots->append(elm);
+        st->print(" root[%4d]: ", i);
       } else {
         st->print(" -%4d: ", i);
       }

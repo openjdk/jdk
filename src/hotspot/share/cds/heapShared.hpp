@@ -227,8 +227,8 @@ public:
         _has_native_pointers(false),
         _root_index(-1) {}
     // This class is trivially copyable and assignable.
-    //CachedOopInfo(const CachedOopInfo&) = default;
-    //CachedOopInfo& operator=(const CachedOopInfo&) = default;
+    CachedOopInfo(const CachedOopInfo&) = default;
+    CachedOopInfo& operator=(const CachedOopInfo&) = default;
 
     oop orig_referrer() const;
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
@@ -245,7 +245,7 @@ private:
   static const int MAX_TABLE_SIZE     = 1000000;
   static bool _use_identity_cache_for_archived_object_cache;
 
-  static unsigned archived_object_cache_hash(OopHandle const& oh) { return oop_handle_hash_raw(oh); }
+  static unsigned archived_object_cache_hash(OopHandle const& oh);
 
   typedef ResizeableHashTable<OopHandle, CachedOopInfo,
       AnyObj::C_HEAP,
@@ -401,6 +401,7 @@ private:
     _archived_object_cache =
       new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
   }
+  static void make_archived_object_cache_gc_safe();
   static void destroy_archived_object_cache() {
     delete _archived_object_cache;
     _archived_object_cache = nullptr;

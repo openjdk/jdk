@@ -78,6 +78,9 @@ int AOTMappedHeapLoader::_root_segment_max_size_elems;
 MemRegion AOTMappedHeapLoader::_mapped_heap_memregion;
 bool AOTMappedHeapLoader::_heap_pointers_need_patching;
 
+// Used for AOT map logging
+static GrowableArrayCHeap<size_t, mtClass>* _root_offsets;
+
 // Every mapped region is offset by _mapped_heap_delta from its requested address.
 // See FileMapInfo::heap_region_requested_address().
 ATTRIBUTE_NO_UBSAN
@@ -467,6 +470,15 @@ void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
     if (CDSConfig::is_dumping_final_static_archive()) {
       StringTable::move_shared_strings_into_runtime_table();
     }
+
+    if (AOTMapLogger::is_logging_at_bootstrap()) {
+      _root_offsets = new GrowableArrayCHeap<size_t, mtClass>();
+
+      for (int i = 0; i < segments.roots_count(); i++) {
+        oop root = AOTMappedHeapLoader::get_root(i);
+        _root_offsets->append(pointer_delta(root, cast_to_oop(bottom), 1));
+      }
+    }
   }
 }
 
@@ -765,6 +777,17 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                klass,
                size,
                false };
+    }
+
+    GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
+      GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* result = new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
+
+      for (int i = 0; i < _root_offsets->length(); i++) {
+        size_t offset = _root_offsets->at(i);
+        result->append(capture(_buffer_start + offset));
+      }
+
+      return result;
     }
   };
 

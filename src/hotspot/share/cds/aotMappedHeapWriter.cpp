@@ -271,14 +271,13 @@ size_t AOTMappedHeapWriter::size_of_buffered_oop(address buffered_addr) {
     return nbytes / BytesPerWord;
   }
 
-  address hrs = buffer_bottom();
   for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
+    address seg_addr = offset_to_buffered_address<address>(_heap_root_segments.segment_offset(seg_idx));
     nbytes = _heap_root_segments.size_in_bytes(seg_idx);
-    if (hrs == buffered_addr) {
+    if (seg_addr == buffered_addr) {
       assert((nbytes % BytesPerWord) == 0, "should be aligned");
       return nbytes / BytesPerWord;
     }
-    hrs += nbytes;
   }
 
   ShouldNotReachHere();
@@ -939,16 +938,14 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapIn
     }
 
     GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
-      //GrowableArrayCHeap<oop, mtClassShared>* pending_roots = HeapShared::pending_roots();
+      GrowableArrayCHeap<OopHandle, mtClassShared>* pending_roots = HeapShared::pending_roots();
       GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* result = new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
 
-#if 0
       for (int i = 0; i < pending_roots->length(); ++i) {
-        HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(pending_roots->at(i));
+        HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(pending_roots->at(i).resolve());
         address buffered_addr = _buffer_start + p->buffer_offset();
         result->append(capture(buffered_addr));
       }
-#endif
 
       return result;
     }

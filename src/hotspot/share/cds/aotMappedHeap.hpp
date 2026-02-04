@@ -204,10 +204,6 @@ public:
       return capture(buffer_addr);
     }
   }
-
-  GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
-    return new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
-  }
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 
