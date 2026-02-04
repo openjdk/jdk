@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,17 @@
  * @run main ByteBuffers AES 16
  */
 
-import java.util.*;
-import java.nio.*;
+import java.lang.foreign.Arena;
+import java.util.Random;
+import java.util.Arrays;
+import java.nio.ByteBuffer;
 
-import java.security.*;
+import java.security.Provider;
+import java.security.Security;
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 public class ByteBuffers {
 
@@ -60,32 +64,48 @@ public class ByteBuffers {
 
         byte[] outBytes = cipher.doFinal(t);
 
-        // create ByteBuffers for input (i1, i2, i3) and fill them
-        ByteBuffer i0 = ByteBuffer.allocate(n + 256);
-        i0.position(random.nextInt(256));
-        i0.limit(i0.position() + n);
-        ByteBuffer i1 = i0.slice();
-        i1.put(t);
+        try (Arena arena = Arena.ofConfined()) {
+            // create ByteBuffers for input (i1, i2, i3) and fill them
+            ByteBuffer i0 = ByteBuffer.allocate(n + 256);
+            i0.position(random.nextInt(256));
+            i0.limit(i0.position() + n);
+            ByteBuffer i1 = i0.slice();
+            i1.put(t);
 
-        ByteBuffer i2 = ByteBuffer.allocateDirect(t.length);
-        i2.put(t);
+            ByteBuffer i2 = ByteBuffer.allocateDirect(t.length);
+            i2.put(t);
 
-        i1.clear();
-        ByteBuffer i3 = i1.asReadOnlyBuffer();
+            i1.clear();
+            ByteBuffer i3 = i1.asReadOnlyBuffer();
 
-        ByteBuffer o0 = ByteBuffer.allocate(n + 512);
-        o0.position(random.nextInt(256));
-        o0.limit(o0.position() + n + 256);
-        ByteBuffer o1 = o0.slice();
+            ByteBuffer i4 = arena.allocate(t.length).asByteBuffer();
+            i4.put(t);
+            i4.clear();
 
-        ByteBuffer o2 = ByteBuffer.allocateDirect(t.length + 256);
+            ByteBuffer o0 = ByteBuffer.allocate(n + 512);
+            o0.position(random.nextInt(256));
+            o0.limit(o0.position() + n + 256);
+            ByteBuffer o1 = o0.slice();
 
-        crypt(cipher, i1, o1, outBytes, random);
-        crypt(cipher, i2, o1, outBytes, random);
-        crypt(cipher, i3, o1, outBytes, random);
-        crypt(cipher, i1, o2, outBytes, random);
-        crypt(cipher, i2, o2, outBytes, random);
-        crypt(cipher, i3, o2, outBytes, random);
+            ByteBuffer o2 = ByteBuffer.allocateDirect(t.length + 256);
+
+            ByteBuffer o3 = arena.allocate(t.length).asByteBuffer();
+
+            crypt(cipher, i1, o1, outBytes, random);
+            crypt(cipher, i2, o1, outBytes, random);
+            crypt(cipher, i3, o1, outBytes, random);
+            crypt(cipher, i4, o1, outBytes, random);
+
+            crypt(cipher, i1, o2, outBytes, random);
+            crypt(cipher, i2, o2, outBytes, random);
+            crypt(cipher, i3, o2, outBytes, random);
+            crypt(cipher, i4, o2, outBytes, random);
+
+            crypt(cipher, i1, o3, outBytes, random);
+            crypt(cipher, i2, o3, outBytes, random);
+            crypt(cipher, i3, o3, outBytes, random);
+            crypt(cipher, i4, o3, outBytes, random);
+        }
 
         System.out.println("All tests passed");
     }

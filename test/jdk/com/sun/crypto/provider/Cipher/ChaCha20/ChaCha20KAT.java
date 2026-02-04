@@ -30,6 +30,7 @@
  * @summary ChaCha20 Cipher Implementation (KAT)
  */
 
+import java.lang.foreign.Arena;
 import java.util.*;
 import java.security.GeneralSecurityException;
 import javax.crypto.Cipher;
@@ -200,7 +201,13 @@ public class ChaCha20KAT {
         for (TestData test : testList) {
             System.out.println("*** Test " + ++testNumber + ": " +
                     test.testName);
-            if (runByteBuffer(test)) {
+            if (runByteBuffer(test, true)) {
+                testsPassed++;
+            }
+
+            System.out.println("*** Test " + ++testNumber + ": " +
+                    test.testName);
+            if (runByteBuffer(test, false)) {
                 testsPassed++;
             }
         }
@@ -360,7 +367,7 @@ public class ChaCha20KAT {
         System.out.println();
     }
 
-    private static boolean runByteBuffer(TestData testData)
+    private static boolean runByteBuffer(TestData testData, boolean heap)
             throws GeneralSecurityException {
         boolean encRes = false;
         boolean decRes = false;
@@ -372,48 +379,63 @@ public class ChaCha20KAT {
                 testData.nonce, testData.counter);
         mambo.init(Cipher.ENCRYPT_MODE, mamboKey, mamboSpec);
 
-        ByteBuffer bbIn = ByteBuffer.wrap(testData.input);
-        ByteBuffer bbEncOut = ByteBuffer.allocate(
-                mambo.getOutputSize(testData.input.length));
-        ByteBuffer bbExpOut = ByteBuffer.wrap(testData.expOutput);
+        try (Arena arena = Arena.ofConfined()) {
+            ByteBuffer bbIn = ByteBuffer.wrap(testData.input);
+            ByteBuffer bbEncOut;
+            ByteBuffer bbExpOut = ByteBuffer.wrap(testData.expOutput);
+            if (heap) {
+                bbEncOut = ByteBuffer.allocate(
+                        mambo.getOutputSize(testData.input.length));
+            } else {
+                bbEncOut = arena.allocate(
+                        mambo.getOutputSize(testData.input.length))
+                        .asByteBuffer();
+            }
 
-        mambo.doFinal(bbIn, bbEncOut);
-        bbIn.rewind();
-        bbEncOut.rewind();
+            mambo.doFinal(bbIn, bbEncOut);
+            bbIn.rewind();
+            bbEncOut.rewind();
 
-        if (bbEncOut.compareTo(bbExpOut) != 0) {
-            System.out.println("ERROR - Output Mismatch!");
-            System.out.println("Expected:\n" +
-                    dumpHexBytes(bbExpOut, 16, "\n", " "));
-            System.out.println("Actual:\n" +
-                    dumpHexBytes(bbEncOut, 16, "\n", " "));
-            System.out.println();
-        } else {
-            encRes = true;
+            if (bbEncOut.compareTo(bbExpOut) != 0) {
+                System.out.println("ERROR - Output Mismatch!");
+                System.out.println("Expected:\n" +
+                        dumpHexBytes(bbExpOut, 16, "\n", " "));
+                System.out.println("Actual:\n" +
+                        dumpHexBytes(bbEncOut, 16, "\n", " "));
+                System.out.println();
+            } else {
+                encRes = true;
+            }
+
+            // Decrypt the result of the encryption operation
+            mambo = Cipher.getInstance("ChaCha20");
+            mambo.init(Cipher.DECRYPT_MODE, mamboKey, mamboSpec);
+            System.out.print("Decrypt - ");
+            ByteBuffer bbDecOut;
+            if (heap) {
+                bbDecOut = ByteBuffer.allocate(
+                        mambo.getOutputSize(bbEncOut.remaining()));
+            } else {
+                bbDecOut = arena.allocate(
+                        mambo.getOutputSize(bbEncOut.remaining()))
+                        .asByteBuffer();
+            }
+
+            mambo.doFinal(bbEncOut, bbDecOut);
+            bbEncOut.rewind();
+            bbDecOut.rewind();
+
+            if (bbDecOut.compareTo(bbIn) != 0) {
+                System.out.println("ERROR - Output Mismatch!");
+                System.out.println("Expected:\n" +
+                        dumpHexBytes(bbIn, 16, "\n", " "));
+                System.out.println("Actual:\n" +
+                        dumpHexBytes(bbDecOut, 16, "\n", " "));
+                System.out.println();
+            } else {
+                decRes = true;
+            }
         }
-
-        // Decrypt the result of the encryption operation
-        mambo = Cipher.getInstance("ChaCha20");
-        mambo.init(Cipher.DECRYPT_MODE, mamboKey, mamboSpec);
-        System.out.print("Decrypt - ");
-        ByteBuffer bbDecOut = ByteBuffer.allocate(
-                mambo.getOutputSize(bbEncOut.remaining()));
-
-        mambo.doFinal(bbEncOut, bbDecOut);
-        bbEncOut.rewind();
-        bbDecOut.rewind();
-
-        if (bbDecOut.compareTo(bbIn) != 0) {
-            System.out.println("ERROR - Output Mismatch!");
-            System.out.println("Expected:\n" +
-                    dumpHexBytes(bbIn, 16, "\n", " "));
-            System.out.println("Actual:\n" +
-                    dumpHexBytes(bbDecOut, 16, "\n", " "));
-            System.out.println();
-        } else {
-            decRes = true;
-        }
-
         return (encRes && decRes);
     }
 

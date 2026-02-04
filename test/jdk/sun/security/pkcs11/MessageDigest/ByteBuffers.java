@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,10 @@
  * @run main/othervm ByteBuffers
  */
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
-import java.security.*;
+import java.security.MessageDigest;
+import java.security.Provider;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.List;
@@ -96,6 +98,17 @@ public class ByteBuffers extends PKCS11Test {
         if (Arrays.equals(d1, d2) == false) {
             throw new Exception("Test 3 failed");
         }
+
+        try (Arena arena = Arena.ofConfined()) {
+            ByteBuffer b5 = arena.allocate(n).asByteBuffer();
+            b5.put(data);
+            b5.clear();
+            byte[] d5 = digest(md, b5);
+            if (Arrays.equals(d1, d5) == false) {
+                throw new Exception("Test 4 failed");
+            }
+        }
+
         System.out.println("All tests passed");
     }
 

@@ -27,6 +27,7 @@
  * @summary ArithmeticException in GaloisCounterMode
  */
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 
 import javax.crypto.AEADBadTagException;
@@ -50,6 +51,9 @@ public class GCMShortInput {
         cipher.init(Cipher.DECRYPT_MODE, keySpec, params);
         try {
             cipher.doFinal(ByteBuffer.allocate(0), ByteBuffer.allocate(0));
+            try (Arena arena = Arena.ofConfined()) {
+                cipher.doFinal(arena.allocate(0).asByteBuffer(), arena.allocate(0).asByteBuffer());
+            }
             throw new AssertionError("AEADBadTagException expected");
         } catch (AEADBadTagException e) {
             // expected
