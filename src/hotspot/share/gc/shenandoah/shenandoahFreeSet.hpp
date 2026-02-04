@@ -64,9 +64,9 @@ public:
   static constexpr uint                         UIntNumPartitions = uint(ShenandoahFreeSetPartitionId::NotFree);
 
 private:
-  idx_t const _max;           // The maximum number of heap regions
-  size_t const _region_size_bytes;
-  ShenandoahFreeSet* const  _free_set;
+  const idx_t _max;           // The maximum number of heap regions
+  const size_t _region_size_bytes;
+  const ShenandoahFreeSet* _free_set;
   // For each partition, we maintain a bitmap of which regions are affiliated with his partition.
   ShenandoahSimpleBitMap _membership[UIntNumPartitions];
   // For each partition, we track an interval outside of which a region affiliated with that partition is guaranteed
