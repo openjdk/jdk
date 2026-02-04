@@ -503,6 +503,7 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/ProcessBuilder/PipelineLeaksFD.java                   8375585 generic-all
 
 ############################################################################
 
@@ -710,7 +711,6 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
-jdk/jfr/event/oldobject/TestEmergencyDumpAtOOM.java             8371014 aix-ppc64,linux-ppc64le
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8371630 generic-all
@@ -778,3 +778,16 @@ java/awt/Cursor/CursorDragTest/ListDragCursor.java 7177297 macosx-all
 # jdk_since_checks
 
 tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 8354921 generic-all
+
+#############################################################################
+
+# Preview project specific failures go here at the end of the file.
+#
+# These are NOT failures that occur with the '--enable-preview' option
+# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# These are failures that occur WITHOUT the '--enable-preview' option
+# specified AND occur because of some issue with preview project code,
+# in either implementation or test code.
+
+#############################################################################
+

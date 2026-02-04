@@ -60,6 +60,8 @@ public:
 
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
+  static bool need_satb_barrier(DecoratorSet decorators, BasicType type);
+  static bool need_card_barrier(DecoratorSet decorators, BasicType type);
 
   static bool is_strong_access(DecoratorSet decorators) {
     return (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) == 0;

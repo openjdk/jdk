@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ class fixed_strings {
 
   public:
 
-  fixed_strings() : first(0) {}
+  fixed_strings() : first(nullptr) {}
   ~fixed_strings() {
     node* n = first;
     while (n) {
@@ -113,7 +113,7 @@ bool AixSymbols::get_function_name (
                                      //                 information (null if not available)
     bool demangle                    // [in] whether to demangle the name
   ) {
-  struct tbtable* tb = 0;
+  struct tbtable* tb = nullptr;
   unsigned int searchcount = 0;
 
   // initialize output parameters
@@ -653,10 +653,10 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
   // To print the first frame, use the current value of iar:
   // current entry indicated by iar (the current pc)
-  codeptr_t cur_iar = 0;
-  stackptr_t cur_sp = 0;
-  codeptr_t cur_rtoc = 0;
-  codeptr_t cur_lr = 0;
+  codeptr_t cur_iar = nullptr;
+  stackptr_t cur_sp = nullptr;
+  codeptr_t cur_rtoc = nullptr;
+  codeptr_t cur_lr = nullptr;
 
   const ucontext_t* uc = (const ucontext_t*) context;
 
@@ -926,7 +926,7 @@ static struct handletableentry* p_handletable = nullptr;
 static const char* rtv_linkedin_libpath() {
   constexpr int bufsize = 4096;
   static char buffer[bufsize];
-  static const char* libpath = 0;
+  static const char* libpath = nullptr;
 
   // we only try to retrieve the libpath once. After that try we
   // let libpath point to buffer, which then contains a valid libpath
