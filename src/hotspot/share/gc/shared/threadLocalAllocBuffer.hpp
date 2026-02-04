@@ -34,16 +34,13 @@
 class ThreadLocalAllocStats;
 
 // ThreadLocalAllocBuffer: a descriptor for thread-local storage used by
-// the threads for allocation.
-//            It is thread-private at any time, but maybe multiplexed over
-//            time across multiple threads. The park()/unpark() pair is
-//            used to make it available for such multiplexing.
+// the threads for allocation. It is thread-private at any time.
 //
-//            Heap sampling is performed via the end and allocation_end
-//            fields.
-//            allocation_end contains the real end of the tlab allocation,
-//            whereas end can be set to an arbitrary spot in the tlab to
-//            trip the return and sample the allocation.
+// Heap sampling is performed via the end and allocation_end
+// fields.
+// allocation_end contains the real end of the tlab allocation,
+// whereas end can be set to an arbitrary spot in the tlab to
+// trip the return and sample the allocation.
 class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -117,9 +114,7 @@ public:
   HeapWord* end() const                          { return _end; }
   HeapWord* top() const                          { return _top.load_relaxed(); }
   HeapWord* hard_end();
-  HeapWord* pf_top() const                       { return _pf_top; }
   size_t desired_size() const                    { return _desired_size; }
-  size_t used() const                            { return pointer_delta(top(), start()); }
   size_t used_bytes() const                      { return pointer_delta(top(), start(), 1); }
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
