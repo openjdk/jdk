@@ -3515,9 +3515,9 @@ final class FdLibm {
      * Method :
      *
      *
-     *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha, -INF < alpha < < INF
-     *      and sinh(asinh(x)) = x, -INF < x  < INF.
-     *      It can be written as asinh(x) = ln(x + sqrt(x^2 + 1)), -INF < x  < INF.
+     *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
+     *      and sinh(asinh(x)) = x, -&infin; &lt; x &lt; &infin;
+     *      It can be written as asinh(x) = ln(|x| + sqrt(x^2 + 1)), -&infin; &lt; x &lt; &infin;
      *      1. Replace x by |x| as the function is odd.
      *      2.
      *          asinh(x) := x, if 1+x^2 = 1,
@@ -3528,9 +3528,9 @@ final class FdLibm {
      *
      *
      * Special cases:
-     *      only asinh(0)=0 is exact for finite x.
+     *      only asinh(&plusmn;0))=&plusmn;0) is exact for finite x.
      *      asinh(NaN) is NaN
-     *      asinh(INF) is INF
+     *      asinh(&plusmn;&infin;) is &plusmn;&infin;
      */
     static final class Asinh {
         private static final double ln2 = 6.93147180559945286227e-01;
@@ -3540,8 +3540,8 @@ final class FdLibm {
             double t, w;
             int hx, ix;
             hx = __HI(x);
-            ix = hx & 0x7fffffff;
-            if (ix >= 0x7ff00000) {
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x7ff0_0000) {
                 return x + x;                       // x is inf or NaN
             }
             if (ix < 0x3e300000) {                   // |x| < 2**-28
@@ -3549,9 +3549,9 @@ final class FdLibm {
                     return x;                       // return x inexact except 0
                 }
             }
-            if (ix > 0x41b00000) {                   // |x| > 2**28
+            if (ix > 0x41b0_0000) {                   // |x| > 2**28
                 w = Log.compute(Math.abs(x)) + ln2;
-            } else if (ix > 0x40000000) {           // 2**28 > |x| > 2.0
+            } else if (ix > 0x4000_0000) {           // 2**28 > |x| > 2.0
                 t = Math.abs(x);
                 w = Log.compute(2.0 * t + 1.0 / (Sqrt.compute(x * x + 1.0) + t));
             } else {                                // 2.0 > |x| > 2**-28
