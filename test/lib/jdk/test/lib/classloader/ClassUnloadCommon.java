@@ -21,10 +21,11 @@
  * questions.
  */
 
-
 /*
- * To use ClassUnloadCommon from a sub-process, see test/hotspot/jtreg/runtime/logging/ClassLoadUnloadTest.java
+ * To use ClassUnloadCommon from a sub-process, see
+ * test/hotspot/jtreg/runtime/logging/ClassLoadUnloadTest.java
  * for an example.
+ * Warning! Using this component need VM option -XX:-UseGCOverheadLimit
  */
 
 
@@ -185,6 +186,14 @@ public class ClassUnloadCommon {
         } catch (Exception e) {
               return null;
         }
+    }
+
+    /**
+     * Has class loader been reclaimed or not.
+     */
+    private boolean isClassLoaderReclaimed() {
+        return customClassLoaderPhantomRef != null
+            && customClassLoaderPhantomRef.refersTo(null);
     }
 
     /**
@@ -356,13 +365,5 @@ public class ClassUnloadCommon {
         // class loader has not been reclaimed
         System.out.println("ClassUnloadCommon: class loader is still reachable.");
         return false;
-    }
-
-    /**
-     * Has class loader been reclaimed or not.
-     */
-    private boolean isClassLoaderReclaimed() {
-        return customClassLoaderPhantomRef != null
-            && customClassLoaderPhantomRef.refersTo(null);
     }
 }
