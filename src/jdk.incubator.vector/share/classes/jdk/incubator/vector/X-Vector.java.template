@@ -2720,20 +2720,26 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     final
     @ForceInline
-    $abstractvectortype$ sliceTemplate(int origin, Vector<$Boxtype$> v1) {
+    <V extends Vector<$Boxtype$>>
+    $abstractvectortype$ sliceTemplate(int origin, V v1) {
         $abstractvectortype$ that = ($abstractvectortype$) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+        return ($abstractvectortype$)VectorSupport.sliceOp(origin, getClass(), $type$.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                $Bitstype$Vector iotaVector = ($Bitstype$Vector) vec1.iotaShuffle().toBitsVector();
 #if[FP]
-        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+                $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vec1.vspecies().asIntegral(),
+                                                                     ($bitstype$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
 #else[FP]
-        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                $abstractvectortype$ filter = vec1.broadcast(($type$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
 #end[FP]
-        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+                AbstractShuffle<$Boxtype$> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2760,16 +2766,22 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     $abstractvectortype$ sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+        $abstractvectortype$ that = ($abstractvectortype$) vspecies().zero();
+        return ($abstractvectortype$)VectorSupport.sliceOp(origin, getClass(), $type$.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                $Bitstype$Vector iotaVector = ($Bitstype$Vector) vec1.iotaShuffle().toBitsVector();
 #if[FP]
-        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+                $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vec1.vspecies().asIntegral(),
+                                                                     ($bitstype$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
 #else[FP]
-        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
-        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                $abstractvectortype$ filter = vec1.broadcast(($type$)(vec1.length() - index));
+                VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
 #end[FP]
-        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+                AbstractShuffle<$Boxtype$> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2339,6 +2339,36 @@ public class IRNode {
     public static final String RISCV_VAND_NOTL_VX_MASKED = PREFIX + "RISCV_VAND_NOTL_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
+    }
+
+    public static final String VECTOR_SLICE_B = VECTOR_PREFIX + "VECTOR_SLICE_B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_B, "VectorSlice", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_SLICE_S = VECTOR_PREFIX + "VECTOR_SLICE_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_S, "VectorSlice", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_SLICE_I = VECTOR_PREFIX + "VECTOR_SLICE_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_I, "VectorSlice", TYPE_INT);
+    }
+
+    public static final String VECTOR_SLICE_F = VECTOR_PREFIX + "VECTOR_SLICE_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_F, "VectorSlice", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_SLICE_L = VECTOR_PREFIX + "VECTOR_SLICE_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_L, "VectorSlice", TYPE_LONG);
+    }
+
+    public static final String VECTOR_SLICE_D = VECTOR_PREFIX + "VECTOR_SLICE_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_D, "VectorSlice", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;

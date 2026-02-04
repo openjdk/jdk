@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2195,6 +2195,7 @@ private:
   void palignr(XMMRegister dst, XMMRegister src, int imm8);
   void vpalignr(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);
   void evalignq(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void evalignd(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8, int vector_len);
 
   void pblendw(XMMRegister dst, XMMRegister src, int imm8);
   void vblendps(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);

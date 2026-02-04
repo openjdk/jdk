@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
-        return CallGenerator::for_late_inline(callee, cg);
+        float expected_uses = jvms->method()->scale_count(site_count, prof_factor);
+        CallGenerator* inline_cg = CallGenerator::for_inline(callee, expected_uses);
+        return CallGenerator::for_vector_late_inline(callee, cg, inline_cg);
       } else {
         return cg;
       }

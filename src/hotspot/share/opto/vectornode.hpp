@@ -1689,6 +1689,24 @@ class VectorTestNode : public CmpNode {
   }
 };
 
+// Vector slice operation with constant index. Slices a segment of adjacent lanes,
+// starting at a given origin lane in the current vector, and continuing (as needed)
+// into an immediately following vector.
+class VectorSliceNode : public VectorNode {
+ public:
+  VectorSliceNode(Node* vec1, Node* vec2, Node* origin, const TypeVect* vt)
+    : VectorNode(vec1, vec2, origin, vt) {
+    assert(origin->is_Con(), "origin must be a constant");
+  }
+
+  virtual int Opcode() const;
+  Node* vec1() const { return in(1); }
+  Node* vec2() const { return in(2); }
+  Node* origin() const { return in(3); }
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
+
 // Blend two vectors based on a vector mask. For each lane, select the value
 // from the first input vector (vec1) if the corresponding mask lane is set,
 // otherwise select from the second input vector (vec2).

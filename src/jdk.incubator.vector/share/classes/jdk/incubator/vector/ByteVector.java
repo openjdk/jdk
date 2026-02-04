@@ -2307,15 +2307,20 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     /*package-private*/
     final
     @ForceInline
-    ByteVector sliceTemplate(int origin, Vector<Byte> v1) {
+    <V extends Vector<Byte>>
+    ByteVector sliceTemplate(int origin, V v1) {
         ByteVector that = (ByteVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
-        ByteVector filter = broadcast((byte)(length() - origin));
-        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Byte> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (ByteVector)VectorSupport.sliceOp(origin, getClass(), byte.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ByteVector iotaVector = (ByteVector) vec1.iotaShuffle().toBitsVector();
+                ByteVector filter = vec1.broadcast((byte)(vec1.length() - index));
+                VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Byte> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2342,11 +2347,16 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @ForceInline
     ByteVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
-        ByteVector filter = broadcast((byte)(length() - origin));
-        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Byte> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        ByteVector that = (ByteVector) vspecies().zero();
+        return (ByteVector)VectorSupport.sliceOp(origin, getClass(), byte.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ByteVector iotaVector = (ByteVector) vec1.iotaShuffle().toBitsVector();
+                ByteVector filter = vec1.broadcast((byte)(vec1.length() - index));
+                VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Byte> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**

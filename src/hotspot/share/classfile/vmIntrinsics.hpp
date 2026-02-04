@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1166,6 +1166,18 @@ class methodHandle;
                                   "Ljava/util/function/BiFunction;)"                                                                           \
                                   "Z")                                                                                                         \
    do_name(vector_test_name, "test")                                                                                                           \
+                                                                                                                                               \
+  do_intrinsic(_VectorSlice, jdk_internal_vm_vector_VectorSupport, vector_slice_name, vector_slice_sig, F_S)                                   \
+   do_signature(vector_slice_sig, "(I"                                                                                                         \
+                                   "Ljava/lang/Class;"                                                                                         \
+                                   "Ljava/lang/Class;"                                                                                         \
+                                   "I"                                                                                                         \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
+                                   "Ljdk/internal/vm/vector/VectorSupport$VectorSliceOp;)"                                                     \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                            \
+   do_name(vector_slice_name, "sliceOp")                                                                                                       \
+                                                                                                                                               \
                                                                                                                                                \
   do_intrinsic(_VectorBlend, jdk_internal_vm_vector_VectorSupport, vector_blend_name, vector_blend_sig, F_S)                                   \
    do_signature(vector_blend_sig, "(Ljava/lang/Class;"                                                                                         \

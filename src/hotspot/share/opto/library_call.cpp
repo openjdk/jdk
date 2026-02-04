@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,6 +774,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_index_vector();
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return inline_index_partially_in_upper_range();
+  case vmIntrinsics::_VectorSlice:
+    return inline_vector_slice();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();

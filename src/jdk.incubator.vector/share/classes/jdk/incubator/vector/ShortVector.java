@@ -2308,15 +2308,20 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     final
     @ForceInline
-    ShortVector sliceTemplate(int origin, Vector<Short> v1) {
+    <V extends Vector<Short>>
+    ShortVector sliceTemplate(int origin, V v1) {
         ShortVector that = (ShortVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
-        ShortVector filter = broadcast((short)(length() - origin));
-        VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Short> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (ShortVector)VectorSupport.sliceOp(origin, getClass(), short.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ShortVector iotaVector = (ShortVector) vec1.iotaShuffle().toBitsVector();
+                ShortVector filter = vec1.broadcast((short)(vec1.length() - index));
+                VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Short> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2343,11 +2348,16 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     ShortVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
-        ShortVector filter = broadcast((short)(length() - origin));
-        VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
-        AbstractShuffle<Short> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        ShortVector that = (ShortVector) vspecies().zero();
+        return (ShortVector)VectorSupport.sliceOp(origin, getClass(), short.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                ShortVector iotaVector = (ShortVector) vec1.iotaShuffle().toBitsVector();
+                ShortVector filter = vec1.broadcast((short)(vec1.length() - index));
+                VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+                AbstractShuffle<Short> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**

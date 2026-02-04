@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -757,6 +757,20 @@ public class VectorSupport {
     }
 
     /* ============================================================================ */
+
+    public interface VectorSliceOp<V extends Vector<E>, E> {
+        V apply(int origin, V v1, V v2);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     E>
+    V sliceOp(int origin, Class<?> vClass, Class<E> eClass, int length, V v1, V v2,
+              VectorSliceOp<V, E> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(origin, v1, v2);
+    }
 
     // Returns a string containing a list of CPU features VM detected.
     public static native String getCPUFeatures();
