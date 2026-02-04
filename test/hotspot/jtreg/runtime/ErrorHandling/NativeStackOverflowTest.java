@@ -22,24 +22,31 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @requires os.family != "windows" & os.family != "aix"
+ * @requires vm.flagless
  * @library /test/lib
- * @run testng NativeStackOverflowTest
+ * @run driver NativeStackOverflowTest dflt
+ */
+
+/*
+ * @test id=explicit
+ * @requires os.family != "windows" & os.family != "aix"
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver NativeStackOverflowTest explicit
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import org.testng.annotations.Test;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
-import static org.testng.Assert.assertTrue;
-
 public class NativeStackOverflowTest {
+
     private static class Crasher {
         public static void main(String[] args) throws Throwable {
             System.loadLibrary("NativeStackOverflow");
@@ -48,22 +55,57 @@ public class NativeStackOverflowTest {
         public static native void crash();
     }
 
-    @Test
-    public void testNativeStackOverflow() throws Exception {
-        OutputAnalyzer output = ProcessTools.executeTestJava(
-                "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseAltSigStacks", "-Xlog:os+thread=debug",
-                // executeTestJava doesn't seem to forward 'java.library.path'
-                "-Djava.library.path=" + System.getProperty("java.library.path"),
-                Crasher.class.getName());
+    public static void test(boolean useExplicitStackSize) throws Exception {
+
+        final int explicitStackSize = 1024;
+        final int defaultStackSize = 128; // keep in sync with -XX:AltSigStackSize
+        ArrayList<String> args =
+                new ArrayList<>(Arrays.asList("-XX:+UnlockDiagnosticVMOptions", "-XX:+UseAltSigStacks",
+                                              "-Xlog:os+thread=debug",
+                                              "-Djava.library.path=" + System.getProperty("java.library.path")));
+        if (useExplicitStackSize) {
+            args.add("-XX:AltSigStackSize=" + explicitStackSize);
+        }
+        args.add(Crasher.class.getName());
+
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
+
+        final int expectedStackSize = useExplicitStackSize ? explicitStackSize : defaultStackSize;
+        final int acceptableFudge = 128;
+
+output.reportDiagnosticSummary();
+        output.shouldNotHaveExitValue(0);
+
+        output.shouldContain("Alternative signal stack size");
+        final int realStackSize =
+            Integer.parseInt(output.firstMatch(".*Alternative signal stack size (\\d+).*", 1)) / 1024;
+
+        if (realStackSize < expectedStackSize || realStackSize > (expectedStackSize + acceptableFudge)) {
+            throw new RuntimeException(String.format("Unexpected stack size (%d vs %d)", expectedStackSize, realStackSize));
+        }
+
+        output.shouldMatch(".*Thread \\d+ alternate signal stack: enabled.*");
+        output.shouldContain("An irrecoverable stack overflow has occurred");
 
         File hsErrFile = HsErrFileUtils.openHsErrFileFromOutput(output);
-        Path hsErrPath = hsErrFile.toPath();
-        assertTrue(Files.exists(hsErrPath));
 
         Pattern[] positivePatterns = {
                 Pattern.compile(".*(SIGSEGV|SIGBUS).*"),
-                Pattern.compile(".*irrecoverable stack overflow.*")
+                Pattern.compile(".*irrecoverable stack overflow.*"),
+                Pattern.compile(".*Java_NativeStackOverflowTest_00024Crasher_crash.*"),
+                Pattern.compile(".*Java_NativeStackOverflowTest_00024Crasher_crash.*"),
+                Pattern.compile(".*Java_NativeStackOverflowTest_00024Crasher_crash.*"),
+                Pattern.compile(".*Java_NativeStackOverflowTest_00024Crasher_crash.*"),
+                Pattern.compile(".*Java_NativeStackOverflowTest_00024Crasher_crash.*")
         };
         HsErrFileUtils.checkHsErrFileContent(hsErrFile, positivePatterns, null, true /* check end marker */, false /* verbose */, true /* print on error */);
+    }
+
+    public static void main(String[] args) throws Exception {
+        final boolean useExplicitStackSize =
+                switch(args[0]) { case "dflt" -> false;
+                                  case "explicit" -> true;
+                                  default -> throw new RuntimeException("invalid"); };
+        test(useExplicitStackSize);
     }
 }

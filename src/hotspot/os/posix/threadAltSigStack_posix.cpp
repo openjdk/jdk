@@ -26,6 +26,8 @@
 #include "logging/logStream.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 #include <signal.h>
@@ -37,16 +39,13 @@
 // secondary crashes during signal handling, which would increase stack
 // usage.
 static size_t get_alternate_signal_stack_size() {
+  // Note: the first thread initializing this would be the main thread which
+  // still runs single-threaded. It is invoked after initial argument parsing.
   static size_t value = 0;
   if (value == 0) {
     assert(UseAltSigStacks, "invariant");
-
-    // Note: the first thread initializing this would be the main thread which
-    // still runs single-threaded. It is invoked after initial argument parsing.
-    assert(StackOverflow::is_initialized(), "Too early?");
-
     const size_t stacksize_mincap = (MINSIGSTKSZ) + (128 * K); // very generous
-    value = MAX2(stacksize_mincap, StackOverflow::stack_shadow_zone_size());
+    value = MAX2(stacksize_mincap, (size_t)(AltSigStackSize * K));
     value = align_up(value, os::vm_page_size());
 
     // Guard page
@@ -127,7 +126,7 @@ void Thread::enable_alternate_signal_stack() {
   if (success) {
     step ++;
     DEBUG_ONLY(memset(p, 0, stacksize));
- //   success = os::protect_memory(p, os::vm_page_size(), os::MEM_PROT_NONE, true);
+    success = os::protect_memory(p, os::vm_page_size(), os::MEM_PROT_NONE, true);
   }
 
   if (!success) {
@@ -150,8 +149,6 @@ void Thread::enable_alternate_signal_stack() {
 }
 
 void Thread::disable_alternate_signal_stack() {
-  const size_t stacksize = get_alternate_signal_stack_size();
-
   if (!UseAltSigStacks) {
     return;
   }
@@ -164,11 +161,13 @@ void Thread::disable_alternate_signal_stack() {
   assert(this == Thread::current_or_null_safe(), "Only for current thread");
   assert(_altsigstack != nullptr, "Not enabled?");
 
+  const size_t stacksize = get_alternate_signal_stack_size();
+
   // We first uninstall the alternative signal stack
   stack_t ss;
   ss.ss_flags = SS_DISABLE;
   ss.ss_sp = nullptr;
-  ss.ss_size = stacksize; // needed on MacOS to prevent ENOMEM, even though it spec says otherwise
+  ss.ss_size = stacksize; // needed on MacOS, even though posix spec says otherwise
   stack_t oss;
   sigaltstack_and_log(&ss, &oss);
 

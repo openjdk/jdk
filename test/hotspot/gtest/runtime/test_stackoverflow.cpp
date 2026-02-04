@@ -28,10 +28,10 @@
 #include "runtime/stackOverflow.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 #include "unittest.hpp"
-
 
 
 TEST_VM(StackOverflow, basics) {
@@ -118,15 +118,11 @@ struct NonJavaTestThread : public NamedThread {
   }
 }; // NativeHeapTrimmer
 
-// Note: on MacOS, running into the native guard page at the end of a stack generates
-// a SIGBUS, not a SIGSEGV
-#ifdef __APPLE__
-#define EXPECTED_SIGNAL "SIGBUS"
-#else
-#define EXPECTED_SIGNAL "SIGSEGV"
-#endif
-
-TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread, EXPECTED_SIGNAL) {
+TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread,
+                     MACOS_ONLY("SIGBUS") NOT_MACOS("SIGSEGV")) {
+  if (!UseAltSigStacks) {
+    return;
+  }
   new NonJavaTestThread();
   // Wait some time for the thread to come up and crash the process
   int wait_ms = 5000;
@@ -136,12 +132,14 @@ TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread, EXPECTED
   }
   ASSERT_FALSE(false); // We should have died by this point
 }
-#undef EXPECTED_SIGNAL
 
 // Test that we get hs-err files for stack overflows in JVM-hosted JavaThreads. There
 // is a companion jtreg test (runtime/ErrorHandling/NativeStackoverflowTest) which
 // tests the same thing, but for custom JNI code invoked from java.
 TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInJavaThread, "SIGSEGV") {
+  if (!UseAltSigStacks) {
+    return;
+  }
   // Gtests get invoked on the "main" java thread, so its a java thread.
   cause_native_stack_overflow();
 }

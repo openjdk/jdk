@@ -2006,8 +2006,12 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
                                                                             \
-  product(bool, UseAltSigStacks, true, DIAGNOSTIC,                         \
-          "Enable the use of alternative signal stacks." )                  \
+  product(bool, UseAltSigStacks, true, DIAGNOSTIC,                          \
+          "Enable the use of alternative signal stacks.")                   \
+                                                                            \
+  product(intx, AltSigStackSize, 128, DIAGNOSTIC,                           \
+          range(128, 8192)                                                  \
+          "If UseAltSigStacks is enabled, signal stack size (in Kbytes).")  \
                                                                             \
 
 // end of RUNTIME_FLAGS
