@@ -2010,12 +2010,10 @@ void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, Basic
       if (size == T2S) {
         // For T2S (2x32-bit elements), use pairwise instructions because
         // uminv/umaxv/sminv/smaxv don't support arrangement 2S.
-        is_min ? neon_minp(is_unsigned, vtmp, size, vsrc, vsrc)
-               : neon_maxp(is_unsigned, vtmp, size, vsrc, vsrc);
+        neon_minmaxp(is_unsigned, is_min, vtmp, size, vsrc, vsrc);
       } else {
         // For other sizes, use reduction to scalar instructions.
-        is_min ? neon_minv(is_unsigned, vtmp, size, vsrc)
-               : neon_maxv(is_unsigned, vtmp, size, vsrc);
+        neon_minmaxv(is_unsigned, is_min, vtmp, size, vsrc);
       }
       if (bt == T_INT) {
         umov(dst, vtmp, S, 0);
@@ -2111,8 +2109,7 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
       bool is_unsigned;
       Condition cond;
       decode_minmax_reduction_opc(opc, &is_min, &is_unsigned, &cond);
-      is_min ? sve_minv(is_unsigned, tmp, size, pg, src2)
-             : sve_maxv(is_unsigned, tmp, size, pg, src2);
+      sve_minmaxv(is_unsigned, is_min, tmp, size, pg, src2);
       // Move result from vector to general register
       if (is_unsigned || bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
