@@ -225,9 +225,9 @@ public class ZipFileDuplicateEntryTest {
     }
 
     /**
-     * DataProvider used to specify the Zip entries to use
+     * MethodSource used to specify the Zip entries to use
      *
-     * @return The Entry to use within the test
+     * @return Stream that indicates which Entry to use within the test
      */
     public static Stream<Entry> entries() {
         return Stream.of(FILE_ENTRY, DIR_ENTRY);

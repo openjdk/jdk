@@ -81,18 +81,18 @@ public class CloseInflaterDeflaterTest {
     private static Random rand = new Random();
 
     /**
-     * DataProvider to specify whether to use close() or finish() of OutputStream
+     * MethodSource to specify whether to use close() or finish() of OutputStream
      *
-     * @return Entry object indicating which method to use for closing OutputStream
+     * @return Stream indicating which method to use for closing OutputStream
      */
     public static Stream<Boolean> testOutputStreams() {
         return Stream.of(true, false);
     }
 
     /**
-     * DataProvider to specify on which outputstream closeEntry() has to be called
+     * MethodSource to specify on which outputstream closeEntry() has to be called
      *
-     * @return Entry object returning either JarOutputStream or ZipOutputStream
+     * @return Stream consisting of either a JarOutputStream or ZipOutputStream
      */
     public static Stream<ZipOutputStream> testZipAndJar() throws IOException{
         return Stream.of(new JarOutputStream(outStream), new ZipOutputStream(outStream));

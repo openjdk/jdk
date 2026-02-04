@@ -21,8 +21,6 @@
  * questions.
  */
 
-
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -30,6 +28,9 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @test
@@ -55,8 +56,8 @@ public class GZIPOutputStreamHeaderTest {
             gzipOutputStream.write(data.getBytes(StandardCharsets.UTF_8));
         }
         final byte[] compressed = baos.toByteArray();
-        Assertions.assertNotNull(compressed, "Compressed data is null");
-        Assertions.assertEquals(HEADER_VALUE_OS_UNKNOWN, toUnsignedByte(compressed[OS_HEADER_INDEX]),
+        assertNotNull(compressed, "Compressed data is null");
+        assertEquals(HEADER_VALUE_OS_UNKNOWN, toUnsignedByte(compressed[OS_HEADER_INDEX]),
                 "Unexpected value for OS header");
         // finally verify that the compressed data is readable back to the original
         final String uncompressed;
@@ -66,7 +67,7 @@ public class GZIPOutputStreamHeaderTest {
             gzipInputStream.transferTo(os);
             uncompressed = new String(os.toByteArray(), StandardCharsets.UTF_8);
         }
-        Assertions.assertEquals(data, uncompressed, "Unexpected data read from GZIPInputStream");
+        assertEquals(data, uncompressed, "Unexpected data read from GZIPInputStream");
     }
 
     private static int toUnsignedByte(final byte b) {

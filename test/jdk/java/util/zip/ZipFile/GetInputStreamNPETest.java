@@ -756,9 +756,9 @@ public class GetInputStreamNPETest {
     };
 
     /**
-     * DataProvider used to specify valid jars and whether to verify them
+     * MethodSource used to specify valid jars and whether to verify them
      *
-     * @return Entry object indicating the jar file and whether it will be verified
+     * @return Stream of Arguments which indicate the jar file and whether it will be verified
      */
     public static Stream<Arguments> validJars() {
         return Stream.of(
@@ -770,9 +770,9 @@ public class GetInputStreamNPETest {
     }
 
     /**
-     * DataProvider used to specify invalid jars and whether to verify them
+     * MethodSource used to specify invalid jars and whether to verify them
      *
-     * @return Entry object indicating the jar file and whether it will be verified
+     * @return Stream of Arguments which indicate the jar file and whether it will be verified
      */
     public static Stream<Arguments> inValidJars() {
         return Stream.of(

@@ -340,7 +340,7 @@ public class InvalidCommentLengthTest {
      * the Jar file is opened by  {@code JarFile}
      */
     @Test
-    public void JarFileInValidCommentLengthTest()  {
+    public void JarFileInValidCommentLengthTest() {
         var ex= assertThrows(ZipException.class,
                 () -> new JarFile(INVALID_CEN_COMMENT_LENGTH_JAR.toFile()));
         assertEquals(INVALID_CEN_HEADER_BAD_ENTRY_NAME_OR_COMMENT, ex.getMessage());

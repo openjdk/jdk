@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,6 +32,8 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -53,18 +53,18 @@ public class DeflaterDictionaryTests {
     private static final int DICTIONARY_LENGTH = 3;
 
     /**
-     * DataProvider with offsets which should be valid for setDictionary
+     * MethodSource with offsets which should be valid for setDictionary
      *
-     * @return valid offset values
+     * @return Stream of valid offset values
      */
     protected static IntStream validDictionaryOffsets() {
         return IntStream.of(0, DICTIONARY_OFFSET, DICTIONARY_LENGTH);
     }
 
     /**
-     * DataProvider with  invalid offsets for setDictionary
+     * MethodSource with invalid offsets for setDictionary
      *
-     * @return invalid offset values
+     * @return Stream of invalid offset values
      */
     protected static IntStream invalidDictionaryOffsets() {
         return IntStream.of(-1, DICTIONARY_LENGTH + 2, DICTIONARY.length());
@@ -109,8 +109,8 @@ public class DeflaterDictionaryTests {
             System.out.printf("Inflater::getAdler:%d, length: %d%n",
                     inflater.getAdler(), resultLength);
 
-            Assertions.assertEquals(resultLength, SRC_DATA.length());
-            Assertions.assertArrayEquals(Arrays.copyOf(result, resultLength), input);
+            assertEquals(resultLength, SRC_DATA.length());
+            assertArrayEquals(Arrays.copyOf(result, resultLength), input);
         } finally {
             // Release Resources
             deflater.end();
@@ -157,8 +157,8 @@ public class DeflaterDictionaryTests {
             System.out.printf("Inflater::getAdler:%d, length: %d%n",
                     inflater.getAdler(), resultLength);
 
-            Assertions.assertEquals(resultLength, SRC_DATA.length());
-            Assertions.assertArrayEquals(Arrays.copyOf(result, resultLength), input);
+            assertEquals(resultLength, SRC_DATA.length());
+            assertArrayEquals(Arrays.copyOf(result, resultLength), input);
         } finally {
             // Release Resources
             deflater.end();
@@ -211,8 +211,8 @@ public class DeflaterDictionaryTests {
             System.out.printf("Inflater::getAdler:%d, length: %d%n",
                     inflater.getAdler(), resultLength);
 
-            Assertions.assertEquals(resultLength, SRC_DATA.length());
-            Assertions.assertArrayEquals(Arrays.copyOf(result, resultLength), input);
+            assertEquals(resultLength, SRC_DATA.length());
+            assertArrayEquals(Arrays.copyOf(result, resultLength), input);
         } finally {
             // Release Resources
             deflater.end();
