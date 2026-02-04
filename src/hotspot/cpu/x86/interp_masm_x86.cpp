@@ -1077,12 +1077,12 @@ void InterpreterMacroAssembler::leave_jfr_critical_section() {
 
 #if INCLUDE_STACKWALKER
 void InterpreterMacroAssembler::enter_stackwalker_critical_section() {
-  const Address stackwalker_critical_section(r15_thread, in_bytes(Thread::stackwalker_critical_section_offset()));
+  const Address stackwalker_critical_section(r15_thread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
   movbool(stackwalker_critical_section, true);
 }
 
 void InterpreterMacroAssembler::leave_stackwalker_critical_section() {
-  const Address stackwalker_critical_section(r15_thread, in_bytes(Thread::stackwalker_critical_section_offset()));
+  const Address stackwalker_critical_section(r15_thread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
   movbool(stackwalker_critical_section, false);
 }
 #endif // INCLUDE_STACKWALKER

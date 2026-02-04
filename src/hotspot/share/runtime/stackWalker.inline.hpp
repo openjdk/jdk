@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2026, Datadog, Inc. All rights reserved.
+* Copyright (c) 2026, Datadog, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +23,25 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
-#define SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
+#ifndef SHARE_RUNTIME_STACKWALKER_INLINE_HPP
+#define SHARE_RUNTIME_STACKWALKER_INLINE_HPP
 
 #include "runtime/stackWalker.hpp"
+#include "runtime/javaThread.hpp"
 
-#define DECLARE_FIELD_STACKWALKER StackWalkerThreadLocal _stackwalker_thread_local;
+void StackWalker::check_and_process_requests(JavaThread* jt) {
+  StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+  // Protect agains re-entrant calls. This can happen when we are
+  // currently processing sampling requests and one is calling into
+  // a JVMTI callback. Calling into a callback requires that we
+  // transition the thread state from VM to native, which also
+  // involves a safepoint check. That safepoint would then go ahead
+  // and call into JFR again.
+  if (tl.has_requests() && !tl.is_processing_requests()) {
+    tl.set_processing_requests(true);
+    process_requests(jt, jt, true);
+    tl.set_processing_requests(false);
+  }
+}
 
-#define DEFINE_THREAD_LOCAL_OFFSET_STACKWALKER \
-static ByteSize stackwalker_thread_local_offset() { return byte_offset_of(Thread, _stackwalker_thread_local); }
-
-#define THREAD_LOCAL_OFFSET_STACKWALKER Thread::stackwalker_thread_local_offset()
-
-#define DEFINE_ACCESSOR_STACKWALKER \
-  StackWalkerThreadLocal& stackwalker_thread_local() { return _stackwalker_thread_local; }
-
-#define DEFINE_OFFSET_STACKWALKER \
-  static ByteSize stackwalker_thread_local_offset() { return byte_offset_of(Thread, _stackwalker_thread_local); }
-
-#define CRITICAL_SECTION_OFFSET_STACKWALKER \
-StackWalkerThreadLocal::critical_section_offset() + THREAD_LOCAL_OFFSET_STACKWALKER
-
-#endif // SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
+#endif // SHARE_RUNTIME_STACKWALKER_INLINE_HPP

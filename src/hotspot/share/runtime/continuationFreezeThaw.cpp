@@ -80,6 +80,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
+#if INCLUDE_STACKWALKER
+#include "runtime/stackWalker.inline.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -601,6 +604,7 @@ void FreezeBase::unwind_frames() {
   entry->flush_stack_processing(_thread);
   assert_frames_in_continuation_are_safe(_thread);
   JFR_ONLY(Jfr::check_and_process_sample_request(_thread);)
+  STACKWALKER_ONLY(StackWalker::check_and_process_requests(_thread));
   set_anchor_to_entry(_thread, entry);
 }
 

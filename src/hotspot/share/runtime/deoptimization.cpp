@@ -102,6 +102,9 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
+#if INCLUDE_STACKWALKER
+#include "runtime/stackWalker.inline.hpp"
+#endif
 
 uint64_t DeoptimizationScope::_committed_deopt_gen = 0;
 uint64_t DeoptimizationScope::_active_deopt_gen    = 1;
@@ -472,6 +475,8 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
 // This is factored, since it is both called from a JRT_LEAF (deoptimization) and a JRT_ENTRY (uncommon_trap)
 Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread* current, int exec_mode) {
   JFR_ONLY(Jfr::check_and_process_sample_request(current);)
+  STACKWALKER_ONLY(StackWalker::check_and_process_requests(current));
+
   // When we get here we are about to unwind the deoptee frame. In order to
   // catch not yet safe to use frames, the following stack watermark barrier
   // poll will make such frames safe to use.

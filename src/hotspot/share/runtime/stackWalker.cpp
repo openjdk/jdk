@@ -23,11 +23,200 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
+#include "memory/allocation.hpp"
 #include "code/codeCache.hpp"
+#include "code/debugInfoRec.hpp"
 #include "interpreter/interpreter.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWalker.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vframe.inline.hpp"
+#include "utilities/spinYield.hpp"
+
+volatile u4 StackWalkerRequestQueue::_lost_requests_sum = 0;
+
+class StackWalkerVframeStream : public vframeStreamCommon {
+  bool _vthread;
+
+  void next_frame() {
+    do {
+      if (_vthread && Continuation::is_continuation_enterSpecial(_frame)) {
+        if (_cont_entry->is_virtual_thread()) {
+          // An entry of a vthread continuation is a termination point.
+          _mode = at_end_mode;
+          break;
+        }
+        _cont_entry = _cont_entry->parent();
+      }
+
+      _frame = _frame.sender(&_reg_map);
+
+    } while (!fill_from_frame());
+  }
+
+  static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
+    // NOTE: WalkContinuation::skip, because of interactions with ZGC relocation
+    //       and load barriers. This code is run while generating stack traces for
+    //       the ZPage allocation event, even when ZGC is relocating  objects.
+    //       When ZGC is relocating, it is forbidden to run code that performs
+    //       load barriers. With WalkContinuation::include, we visit heap stack
+    //       chunks and could be using load barriers.
+    //
+    // NOTE: Shenandoah GC also seems to require this check - actual details as to why
+    //       is unknown but to be filled in by others.
+    return (UseZGC || UseShenandoahGC) && !StackWatermarkSet::processing_started(jt)
+      ? RegisterMap::WalkContinuation::skip
+      : RegisterMap::WalkContinuation::include;
+  }
+public:
+  StackWalkerVframeStream(JavaThread* jt, const frame& fr, bool in_continuation, bool stop_at_java_call_stub) :
+    vframeStreamCommon(jt, RegisterMap::UpdateMap::skip, RegisterMap::ProcessFrames::skip, walk_continuation(jt)),
+    _vthread(in_continuation) {
+    assert(!_vthread || StackWalkerThreadLocal::is_vthread(jt), "invariant");
+    if (in_continuation) {
+      _cont_entry = jt->last_continuation();
+      assert(_cont_entry != nullptr, "invariant");
+    }
+    _frame = fr;
+    _stop_at_java_call_stub = stop_at_java_call_stub;
+    while (!fill_from_frame()) {
+      _frame = _frame.sender(&_reg_map);
+    }
+  }
+
+  void next_vframe() {
+    // handle frames with inlining
+    if (_mode == compiled_mode && fill_in_compiled_inlined_sender()) {
+      return;
+    }
+    next_frame();
+  }
+};
+
+u4 StackWalkerRequestQueue::size() const {
+  return AtomicAccess::load_acquire(&_head);
+}
+
+StackWalkerRequestQueue::StackWalkerRequestQueue():
+   _data(nullptr), _capacity(0), _head(0), _lost_requests(0), _lost_requests_due_to_queue_full(0) {
+}
+
+StackWalkerRequestQueue::~StackWalkerRequestQueue() {
+  if (_data != nullptr) {
+    assert(_capacity != 0, "invariant");
+    FREE_C_HEAP_ARRAY(StackWalkRequest, _data);
+  }
+}
+
+bool StackWalkerRequestQueue::enqueue(const StackWalkRequest& request) {
+  assert(JavaThread::current()->stackwalker_thread_local().is_enqueue_locked(), "invariant");
+  assert(&JavaThread::current()->stackwalker_thread_local().queue() == this, "invariant");
+  u4 elementIndex;
+  do {
+    elementIndex = AtomicAccess::load_acquire(&_head);
+    if (elementIndex >= _capacity) {
+      return false;
+    }
+  } while (AtomicAccess::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
+  _data[elementIndex] = request;
+  return true;
+}
+
+StackWalkRequest& StackWalkerRequestQueue::at(u4 index) {
+  assert(index < _head, "invariant");
+  return _data[index];
+}
+
+bool StackWalkerRequestQueue::is_empty() const {
+  return AtomicAccess::load_acquire(&_head) == 0;
+}
+
+u4 StackWalkerRequestQueue::lost_requests() const {
+  return AtomicAccess::load(&_lost_requests);
+}
+
+void StackWalkerRequestQueue::increment_lost_requests() {
+  AtomicAccess::inc(&_lost_requests_sum);
+  AtomicAccess::inc(&_lost_requests);
+}
+
+void StackWalkerRequestQueue::increment_lost_requests_due_to_queue_full() {
+  AtomicAccess::inc(&_lost_requests_due_to_queue_full);
+}
+
+void StackWalkerRequestQueue::clear() {
+  AtomicAccess::release_store(&_head, (u4)0);
+}
+
+bool StackWalkerThreadLocal::is_enqueue_locked() const {
+  return AtomicAccess::load_acquire(&_lock) == ENQUEUE;
+}
+
+bool StackWalkerThreadLocal::is_dequeue_locked() const {
+  return AtomicAccess::load_acquire(&_lock) == DEQUEUE;
+}
+
+bool StackWalkerThreadLocal::try_acquire_enqueue_lock() {
+  return AtomicAccess::cmpxchg(&_lock, UNLOCKED, ENQUEUE) == UNLOCKED;
+}
+
+bool StackWalkerThreadLocal::try_acquire_dequeue_lock() {
+  while (true)  {
+    StackWalkerLockState got = AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE);
+    if (got == UNLOCKED) {
+      return true; // successfully locked for dequeue
+    }
+    if (got == DEQUEUE) {
+      return false; // already locked for dequeue
+    }
+    // else wait for the lock to be released from a signal handler
+  }
+}
+
+void StackWalkerThreadLocal::acquire_dequeue_lock() {
+  SpinYield s;
+  while (AtomicAccess::cmpxchg(&_lock, UNLOCKED, DEQUEUE) != UNLOCKED) {
+    s.wait();
+  }
+}
+
+void StackWalkerThreadLocal::release_queue_lock() {
+  AtomicAccess::release_store(&_lock, UNLOCKED);
+}
+
+void StackWalkerThreadLocal::set_has_requests(bool has_requests) {
+  AtomicAccess::release_store(&_has_requests, has_requests);
+}
+
+bool StackWalkerThreadLocal::has_requests() const {
+  return AtomicAccess::load_acquire(&_has_requests);
+}
+
+void StackWalkerThreadLocal::set_do_async_processing_of_requests(bool wants) {
+  AtomicAccess::release_store(&_do_async_processing_of_requests, wants);
+}
+
+bool StackWalkerThreadLocal::wants_async_processing_of_requests() const {
+  return AtomicAccess::load_acquire(&_do_async_processing_of_requests);
+}
+
+void StackWalkerThreadLocal::set_processing_requests(bool processing) {
+  _processing_requests = processing;
+}
+
+bool StackWalkerThreadLocal::is_processing_requests() const {
+  return _processing_requests;
+}
+
+bool StackWalkerThreadLocal::is_vthread(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  return AtomicAccess::load_acquire(&jt->stackwalker_thread_local()._vthread) && jt->last_continuation() != nullptr;
+}
 
 static bool is_entry_frame(address pc) {
   return StubRoutines::returns_to_call_stub(pc);
@@ -50,31 +239,31 @@ static address interpreter_frame_bcp(const StackWalkRequest& request) {
   return frame::interpreter_bcp(static_cast<intptr_t*>(request._sample_bcp));
 }
 
-static bool in_stack(intptr_t* ptr, JavaThread* jt) {
+static bool in_stack(intptr_t* ptr, const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   return jt->is_in_full_stack_checked(reinterpret_cast<address>(ptr));
 }
 
-static bool sp_in_stack(const StackWalkRequest& request, JavaThread* jt) {
+static bool sp_in_stack(const StackWalkRequest& request, const JavaThread* jt) {
   return in_stack(static_cast<intptr_t*>(request._sample_sp), jt);
 }
 
-static bool fp_in_stack(const StackWalkRequest& request, JavaThread* jt) {
+static bool fp_in_stack(const StackWalkRequest& request, const JavaThread* jt) {
   return in_stack(static_cast<intptr_t*>(request._sample_bcp), jt);
 }
 
-static intptr_t* frame_sender_sp(const StackWalkRequest& request, JavaThread* jt) {
+static intptr_t* frame_sender_sp(const StackWalkRequest& request, const JavaThread* jt) {
   assert(fp_in_stack(request, jt), "invariant");
   return frame::sender_sp(static_cast<intptr_t*>(request._sample_bcp));
 }
 
-static void update_interpreter_frame_pc(StackWalkRequest& request, JavaThread* jt) {
+static void update_interpreter_frame_pc(StackWalkRequest& request, const JavaThread* jt) {
   assert(fp_in_stack(request, jt), "invariant");
   assert(is_interpreter(request), "invariant");
   request._sample_pc = frame::interpreter_return_address(static_cast<intptr_t*>(request._sample_bcp));
 }
 
-static void update_frame_sender_sp(StackWalkRequest& request, JavaThread* jt) {
+static void update_frame_sender_sp(StackWalkRequest& request, const JavaThread* jt) {
   request._sample_sp = frame_sender_sp(request, jt);
 }
 
@@ -83,7 +272,7 @@ static intptr_t* frame_link(const StackWalkRequest& request) {
 }
 
 // Less extensive sanity checks for an interpreter frame.
-static bool is_valid_interpreter_frame(const StackWalkRequest& request, JavaThread* jt) {
+static bool is_valid_interpreter_frame(const StackWalkRequest& request, const JavaThread* jt) {
   assert(sp_in_stack(request, jt), "invariant");
   assert(fp_in_stack(request, jt), "invariant");
   return frame::is_interpreter_frame_setup_at(static_cast<intptr_t*>(request._sample_bcp), request._sample_sp);
@@ -97,7 +286,7 @@ static bool is_continuation_frame(const StackWalkRequest& request) {
   return is_continuation_frame(static_cast<address>(request._sample_pc));
 }
 
-static intptr_t* sender_for_interpreter_frame(StackWalkRequest& request, JavaThread* jt) {
+static intptr_t* sender_for_interpreter_frame(StackWalkRequest& request, const JavaThread* jt) {
   update_interpreter_frame_pc(request, jt); // pick up return address
   if (is_continuation_frame(request) || is_entry_frame(request)) {
     request._sample_pc = nullptr;
@@ -176,7 +365,8 @@ static bool build_from_ljf(StackWalkRequest& request,
   }
   assert(last_pc != nullptr, "invariant");
   if (is_interpreter(last_pc)) {
-    if (jt->in_stackwalker_critical_section()) {
+    const StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+    if (tl.in_critical_section()) {
       return false;
     }
     request._sample_pc = last_pc;
@@ -196,7 +386,7 @@ static void set_biased(StackWalkRequest& request, JavaThread* jt) {
   request._sample_pc = nullptr;
 }
 
-void StackWalker::build_stack_walk_request(StackWalkRequest& request, void* ucontext, JavaThread* java_thread) {
+void StackWalker::build_stack_walk_request(StackWalkRequest& request, const void* ucontext, JavaThread* java_thread) {
   assert(java_thread != nullptr, "invariant");
 
   // Prioritize the ljf, if one exists.
@@ -209,4 +399,429 @@ void StackWalker::build_stack_walk_request(StackWalkRequest& request, void* ucon
       set_biased(request, java_thread);
     }
   }
+}
+
+static bool check_state(const JavaThread* thread) {
+  switch (thread->thread_state()) {
+    case _thread_in_Java:
+    case _thread_in_native:
+      return true;
+    default:
+      return false;
+  }
+}
+
+void StackWalker::request_stack_trace(StackWalkerCallback* callback, JavaThread* jt, const void* context, u4 max_frames) {
+  // TODO: Handle other threads as well. Those would have to be biased and taken
+  // at the next safepoint/handshake.
+  assert(jt == JavaThread::current(), "Only current thread supported for now");
+  StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+  StackWalkerRequestQueue& queue = tl.queue();
+  if (!check_state(jt)) {
+    queue.increment_lost_requests();
+    return;
+  }
+  if (!tl.try_acquire_enqueue_lock()) {
+    queue.increment_lost_requests();
+    return;
+  }
+
+  StackWalkRequest request(callback, max_frames);
+  build_stack_walk_request(request, context, jt);
+
+  if (queue.enqueue(request)) {
+    if (queue.size() == 1) {
+      tl.set_has_requests(true);
+      SafepointMechanism::arm_local_poll_release(jt);
+    }
+  } else {
+    queue.increment_lost_requests();
+    queue.increment_lost_requests_due_to_queue_full();
+  }
+
+  if (jt->thread_state() == _thread_in_native) {
+      if (!tl.wants_async_processing_of_requests()) {
+        tl.set_do_async_processing_of_requests(true);
+        trigger_async_processing_of_requests();
+      }
+  } else {
+    tl.set_do_async_processing_of_requests(false);
+  }
+
+  tl.release_queue_lock();
+}
+
+void StackWalker::trigger_async_processing_of_requests() {
+  // TODO: Implement this.
+}
+
+static bool is_in_continuation(const frame& frame, JavaThread* jt) {
+  return StackWalkerThreadLocal::is_vthread(jt) &&
+         (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
+}
+
+#ifdef LINUX
+// An interpreter frame is handled differently from a compiler frame.
+//
+// The StackWalkRequest description partially describes a _potential_ interpreter Java frame.
+// It's partial because the requester thread only sets the fp and bcp fields.
+//
+// We want to ensure that what we discovered inside interpreter code _really_ is what we assume, a valid interpreter frame.
+//
+// Therefore, instead of letting the requester thread read what it believes to be a Method*, we delay until we are at a safepoint to ensure the Method* is valid.
+//
+// If the StackWalkRequest represents a valid interpreter frame, the Method* is retrieved and the sender frame is returned per the sender_frame.
+//
+// If it is not a valid interpreter frame, then the StackWalkRequest is invalidated, and the current frame is returned per the sender frame.
+//
+static bool compute_sender_frame(StackWalkRequest& request, frame& sender_frame, bool& in_continuation, JavaThread* jt) {
+  assert(is_interpreter(request), "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(jt->has_last_Java_frame(), "invariant");
+
+  // For a request representing an interpreter frame, request._sample_sp is actually the frame pointer, fp.
+  const void* const sampled_fp = request._sample_sp;
+
+  StackFrameStream stream(jt, false, false);
+
+  // Search for the sampled interpreter frame and get its Method*.
+
+  while (!stream.is_done()) {
+    const frame* const frame = stream.current();
+    assert(frame != nullptr, "invariant");
+    const intptr_t* const real_fp = frame->real_fp();
+    assert(real_fp != nullptr, "invariant");
+    if (real_fp == sampled_fp && frame->is_interpreted_frame()) {
+      Method* const method = frame->interpreter_frame_method();
+      assert(method != nullptr, "invariant");
+      request._sample_pc = method;
+      // Got the Method*. Validate bcp.
+      if (!method->is_native() &&  !method->contains(static_cast<address>(request._sample_bcp))) {
+        request._sample_bcp = frame->interpreter_frame_bcp();
+      }
+      in_continuation = is_in_continuation(*frame, jt);
+      break;
+    }
+    if (real_fp >= sampled_fp) {
+      // What we sampled is not an official interpreter frame.
+      // Invalidate the sample request and use current.
+      request._sample_bcp = nullptr;
+      sender_frame = *stream.current();
+      in_continuation = is_in_continuation(sender_frame, jt);
+      return true;
+    }
+    stream.next();
+  }
+
+  assert(!stream.is_done(), "invariant");
+
+  // Step to sender.
+  stream.next();
+
+  // If the top frame is in a continuation, check that the sender frame is too.
+  if (in_continuation && !is_in_continuation(*stream.current(), jt)) {
+    // Leave sender frame empty.
+    return true;
+  }
+
+  sender_frame = *stream.current();
+
+  assert(request._sample_pc != nullptr, "invariant");
+  assert(request._sample_bcp != nullptr, "invariant");
+  assert(Method::is_valid_method(static_cast<const Method*>(request._sample_pc)), "invariant");
+  assert(static_cast<const Method*>(request._sample_pc)->is_native() ||
+         static_cast<const Method*>(request._sample_pc)->contains(static_cast<address>(request._sample_bcp)), "invariant");
+  return true;
+}
+
+static const PcDesc* get_pc_desc(nmethod* nm, void* pc) {
+  assert(nm != nullptr, "invariant");
+  assert(pc != nullptr, "invariant");
+  return nm->pc_desc_near(static_cast<address>(pc));
+}
+
+static bool is_valid(const PcDesc* pc_desc) {
+  return pc_desc != nullptr && pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null;
+}
+
+static bool compute_top_frame(StackWalkRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool& biased) {
+  assert(jt != nullptr, "invariant");
+
+  if (!jt->has_last_Java_frame()) {
+    return false;
+  }
+
+  if (is_interpreter(request)) {
+    return compute_sender_frame(request, top_frame, in_continuation, jt);
+  }
+
+  void* const sampled_pc = request._sample_pc;
+  CodeBlob* sampled_cb;
+  if (sampled_pc == nullptr || (sampled_cb = CodeCache::find_blob(sampled_pc)) == nullptr) {
+    // A biased sample is requested or no code blob.
+    top_frame = jt->last_frame();
+    in_continuation = is_in_continuation(top_frame, jt);
+    biased = true;
+    return true;
+  }
+
+  // We will never describe a sample request that represents an unparsable stub or blob.
+  assert(sampled_cb->frame_complete_offset() != CodeOffsets::frame_never_safe, "invariant");
+
+  const void* const sampled_sp = request._sample_sp;
+  assert(sampled_sp != nullptr, "invariant");
+
+  nmethod* const sampled_nm = sampled_cb->as_nmethod_or_null();
+
+  StackFrameStream stream(jt, false /* update registers */, false /* process frames */);
+
+  if (stream.current()->is_safepoint_blob_frame()) {
+    if (sampled_nm != nullptr) {
+      // Move to the physical sender frame of the SafepointBlob stub frame using the frame size, not the logical iterator.
+      const int safepoint_blob_stub_frame_size = stream.current()->cb()->frame_size();
+      intptr_t* const sender_sp = stream.current()->unextended_sp() + safepoint_blob_stub_frame_size;
+      if (sender_sp > sampled_sp) {
+        const address saved_exception_pc = jt->saved_exception_pc();
+        assert(saved_exception_pc != nullptr, "invariant");
+        const nmethod* const exception_nm = CodeCache::find_blob(saved_exception_pc)->as_nmethod();
+        assert(exception_nm != nullptr, "invariant");
+        if (exception_nm == sampled_nm && sampled_nm->is_at_poll_return(saved_exception_pc)) {
+          // We sit at the poll return site in the sampled compiled nmethod with only the return address on the stack.
+          // The sampled_nm compiled frame is no longer extant, but we might be able to reconstruct a synthetic
+          // compiled frame at this location. We do this by overlaying a reconstructed frame on top of
+          // the huge SafepointBlob stub frame. Of course, the synthetic frame only contains random stack memory,
+          // but it is safe because stack walking cares only about the form of the frame (i.e., an sp and a pc).
+          // We also do not have to worry about stackbanging because we currently have a huge SafepointBlob stub frame
+          // on the stack. For extra assurance, we know that we can create this frame size at this
+          // very location because we just popped such a frame before we hit the return poll site.
+          //
+          // Let's attempt to correct for the safepoint bias.
+          const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
+          if (is_valid(pc_desc)) {
+            intptr_t* const synthetic_sp = sender_sp - sampled_nm->frame_size();
+            intptr_t* const synthetic_fp = sender_sp AARCH64_ONLY( - frame::sender_sp_offset);
+            top_frame = frame(synthetic_sp, synthetic_sp, synthetic_fp, pc_desc->real_pc(sampled_nm), sampled_nm);
+            in_continuation = is_in_continuation(top_frame, jt);
+            return true;
+          }
+        }
+      }
+    }
+    stream.next(); // skip the SafepointBlob stub frame
+  }
+
+  assert(!stream.current()->is_safepoint_blob_frame(), "invariant");
+
+  biased = true;
+
+  // Search the first frame that is above the sampled sp.
+  for (; !stream.is_done(); stream.next()) {
+    frame* const current = stream.current();
+
+    if (current->real_fp() <= sampled_sp) {
+      // Continue searching for a matching frame.
+      continue;
+    }
+
+    if (sampled_nm == nullptr) {
+      // The sample didn't have an nmethod; we decide to trace from its sender.
+      // Another instance of safepoint bias.
+      top_frame = *current;
+      break;
+    }
+
+    // Check for a matching compiled method.
+    if (current->cb()->as_nmethod_or_null() == sampled_nm) {
+      if (current->pc() != sampled_pc) {
+        // Let's adjust for the safepoint bias if we can.
+        const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
+        if (is_valid(pc_desc)) {
+          current->adjust_pc(pc_desc->real_pc(sampled_nm));
+          biased = false;
+        }
+      }
+    }
+    // Either a hit or a mismatched sample in which case we trace from the sender.
+    // Yet another instance of safepoint bias,to be addressed with
+    // more exact and stricter versions when parsable blobs become available.
+    top_frame = *current;
+    break;
+  }
+
+  in_continuation = is_in_continuation(top_frame, jt);
+  return true;
+}
+
+class StackWalkState {
+public:
+  StackWalkRequest& _request;
+  u4 _count;
+  bool _truncated;
+  StackWalkState(StackWalkRequest& request) : _request(request), _count(0), _truncated(false) {}
+
+  u4 max_frames() const { return _request.max_frames(); }
+
+  void report_frame(const Method* method, int bci, StackWalkerFrameType type) const {
+    _request.callback()->stack_frame(method, bci, type);
+  }
+};
+
+static void report_interpreter_top_frame(const StackWalkState& state, const StackWalkRequest& request) {
+  const Method* method = static_cast<Method*>(request._sample_pc);
+  assert(method != nullptr, "invariant");
+  const int bci = method->is_native() ? 0 : method->bci_from(static_cast<address>(request._sample_bcp));
+  StackWalkerFrameType type = method->is_native() ? StackWalkerFrameType::FRAME_NATIVE : StackWalkerFrameType::FRAME_INTERPRETER;
+  state.report_frame(method, bci, type);
+}
+
+static bool report_inner(StackWalkState& state, JavaThread* jt, const frame& frame, bool in_continuation, int skip) {
+  assert(jt != nullptr, "invariant");
+  assert(!in_continuation || is_in_continuation(frame, jt), "invariant");
+  Thread* const current_thread = Thread::current();
+  HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
+  StackWalkerVframeStream vfs(jt, frame, in_continuation, false);
+  state._truncated = false;
+  for (int i = 0; i < skip; ++i) {
+    if (vfs.at_end()) {
+      break;
+    }
+    vfs.next_vframe();
+  }
+  while (!vfs.at_end()) {
+    if (state._count >= state.max_frames()) {
+      state._truncated = true;
+      break;
+    }
+    const Method* method = vfs.method();
+    StackWalkerFrameType type = vfs.is_interpreted_frame() ? StackWalkerFrameType::FRAME_INTERPRETER : StackWalkerFrameType::FRAME_JIT;
+    int bci = 0;
+    if (method->is_native()) {
+      type = StackWalkerFrameType::FRAME_NATIVE;
+    } else {
+      bci = vfs.bci();
+    }
+
+    const intptr_t* const frame_id = vfs.frame_id();
+    vfs.next_vframe();
+    if (type == StackWalkerFrameType::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
+      // This frame and the caller frame are both the same physical
+      // frame, so this frame is inlined into the caller.
+      type = StackWalkerFrameType::FRAME_INLINE;
+    }
+    state.report_frame(method, bci, type);
+    state._count++;
+  }
+  return state._count > 0;
+}
+
+static bool report(StackWalkState& state, JavaThread* jt, const frame& frame, bool in_continuation, int skip) {
+  // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
+  // This is because RegisterMap uses Handles to support continuations.
+  ResetNoHandleMark rnhm;
+  return report_inner(state, jt, frame, in_continuation, skip);
+}
+
+static bool report(StackWalkState& state, JavaThread* jt, const frame& frame, bool in_continuation, const StackWalkRequest& request) {
+  if (is_interpreter(request)) {
+    report_interpreter_top_frame(state, request);
+    if (frame.pc() == nullptr) {
+      // No sender frame. Done.
+      return true;
+    }
+  }
+  return report(state, jt, frame, in_continuation, 0);
+}
+
+static void report_thread(StackWalkRequest& request, const StackWalkerThreadLocal& tl, JavaThread* jt, const Thread* current) {
+  assert(jt != nullptr, "invariant");
+  assert(current != nullptr, "invariant");
+  frame top_frame;
+  bool biased = false;
+  bool in_continuation = false;
+  bool could_compute_top_frame = compute_top_frame(request, top_frame, in_continuation, jt, biased);
+  //const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+
+  if (!could_compute_top_frame) {
+    // TODO: Handle failure
+    Unimplemented();
+    // JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period, request._jvmti, request._begin_stack_trace_callback, request._end_stack_trace_callback, request._user_data);
+    return;
+  }
+  //traceid sid;
+  {
+    //ResourceMark rm(current);
+    StackWalkState state(request);
+    if (!report(state, jt, top_frame, in_continuation, request)) {
+      // Unable to record stacktrace. Fail.
+      // TODO: Handle failure
+      Unimplemented();
+      //JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period, request._jvmti, request._begin_stack_trace_callback, request._end_stack_trace_callback, request._user_data);
+      return;
+    }
+    //if (!request._jvmti) {
+    //  sid = JfrStackTraceRepository::add(stacktrace);
+    //}
+    //assert(sid != 0, "invariant");
+    //JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased, request._jvmti, request._begin_stack_trace_callback, request._end_stack_trace_callback, request._stack_frame_callback, stacktrace, request._user_data);
+  }
+
+  //if (current == jt) {
+  //  send_safepoint_latency_event(request._request, now, sid, jt);
+  //}
+}
+#endif
+
+void StackWalker::process_requests(const Thread* current, JavaThread* jt, bool lock) {
+  assert(current != nullptr, "current should not be null");
+  assert(current != nullptr, "Java thread should not be null");
+  assert(jt->thread_state() == _thread_in_vm || jt->thread_state() == _thread_in_Java, "invariant");
+
+  StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+#ifdef LINUX
+  tl.set_do_async_processing_of_requests(false);
+  if (lock) {
+    tl.acquire_dequeue_lock();
+  }
+  StackWalkerRequestQueue& queue = tl.queue();
+  for (u4 i = 0; i < queue.size(); i++) {
+    report_thread(queue.at(i), tl, jt, current);
+  }
+  queue.clear();
+  assert(queue.is_empty(), "invariant");
+  tl.set_has_requests(false);
+  if (queue.lost_requests() > 0) {
+    // TODO: Implement reporting of lost requests.
+    Unimplemented();
+    //StackWalker::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
+    queue.resize_if_needed();
+  }
+  if (lock) {
+    tl.release_queue_lock();
+  }
+#endif
+}
+
+static bool is_virtual(const JavaThread* jt, oop thread) {
+  assert(jt != nullptr, "invariant");
+  return thread != jt->threadObj();
+}
+
+void StackWalkerThreadLocal::on_set_current_thread(JavaThread* jt, oop thread) {
+  assert(jt != nullptr, "invariant");
+  assert(thread != nullptr, "invariant");
+  StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+  if (!is_virtual(jt, thread)) {
+    AtomicAccess::release_store(&tl._vthread, false);
+    return;
+  }
+  // TODO: how relevant is the remaining code?
+  // assert(tl._non_reentrant_nesting == 0, "invariant");
+  // AtomicAccess::store(&tl->_vthread_id, AccessThreadTraceId::id(thread));
+  // const u2 epoch_raw = AccessThreadTraceId::epoch(thread);
+  // const bool excluded = epoch_raw & excluded_bit;
+  // AtomicAccess::store(&tl->_vthread_excluded, excluded);
+  // if (!excluded) {
+  //   AtomicAccess::store(&tl->_vthread_epoch, static_cast<u2>(epoch_raw & epoch_mask));
+  // }
+  AtomicAccess::release_store(&tl._vthread, true);
 }

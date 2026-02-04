@@ -30,11 +30,170 @@
 
 class JavaThread;
 
+enum class StackWalkerFrameType {
+  FRAME_INTERPRETER,
+  FRAME_JIT,
+  FRAME_INLINE,
+  FRAME_NATIVE,
+};
+
+class StackWalkerCallback {
+public:
+  virtual ~StackWalkerCallback() =default;
+
+  virtual void begin_stacktrace(bool biased) = 0;
+  virtual void end_stacktrace(bool truncated) = 0;
+  virtual void stack_frame(const Method* method, int bci, StackWalkerFrameType type) = 0;
+  virtual void failure() = 0;
+};
+
 class StackWalkRequest {
+  StackWalkerCallback* _callback;
+  u4 _max_frames;
 public:
   void* _sample_sp;
   void* _sample_pc;
   void* _sample_bcp;
+
+  StackWalkRequest(StackWalkerCallback* callback, u4 max_frames) :
+    _callback(callback),
+    _max_frames(max_frames),
+    _sample_sp(nullptr),
+    _sample_pc(nullptr),
+    _sample_bcp(nullptr) {}
+
+  u4 max_frames() const { return _max_frames; }
+  StackWalkerCallback* callback() const { return _callback; }
+};
+
+// Fixed size async-signal-safe SPSC linear queue backed by an array.
+// Designed to be only used under lock and read linearly
+class StackWalkerRequestQueue {
+
+  static const u4 INITIAL_CAPACITY = 20;
+  static const u4 MAX_CAPACITY     = 2000;
+
+  StackWalkRequest* _data;
+  volatile u4 _capacity;
+  // next unfilled index
+  volatile u4 _head;
+
+  volatile u4 _lost_requests;
+  volatile u4 _lost_requests_due_to_queue_full;
+
+  static volatile u4 _lost_requests_sum;
+
+public:
+  StackWalkerRequestQueue();
+
+  ~StackWalkerRequestQueue();
+
+  // signal safe, but can't be interleaved with dequeue
+  bool enqueue(const StackWalkRequest& trace);
+
+  StackWalkRequest& at(u4 index);
+
+  u4 size() const;
+
+  void set_size(u4 size);
+
+  u4 capacity() const;
+
+  // deletes all samples in the queue
+  void set_capacity(u4 capacity);
+
+  bool is_empty() const;
+
+  u4 lost_requests() const;
+
+  void increment_lost_requests();
+
+  void increment_lost_requests_due_to_queue_full();
+
+  // returns the previous lost samples count
+  u4 get_and_reset_lost_requests();
+
+  u4 get_and_reset_lost_requests_due_to_queue_full();
+
+  void resize_if_needed();
+
+  // init the queue capacity
+  void init();
+
+  void clear();
+};
+
+class StackWalkerThreadLocal {
+  StackWalkerRequestQueue _queue;
+
+  enum StackWalkerLockState {
+    UNLOCKED,
+    // locked for enqueuing
+    ENQUEUE,
+    // locked for dequeuing
+    DEQUEUE
+  };
+  volatile StackWalkerLockState _lock;
+
+  volatile bool _has_requests;
+
+  volatile bool _do_async_processing_of_requests;
+
+  bool _critical_section;
+
+  bool _processing_requests;
+
+  bool _vthread;
+
+public:
+
+  StackWalkerThreadLocal() :
+    _lock(UNLOCKED),
+    _has_requests(false),
+    _do_async_processing_of_requests(false),
+    _critical_section(false),
+    _processing_requests(false),
+    _vthread(false) {}
+
+  static void on_set_current_thread(JavaThread* thread, oop thread_obj);
+  static bool is_vthread(JavaThread* jt);
+
+  bool in_critical_section() const {
+    return _critical_section;
+  }
+
+  static ByteSize critical_section_offset() {
+    return byte_offset_of(StackWalkerThreadLocal, _critical_section);
+  }
+
+  StackWalkerRequestQueue& queue() {
+    return _queue;
+  }
+
+  // The stack-walker lock has three different states:
+  // - ENQUEUE: lock for enqueuing stack-walk requests
+  // - DEQUEUE: lock for dequeuing stack-walk requests
+  // - UNLOCKED: no lock held
+  // This ensures that we can safely enqueue and dequeue stack-walk requests,
+  // without interleaving
+
+  bool is_enqueue_locked() const;
+  bool is_dequeue_locked() const;
+
+  bool try_acquire_enqueue_lock();
+  bool try_acquire_dequeue_lock();
+  void acquire_dequeue_lock();
+  void release_queue_lock();
+
+  void set_has_requests(bool has_events);
+  bool has_requests() const;
+
+  void set_do_async_processing_of_requests(bool wants);
+  bool wants_async_processing_of_requests() const;
+
+  void set_processing_requests(bool processing);
+  bool is_processing_requests() const;
+
 };
 
 /**
@@ -42,8 +201,14 @@ public:
  * thread.
  */
 class StackWalker : public AllStatic {
+  static void build_stack_walk_request(StackWalkRequest& request, const void* ucontext, JavaThread* java_thread);
+  static void trigger_async_processing_of_requests();
+  static void process_requests(const Thread* current, JavaThread* jt, bool lock);
 public:
-  static void build_stack_walk_request(StackWalkRequest& request, void* ucontext, JavaThread* java_thread);
+
+  static void request_stack_trace(StackWalkerCallback* callback, JavaThread* jt, const void* context, u4 max_frames);
+
+  static inline void check_and_process_requests(JavaThread* jt);
 };
 
 #endif // SHARE_RUNTIME_STACKWALKER_HPP

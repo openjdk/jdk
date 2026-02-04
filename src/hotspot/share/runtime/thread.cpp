@@ -93,7 +93,6 @@ Thread::Thread(MemTag mem_tag) {
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  STACKWALKER_ONLY(INITIALIZE_FIELD_STACKWALKER)
   _current_pending_raw_monitor = nullptr;
   _vm_error_callbacks = nullptr;
 

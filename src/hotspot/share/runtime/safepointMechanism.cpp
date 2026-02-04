@@ -35,6 +35,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
+#if INCLUDE_STACKWALKER
+#include "runtime/stackWalker.inline.hpp"
+#endif
 
 uintptr_t SafepointMechanism::_poll_word_armed_value;
 uintptr_t SafepointMechanism::_poll_word_disarmed_value;
@@ -161,6 +164,8 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
   } while (need_rechecking);
 
   JFR_ONLY(Jfr::check_and_process_sample_request(thread);)
+  STACKWALKER_ONLY(StackWalker::check_and_process_requests(thread));
+
   update_poll_values(thread);
   assert(sp_before == thread->last_Java_sp(), "Anchor has changed");
 }
