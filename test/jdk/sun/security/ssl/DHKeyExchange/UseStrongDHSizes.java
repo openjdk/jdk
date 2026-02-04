@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,8 @@
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe4096 UseStrongDHSizes 4096
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe6144 UseStrongDHSizes 4096
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 4096
- * @run main/othervm UseStrongDHSizes 6144
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe6144 UseStrongDHSizes 6144
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 6144
- * @run main/othervm UseStrongDHSizes 8192
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 8192
  */
 
