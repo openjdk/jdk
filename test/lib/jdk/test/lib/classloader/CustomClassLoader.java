@@ -23,7 +23,9 @@
 
 package jdk.test.lib.classloader;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * The <code>CustomClassLoader</code> class is used in <code>ClassUnloadCommon</code>.
@@ -75,7 +77,7 @@ public class CustomClassLoader extends ClassLoader {
      *
      * @see #setClassPath(String)
      */
-    protected synchronized Class findClass(String name) throws ClassNotFoundException {
+    protected synchronized Class<?> findClass(String name) throws ClassNotFoundException {
         java.nio.file.Path path = ClassFileFinder.findClassFile(name, classPath);
         if (path == null) {
             throw new ClassNotFoundException(name);
