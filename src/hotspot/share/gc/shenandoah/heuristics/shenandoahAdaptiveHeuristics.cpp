@@ -609,9 +609,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // sizes are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 5,
     // spanning 15ms of execution.
 
-    // The test (allocated > available / 2) is intended to prevent accelerated triggers from firing so quickly that there
+    // The test (allocated > available / 5) is intended to prevent accelerated triggers from firing so quickly that there
     // has not been sufficient time to create garbage that can be reclaimed during the next GC cycle.  If we trigger before
-    // garbage can be created, the concurrent GC will find no garbage.  Note that garbage that was allocated following the
+    // garbage has been created, the concurrent GC will find no garbage.  This has been observed to result in degens which
+    // experience OOM during evac, which escalate to Full GC.  Note that garbage that was allocated following the
     // start of the current GC cycle cannot be reclaimed in this GC cycle.  Here is the derivation of this expression:
 
     // Let R (runway) represent the total amount of memory that can be allocated following the start of GC(N).  At any point
@@ -620,12 +621,12 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // the preceding GC cycle.  In this configuration, we would expect half of R to be consumed during concurrent cycle GC(N)
     // and half to be consumed during concurrent GC(N+1).
     //
-    // Assume we want to delay GC trigger until:    A/V > 0.5
-    //     This is equivalent to enforcing that:      A > 0.5V
-    //                                 which is:     2A > V
-    //              Since A+V equals R, we have: A + 2A > A + V  = R
-    //                     which is to say that:      A > R/3
-    if ((allocated > available / 2) && (consumption_accelerated > allocatable_words)) {
+    // Assume we want to delay GC trigger until:    A/V > 0.25
+    //     This is equivalent to enforcing that:      A > 0.25V
+    //                                 which is:     4A > V
+    //              Since A+V equals R, we have: A + 4A > A + V  = R
+    //                     which is to say that:      A > R/5
+    if ((allocated > available / 5) && (consumption_accelerated > allocatable_words)) {
       size_t size_t_alloc_rate = (size_t) current_rate_by_acceleration * HeapWordSize;
       if (acceleration > 0) {
         size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
