@@ -47,8 +47,8 @@ public:
   bool should_degenerate_cycle() override;
 
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
-                                                       RegionData* data, size_t data_size,
-                                                       size_t free) override;
+                                             RegionData* data, size_t data_size,
+                                             size_t free) override;
 
   const char* name() override     { return "Passive"; }
   bool is_diagnostic() override   { return true; }

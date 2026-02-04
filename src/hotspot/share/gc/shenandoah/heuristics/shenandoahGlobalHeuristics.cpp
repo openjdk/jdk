@@ -37,8 +37,8 @@ ShenandoahGlobalHeuristics::ShenandoahGlobalHeuristics(ShenandoahGlobalGeneratio
 
 
 void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                         RegionData* data, size_t size,
-                                                                         size_t actual_free) {
+                                                                       RegionData* data, size_t size,
+                                                                       size_t actual_free) {
   // Better select garbage-first regions
   QuickSort::sort<RegionData>(data, size, compare_by_garbage);
 

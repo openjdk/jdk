@@ -77,8 +77,8 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
 }
 
 void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                          RegionData* data, size_t size,
-                                                                          size_t actual_free) {
+                                                                        RegionData* data, size_t size,
+                                                                        size_t actual_free) {
   // Do not select too large CSet that would overflow the available free space
   size_t max_cset = actual_free * 3 / 4;
 

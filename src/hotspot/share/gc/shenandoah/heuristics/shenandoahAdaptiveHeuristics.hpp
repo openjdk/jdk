@@ -33,7 +33,7 @@
 #include "utilities/numberSeq.hpp"
 
 /**
- * ShenanoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
+ * ShenandoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
  * informed estimates of current and future allocation rates based on weighted averages and standard deviations of the
  * truncated history.  More recently sampled allocations are weighted more heavily than older samples when computing
  * averages and standard deviations.

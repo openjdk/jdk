@@ -36,8 +36,8 @@ public:
   ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info);
 
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                       RegionData* data, size_t size,
-                                                       size_t free) override;
+                                             RegionData* data, size_t size,
+                                             size_t free) override;
 
   bool should_start_gc() override;
 

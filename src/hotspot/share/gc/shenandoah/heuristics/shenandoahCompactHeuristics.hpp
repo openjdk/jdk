@@ -38,8 +38,8 @@ public:
   bool should_start_gc() override;
 
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                       RegionData* data, size_t size,
-                                                       size_t actual_free) override;
+                                             RegionData* data, size_t size,
+                                             size_t actual_free) override;
 
   const char* name() override     { return "Compact"; }
   bool is_diagnostic() override   { return false; }

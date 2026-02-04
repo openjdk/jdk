@@ -51,8 +51,8 @@ bool ShenandoahPassiveHeuristics::should_degenerate_cycle() {
 }
 
 void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                          RegionData* data, size_t size,
-                                                                          size_t actual_free) {
+                                                                        RegionData* data, size_t size,
+                                                                        size_t actual_free) {
   assert(ShenandoahDegeneratedGC, "This path is only taken for Degenerated GC");
 
   // Do not select too large CSet that would overflow the available free space.
