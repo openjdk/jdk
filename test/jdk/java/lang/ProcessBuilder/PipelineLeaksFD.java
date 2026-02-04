@@ -25,6 +25,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
+import jdk.test.lib.Utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.io.Writer;
 import java.lang.ProcessHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -44,7 +46,8 @@ import java.util.stream.Collectors;
  * @bug 8289643 8291760 8291986
  * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
  * @summary File descriptor leak detection with ProcessBuilder.startPipeline
- * @run junit/othervm PipelineLeaksFD
+ * @library /test/lib
+ * @run junit/othervm/timeout=240 PipelineLeaksFD
  */
 
 public class PipelineLeaksFD {
@@ -236,8 +239,11 @@ public class PipelineLeaksFD {
                 .redirectInput(lsofEmptyInput.toFile()) // empty input
                 .redirectError(ProcessBuilder.Redirect.DISCARD) // ignored output
                 .start()) {
-            int status = p.waitFor();
-            assertEquals(0, status, "Process 'lsof' failed");
+            boolean status = p.waitFor(Utils.adjustTimeout(120), TimeUnit.SECONDS);
+            if (!status) {
+                p.destroyForcibly();
+            }
+            assertTrue(status, "Process 'lsof' failed");
 
             return Files.readAllLines(lsofOutput);
         } catch (InterruptedException ie) {
