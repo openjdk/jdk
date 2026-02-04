@@ -187,6 +187,13 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 }
 
 static bool stack_has_headroom(size_t headroom) {
+
+#ifndef _WINDOWS
+  if (UseAltSigStacks) { // For simplicity.
+    return true;
+  }
+#endif
+
   size_t stack_size = 0;
   address stack_base = nullptr;
   os::current_stack_base_and_size(&stack_base, &stack_size);
