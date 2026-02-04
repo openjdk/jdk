@@ -306,7 +306,12 @@ bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, Node* start, con
       }
     } else if (const CallNode* call = mem->isa_Call(); call != nullptr) {
       // Step through call if it does not modify the source element.
-      if (call->may_modify(src_ptr_ty, phase)) {
+      if (const ArrayCopyNode* arycpy = call->isa_ArrayCopy(); arycpy != nullptr) {
+        if (arycpy->may_modify(src_ptr_ty, phase) &&
+            arycpy->modifies(src_offset, src_offset, phase, false)) {
+          return true;
+        }
+      } else if (call->may_modify(src_ptr_ty, phase)) {
         return true;
       }
       to_visit.push(call->memory());
