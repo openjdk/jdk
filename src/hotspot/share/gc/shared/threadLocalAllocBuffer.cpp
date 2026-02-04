@@ -308,19 +308,19 @@ Thread* ThreadLocalAllocBuffer::thread() {
 }
 
 void ThreadLocalAllocBuffer::set_back_allocation_end() {
-  _end.store_relaxed(allocation_end());
+  _end = _allocation_end;
 }
 
 void ThreadLocalAllocBuffer::set_sampling_point(HeapWord* sampling_point) {
   precond(sampling_point >= top());
-  precond(sampling_point <= allocation_end());
+  precond(sampling_point <= _allocation_end);
 
   // This will trigger a slow-path, which in turn might take a sample.
-  _end.store_relaxed(sampling_point);
+  _end = sampling_point;
 }
 
 HeapWord* ThreadLocalAllocBuffer::hard_end() {
-  return allocation_end() + alignment_reserve();
+  return _allocation_end + alignment_reserve();
 }
 
 PerfVariable* ThreadLocalAllocStats::_perf_allocating_threads;

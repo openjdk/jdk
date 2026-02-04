@@ -349,8 +349,8 @@
      static_field(MetaspaceObj,                _aot_metaspace_top,                            void*)                                 \
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        Atomic<HeapWord*>)                     \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          Atomic<HeapWord*>)                     \
-  nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          Atomic<HeapWord*>)                     \
-  nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       Atomic<HeapWord*>)                     \
+  nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \
+  nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
      static_field(ThreadLocalAllocBuffer,      _reserve_for_allocation_prefetch,              int)                                   \
