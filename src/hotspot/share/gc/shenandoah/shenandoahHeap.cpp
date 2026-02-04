@@ -925,7 +925,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   if (req.is_mutator_alloc()) {
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
-      result = allocate_memory_under_lock(req, in_new_region);
+      result = _free_set->mutator_allocator()->allocate(req, in_new_region);
     }
 
     // Check that gc overhead is not exceeded.
@@ -957,7 +957,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       const size_t original_count = shenandoah_policy()->full_gc_count();
       while (result == nullptr && should_retry_allocation(original_count)) {
         control_thread()->handle_alloc_failure(req, true);
-        result = allocate_memory_under_lock(req, in_new_region);
+        result = _free_set->mutator_allocator()->allocate(req, in_new_region);
       }
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
@@ -973,7 +973,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
-    result = allocate_memory_under_lock(req, in_new_region);
+    result = allocate_memory_for_collector(req, in_new_region);
     // Do not call handle_alloc_failure() here, because we cannot block.
     // The allocation failure would be handled by the LRB slowpath with handle_alloc_failure_evac().
   }
@@ -1003,57 +1003,11 @@ inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_coun
       && !shenandoah_policy()->is_at_shutdown();
 }
 
-HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
-  // If we are dealing with mutator allocation, then we may need to block for safepoint.
-  // We cannot block for safepoint for GC allocations, because there is a high chance
-  // we are already running at safepoint or from stack watermark machinery, and we cannot
-  // block again.
-  ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
-
-  // Make sure the old generation has room for either evacuations or promotions before trying to allocate.
-  if (req.is_old() && !old_generation()->can_allocate(req)) {
-    return nullptr;
+HeapWord* ShenandoahHeap::allocate_memory_for_collector(ShenandoahAllocRequest& req, bool& in_new_region) {
+  if (req.is_young()) {
+    return _free_set->collector_allocator()->allocate(req, in_new_region);
   }
-
-  // If TLAB request size is greater than available, allocate() will attempt to downsize request to fit within available
-  // memory.
-  HeapWord* result = _free_set->allocate(req, in_new_region);
-
-  // Record the plab configuration for this result and register the object.
-  if (result != nullptr && req.is_old()) {
-    if (req.is_lab_alloc()) {
-      old_generation()->configure_plab_for_current_thread(req);
-    } else {
-      // Register the newly allocated object while we're holding the global lock since there's no synchronization
-      // built in to the implementation of register_object().  There are potential races when multiple independent
-      // threads are allocating objects, some of which might span the same card region.  For example, consider
-      // a card table's memory region within which three objects are being allocated by three different threads:
-      //
-      // objects being "concurrently" allocated:
-      //    [-----a------][-----b-----][--------------c------------------]
-      //            [---- card table memory range --------------]
-      //
-      // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
-      // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
-      // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
-      // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
-      // card region.
-      //
-      // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
-      // last-start representing object b while first-start represents object c.  This is why we need to require all
-      // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-      old_generation()->card_scan()->register_object(result);
-
-      if (req.is_promotion()) {
-        // Shared promotion.
-        const size_t actual_size = req.actual_size() * HeapWordSize;
-        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
-        old_generation()->expend_promoted(actual_size);
-      }
-    }
-  }
-
-  return result;
+  return _free_set->old_collector_allocator()->allocate(req, in_new_region);
 }
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size) {
@@ -2530,8 +2484,11 @@ void ShenandoahHeap::final_update_refs_update_region_states() {
   parallel_heap_region_iterate(&cl);
 }
 
-void ShenandoahHeap::rebuild_free_set_within_phase() {
+void ShenandoahHeap::rebuild_free_set_within_phase(const bool release_atomic_alloc_regions_first) {
   ShenandoahHeapLocker locker(lock());
+  if (release_atomic_alloc_regions_first) {
+    _free_set->release_alloc_regions();
+  }
   size_t young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count;
   _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count);
   // If there are no old regions, first_old_region will be greater than last_old_region
@@ -2558,6 +2515,9 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
   // Rebuild free set based on adjusted generation sizes.
   _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, old_region_count);
 
+    // Reserve alloc regions for mutator after finishing rebuild.
+  _free_set->mutator_allocator()->reserve_alloc_regions();
+
   if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
@@ -2565,11 +2525,11 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
   }
 }
 
-void ShenandoahHeap::rebuild_free_set(bool concurrent) {
+void ShenandoahHeap::rebuild_free_set(bool concurrent, bool release_atomic_alloc_regions_first) {
   ShenandoahGCPhase phase(concurrent ?
                           ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                           ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
-  rebuild_free_set_within_phase();
+  rebuild_free_set_within_phase(release_atomic_alloc_regions_first);
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {
@@ -2805,7 +2765,7 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
 
   for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
     ShenandoahHeapRegion* r = get_region(idx);
-    assert(r->is_regular(), "Must be regular");
+    assert(r->is_regular(), "Must be regular, state: %s", r->region_state_to_string(r->state()));
     assert(r->is_young(), "Must be young");
     assert(idx == end_reg_idx || r->top() == r->end(),
            "All regions except the last one should be full: " PTR_FORMAT " " PTR_FORMAT,

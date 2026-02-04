@@ -48,6 +48,9 @@ void ShenandoahOldGC::op_final_mark() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
+  // Release all alloc regions at the beginning of final mark.
+  heap->free_set()->release_alloc_regions_under_lock();
+
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded(_old_generation);
   }
@@ -71,6 +74,11 @@ void ShenandoahOldGC::op_final_mark() {
 
     if (VerifyAfterGC) {
       Universe::verify();
+    }
+
+    {
+      ShenandoahHeapLocker locker(heap->lock());
+      heap->free_set()->mutator_allocator()->reserve_alloc_regions();
     }
 
     {
@@ -139,7 +147,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
   // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to
   // follow the end of OLD marking.
-  heap->rebuild_free_set_within_phase();
+  heap->rebuild_free_set_within_phase(true/*release_atomic_alloc_regions_first*/);
   heap->free_set()->log_status_under_lock();
   return true;
 }

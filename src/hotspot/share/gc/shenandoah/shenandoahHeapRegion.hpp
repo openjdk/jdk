@@ -251,11 +251,12 @@ private:
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
-  HeapWord* _top;
+  HeapWord* volatile _atomic_top; // for atomic alloc functions, always set to nullptr if a region is not an active alloc region.
+  HeapWord* volatile _top;
 
-  size_t _tlab_allocs;
-  size_t _gclab_allocs;
-  size_t _plab_allocs;
+  size_t volatile _tlab_allocs;
+  size_t volatile _gclab_allocs;
+  size_t volatile _plab_allocs;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
@@ -264,9 +265,9 @@ private:
 
   HeapWord* volatile _update_watermark;
 
-  uint _age;
+  volatile uint _age;
   bool _promoted_in_place;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+  CENSUS_NOISE(volatile uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
@@ -382,6 +383,17 @@ public:
   // Allocate fill after top
   inline HeapWord* allocate_fill(size_t word_size);
 
+  inline HeapWord* allocate_lab(const ShenandoahAllocRequest &req, size_t &actual_size);
+
+  // Atomic allocation using CAS, return nullptr if full or no enough space for the req
+  inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req, bool &ready_for_retire);
+
+  inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size, bool &ready_for_retire);
+
+  // Use AtomicAccess::cmpxchg to allocate the object,
+  // prior value of _atomic_top will be always written to reference prior_atomic_top.
+  inline bool try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_atomic_top);
+
   inline void clear_live_data();
   void set_live_data(size_t s);
 
@@ -455,11 +467,36 @@ public:
   // Find humongous start region that this region belongs to
   ShenandoahHeapRegion* humongous_start_region() const;
 
-  HeapWord* top() const         { return _top;     }
-  void set_top(HeapWord* v)     { _top = v;        }
+  HeapWord* atomic_top() const {
+    return AtomicAccess::load_acquire(&_atomic_top);
+  }
 
-  HeapWord* new_top() const     { return _new_top; }
-  void set_new_top(HeapWord* v) { _new_top = v;    }
+  // The field _top can be stale when the region is an atomic alloc region, therefore,
+  // it always checks the atomic top first if CHECK_ATOMIC_TOP is not overridden.
+  template<bool CHECK_ATOMIC_TOP = true>
+  HeapWord* top() const {
+    if (CHECK_ATOMIC_TOP) {
+      HeapWord* at = atomic_top();
+      return at == nullptr ? AtomicAccess::load(&_top) : at;
+    }
+    assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
+    return _top;
+  }
+
+  void set_top(HeapWord* v) {
+    assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
+    _top = v;
+  }
+
+  HeapWord* new_top() const {
+    assert(atomic_top() == nullptr, "Must be");
+    return _new_top;
+  }
+
+  void set_new_top(HeapWord* v) {
+    assert(atomic_top() == nullptr, "Must be");
+    _new_top = v;
+  }
 
   HeapWord* bottom() const      { return _bottom;  }
   HeapWord* end() const         { return _end;     }
@@ -468,6 +505,11 @@ public:
   size_t used() const           { return byte_size(bottom(), top()); }
   size_t used_before_promote() const { return byte_size(bottom(), get_top_before_promote()); }
   size_t free() const           { return byte_size(top(),    end()); }
+  size_t free_words() const     { return pointer_delta(end(), top()); }
+  size_t free_bytes_for_atomic_alloc() const {
+    HeapWord* v_top = atomic_top();
+    return v_top == nullptr ? 0 : byte_size(v_top,    end());
+  }
 
   // Does this region contain this address?
   bool contains(HeapWord* p) const {
@@ -480,9 +522,11 @@ public:
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
   size_t get_plab_allocs() const;
+  bool has_allocs() const;
 
   inline HeapWord* get_update_watermark() const;
   inline void set_update_watermark(HeapWord* w);
+  inline void concurrent_set_update_watermark(HeapWord* w);
   inline void set_update_watermark_at_safepoint(HeapWord* w);
 
   inline ShenandoahAffiliation affiliation() const;
@@ -491,23 +535,37 @@ public:
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
   // Region ageing and rejuvenation
-  uint age() const { return _age; }
-  CENSUS_NOISE(uint youth() const { return _youth; })
+  uint age() const { return AtomicAccess::load(&_age); }
+  CENSUS_NOISE(uint youth() const { return AtomicAccess::load(&_youth); })
 
   void increment_age() {
-    const uint max_age = markWord::max_age;
-    assert(_age <= max_age, "Error");
-    if (_age++ >= max_age) {
-      _age = max_age;   // clamp
+    const uint current_age = age();
+    assert(current_age <= markWord::max_age, "Error");
+    if (current_age < markWord::max_age) {
+      const uint old = AtomicAccess::cmpxchg(&_age, current_age, current_age + 1, memory_order_relaxed);
+      assert(old == current_age || old == 0u, "Only fail when any mutator reset the age.");
     }
   }
 
   void reset_age() {
-    CENSUS_NOISE(_youth += _age;)
-    _age = 0;
+    uint current = age();
+    // return immediately in fast path when current age is 0
+    if (current == 0u) return;
+    // reset_age can be called from multiple mutator/worker threads concurrently w/o heap lock,
+    // if no need to update census noise, there is no need to use cmpxchg here.
+    // The while loop with cmpxchg is to make sure we don't duplicately count the age in census noise.
+    uint old = current;
+    while ((current = AtomicAccess::cmpxchg(&_age, old, 0u)) != old &&
+           current != 0u) {
+      old = current;
+    }
+    if (current != 0u) {
+      // Only the thread successfully resets age should update census noise
+      CENSUS_NOISE(AtomicAccess::add(&_youth, current, memory_order_relaxed);)
+    }
   }
 
-  CENSUS_NOISE(void clear_youth() { _youth = 0; })
+  CENSUS_NOISE(void clear_youth() { AtomicAccess::store(&_youth,  0u); })
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -519,6 +577,44 @@ public:
 
   inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
+  }
+
+  inline void set_active_alloc_region() {
+    shenandoah_assert_heaplocked();
+    assert(atomic_top() == nullptr, "Must be");
+    // Sync _top to _atomic_top to set the region as an active atomic alloc region
+    AtomicAccess::release_store(&_atomic_top, top<false>());
+  }
+
+  // Unset a heap region as active alloc region,
+  // This method should be only called from ShenandoahAllocator::refresh_alloc_regions or ShenandoahAllocator::release_alloc_regions
+  // when the region is removed from the alloc region array in ShenandoahAllocator.
+  inline void unset_active_alloc_region() {
+    shenandoah_assert_heaplocked();
+    assert(is_atomic_alloc_region(), "Must be");
+
+    // Before unset _active_alloc_region flag, _atomic_top needs to be set to sentinel value using AtomicAccess::cmpxchg,
+    // this avoids race condition when the alloc region removed from the alloc regions array used by lock-free allocation in allocator;
+    // meanwhile the previous value of _atomic_top needs to be synced back to _top.
+    HeapWord* prior_atomic_top = nullptr;
+    HeapWord* current_atomic_top = atomic_top();
+    while (true /*always break out in the loop*/) {
+      assert(current_atomic_top != nullptr, "Must not");
+      AtomicAccess::store(&_top, current_atomic_top); // Sync current _atomic_top back to _top
+      prior_atomic_top = AtomicAccess::cmpxchg(&_atomic_top, current_atomic_top, (HeapWord*) nullptr, memory_order_release);
+      if (prior_atomic_top == current_atomic_top) {
+        // break out the loop when successfully exchange _atomic_top to nullptr
+        break;
+      }
+      current_atomic_top = prior_atomic_top;
+    }
+    assert(top<false>() == current_atomic_top, "Value of _atomic_top must have synced to _top");
+    assert(!is_atomic_alloc_region(), "Must not");
+  }
+
+  inline bool is_atomic_alloc_region() const {
+    // region is an active atomic alloc region if the atomic top is set
+    return atomic_top() != nullptr;
   }
 
 private:

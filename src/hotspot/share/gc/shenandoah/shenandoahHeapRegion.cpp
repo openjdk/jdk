@@ -69,6 +69,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _empty_time(os::elapsedTime()),
   _top_before_promoted(nullptr),
   _state(committed ? _empty_committed : _empty_uncommitted),
+  _atomic_top(nullptr),
   _top(start),
   _tlab_allocs(0),
   _gclab_allocs(0),
@@ -325,6 +326,10 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   CENSUS_NOISE(clear_youth();)
   switch (state()) {
+    case _regular:
+      if (free() != region_size_bytes()) {
+        report_illegal_transition("emptying");
+      }
     case _trash:
       set_state(_empty_committed);
       _empty_time = os::elapsedTime();
@@ -361,25 +366,29 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
-  _tlab_allocs = 0;
-  _gclab_allocs = 0;
-  _plab_allocs = 0;
+  AtomicAccess::store(&_tlab_allocs, size_t(0));
+  AtomicAccess::store(&_gclab_allocs, size_t(0));
+  AtomicAccess::store(&_plab_allocs, size_t(0));
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  return used() - (AtomicAccess::load(&_tlab_allocs) + AtomicAccess::load(&_gclab_allocs) + AtomicAccess::load(&_plab_allocs)) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
-  return _tlab_allocs * HeapWordSize;
+  return AtomicAccess::load(&_tlab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_gclab_allocs() const {
-  return _gclab_allocs * HeapWordSize;
+  return AtomicAccess::load(&_gclab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_plab_allocs() const {
-  return _plab_allocs * HeapWordSize;
+  return AtomicAccess::load(&_plab_allocs) * HeapWordSize;
+}
+
+bool ShenandoahHeapRegion::has_allocs() const {
+  return top() > bottom();
 }
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
@@ -564,6 +573,8 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
+  assert(!is_atomic_alloc_region(), "Must not be atomic alloc region");
+  assert(atomic_top() == nullptr, "Must be");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   _mixed_candidate_garbage_words = 0;

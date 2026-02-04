@@ -538,7 +538,7 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
     // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
     // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
     // during promote-in-place processing.
-    heap->rebuild_free_set(true /*concurrent*/);
+    heap->rebuild_free_set(true /*concurrent*/, true /*release alloc regions before rebuilding*/);
   }
 }
 
@@ -756,6 +756,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
 
+    // Release all alloc regions before choosing cset.
+    heap->free_set()->release_alloc_regions_under_lock();
+
     // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
     // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
     // ShenandoahGeneration and ShenandoahOldGeneration for more detail.
@@ -794,6 +797,12 @@ void ShenandoahConcurrentGC::op_final_mark() {
           heap->verifier()->verify_after_concmark(_generation);
         }
       }
+    }
+
+    {
+      ShenandoahHeapLocker locker(heap->lock());
+      // Free set has been re-built, reserve alloc regions for mutator
+      heap->free_set()->mutator_allocator()->reserve_alloc_regions();
     }
   }
 
@@ -1091,6 +1100,12 @@ void ShenandoahConcurrentGC::op_cleanup_early() {
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {
+  {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahHeapLocker locker(heap->lock());
+    // Reserve alloc regions for evacuation.
+    heap->free_set()->collector_allocator()->reserve_alloc_regions();
+  }
   ShenandoahHeap::heap()->evacuate_collection_set(_generation, true /*concurrent*/);
 }
 
@@ -1191,6 +1206,8 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_in_to_space(_generation);
   }
+
+  heap->free_set()->release_alloc_regions_under_lock();
 
   // If we are running in generational mode and this is an aging cycle, this will also age active
   // regions that haven't been used for allocation.

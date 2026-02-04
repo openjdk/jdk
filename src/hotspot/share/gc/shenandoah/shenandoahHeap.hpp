@@ -482,8 +482,8 @@ private:
   void recycle_trash();
 public:
   // The following two functions rebuild the free set at the end of GC, in preparation for an idle phase.
-  void rebuild_free_set(bool concurrent);
-  void rebuild_free_set_within_phase();
+  void rebuild_free_set(bool concurrent, bool release_atomic_alloc_regions_first = false);
+  void rebuild_free_set_within_phase(bool release_atomic_alloc_regions_first = false);
   void notify_gc_progress();
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;
@@ -681,7 +681,7 @@ protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
 
 private:
-  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
+  HeapWord* allocate_memory_for_collector(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 

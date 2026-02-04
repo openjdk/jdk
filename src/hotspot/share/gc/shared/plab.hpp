@@ -78,6 +78,8 @@ public:
 
   // Minimum PLAB size.
   static size_t min_size();
+  // Minimum PLAB size in bytes.
+  static size_t min_size_bytes();
   // Maximum PLAB size.
   static size_t max_size();
 

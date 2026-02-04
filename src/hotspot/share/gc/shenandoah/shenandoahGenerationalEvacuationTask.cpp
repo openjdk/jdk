@@ -138,7 +138,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
 
 
 void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRegion* r) {
-  if (r->is_young() && r->is_active() && _heap->is_tenurable(r)) {
+  if (r->is_young() && r->is_active() && _heap->is_tenurable(r) && !r->is_atomic_alloc_region()) {
     if (r->is_humongous_start()) {
       // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
       // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that
@@ -186,6 +186,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     assert(region->is_regular(), "Use different service to promote humongous regions");
     assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
     assert(region->get_top_before_promote() == tams, "Region %zu has been used for allocations before promotion", region->index());
+    assert(!region->is_atomic_alloc_region(), "Must not be atomic alloc region");
   }
 
   ShenandoahOldGeneration* const old_gen = _heap->old_generation();
