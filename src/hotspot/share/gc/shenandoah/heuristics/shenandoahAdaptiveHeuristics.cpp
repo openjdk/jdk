@@ -609,24 +609,40 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // sizes are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 5,
     // spanning 15ms of execution.
 
-    if (consumption_accelerated > allocatable_words) {
+    // The test (allocated > available / 2) is intended to prevent accelerated triggers from firing so quickly that there
+    // has not been sufficient time to create garbage that can be reclaimed during the next GC cycle.  If we trigger before
+    // garbage can be created, the concurrent GC will find no garbage.  Note that garbage that was allocated following the
+    // start of the current GC cycle cannot be reclaimed in this GC cycle.  Here is the derivation of this expression:
+
+    // Let R (runway) represent the total amount of memory that can be allocated following the start of GC(N).  At any point
+    // in time following the start of GC(N), the (V) available memory plus the (A) allocated-since-start-of-GC equals R.  In
+    // a balanced, fully utilized configuration, we will be starting each new GC cycle immediately following completion of
+    // the preceding GC cycle.  In this configuration, we would expect half of R to be consumed during concurrent cycle GC(N)
+    // and half to be consumed during concurrent GC(N+1).
+    //
+    // Assume we want to delay GC trigger until:    A/V > 0.5
+    //     This is equivalent to enforcing that:      A > 0.5V
+    //                                 which is:     2A > V
+    //              Since A+V equals R, we have: A + 2A > A + V  = R
+    //                     which is to say that:      A > R/3
+    if ((allocated > available / 2) && (consumption_accelerated > allocatable_words)) {
       size_t size_t_alloc_rate = (size_t) current_rate_by_acceleration * HeapWordSize;
       if (acceleration > 0) {
         size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
-        log_trigger("Accelerated consumption (%zu%s) exceeds free headroom (%zu%s) at "
-                    "current rate (%zu%s/s) with acceleration (%zu%s/s/s) for planned %s GC time (%.2f ms)",
-                    byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
-                    byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
-                    byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
-                    byte_size_in_proper_unit(size_t_acceleration), proper_unit_for_byte_size(size_t_acceleration),
+        log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
+                    "current rate (" PROPERFMT "/s) with acceleration (" PROPERFMT "/s/s) for planned %s GC time (%.2f ms)",
+                    PROPERFMTARGS(consumption_accelerated * HeapWordSize),
+                    PROPERFMTARGS(allocatable_words * HeapWordSize),
+                    PROPERFMTARGS(size_t_alloc_rate),
+                    PROPERFMTARGS(size_t_acceleration),
                     future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
                     future_accelerated_planned_gc_time * 1000);
       } else {
-        log_trigger("Momentary spike consumption (%zu%s) exceeds free headroom (%zu%s) at "
-                    "current rate (%zu%s/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
-                    byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
-                    byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
-                    byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
+        log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
+                    "current rate (" PROPERFMT "/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
+                    PROPERFMTARGS(consumption_accelerated * HeapWordSize),
+                    PROPERFMTARGS(allocatable_words * HeapWordSize),
+                    PROPERFMTARGS(size_t_alloc_rate),
                     future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
                     future_accelerated_planned_gc_time * 1000, _spike_threshold_sd);
 
