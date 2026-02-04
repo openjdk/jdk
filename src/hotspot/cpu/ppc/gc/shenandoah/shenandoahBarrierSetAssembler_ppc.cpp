@@ -50,14 +50,14 @@
 
 #define __ masm->
 
-void ShenandoahBarrierSetAssembler::satb_write_barrier(MacroAssembler *masm,
-                                                       Register base, RegisterOrConstant ind_or_offs,
-                                                       Register tmp1, Register tmp2, Register tmp3,
-                                                       MacroAssembler::PreservationLevel preservation_level) {
+void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler *masm,
+                                                 Register base, RegisterOrConstant ind_or_offs,
+                                                 Register tmp1, Register tmp2, Register tmp3,
+                                                 MacroAssembler::PreservationLevel preservation_level) {
   if (ShenandoahSATBBarrier) {
-    __ block_comment("satb_write_barrier (shenandoahgc) {");
-    satb_write_barrier_impl(masm, 0, base, ind_or_offs, tmp1, tmp2, tmp3, preservation_level);
-    __ block_comment("} satb_write_barrier (shenandoahgc)");
+    __ block_comment("satb_barrier (shenandoahgc) {");
+    satb_barrier_impl(masm, 0, base, ind_or_offs, tmp1, tmp2, tmp3, preservation_level);
+    __ block_comment("} satb_barrier (shenandoahgc)");
   }
 }
 
@@ -198,11 +198,12 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
 //              In "load mode", this register acts as a temporary register and must
 //              thus not be 'noreg'.  In "preloaded mode", its content will be sustained.
 // tmp1/tmp2:   Temporary registers, one of which must be non-volatile in "preloaded mode".
-void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm, DecoratorSet decorators,
-                                                            Register base, RegisterOrConstant ind_or_offs,
-                                                            Register pre_val,
-                                                            Register tmp1, Register tmp2,
-                                                            MacroAssembler::PreservationLevel preservation_level) {
+void ShenandoahBarrierSetAssembler::satb_barrier_impl(MacroAssembler *masm, DecoratorSet decorators,
+                                                      Register base, RegisterOrConstant ind_or_offs,
+                                                      Register pre_val,
+                                                      Register tmp1, Register tmp2,
+                                                      MacroAssembler::PreservationLevel preservation_level) {
+  assert(ShenandoahSATBBarrier, "Should be checked by caller");
   assert_different_registers(tmp1, tmp2, pre_val, noreg);
 
   Label skip_barrier;
@@ -574,13 +575,13 @@ void ShenandoahBarrierSetAssembler::load_at(
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     if (ShenandoahSATBBarrier) {
       __ block_comment("keep_alive_barrier (shenandoahgc) {");
-      satb_write_barrier_impl(masm, 0, noreg, noreg, dst, tmp1, tmp2, preservation_level);
+      satb_barrier_impl(masm, 0, noreg, noreg, dst, tmp1, tmp2, preservation_level);
       __ block_comment("} keep_alive_barrier (shenandoahgc)");
     }
   }
 }
 
-void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register base, RegisterOrConstant ind_or_offs, Register tmp) {
+void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register base, RegisterOrConstant ind_or_offs, Register tmp) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
   assert_different_registers(base, tmp, R0);
 
@@ -603,21 +604,33 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler *masm, DecoratorSet 
                                              Register base, RegisterOrConstant ind_or_offs, Register val,
                                              Register tmp1, Register tmp2, Register tmp3,
                                              MacroAssembler::PreservationLevel preservation_level) {
-  if (is_reference_type(type)) {
-    if (ShenandoahSATBBarrier) {
-      satb_write_barrier(masm, base, ind_or_offs, tmp1, tmp2, tmp3, preservation_level);
-    }
+  // 1: non-reference types require no barriers
+  if (!is_reference_type(type)) {
+    BarrierSetAssembler::store_at(masm, decorators, type,
+                                  base, ind_or_offs,
+                                  val,
+                                  tmp1, tmp2, tmp3,
+                                  preservation_level);
+    return;
   }
 
+  bool storing_non_null = (val != noreg);
+
+  // 2: pre-barrier: SATB needs the previous value
+  if (ShenandoahBarrierSet::need_satb_barrier(decorators, type)) {
+    satb_barrier(masm, base, ind_or_offs, tmp1, tmp2, tmp3, preservation_level);
+  }
+
+  // Store!
   BarrierSetAssembler::store_at(masm, decorators, type,
                                 base, ind_or_offs,
                                 val,
                                 tmp1, tmp2, tmp3,
                                 preservation_level);
 
-  // No need for post barrier if storing null
-  if (ShenandoahCardBarrier && is_reference_type(type) && val != noreg) {
-    store_check(masm, base, ind_or_offs, tmp1);
+  // 3: post-barrier: card barrier needs store address
+  if (ShenandoahBarrierSet::need_card_barrier(decorators, type) && storing_non_null) {
+    card_barrier(masm, base, ind_or_offs, tmp1);
   }
 }
 
