@@ -88,6 +88,10 @@ LIBAWT_EXTRA_HEADER_DIRS := \
 
 LIBAWT_CFLAGS := -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES -DMLIB_NO_LIBSUNMATH
 
+ifeq ($(ENABLE_HEADLESS_ONLY), true)
+  LIBAWT_CFLAGS += -DHEADLESS
+endif
+
 ifeq ($(call isTargetOs, windows), true)
   LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE -DMLIB_OS64BIT
   LIBAWT_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
@@ -167,11 +171,18 @@ ifeq ($(call isTargetOs, windows macosx), false)
       $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
       #
 
+  LIBAWT_HEADLESS_EXCLUDE_FILES := \
+      GLXGraphicsConfig.c \
+      GLXSurfaceData.c \
+      X11PMBlitLoops.c \
+      X11Renderer.c \
+      X11SurfaceData.c \
+      #
+
   LIBAWT_HEADLESS_EXTRA_HEADER_DIRS := \
       $(LIBAWT_DEFAULT_HEADER_DIRS) \
       common/awt/debug \
       common/font \
-      common/java2d/opengl \
       java.base:libjvm \
       #
 
@@ -191,7 +202,8 @@ ifeq ($(call isTargetOs, windows macosx), false)
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
-      EXCLUDES := medialib, \
+      EXCLUDES := medialib opengl, \
+      EXCLUDE_FILES := $(LIBAWT_HEADLESS_EXCLUDE_FILES), \
       ONLY_EXPORTED := $(LIBAWT_HEADLESS_ONLY_EXPORTED), \
       OPTIMIZATION := LOW, \
       CFLAGS := -DHEADLESS=true $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) \
