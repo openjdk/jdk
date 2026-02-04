@@ -557,8 +557,7 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
   // the allocation pattern) so joining the types only works if both are oops
   const Type* p1_type = p1->bottom_type();
   const Type* p2_type = p2->bottom_type();
-  const Type* join = p1_type->join(p2_type);
-  if (p1_type->isa_oopptr() && p2_type->isa_oopptr() && join->empty()) {
+  if (p1_type->isa_oopptr() && p2_type->isa_oopptr() && p1_type->join(p2_type)->empty()) {
     return true;
   }
 
