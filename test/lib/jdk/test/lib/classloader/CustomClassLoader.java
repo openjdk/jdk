@@ -21,7 +21,7 @@
  * questions.
  */
 
-package nsk.share;
+package jdk.test.lib.classloader;
 
 import java.io.*;
 

@@ -31,8 +31,7 @@
 
 package jdk.test.lib.classloader;
 import jdk.test.whitebox.WhiteBox;
-import nsk.share.CustomClassLoader;
-import nsk.share.Failure;
+import jdk.test.lib.Failure;
 
 import java.io.File;
 import java.io.Serial;

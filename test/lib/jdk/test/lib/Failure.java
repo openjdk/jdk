@@ -21,9 +21,7 @@
  * questions.
  */
 
-package nsk.share;
-
-import java.io.*;
+package jdk.test.lib;
 
 /**
  * Thrown to indicate failure caused by some occasional reason,

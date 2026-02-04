@@ -27,9 +27,10 @@
  * @bug 8142506
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
- * @library /test/lib /vmTestbase
+ * @library /test/lib
  * @library classes
  * @build test.Empty
+ * @build jdk.test.lib.Failure
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver ClassLoadUnloadTest

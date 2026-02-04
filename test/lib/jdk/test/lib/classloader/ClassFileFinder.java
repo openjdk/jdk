@@ -21,12 +21,10 @@
  * questions.
  */
 
-package nsk.share;
+package jdk.test.lib.classloader;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.nio.file.Files;
 import java.util.Arrays;
 
 public class ClassFileFinder {

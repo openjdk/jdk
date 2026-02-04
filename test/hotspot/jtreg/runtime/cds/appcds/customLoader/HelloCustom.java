@@ -40,9 +40,8 @@
  */
 
 import jdk.test.lib.cds.CDSOptions;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class HelloCustom {
     static {
