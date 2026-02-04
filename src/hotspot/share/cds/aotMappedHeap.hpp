@@ -45,6 +45,8 @@ public:
   int roots_count() { return _roots_count; }
   size_t max_size_in_bytes() { return _max_size_in_bytes; }
   int max_size_in_elems() { return _max_size_in_elems; }
+  int first_segment_size_in_elems() { return _first_segment_size_in_elems; }
+
 
   size_t size_in_bytes(size_t seg_idx);
   int size_in_elems(size_t seg_idx);
@@ -64,7 +66,12 @@ public:
                             int first_segment_size_in_bytes,
                             int first_segment_size_in_elems) {
     memset(this, 0, sizeof(*this));
-    _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;
+
+    _count = 1;
+    int remain_elements = roots_count - first_segment_size_in_elems;
+    precond(remain_elements >= 0);
+    _count += (remain_elements + max_size_in_elems - 1) / max_size_in_elems;
+
     _roots_count = roots_count;
     _max_size_in_bytes = max_size_in_bytes;
     _max_size_in_elems = max_size_in_elems;

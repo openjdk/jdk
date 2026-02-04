@@ -419,7 +419,6 @@ int HeapShared::append_root(oop obj) {
   assert(SafepointSynchronize::is_at_safepoint() , "todo: need a lock when access outside of safepoint");
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
   if (obj == nullptr) {
-    assert(0, "huh");
     assert(_pending_roots->at(0).is_empty(), "root index 1 is always null");
     return 0;
   }
@@ -612,7 +611,7 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
  void HeapShared::init_dumping() {
    _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
    _pending_roots = new GrowableArrayCHeap<OopHandle, mtClassShared>(500);
-   //_pending_roots->append(OopHandle());
+   _pending_roots->append(OopHandle());
 }
 
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {

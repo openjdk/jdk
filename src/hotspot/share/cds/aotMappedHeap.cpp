@@ -38,7 +38,7 @@ int AOTMappedHeapRootSegments::size_in_elems(size_t seg_idx) {
     return _max_size_in_elems;
   } else {
     // Last slice, leftover
-    return _roots_count % _max_size_in_elems;
+    return (_roots_count - _first_segment_size_in_elems) % _max_size_in_elems;
   }
 }
 

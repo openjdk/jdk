@@ -942,9 +942,13 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapIn
       GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* result = new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
 
       for (int i = 0; i < pending_roots->length(); ++i) {
-        HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(pending_roots->at(i).resolve());
-        address buffered_addr = _buffer_start + p->buffer_offset();
-        result->append(capture(buffered_addr));
+        if (i == 0) {
+          result->append(null_data());
+        } else {
+          HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(pending_roots->at(i).resolve());
+          address buffered_addr = _buffer_start + p->buffer_offset();
+          result->append(capture(buffered_addr));
+        }
       }
 
       return result;
