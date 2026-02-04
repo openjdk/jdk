@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,7 +687,7 @@ class CallGenerator;
 class CallNode : public SafePointNode {
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) const;
 
 public:
   const TypeFunc* _tf;          // Function type
@@ -736,7 +736,7 @@ public:
   virtual bool needs_deep_clone_jvms(Compile* C) { return _generator != nullptr || C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
@@ -1044,7 +1044,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -1208,7 +1208,7 @@ public:
   bool is_balanced();
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);

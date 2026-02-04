@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ private:
                               address slow_call_address,
                               Node* valid_length_test);
   void yank_alloc_node(AllocateNode* alloc);
-  Node *value_from_mem(Node *mem, Node *ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
+  Node *value_from_mem(Node* start, Node* ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
@@ -192,7 +192,7 @@ private:
                           Node* klass_node, Node* length,
                           Node* size_in_bytes);
 
-  Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
+  Node* make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn) {
