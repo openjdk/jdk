@@ -545,6 +545,15 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
     }
 
     case T_LONG: {
+#if INCLUDE_CDS
+      if (AOTCodeCache::is_on_for_dump()) {
+        address b = c->as_pointer();
+        if (b == (address)ThreadIdentifier::unsafe_offset()) {
+          __ lea(dest->as_register_lo(), ExternalAddress(b));
+          break;
+        }
+      }
+#endif
       assert(patch_code == lir_patch_none, "no patching handled here");
       __ movptr(dest->as_register_lo(), (intptr_t)c->as_jlong());
       break;
