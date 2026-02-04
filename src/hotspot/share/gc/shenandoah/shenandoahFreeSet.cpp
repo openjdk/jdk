@@ -1194,6 +1194,21 @@ void ShenandoahRegionPartitions::assert_bounds() {
   assert(_humongous_waste[int(ShenandoahFreeSetPartitionId::Mutator)] == young_humongous_waste,
          "Mutator humongous waste must match");
 }
+
+inline void ShenandoahRegionPartitions::assert_bounds_not_changed() {
+  for (uint8_t i = 0; i < UIntNumPartitions; i++) {
+    ShenandoahFreeSetPartitionId partition = static_cast<ShenandoahFreeSetPartitionId>(i);
+    assert(leftmost(partition) == _max || membership(leftmost(partition)) == partition, "Left most boundry must be sane");
+    assert(rightmost(partition) == -1 || membership(rightmost(partition)) == partition, "Right most boundry must be sane");
+    assert(leftmost_empty(partition) == _max ||
+           (membership(leftmost_empty(partition)) == partition &&
+            _free_set->alloc_capacity(leftmost_empty(partition)) == _region_size_bytes), "Left most empty boundry must be sane");
+    assert(rightmost_empty(partition) == -1 ||
+           (membership(rightmost_empty(partition)) == partition &&
+            _free_set->alloc_capacity(rightmost_empty(partition)) == _region_size_bytes), "Right most empty boundry must be sane");
+  }
+}
+
 #endif
 
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
@@ -1654,10 +1669,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // Not old collector alloc, so this is a young collector gclab or shared allocation
     orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
-  DEBUG_ONLY(bool should_assert_bounds = false;)
+  DEBUG_ONLY(bool boundary_changed = false;)
   if ((result != nullptr) && in_new_region) {
     _partitions.one_region_is_no_longer_empty(orig_partition);
-    DEBUG_ONLY(should_assert_bounds = true;)
+    DEBUG_ONLY(boundary_changed = true;)
   }
 
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
@@ -1669,7 +1684,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
     size_t idx = r->index();
     size_t waste_bytes = _partitions.retire_from_partition(orig_partition, idx, r->used());
-    DEBUG_ONLY(should_assert_bounds = true;)
+    DEBUG_ONLY(boundary_changed = true;)
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
       increase_bytes_allocated(waste_bytes);
     }
@@ -1714,8 +1729,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     assert(false, "won't happen");
   }
 #ifdef ASSERT
-  if (should_assert_bounds) {
+  if (boundary_changed) {
     _partitions.assert_bounds();
+  } else {
+    _partitions.assert_bounds_not_changed();
   }
 #endif
   return result;
