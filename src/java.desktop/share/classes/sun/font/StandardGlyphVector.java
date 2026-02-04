@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,11 +608,13 @@ public class StandardGlyphVector extends GlyphVector {
         }
 
         Rectangle2D vb = getGlyphVisualBounds(ix).getBounds2D();
-        Point2D pt = getGlyphPosition(ix);
-        vb.setRect(vb.getMinX() - pt.getX(),
-                   vb.getMinY() - pt.getY(),
-                   vb.getWidth(),
-                   vb.getHeight());
+        if (!vb.isEmpty()) {
+            Point2D pt = getGlyphPosition(ix);
+            vb.setRect(vb.getMinX() - pt.getX(),
+                       vb.getMinY() - pt.getY(),
+                       vb.getWidth(),
+                       vb.getHeight());
+        }
         Point2D.Float adv =
             getGlyphStrike(ix).strike.getGlyphMetrics(glyphs[ix]);
         GlyphMetrics gm = new GlyphMetrics(true, adv.x, adv.y,

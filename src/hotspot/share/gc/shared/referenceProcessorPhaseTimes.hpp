@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shared/workerDataArray.hpp"
 #include "memory/allocation.hpp"
 #include "memory/referenceType.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/ticks.hpp"
 
 class DiscoveredList;
@@ -52,7 +53,7 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Total spent time for reference processing.
   double                   _total_time_ms;
 
-  size_t                   _ref_dropped[number_of_subclasses_of_ref];
+  Atomic<size_t>           _ref_dropped[number_of_subclasses_of_ref];
   size_t                   _ref_discovered[number_of_subclasses_of_ref];
 
   bool                     _processing_is_mt;

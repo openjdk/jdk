@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
@@ -91,14 +92,16 @@ SerialHeap::SerialHeap() :
     CollectedHeap(),
     _young_gen(nullptr),
     _old_gen(nullptr),
+    _young_gen_saved_top(nullptr),
+    _old_gen_saved_top(nullptr),
     _rem_set(nullptr),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _young_manager(nullptr),
     _old_manager(nullptr),
-    _is_heap_almost_full(false),
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
-    _old_pool(nullptr) {
+    _old_pool(nullptr),
+    _is_heap_almost_full(false) {
   _young_manager = new GCMemoryManager("Copy");
   _old_manager = new GCMemoryManager("MarkSweepCompact");
   GCLocker::initialize();
@@ -630,6 +633,14 @@ bool SerialHeap::requires_barriers(stackChunkOop obj) const {
 
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool SerialHeap::is_in(const void* p) const {
+  // precondition
+  verify_not_in_native_if_java_thread();
+
+  if (!is_in_reserved(p)) {
+    // If it's not even in reserved.
+    return false;
+  }
+
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
 
@@ -797,3 +808,12 @@ void SerialHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
 };
+
+#ifdef ASSERT
+void SerialHeap::verify_not_in_native_if_java_thread() {
+  if (Thread::current()->is_Java_thread()) {
+    JavaThread* thread = JavaThread::current();
+    assert(thread->thread_state() != _thread_in_native, "precondition");
+  }
+}
+#endif

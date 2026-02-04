@@ -49,6 +49,7 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java#with-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 compiler/runtime/Test8168712.java#without-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/runtime/Test7196199.java 8365196 windows-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
@@ -76,8 +77,6 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
-serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150 generic-all
-
 #############################################################################
 
 # :hotspot_gc
@@ -94,7 +93,6 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 gc/shenandoah/TestRetainObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab 8361099 generic-all
 gc/shenandoah/TestSieveObjects.java#no-tlab-genshen 8361099 generic-all
-gc/cslocker/TestCSLocker.java 8373025 generic-all
 
 #############################################################################
 
@@ -115,7 +113,6 @@ runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
-containers/docker/TestMemoryAwareness.java 8303470 linux-all
 containers/docker/TestJFREvents.java 8327723 linux-x64
 containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 
@@ -139,9 +136,6 @@ serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
 serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
 serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
-
-serviceability/sa/ClhsdbScanOops.java#parallel    8373022 generic-all
-serviceability/sa/ClhsdbScanOops.java#serial      8373022 generic-all
 
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
