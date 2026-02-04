@@ -919,7 +919,7 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapIn
                                requested_shift,
                                root_segments) {}
 
-    AOTMapLogger::OopData capture(address buffered_addr) {
+    AOTMapLogger::OopData capture(address buffered_addr) override {
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
       size_t size = size_of_buffered_oop(buffered_addr);
       address requested_addr = buffered_addr_to_requested_addr(buffered_addr);
