@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@
  * @run main/othervm/manual -Djava.security.debug=certpath EmSignRootG2CA OCSP
  * @run main/othervm/manual -Djava.security.debug=certpath EmSignRootG2CA CRL
  */
+
+import jtreg.SkippedException;
+
+import java.util.List;
 
 public class EmSignRootG2CA {
 
@@ -176,5 +180,12 @@ public class EmSignRootG2CA {
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
                 "Thu Oct 05 22:51:36 PDT 2023", System.out);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }

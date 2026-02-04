@@ -31,6 +31,10 @@
  * @run main/othervm/manual -Djava.security.debug=certpath HaricaCA CRL
  */
 
+import jtreg.SkippedException;
+
+import java.util.List;
+
 /*
  * Obtain test artifacts for Harica CA from:
  *
@@ -53,6 +57,13 @@ public class HaricaCA {
 
         new Harica_CA().runTest(pathValidator, ocspEnabled);
         new Harica_ECC().runTest(pathValidator, ocspEnabled);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }
 

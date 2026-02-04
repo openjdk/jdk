@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@
  * @run main/othervm/manual -Djava.security.debug=certpath DigicertCSRootG5 CRL
  */
 
+import jtreg.SkippedException;
+
+import java.util.List;
+
 public class DigicertCSRootG5 {
 
     public static void main(String[] args) throws Exception {
@@ -46,6 +50,13 @@ public class DigicertCSRootG5 {
 
         new Digicert_CS_ECC().runTest(pathValidator);
         new Digicert_CS_RSA().runTest(pathValidator);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }
 

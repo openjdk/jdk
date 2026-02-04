@@ -31,6 +31,10 @@
  * @run main/othervm/manual -Djava.security.debug=certpath LuxTrustCA CRL
  */
 
+import jtreg.SkippedException;
+
+import java.util.List;
+
 /*
  * Obtain TLS test artifacts for LuxTrust CAs from:
  *
@@ -192,5 +196,12 @@ public class LuxTrustCA {
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
                 "Wed Jul 10 04:48:49 PDT 2019", System.out);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }

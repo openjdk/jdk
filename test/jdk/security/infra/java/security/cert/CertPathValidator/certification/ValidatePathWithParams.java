@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import jtreg.SkippedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -48,8 +47,10 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -62,6 +63,7 @@ public class ValidatePathWithParams {
     private static final String CACERTS_STORE = System.getProperty("test.jdk")
             + FS + "lib" + FS + "security" + FS + "cacerts";
 
+    private final List<String> skippedValidations = new ArrayList<>();
     private final String[] trustedRootCerts;
 
     // use this for expired cert validation
@@ -74,6 +76,10 @@ public class ValidatePathWithParams {
     private final CertPathValidator certPathValidator;
     private final PKIXRevocationChecker certPathChecker;
     private final CertificateFactory cf;
+
+    public List<String> getSkippedValidations() {
+        return skippedValidations;
+    }
 
     /**
      * Possible status values supported for EE certificate
@@ -147,18 +153,36 @@ public class ValidatePathWithParams {
             // Some machines don't have network setup correctly to be able to
             // reach outside world, skip such failures
             ioe.printStackTrace(System.err);
-            throw new SkippedException("WARNING: Network setup issue, skip this test");
+            skippedValidations.add(String.format(
+                    "WARNING: Network setup issue certsToValidate: %s, " +
+                    "st: %s, revDate: %s",
+                    Arrays.toString(certsToValidate),
+                    st,
+                    revDate));
+            return;
         } catch (CertPathValidatorException cpve) {
             out.println("Received exception: " + cpve);
 
             if (cpve.getCause() instanceof IOException) {
-                throw new SkippedException("WARNING: CertPathValidatorException caused by IO"
-                        + " error, skip this test");
+                skippedValidations.add(String.format(
+                        "WARNING: CertPathValidatorException caused by IO error " +
+                        "certsToValidate: %s, st: %s, revDate: %s",
+                        Arrays.toString(certsToValidate),
+                        st,
+                        revDate));
+                return;
             }
 
             if (cpve.getReason() == CertPathValidatorException.BasicReason.ALGORITHM_CONSTRAINED) {
-                throw new SkippedException("WARNING: CertPathValidatorException caused by"
-                        + " restricted algorithm, skip this test");
+                skippedValidations.add(String.format(
+                        "WARNING: CertPathValidatorException caused by " +
+                        "restricted algorithm " +
+                        "certsToValidate: %s, st: %s, revDate: %s",
+                        Arrays.toString(certsToValidate),
+                        st,
+                        revDate));
+                return;
+
             }
 
             if (cpve.getReason() == CertPathValidatorException.BasicReason.REVOKED
@@ -184,7 +208,13 @@ public class ValidatePathWithParams {
         // Don't want test to fail in case certificate is expired when not expected
         // Simply skip the test.
         if (expectedStatus != Status.EXPIRED && certStatus == Status.EXPIRED) {
-            throw new SkippedException("WARNING: Certificate expired, skip the test");
+            skippedValidations.add(String.format(
+                    "WARNING: Certificate expired " +
+                    "certsToValidate: %s, st: %s, revDate: %s",
+                    Arrays.toString(certsToValidate),
+                    st,
+                    revDate));
+            return;
         }
 
         if (certStatus != expectedStatus) {

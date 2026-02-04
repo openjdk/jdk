@@ -31,6 +31,10 @@
  * @run main/othervm/manual -Djava.security.debug=certpath SectigoCSRootCAs CRL
  */
 
+import jtreg.SkippedException;
+
+import java.util.List;
+
 public class SectigoCSRootCAs {
 
     public static void main(String[] args) throws Exception {
@@ -46,6 +50,13 @@ public class SectigoCSRootCAs {
 
         new SectigoCSRootCA_R46().runTest(pathValidator);
         new SectigoCSRootCA_E46().runTest(pathValidator);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }
 
