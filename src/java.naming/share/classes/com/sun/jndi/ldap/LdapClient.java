@@ -460,12 +460,12 @@ public final class LdapClient implements PooledConnection {
                 if (debug > 0) System.err.println("LdapClient: closed connection " + this);
                 if (!pooled) {
                     // Not being pooled; continue with closing
-                    conn.cleanup(reqCtls, false);
+                    conn.cleanupAndClose(reqCtls);
                 } else {
                     // Pooled
                     // Is this a real close or a request to return conn to pool
                     if (hardClose) {
-                        conn.cleanup(reqCtls, false);
+                        conn.cleanupAndClose(reqCtls);
                         pcb.removePooledConnection(this);
                     } else {
                         pcb.releasePooledConnection(this);
@@ -476,6 +476,7 @@ public final class LdapClient implements PooledConnection {
             lock.unlock();
         }
     }
+
 
     // NOTE: Should NOT be synchronized otherwise won't be able to close
     private void forceClose(boolean cleanPool) {
