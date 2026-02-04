@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,14 @@
       /* overflow detection requires NMT to be on. If off, fake assert. */                \
       guarantee(false,                                                                    \
                 "fake message ignore this - " expected_assertion_message);                \
+    }                                                                                     \
+  }
+
+  #define DEFINE_TEST_REGEX(test_function, expected_assertion_message)                    \
+  TEST_VM_FATAL_ERROR_MSG(NMT, test_function, expected_assertion_message) {               \
+    if (MemTracker::tracking_level() > NMT_off) {                                         \
+      tty->print_cr("NMT overwrite death test, please ignore subsequent error dump.");    \
+      test_function ();                                                                   \
     }                                                                                     \
   }
 
@@ -105,9 +113,10 @@ static void test_double_free() {
 // The message would be either
 // - "header canary broken" or
 // - "header canary dead (double free?)".
-// However, since gtest regex expressions do not support unions (a|b), I search for a reasonable
-// subset here.
-DEFINE_TEST(test_double_free, "header canary")
+// In case of concurrent access, we may see a SIGSEGV instead.
+// Since gtest regex expressions do not support unions (a|b), AnyOf() matcher is used.
+DEFINE_TEST_REGEX(test_double_free, ::testing::AnyOf(::testing::ContainsRegex("header canary"), ::testing::ContainsRegex("SIG")))
+
 
 ///////
 
