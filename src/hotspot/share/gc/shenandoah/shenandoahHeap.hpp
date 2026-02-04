@@ -129,9 +129,7 @@ public:
   ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_block_for_safepoint = false);
 
   ~ShenandoahHeapLocker() {
-    if (_lock != nullptr) {
-      _lock->unlock();
-    }
+    _lock->unlock();
   }
 };
 

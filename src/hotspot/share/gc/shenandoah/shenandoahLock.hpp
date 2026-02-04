@@ -116,15 +116,12 @@ class ShenandoahLocker : public StackObj {
   Lock* const _lock;
 public:
   ShenandoahLocker(Lock* lock, bool allow_block_for_safepoint = false) : _lock(lock) {
-    if (_lock != nullptr) {
-      _lock->lock(allow_block_for_safepoint);
-    }
+    assert(_lock != nullptr, "Must not");
+    _lock->lock(allow_block_for_safepoint);
   }
 
   ~ShenandoahLocker() {
-    if (_lock != nullptr) {
-      _lock->unlock();
-    }
+    _lock->unlock();
   }
 };
 
