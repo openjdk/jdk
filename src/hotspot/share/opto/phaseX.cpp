@@ -31,6 +31,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -2635,6 +2636,25 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
           (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
           (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
           (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F)) {
+        worklist.push(u);
+      }
+    }
+  }
+  // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
+  // ConvF2HF::Ideal matches ConvF2HF(binopF(ConvHF2F(...))) => FP16BinOp(...).
+  // Notify them when the inner conversion changes.
+  int n_op = n->Opcode();
+  if (n_op == Op_ConvF2D && use_op == Op_SqrtD) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvD2F) {
+        worklist.push(u);
+      }
+    }
+  } else if (n_op == Op_ConvHF2F && Float16NodeFactory::is_float32_binary_oper(use_op)) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvF2HF) {
         worklist.push(u);
       }
     }
