@@ -5110,9 +5110,8 @@ void MacroAssembler::get_thread(Register thread) {
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  CardTable::CardValue* byte_map_base =
-    ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
-  mv(reg, (uint64_t)byte_map_base);
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
+  mv(reg, (uint64_t)ctbs->card_table_base_const());
 }
 
 void MacroAssembler::build_frame(int framesize) {

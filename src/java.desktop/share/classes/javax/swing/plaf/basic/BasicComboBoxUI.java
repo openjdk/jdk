@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.swing.text.*;
 import javax.swing.event.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import sun.awt.AppContext;
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
@@ -202,10 +201,6 @@ public class BasicComboBoxUI extends ComboBoxUI {
     // Cached the size that the display needs to render the largest item
     private Dimension cachedDisplaySize = new Dimension( 0, 0 );
 
-    // Key used for lookup of the DefaultListCellRenderer in the AppContext.
-    private static final Object COMBO_UI_LIST_CELL_RENDERER_KEY =
-                        new StringBuffer("DefaultListCellRendererKey");
-
     static final StringBuffer HIDE_POPUP_KEY
                   = new StringBuffer("HidePopupKey");
 
@@ -237,18 +232,10 @@ public class BasicComboBoxUI extends ComboBoxUI {
      */
     public BasicComboBoxUI() {}
 
+    private static final ListCellRenderer<Object> CELL_RENDERER = new DefaultListCellRenderer();
     // Used for calculating the default size.
     private static ListCellRenderer<Object> getDefaultListCellRenderer() {
-        @SuppressWarnings("unchecked")
-        ListCellRenderer<Object> renderer = (ListCellRenderer)AppContext.
-                         getAppContext().get(COMBO_UI_LIST_CELL_RENDERER_KEY);
-
-        if (renderer == null) {
-            renderer = new DefaultListCellRenderer();
-            AppContext.getAppContext().put(COMBO_UI_LIST_CELL_RENDERER_KEY,
-                                           new DefaultListCellRenderer());
-        }
-        return renderer;
+        return CELL_RENDERER;
     }
 
     /**

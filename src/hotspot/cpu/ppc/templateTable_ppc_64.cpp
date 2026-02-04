@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2199,7 +2199,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register method = Rscratch;
     const Register klass  = Rscratch;
 
@@ -2244,8 +2245,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
   __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static fields
-  if (VM_Version::supports_fast_class_init_checks() &&
-      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register field_holder = R4_ARG2;
 
     // InterpreterRuntime::resolve_get_put sets field_holder and finally release-stores put_code.
