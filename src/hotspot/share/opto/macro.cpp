@@ -1198,8 +1198,8 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 }
 
 
-Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
-  Node* adr = basic_plus_adr(base, offset);
+Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
+  Node* adr = basic_plus_adr(top(), base, offset);
   const TypePtr* adr_type = adr->bottom_type()->is_ptr();
   Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt, MemNode::unordered);
   transform_later(value);
@@ -1207,8 +1207,8 @@ Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, 
 }
 
 
-Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
-  Node* adr = basic_plus_adr(base, offset);
+Node* PhaseMacroExpand::make_store_raw(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
+  Node* adr = basic_plus_adr(top(), base, offset);
   mem = StoreNode::make(_igvn, ctl, mem, adr, nullptr, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
@@ -1753,20 +1753,20 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
                                     Node* size_in_bytes) {
   InitializeNode* init = alloc->initialization();
   // Store the klass & mark bits
-  Node* mark_node = alloc->make_ideal_mark(&_igvn, object, control, rawmem);
+  Node* mark_node = alloc->make_ideal_mark(&_igvn, control, rawmem);
   if (!mark_node->is_Con()) {
     transform_later(mark_node);
   }
-  rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
+  rawmem = make_store_raw(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
 
   if (!UseCompactObjectHeaders) {
-    rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+    rawmem = make_store_raw(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
   }
   int header_size = alloc->minimum_header_size();  // conservatively small
 
   // Array length
   if (length != nullptr) {         // Arrays need length field
-    rawmem = make_store(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
+    rawmem = make_store_raw(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
@@ -1792,6 +1792,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     if (!(UseTLAB && ZeroTLAB)) {
       rawmem = ClearArrayNode::clear_memory(control, rawmem, object,
                                             header_size, size_in_bytes,
+                                            true,
                                             &_igvn);
     }
   } else {
@@ -1946,7 +1947,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for ( intx i = 0; i < lines; i++ ) {
-        prefetch_adr = new AddPNode( old_eden_top, new_eden_top,
+        prefetch_adr = new AddPNode( top(), new_eden_top,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode( i_o, prefetch_adr );
@@ -2321,12 +2322,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   // No need for a null check on unlock
 
   // Make the merge point
-  Node *region;
-  Node *mem_phi;
-
-  region  = new RegionNode(3);
-  // create a Phi for the memory state
-  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+  Node* region = new RegionNode(3);
 
   FastUnlockNode *funlock = new FastUnlockNode( ctrl, obj, box );
   funlock = transform_later( funlock )->as_FastUnlock();
@@ -2355,12 +2351,15 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   transform_later(region);
   _igvn.replace_node(_callprojs.fallthrough_proj, region);
 
-  Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory) );
-  mem_phi->init_req(1, memproj );
-  mem_phi->init_req(2, mem);
-  transform_later(mem_phi);
-
-  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
+  if (_callprojs.fallthrough_memproj != nullptr) {
+    // create a Phi for the memory state
+    Node* mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+    Node* memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
+    mem_phi->init_req(1, memproj);
+    mem_phi->init_req(2, mem);
+    transform_later(mem_phi);
+    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
+  }
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {

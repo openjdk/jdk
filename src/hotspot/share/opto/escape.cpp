@@ -3511,10 +3511,7 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
         bt = field->layout_type();
       } else {
         // Check for unsafe oop field access
-        if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
-            n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
-            n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN) ||
-            BarrierSet::barrier_set()->barrier_set_c2()->escape_has_out_with_unsafe_object(n)) {
+        if (has_oop_node_outs(n)) {
           bt = T_OBJECT;
           (*unsafe) = true;
         }
@@ -3530,16 +3527,22 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
       }
     } else if (adr_type->isa_rawptr() || adr_type->isa_klassptr()) {
       // Allocation initialization, ThreadLocal field access, unsafe access
-      if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
-          n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
-          n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN) ||
-          BarrierSet::barrier_set()->barrier_set_c2()->escape_has_out_with_unsafe_object(n)) {
+      if (has_oop_node_outs(n)) {
         bt = T_OBJECT;
       }
     }
   }
   // Note: T_NARROWOOP is not classed as a real reference type
-  return (is_reference_type(bt) || bt == T_NARROWOOP);
+  bool res = (is_reference_type(bt) || bt == T_NARROWOOP);
+  assert(!has_oop_node_outs(n) || res, "sanity: AddP has oop outs, needs to be treated as oop field");
+  return res;
+}
+
+bool ConnectionGraph::has_oop_node_outs(Node* n) {
+  return n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
+         n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
+         n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN) ||
+         BarrierSet::barrier_set()->barrier_set_c2()->escape_has_out_with_unsafe_object(n);
 }
 
 // Returns unique pointed java object or null.
@@ -3772,9 +3775,9 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
-  // case #6. Constant Pool, ThreadLocal, CastX2P or
+  // case #6. Constant Pool, ThreadLocal, CastX2P, Klass, OSR buffer buf or
   //          Raw object's field reference:
-  //      {ConP, ThreadLocal, CastX2P, raw Load}
+  //      {ConP, ThreadLocal, CastX2P, raw Load, Parm0}
   //  top   |
   //     \  |
   //     AddP  ( base == top )
@@ -3816,7 +3819,9 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
       int opcode = uncast_base->Opcode();
       assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
+             (_igvn->C->is_osr_compilation() && uncast_base->is_Parm() && uncast_base->as_Parm()->_con == TypeFunc::Parms)||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != nullptr)) ||
+             (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_klassptr() != nullptr)) ||
              is_captured_store_address(addp), "sanity");
     }
   }
@@ -4411,7 +4416,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   uint new_index_start = (uint) _compile->num_alias_types();
   VectorSet visited;
   ideal_nodes.clear(); // Reset for use with set_map/get_map.
-  uint unique_old = _compile->unique();
 
   //  Phase 1:  Process possible allocations from alloc_worklist.
   //  Create instance types for the CheckCastPP for allocations where possible.
