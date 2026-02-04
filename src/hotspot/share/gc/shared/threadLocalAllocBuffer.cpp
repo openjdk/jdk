@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,10 +458,20 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
   return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
 }
 
-const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
-  return AtomicAccess::load(&_start);
-}
-
-const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
-  return AtomicAccess::load(&_top);
+size_t ThreadLocalAllocBuffer::cooked_used_bytes() const {
+  HeapWord* start = AtomicAccess::load(&_start);
+  HeapWord* top = AtomicAccess::load(&_top);
+  // We can't use pointer_delta() because due to races _start and _top may not
+  // be consistent. However the difference of pointers is defined
+  // for pointers into the same memory buffer, which a TLAB is. So it might be
+  // negative and we got inconsistent results - just return 0 in that case.
+  ptrdiff_t diff = top - start;
+  // Comparing diff with the maximum allowed size will ensure that we don't add
+  // the used bytes from a semi-initialized TLAB ending up with incorrect values.
+  // There is still a race between incrementing _allocated_bytes and clearing
+  // the TLAB, that might cause incorrectly returning some usage.
+  if ((diff <= 0) || (diff > checked_cast<ptrdiff_t>(ThreadLocalAllocBuffer::max_size_in_bytes()))) {
+    return 0;
+  }
+  return diff * HeapWordSize;
 }
