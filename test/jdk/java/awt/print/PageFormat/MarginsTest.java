@@ -35,7 +35,10 @@ import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.print.*;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.lang.Override;
 import java.lang.reflect.InvocationTargetException;
 
@@ -47,7 +50,7 @@ import java.lang.reflect.InvocationTargetException;
  * @requires (os.family == "mac")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @summary verifies printing margins .
+ * @summary Verifies printing margins
  * @run main/manual MarginsTest
  */
 
@@ -59,17 +62,17 @@ public class MarginsTest {
     private static final float bottomMargin = 0.9f;
 
     private static final String INSTRUCTIONS = """
-        This test checks margins correctness.
-        Portrait-oriented and landscape-oriented papers should be supported by the test printer,
-        a PDF printer is acceptable.
+            This test checks margins correctness.
+            Portrait-oriented and landscape-oriented papers should be supported by the test printer,
+            a PDF printer is acceptable.
 
-        1. Read an instruction in the bottom of this window.
-        2. Press "Print page ..." button.
-        3. Check a printed rectangle along the borders and margins' size. The margins should
-        equal the printed values, all rectangle's sides should be visible.
-        4. Repeat steps 1-3 until instructions are visible.
-        5. Press "Pass" button if all printed pages are correct, else press "Fail" button.
-        """;
+            1. Read an instruction in the bottom of this window.
+            2. Press "Print page ..." button.
+            3. Check a printed rectangle along the borders and margins' size. The margins should
+            equal the printed values, all rectangle's sides should be visible.
+            4. Repeat steps 1-3 until instructions are visible.
+            5. Press "Pass" button if all printed pages are correct, else press "Fail" button.
+            """;
 
     private static final String[] WINDOW_INSTRUCTIONS = new String[]{
             """
@@ -106,7 +109,7 @@ public class MarginsTest {
                         JTextArea textArea = new JTextArea();
                         textArea.setText(WINDOW_INSTRUCTIONS[index]);
                         textArea.setMargin(new Insets(5, 5, 5, 5));
-                        JButton button = new JButton("Print page " + (index+1) + " of 4");
+                        JButton button = new JButton("Print page " + (index + 1) + " of 4");
                         button.addActionListener(new ActionListener() {
                             @Override
                             public void actionPerformed(ActionEvent e) {
@@ -123,10 +126,10 @@ public class MarginsTest {
                                         }
                                         final int units = MediaPrintableArea.INCH;
                                         attrs.add(new MediaPrintableArea(mpa.getX(units) + leftMargin,
-                                                        mpa.getY(units) + topMargin,
-                                                        mpa.getWidth(units) - rightMargin,
-                                                        mpa.getHeight(units) - bottomMargin,
-                                                        units));
+                                                mpa.getY(units) + topMargin,
+                                                mpa.getWidth(units) - rightMargin,
+                                                mpa.getHeight(units) - bottomMargin,
+                                                units));
                                         printerJob.print(attrs);
                                     } catch (PrinterException ex) {
                                         throw new RuntimeException(ex);
@@ -137,7 +140,7 @@ public class MarginsTest {
                                     return;
                                 }
                                 index++;
-                                button.setText("Print page " + (index+1) + " of 4");
+                                button.setText("Print page " + (index + 1) + " of 4");
                                 button.setEnabled(true);
                                 textArea.setText(WINDOW_INSTRUCTIONS[index]);
                             }
@@ -171,24 +174,24 @@ public class MarginsTest {
         @Override
         public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
             if (pageIndex == 0) {
-                final int left = (int) pageFormat.getImageableX()+1;
-                final int top = (int) pageFormat.getImageableY()+1;
-                final int width = (int) pageFormat.getImageableWidth()-1;
-                final int height = (int) pageFormat.getImageableHeight()-1;
+                final int left = (int) pageFormat.getImageableX() + 1;
+                final int top = (int) pageFormat.getImageableY() + 1;
+                final int width = (int) pageFormat.getImageableWidth() - 1;
+                final int height = (int) pageFormat.getImageableHeight() - 1;
                 final int right = (int) pageFormat.getWidth() - left - width;
                 final int bottom = (int) pageFormat.getHeight() - top - height;
 
                 final int fontHeight = graphics.getFontMetrics().getHeight();
-                final double pointsPerMM = 72/25.4;
+                final double pointsPerMM = 72 / 25.4;
 
                 graphics.drawRect(left, top, width, height);
-                graphics.drawString(String.format("%.2fmm", left/pointsPerMM), left + 5, top + height / 2);
-                graphics.drawString(String.format("%.2fmm", top/pointsPerMM), left + width / 2, top + fontHeight + 5);
-                String rightStr = String.format("%.2fmm", right/pointsPerMM);
+                graphics.drawString(String.format("%.2fmm", left / pointsPerMM), left + 5, top + height / 2);
+                graphics.drawString(String.format("%.2fmm", top / pointsPerMM), left + width / 2, top + fontHeight + 5);
+                String rightStr = String.format("%.2fmm", right / pointsPerMM);
                 graphics.drawString(rightStr, (left + width) - (graphics.getFontMetrics().stringWidth(rightStr) + 5),
-                        (top + height)/2);
-                String bottomStr = String.format("%.2fmm", bottom/pointsPerMM);
-                graphics.drawString(bottomStr, left + (width/2 - (graphics.getFontMetrics().stringWidth(bottomStr))/2),
+                        (top + height) / 2);
+                String bottomStr = String.format("%.2fmm", bottom / pointsPerMM);
+                graphics.drawString(bottomStr, left + (width / 2 - (graphics.getFontMetrics().stringWidth(bottomStr)) / 2),
                         (top + height) - fontHeight - 5);
 
                 return PAGE_EXISTS;
