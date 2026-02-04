@@ -5391,8 +5391,9 @@ void os::print_open_file_descriptors(outputStream* st) {
   struct dirent* dentp;
   const int TIMEOUT_MS = 50;
   struct timespec start, now;
-  clock_gettime(CLOCK_MONOTONIC, &start);
   bool timed_out = false;
+  int status = clock_gettime(CLOCK_MONOTONIC, &start);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
 
   if (dirp == nullptr) {
     st->print_cr("Open File Descriptors: unknown");
@@ -5403,7 +5404,8 @@ void os::print_open_file_descriptors(outputStream* st) {
   while ((dentp = readdir(dirp)) != nullptr) {
     if (isdigit(dentp->d_name[0])) fds++;
     if (fds % 100 == 0) {
-      clock_gettime(CLOCK_MONOTONIC, &now);
+      int status = clock_gettime(CLOCK_MONOTONIC, &now);
+      assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
       long elapsed_ms = (now.tv_sec - start.tv_sec) * 1000L +
                         (now.tv_nsec - start.tv_nsec) / 1000000L;
       if (elapsed_ms > TIMEOUT_MS) {
