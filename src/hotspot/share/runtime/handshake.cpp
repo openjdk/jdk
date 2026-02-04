@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -361,6 +362,27 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
   VMThread::execute(&handshake);
 }
 
+void Handshake::execute(HandshakeClosure* hs_cl, oop vthread) {
+  assert(java_lang_VirtualThread::is_instance(vthread), "");
+  Handle vth(JavaThread::current(), vthread);
+
+  MountUnmountDisabler md(vthread);
+  oop carrier_thread = java_lang_VirtualThread::carrier_thread(vth());
+  if (carrier_thread != nullptr) {
+    JavaThread* target = java_lang_Thread::thread(carrier_thread);
+    assert(target != nullptr, "");
+    // Technically there is no need for a ThreadsListHandle since the target
+    // will block if it tries to unmount the vthread, so it can never exit.
+    ThreadsListHandle tlh(JavaThread::current());
+    assert(tlh.includes(target), "");
+    execute(hs_cl, &tlh, target);
+    assert(target->threadObj() == java_lang_VirtualThread::carrier_thread(vth()), "");
+  } else {
+    // unmounted vthread, execute closure with the current thread
+    hs_cl->do_thread(nullptr);
+  }
+}
+
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
   // tlh == nullptr means we rely on a ThreadsListHandle somewhere
   // in the caller's context (and we sanity check for that).
@@ -499,8 +521,8 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(allow_suspend || !check_async_exception, "invalid case");
 #if INCLUDE_JVMTI
-  if (allow_suspend && _handshakee->is_disable_suspend()) {
-    // filter out suspend operations while JavaThread is in disable_suspend mode
+  if (allow_suspend && (_handshakee->is_disable_suspend() || _handshakee->is_vthread_transition_disabler())) {
+    // filter out suspend operations while JavaThread can not be suspended
     allow_suspend = false;
   }
 #endif

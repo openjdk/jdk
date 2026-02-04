@@ -425,22 +425,29 @@ jint ShenandoahHeap::initialize() {
 
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
+
+    if (mode()->is_generational()) {
+      size_t young_reserve = (soft_max_capacity() * ShenandoahEvacReserve) / 100;
+      young_generation()->set_evacuation_reserve(young_reserve);
+      old_generation()->set_evacuation_reserve((size_t) 0);
+      old_generation()->set_promoted_reserve((size_t) 0);
+    }
+
     _free_set = new ShenandoahFreeSet(this, _num_regions);
-
-
     post_initialize_heuristics();
+
     // We are initializing free set.  We ignore cset region tallies.
-    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     if (mode()->is_generational()) {
       ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
       // We cannot call
       //  gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions)
       // until after the heap is fully initialized.  So we make up a safe value here.
       size_t allocation_runway = InitialHeapSize / 2;
-      gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
+      gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
     }
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
   }
 
   if (AlwaysPreTouch) {
@@ -985,7 +992,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 
     assert (req.is_lab_alloc() || (requested == actual),
             "Only LAB allocations are elastic: %s, requested = %zu, actual = %zu",
-            ShenandoahAllocRequest::alloc_type_to_string(req.type()), requested, actual);
+            req.type_string(), requested, actual);
   }
 
   return result;
@@ -1014,8 +1021,9 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 
   // Record the plab configuration for this result and register the object.
   if (result != nullptr && req.is_old()) {
-    old_generation()->configure_plab_for_current_thread(req);
-    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
+    if (req.is_lab_alloc()) {
+      old_generation()->configure_plab_for_current_thread(req);
+    } else {
       // Register the newly allocated object while we're holding the global lock since there's no synchronization
       // built in to the implementation of register_object().  There are potential races when multiple independent
       // threads are allocating objects, some of which might span the same card region.  For example, consider
@@ -1035,6 +1043,13 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
       // last-start representing object b while first-start represents object c.  This is why we need to require all
       // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
       old_generation()->card_scan()->register_object(result);
+
+      if (req.is_promotion()) {
+        // Shared promotion.
+        const size_t actual_size = req.actual_size() * HeapWordSize;
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
+        old_generation()->expend_promoted(actual_size);
+      }
     }
   }
 
@@ -1650,7 +1665,7 @@ void ShenandoahHeap::verify(VerifyOption vo) {
   }
 }
 size_t ShenandoahHeap::tlab_capacity() const {
-  return _free_set->capacity();
+  return _free_set->capacity_not_holding_lock();
 }
 
 class ObjectIterateScanRootClosure : public BasicOopIterateClosure {
@@ -1962,7 +1977,7 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
   const uint active_workers = workers()->active_workers();
   const size_t n_regions = num_regions();
-  size_t stride = ShenandoahParallelRegionStride;
+  size_t stride = blk->parallel_region_stride();
   if (stride == 0 && active_workers > 1) {
     // Automatically derive the stride to balance the work between threads
     // evenly. Do not try to split work if below the reasonable threshold.
@@ -2130,7 +2145,7 @@ GCTracer* ShenandoahHeap::tracer() {
 }
 
 size_t ShenandoahHeap::tlab_used() const {
-  return _free_set->used();
+  return _free_set->used_not_holding_lock();
 }
 
 bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
@@ -2515,14 +2530,10 @@ void ShenandoahHeap::final_update_refs_update_region_states() {
   parallel_heap_region_iterate(&cl);
 }
 
-void ShenandoahHeap::rebuild_free_set(bool concurrent) {
-  ShenandoahGCPhase phase(concurrent ?
-                          ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
-                          ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
+void ShenandoahHeap::rebuild_free_set_within_phase() {
   ShenandoahHeapLocker locker(lock());
-  size_t young_cset_regions, old_cset_regions;
-  size_t first_old_region, last_old_region, old_region_count;
-  _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
+  size_t young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count;
+  _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count);
   // If there are no old regions, first_old_region will be greater than last_old_region
   assert((first_old_region > last_old_region) ||
          ((last_old_region + 1 - first_old_region >= old_region_count) &&
@@ -2540,25 +2551,25 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
-
-    // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
-    // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular
-    // regions in place when many of these regular regions have an abundant amount of available memory within them.  Fragmentation
-    // will decrease as promote-by-copy consumes the available memory within these partially consumed regions.
-    //
-    // We consider old-gen to have excessive fragmentation if more than 12.5% of old-gen is free memory that resides
-    // within partially consumed regions of memory.
+    size_t allocation_runway =
+      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
   }
   // Rebuild free set based on adjusted generation sizes.
-  _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
+  _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, old_region_count);
 
   if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
+}
+
+void ShenandoahHeap::rebuild_free_set(bool concurrent) {
+  ShenandoahGCPhase phase(concurrent ?
+                          ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
+                          ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
+  rebuild_free_set_within_phase();
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {
@@ -2707,18 +2718,6 @@ void ShenandoahRegionIterator::reset() {
 bool ShenandoahRegionIterator::has_next() const {
   return _index < _heap->num_regions();
 }
-
-char ShenandoahHeap::gc_state() const {
-  return _gc_state.raw_value();
-}
-
-bool ShenandoahHeap::is_gc_state(GCState state) const {
-  // If the global gc state has been changed, but hasn't yet been propagated to all threads, then
-  // the global gc state is the correct value. Once the gc state has been synchronized with all threads,
-  // _gc_state_changed will be toggled to false and we need to use the thread local state.
-  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
-}
-
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT

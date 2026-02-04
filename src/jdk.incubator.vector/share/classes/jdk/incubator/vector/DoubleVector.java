@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3610,6 +3610,18 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 .reinterpretAsDoubles();
         }
         return this;
+    }
+
+    @Override
+    @ForceInline
+    final
+    DoubleVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<Double> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (DoubleVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

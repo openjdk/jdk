@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,31 +64,31 @@ ZRelocateQueue::ZRelocateQueue()
     _needs_attention(0) {}
 
 bool ZRelocateQueue::needs_attention() const {
-  return AtomicAccess::load(&_needs_attention) != 0;
+  return _needs_attention.load_relaxed() != 0;
 }
 
 void ZRelocateQueue::inc_needs_attention() {
-  const int needs_attention = AtomicAccess::add(&_needs_attention, 1);
+  const int needs_attention = _needs_attention.add_then_fetch(1);
   assert(needs_attention == 1 || needs_attention == 2, "Invalid state");
 }
 
 void ZRelocateQueue::dec_needs_attention() {
-  const int needs_attention = AtomicAccess::sub(&_needs_attention, 1);
+  const int needs_attention = _needs_attention.sub_then_fetch(1);
   assert(needs_attention == 0 || needs_attention == 1, "Invalid state");
 }
 
 void ZRelocateQueue::activate(uint nworkers) {
-  _is_active = true;
+  _is_active.store_relaxed(true);
   join(nworkers);
 }
 
 void ZRelocateQueue::deactivate() {
-  AtomicAccess::store(&_is_active, false);
+  _is_active.store_relaxed(false);
   clear();
 }
 
 bool ZRelocateQueue::is_active() const {
-  return AtomicAccess::load(&_is_active);
+  return _is_active.load_relaxed();
 }
 
 void ZRelocateQueue::join(uint nworkers) {
@@ -453,7 +453,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
 class ZRelocateSmallAllocator {
 private:
   ZGeneration* const _generation;
-  volatile size_t    _in_place_count;
+  Atomic<size_t>     _in_place_count;
 
 public:
   ZRelocateSmallAllocator(ZGeneration* generation)
@@ -463,7 +463,7 @@ public:
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZPage* const page = alloc_page(forwarding);
     if (page == nullptr) {
-      AtomicAccess::inc(&_in_place_count);
+      _in_place_count.add_then_fetch(1u);
     }
 
     if (target != nullptr) {
@@ -493,7 +493,7 @@ public:
   }
 
   size_t in_place_count() const {
-    return _in_place_count;
+    return _in_place_count.load_relaxed();
   }
 };
 
@@ -503,7 +503,7 @@ private:
   ZConditionLock      _lock;
   ZRelocationTargets* _shared_targets;
   bool                _in_place;
-  volatile size_t     _in_place_count;
+  Atomic<size_t>      _in_place_count;
 
 public:
   ZRelocateMediumAllocator(ZGeneration* generation, ZRelocationTargets* shared_targets)
@@ -539,7 +539,7 @@ public:
       ZPage* const to_page = alloc_page(forwarding);
       _shared_targets->set(partition_id, to_age, to_page);
       if (to_page == nullptr) {
-        AtomicAccess::inc(&_in_place_count);
+        _in_place_count.add_then_fetch(1u);
         _in_place = true;
       }
 
@@ -579,7 +579,7 @@ public:
   }
 
   size_t in_place_count() const {
-    return _in_place_count;
+    return _in_place_count.load_relaxed();
   }
 };
 
@@ -1087,7 +1087,6 @@ private:
   ZRelocateSmallAllocator                   _small_allocator;
   ZRelocateMediumAllocator                  _medium_allocator;
   const size_t                              _total_forwardings;
-  volatile size_t                           _numa_local_forwardings;
 
 public:
   ZRelocateTask(ZRelocationSet* relocation_set,
@@ -1104,8 +1103,7 @@ public:
       _medium_targets(medium_targets),
       _small_allocator(_generation),
       _medium_allocator(_generation, shared_medium_targets),
-      _total_forwardings(relocation_set->nforwardings()),
-      _numa_local_forwardings(0) {
+      _total_forwardings(relocation_set->nforwardings()) {
 
     for (uint32_t i = 0; i < ZNUMA::count(); i++) {
       ZRelocationSetParallelIterator* const iter = _iters->addr(i);
@@ -1124,18 +1122,17 @@ public:
 
     // Signal that we're not using the queue anymore. Used mostly for asserts.
     _queue->deactivate();
-
-    if (ZNUMA::is_enabled()) {
-      log_debug(gc, reloc, numa)("Forwardings relocated NUMA-locally: %zu / %zu (%.0f%%)",
-                                 _numa_local_forwardings, _total_forwardings, percent_of(_numa_local_forwardings, _total_forwardings));
-    }
   }
 
   virtual void work() {
     ZRelocateWork<ZRelocateSmallAllocator> small(&_small_allocator, _small_targets->addr(), _generation);
     ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _medium_targets->addr(), _generation);
+
     const uint32_t num_nodes = ZNUMA::count();
-    uint32_t numa_local_forwardings_worker = 0;
+    const uint32_t start_node = ZNUMA::id();
+    uint32_t current_node = start_node;
+    bool has_affinity = false;
+    bool has_affinity_current_node = false;
 
     const auto do_forwarding = [&](ZForwarding* forwarding) {
       ZPage* const page = forwarding->page();
@@ -1167,26 +1164,30 @@ public:
 
     const auto do_forwarding_one_from_iter = [&]() {
       ZForwarding* forwarding;
-      const uint32_t start_node = ZNUMA::id();
-      uint32_t current_node = start_node;
 
-      for (uint32_t i = 0; i < num_nodes; i++) {
+      for (;;) {
         if (_iters->get(current_node).next_if(&forwarding, check_numa_local, current_node)) {
-          claim_and_do_forwarding(forwarding);
-
-          if (current_node == start_node) {
-            // Track if this forwarding was relocated on the local NUMA node
-            numa_local_forwardings_worker++;
+          // Set thread affinity for NUMA-local processing (if needed)
+          if (UseNUMA && !has_affinity_current_node) {
+            os::numa_set_thread_affinity(Thread::current(), ZNUMA::numa_id_to_node(current_node));
+            has_affinity = true;
+            has_affinity_current_node = true;
           }
 
+          // Perform the forwarding task
+          claim_and_do_forwarding(forwarding);
           return true;
         }
 
-        // Check next node.
+        // No work found on the current node, move to the next node
         current_node = (current_node + 1) % num_nodes;
-      }
+        has_affinity_current_node = false;
 
-      return false;
+        // If we've looped back to the starting node there's no more work to do
+        if (current_node == start_node) {
+          return false;
+        }
+      }
     };
 
     for (;;) {
@@ -1209,11 +1210,13 @@ public:
       }
     }
 
-    if (ZNUMA::is_enabled()) {
-      AtomicAccess::add(&_numa_local_forwardings, numa_local_forwardings_worker, memory_order_relaxed);
-    }
-
     _queue->leave();
+
+    if (UseNUMA && has_affinity) {
+      // Restore the affinity of the thread so that it isn't bound to a specific
+      // node any more
+      os::numa_set_thread_affinity(Thread::current(), -1);
+    }
   }
 
   virtual void resize_workers(uint nworkers) {
@@ -1322,7 +1325,7 @@ private:
 
 public:
   ZFlipAgePagesTask(const ZArray<ZPage*>* pages)
-    : ZTask("ZPromotePagesTask"),
+    : ZTask("ZFlipAgePagesTask"),
       _iter(pages) {}
 
   virtual void work() {
@@ -1337,16 +1340,6 @@ public:
       // Figure out if this is proper promotion
       const bool promotion = to_age == ZPageAge::old;
 
-      if (promotion) {
-        // Before promoting an object (and before relocate start), we must ensure that all
-        // contained zpointers are store good. The marking code ensures that for non-null
-        // pointers, but null pointers are ignored. This code ensures that even null pointers
-        // are made store good, for the promoted objects.
-        prev_page->object_iterate([&](oop obj) {
-          ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
-        });
-      }
-
       // Logging
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
@@ -1360,7 +1353,7 @@ public:
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);
-        // Defer promoted page registration times the lock is taken
+        // Defer promoted page registration
         promoted_pages.push(prev_page);
       }
 
@@ -1371,9 +1364,49 @@ public:
   }
 };
 
+class ZPromoteBarrierTask : public ZTask {
+private:
+  ZArrayParallelIterator<ZPage*> _flip_promoted_iter;
+  ZArrayParallelIterator<ZPage*> _relocate_promoted_iter;
+
+public:
+  ZPromoteBarrierTask(const ZArray<ZPage*>* flip_promoted_pages,
+                      const ZArray<ZPage*>* relocate_promoted_pages)
+    : ZTask("ZPromoteBarrierTask"),
+      _flip_promoted_iter(flip_promoted_pages),
+      _relocate_promoted_iter(relocate_promoted_pages) {}
+
+  virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
+
+    auto promote_barriers = [&](ZArrayParallelIterator<ZPage*>* iter) {
+      for (ZPage* page; iter->next(&page);) {
+        // When promoting an object (and before relocate start), we must ensure that all
+        // contained zpointers are store good. The marking code ensures that for non-null
+        // pointers, but null pointers are ignored. This code ensures that even null pointers
+        // are made store good, for the promoted objects.
+        page->object_iterate([&](oop obj) {
+          ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
+        });
+
+        SuspendibleThreadSet::yield();
+      }
+    };
+
+    promote_barriers(&_flip_promoted_iter);
+    promote_barriers(&_relocate_promoted_iter);
+  }
+};
+
 void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages) {
   ZFlipAgePagesTask flip_age_task(pages);
   workers()->run(&flip_age_task);
+}
+
+void ZRelocate::barrier_promoted_pages(const ZArray<ZPage*>* flip_promoted_pages,
+                                       const ZArray<ZPage*>* relocate_promoted_pages) {
+  ZPromoteBarrierTask promote_barrier_task(flip_promoted_pages, relocate_promoted_pages);
+  workers()->run(&promote_barrier_task);
 }
 
 void ZRelocate::synchronize() {

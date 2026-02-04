@@ -261,6 +261,7 @@
   develop(uintx, ObjArrayMarkingStride, 2048,                               \
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
+          range(1, INT_MAX/2)                                               \
                                                                             \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "(Deprecated) Never act like a server-class machine")             \
@@ -291,7 +292,7 @@
           "size on systems with small physical memory size")                \
           range(0.0, 100.0)                                                 \
                                                                             \
-  product(double, InitialRAMPercentage, 0.2,                                \
+  product(double, InitialRAMPercentage, 0.0,                                \
           "Percentage of real memory used for initial heap size")           \
           range(0.0, 100.0)                                                 \
                                                                             \

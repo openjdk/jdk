@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -104,6 +104,3 @@ void Endian::set_java(u1* p, u2 x) {
     p[1] = x & 0xff;
 }
 
-Endian* Endian::get_native_handler() {
-    return NativeEndian::get_native();
-}

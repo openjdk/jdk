@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
@@ -113,9 +114,6 @@
 #endif
 #if INCLUDE_MANAGEMENT
 #include "services/finalizerService.hpp"
-#endif
-#ifdef LINUX
-#include "osContainer_linux.hpp"
 #endif
 
 #include <errno.h>
@@ -228,6 +226,19 @@ extern void trace_class_resolution(Klass* to_class) {
 
 // java.lang.System //////////////////////////////////////////////////////////////////////
 
+JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
+#if INCLUDE_CDS
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    if (!AOTMetaspace::preimage_static_archive_dumped()) {
+      AOTMetaspace::dump_static_archive(THREAD);
+      return JNI_TRUE;
+    }
+  }
+  return JNI_FALSE;
+#else
+  return JNI_FALSE;
+#endif // INCLUDE_CDS
+JVM_END
 
 JVM_LEAF(jlong, JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored))
   return os::javaTimeMillis();
@@ -486,11 +497,9 @@ JVM_LEAF(jboolean, JVM_IsUseContainerSupport(void))
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsContainerized(void))
-#ifdef LINUX
-  if (OSContainer::is_containerized()) {
+  if (os::is_containerized()) {
     return JNI_TRUE;
   }
-#endif
   return JNI_FALSE;
 JVM_END
 
@@ -1197,21 +1206,10 @@ JVM_ENTRY(jboolean, JVM_IsHiddenClass(JNIEnv *env, jclass cls))
 JVM_END
 
 
-class ScopedValueBindingsResolver {
-public:
-  InstanceKlass* Carrier_klass;
-  ScopedValueBindingsResolver(JavaThread* THREAD) {
-    Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ScopedValue_Carrier(), true, THREAD);
-    Carrier_klass = InstanceKlass::cast(k);
-  }
-};
-
 JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
   ResourceMark rm(THREAD);
   GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
   JvmtiVMObjectAllocEventCollector oam;
-
-  static ScopedValueBindingsResolver resolver(THREAD);
 
   // Iterate through Java frames
   vframeStream vfst(thread);
@@ -1225,7 +1223,7 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
     InstanceKlass* holder = method->method_holder();
     if (name == vmSymbols::runWith_method_name()) {
       if (holder == vmClasses::Thread_klass()
-          || holder == resolver.Carrier_klass) {
+          || holder == vmClasses::ScopedValue_Carrier_klass()) {
         loc = 1;
       }
     }
@@ -3661,68 +3659,24 @@ JVM_LEAF(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
 
-JVM_ENTRY(void, JVM_VirtualThreadStart(JNIEnv* env, jobject vthread))
-#if INCLUDE_JVMTI
-  if (!DoJVMTIVirtualThreadTransitions) {
-    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
-    return;
-  }
-  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-    JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
-  } else {
-    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
-    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, false);
-  }
-#endif
+JVM_ENTRY(void, JVM_VirtualThreadEndFirstTransition(JNIEnv* env, jobject vthread))
+  oop vt = JNIHandles::resolve_external_guard(vthread);
+  MountUnmountDisabler::end_transition(thread, vt, true /*is_mount*/, true /*is_thread_start*/);
 JVM_END
 
-JVM_ENTRY(void, JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread))
-#if INCLUDE_JVMTI
-  if (!DoJVMTIVirtualThreadTransitions) {
-    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
-    return;
-  }
-  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-    JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
-  } else {
-    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
-    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, true);
-  }
-#endif
+JVM_ENTRY(void, JVM_VirtualThreadStartFinalTransition(JNIEnv* env, jobject vthread))
+  oop vt = JNIHandles::resolve_external_guard(vthread);
+  MountUnmountDisabler::start_transition(thread, vt, false /*is_mount */, true /*is_thread_end*/);
 JVM_END
 
-// If notifications are disabled then just update the VTMS transition bit and return.
-// Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call.
-JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide))
-#if INCLUDE_JVMTI
-  if (!DoJVMTIVirtualThreadTransitions) {
-    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
-    return;
-  }
-  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-    JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
-  } else {
-    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
-    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
-  }
-#endif
+JVM_ENTRY(void, JVM_VirtualThreadStartTransition(JNIEnv* env, jobject vthread, jboolean is_mount))
+  oop vt = JNIHandles::resolve_external_guard(vthread);
+  MountUnmountDisabler::start_transition(thread, vt, is_mount, false /*is_thread_end*/);
 JVM_END
 
-// If notifications are disabled then just update the VTMS transition bit and return.
-// Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call below.
-JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide))
-#if INCLUDE_JVMTI
-  if (!DoJVMTIVirtualThreadTransitions) {
-    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
-    return;
-  }
-  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-    JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
-  } else {
-    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
-    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
-  }
-#endif
+JVM_ENTRY(void, JVM_VirtualThreadEndTransition(JNIEnv* env, jobject vthread, jboolean is_mount))
+  oop vt = JNIHandles::resolve_external_guard(vthread);
+  MountUnmountDisabler::end_transition(thread, vt, is_mount, false /*is_thread_start*/);
 JVM_END
 
 // Notification from VirtualThread about disabling JVMTI Suspend in a sync critical section.
@@ -3772,6 +3726,7 @@ JVM_ENTRY(jobject, JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignore
     parkEvent->park();
   }
 JVM_END
+
 /*
  * Return the current class's class file version.  The low order 16 bits of the
  * returned jint contain the class's major version.  The high order 16 bits

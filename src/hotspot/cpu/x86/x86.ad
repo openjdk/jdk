@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2633,6 +2633,71 @@ bool Matcher::supports_vector_calling_convention(void) {
   return EnableVectorSupport;
 }
 
+static bool is_ndd_demotable_opr1(const MachNode* mdef) {
+  return ((mdef->flags() & Node::PD::Flag_ndd_demotable_opr1) != 0);
+}
+
+static bool is_ndd_demotable_opr2(const MachNode* mdef) {
+  return ((mdef->flags() & Node::PD::Flag_ndd_demotable_opr2) != 0);
+}
+
+#ifdef ASSERT
+static bool is_ndd_demotable(const MachNode* mdef) {
+  return (is_ndd_demotable_opr1(mdef) || is_ndd_demotable_opr2(mdef));
+}
+#endif
+
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef,
+                                            int oper_index) {
+  if (mdef == nullptr) {
+    return false;
+  }
+
+  if (mdef->num_opnds() <= oper_index || mdef->operand_index(oper_index) < 0 ||
+      mdef->in(mdef->operand_index(oper_index)) == nullptr) {
+    assert(oper_index != 1 || !is_ndd_demotable_opr1(mdef), "%s", mdef->Name());
+    assert(oper_index != 2 || !is_ndd_demotable_opr2(mdef), "%s", mdef->Name());
+    return false;
+  }
+
+  // Complex memory operand covers multiple incoming edges needed for
+  // address computation. Biasing def towards any address component will not
+  // result in NDD demotion by assembler.
+  if (mdef->operand_num_edges(oper_index) != 1) {
+    return false;
+  }
+
+  // Demotion candidate must be register mask compatible with definition.
+  const RegMask& oper_mask = mdef->in_RegMask(mdef->operand_index(oper_index));
+  if (!oper_mask.overlap(mdef->out_RegMask())) {
+    assert(!is_ndd_demotable(mdef), "%s", mdef->Name());
+    return false;
+  }
+
+  switch (oper_index) {
+  // First operand of MachNode corresponding to Intel APX NDD selection
+  // pattern can share its assigned register with definition operand if
+  // their live ranges do not overlap. In such a scenario we can demote
+  // it to legacy map0/map1 instruction by replacing its 4-byte extended
+  // EVEX prefix with shorter REX/REX2 encoding. Demotion candidates
+  // are decorated with a special flag by instruction selector.
+  case 1:
+    return is_ndd_demotable_opr1(mdef);
+
+  // Definition operand of commutative operation can be biased towards second
+  // operand.
+  case 2:
+    return is_ndd_demotable_opr2(mdef);
+
+  // Current scheme only selects up to two biasing candidates
+  default:
+    assert(false, "unhandled operand index: %s", mdef->Name());
+    break;
+  }
+
+  return false;
+}
+
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   assert(EnableVectorSupport, "sanity");
   int lo = XMM0_num;
@@ -2767,21 +2832,11 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
-  static uint size_exception_handler() {
-    // NativeCall instruction size is the same as NativeJump.
-    // exception handler starts out as jump and can be patched to
-    // a call be deoptimization.  (4932387)
-    // Note that this value is also credited (in output.cpp) to
-    // the size of the code section.
-    return NativeJump::instruction_size;
-  }
-
   static uint size_deopt_handler() {
-    // three 5 byte instructions plus one move for unreachable address.
-    return 15+3;
+    // one call and one jmp.
+    return 7;
   }
 };
 
@@ -2822,7 +2877,7 @@ static inline bool is_clz_non_subword_predicate_evex(BasicType bt, int vlen_byte
 
 class Node::PD {
 public:
-  enum NodeFlags {
+  enum NodeFlags : uint64_t {
     Flag_intel_jcc_erratum    = Node::_last_flag << 1,
     Flag_sets_carry_flag      = Node::_last_flag << 2,
     Flag_sets_parity_flag     = Node::_last_flag << 3,
@@ -2834,7 +2889,9 @@ public:
     Flag_clears_zero_flag     = Node::_last_flag << 9,
     Flag_clears_overflow_flag = Node::_last_flag << 10,
     Flag_clears_sign_flag     = Node::_last_flag << 11,
-    _last_flag                = Flag_clears_sign_flag
+    Flag_ndd_demotable_opr1   = Node::_last_flag << 12,
+    Flag_ndd_demotable_opr2   = Node::_last_flag << 13,
+    _last_flag                = Flag_ndd_demotable_opr2
   };
 };
 
@@ -2873,24 +2930,6 @@ int MachNode::compute_padding(int current_offset) const {
   }
 }
 
-// Emit exception handler code.
-// Stuff framesize into a register and call a VM stub routine.
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm) {
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-  int offset = __ offset();
-  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
@@ -2903,21 +2942,20 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
   int offset = __ offset();
 
-  address the_pc = (address) __ pc();
-  Label next;
-  // push a "the_pc" on the stack without destroying any registers
-  // as they all may be live.
+  Label start;
+  __ bind(start);
 
-  // push address of "next"
-  __ call(next, relocInfo::none); // reloc none is fine since it is a disp32
-  __ bind(next);
-  // adjust it so it matches "the_pc"
-  __ subptr(Address(rsp, 0), __ offset() - offset);
+  __ call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  int entry_offset = __ offset();
+
+  __ jmp(start);
+
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow %d", (__ offset() - offset));
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
-  return offset;
+  return entry_offset;
 }
 
 static Assembler::Width widthForType(BasicType bt) {
@@ -3346,6 +3384,11 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       if (UseAVX > 2 && (!VM_Version::supports_avx512dq() && size_in_bits == 512)) {
+        return false;
+      }
+      break;
+    case Op_VectorBlend:
+      if (UseAVX == 0 && size_in_bits < 128) {
         return false;
       }
       break;
@@ -7243,12 +7286,12 @@ instruct loadD(regD dst, memory mem)
 %}
 
 // max = java.lang.Math.max(float a, float b)
-instruct maxF_avx10_reg(regF dst, regF a, regF b) %{
+instruct maxF_reg_avx10_2(regF dst, regF a, regF b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MaxF a b));
   format %{ "maxF $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MAX_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7279,12 +7322,12 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
 %}
 
 // max = java.lang.Math.max(double a, double b)
-instruct maxD_avx10_reg(regD dst, regD a, regD b) %{
+instruct maxD_reg_avx10_2(regD dst, regD a, regD b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MaxD a b));
   format %{ "maxD $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MAX_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7315,12 +7358,12 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRe
 %}
 
 // max = java.lang.Math.min(float a, float b)
-instruct minF_avx10_reg(regF dst, regF a, regF b) %{
+instruct minF_reg_avx10_2(regF dst, regF a, regF b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinF a b));
   format %{ "minF $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MIN_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7351,12 +7394,12 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
 %}
 
 // max = java.lang.Math.min(double a, double b)
-instruct minD_avx10_reg(regD dst, regD a, regD b) %{
+instruct minD_reg_avx10_2(regD dst, regD a, regD b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinD a b));
   format %{ "minD $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MIN_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9826,7 +9869,7 @@ instruct addI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (AddI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -9854,7 +9897,7 @@ instruct addI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (AddI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -9897,7 +9940,7 @@ instruct addI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (AddI src1 (LoadI src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
@@ -9954,6 +9997,7 @@ instruct incI_rReg_ndd(rRegI dst, rRegI src, immI_1 val, rFlagsReg cr)
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddI src val));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
@@ -10008,6 +10052,7 @@ instruct decI_rReg_ndd(rRegI dst, rRegI src, immI_M1 val, rFlagsReg cr)
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddI src val));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
@@ -10114,7 +10159,7 @@ instruct addL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (AddL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -10142,7 +10187,7 @@ instruct addL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (AddL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -10185,7 +10230,7 @@ instruct addL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (AddL src1 (LoadL src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
@@ -10241,6 +10286,7 @@ instruct incL_rReg_ndd(rRegL dst, rRegI src, immL1 val, rFlagsReg cr)
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "eincq    $dst, $src\t# long ndd" %}
   ins_encode %{
@@ -10295,6 +10341,7 @@ instruct decL_rReg_ndd(rRegL dst, rRegL src, immL_M1 val, rFlagsReg cr)
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
@@ -11009,7 +11056,7 @@ instruct subI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (SubI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -11023,7 +11070,7 @@ instruct subI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (SubI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -11066,7 +11113,7 @@ instruct subI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (SubI src1 (LoadI src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   ins_cost(150);
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
@@ -11124,7 +11171,7 @@ instruct subL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (SubL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -11138,7 +11185,7 @@ instruct subL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (SubL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -11181,7 +11228,7 @@ instruct subL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (SubL src1 (LoadL src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   ins_cost(150);
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
@@ -11253,7 +11300,7 @@ instruct negI_rReg_ndd(rRegI dst, rRegI src, immI_0 zero, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (SubI zero src));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr2);
 
   format %{ "enegl    $dst, $src\t# int ndd" %}
   ins_encode %{
@@ -11281,7 +11328,7 @@ instruct negI_rReg_2_ndd(rRegI dst, rRegI src, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (NegI src));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "enegl    $dst, $src\t# int ndd" %}
   ins_encode %{
@@ -11322,7 +11369,7 @@ instruct negL_rReg_ndd(rRegL dst, rRegL src, immL0 zero, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (SubL zero src));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr2);
 
   format %{ "enegq    $dst, $src\t# long ndd" %}
   ins_encode %{
@@ -11350,7 +11397,7 @@ instruct negL_rReg_2_ndd(rRegL dst, rRegL src, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (NegL src));
   effect(KILL cr);
-  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag);
+  flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "enegq    $dst, $src\t# long ndd" %}
   ins_encode %{
@@ -11395,6 +11442,7 @@ instruct mulI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (MulI src1 src2));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(300);
   format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
@@ -11436,6 +11484,7 @@ instruct mulI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (MulI src1 (LoadI src2)));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(350);
   format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
@@ -11487,6 +11536,7 @@ instruct mulL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (MulL src1 src2));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(300);
   format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
@@ -11528,6 +11578,7 @@ instruct mulL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (MulL src1 (LoadL src2)));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(350);
   format %{ "eimulq   $dst, $src1, $src2 \t# long" %}
@@ -11802,6 +11853,7 @@ instruct salI_rReg_immI2_ndd(rRegI dst, rRegI src, immI2 shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (LShiftI src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "esall    $dst, $src, $shift\t# int(ndd)" %}
   ins_encode %{
@@ -11830,6 +11882,7 @@ instruct salI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (LShiftI src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "esall    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
@@ -11936,6 +11989,7 @@ instruct sarI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (RShiftI src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "esarl    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
@@ -12042,6 +12096,7 @@ instruct shrI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (URShiftI src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "eshrl    $dst, $src, $shift\t # int (ndd)" %}
   ins_encode %{
@@ -12149,6 +12204,7 @@ instruct salL_rReg_immI2_ndd(rRegL dst, rRegL src, immI2 shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (LShiftL src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
@@ -12177,6 +12233,7 @@ instruct salL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (LShiftL src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
@@ -12283,6 +12340,7 @@ instruct sarL_rReg_imm_ndd(rRegL dst, rRegL src, immI shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (RShiftL src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "esarq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
@@ -12389,6 +12447,7 @@ instruct shrL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (URShiftL src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "eshrq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
@@ -12560,6 +12619,7 @@ instruct rolI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift, rFlagsReg cr)
   predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "eroll    $dst, $src, $shift\t# rotate left (int ndd)" %}
   ins_encode %{
@@ -12624,6 +12684,7 @@ instruct rorI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift, rFlagsReg cr)
   predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "erorl    $dst, $src, $shift\t# rotate right(int ndd)" %}
   ins_encode %{
@@ -12676,6 +12737,7 @@ instruct rolL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
   predicate(!UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft dst shift));
   effect(KILL cr);
+
   format %{ "rolq    $dst, $shift" %}
   ins_encode %{
     __ rolq($dst$$Register);
@@ -12689,6 +12751,7 @@ instruct rolL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift, rFlagsReg cr)
   predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "erolq    $dst, $src, $shift\t# rotate left(long ndd)" %}
   ins_encode %{
@@ -12753,6 +12816,7 @@ instruct rorL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift, rFlagsReg cr)
   predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight src shift));
   effect(KILL cr);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "erorq    $dst, $src, $shift\t# rotate right(long ndd)" %}
   ins_encode %{
@@ -12830,7 +12894,7 @@ instruct andI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (AndI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "eandl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -12923,7 +12987,7 @@ instruct andI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (AndI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -12967,7 +13031,7 @@ instruct andI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (AndI src1 (LoadI src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
@@ -13167,7 +13231,7 @@ instruct orI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -13196,7 +13260,7 @@ instruct orI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -13210,7 +13274,7 @@ instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eorl     $dst, $src2, $src1\t# int ndd" %}
   ins_encode %{
@@ -13254,7 +13318,7 @@ instruct orI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrI src1 (LoadI src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
@@ -13330,7 +13394,7 @@ instruct xorI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (XorI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -13356,6 +13420,7 @@ instruct xorI_rReg_im1_ndd(rRegI dst, rRegI src, immI_M1 imm)
 %{
   match(Set dst (XorI src imm));
   predicate(UseAPX);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "enotl    $dst, $src" %}
   ins_encode %{
@@ -13386,7 +13451,7 @@ instruct xorI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   predicate(UseAPX && n->in(2)->bottom_type()->is_int()->get_con() != -1);
   match(Set dst (XorI src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
@@ -13432,7 +13497,7 @@ instruct xorI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (XorI src1 (LoadI src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
@@ -13511,7 +13576,7 @@ instruct andL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (AndL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "eandq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -13567,7 +13632,7 @@ instruct andL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (AndL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -13611,7 +13676,7 @@ instruct andL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (AndL src1 (LoadL src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
@@ -13814,7 +13879,7 @@ instruct orL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -13869,7 +13934,7 @@ instruct orL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -13883,7 +13948,7 @@ instruct orL_rReg_imm_rReg_ndd(rRegL dst, immL32 src1, rRegL src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "eorq     $dst, $src2, $src1\t# long ndd" %}
   ins_encode %{
@@ -13928,7 +13993,7 @@ instruct orL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (OrL src1 (LoadL src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
@@ -14007,7 +14072,7 @@ instruct xorL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
   predicate(UseAPX);
   match(Set dst (XorL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -14033,6 +14098,7 @@ instruct xorL_rReg_im1_ndd(rRegL dst,rRegL src, immL_M1 imm)
 %{
   predicate(UseAPX);
   match(Set dst (XorL src imm));
+  flag(PD::Flag_ndd_demotable_opr1);
 
   format %{ "enotq   $dst, $src" %}
   ins_encode %{
@@ -14063,7 +14129,7 @@ instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
   predicate(UseAPX && n->in(2)->bottom_type()->is_long()->get_con() != -1L);
   match(Set dst (XorL src1 src2));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1);
 
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
@@ -14109,7 +14175,7 @@ instruct xorL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   predicate(UseAPX);
   match(Set dst (XorL src1 (LoadL src2)));
   effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag, PD::Flag_ndd_demotable_opr1, PD::Flag_ndd_demotable_opr2);
 
   ins_cost(150);
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
@@ -14517,7 +14583,7 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2I_reg_reg_avx10(rRegI dst, regF src)
+instruct convF2I_reg_reg_avx10_2(rRegI dst, regF src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2I src));
@@ -14528,7 +14594,7 @@ instruct convF2I_reg_reg_avx10(rRegI dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2I_reg_mem_avx10(rRegI dst, memory src)
+instruct convF2I_reg_mem_avx10_2(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2I (LoadF src)));
@@ -14551,7 +14617,7 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2L_reg_reg_avx10(rRegL dst, regF src)
+instruct convF2L_reg_reg_avx10_2(rRegL dst, regF src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2L src));
@@ -14562,7 +14628,7 @@ instruct convF2L_reg_reg_avx10(rRegL dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2L_reg_mem_avx10(rRegL dst, memory src)
+instruct convF2L_reg_mem_avx10_2(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2L (LoadF src)));
@@ -14585,7 +14651,7 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2I_reg_reg_avx10(rRegI dst, regD src)
+instruct convD2I_reg_reg_avx10_2(rRegI dst, regD src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2I src));
@@ -14596,7 +14662,7 @@ instruct convD2I_reg_reg_avx10(rRegI dst, regD src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2I_reg_mem_avx10(rRegI dst, memory src)
+instruct convD2I_reg_mem_avx10_2(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2I (LoadD src)));
@@ -14619,7 +14685,7 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2L_reg_reg_avx10(rRegL dst, regD src)
+instruct convD2L_reg_reg_avx10_2(rRegL dst, regD src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2L src));
@@ -14630,7 +14696,7 @@ instruct convD2L_reg_reg_avx10(rRegL dst, regD src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2L_reg_mem_avx10(rRegL dst, memory src)
+instruct convD2L_reg_mem_avx10_2(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2L (LoadD src)));
@@ -16564,6 +16630,7 @@ instruct minI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
   predicate(UseAPX);
   match(Set dst (MinI src1 src2));
   effect(DEF dst, USE src1, USE src2);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   ins_cost(200);
   expand %{
@@ -16615,6 +16682,7 @@ instruct maxI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
   predicate(UseAPX);
   match(Set dst (MaxI src1 src2));
   effect(DEF dst, USE src1, USE src2);
+  flag(PD::Flag_ndd_demotable_opr1);
 
   ins_cost(200);
   expand %{
@@ -19605,7 +19673,7 @@ instruct minmax_reductionF_av(legRegF dst, legVec src, legVec tmp, legVec atmp, 
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reduction2F_avx10(regF dst, immF src1, vec src2, vec xtmp1) %{
+instruct minmax_reduction2F_avx10_2(regF dst, immF src1, vec src2, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
@@ -19623,7 +19691,7 @@ instruct minmax_reduction2F_avx10(regF dst, immF src1, vec src2, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionF_avx10(regF dst, immF src1, vec src2, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionF_avx10_2(regF dst, immF src1, vec src2, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
@@ -19641,7 +19709,7 @@ instruct minmax_reductionF_avx10(regF dst, immF src1, vec src2, vec xtmp1, vec x
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reduction2F_avx10_av(regF dst, vec src, vec xtmp1) %{
+instruct minmax_reduction2F_av_avx10_2(regF dst, vec src, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             Matcher::vector_length(n->in(2)) == 2);
   match(Set dst (MinReductionV dst src));
@@ -19657,7 +19725,7 @@ instruct minmax_reduction2F_avx10_av(regF dst, vec src, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionF_avx10_av(regF dst, vec src, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionF_av_avx10_2(regF dst, vec src, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             Matcher::vector_length(n->in(2)) >= 4);
   match(Set dst (MinReductionV dst src));
@@ -19755,7 +19823,7 @@ instruct minmax_reductionD_av(legRegD dst, legVec src, legVec tmp1, legVec tmp2,
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reduction2D_avx10(regD dst, immD src1, vec src2, vec xtmp1) %{
+instruct minmax_reduction2D_avx10_2(regD dst, immD src1, vec src2, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
@@ -19773,7 +19841,7 @@ instruct minmax_reduction2D_avx10(regD dst, immD src1, vec src2, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionD_avx10(regD dst, immD src1, vec src2, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionD_avx10_2(regD dst, immD src1, vec src2, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
@@ -19792,7 +19860,7 @@ instruct minmax_reductionD_avx10(regD dst, immD src1, vec src2, vec xtmp1, vec x
 %}
 
 
-instruct minmax_reduction2D_av_avx10(regD dst, vec src, vec xtmp1) %{
+instruct minmax_reduction2D_av_avx10_2(regD dst, vec src, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             Matcher::vector_length(n->in(2)) == 2);
   match(Set dst (MinReductionV dst src));
@@ -19808,7 +19876,7 @@ instruct minmax_reduction2D_av_avx10(regD dst, vec src, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionD_av_avx10(regD dst, vec src, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionD_av_avx10_2(regD dst, vec src, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             Matcher::vector_length(n->in(2)) >= 4);
   match(Set dst (MinReductionV dst src));
@@ -20711,7 +20779,7 @@ instruct vminmaxL_reg_evex(vec dst, vec src1, vec src2) %{
 %}
 
 // Float/Double vector Min/Max
-instruct minmaxFP_avx10_reg(vec dst, vec a, vec b) %{
+instruct minmaxFP_reg_avx10_2(vec dst, vec a, vec b) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_floating_point_type(Matcher::vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
   match(Set dst (MinV a b));
@@ -22058,29 +22126,29 @@ instruct castFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   ins_pipe( pipe_slow );
 %}
 
-instruct castFtoX_reg_avx10(vec dst, vec src) %{
+instruct castFtoX_reg_avx10_2(vec dst, vec src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastF2X src));
-  format %{ "vector_cast_f2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_f2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = (to_elem_bt == T_LONG) ? vector_length_encoding(this) : vector_length_encoding(this, $src);
-    __ vector_castF2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vector_castF2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct castFtoX_mem_avx10(vec dst, memory src) %{
+instruct castFtoX_mem_avx10_2(vec dst, memory src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastF2X (LoadVector src)));
-  format %{ "vector_cast_f2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_f2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     int vlen = Matcher::vector_length(this);
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = (to_elem_bt == T_LONG) ? vector_length_encoding(this) : vector_length_encoding(vlen * sizeof(jfloat));
-    __ vector_castF2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
+    __ vector_castF2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -22132,29 +22200,29 @@ instruct castDtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   ins_pipe( pipe_slow );
 %}
 
-instruct castDtoX_reg_avx10(vec dst, vec src) %{
+instruct castDtoX_reg_avx10_2(vec dst, vec src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastD2X src));
-  format %{ "vector_cast_d2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_d2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    __ vector_castD2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vector_castD2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct castDtoX_mem_avx10(vec dst, memory src) %{
+instruct castDtoX_mem_avx10_2(vec dst, memory src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastD2X (LoadVector src)));
-  format %{ "vector_cast_d2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_d2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     int vlen = Matcher::vector_length(this);
     int vlen_enc = vector_length_encoding(vlen * sizeof(jdouble));
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    __ vector_castD2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
+    __ vector_castD2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25126,14 +25194,14 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_minmax_HF_avx10_reg(regF dst, regF src1, regF src2)
+instruct scalar_minmax_HF_reg_avx10_2(regF dst, regF src1, regF src2)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MaxHF src1 src2));
   match(Set dst (MinHF src1 src2));
   format %{ "scalar_min_max_fp16 $dst, $src1, $src2" %}
   ins_encode %{
-    int function = this->ideal_Opcode() == Op_MinHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    int function = this->ideal_Opcode() == Op_MinHF ? AVX10_2_MINMAX_MIN_COMPARE_SIGN : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
     __ eminmaxsh($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, function);
   %}
   ins_pipe( pipe_slow );
@@ -25241,7 +25309,7 @@ instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_minmax_HF_avx10_mem(vec dst, vec src1, memory src2)
+instruct vector_minmax_HF_mem_avx10_2(vec dst, vec src1, memory src2)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinVHF src1 (VectorReinterpret (LoadVector src2))));
@@ -25249,13 +25317,13 @@ instruct vector_minmax_HF_avx10_mem(vec dst, vec src1, memory src2)
   format %{ "vector_min_max_fp16_mem $dst, $src1, $src2" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_2_MINMAX_MIN_COMPARE_SIGN : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
     __ evminmaxph($dst$$XMMRegister, k0, $src1$$XMMRegister, $src2$$Address, true, function, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_minmax_HF_avx10_reg(vec dst, vec src1, vec src2)
+instruct vector_minmax_HF_reg_avx10_2(vec dst, vec src1, vec src2)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinVHF src1 src2));
@@ -25263,7 +25331,7 @@ instruct vector_minmax_HF_avx10_reg(vec dst, vec src1, vec src2)
   format %{ "vector_min_max_fp16 $dst, $src1, $src2" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_2_MINMAX_MIN_COMPARE_SIGN : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
     __ evminmaxph($dst$$XMMRegister, k0, $src1$$XMMRegister, $src2$$XMMRegister, true, function, vlen_enc);
   %}
   ins_pipe( pipe_slow );
