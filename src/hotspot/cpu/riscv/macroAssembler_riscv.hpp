@@ -390,6 +390,8 @@ class MacroAssembler: public Assembler {
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
+
   // only if +VerifyOops
   void _verify_oop(Register reg, const char* s, const char* file, int line);
   void _verify_oop_addr(Address addr, const char* s, const char* file, int line);

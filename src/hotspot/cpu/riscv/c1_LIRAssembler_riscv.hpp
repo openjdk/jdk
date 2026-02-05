@@ -56,7 +56,7 @@ private:
   // Record the type of the receiver in ReceiverTypeData
   void type_profile_helper(Register mdo,
                            ciMethodData *md, ciProfileData *data,
-                           Register recv, Label* update_done);
+                           Register recv);
 
   void casw(Register addr, Register newval, Register cmpval);
   void caswu(Register addr, Register newval, Register cmpval);
