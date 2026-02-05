@@ -59,7 +59,7 @@ class InterpreterCodelet: public Stub {
   // General info/converters
   int     size() const                           { return _size; }
   static  int alignment()                        { return HeapWordSize; }
-  static  int code_alignment()                   { return CodeEntryAlignment; }
+  static uint code_alignment()                   { return CodeEntryAlignment; }
 
   // Code info
   address code_begin() const                     { return align_up((address)this + sizeof(InterpreterCodelet), code_alignment()); }

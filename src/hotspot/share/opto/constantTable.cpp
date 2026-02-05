@@ -158,7 +158,7 @@ void ConstantTable::calculate_offsets_and_size() {
   // Align size up to the next section start (which is insts; see
   // CodeBuffer::align_at_start).
   assert(_size == -1, "already set?");
-  _size = align_up(offset, (int)CodeEntryAlignment);
+  _size = align_up(offset, CodeEntryAlignment);
 }
 
 bool ConstantTable::emit(C2_MacroAssembler* masm) const {

@@ -163,10 +163,10 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if (CodeCacheSegmentSize < (size_t)CodeEntryAlignment) {
+  if (CodeCacheSegmentSize < CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
-                        "larger than or equal to CodeEntryAlignment (%zd) "
+                        "larger than or equal to CodeEntryAlignment (%d) "
                         "to align entry points\n",
                         CodeCacheSegmentSize, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -194,25 +194,25 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error CodeEntryAlignmentConstraintFunc(uint value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
-                        "CodeEntryAlignment (%zd) must be "
+                        "CodeEntryAlignment (%d) must be "
                         "a power of two\n", CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
   if (CodeEntryAlignment < 16) {
       JVMFlag::printError(verbose,
-                          "CodeEntryAlignment (%zd) must be "
+                          "CodeEntryAlignment (%d) must be "
                           "greater than or equal to %d\n",
                           CodeEntryAlignment, 16);
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if ((size_t)CodeEntryAlignment > CodeCacheSegmentSize) {
+  if (CodeEntryAlignment > CodeCacheSegmentSize) {
     JVMFlag::printError(verbose,
-                        "CodeEntryAlignment (%zd) must be "
+                        "CodeEntryAlignment (%d) must be "
                         "less than or equal to CodeCacheSegmentSize (%zu) "
                         "to align entry points\n",
                         CodeEntryAlignment, CodeCacheSegmentSize);
@@ -244,7 +244,7 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
   if (OptoLoopAlignment > CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                         "OptoLoopAlignment (%zd) must be "
-                        "less or equal to CodeEntryAlignment (%zd)\n",
+                        "less or equal to CodeEntryAlignment (%d)\n",
                         value, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -342,7 +342,7 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
   if (InteriorEntryAlignment > CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                        "InteriorEntryAlignment (%zd) must be "
-                       "less than or equal to CodeEntryAlignment (%zd)\n",
+                       "less than or equal to CodeEntryAlignment (%d)\n",
                        InteriorEntryAlignment, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

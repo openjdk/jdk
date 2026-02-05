@@ -39,7 +39,7 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls 
 define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
 define_pd_global(size_t, CodeCacheSegmentSize,   64);
-define_pd_global(intx, CodeEntryAlignment,       64);
+define_pd_global(uint, CodeEntryAlignment,       64);
 define_pd_global(intx, OptoLoopAlignment,        16);
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)

@@ -1508,8 +1508,10 @@ const int ObjectAlignmentInBytes = 8;
           range(1, 1024)                                                    \
           constraint(CodeCacheSegmentSizeConstraintFunc, AfterErgo)         \
                                                                             \
-  product_pd(intx, CodeEntryAlignment, EXPERIMENTAL,                        \
-          "Code entry alignment for generated code (in bytes)")             \
+  product_pd(uint, CodeEntryAlignment, EXPERIMENTAL,                        \
+          "Code entry alignment for generated code"                         \
+          " (in bytes, power of two)")                                      \
+          range(16, 1024)                                                   \
           constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
