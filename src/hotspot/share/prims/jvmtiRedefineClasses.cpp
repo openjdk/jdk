@@ -1472,9 +1472,6 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     }
 
     res = merge_cp_and_rewrite(the_class, scratch_class, THREAD);
-    if (res != JVMTI_ERROR_NONE) {
-      return res;
-    }
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
       log_info(redefine, class, load, exceptions)("merge_cp_and_rewrite exception: '%s'", ex_name->as_C_string());
@@ -1484,6 +1481,8 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
       } else {
         return JVMTI_ERROR_INTERNAL;
       }
+    } else if (res != JVMTI_ERROR_NONE) {
+      return res;
     }
 
 #ifdef ASSERT
