@@ -458,19 +458,19 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
   return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
 }
 
-size_t ThreadLocalAllocBuffer::cooked_used_bytes() const {
+size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
   HeapWord* start = AtomicAccess::load(&_start);
   HeapWord* top = AtomicAccess::load(&_top);
-  // We can't use pointer_delta() because due to races _start and _top may not
-  // be consistent. However the difference of pointers is defined
-  // for pointers into the same memory buffer, which a TLAB is. So it might be
-  // negative and we got inconsistent results - just return 0 in that case.
-  ptrdiff_t diff = top - start;
+  // There has been a race when retrieving _top and _start. Return 0.
+  if (_top < _start) {
+    return 0;
+  }
+  size_t used_bytes = pointer_delta(_start, _top, 1);
   // Comparing diff with the maximum allowed size will ensure that we don't add
   // the used bytes from a semi-initialized TLAB ending up with implausible values.
   // In this case also just return 0.
-  if ((diff <= 0) || (diff > checked_cast<ptrdiff_t>(ThreadLocalAllocBuffer::max_size_in_bytes()))) {
+  if (used_bytes > ThreadLocalAllocBuffer::max_size_in_bytes()) {
     return 0;
   }
-  return diff * HeapWordSize;
+  return used_bytes;
 }

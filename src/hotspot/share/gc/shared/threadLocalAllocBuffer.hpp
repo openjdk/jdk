@@ -124,7 +124,7 @@ public:
   // value may be inconsistent with any other metrics (e.g. total allocated
   // bytes), and may just incorrectly return 0.
   // Intented fo external inspection only where accuracy is not 100% required.
-  size_t cooked_used_bytes() const;
+  size_t estimated_used_bytes() const;
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
