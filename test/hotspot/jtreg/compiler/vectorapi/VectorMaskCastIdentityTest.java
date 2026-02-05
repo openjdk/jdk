@@ -50,7 +50,8 @@ public class VectorMaskCastIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 0" },
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
+                   IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testOneCastToSameType() {
@@ -71,7 +72,8 @@ public class VectorMaskCastIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 0" },
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
+                   IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testTwoCastToSameType() {
@@ -91,7 +93,8 @@ public class VectorMaskCastIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 1" },
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
+                   IRNode.VECTOR_MASK_CAST, "= 1" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testOneCastToDifferentType() {
@@ -110,7 +113,8 @@ public class VectorMaskCastIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 2" },
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
+                   IRNode.VECTOR_MASK_CAST, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testTwoCastToDifferentType() {

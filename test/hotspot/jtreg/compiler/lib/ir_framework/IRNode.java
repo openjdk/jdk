@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,7 @@ public class IRNode {
     public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
     public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
 
+    private static final String TYPE_BOOL   = "Z";
     private static final String TYPE_BYTE   = "B";
     private static final String TYPE_CHAR   = "C";
     private static final String TYPE_SHORT  = "S";
@@ -1063,6 +1064,11 @@ public class IRNode {
     public static final String LOAD_US_OF_CLASS = COMPOSITE_PREFIX + "LOAD_US_OF_CLASS" + POSTFIX;
     static {
         loadOfNodes(LOAD_US_OF_CLASS, "LoadUS");
+    }
+
+    public static final String LOAD_VECTOR_Z = VECTOR_PREFIX + "LOAD_VECTOR_Z" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_Z, "LoadVector", TYPE_BOOL);
     }
 
     public static final String LOAD_VECTOR_B = VECTOR_PREFIX + "LOAD_VECTOR_B" + POSTFIX;
@@ -3471,6 +3477,7 @@ public class IRNode {
      */
     public static int getTypeSizeInBytes(String typeString) {
         return switch (typeString) {
+            case TYPE_BOOL              -> 1;
             case TYPE_BYTE              -> 1;
             case TYPE_CHAR, TYPE_SHORT  -> 2;
             case TYPE_INT, TYPE_FLOAT   -> 4;
