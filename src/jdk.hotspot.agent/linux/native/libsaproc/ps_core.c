@@ -729,8 +729,9 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       }
 
       if (lib_name[0] != '\0') { // ignore empty lib names
-         if (strcmp("linux-vdso.so.1", lib_name) == 0 ||
-             strcmp("linux-vdso64.so.1", lib_name) == 0) {
+         // We can use lib_base_diff to compare with vdso_addr
+         // because base address of vDSO should be 0.
+         if (lib_base_diff == ph->core->vdso_addr) {
            lib_fd = handle_vdso(ph, lib_name, sizeof(lib_name));
          } else {
            lib_fd = pathmap_open(lib_name);
