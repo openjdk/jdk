@@ -21,13 +21,20 @@
  * questions.
  */
 
-/* @test
+/* @test id=tmp
  * @bug 4313887 6838333 8343020 8357425
  * @summary Unit test for java.nio.file.SecureDirectoryStream
  * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @library .. /test/lib
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jtreg.SkippedException
  * @run main SecureDS
+ */
+
+/* @test id=cwd
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform jtreg.SkippedException
+ * @run main SecureDS cwd
  */
 
 import java.nio.file.*;
@@ -35,17 +42,22 @@ import static java.nio.file.Files.*;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
-import java.nio.channels.*;
 import java.io.IOException;
 import java.util.*;
 
 import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class SecureDS {
     static boolean supportsSymbolicLinks;
 
     public static void main(String[] args) throws IOException {
-        Path dir = TestUtil.createTemporaryDirectory();
+        Path dir;
+        if (args.length > 0 && args[0].equals("cwd")) {
+            dir = TestUtil.createTemporaryDirectory(System.getProperty("user.dir"));
+        } else {
+            dir = TestUtil.createTemporaryDirectory();
+        }
         try {
             DirectoryStream<Path> stream = newDirectoryStream(dir);
             stream.close();
@@ -301,7 +313,17 @@ public class SecureDS {
         Files.writeString(filepath, TEXT);
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir);) {
             if (ds instanceof SecureDirectoryStream<Path> sds) {
-                sds.move(file, null, file);
+                try {
+                    sds.move(file, null, file);
+                } catch (AtomicMoveNotSupportedException e) {
+                    if (Files.getFileStore(cwd).equals(Files.getFileStore(dir))) {
+                        // re-throw if move between same volume
+                        throw e;
+                    } else {
+                        throw new SkippedException(
+                            "java.nio.file.AtomicMoveNotSupportedException");
+                    }
+                }
                 if (!TEXT.equals(Files.readString(result)))
                     throw new RuntimeException(result + " content incorrect");
             } else {
@@ -311,11 +333,10 @@ public class SecureDS {
             boolean fileDeleted = Files.deleteIfExists(filepath);
             if (!fileDeleted)
                 Files.deleteIfExists(result);
+            // clean-up
+            delete(dir1);
+            delete(dir2);
         }
-
-        // clean-up
-        delete(dir1);
-        delete(dir2);
     }
 
     // null and ClosedDirectoryStreamException

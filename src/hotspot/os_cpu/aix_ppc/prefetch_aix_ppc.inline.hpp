@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,29 +29,21 @@
 // Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read(const void *loc, intx interval) {
-#if !defined(USE_XLC_BUILTINS)
   __asm__ __volatile__ (
     "   dcbt   0, %0       \n"
     :
     : /*%0*/"r" ( ((address)loc) +((long)interval) )
     //:
     );
-#else
-  __dcbt(((address)loc) +((long)interval));
-#endif
 }
 
 inline void Prefetch::write(void *loc, intx interval) {
-#if !defined(USE_XLC_BUILTINS)
   __asm__ __volatile__ (
     "   dcbtst 0, %0       \n"
     :
     : /*%0*/"r" ( ((address)loc) +((long)interval) )
     //:
     );
-#else
-  __dcbtst( ((address)loc) +((long)interval) );
-#endif
 }
 
 #endif // OS_CPU_AIX_PPC_PREFETCH_AIX_PPC_INLINE_HPP

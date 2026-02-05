@@ -88,7 +88,6 @@ TEST_VM(NMT, realloc_failure_overflowing_size) {
 TEST_VM(NMT, realloc_failure_gigantic_size) {
   check_failing_realloc(SIZE_MAX - M);
 }
-#endif // !INCLUDE_ASAN
 
 static void* do_realloc(void* p, size_t old_size, size_t new_size, uint8_t old_content, bool check_nmt_header) {
 
@@ -154,8 +153,8 @@ TEST_VM(NMT, HeaderKeepsIntegrityAfterRevival) {
   size_t some_size = 16;
   void* p = os::malloc(some_size, mtTest);
   ASSERT_NOT_NULL(p) << "Failed to malloc()";
-  MallocHeader* hdr = MallocTracker::malloc_header(p);
-  hdr->mark_block_as_dead();
-  hdr->revive();
+  MallocHeader* hdr = MallocHeader::kill_block(p);
+  MallocHeader::revive_block(p);
   check_expected_malloc_header(p, mtTest, some_size);
 }
+#endif // !INCLUDE_ASAN
