@@ -1586,9 +1586,13 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     Node* L = iv_info.offset;
 
     if (iv_info.short_offset) {
-      // ConvI2L(i + E): clamp R at max_jint + 1 (offset E is inside int arithmetic).
+      // This converts:
+      // (long)((int)i + E) <u64 R
+      // with E an int into:
+      // (long)i + (long)E <u64 unsigned_min((long)max_jint + 1, R)
+      //
       // Unlike short_scale where L is added in long after ConvI2L, here the offset
-      // is part of the int computation, so we clamp without adding L.
+      // is part of the int computation, so we clamp at max_jint + 1 without adding L.
       Node* max_jint_plus_one_long = longcon((jlong)max_jint + 1);
       R = MinMaxNode::unsigned_min(R, max_jint_plus_one_long, TypeLong::POS, _igvn);
       set_subtree_ctrl(R, true);
