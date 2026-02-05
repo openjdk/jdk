@@ -56,7 +56,9 @@ static void release_if_needed(char* p, size_t s) {
 // This is not reflected by os_allocation_granularity().
 // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
 static size_t allocation_granularity() {
-  return os::vm_allocation_granularity();
+  return
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
+    NOT_AIX(os::vm_allocation_granularity());
 }
 
 #define ERRINFO "addr: " << ((void*)addr) << " min: " << ((void*)min) << " max: " << ((void*)max) \
@@ -333,6 +335,8 @@ TEST_VM(os, attempt_reserve_memory_randomization_cornercases) {
 
 // Test that, regardless where the hole is in the [min, max) range, if we probe nonrandomly, we will fill that hole
 // as long as the range size is smaller than the number of probe attempts
+// On AIX, the allocation granularity is too large and not well suited for 'small' holes, so we avoid the test
+#if !defined(_AIX)
 TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
   const size_t ps = os::vm_page_size();
   const size_t ag = allocation_granularity();
@@ -346,3 +350,4 @@ TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
     }
   }
 }
+#endif
