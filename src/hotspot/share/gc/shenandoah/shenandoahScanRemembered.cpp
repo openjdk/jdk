@@ -1078,38 +1078,44 @@ void ShenandoahReconstructRememberedSetTask::work(uint worker_id) {
   ShenandoahDirtyRememberedSetClosure dirty_cards_for_cross_generational_pointers;
 
   while (r != nullptr) {
-    if (r->is_old() && r->is_active()) {
-      HeapWord* obj_addr = r->bottom();
-      if (r->is_humongous_start()) {
-        // First, clear the remembered set
-        oop obj = cast_to_oop(obj_addr);
-        size_t size = obj->size();
-
-        size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-        size_t region_index = r->index();
-        ShenandoahHeapRegion* humongous_region = heap->get_region(region_index);
-        while (num_regions-- != 0) {
-          scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
-          region_index++;
-          humongous_region = heap->get_region(region_index);
-        }
-
-        // Then register the humongous object and DIRTY relevant remembered set cards
-        scanner->register_object_without_lock(obj_addr);
-        obj->oop_iterate(&dirty_cards_for_cross_generational_pointers);
-      } else if (!r->is_humongous()) {
-        scanner->reset_object_range(r->bottom(), r->end());
-
-        // Then iterate over all objects, registering object and DIRTYing relevant remembered set cards
-        HeapWord* t = r->top();
-        while (obj_addr < t) {
+    if (r->is_active()) {
+      if (r->is_old()) {
+        HeapWord* obj_addr = r->bottom();
+        if (r->is_humongous_start()) {
+          // First, clear the remembered set
           oop obj = cast_to_oop(obj_addr);
+          size_t size = obj->size();
+
+          size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+          size_t region_index = r->index();
+          ShenandoahHeapRegion* humongous_region = heap->get_region(region_index);
+          while (num_regions-- != 0) {
+            scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
+            region_index++;
+            humongous_region = heap->get_region(region_index);
+          }
+
+          // Then register the humongous object and DIRTY relevant remembered set cards
           scanner->register_object_without_lock(obj_addr);
-          obj_addr += obj->oop_iterate_size(&dirty_cards_for_cross_generational_pointers);
-        }
-      } // else, ignore humongous continuation region
+          obj->oop_iterate(&dirty_cards_for_cross_generational_pointers);
+        } else if (!r->is_humongous()) {
+          scanner->reset_object_range(r->bottom(), r->end());
+
+          // Then iterate over all objects, registering object and DIRTYing relevant remembered set cards
+          HeapWord* t = r->top();
+          while (obj_addr < t) {
+            oop obj = cast_to_oop(obj_addr);
+            scanner->register_object_without_lock(obj_addr);
+            obj_addr += obj->oop_iterate_size(&dirty_cards_for_cross_generational_pointers);
+          }
+        } // else, ignore humongous continuation region
+      } else {
+        // The region is young, but it may become old again and we don't want stale remembered set data.
+        assert(r->is_young(), "Region: %zu, is active but free", r->index());
+        heap->old_generation()->clear_cards_for(r);
+      }
     }
-    // else, this region is FREE or YOUNG or inactive and we can ignore it.
+    // else, this region is FREE or inactive and we can ignore it.
     r = _regions->next();
   }
 }
