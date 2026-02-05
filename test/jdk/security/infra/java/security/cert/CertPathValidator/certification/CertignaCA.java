@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,15 @@
  * questions.
  */
 
+import jtreg.SkippedException;
+
+import java.util.List;
+
 /*
  * @test
  * @bug 8245654 8256895
  * @summary Interoperability tests with Certigna Root CAs from Dhimyotis
+ * @library /test/lib/
  * @build ValidatePathWithParams
  * @run main/othervm/manual -Djava.security.debug=certpath CertignaCA OCSP
  * @run main/othervm/manual -Djava.security.debug=certpath CertignaCA CRL
@@ -216,5 +221,12 @@ public class CertignaCA {
         pathValidator.validate(revChainToValidate,
                 ValidatePathWithParams.Status.REVOKED,
                 "Fri Mar 10 03:39:51 PST 2023", System.out);
+
+        final List<String> skippedValidations =
+                pathValidator.getSkippedValidations();
+        if (!skippedValidations.isEmpty()){
+            throw new SkippedException("Some validations/tests were skipped " +
+                                       skippedValidations);
+        }
     }
 }
