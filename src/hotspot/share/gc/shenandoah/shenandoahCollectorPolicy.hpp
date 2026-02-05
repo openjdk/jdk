@@ -110,7 +110,7 @@ public:
     return _consecutive_degenerated_gcs;
   }
 
-  // Genshen will only upgrade to a full gc after the configured number of futile degenerated cycles.
+  // Only upgrade to a full gc after the configured number of futile degenerated cycles.
   bool should_upgrade_degenerated_gc() const {
     return _consecutive_degenerated_gcs_without_progress >= CONSECUTIVE_BAD_DEGEN_PROGRESS_THRESHOLD;
   }
