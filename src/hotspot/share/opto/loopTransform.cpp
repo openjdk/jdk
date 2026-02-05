@@ -1314,22 +1314,30 @@ bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
   return true;
 }
 
-//------------------------------clone_up_backedge_goo--------------------------
-// Return the appropriate node to use on the new loop's data-flow path derived from 'n'.
-// If no suitable existing node can be reused, create a private clone controlled by
-// the 'preheader_ctrl'.
+//------------------------------resolve_value_for_preheader--------------------------
+// Determine the appropriate node to use on the data-flow path of a newly created
+// loop, starting from node 'n'. If an existing node cannot be safely reused,
+// recursively create a private clone whose control is anchored in 'preheader_ctrl'.
 //
-// If 'back_ctrl' is not null:
-//   - Clone a private version of node 'n' in 'preheader_ctrl' if it resides in the 'back_ctrl' block.
-//   - Otherwise, return 'n' unchanged.
+// The behavior depends on the selected ResolveMode:
 //
-// If 'back_ctrl' is null: (Specially for pre-loop exit in resolve_input_for_drain_or_post())
-//   - Clone 'n' into 'preheader_ctrl' if its block does not strictly dominate 'preheader_ctrl'.
-//   - Otherwise, return 'n'.
-Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones) {
-  bool is_from_preloop_exit = (back_ctrl == nullptr);
+// FromBackedge:
+//   - If 'n' is controlled by 'back_ctrl', clone a private copy of 'n' and
+//     anchor it in 'preheader_ctrl'.
+//   - Otherwise, reuse 'n' unchanged.
+//
+// FromPreLoopExit:
+//   - If the control of 'n' does not strictly dominate 'preheader_ctrl',
+//     clone 'n' and anchor the clone in 'preheader_ctrl'.
+//   - Otherwise, reuse 'n' unchanged.
+//
+// The method ensures that each node is visited at most once, reusing previously
+// created clones when available. If cloning is required, all non-control inputs
+// are recursively resolved to preserve correctness of the new data-flow.
+Node *PhaseIdealLoop::resolve_value_for_preheader(ResolveMode mode, Node* back_ctrl, Node* preheader_ctrl,
+                                                  Node* n, VectorSet& visited, Node_Stack& clones) {
   bool requires_clone_from_preloop_exit = !is_dominator(get_ctrl(n), preheader_ctrl);
-  if (is_from_preloop_exit) {
+  if (mode == FromPreLoopExit) {
     // Specially for pre-loop exit in resolve_input_for_drain_or_post()
     if (!requires_clone_from_preloop_exit) { return n; }
   } else {
@@ -1345,7 +1353,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
   Node *x = nullptr;               // If required, a clone of 'n'
   // Check for 'n' being pinned in the backedge.
   if (n->in(0) && (n->in(0) == back_ctrl ||
-                   (is_from_preloop_exit && requires_clone_from_preloop_exit))) {
+                   (mode == FromPreLoopExit && requires_clone_from_preloop_exit))) {
     assert(clones.find(n->_idx) == nullptr, "dead loop");
     x = n->clone();             // Clone a copy of 'n' to preheader
     clones.push(x, n->_idx);
@@ -1356,7 +1364,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
   // If there are no changes we can just return 'n', otherwise
   // we need to clone a private copy and change it.
   for (uint i = 1; i < n->req(); i++) {
-    Node *g = clone_up_backedge_goo(back_ctrl, preheader_ctrl, n->in(i), visited, clones);
+    Node* g = resolve_value_for_preheader(mode, back_ctrl, preheader_ctrl, n->in(i), visited, clones);
     if (g != n->in(i)) {
       if (!x) {
         assert(clones.find(n->_idx) == nullptr, "dead loop");
@@ -1369,7 +1377,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
   if (x) {                     // x can legally float to pre-header location
     register_new_node(x, preheader_ctrl);
     return x;
-  } else if (!is_from_preloop_exit) {  // raise n to cover LCA of uses
+  } else if (mode != FromPreLoopExit) {  // raise n to cover LCA of uses
     set_ctrl(n, find_non_split_ctrl(back_ctrl->in(0)));
   }
   return n;
@@ -1398,19 +1406,21 @@ Node* PhaseIdealLoop::resolve_input_for_drain_or_post(Node* post_head_ctrl, Vect
                                                       Node* main_phi, CloneLoopMode mode) {
   CountedLoopNode* main_head = main_phi->in(0)->as_CountedLoop();
   Node* main_backedge_ctrl = main_head->back_control();
-  // For the post loop, we call clone_up_backedge_goo() to obtain the fall-out values
+  // For the post loop, we call resolve_value_for_preheader() to obtain the fall-out values
   // from the main loop, which serve as the fall-in values for the post loop.
   if (mode == ControlAroundStripMined) {
-    return clone_up_backedge_goo(main_backedge_ctrl,
-                                 post_head_ctrl,
-                                 main_phi->in(LoopNode::LoopBackControl),
-                                 visited, clones);
+    return resolve_value_for_preheader(FromBackedge, main_backedge_ctrl,
+                                       post_head_ctrl,
+                                       main_phi->in(LoopNode::LoopBackControl),
+                                       visited, clones);
   }
+
+  assert(mode == InsertVectorizedDrain, "We don't support other modes");
 
   // For drain loop, after inserting zero trip guard for the vectorized drain loop,
   // we now need to make the fall-in values to the vectorized drain
   // loop come from phis merging exit values from the pre loop and
-  // the main loop.
+  // the main loop, see "drain_input".
   // (new edges are marked with "*/*" or "*\*".)
   //
   //      pre loop exit  'pre_incr'
@@ -1423,7 +1433,7 @@ Node* PhaseIdealLoop::resolve_input_for_drain_or_post(Node* post_head_ctrl, Vect
   //       |     |              |         \   /
   //       |    IfTrue          |    ----> PhiNode('main_phi')
   //       |     |              v    |       |
-  //       |     -------loop end     ---- addI('iv_after_main')
+  //       |     -------loop end     ---- addI('main_exit_value')
   //        \              |                 |
   //         \          IfFalse              |
   //          \          /        'pre_incr' |
@@ -1451,45 +1461,32 @@ Node* PhaseIdealLoop::resolve_input_for_drain_or_post(Node* post_head_ctrl, Vect
   //                    post zero-trip guard
   //                           ...
   //
-  // We look for an existing Phi node 'drain_input' among the uses of 'iv_after_main'.
+  // We look for an existing Phi node 'drain_input' among the uses of 'main_exit_value'.
   //
   // If no valid Phi is found, we create a new Phi that merges output data edges
   // from both the pre-loop and main loop. The example here is test5() added in
   // TestVectorizedDrainLoop.java.
   Node* drain_input = nullptr;
-  Node* iv_after_main = main_phi->in(LoopNode::LoopBackControl);
-  if (get_ctrl(iv_after_main) != main_backedge_ctrl) {
-    // We try to look up target phi from all uses of node 'iv_after_main'.
-    drain_input = find_merge_phi_for_vectorized_drain(iv_after_main, main_merge_region);
-  }
+  Node* main_backedge = main_phi->in(LoopNode::LoopBackControl);
+  drain_input = find_merge_phi_for_vectorized_drain(main_backedge, main_merge_region);
   if (drain_input == nullptr) {
     // Make the fall-in values to the vectorized drain-loop come from a phi node
     // merging the data from the vector main-loop and the pre-loop.
 
-    // If Node 'iv_after_main' lives in the 'main_backedge_ctrl' block, we clone a
-    // private version of 'iv_after_main' in 'main_exit' block and return that,
-    // otherwise return 'iv_after_main'.
-    iv_after_main = clone_up_backedge_goo(main_backedge_ctrl, main_merge_region->in(2),
-                                          iv_after_main, visited, clones);
-    drain_input = PhiNode::make(main_merge_region, iv_after_main);
-    Node* pre_incr = main_phi->in(LoopNode::EntryControl);
-    if (has_ctrl(pre_incr) && !is_dominator(get_ctrl(pre_incr), main_merge_region->in(1))) {
+    Node* main_exit_value = resolve_value_for_preheader(FromBackedge, main_backedge_ctrl, main_merge_region->in(2),
+                                                        main_backedge, visited, clones);
+    drain_input = PhiNode::make(main_merge_region, main_exit_value);
+    Node* main_entry = main_phi->in(LoopNode::EntryControl);
+    Node* pre_exit_value = main_entry;
+    if (has_ctrl(main_entry) && !is_dominator(get_ctrl(main_entry), main_merge_region->in(1))) {
       // If the entry input of the main_phi is not directly from pre-loop but has been preprocessed
       // by some nodes floating below the zero-trip guard of main-loop, we need to clone a private
       // version of these nodes for vectorized drain loop.
-      pre_incr = clone_up_backedge_goo(nullptr, main_merge_region->in(1), pre_incr, visited, clones);
+      pre_exit_value = resolve_value_for_preheader(FromPreLoopExit, nullptr, main_merge_region->in(1),
+                                                   main_entry, visited, clones);
     }
-    drain_input->set_req(1, pre_incr);
-    // If inserting a new Phi, check for prior hits
-    Node* hit = _igvn.hash_find_insert(drain_input);
-    if (hit == nullptr) {
-      // Register new phi
-      _igvn.register_new_node_with_optimizer(drain_input);
-    } else {
-      // Remove the new phi from the graph and use the hit
-      _igvn.remove_dead_node(drain_input);
-      drain_input = hit;
-    }
+    drain_input->set_req(1, pre_exit_value);
+    _igvn.register_new_node_with_optimizer(drain_input);
     set_ctrl(drain_input, main_merge_region);
   }
   return drain_input;
@@ -1635,10 +1632,10 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
     Node* main_phi = main_head->out(i2);
     if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
       Node* pre_phi = old_new[main_phi->_idx];
-      Node* fallpre = clone_up_backedge_goo(pre_head->back_control(),
-                                            main_head->skip_strip_mined()->in(LoopNode::EntryControl),
-                                            pre_phi->in(LoopNode::LoopBackControl),
-                                            visited, clones);
+      Node* fallpre = resolve_value_for_preheader(FromBackedge, pre_head->back_control(),
+                                                  main_head->skip_strip_mined()->in(LoopNode::EntryControl),
+                                                  pre_phi->in(LoopNode::LoopBackControl),
+                                                  visited, clones);
       _igvn.hash_delete(main_phi);
       main_phi->set_req(LoopNode::EntryControl, fallpre);
     }
@@ -1828,6 +1825,9 @@ void PhaseIdealLoop::rewire_ctrl_for_drain_loop_nodes(CountedLoopNode* main_head
     for (uint i = 0; i < start->outcnt(); i++) {
       Node* loop_node = start->raw_out(i);
       if (loop_node->in(0) == start && loop_node->_idx >= new_counter) {
+        assert(start == main_head->skip_strip_mined()->in(LoopNode::EntryControl) ||
+               start == main_head->skip_assertion_predicates_with_halt(),
+               "initialize_assertion_predicates_for_post_loop() must be extended to avoid sinking assertion predicates");
         _igvn.replace_input_of(loop_node, 0, new_start);
         --i;
       }
@@ -1941,10 +1941,10 @@ Node* PhaseIdealLoop::insert_post_or_drain_loop(IdealLoopTree* loop, Node_List& 
   post_end->_prob = PROB_FAIR;
 
   // Step 2: Find some key nodes which control the execution paths of the zero trip guard.
-  // Step 2.1: Find 'zero_ctrl' which will be the control input of the zero trip guard.
+  // Step 2.1: Get 'zero_ctrl' which will be the control input of the zero trip guard.
   Node* zero_ctrl = nullptr;
   if (mode == InsertVectorizedDrain) {
-    // For vectorized drain loop, 'zero_ctrl' should be the node merges exits
+    // For vectorized drain loop, 'zero_ctrl' should be the node that merges exits
     // from the main loop and the pre loop.
     zero_ctrl = main_exit->unique_ctrl_out_or_null();
     assert(zero_ctrl != nullptr && zero_ctrl->is_Region(),
@@ -2255,10 +2255,10 @@ void PhaseIdealLoop::create_assertion_predicates_at_main_or_post_loop(CountedLoo
 }
 
 // Rewire any control dependent nodes on the old target loop entry before adding Assertion Predicate related nodes.
-// These have been added by PhaseIdealLoop::clone_up_backedge_goo() and assume to be ending up at the target loop entry
+// These have been added by PhaseIdealLoop::resolve_value_for_preheader() and assume to be ending up at the target loop entry
 // which is no longer the case when adding additional Assertion Predicates. Fix this by rewiring these nodes to the new
 // target loop entry which corresponds to the tail of the last Assertion Predicate before the target loop. This is safe
-// to do because these control dependent nodes on the old target loop entry created by clone_up_backedge_goo() were
+// to do because these control dependent nodes on the old target loop entry created by resolve_value_for_preheader() were
 // pinned on the loop backedge before. The Assertion Predicates are not control dependent on these nodes in any way.
 void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
   CountedLoopNode* target_loop_head, const Node* old_target_loop_entry,

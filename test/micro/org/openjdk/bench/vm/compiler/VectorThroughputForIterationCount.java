@@ -128,10 +128,33 @@ public abstract class VectorThroughputForIterationCount {
     private int seed;
     private Random r = new Random(seed);
 
-    // Enable a warm-up phase with a large iteration count to force
-    // auto-vectorization and unrolling. Without this, C2 may optimize
-    // away small fixed-trip loops based on profiling, making the
-    // effects of this patch unobservable.
+    // When enabled, run an additional warm-up phase using a large loop iteration
+    // count to encourage C2 to generate vectorized and unrolled loop bodies.
+    //
+    // Rationale:
+    // Some benchmarks in this suite use small, fixed trip-count loops. During
+    // early profiling, C2 may treat such loops as trivial, avoid vectorization,
+    // or optimize them away entirely. In those cases, changes that affect loop
+    // vectorization behavior, such as the improvement introduced by JDK-8307084,
+    // may not be observable in the generated code.
+    //
+    // As a result, this benchmark suite contains two main classes of
+    // microbenchmarks:
+    //   1) bench_xx_computeBound / bench_xx_memoryBound
+    //      These measure the performance of C2-generated code for the given
+    //      workload without relying on a special warm-up phase.
+    //   2) bench03xx_staticTripCount / bench03xx_dynamicTripCount
+    //      These benchmarks are sensitive to early profiling. Enabling a
+    //      large-loop warm-up forces the optimizer to observe the loop at scale,
+    //      making vectorized code generation more likely and allowing such
+    //      effects to be measured.
+    //
+    // Usage guidance:
+    // - Enable for microbenchmarks that rely on observing vectorization or
+    //   unrolling effects, especially when loop trip counts are small or
+    //   constant (e.g., bench03xx_staticTripCount and bench03xx_dynamicTripCount,
+    //   introduced by JDK-8307084).
+    // - Disable for general regression testing and for other microbenchmarks.
     @Param({"true", "false"})
     public static boolean ENABLE_LARGE_LOOP_WARMUP;
 
@@ -270,12 +293,12 @@ public abstract class VectorThroughputForIterationCount {
     }
 
     @Benchmark
-    public void bench031B_drain_memoryBound() {
+    public void bench031B_staticTripCount() {
         byteadd(aB, bB, rB, START_IDX, ITERATION_COUNT);
     }
 
     @Benchmark
-    public void bench031B_drain_dynamic() {
+    public void bench031B_dynamicTripCount() {
         for (int r = 0; r < REPETITIONS; r++) {
             byteadd(aB, bB, rB, START_IDX, offsets[r]+ITERATION_COUNT);
         }
@@ -316,12 +339,12 @@ public abstract class VectorThroughputForIterationCount {
 //    }
 
     @Benchmark
-    public void bench032S_drain_memoryBound() {
+    public void bench032S_staticTripCount() {
         shortadd(aS, bS, rS, START_IDX, ITERATION_COUNT);
     }
 
     @Benchmark
-    public void bench032S_drain_dynamic() {
+    public void bench032S_dynamicTripCount() {
         for (int r = 0; r < REPETITIONS; r++) {
             shortadd(aS, bS, rS, START_IDX, offsets[r]+ITERATION_COUNT);
         }
@@ -397,12 +420,12 @@ public abstract class VectorThroughputForIterationCount {
     }
 
     @Benchmark
-    public void bench034I_drain_memoryBound() {
+    public void bench034I_staticTripCount() {
         intadd(aI, bI, rI, START_IDX, ITERATION_COUNT);
     }
 
     @Benchmark
-    public void bench034I_drain_dynamic() {
+    public void bench034I_dynamicTripCount() {
         for (int r = 0; r < REPETITIONS; r++) {
             intadd(aI, bI, rI, START_IDX, offsets[r]+ITERATION_COUNT);
         }
@@ -443,12 +466,12 @@ public abstract class VectorThroughputForIterationCount {
     }
 
     @Benchmark
-    public void bench035L_drain_memoryBound() {
+    public void bench035L_staticTripCount() {
         longadd(aL, bL, rL, START_IDX, ITERATION_COUNT);
     }
 
     @Benchmark
-    public void bench035L_drain_dynamic() {
+    public void bench035L_dynamicTripCount() {
         for (int r = 0; r < REPETITIONS; r++) {
             longadd(aL, bL, rL, START_IDX, offsets[r]+ITERATION_COUNT);
         }

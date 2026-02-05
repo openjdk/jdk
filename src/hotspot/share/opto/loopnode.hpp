@@ -1429,13 +1429,13 @@ public:
   enum CloneLoopMode {
     IgnoreStripMined = 0,        // Only clone inner strip mined loop
     CloneIncludesStripMined = 1, // clone both inner and outer strip mined loops
-    ControlAroundStripMined = 2, // Only clone inner strip mined loop,
-                                 // result control flow branches
-                                 // either to inner clone or outer
-                                 // strip mined loop.
-    InsertVectorizedDrain = 3    // Only clone inner strip mined vector loop,
-                                 // result control flow branches to inner clone or
-                                 // scalar post loop
+    ControlAroundStripMined = 2, // Only clone the inner strip-mined loop and insert
+                                 // control flow around it. Exit control flow
+                                 // branches either to inner clone or to the outer
+                                 // strip-mined loop.
+    InsertVectorizedDrain = 3    // Only clone the inner strip-mined vector loop and
+                                 // insert control flow that branches either to the
+                                 // cloned inner loop or to the scalar post loop.
   };
   void clone_loop( IdealLoopTree *loop, Node_List &old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
@@ -1489,18 +1489,12 @@ public:
   // Add a vectorized drain loop between the main loop and the current post loop.
   void insert_vectorized_drain_loop(IdealLoopTree* loop, Node_List& old_new);
 
-  // Return the appropriate node to use on the new loop's data-flow path derived from 'n'.
-  // If no suitable existing node can be reused, create a private clone controlled by the
-  // 'preheader_ctrl'.
-  //
-  // If 'back_ctrl' is not null:
-  //   - Clone a private version of node 'n' in 'preheader_ctrl' if it resides in the 'back_ctrl' block.
-  //   - Otherwise, return 'n' unchanged.
-  //
-  // If 'back_ctrl' is null: (Specially for pre-loop exit in resolve_input_for_drain_or_post())
-  //   - Clone 'n' into 'preheader_ctrl' if its block does not strictly dominate 'preheader_ctrl'.
-  //   - Otherwise, return 'n'.
-  Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
+  enum ResolveMode {
+      FromPreLoopExit, // Resolve the correct value coming from the pre-loop exit
+      FromBackedge,    // Resolve the correct node coming from the main loop backedge
+  };
+  Node* resolve_value_for_preheader(ResolveMode mode, Node* back_ctrl, Node* preheader_ctrl,
+                                    Node* n, VectorSet& visited, Node_Stack& clones );
 
   // Determine and obtain the correct fall-in values for either the drain loop or the post loop.
   Node* resolve_input_for_drain_or_post(Node* post_head_ctrl, VectorSet& visited,
