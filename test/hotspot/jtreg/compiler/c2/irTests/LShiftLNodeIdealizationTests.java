@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public class LShiftLNodeIdealizationTests {
             "testLShiftOfAndOfRShift",
             "testLShiftOfAndOfURShift",
             "testLShiftOfAndOfCon",
+            "testShiftOfSubConstant",
     })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
@@ -118,6 +119,7 @@ public class LShiftLNodeIdealizationTests {
         Asserts.assertEQ((a + a) << 63, testLargeShiftOfAddSameInput(a));
         Asserts.assertEQ(((a + 1) << 1) + 1, testShiftOfAddConstant(a));
         Asserts.assertEQ((a & ((1L << (64 - 10)) -1)) << 10, testLShiftOfAndOfCon(a));
+        Asserts.assertEQ(((1L - a) << 1) + 1, testShiftOfSubConstant(a));
 
         assertDoubleShiftResult(a);
     }
@@ -357,5 +359,11 @@ public class LShiftLNodeIdealizationTests {
     @IR(counts = { IRNode.LSHIFT_L, "1" } , failOn = { IRNode.AND_L } )
     public long testLShiftOfAndOfCon(long x) {
         return (x & ((1L << (64 - 10)) -1)) << 10;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1",  IRNode.SUB_L, "1" }, failOn =  { IRNode.ADD_L })
+    public long testShiftOfSubConstant(long x) {
+        return ((1 - x) << 1) + 1;
     }
 }

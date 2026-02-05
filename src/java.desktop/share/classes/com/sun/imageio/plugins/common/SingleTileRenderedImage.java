@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class SingleTileRenderedImage extends SimpleRenderedImage {
     /**
      * Returns the image's Raster as tile (0, 0).
      */
+    @Override
     public Raster getTile(int tileX, int tileY) {
         if (tileX != 0 || tileY != 0) {
             throw new IllegalArgumentException("tileX != 0 || tileY != 0");

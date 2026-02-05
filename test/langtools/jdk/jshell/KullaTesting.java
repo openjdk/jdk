@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -969,11 +970,21 @@ public class KullaTesting {
     }
 
     public void assertSignature(String code, String... expected) {
+        assertSignature(code, false, expected);
+    }
+
+    public void assertSignature(String code, boolean includeActive, String... expected) {
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' expected, but not found in: " + code);
         List<Documentation> documentation = getAnalysis().documentation(code, cursor, false);
-        Set<String> docSet = documentation.stream().map(doc -> doc.signature()).collect(Collectors.toSet());
+        Function<Documentation, String> convert;
+        if (includeActive) {
+            convert = doc -> doc.signature() + ":" + doc.activeParameterIndex();
+        } else {
+            convert = doc -> doc.signature();
+        }
+        Set<String> docSet = documentation.stream().map(convert).collect(Collectors.toSet());
         Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
         assertEquals(expectedSet, docSet, "Input: " + code);
     }

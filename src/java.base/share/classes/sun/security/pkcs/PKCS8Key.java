@@ -26,6 +26,7 @@
 package sun.security.pkcs;
 
 import jdk.internal.access.SharedSecrets;
+import sun.security.ec.ECPrivateKeyImpl;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
@@ -104,11 +105,29 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         }
     }
 
-    private PKCS8Key(byte[] privEncoding, byte[] pubEncoding)
+    /**
+     * Constructor that takes both public and private encodings.
+     *
+     * If the private key includes a public key encoding (like an EC key in
+     * SEC1v2 format), and a specified public key matches it, the existing
+     * encoding is reused rather than recreated.
+     */
+    public PKCS8Key(byte[] publicEncoding, byte[] privateEncoding)
         throws InvalidKeyException {
-        this(privEncoding);
-        pubKeyEncoded = pubEncoding;
-        version = V2;
+        this(privateEncoding);
+        if (publicEncoding != null) {
+            if (pubKeyEncoded != null) {
+                if (!Arrays.equals(pubKeyEncoded, publicEncoding)) {
+                    Arrays.fill(privKeyMaterial, (byte) 0x0);
+                    throw new InvalidKeyException("PrivateKey " +
+                        "encoding has a public key that does not match " +
+                        "the given PublicKey");
+                }
+            } else {
+                pubKeyEncoded = publicEncoding;
+                version = V2;
+            }
+        }
     }
 
     public int getVersion() {
@@ -136,6 +155,14 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
 
             // Store key material for subclasses to parse
             privKeyMaterial = val.data.getOctetString();
+
+            // Special check and parsing for ECDSA's SEC1v2 format
+            if (algid.getOID().equals(AlgorithmId.EC_oid)) {
+                var bits = ECPrivateKeyImpl.parsePublicBits(privKeyMaterial);
+                if (bits != null) {
+                    pubKeyEncoded = new X509Key(algid, bits).getEncoded();
+                }
+            }
 
             // PKCS8 v1 typically ends here
             if (val.data.available() == 0) {
@@ -271,18 +298,23 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * With a given encoded Public and Private key, generate and return a
      * PKCS8v2 DER-encoded byte[].
      *
-     * @param pubKeyEncoded DER-encoded PublicKey
+     * @param pubKeyEncoded DER-encoded PublicKey, this may be null.
      * @param privKeyEncoded DER-encoded PrivateKey
      * @return DER-encoded byte array
      * @throws IOException thrown on encoding failure
      */
     public static byte[] getEncoded(byte[] pubKeyEncoded, byte[] privKeyEncoded)
         throws IOException {
+        PKCS8Key pkcs8Key;
         try {
-            return new PKCS8Key(privKeyEncoded, pubKeyEncoded).
-                generateEncoding();
+            pkcs8Key = new PKCS8Key(pubKeyEncoded, privKeyEncoded);
         } catch (InvalidKeyException e) {
             throw new IOException(e);
+        }
+        try {
+            return pkcs8Key.generateEncoding().clone();
+        } finally {
+            pkcs8Key.clear();
         }
     }
 
@@ -295,7 +327,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     private synchronized byte[] getEncodedInternal() {
         if (encodedKey == null) {
             try {
-                encodedKey = generateEncoding();
+                generateEncoding();
             } catch (IOException e) {
                return null;
             }
@@ -326,7 +358,6 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
                     throw new IOException(e);
                 }
 
-                // X509Key x = X509Key.parse(pubKeyEncoded);
                 DerOutputStream pubOut = new DerOutputStream();
                 pubOut.putUnalignedBitString(x.getKey());
                 out.writeImplicit(

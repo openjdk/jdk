@@ -781,7 +781,6 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
     // Merge with the next instruction
     {
-      int target;
       VerificationType type, type2;
       VerificationType atype;
 
@@ -1606,9 +1605,8 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_ifle:
           current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
-          target = bcs.dest();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_if_acmpeq :
         case Bytecodes::_if_acmpne :
@@ -1619,19 +1617,16 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_ifnonnull :
           current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
-          target = bcs.dest();
           stackmap_table.check_jump_target
-            (&current_frame, target, CHECK_VERIFY(this));
+            (&current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_goto :
-          target = bcs.dest();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_goto_w :
-          target = bcs.dest_w();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s4(), CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_tableswitch :
         case Bytecodes::_lookupswitch :
@@ -2280,15 +2275,14 @@ void ClassVerifier::verify_switch(
       }
     }
   }
-  int target = bci + default_offset;
-  stackmap_table->check_jump_target(current_frame, target, CHECK_VERIFY(this));
+  stackmap_table->check_jump_target(current_frame, bci, default_offset, CHECK_VERIFY(this));
   for (int i = 0; i < keys; i++) {
     // Because check_jump_target() may safepoint, the bytecode could have
     // moved, which means 'aligned_bcp' is no good and needs to be recalculated.
     aligned_bcp = align_up(bcs->bcp() + 1, jintSize);
-    target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
+    int offset = (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
     stackmap_table->check_jump_target(
-      current_frame, target, CHECK_VERIFY(this));
+      current_frame, bci, offset, CHECK_VERIFY(this));
   }
   NOT_PRODUCT(aligned_bcp = nullptr);  // no longer valid at this point
 }

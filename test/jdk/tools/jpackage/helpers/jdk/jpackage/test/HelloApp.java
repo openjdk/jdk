@@ -125,6 +125,8 @@ public final class HelloApp {
         if (appDesc.isWithMainClass()) {
             builder.setMainClass(appDesc.className());
         }
+        // Use an old release number to make test app classes runnable on older runtimes.
+        builder.setRelease(11);
         return builder;
     }
 

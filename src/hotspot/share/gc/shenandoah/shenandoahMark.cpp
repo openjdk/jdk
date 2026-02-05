@@ -55,10 +55,10 @@ ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation) :
 }
 
 template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahReferenceProcessor *rp, StringDedup::Requests* const req, bool update_refs) {
+void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::Requests* const req, bool update_refs) {
   ShenandoahObjToScanQueue* q = get_queue(w);
   ShenandoahObjToScanQueue* old_q = get_old_queue(w);
-
+  ShenandoahReferenceProcessor *rp = _generation->ref_processor();
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahLiveData* ld = heap->get_liveness_cache(w);
 
@@ -78,22 +78,22 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
 }
 
 template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                               ShenandoahGenerationType generation, StringDedup::Requests* const req) {
+void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
+                               ShenandoahGenerationType generation_type, StringDedup::Requests* const req) {
   bool update_refs = ShenandoahHeap::heap()->has_forwarded_objects();
-  switch (generation) {
+  switch (generation_type) {
     case YOUNG:
-      mark_loop_prework<YOUNG, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, update_refs);
+      mark_loop_prework<YOUNG, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req, update_refs);
       break;
     case OLD:
       // Old generation collection only performs marking, it should not update references.
-      mark_loop_prework<OLD, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, false);
+      mark_loop_prework<OLD, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req, false);
       break;
     case GLOBAL:
-      mark_loop_prework<GLOBAL, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, update_refs);
+      mark_loop_prework<GLOBAL, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req, update_refs);
       break;
     case NON_GEN:
-      mark_loop_prework<NON_GEN, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, update_refs);
+      mark_loop_prework<NON_GEN, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, req, update_refs);
       break;
     default:
       ShouldNotReachHere();
@@ -101,30 +101,30 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
   }
 }
 
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                               ShenandoahGenerationType generation, bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req) {
+void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
+                               bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req) {
   if (cancellable) {
     switch(dedup_mode) {
       case NO_DEDUP:
-        mark_loop<true, NO_DEDUP>(worker_id, terminator, rp, generation, req);
+        mark_loop<true, NO_DEDUP>(worker_id, terminator, generation_type, req);
         break;
       case ENQUEUE_DEDUP:
-        mark_loop<true, ENQUEUE_DEDUP>(worker_id, terminator, rp, generation, req);
+        mark_loop<true, ENQUEUE_DEDUP>(worker_id, terminator, generation_type, req);
         break;
       case ALWAYS_DEDUP:
-        mark_loop<true, ALWAYS_DEDUP>(worker_id, terminator, rp, generation, req);
+        mark_loop<true, ALWAYS_DEDUP>(worker_id, terminator, generation_type, req);
         break;
     }
   } else {
     switch(dedup_mode) {
       case NO_DEDUP:
-        mark_loop<false, NO_DEDUP>(worker_id, terminator, rp, generation, req);
+        mark_loop<false, NO_DEDUP>(worker_id, terminator, generation_type, req);
         break;
       case ENQUEUE_DEDUP:
-        mark_loop<false, ENQUEUE_DEDUP>(worker_id, terminator, rp, generation, req);
+        mark_loop<false, ENQUEUE_DEDUP>(worker_id, terminator, generation_type, req);
         break;
       case ALWAYS_DEDUP:
-        mark_loop<false, ALWAYS_DEDUP>(worker_id, terminator, rp, generation, req);
+        mark_loop<false, ALWAYS_DEDUP>(worker_id, terminator, generation_type, req);
         break;
     }
   }
@@ -139,12 +139,8 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
   ShenandoahObjToScanQueue* q;
   ShenandoahMarkTask t;
 
-  // Do not use active_generation() : we must use the gc_generation() set by
-  // ShenandoahGCScope on the ControllerThread's stack; no safepoint may
-  // intervene to update active_generation, so we can't
-  // shenandoah_assert_generations_reconciled() here.
-  assert(heap->gc_generation()->type() == GENERATION, "Sanity: %d != %d", heap->gc_generation()->type(), GENERATION);
-  heap->gc_generation()->ref_processor()->set_mark_closure(worker_id, cl);
+  assert(_generation->type() == GENERATION, "Sanity: %d != %d", _generation->type(), GENERATION);
+  _generation->ref_processor()->set_mark_closure(worker_id, cl);
 
   /*
    * Process outstanding queues, if any.

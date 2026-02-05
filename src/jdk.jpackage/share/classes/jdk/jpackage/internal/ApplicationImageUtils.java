@@ -26,12 +26,12 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,44 +42,36 @@ import jdk.jpackage.internal.PackagingPipeline.ApplicationImageTaskAction;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
 import jdk.jpackage.internal.util.FileUtils;
-import jdk.jpackage.internal.util.PathUtils;
 
 
 final class ApplicationImageUtils {
 
-    static Optional<OverridableResource> createLauncherIconResource(Application app,
-            Launcher launcher,
+    static Optional<OverridableResource> createLauncherIconResource(Launcher launcher,
             Function<String, OverridableResource> resourceSupplier) {
-        final String defaultIconName = launcher.defaultIconResourceName();
-        final String resourcePublicName = launcher.executableName() + PathUtils.getSuffix(Path.of(defaultIconName));
 
-        if (!launcher.hasIcon()) {
-            return Optional.empty();
-        }
+        return launcher.icon().map(icon -> {
+            var resource = LauncherBuilder.createLauncherIconResource(launcher, resourceSupplier);
 
-        OverridableResource resource = resourceSupplier.apply(defaultIconName)
-                .setCategory("icon")
-                .setPublicName(resourcePublicName);
-
-        launcher.icon().flatMap(CustomLauncherIcon::fromLauncherIcon).map(CustomLauncherIcon::path).ifPresent(resource::setExternal);
-
-        if (launcher.hasDefaultIcon() && app.mainLauncher().orElseThrow() != launcher) {
-            // No icon explicitly configured for this launcher.
-            // Dry-run resource creation to figure out its source.
-            final Path nullPath = null;
-            if (toSupplier(() -> resource.saveToFile(nullPath)).get() != OverridableResource.Source.ResourceDir) {
-                // No icon in resource dir for this launcher, inherit icon
-                // configured for the main launcher.
-                return createLauncherIconResource(
-                        app, app.mainLauncher().orElseThrow(),
-                        resourceSupplier
-                ).map(r -> r.setLogPublicName(resourcePublicName));
+            switch (icon) {
+                case DefaultLauncherIcon _ -> {
+                    resource.setSourceOrder(OverridableResource.Source.DefaultResource);
+                }
+                case ResourceDirLauncherIcon v -> {
+                    resource.setSourceOrder(OverridableResource.Source.ResourceDir);
+                    resource.setPublicName(v.name());
+                }
+                case CustomLauncherIcon v -> {
+                    resource.setSourceOrder(OverridableResource.Source.External);
+                    resource.setExternal(v.path());
+                }
             }
-        }
 
-        return Optional.of(resource);
+            return resource;
+        });
     }
 
     static ApplicationImageTaskAction<Application, ApplicationLayout> createWriteRuntimeAction() {
@@ -148,6 +140,7 @@ final class ApplicationImageUtils {
             }
         }
 
-        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath(), excludes, LinkOption.NOFOLLOW_LINKS);
+        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath(), excludes,
+                LinkOption.NOFOLLOW_LINKS, StandardCopyOption.REPLACE_EXISTING);
     }
 }
