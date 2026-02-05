@@ -206,9 +206,8 @@ public final class SSLLogger implements System.Logger {
         System.err.printf("%-16s %s%n%n", "expand",
                 "expanded (less compact) output format");
         System.err.printf("%-16s %s%n", "all", "turn on all debugging");
-        System.err.printf("%-16s %s%n", "ssl", "turn on ssl debugging");
-        System.err.println();
-        System.err.println("The following filters can be used with ssl:");
+        System.err.printf("%-16s %s%n%n", "ssl", "turn on ssl debugging");
+        System.err.printf("The following filters can be used with ssl:%n%n");
         System.err.printf("    %-14s %s%n", "defaultctx",
                 "print default SSL initialization");
         System.err.printf("    %-14s %s%n", "handshake",
@@ -234,9 +233,10 @@ public final class SSLLogger implements System.Logger {
         System.err.printf("    %-14s %s%n", "trustmanager",
                 "print trust manager tracing");
         System.err.printf("%nIf \"ssl\" is specified by itself," +
-                " all non-widening filters are enabled.%n%n");
-        System.err.printf("%nAdding valid filter options to \"ssl\" will log" +
-                " messages to include%njust those filtered categories.%n");
+                " all non-widening filters are enabled.%n");
+        System.err.printf("%nSpecifying filter options with \"ssl\"" +
+                " includes messages for the selected categories, as well" +
+                " as all general SSL debug messages.%n");
         System.exit(0);
     }
 

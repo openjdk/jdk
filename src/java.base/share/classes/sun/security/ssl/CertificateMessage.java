@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1018,13 +1018,18 @@ final class CertificateMessage {
                     .stream()
                     .map(ss -> ss.keyAlgorithm)
                     .distinct()
-                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
-                            hc.algorithmConstraints,                        //  we will be able to produce
-                            hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
+                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(
+                            // Don't select a signature scheme unless
+                            // we will be able to produce a
+                            // CertificateVerify message later
+                            hc.algorithmConstraints,
+                            hc.peerRequestedSignatureSchemes,
                             ka, hc.negotiatedProtocol) != null
                             || SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE,
-                                    "Unable to produce CertificateVerify for key algorithm: " + ka))
-                    .filter(ka -> X509Authentication.valueOfKeyAlgorithm(ka) != null
+                                    "Unable to produce CertificateVerify for " +
+                                            "key algorithm: " + ka))
+                    .filter(ka ->
+                            X509Authentication.valueOfKeyAlgorithm(ka) != null
                             || SSLLogger.logWarning(SSLLogger.Opt.HANDSHAKE,
                             "Unsupported key algorithm: " + ka))
                     .toArray(String[]::new);
@@ -1118,7 +1123,7 @@ final class CertificateMessage {
             if (hc.handshakeConsumers.containsKey(
                     SSLHandshake.ENCRYPTED_EXTENSIONS.id)) {
                 throw hc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                                           "Unexpected Certificate handshake message");
+                                   "Unexpected Certificate handshake message");
             }
 
             T13CertificateMessage cm = new T13CertificateMessage(hc, message);
@@ -1382,5 +1387,4 @@ final class CertificateMessage {
 
         return alert;
     }
-
 }
