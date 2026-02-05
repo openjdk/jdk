@@ -329,11 +329,6 @@ public:
     return current()->buffer_to_requested_delta();
   }
 
-  inline static u4 to_offset_u4(uintx offset) {
-    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
-    return (u4)offset;
-  }
-
 public:
   static const uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;;
 
@@ -347,28 +342,6 @@ public:
 
   // The reverse of buffer_to_offset()
   address offset_to_buffered_address(u4 offset) const;
-
-  template <typename T>
-  u4 buffer_to_offset_u4(T p) const {
-    uintx offset = buffer_to_offset((address)p);
-    return to_offset_u4(offset);
-  }
-
-  template <typename T>
-  u4 any_to_offset_u4(T p) const {
-    assert(p != nullptr, "must not be null");
-    uintx offset = any_to_offset((address)p);
-    return to_offset_u4(offset);
-  }
-
-  template <typename T>
-  u4 any_or_null_to_offset_u4(T p) const {
-    if (p == nullptr) {
-      return 0;
-    } else {
-      return any_to_offset_u4<T>(p);
-    }
-  }
 
   template <typename T>
   T offset_to_buffered(u4 offset) const {

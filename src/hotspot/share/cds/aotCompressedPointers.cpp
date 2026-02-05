@@ -24,8 +24,8 @@
 
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "utilities/debug.hpp"
 
 size_t AOTCompressedPointers::compute_byte_offset(address p) {
