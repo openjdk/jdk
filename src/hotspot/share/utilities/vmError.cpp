@@ -966,10 +966,15 @@ void VMError::report(outputStream* st, bool _verbose) {
     frame fr = _context ? os::fetch_frame_from_context(_context)
                         : os::current_frame();
 
-    if (fr.sp()) {
-      st->print(",  sp=" PTR_FORMAT, p2i(fr.sp()));
-      size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
-      st->print(",  free space=%zuk", free_stack_size);
+    address sp = (address)fr.sp();
+    if (sp != nullptr) {
+      st->print(",  sp=" PTR_FORMAT, p2i(sp));
+      if (sp >= stack_bottom && sp < stack_top) {
+        size_t free_stack_size = pointer_delta(sp, stack_bottom, 1024);
+        st->print(",  free space=%zuk", free_stack_size);
+      } else {
+        st->print(" **OUTSIDE STACK**.");
+      }
     }
 
     st->cr();
