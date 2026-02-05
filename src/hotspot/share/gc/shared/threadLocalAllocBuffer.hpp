@@ -119,9 +119,11 @@ public:
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
 
-  // Attempts to calculate the the currently used bytes in the TLAB. Due to races
-  // the return value may be inconsistent with any other values (e.g. total allocated
-  // bytes counter), or just incorrectly return 0. For external inspection only.
+  // Returns an estimate of the number of bytes currently used in the TLAB.
+  // Due to races with concurrent allocations and/or resetting the TLAB the return
+  // value may be inconsistent with any other metrics (e.g. total allocated
+  // bytes), and may just incorrectly return 0.
+  // Intented fo external inspection only where accuracy is not 100% required.
   size_t cooked_used_bytes() const;
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
