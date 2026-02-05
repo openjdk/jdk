@@ -538,7 +538,7 @@ const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
   return ShenandoahBarrierSetC2::_load_reference_barrier_Type;
 }
 
-void ShenandoahBarrierSetC2::make_barrier_Type_init() {
+void ShenandoahBarrierSetC2::init() {
   ShenandoahBarrierSetC2::make_write_barrier_pre_Type();
   ShenandoahBarrierSetC2::make_clone_barrier_Type();
   ShenandoahBarrierSetC2::make_load_reference_barrier_Type();

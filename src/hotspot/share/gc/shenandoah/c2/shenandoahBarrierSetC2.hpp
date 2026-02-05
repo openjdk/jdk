@@ -113,7 +113,7 @@ public:
   static const TypeFunc* write_barrier_pre_Type();
   static const TypeFunc* clone_barrier_Type();
   static const TypeFunc* load_reference_barrier_Type();
-  static void make_barrier_Type_init();
+  static void init();
 
   virtual bool has_load_barrier_nodes() const { return true; }
 

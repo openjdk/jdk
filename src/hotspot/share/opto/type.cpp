@@ -734,7 +734,7 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
 
 #if INCLUDE_SHENANDOAHGC
-  ShenandoahBarrierSetC2::make_barrier_Type_init();
+  ShenandoahBarrierSetC2::init();
 #endif //INCLUDE_SHENANDOAHGC
 
   BarrierSetC2::make_clone_type();
