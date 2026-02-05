@@ -614,10 +614,10 @@ static int handle_vdso(struct ps_prochandle* ph, char* lib_name, size_t lib_name
   // Check vDSO binary first (for referring debuginfo if possible).
   char *vdso_path = (char*)malloc(lib_name_len);
   snprintf(vdso_path, lib_name_len, "/lib/modules/%s/vdso/vdso64.so", uts.release);
-  if (access(vdso_path, F_OK) == 0) {
+  lib_fd = pathmap_open(vdso_path);
+  if (lib_fd != -1) {
     print_debug("replace vDSO: %s -> %s\n", lib_name, vdso_path);
     strncpy(lib_name, vdso_path, lib_name_len);
-    lib_fd = pathmap_open(lib_name);
   } else {
     // Copy vDSO memory segment from core to temporal memory
     // if vDSO binary is not available.
