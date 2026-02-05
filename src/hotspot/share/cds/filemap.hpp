@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_FILEMAP_HPP
 #define SHARE_CDS_FILEMAP_HPP
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/heapShared.hpp"
@@ -159,7 +160,8 @@ private:
   int     _spec_trap_limit_extra_entries;
 
   template <typename T> T from_mapped_offset(size_t offset) const {
-    return (T)(mapped_base_address() + offset);
+    return AOTCompressedPointers::decode<T>((address)mapped_base_address(),
+                                            AOTCompressedPointers::to_narrowPtr(offset));
   }
   void set_as_offset(char* p, size_t *offset);
   template <typename T> void set_as_offset(T p, size_t *offset) {

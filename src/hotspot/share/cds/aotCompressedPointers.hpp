@@ -28,6 +28,7 @@
 #include "cds/cds_globals.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/metaspace.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -41,7 +42,19 @@ public:
   // Currently we allow only up to 2GB total size in the rw and ro regions (which are
   // contiguous to each other).
   typedef u4 narrowPtr;
-  static constexpr uintx MaxMetadataOffsetBytes = 0x7FFFFFFF;
+  static constexpr size_t MaxMetadataOffsetBytes = 0x7FFFFFFF;
+
+  // T must be an unsigned type whose value is less than 0xFFFFFFFF
+  template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
+  static narrowPtr to_narrowPtr(T narrowp) {
+    return checked_cast<narrowPtr>(narrowp);
+  }
+
+  // T must be an unsigned type of at least 32 bits
+  template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
+  static T from_narrowPtr(narrowPtr narrowp) {
+    return checked_cast<T>(narrowp);
+  }
 
   // Encoding ------
 
@@ -96,13 +109,16 @@ public:
   static T decode_not_null(address base_address, narrowPtr narrowp) {
     assert(narrowp != 0, "sanity");
     T p = (T)(base_address + narrowp);
-    assert(Metaspace::in_aot_cache(p), "must be");
+    // p may not be in AOT cache as this function may be called before the
+    // AOT cache is mapped.
     return p;
   }
 
   template <typename T>
   static T decode_not_null(narrowPtr narrowp) {
-    return decode_not_null<T>(reinterpret_cast<address>(SharedBaseAddress), narrowp);
+    T fullp = decode_not_null<T>(reinterpret_cast<address>(SharedBaseAddress), narrowp);
+    assert(Metaspace::in_aot_cache(fullp), "must be");
+    return fullp;
   }
 
   template <typename T>
@@ -111,6 +127,15 @@ public:
       return nullptr;
     } else {
       return decode_not_null<T>(narrowp);
+    }
+  }
+
+  template <typename T>
+  static T decode(address base_address, narrowPtr narrowp) {
+    if (narrowp == 0) {
+      return nullptr;
+    } else {
+      return decode_not_null<T>(base_address, narrowp);
     }
   }
 };

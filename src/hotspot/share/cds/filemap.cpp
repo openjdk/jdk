@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1768,7 +1768,7 @@ void FileMapInfo::print(outputStream* st) const {
 }
 
 void FileMapHeader::set_as_offset(char* p, size_t *offset) {
-  *offset = ArchiveBuilder::current()->any_to_offset((address)p);
+  *offset = AOTCompressedPointers::from_narrowPtr<size_t>(AOTCompressedPointers::encode(p));
 }
 
 int FileMapHeader::compute_crc() {

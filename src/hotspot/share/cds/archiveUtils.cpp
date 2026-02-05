@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -331,9 +332,8 @@ void WriteClosure::do_ptr(void** p) {
 
 void ReadClosure::do_ptr(void** p) {
   assert(*p == nullptr, "initializing previous initialized pointer.");
-  intptr_t obj = nextPtr();
-  assert(obj >= 0, "sanity.");
-  *p = (obj != 0) ? (void*)(_base_address + obj) : (void*)obj;
+  u4 narrowp = checked_cast<u4>(nextPtr());
+  *p = AOTCompressedPointers::decode<void*>(_base_address, narrowp);
 }
 
 void ReadClosure::do_u4(u4* p) {
