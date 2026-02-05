@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,69 +470,83 @@ public class JEditorPane extends JTextComponent {
         if (page == null) {
             throw new IOException("invalid url");
         }
-        URL loaded = getPage();
 
+        final URL loaded = getPage();
+        final Object postData = getPostData();
+        final String reference = page.getRef();
+
+        if ((postData == null) && (loaded != null) && (page.sameFile(loaded))) {
+            // The same page with different reference
+            if (reference != null) {
+                scrollToReference(reference);
+                getDocument().putProperty(Document.StreamDescriptionProperty, page);
+            } else {
+                // Scroll to the top of the page
+                scrollRectToVisible(new Rectangle(0, 0, 1, 1));
+            }
+            return;
+        }
+
+        // different url or POST method, load the new content
 
         // reset scrollbar
-        if (!page.equals(loaded) && page.getRef() == null) {
-            scrollRectToVisible(new Rectangle(0,0,1,1));
+        scrollRectToVisible(new Rectangle(0, 0, 1, 1));
+
+        synchronized (this) {
+            // Cancel background loading
+            if (pageLoader != null) {
+                pageLoader.cancel(true);
+                pageLoader = null;
+            }
         }
-        boolean reloaded = false;
-        Object postData = getPostData();
-        if ((loaded == null) || !loaded.sameFile(page) || (postData != null)) {
-            // different url or POST method, load the new content
 
-            int p = getAsynchronousLoadPriority(getDocument());
-            if (p < 0) {
-                // open stream synchronously
-                InputStream in = getStream(page);
-                if (kit != null) {
-                    Document doc = initializeModel(kit, page);
-
-                    // At this point, one could either load up the model with no
-                    // view notifications slowing it down (i.e. best synchronous
-                    // behavior) or set the model and start to feed it on a separate
-                    // thread (best asynchronous behavior).
-                    p = getAsynchronousLoadPriority(doc);
-                    if (p >= 0) {
-                        // load asynchronously
-                        setDocument(doc);
-                        synchronized(this) {
-                            pageLoader = new PageLoader(doc, in, loaded, page);
-                            pageLoader.execute();
-                        }
-                        return;
-                    }
-                    read(in, doc);
-                    setDocument(doc);
-                    reloaded = true;
-                }
-            } else {
-                // we may need to cancel background loading
-                if (pageLoader != null) {
-                    pageLoader.cancel(true);
-                }
-
+        int p = getAsynchronousLoadPriority(getDocument());
+        if (p >= 0) {
+            synchronized (this) {
                 // Do everything in a background thread.
                 // Model initialization is deferred to that thread, too.
                 pageLoader = new PageLoader(null, null, loaded, page);
                 pageLoader.execute();
-                return;
             }
+            return;
         }
-        final String reference = page.getRef();
+
+        // open stream synchronously
+        InputStream in = getStream(page);
+
+        // getStream instantiates a new kit
+        if (kit == null) {
+            return;
+        }
+
+        Document doc = initializeModel(kit, page);
+
+        // At this point, one could either load up the model with no
+        // view notifications slowing it down (i.e. best synchronous
+        // behavior) or set the model and start to feed it on a separate
+        // thread (best asynchronous behavior).
+        p = getAsynchronousLoadPriority(doc);
+        if (p >= 0) {
+            // load asynchronously
+            setDocument(doc);
+            synchronized (this) {
+                pageLoader = new PageLoader(doc, in, loaded, page);
+                pageLoader.execute();
+            }
+            return;
+        }
+
+        read(in, doc);
+        setDocument(doc);
+
         if (reference != null) {
-            if (!reloaded) {
-                scrollToReference(reference);
-            }
-            else {
-                // Have to scroll after painted.
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        scrollToReference(reference);
-                    }
-                });
-            }
+            // Have to scroll after painted.
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    scrollToReference(reference);
+                }
+            });
+
             getDocument().putProperty(Document.StreamDescriptionProperty, page);
         }
         firePropertyChange("page", loaded, page);
