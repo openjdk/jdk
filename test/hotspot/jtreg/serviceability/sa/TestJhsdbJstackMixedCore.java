@@ -37,7 +37,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8374482 8376284
+ * @bug 8374482 8376264 8376284
  * @requires (os.family == "linux") & (vm.hasSA)
  * @requires os.arch == "amd64"
  * @library /test/lib
