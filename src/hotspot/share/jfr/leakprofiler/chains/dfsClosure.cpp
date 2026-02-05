@@ -162,12 +162,12 @@ void DFSClosure::probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth) 
 
   assert(!ref.is_null(), "invariant");
 
-  if (_probe_stack.is_full()) {
-    _times_probe_stack_full ++;
+  if (pointee == nullptr) {
     return;
   }
 
-  if (pointee == nullptr) {
+  if (_probe_stack.is_full()) {
+    _times_probe_stack_full ++;
     return;
   }
 
