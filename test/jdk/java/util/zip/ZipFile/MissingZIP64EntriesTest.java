@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,7 +480,7 @@ public class MissingZIP64EntriesTest {
     private ByteBuffer buffer;
 
     /**
-     * The DataProvider returning a byte array representing the Zip file,
+     * The MethodSource returning a byte array representing the Zip file,
      * CEN offsets to set to 0xFFFFFFFF and the expected
      * ZipException error message when there are missing Zip64 Extra header fields
      * @return Arguments used in each test run
@@ -501,7 +501,7 @@ public class MissingZIP64EntriesTest {
     }
 
     /**
-     * The DataProvider of CEN offsets to set to 0xFFFFFFFF or 0xFFFF when the Extra Length
+     * The MethodSource of CEN offsets to set to 0xFFFFFFFF or 0xFFFF when the Extra Length
      * size is 0 for the Zip file created using ZIP_WITH_NO_EXTRA_LEN_BYTEARRAY
      * @return Arguments used in each test run
      */
@@ -519,7 +519,7 @@ public class MissingZIP64EntriesTest {
     }
 
     /**
-     * The DataProvider of CEN offsets to set to 0xFFFFFFFF when the ZIP64 extra header
+     * The MethodSource of CEN offsets to set to 0xFFFFFFFF when the ZIP64 extra header
      * Length size is 0 for the Zip file created using
      * ZIP_WITH_ZEROLEN_ZIP64_EXTRAHDR_BYTEARRAY
      * @return Arguments used in each test run
@@ -536,7 +536,7 @@ public class MissingZIP64EntriesTest {
     }
 
     /**
-     * The DataProvider which will return a byte array representing a
+     * The MethodSource which will return a byte array representing a
      * valid Zip file and the expected content for the Zip file entry 'Hello.txt'.
      * @return Arguments used in each test run
      */
