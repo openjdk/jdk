@@ -24,6 +24,7 @@
 
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
@@ -1007,6 +1008,20 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   }
   return buffer_to_offset(p);
 }
+
+#if 0
+size_t ArchiveBuilder::any_to_offset_new(address p) const {
+  if (is_in_mapped_static_archive(p)) {
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
+    return pointer_delta(p, _mapped_static_archive_bottom, 1);
+  }
+  if (!is_in_buffer_space(p)) {
+    // p must be a "source" address
+    p = get_buffered_addr(p);
+  }
+  return buffer_to_offset_new(p);
+}
+#endif
 
 address ArchiveBuilder::offset_to_buffered_address(u4 offset) const {
   address requested_addr = _requested_static_archive_bottom + offset;

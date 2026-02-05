@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
@@ -418,8 +419,8 @@ public:
         (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash();
-    u4 delta = _builder->any_to_offset_u4((void*)runtime_info);
-    _writer->add(hash, delta);
+    AOTCompressedPointers::narrowPtr encoded_ptr = AOTCompressedPointers::encode_not_null(runtime_info);
+    _writer->add(hash, encoded_ptr);
     return true;
   }
 };

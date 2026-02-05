@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
 #define SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
-#include "cds/archiveBuilder.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "utilities/growableArray.hpp"
@@ -132,19 +133,20 @@ public:
 };
 
 class RunTimeLambdaProxyClassKey {
-  u4 _caller_ik;
-  u4 _invoked_name;
-  u4 _invoked_type;
-  u4 _method_type;
-  u4 _member_method;
-  u4 _instantiated_method_type;
+  using narrowPtr = AOTCompressedPointers::narrowPtr;
+  narrowPtr _caller_ik;
+  narrowPtr _invoked_name;
+  narrowPtr _invoked_type;
+  narrowPtr _method_type;
+  narrowPtr _member_method;
+  narrowPtr _instantiated_method_type;
 
-  RunTimeLambdaProxyClassKey(u4 caller_ik,
-                             u4 invoked_name,
-                             u4 invoked_type,
-                             u4 method_type,
-                             u4 member_method,
-                             u4 instantiated_method_type) :
+  RunTimeLambdaProxyClassKey(narrowPtr caller_ik,
+                             narrowPtr invoked_name,
+                             narrowPtr invoked_type,
+                             narrowPtr method_type,
+                             narrowPtr member_method,
+                             narrowPtr instantiated_method_type) :
     _caller_ik(caller_ik),
     _invoked_name(invoked_name),
     _invoked_type(invoked_type),
@@ -154,15 +156,12 @@ class RunTimeLambdaProxyClassKey {
 
 public:
   static RunTimeLambdaProxyClassKey init_for_dumptime(LambdaProxyClassKey& key) {
-    assert(ArchiveBuilder::is_active(), "sanity");
-    ArchiveBuilder* b = ArchiveBuilder::current();
-
-    u4 caller_ik                = b->any_to_offset_u4(key.caller_ik());
-    u4 invoked_name             = b->any_to_offset_u4(key.invoked_name());
-    u4 invoked_type             = b->any_to_offset_u4(key.invoked_type());
-    u4 method_type              = b->any_to_offset_u4(key.method_type());
-    u4 member_method            = b->any_or_null_to_offset_u4(key.member_method()); // could be null
-    u4 instantiated_method_type = b->any_to_offset_u4(key.instantiated_method_type());
+    narrowPtr caller_ik                = AOTCompressedPointers::encode_not_null(key.caller_ik());
+    narrowPtr invoked_name             = AOTCompressedPointers::encode_not_null(key.invoked_name());
+    narrowPtr invoked_type             = AOTCompressedPointers::encode_not_null(key.invoked_type());
+    narrowPtr method_type              = AOTCompressedPointers::encode_not_null(key.method_type());
+    narrowPtr member_method            = AOTCompressedPointers::encode(key.member_method()); // could be null
+    narrowPtr instantiated_method_type = AOTCompressedPointers::encode_not_null(key.instantiated_method_type());
 
     return RunTimeLambdaProxyClassKey(caller_ik, invoked_name, invoked_type, method_type,
                                       member_method, instantiated_method_type);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
@@ -261,7 +262,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
           Array<char>* line = ArchiveBuilder::new_ro_array<char>((int)str_len);
           strncpy(line->adr_at(0), str, str_len);
 
-          _static_archive_invokers->at_put(index, ArchiveBuilder::current()->any_to_offset_u4(line));
+          _static_archive_invokers->at_put(index, AOTCompressedPointers::encode_not_null(line));
           index++;
         }
       }
