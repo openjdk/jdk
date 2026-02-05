@@ -2124,8 +2124,8 @@ class CountedLoopConverter {
   const BasicType _iv_bt;
 
   LoopStructure _structure;
-  bool _insert_stride_overflow_limit_check = false;
-  bool _insert_init_trip_limit_check = false;
+  bool _should_insert_stride_overflow_limit_check = false;
+  bool _should_insert_init_trip_limit_check = false;
 
   DEBUG_ONLY(bool _checked_for_counted_loop = false;)
 
@@ -2140,6 +2140,8 @@ class CountedLoopConverter {
 
   void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol) const;
+  void insert_stride_overflow_limit_check() const;
+  void insert_init_trip_limit_check() const;
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry) const;
 

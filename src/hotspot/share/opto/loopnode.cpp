@@ -400,6 +400,28 @@ void CountedLoopConverter::insert_loop_limit_check_predicate(const ParsePredicat
 #endif
 }
 
+void CountedLoopConverter::insert_stride_overflow_limit_check() const {
+  Node* init_control = _head->in(LoopNode::EntryControl);
+  jlong stride_con = _structure.stride_con();
+  jlong adjusted_stride_con = (stride_con > 0
+                             ? max_signed_integer(_iv_bt)
+                             : min_signed_integer(_iv_bt)) - _structure.final_limit_correction();
+
+  Node* cmp_limit = CmpNode::make(_structure.limit(), _phase->igvn().integercon(adjusted_stride_con, _iv_bt), _iv_bt);
+  Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::le : BoolTest::ge);
+  insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+}
+
+void CountedLoopConverter::insert_init_trip_limit_check() const {
+  Node* init_control = _head->in(LoopNode::EntryControl);
+  Node* init_trip = _structure.phi()->in(LoopNode::EntryControl);
+  jlong stride_con = _structure.stride_con();
+
+  Node* cmp_limit = CmpNode::make(init_trip, _structure.limit(), _iv_bt);
+  Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::lt : BoolTest::gt);
+  insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+}
+
 Node* PhaseIdealLoop::loop_exit_control(const Node* head, const IdealLoopTree* loop) const {
   // Counted loop head must be a good RegionNode with only 3 not null
   // control input edges: Self, Entry, LoopBack.
@@ -1989,6 +2011,15 @@ bool CountedLoopConverter::stress_long_counted_loop() {
     return false;
   }
 
+  // Make sure we have loop limit checks in place to preserve overflows behaviour after casting to long.
+  if (_should_insert_stride_overflow_limit_check) {
+    insert_stride_overflow_limit_check();
+  }
+
+  if (_should_insert_init_trip_limit_check) {
+    insert_init_trip_limit_check();
+  }
+
   for (uint i = 0; i < iv_nodes.size(); i++) {
     Node* n = iv_nodes.at(i);
     Node* clone = old_new[n->_idx];
@@ -2300,7 +2331,7 @@ bool CountedLoopConverter::is_counted_loop() {
   // If stride_overflow_state == NO_OVERFLOW, limit's type always satisfies the condition, for
   // example, when it is an array length.
 
-  _insert_stride_overflow_limit_check = false;
+  _should_insert_stride_overflow_limit_check = false;
   if (stride_overflow_state == RequireLimitCheck) {
     // (1) Loop Limit Check Predicate is required because we could not statically prove that
     //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
@@ -2322,7 +2353,7 @@ bool CountedLoopConverter::is_counted_loop() {
       return false;
     }
 
-    _insert_stride_overflow_limit_check = true;
+    _should_insert_stride_overflow_limit_check = true;
   }
 
   // (2.3)
@@ -2335,7 +2366,7 @@ bool CountedLoopConverter::is_counted_loop() {
       (stride_con > 0 && init_t->hi_as_long() >= limit_t->lo_as_long()) ||
       (stride_con < 0 && init_t->lo_as_long() <= limit_t->hi_as_long());
 
-  _insert_init_trip_limit_check = false;
+  _should_insert_init_trip_limit_check = false;
   if (init_gte_limit && // (2.1)
       ((_structure.exit_test().mask() == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
           !has_dominating_loop_limit_check(init_trip,
@@ -2371,7 +2402,7 @@ bool CountedLoopConverter::is_counted_loop() {
       return false;
     }
 
-    _insert_init_trip_limit_check = true;
+    _should_insert_init_trip_limit_check = true;
   }
 
   _structure.exit_test().canonicalize_mask(stride_con);
@@ -2529,21 +2560,12 @@ IdealLoopTree* CountedLoopConverter::convert() {
   Node* init_control = _head->in(LoopNode::EntryControl);
   const jlong stride_con = _structure.stride_con();
 
-  if (_insert_stride_overflow_limit_check) {
-    jlong adjusted_stride_con = (stride_con > 0
-                               ? max_signed_integer(_iv_bt)
-                               : min_signed_integer(_iv_bt)) - _structure.final_limit_correction();
-
-    Node* cmp_limit = CmpNode::make(_structure.limit(), igvn->integercon(adjusted_stride_con, _iv_bt), _iv_bt);
-    Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::le : BoolTest::ge);
-    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+  if (_should_insert_stride_overflow_limit_check) {
+    insert_stride_overflow_limit_check();
   }
 
-  Node* init_trip = _structure.phi()->in(LoopNode::EntryControl);
-  if (_insert_init_trip_limit_check) {
-    Node* cmp_limit = CmpNode::make(init_trip, _structure.limit(), _iv_bt);
-    Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::lt : BoolTest::gt);
-    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+  if (_should_insert_init_trip_limit_check) {
+    insert_init_trip_limit_check();
   }
 
   Node* back_control = _phase->loop_exit_control(_head, _loop);
