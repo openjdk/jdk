@@ -2062,7 +2062,7 @@ Node* RotateLeftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
        !Matcher::match_rule_supported_vector(Op_RotateLeftV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), true, vlen, bt, phase);
   }
-  return nullptr;
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -2072,7 +2072,7 @@ Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
        !Matcher::match_rule_supported_vector(Op_RotateRightV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), false, vlen, bt, phase);
   }
-  return nullptr;
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 #ifndef PRODUCT
@@ -2306,7 +2306,7 @@ Node* FmaVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     swap_edges(1, 2);
     return this;
   }
-  return nullptr;
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 // Generate other vector nodes to implement the masked/non-masked vector negation.
@@ -2369,7 +2369,7 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return degenerate_integral_negate(phase, false);
     }
   }
-  return nullptr;
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 static Node* reverse_operations_identity(Node* n, Node* in1) {
