@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -375,9 +375,6 @@ public:
 
     // Remove an image entry from the table.
     void remove(ImageFileReader* image);
-
-    // Determine if image entry is in table.
-    bool contains(ImageFileReader* image);
 };
 
 // Manage the image file.
@@ -444,15 +441,6 @@ public:
 
     // Close an image file if the file is not in use elsewhere.
     static void close(ImageFileReader *reader);
-
-    // Return an id for the specified ImageFileReader.
-    static u8 reader_to_ID(ImageFileReader *reader);
-
-    // Validate the image id.
-    static bool id_check(u8 id);
-
-    // Return an id for the specified ImageFileReader.
-    static ImageFileReader* id_to_reader(u8 id);
 
     // Open image file for read access.
     bool open();
@@ -544,10 +532,6 @@ public:
                             "index exceeds location count");
         return _endian->get(_offsets_table[index]);
     }
-
-    // Find the location attributes associated with the path.    Returns true if
-    // the location is found, false otherwise.
-    bool find_location(const char* path, ImageLocation& location) const;
 
     // Find the location index and size associated with the path.
     // Returns the location index and size if the location is found,

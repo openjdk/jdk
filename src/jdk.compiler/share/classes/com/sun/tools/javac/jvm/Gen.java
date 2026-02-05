@@ -45,7 +45,6 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.jvm.Items.*;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -161,11 +160,6 @@ public class Gen extends JCTree.Visitor {
     /** The number of code-gen errors in this class.
      */
     private int nerrs = 0;
-
-    /** An object containing mappings of syntax trees to their
-     *  ending source positions.
-     */
-    EndPosTable endPosTable;
 
     boolean inCondSwitchExpression;
     Chain switchExpressionTrueChain;
@@ -455,7 +449,7 @@ public class Gen extends JCTree.Visitor {
                         JCStatement init = make.at(vdef.pos()).
                             Assignment(sym, vdef.init);
                         initCode.append(init);
-                        endPosTable.replaceTree(vdef, init);
+                        init.endpos = vdef.endpos;
                         initTAs.addAll(getAndRemoveNonFieldTAs(sym));
                     } else if (sym.getConstValue() == null) {
                         // Initialize class (static) variables only if
@@ -463,7 +457,7 @@ public class Gen extends JCTree.Visitor {
                         JCStatement init = make.at(vdef.pos).
                             Assignment(sym, vdef.init);
                         clinitCode.append(init);
-                        endPosTable.replaceTree(vdef, init);
+                        init.endpos = vdef.endpos;
                         clinitTAs.addAll(getAndRemoveNonFieldTAs(sym));
                     } else {
                         checkStringConstant(vdef.init.pos(), sym.getConstValue());
@@ -1027,8 +1021,7 @@ public class Gen extends JCTree.Visitor {
                                         varDebugInfo,
                                         stackMap,
                                         debugCode,
-                                        genCrt ? new CRTable(tree, env.toplevel.endPositions)
-                                               : null,
+                                        genCrt ? new CRTable(tree) : null,
                                         syms,
                                         types,
                                         poolWriter);
@@ -2478,7 +2471,6 @@ public class Gen extends JCTree.Visitor {
             attrEnv = env;
             ClassSymbol c = cdef.sym;
             this.toplevel = env.toplevel;
-            this.endPosTable = toplevel.endPositions;
             /* method normalizeDefs() can add references to external classes into the constant pool
              */
             cdef.defs = normalizeDefs(cdef.defs, c);
@@ -2508,7 +2500,6 @@ public class Gen extends JCTree.Visitor {
             attrEnv = null;
             this.env = null;
             toplevel = null;
-            endPosTable = null;
             nerrs = 0;
             qualifiedSymbolCache.clear();
         }

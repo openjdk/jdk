@@ -2098,6 +2098,7 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
 
 bool Compile::inline_incrementally_one() {
   assert(IncrementalInline, "incremental inlining should be on");
+  assert(_late_inlines.length() > 0, "should have been checked by caller");
 
   TracePhase tp(_t_incrInline_inline);
 
@@ -2170,12 +2171,31 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
 }
 
+template<typename E>
+static void shuffle_array(Compile& C, GrowableArray<E>& array) {
+  if (array.length() < 2) {
+    return;
+  }
+  for (uint i = array.length() - 1; i >= 1; i--) {
+    uint j = C.random() % (i + 1);
+    swap(array.at(i), array.at(j));
+  }
+}
+
+void Compile::shuffle_late_inlines() {
+  shuffle_array(*C, _late_inlines);
+}
+
 // Perform incremental inlining until bound on number of live nodes is reached
 void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   TracePhase tp(_t_incrInline);
 
   set_inlining_incrementally(true);
   uint low_live_nodes = 0;
+
+  if (StressIncrementalInlining) {
+    shuffle_late_inlines();
+  }
 
   while (_late_inlines.length() > 0) {
     if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
@@ -2209,6 +2229,10 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
+    if (_late_inlines.length() == 0) {
+      break; // no more progress
+    }
+
     while (inline_incrementally_one()) {
       assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
@@ -2219,10 +2243,6 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
 
     if (failing())  return;
-
-    if (_late_inlines.length() == 0) {
-      break; // no more progress
-    }
   }
 
   igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -2248,6 +2268,10 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   assert(inlining_incrementally() == false, "not allowed");
   assert(_modified_nodes == nullptr, "not allowed");
   assert(_late_inlines.length() > 0, "sanity");
+
+  if (StressIncrementalInlining) {
+    shuffle_late_inlines();
+  }
 
   while (_late_inlines.length() > 0) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -5140,13 +5164,7 @@ void CloneMap::dump(node_idx_t key, outputStream* st) const {
 }
 
 void Compile::shuffle_macro_nodes() {
-  if (_macro_nodes.length() < 2) {
-    return;
-  }
-  for (uint i = _macro_nodes.length() - 1; i >= 1; i--) {
-    uint j = C->random() % (i + 1);
-    swap(_macro_nodes.at(i), _macro_nodes.at(j));
-  }
+  shuffle_array(*C, _macro_nodes);
 }
 
 // Move Allocate nodes to the start of the list
