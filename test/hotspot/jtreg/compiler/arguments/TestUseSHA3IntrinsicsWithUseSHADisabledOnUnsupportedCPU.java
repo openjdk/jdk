@@ -24,12 +24,10 @@
 /**
  * @test
  * @bug 8375443
- * @summary Verify that UseSHA3Intrinsics is properly disabled with warnings on systems
- *          without AVX-512 support (unsupported CPU)
+ * @summary Verify that UseSHA3Intrinsics is properly disabled with warnings
+ *          on unsupported CPU.
  * @library /test/lib /
  * @requires vm.flagless
- * @requires os.simpleArch == "x64"
- * @requires !(vm.cpu.features ~= ".*avx512f.*" & vm.cpu.features ~= ".*avx512bw.*")
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -40,8 +38,10 @@
 
 package compiler.arguments;
 
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.process.ExitCode;
+import jtreg.SkippedException;
 
 public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
     private static final String OPTION_NAME = "UseSHA3Intrinsics";
@@ -51,6 +51,9 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
     private static final String UNLOCK_DIAGNOSTIC = "-XX:+UnlockDiagnosticVMOptions";
 
     public static void main(String[] args) throws Throwable {
+        if (IntrinsicPredicates.isSHA3IntrinsicAvailable().getAsBoolean()) {
+            throw new SkippedException("Skipping... SHA3 intrinsics are available on this platform.");
+        }
 
         // Verify that UseSHA3Intrinsics remains false when UseSHA is enabled
         // but CPU doesn't support the instructions

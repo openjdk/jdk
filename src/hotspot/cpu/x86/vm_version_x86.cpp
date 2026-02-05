@@ -1343,7 +1343,6 @@ void VM_Version::get_processor_features() {
   if (UseSHA && supports_evex() && supports_avx512bw()) {
     if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
-      UseSHA3Intrinsics = true;
     }
   } else if (UseSHA3Intrinsics) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
