@@ -639,7 +639,7 @@ class StubGenerator: public StubCodeGenerator {
     // complete return to VM
     assert(StubRoutines::_call_stub_return_address != nullptr,
            "_call_stub_return_address must have been generated before");
-    __ b(StubRoutines::_call_stub_return_address);
+    __ b(RuntimeAddress(StubRoutines::_call_stub_return_address));
 
     // record the stub entry and end
     store_archive_data(stub_id, start, __ pc());
@@ -1675,19 +1675,25 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (direction == copy_forwards) {
       if (type != T_OBJECT) {
-        __ bl(StubRoutines::aarch64::copy_byte_f());
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_byte_f()));
+        __ blr(rscratch1);
       } else if ((decorators & IS_DEST_UNINITIALIZED) != 0) {
-        __ bl(StubRoutines::aarch64::copy_oop_uninit_f());
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_uninit_f()));
+        __ blr(rscratch1);
       } else {
-        __ bl(StubRoutines::aarch64::copy_oop_f());
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_f()));
+        __ blr(rscratch1);
       }
     } else {
       if (type != T_OBJECT) {
-        __ bl(StubRoutines::aarch64::copy_byte_b());
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_byte_b()));
+        __ blr(rscratch1);
       } else if ((decorators & IS_DEST_UNINITIALIZED) != 0) {
-        __ bl(StubRoutines::aarch64::copy_oop_uninit_b());
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_uninit_b()));
+        __ blr(rscratch1);
       } else {
-        __ bl(StubRoutines::aarch64::copy_oop_b());
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_b()));
+        __ blr(rscratch1);
       }
     }
 
