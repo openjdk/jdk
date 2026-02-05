@@ -4955,7 +4955,7 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_ldpq(const VSeq<N>& v, Register base) {
     for (int i = 0; i < N; i += 2) {
-      __ ldpq(v[i], v[i+1], Address(base, 32 * i));
+      __ ldpq(v[i], v[i+1], Address(base, 16 * i));
     }
   }
 
@@ -7846,8 +7846,6 @@ class StubGenerator: public StubCodeGenerator {
     __ neg(mask_scalar, set);
     __ dup(mask_vec, __ T2D, mask_scalar);
 
-    __ push(r19, sp); //needed for length = 5
-
     __ cmp(length, (u1)5);
     __ br(Assembler::EQ, L_Length5);
     __ cmp(length, (u1)10);
@@ -7873,6 +7871,8 @@ class StubGenerator: public StubCodeGenerator {
       Register b2 = r14;
       Register b3 = r15;
       Register b4 = r19;
+
+      __ push(r19, sp);
 
       __ ldr(a0, aLimbs);
       __ ldr(a1, Address(aLimbs, 8));
@@ -7910,6 +7910,7 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a3, Address(aLimbs, 24));
       __ str(a4, Address(aLimbs, 32));
 
+      __ pop(r19, sp);
       __ b(L_Done);
     }
 
@@ -7930,14 +7931,12 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(b9, Address(bLimbs, 64));
       __ ldr(b10, Address(bLimbs, 72));
 
-      __ ldpq(a_vec[0], a_vec[1], Address(aLimbs));
-      __ ldpq(a_vec[2], a_vec[3], Address(aLimbs, 32));
+      vs_ldpq(a_vec, aLimbs);
 
       __ eor(b9, b9, a9);
       __ eor(b10, b10, a10);
 
-      __ ldpq(b_vec[0], b_vec[1], Address(bLimbs));
-      __ ldpq(b_vec[2], b_vec[3], Address(bLimbs, 32));
+      vs_ldpq(b_vec, bLimbs);
 
       __ andr(b9, b9, mask_scalar);
       __ andr(b10, b10, mask_scalar);
@@ -7953,9 +7952,7 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a10, Address(aLimbs, 72));
 
       vs_eor(a_vec, a_vec, b_vec);
-
-      __ stpq(a_vec[0], a_vec[1], Address(aLimbs));
-      __ stpq(a_vec[2], a_vec[3], Address(aLimbs, 32));
+      vs_stpq_post(a_vec, aLimbs);
 
       __ b(L_Done);
     }
@@ -8034,24 +8031,12 @@ class StubGenerator: public StubCodeGenerator {
       VSeq<8> a_vec(16);
       VSeq<8> b_vec(24);
 
-      __ ldpq(a_vec[0], a_vec[1], aLimbs);
-      __ ldpq(a_vec[2], a_vec[3], Address(aLimbs, 32));
-      __ ldpq(a_vec[4], a_vec[5], Address(aLimbs, 64));
-      __ ldpq(a_vec[6], a_vec[7], Address(aLimbs, 96));
-
-      __ ldpq(b_vec[0], b_vec[1], bLimbs);
-      __ ldpq(b_vec[2], b_vec[3], Address(bLimbs, 32));
-      __ ldpq(b_vec[4], b_vec[5], Address(bLimbs, 64));
-      __ ldpq(b_vec[6], b_vec[7], Address(bLimbs, 96));
-
+      vs_ldpq(a_vec, aLimbs);
+      vs_ldpq(b_vec, bLimbs);
       vs_eor(b_vec, b_vec, a_vec);
       vs_andr(b_vec, b_vec, mask_vec);
       vs_eor(a_vec, a_vec, b_vec);
-
-      __ stpq(a_vec[0], a_vec[1], Address(aLimbs));
-      __ stpq(a_vec[2], a_vec[3], Address(aLimbs, 32));
-      __ stpq(a_vec[4], a_vec[5], Address(aLimbs, 64));
-      __ stpq(a_vec[6], a_vec[7], Address(aLimbs, 96));
+      vs_stpq_post(a_vec, aLimbs);
 
       __ b(L_Done);
     }
@@ -8077,19 +8062,13 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(b18, Address(bLimbs, 136));
       __ ldr(b19, Address(bLimbs, 144));
 
-      __ ldpq(a_vec[0], a_vec[1], aLimbs);
-      __ ldpq(a_vec[2], a_vec[3], Address(aLimbs, 32));
-      __ ldpq(a_vec[4], a_vec[5], Address(aLimbs, 64));
-      __ ldpq(a_vec[6], a_vec[7], Address(aLimbs, 96));
+      vs_ldpq(a_vec, aLimbs);
 
       __ eor(b17, b17, a17);
       __ eor(b18, b18, a18);
       __ eor(b19, b19, a19);
 
-      __ ldpq(b_vec[0], b_vec[1], bLimbs);
-      __ ldpq(b_vec[2], b_vec[3], Address(bLimbs, 32));
-      __ ldpq(b_vec[4], b_vec[5], Address(bLimbs, 64));
-      __ ldpq(b_vec[6], b_vec[7], Address(bLimbs, 96));
+      vs_ldpq(b_vec, bLimbs);
 
       __ andr(b17, b17, mask_scalar);
       __ andr(b18, b18, mask_scalar);
@@ -8108,15 +8087,10 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a19, Address(aLimbs, 144));
 
       vs_eor(a_vec, a_vec, b_vec);
-
-      __ stpq(a_vec[0], a_vec[1], Address(aLimbs));
-      __ stpq(a_vec[2], a_vec[3], Address(aLimbs, 32));
-      __ stpq(a_vec[4], a_vec[5], Address(aLimbs, 64));
-      __ stpq(a_vec[6], a_vec[7], Address(aLimbs, 96));
+      vs_stpq_post(a_vec, aLimbs);
     }
 
     __ BIND(L_Done);
-    __ pop(r19, sp);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
     __ ret(lr);
