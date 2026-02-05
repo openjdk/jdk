@@ -80,7 +80,7 @@ public class TestJhsdbJstackMixedWithVDSOCallCore {
 
     public static void main(String... args) throws Throwable {
         if (Platform.isMusl()) {
-            throw new SkippedException("musl libc is not supported yet.");
+            throw new SkippedException("This test does not work on musl libc.");
         }
         checkVDSODebugInfo();
 
