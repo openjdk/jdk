@@ -22,6 +22,12 @@
  * questions.
  */
 
+// This file is available under and governed by the GNU General Public
+// License version 2 only, as published by the Free Software Foundation.
+// However, the following notice accompanied the original version of this
+// file:
+//
+
 //
 //  Little Color Management System
 //  Copyright (c) 1998-2026 Marti Maria Saguer

@@ -22,6 +22,11 @@
  * questions.
  */
 
+// This file is available under and governed by the GNU General Public
+// License version 2 only, as published by the Free Software Foundation.
+// However, the following notice accompanied the original version of this
+// file:
+//
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
