@@ -161,7 +161,7 @@ private:
 
   template <typename T> T from_mapped_offset(size_t offset) const {
     return AOTCompressedPointers::decode<T>((address)mapped_base_address(),
-                                            AOTCompressedPointers::to_narrowPtr(offset));
+                                            cast_to_narrowPtr(offset));
   }
   void set_as_offset(char* p, size_t *offset);
   template <typename T> void set_as_offset(T p, size_t *offset) {

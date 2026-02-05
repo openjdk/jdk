@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
-#include "classfile/compactHashtable.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -38,6 +37,7 @@
 class AdapterHandlerEntry;
 class AdapterFingerPrint;
 class MetaspaceClosure;
+class SerializeClosure;
 class vframeStream;
 
 // Runtime is the base class for various runtime interfaces

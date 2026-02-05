@@ -332,17 +332,19 @@ public:
 public:
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
-  uintx buffer_to_offset(address p) const;
+  size_t buffer_to_offset(address p) const;
 
-  // Same as buffer_to_offset, except that the address p points to either (a) an object
-  // inside the output buffer, or (b), an object in the currently mapped static archive.
-  uintx any_to_offset(address p) const;
+  // Same as buffer_to_offset, except that the address p points to one of the following:
+  // - an object in the ArchiveBuilder's buffer.
+  // - an object in the currently mapped AOT cache rw/ro regions.
+  // - an object that has been copied into the ArchiveBuilder's buffer.
+  size_t any_to_offset(address p) const;
 
   // The reverse of buffer_to_offset()
-  address offset_to_buffered_address(uintx offset) const;
+  address offset_to_buffered_address(size_t offset) const;
 
   template <typename T>
-  T offset_to_buffered(uintx offset) const {
+  T offset_to_buffered(size_t offset) const {
     return (T)offset_to_buffered_address(offset);
   }
 

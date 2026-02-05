@@ -991,13 +991,13 @@ void ArchiveBuilder::make_training_data_shareable() {
   _src_obj_table.iterate_all(clean_td);
 }
 
-uintx ArchiveBuilder::buffer_to_offset(address p) const {
+size_t ArchiveBuilder::buffer_to_offset(address p) const {
   address requested_p = to_requested(p);
   assert(requested_p >= _requested_static_archive_bottom, "must be");
   return requested_p - _requested_static_archive_bottom;
 }
 
-uintx ArchiveBuilder::any_to_offset(address p) const {
+size_t ArchiveBuilder::any_to_offset(address p) const {
   if (is_in_mapped_static_archive(p)) {
     assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     return p - _mapped_static_archive_bottom;
@@ -1009,7 +1009,7 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
-address ArchiveBuilder::offset_to_buffered_address(uintx offset) const {
+address ArchiveBuilder::offset_to_buffered_address(size_t offset) const {
   address requested_addr = _requested_static_archive_bottom + offset;
   address buffered_addr = requested_addr - _buffer_to_requested_delta;
   assert(is_in_buffer_space(buffered_addr), "bad offset");

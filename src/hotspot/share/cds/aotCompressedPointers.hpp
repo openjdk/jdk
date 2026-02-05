@@ -44,27 +44,29 @@ public:
 
   // Type conversion -----
 
-  // T must be an unsigned type whose value is less than 0xFFFFFFFF
+  // T must be an unsigned type whose value is less than 0xFFFFFFFF.
+  // A simple type cast. No change in numerical value.
   template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
-  static narrowPtr to_narrowPtr(T narrowp) {
+  static narrowPtr cast_to_narrowPtr(T narrowp) {
     return checked_cast<narrowPtr>(narrowp);
   }
 
   // T must be an unsigned type of at least 32 bits.
+  // A simple type cast. No change in numerical value.
   template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
-  static T from_narrowPtr(narrowPtr narrowp) {
+  static T cast_from_narrowPtr(narrowPtr narrowp) {
     return checked_cast<T>(narrowp);
   }
 
   // Convert narrowp to a byte offset. In the future, this could return
   // a different integer than narrowp if the encoding contains right shifts.
   template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
-  static T to_byte_offset(narrowPtr narrowp) {
+  static T get_byte_offset(narrowPtr narrowp) {
     return checked_cast<T>(narrowp);
   }
 
   static narrowPtr null_narrowPtr() {
-    return to_narrowPtr<u4>(0);
+    return cast_to_narrowPtr<u4>(0);
   }
 
   // Encoding ------
@@ -111,7 +113,7 @@ public:
   template <typename T>
   static T decode_not_null(address base_address, narrowPtr narrowp) {
     assert(narrowp != null_narrowPtr(), "sanity");
-    T p = (T)(base_address + from_narrowPtr<size_t>(narrowp));
+    T p = (T)(base_address + cast_from_narrowPtr<size_t>(narrowp));
     // p may not be in AOT cache as this function may be called before the
     // AOT cache is mapped.
     return p;
@@ -151,5 +153,19 @@ private:
     return checked_cast<narrowPtr>(offset);
   }
 };
+
+// Global functions to save a few keystrokes
+
+template <typename T> AOTCompressedPointers::narrowPtr cast_to_narrowPtr(T narrowp) {
+  return AOTCompressedPointers::cast_to_narrowPtr<T>(narrowp);
+}
+
+template <typename T> T cast_from_narrowPtr(AOTCompressedPointers::narrowPtr narrowp) {
+  return AOTCompressedPointers::cast_from_narrowPtr<T>(narrowp);
+}
+
+inline u4 to_u4(AOTCompressedPointers::narrowPtr narrowp) {
+  return cast_from_narrowPtr<u4>(narrowp);
+}
 
 #endif // SHARE_CDS_AOTCOMPRESSEDPOINTERS_HPP

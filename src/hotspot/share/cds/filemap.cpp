@@ -1768,7 +1768,7 @@ void FileMapInfo::print(outputStream* st) const {
 }
 
 void FileMapHeader::set_as_offset(char* p, size_t *offset) {
-  *offset = AOTCompressedPointers::from_narrowPtr<size_t>(AOTCompressedPointers::encode(p));
+  *offset = cast_from_narrowPtr<size_t>(AOTCompressedPointers::encode(p));
 }
 
 int FileMapHeader::compute_crc() {

@@ -419,8 +419,7 @@ public:
         (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash();
-    AOTCompressedPointers::narrowPtr encoded_ptr = AOTCompressedPointers::encode_not_null(runtime_info);
-    _writer->add(hash, AOTCompressedPointers::from_narrowPtr<u4>(encoded_ptr));
+    _writer->add(hash, AOTCompressedPointers::encode_not_null(runtime_info));
     return true;
   }
 };

@@ -154,10 +154,6 @@ class RunTimeLambdaProxyClassKey {
     _member_method(member_method),
     _instantiated_method_type(instantiated_method_type) {}
 
-  static u4 to_u4(narrowPtr narrowp) {
-    return AOTCompressedPointers::from_narrowPtr<u4>(narrowp);
-  }
-
 public:
   static RunTimeLambdaProxyClassKey init_for_dumptime(LambdaProxyClassKey& key) {
     narrowPtr caller_ik                = AOTCompressedPointers::encode_not_null(key.caller_ik());

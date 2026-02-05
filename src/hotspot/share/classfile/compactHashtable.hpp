@@ -125,7 +125,7 @@ public:
 
   void add(unsigned int hash, u4 encoded_value);
   void add(unsigned int hash, AOTCompressedPointers::narrowPtr encoded_value) {
-    add(hash, AOTCompressedPointers::from_narrowPtr<u4>(encoded_value));
+    add(hash, cast_from_narrowPtr<u4>(encoded_value));
   }
   void dump(SimpleCompactHashtable *cht, const char* table_name);
 
@@ -379,7 +379,7 @@ public:
 
 template <typename V>
 inline V read_value_from_compact_hashtable(address base_address, u4 narrowp) {
-  return AOTCompressedPointers::decode_not_null<V>(base_address, AOTCompressedPointers::to_narrowPtr(narrowp));
+  return AOTCompressedPointers::decode_not_null<V>(base_address, cast_to_narrowPtr(narrowp));
 }
 
 template <

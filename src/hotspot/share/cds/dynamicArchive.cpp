@@ -76,8 +76,8 @@ public:
       return 0;
     }
 
-    u4 a_narrowp = AOTCompressedPointers::from_narrowPtr<u4>(AOTCompressedPointers::encode_not_null(a_name));
-    u4 b_narrowp = AOTCompressedPointers::from_narrowPtr<u4>(AOTCompressedPointers::encode_not_null(b_name));
+    u4 a_narrowp = cast_from_narrowPtr<u4>(AOTCompressedPointers::encode_not_null(a_name));
+    u4 b_narrowp = cast_from_narrowPtr<u4>(AOTCompressedPointers::encode_not_null(b_name));
 
     if (a_narrowp < b_narrowp) {
       return -1;
