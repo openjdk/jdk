@@ -65,6 +65,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
   _is_hidden = ik->is_hidden();
   _is_record = ik->is_record();
+  _trust_final_fields = ik->trust_final_fields();
   _nonstatic_fields = nullptr; // initialized lazily by compute_nonstatic_fields:
   _has_injected_fields = -1;
   _implementor = nullptr; // we will fill these lazily
