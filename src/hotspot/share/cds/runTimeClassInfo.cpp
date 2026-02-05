@@ -30,7 +30,7 @@
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   InstanceKlass* k = info._klass;
-  _klass_offset = AOTCompressedPointers::encode_not_null(k);
+  _klass = AOTCompressedPointers::encode_not_null(k);
 
   if (!SystemDictionaryShared::is_builtin(k)) {
     CrcInfo* c = crc();
@@ -68,7 +68,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   }
 
   if (k->is_hidden() && info.nest_host() != nullptr) {
-    _nest_host_offset = AOTCompressedPointers::encode_not_null(info.nest_host());
+    _nest_host = AOTCompressedPointers::encode_not_null(info.nest_host());
   }
   if (k->has_archived_enum_objs()) {
     int num = info.num_enum_klass_static_fields();
@@ -83,11 +83,12 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
 InstanceKlass* RunTimeClassInfo::klass() const {
   if (AOTMetaspace::in_aot_cache(this)) {
     // <this> is inside a mmaped CDS archive.
-    return AOTCompressedPointers::decode_not_null<InstanceKlass*>(_klass_offset);
+    return AOTCompressedPointers::decode_not_null<InstanceKlass*>(_klass);
   } else {
     // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
     // by the ArchiveBuilder.
-    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
+    uintx byte_offset = AOTCompressedPointers::to_byte_offset<uintx>(_klass);
+    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(byte_offset);
   }
 }
 

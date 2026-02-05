@@ -1009,7 +1009,7 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
-address ArchiveBuilder::offset_to_buffered_address(u4 offset) const {
+address ArchiveBuilder::offset_to_buffered_address(uintx offset) const {
   address requested_addr = _requested_static_archive_bottom + offset;
   address buffered_addr = requested_addr - _buffer_to_requested_delta;
   assert(is_in_buffer_space(buffered_addr), "bad offset");

@@ -513,8 +513,7 @@ void TrainingData::dump_training_data() {
 #endif // ASSERT
       td = ArchiveBuilder::current()->get_buffered_addr(td);
       uint hash = TrainingData::Key::cds_hash(td->key());
-      u4 delta = AOTCompressedPointers::encode_not_null(td);
-      writer.add(hash, delta);
+      writer.add(hash, AOTCompressedPointers::encode_not_null(td));
     }
     writer.dump(&_archived_training_data_dictionary_for_dumping, "training data dictionary");
   }

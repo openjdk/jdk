@@ -34,15 +34,15 @@
 #include "utilities/macros.hpp"
 
 class AOTCompressedPointers: public AllStatic {
-  static size_t compute_byte_offset(address p);
-
 public:
   // For space saving, we can encode the location of metadata objects in the "rw" and "ro"
   // regions using a 32-bit offset from the bottom of the "rw" region.
   // Currently we allow only up to 2GB total size in the rw and ro regions (which are
   // contiguous to each other).
-  typedef u4 narrowPtr;
+  enum class narrowPtr : u4;
   static constexpr size_t MaxMetadataOffsetBytes = 0x7FFFFFFF;
+
+  // Type conversion -----
 
   // T must be an unsigned type whose value is less than 0xFFFFFFFF
   template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
@@ -50,21 +50,24 @@ public:
     return checked_cast<narrowPtr>(narrowp);
   }
 
-  // T must be an unsigned type of at least 32 bits
+  // T must be an unsigned type of at least 32 bits.
   template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
   static T from_narrowPtr(narrowPtr narrowp) {
     return checked_cast<T>(narrowp);
   }
 
-  // Encoding ------
-
-  static void set_encoding_range(address encoding_base, address encoding_top);
-
-  static narrowPtr encode_byte_offset(size_t offset) {
-    assert(offset != 0, "offset 0 is in protection zone");
-    precond(offset <= MaxMetadataOffsetBytes);
-    return checked_cast<narrowPtr>(offset);
+  // Convert narrowp to a byte offset. In the future, this could return
+  // a different integer than narrowp if the encoding contains right shifts.
+  template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
+  static T to_byte_offset(narrowPtr narrowp) {
+    return checked_cast<T>(narrowp);
   }
+
+  static narrowPtr null_narrowPtr() {
+    return to_narrowPtr<u4>(0);
+  }
+
+  // Encoding ------
 
   // ptr can point to one of the following
   // - an object in the ArchiveBuilder's buffer.
@@ -79,7 +82,7 @@ public:
   template <typename T>
   static narrowPtr encode(T ptr) {
     if (ptr == nullptr) {
-      return 0;
+      return null_narrowPtr();
     } else {
       return encode_not_null(ptr);
     }
@@ -97,7 +100,7 @@ public:
   template <typename T>
   static narrowPtr encode_null_or_address_cache(T p) {
     if (p == nullptr) {
-      return 0;
+      return null_narrowPtr();
     } else {
       return encode_address_in_cache<T>(p);
     }
@@ -107,8 +110,8 @@ public:
 
   template <typename T>
   static T decode_not_null(address base_address, narrowPtr narrowp) {
-    assert(narrowp != 0, "sanity");
-    T p = (T)(base_address + narrowp);
+    assert(narrowp != null_narrowPtr(), "sanity");
+    T p = (T)(base_address + from_narrowPtr<size_t>(narrowp));
     // p may not be in AOT cache as this function may be called before the
     // AOT cache is mapped.
     return p;
@@ -123,7 +126,7 @@ public:
 
   template <typename T>
   static T decode(narrowPtr narrowp) {
-    if (narrowp == 0) {
+    if (narrowp == null_narrowPtr()) {
       return nullptr;
     } else {
       return decode_not_null<T>(narrowp);
@@ -132,11 +135,20 @@ public:
 
   template <typename T>
   static T decode(address base_address, narrowPtr narrowp) {
-    if (narrowp == 0) {
+    if (narrowp == null_narrowPtr()) {
       return nullptr;
     } else {
       return decode_not_null<T>(base_address, narrowp);
     }
+  }
+
+private:
+  static size_t compute_byte_offset(address p);
+
+  static narrowPtr encode_byte_offset(size_t offset) {
+    assert(offset != 0, "offset 0 is in protection zone");
+    precond(offset <= MaxMetadataOffsetBytes);
+    return checked_cast<narrowPtr>(offset);
   }
 };
 

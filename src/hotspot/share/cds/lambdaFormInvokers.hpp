@@ -24,6 +24,8 @@
 
 #ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+
+#include "cds/aotCompressedPointers.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
@@ -35,10 +37,11 @@ class Array;
 class SerializeClosure;
 
 class LambdaFormInvokers : public AllStatic {
+  using narrowPtr = AOTCompressedPointers::narrowPtr;
  private:
   static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
   // For storing LF form lines (LF_RESOLVE only) in read only table.
-  static Array<u4>* _static_archive_invokers;
+  static Array<narrowPtr>* _static_archive_invokers;
   static void regenerate_class(char* name, ClassFileStream& st, TRAPS);
  public:
   static void append(char* line);

@@ -339,10 +339,10 @@ public:
   uintx any_to_offset(address p) const;
 
   // The reverse of buffer_to_offset()
-  address offset_to_buffered_address(u4 offset) const;
+  address offset_to_buffered_address(uintx offset) const;
 
   template <typename T>
-  T offset_to_buffered(u4 offset) const {
+  T offset_to_buffered(uintx offset) const {
     return (T)offset_to_buffered_address(offset);
   }
 

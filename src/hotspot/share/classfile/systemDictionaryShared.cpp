@@ -1299,11 +1299,10 @@ public:
       Symbol* name = info._klass->name();
       name = ArchiveBuilder::current()->get_buffered_addr(name);
       hash = SystemDictionaryShared::hash_for_shared_dictionary((address)name);
-      u4 delta = AOTCompressedPointers::encode_not_null(record);
       if (_is_builtin && info._klass->is_hidden()) {
         // skip
       } else {
-        _writer->add(hash, delta);
+        _writer->add(hash, AOTCompressedPointers::encode_not_null(record));
       }
       if (log_is_enabled(Trace, aot, hashtables)) {
         ResourceMark rm;

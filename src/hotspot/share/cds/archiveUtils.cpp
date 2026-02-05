@@ -333,7 +333,7 @@ void WriteClosure::do_ptr(void** p) {
 void ReadClosure::do_ptr(void** p) {
   assert(*p == nullptr, "initializing previous initialized pointer.");
   u4 narrowp = checked_cast<u4>(nextPtr());
-  *p = AOTCompressedPointers::decode<void*>(_base_address, narrowp);
+  *p = AOTCompressedPointers::decode<void*>(_base_address, AOTCompressedPointers::to_narrowPtr(narrowp));
 }
 
 void ReadClosure::do_u4(u4* p) {

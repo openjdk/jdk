@@ -42,8 +42,10 @@ class Method;
 class Symbol;
 
 class RunTimeClassInfo {
- public:
- enum : char {
+  using narrowPtr = AOTCompressedPointers::narrowPtr;
+
+public:
+  enum : char {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
     FROM_IS_ARRAY           = 1 << 1,
     FROM_IS_OBJECT          = 1 << 2
@@ -57,16 +59,16 @@ class RunTimeClassInfo {
   // This is different than DumpTimeClassInfo::DTVerifierConstraint. We use
   // u4 instead of Symbol* to save space on 64-bit CPU.
   struct RTVerifierConstraint {
-    u4 _name;
-    u4 _from_name;
+    narrowPtr _name;
+    narrowPtr _from_name;
     Symbol* name() { return AOTCompressedPointers::decode_not_null<Symbol*>(_name); }
     Symbol* from_name() {
-      return (_from_name == 0) ? nullptr : AOTCompressedPointers::decode_not_null<Symbol*>(_from_name);
+      return AOTCompressedPointers::decode<Symbol*>(_from_name);
     }
   };
 
   struct RTLoaderConstraint {
-    u4   _name;
+    narrowPtr   _name;
     char _loader_type1;
     char _loader_type2;
     Symbol* constraint_name() { return AOTCompressedPointers::decode_not_null<Symbol*>(_name); }
@@ -77,8 +79,8 @@ class RunTimeClassInfo {
   };
 
 private:
-  u4 _klass_offset;
-  u4 _nest_host_offset;
+  narrowPtr _klass;
+  narrowPtr _nest_host;
   int _num_verifier_constraints;
   int _num_loader_constraints;
 
@@ -186,7 +188,7 @@ public:
 
   InstanceKlass* nest_host() {
     assert(!ArchiveBuilder::is_active(), "not called when dumping archive");
-    return AOTCompressedPointers::decode<InstanceKlass*>(_nest_host_offset); // may be null
+    return AOTCompressedPointers::decode<InstanceKlass*>(_nest_host); // may be null
   }
 
   RTLoaderConstraint* loader_constraints() {

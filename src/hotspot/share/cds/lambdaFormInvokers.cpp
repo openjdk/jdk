@@ -53,7 +53,7 @@
 #include "runtime/mutexLocker.hpp"
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
-Array<u4>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
+Array<AOTCompressedPointers::narrowPtr>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
 static bool _stop_appending = false;
 
 #define NUM_FILTER 4
@@ -253,7 +253,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
     }
     if (count > 0) {
-      _static_archive_invokers = ArchiveBuilder::new_ro_array<u4>(count);
+      _static_archive_invokers = ArchiveBuilder::new_ro_array<narrowPtr>(count);
       int index = 0;
       for (int i = 0; i < len; i++) {
         char* str = _lambdaform_lines->at(i);
@@ -275,8 +275,8 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
 void LambdaFormInvokers::read_static_archive_invokers() {
   if (_static_archive_invokers != nullptr) {
     for (int i = 0; i < _static_archive_invokers->length(); i++) {
-      u4 offset = _static_archive_invokers->at(i);
-      Array<char>* line = AOTCompressedPointers::decode_not_null<Array<char>*>(offset);
+      narrowPtr encoded = _static_archive_invokers->at(i);
+      Array<char>* line = AOTCompressedPointers::decode_not_null<Array<char>*>(encoded);
       char* str = line->adr_at(0);
       append(str);
     }

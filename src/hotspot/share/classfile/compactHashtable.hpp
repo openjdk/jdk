@@ -124,6 +124,9 @@ public:
   ~CompactHashtableWriter();
 
   void add(unsigned int hash, u4 encoded_value);
+  void add(unsigned int hash, AOTCompressedPointers::narrowPtr encoded_value) {
+    add(hash, AOTCompressedPointers::from_narrowPtr<u4>(encoded_value));
+  }
   void dump(SimpleCompactHashtable *cht, const char* table_name);
 
 private:
@@ -372,11 +375,11 @@ public:
 //
 // OffsetCompactHashtable -- This is used to store many types of objects
 // in the CDS archive. On 64-bit platforms, we save space by using a 32-bit
-// offset from the CDS base address.
+// narrowPtr from the CDS base address.
 
 template <typename V>
-inline V read_value_from_compact_hashtable(address base_address, u4 offset) {
-  return AOTCompressedPointers::decode_not_null<V>(base_address, offset);
+inline V read_value_from_compact_hashtable(address base_address, u4 narrowp) {
+  return AOTCompressedPointers::decode_not_null<V>(base_address, AOTCompressedPointers::to_narrowPtr(narrowp));
 }
 
 template <
