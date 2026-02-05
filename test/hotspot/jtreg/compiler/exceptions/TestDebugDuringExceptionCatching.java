@@ -42,7 +42,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @library /test/lib /test/jdk/java/lang/invoke/common /
  * @build test.java.lang.invoke.lib.InstructionHelper
  *
- * @run main/othervm compiler.exceptions.TestDebugDuringExceptionCatching
+ * @run main/othervm ${test.main.class}
  */
 public class TestDebugDuringExceptionCatching {
 
