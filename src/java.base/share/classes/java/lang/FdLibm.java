@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3506,6 +3506,61 @@ final class FdLibm {
                 iz = (hz >> 20) - 1023;
             }
             return iz;
+        }
+    }
+
+    /**
+     * Return the Inverse Hyperbolic Tangent of x
+     * Method :
+     *
+     *
+     *      atanh(x) is defined so that atanh(tanh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
+     *      and tanh(atanh(x)) = x, -1 &lt x &lt 1;
+     *      It can be written as atanh(x) = 0.5 * log1p(2 * x/(1-x)), -1 &lt; x &lt; 1;
+     *      1.
+     *          atanh(x) := 0.5 * log1p(2 * x/(1 - x)), if |x| >= 0.5,
+     *                   := 0.5 * log1p(2x + 2x * x/(1 - x)), if |x| < 0.5.
+     *
+     *
+     *
+     * Special cases:
+     *      only atanh(&plusmn;0)=&plusmn;0 is exact for finite x.
+     *      atanh(NaN) is NaN
+     *      atanh(&plusmn;1) is &plusmn;&infin;
+     */
+    static final class Atanh {
+        private static final double zero = 0.0;
+        private static final double one = 1.0;
+        private static final double huge = 1.0e300;
+
+        static double compute(double x) {
+            double t;
+            int hx,ix;
+            /*unsigned*/ int lx;
+            hx = __HI(x);		                                /* high word */
+            lx = __LO(x);		                                /* low word */
+            ix = hx & 0x7fff_ffff;
+            if ((ix | ((lx | (-lx)) >> 31)) > 0x3ff0_0000) {    /* |x| > 1 */
+                return (x - x) / (x - x);
+            }
+            if(ix == 0x3ff0_0000) {
+                return x / zero;
+            }
+            if(ix < 0x3e30_0000 && (huge + x) > zero) {
+                return x;                                       /* x<2**-28 */
+            }
+            //__HI(x) = ix;                                     /* x <- |x| */
+            x = __HI(x, ix);
+            if(ix < 0x3fe0_0000) {		                        /* x < 0.5 */
+                t = x + x;
+                t = 0.5 * Log1p.compute(t + t*x/(one - x));
+            } else
+                t = 0.5 * Log1p.compute((x + x)/(one - x));
+            if(hx >= 0) {
+                return t;
+            } else {
+                return -t;
+            }
         }
     }
 }
