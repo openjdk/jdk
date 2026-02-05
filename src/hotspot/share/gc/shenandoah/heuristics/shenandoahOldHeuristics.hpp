@@ -155,8 +155,8 @@ private:
   void set_trigger_if_old_is_overgrown();
 
  protected:
-  size_t
-  choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size, size_t free) override;
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                             RegionData* data, size_t data_size, size_t free) override;
 
   // This internal helper routine adds as many mixed evacuation candidate regions as fit within the old-gen evacuation budget
   // to the collection set.  This may be called twice to prepare for any given mixed evacuation cycle, the first time with

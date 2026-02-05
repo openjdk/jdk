@@ -539,7 +539,8 @@ private:
   }
 
   // Helper functions
-  bool   is_oop_field(Node* n, int offset, bool* unsafe);
+  bool is_oop_field(Node* n, int offset, bool* unsafe);
+  bool has_oop_node_outs(Node* n);
   static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
   int address_offset(Node* adr, PhaseValues* phase);

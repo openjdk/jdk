@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -669,21 +669,7 @@ public:
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
   bool  _allow_optimizations;   // Allow loop optimizations
 
-  IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail )
-    : _parent(nullptr), _next(nullptr), _child(nullptr),
-      _head(head), _tail(tail),
-      _phase(phase),
-      _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
-      _body(Compile::current()->comp_arena()),
-      _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
-      _has_range_checks(0), _has_range_checks_computed(0),
-      _safepts(nullptr),
-      _required_safept(nullptr),
-      _allow_optimizations(true)
-  {
-    precond(_head != nullptr);
-    precond(_tail != nullptr);
-  }
+  IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail);
 
   // Is 'l' a member of 'this'?
   bool is_member(const IdealLoopTree *l) const; // Test for nested membership
@@ -889,6 +875,8 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
+  Arena _arena; // For data whose lifetime is a single pass of loop optimizations
+
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
   //
   // Exception: dead CFG nodes may instead have a ctrl/idom forwarding
@@ -1048,6 +1036,8 @@ private:
 public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
+
+  Arena* arena() { return &_arena; };
 
   bool has_node(const Node* n) const {
     guarantee(n != nullptr, "No Node.");
@@ -1223,7 +1213,8 @@ private:
   // Compute the Ideal Node to Loop mapping
   PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
-    _loop_or_ctrl(igvn.C->comp_arena()),
+    _arena(mtCompiler, Arena::Tag::tag_idealloop),
+    _loop_or_ctrl(&_arena),
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
@@ -1238,7 +1229,8 @@ private:
   // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
-    _loop_or_ctrl(igvn.C->comp_arena()),
+    _arena(mtCompiler, Arena::Tag::tag_idealloop),
+    _loop_or_ctrl(&_arena),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),

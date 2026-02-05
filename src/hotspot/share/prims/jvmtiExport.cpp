@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef JVMTI_TRACE
@@ -648,22 +649,27 @@ JvmtiExport::decode_version_values(jint version, int * major, int * minor,
 }
 
 void JvmtiExport::enter_primordial_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter primordial phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_PRIMORDIAL);
 }
 
 void JvmtiExport::enter_early_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter early start phase");
   set_early_vmstart_recorded(true);
 }
 
 void JvmtiExport::enter_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter start phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_START);
 }
 
 void JvmtiExport::enter_onload_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter onload phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_ONLOAD);
 }
 
 void JvmtiExport::enter_live_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter live phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_LIVE);
 }
 
@@ -813,6 +819,7 @@ void JvmtiExport::post_vm_death() {
     }
   }
 
+  Events::log(Thread::current_or_null(), "JVMTI - enter dead phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
 }
 
