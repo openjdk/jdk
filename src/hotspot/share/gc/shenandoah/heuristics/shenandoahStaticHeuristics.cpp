@@ -37,8 +37,6 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* spac
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 }
 
-ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
-
 bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->soft_mutator_available();
@@ -59,9 +57,9 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
   return ShenandoahHeuristics::should_start_gc();
 }
 
-size_t ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                         RegionData* data, size_t size,
-                                                                         size_t free) {
+void ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                       RegionData* data, size_t size,
+                                                                       size_t free) {
   size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
 
   for (size_t idx = 0; idx < size; idx++) {
@@ -70,5 +68,4 @@ size_t ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(Shenand
       cset->add_region(r);
     }
   }
-  return 0;
 }
