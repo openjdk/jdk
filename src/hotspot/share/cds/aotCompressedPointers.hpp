@@ -36,7 +36,7 @@
 class AOTCompressedPointers: public AllStatic {
 public:
   // For space saving, we can encode the location of metadata objects in the "rw" and "ro"
-  // regions using a 32-bit offset from the bottom of the "rw" region.
+  // regions using a 32-bit offset from the bottom of the mapped AOT metaspace.
   // Currently we allow only up to 2GB total size in the rw and ro regions (which are
   // contiguous to each other).
   enum class narrowPtr : u4;
@@ -59,7 +59,7 @@ public:
   }
 
   // Convert narrowp to a byte offset. In the future, this could return
-  // a different integer than narrowp if the encoding contains right shifts.
+  // a different integer than narrowp if the encoding contains shifts.
   template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
   static T get_byte_offset(narrowPtr narrowp) {
     return checked_cast<T>(narrowp);
@@ -82,7 +82,7 @@ public:
   }
 
   template <typename T>
-  static narrowPtr encode(T ptr) {
+  static narrowPtr encode(T ptr) { // may be null
     if (ptr == nullptr) {
       return null_narrowPtr();
     } else {
@@ -100,11 +100,11 @@ public:
   }
 
   template <typename T>
-  static narrowPtr encode_null_or_address_cache(T p) {
-    if (p == nullptr) {
+  static narrowPtr encode_null_or_address_cache(T ptr) { // may be null
+    if (ptr == nullptr) {
       return null_narrowPtr();
     } else {
-      return encode_address_in_cache<T>(p);
+      return encode_address_in_cache<T>(ptr);
     }
   }
 
@@ -113,7 +113,7 @@ public:
   template <typename T>
   static T decode_not_null(address base_address, narrowPtr narrowp) {
     assert(narrowp != null_narrowPtr(), "sanity");
-    T p = (T)(base_address + cast_from_narrowPtr<size_t>(narrowp));
+    T p = reinterpret_cast<T>(base_address + cast_from_narrowPtr<size_t>(narrowp));
     // p may not be in AOT cache as this function may be called before the
     // AOT cache is mapped.
     return p;
@@ -127,7 +127,7 @@ public:
   }
 
   template <typename T>
-  static T decode(narrowPtr narrowp) {
+  static T decode(narrowPtr narrowp) { // may be null
     if (narrowp == null_narrowPtr()) {
       return nullptr;
     } else {
@@ -136,7 +136,7 @@ public:
   }
 
   template <typename T>
-  static T decode(address base_address, narrowPtr narrowp) {
+  static T decode(address base_address, narrowPtr narrowp) { // may be null
     if (narrowp == null_narrowPtr()) {
       return nullptr;
     } else {

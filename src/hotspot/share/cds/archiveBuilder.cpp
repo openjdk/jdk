@@ -993,14 +993,13 @@ void ArchiveBuilder::make_training_data_shareable() {
 
 size_t ArchiveBuilder::buffer_to_offset(address p) const {
   address requested_p = to_requested(p);
-  assert(requested_p >= _requested_static_archive_bottom, "must be");
-  return requested_p - _requested_static_archive_bottom;
+  return pointer_delta(requested_p, _requested_static_archive_bottom, 1);
 }
 
 size_t ArchiveBuilder::any_to_offset(address p) const {
   if (is_in_mapped_static_archive(p)) {
     assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
-    return p - _mapped_static_archive_bottom;
+    return pointer_delta(p, _mapped_static_archive_bottom, 1);
   }
   if (!is_in_buffer_space(p)) {
     // p must be a "source" address
