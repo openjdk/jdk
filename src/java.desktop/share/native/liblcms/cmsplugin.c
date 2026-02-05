@@ -22,15 +22,10 @@
  * questions.
  */
 
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2024 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -522,7 +517,7 @@ cmsBool CMSEXPORT _cmsIOPrintf(cmsIOHANDLER* io, const char* frm, ...)
     va_start(args, frm);
 
     len = vsnprintf((char*) Buffer, 2047, frm, args);
-    if (len < 0) {
+    if (len < 0 || len >= 2047) {
         va_end(args);
         return FALSE;   // Truncated, which is a fatal error for us
     }
