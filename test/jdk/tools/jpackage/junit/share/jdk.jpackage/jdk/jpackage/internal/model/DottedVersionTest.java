@@ -22,18 +22,19 @@
  */
 package jdk.jpackage.internal.model;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -54,14 +55,6 @@ public class DottedVersionTest {
             this(input, type.createVersion, "", expectedComponentCount, input);
         }
 
-        static TestConfig greedy(String input, int expectedComponentCount, String expectedToComponent) {
-            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, expectedToComponent);
-        }
-
-        static TestConfig greedy(String input, int expectedComponentCount) {
-            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, input);
-        }
-
         static TestConfig lazy(String input, String expectedSuffix, int expectedComponentCount, String expectedToComponent) {
             return new TestConfig(input, Type.LAZY.createVersion, expectedSuffix, expectedComponentCount, expectedToComponent);
         }
@@ -74,6 +67,7 @@ public class DottedVersionTest {
         assertEquals(cfg.expectedSuffix(), dv.getUnprocessedSuffix());
         assertEquals(cfg.expectedComponentCount(), dv.getComponents().length);
         assertEquals(cfg.expectedToComponent(), dv.toComponentsString());
+        assertEquals(dv.toString(), cfg.input());
     }
 
     private static List<TestConfig> testValid() {
@@ -123,7 +117,7 @@ public class DottedVersionTest {
 
     @ParameterizedTest
     @MethodSource
-    public void testTrim(DottedVersion ver, String expectedStr, int limit) {
+    public void test_trim(DottedVersion ver, String expectedStr, int limit) {
         var expected = DottedVersion.lazy(expectedStr);
         var actual = ver.trim(limit);
         assertEquals(expected, actual);
@@ -136,14 +130,14 @@ public class DottedVersionTest {
     }
 
     @ParameterizedTest
-    @MethodSource
-    public void testTrimNegative(DottedVersion ver, int limit) {
+    @MethodSource("test_trim_pad_negative")
+    public void test_trim_negative(DottedVersion ver, int limit) {
         assertThrowsExactly(IllegalArgumentException.class, () -> {
             ver.trim(limit);
         });
     }
 
-    private static Stream<Arguments> testTrim() {
+    private static Stream<Arguments> test_trim() {
 
         var testCases = new ArrayList<Arguments>();
 
@@ -160,15 +154,9 @@ public class DottedVersionTest {
         return testCases.stream().map(DottedVersionTest::mapFirstStringToDottedVersion);
     }
 
-    private static Stream<Arguments> testTrimNegative() {
-        return Stream.of(
-                Arguments.of("10.5.foo", -1)
-        ).map(DottedVersionTest::mapFirstStringToDottedVersion);
-    }
-
     @ParameterizedTest
     @MethodSource
-    public void testPad(DottedVersion ver, String expectedStr, int limit) {
+    public void test_pad(DottedVersion ver, String expectedStr, int limit) {
         var expected = DottedVersion.lazy(expectedStr);
         var actual = ver.pad(limit);
         assertEquals(expected, actual);
@@ -181,14 +169,14 @@ public class DottedVersionTest {
     }
 
     @ParameterizedTest
-    @MethodSource
-    public void testPadNegative(DottedVersion ver, int limit) {
+    @MethodSource("test_trim_pad_negative")
+    public void test_pad_negative(DottedVersion ver, int limit) {
         assertThrowsExactly(IllegalArgumentException.class, () -> {
             ver.pad(limit);
         });
     }
 
-    private static Stream<Arguments> testPad() {
+    private static Stream<Arguments> test_pad() {
 
         var testCases = new ArrayList<Arguments>();
 
@@ -204,6 +192,12 @@ public class DottedVersionTest {
         }
 
         return testCases.stream().map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    private static Stream<Arguments> test_trim_pad_negative() {
+        return Stream.of(
+                Arguments.of("10.5.foo", -1)
+        ).map(DottedVersionTest::mapFirstStringToDottedVersion);
     }
 
     private static Stream<Arguments> testPadNegative() {
