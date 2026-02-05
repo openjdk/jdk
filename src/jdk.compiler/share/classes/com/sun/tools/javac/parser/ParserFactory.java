@@ -28,7 +28,6 @@ package com.sun.tools.javac.parser;
 import java.util.Locale;
 
 import com.sun.tools.javac.api.JavacTrees;
-import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.tree.DocTreeMaker;
@@ -87,10 +86,6 @@ public class ParserFactory {
         this.scannerFactory = ScannerFactory.instance(context);
         this.locale = context.get(Locale.class);
         this.trees = JavacTrees.instance(context);
-    }
-
-    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap) {
-        return newParser(input, keepDocComments, keepLineMap, false);
     }
 
     public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap, boolean parseModuleInfo) {

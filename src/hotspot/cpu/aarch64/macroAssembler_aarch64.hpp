@@ -1122,6 +1122,8 @@ public:
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
+
   void verify_sve_vector_length(Register tmp = rscratch1);
   void reinitialize_ptrue() {
     if (UseSVE > 0) {

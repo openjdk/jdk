@@ -72,19 +72,31 @@ void ShenandoahBarrierSet::print_on(outputStream* st) const {
 
 bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahLoadRefBarrier) return false;
-  // Only needed for references
   return is_reference_type(type);
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahSATBBarrier) return false;
-  // Only needed for references
   if (!is_reference_type(type)) return false;
-
   bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
   return (on_weak_ref || unknown) && keep_alive;
+}
+
+bool ShenandoahBarrierSet::need_satb_barrier(DecoratorSet decorators, BasicType type) {
+  if (!ShenandoahSATBBarrier) return false;
+  if (!is_reference_type(type)) return false;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+  return as_normal && !dest_uninitialized;
+}
+
+bool ShenandoahBarrierSet::need_card_barrier(DecoratorSet decorators, BasicType type) {
+  if (!ShenandoahCardBarrier) return false;
+  if (!is_reference_type(type)) return false;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  return in_heap;
 }
 
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
