@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,7 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
+  bool                  _print_phase_loop_opts; // True if we should print before and after loop opts phase
 #ifndef PRODUCT
   uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers
@@ -666,7 +667,7 @@ public:
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
   void          print_phase(const char* phase_name);
-  void          print_ideal_ir(const char* phase_name);
+  void          print_ideal_ir(const char* compile_phase_name) const;
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
@@ -680,7 +681,7 @@ public:
   void begin_method();
   void end_method();
 
-  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   bool should_print_igv(int level);
@@ -794,6 +795,7 @@ public:
   void remove_from_merge_stores_igvn(Node* n);
   void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
 
+  void shuffle_late_inlines();
   void shuffle_macro_nodes();
   void sort_macro_nodes();
 
@@ -1058,6 +1060,13 @@ public:
   // Record this CallGenerator for inlining at the end of parsing.
   void              add_late_inline(CallGenerator* cg)        {
     _late_inlines.insert_before(_late_inlines_pos, cg);
+    if (StressIncrementalInlining) {
+      assert(_late_inlines_pos < _late_inlines.length(), "unthinkable!");
+      if (_late_inlines.length() - _late_inlines_pos >= 2) {
+        int j = (C->random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
+        swap(_late_inlines.at(_late_inlines_pos), _late_inlines.at(j));
+      }
+    }
     _late_inlines_pos++;
   }
 

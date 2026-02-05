@@ -71,9 +71,9 @@ class IRMethodBuilder {
             Test[] testAnnos = testMethod.method().getAnnotationsByType(Test.class);
             boolean allowMethodNotCompilable = allowNotCompilable || testAnnos[0].allowNotCompilable();
             if (allowMethodNotCompilable) {
-                return new NotCompilableIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+                return new NotCompilableIRMethod(testMethod.method(), testMethod.irRuleIds().count());
             } else {
-                return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+                return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().count());
             }
         }
     }

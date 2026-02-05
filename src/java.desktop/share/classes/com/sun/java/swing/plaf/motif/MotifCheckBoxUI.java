@@ -30,8 +30,6 @@ import javax.swing.JComponent;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 
-import sun.awt.AppContext;
-
 /**
  * MotifCheckBox implementation
  *
@@ -39,7 +37,7 @@ import sun.awt.AppContext;
  */
 public class MotifCheckBoxUI extends MotifRadioButtonUI {
 
-    private static final Object MOTIF_CHECK_BOX_UI_KEY = new Object();
+    private static final ComponentUI UI = new MotifCheckBoxUI();
 
     private static final String propertyPrefix = "CheckBox" + ".";
 
@@ -50,14 +48,7 @@ public class MotifCheckBoxUI extends MotifRadioButtonUI {
     //         Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        MotifCheckBoxUI motifCheckBoxUI =
-                (MotifCheckBoxUI) appContext.get(MOTIF_CHECK_BOX_UI_KEY);
-        if (motifCheckBoxUI == null) {
-            motifCheckBoxUI = new MotifCheckBoxUI();
-            appContext.put(MOTIF_CHECK_BOX_UI_KEY, motifCheckBoxUI);
-        }
-        return motifCheckBoxUI;
+        return UI;
     }
 
     @Override
