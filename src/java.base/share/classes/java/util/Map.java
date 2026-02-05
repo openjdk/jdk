@@ -1792,6 +1792,13 @@ public interface Map<K, V> {
      * uncomputed values.
      * <p>
      * The returned Map is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * If the provided Set of {@code keys} is subsequently modified, the returned Map will
+     * not reflect such modifications.
+     * <p>
+     * The Set of {@code keys} must use {@linkplain Set#equals(Object) equals()} as its
+     * equivalence relation, or its comparison method must be consistent with equals,
+     * otherwise the behavior is unspecified.
      *
      * @implNote  after all values have been initialized successfully, the computing
      *            function is no longer strongly referenced and becomes eligible for

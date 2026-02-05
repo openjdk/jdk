@@ -811,6 +811,14 @@ public interface Set<E> extends Collection<E> {
      *
      * }
      * }
+     * <p>
+     * If the provided Set of {@code elementCandidates} is subsequently modified, the
+     * returned Set will not reflect such modifications.
+     * <p>
+     * The Set of {@code elementCandidates} must use
+     * {@linkplain Set#equals(Object) equals()} as its equivalence relation, or its
+     * comparison method must be consistent with equals, otherwise the behavior is
+     * unspecified.
      *
      * @implNote  after all element membership statuses have been initialized successfully,
      *            the computing function is no longer strongly referenced and becomes
