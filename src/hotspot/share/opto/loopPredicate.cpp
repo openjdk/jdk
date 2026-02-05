@@ -530,12 +530,11 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
   } else {
     assert(bt == T_INT, "no LoadRange for longs");
   }
-  scale  = 0;
-  offset = nullptr;
-  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, bt, &scale, &offset)) {
-    return false;
-  }
-  return true;
+  PhaseIdealLoop::ScaledIVInfo info;
+  bool is_scaled = phase->is_scaled_iv_plus_offset(cmp->in(1), iv, bt, &info);
+  scale = info.scale;
+  offset = info.offset;
+  return is_scaled;
 }
 
 bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
@@ -1042,10 +1041,11 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     Node* range = cmp->in(2);
     assert(range->Opcode() == Op_LoadRange || iff->is_RangeCheck() || _igvn.type(range)->is_int()->_lo >= 0, "must be");
     assert(invar.is_invariant(range), "range must be invariant");
-    int scale    = 1;
-    Node* offset = zero;
-    bool ok = is_scaled_iv_plus_offset(idx, cl->phi(), &scale, &offset);
+    ScaledIVInfo info;
+    bool ok = is_scaled_iv_plus_offset(idx, cl->phi(), T_INT, &info);
     assert(ok, "must be index expression");
+    int scale = checked_cast<int>(info.scale);
+    Node* offset = info.offset;
 
     Node* init    = cl->init_trip();
     // Limit is not exact.

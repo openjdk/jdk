@@ -1567,35 +1567,32 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
   for (uint i = 0; i < range_checks.size(); i++) {
     ProjNode* proj = range_checks.at(i)->as_Proj();
     RangeCheckNode* rc = proj->in(0)->as_RangeCheck();
-    jlong scale = 0;
-    Node* offset = nullptr;
     Node* rc_bol = rc->in(1);
     Node* rc_cmp = rc_bol->in(1);
     if (rc_cmp->Opcode() == Op_CmpU) {
       // could be shared and have already been taken care of
       continue;
     }
-    bool short_scale = false;
-    bool short_offset = false;
-    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, T_LONG, &scale, &offset, &short_scale, &short_offset);
+    ScaledIVInfo iv_info;
+    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, T_LONG, &iv_info);
     assert(ok, "inconsistent: was tested before");
     Node* range = rc_cmp->in(2);
     Node* c = rc->in(0);
     Node* entry_control = inner_head->in(LoopNode::EntryControl);
 
     Node* R = range;
-    Node* K = longcon(scale);
+    Node* K = longcon(iv_info.scale);
 
-    Node* L = offset;
+    Node* L = iv_info.offset;
 
-    if (short_offset) {
+    if (iv_info.short_offset) {
       // ConvI2L(i + E): clamp R at max_jint + 1 (offset E is inside int arithmetic).
       // Unlike short_scale where L is added in long after ConvI2L, here the offset
       // is part of the int computation, so we clamp without adding L.
       Node* max_jint_plus_one_long = longcon((jlong)max_jint + 1);
       R = MinMaxNode::unsigned_min(R, max_jint_plus_one_long, TypeLong::POS, _igvn);
       set_subtree_ctrl(R, true);
-    } else if (short_scale) {
+    } else if (iv_info.short_scale) {
       // This converts:
       // (int)i*K + L <u64 R
       // with K an int into:
@@ -1657,7 +1654,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     Q_max = new AddLNode(Q_max, Q_first);
     register_new_node(Q_max, entry_control);
 
-    if (scale * stride_con < 0) {
+    if (iv_info.scale * stride_con < 0) {
       swap(Q_min, Q_max);
     }
     // Now, mathematically, Q_max > Q_min, and they are close enough so that (Q_max-Q_min) fits in 32 bits.
@@ -1710,7 +1707,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     // to:     j*K + L_2 <u32 R_2
     // that is:
     //   (j*K + Q_first) - L_clamp <u32 clamp(R, L_clamp, H_clamp) - L_clamp
-    K = intcon(checked_cast<int>(scale));
+    K = intcon(checked_cast<int>(iv_info.scale));
     Node* scaled_iv = new MulINode(inner_phi, K);
     register_new_node(scaled_iv, c);
     Node* scaled_iv_plus_offset = new AddINode(scaled_iv, L_2);

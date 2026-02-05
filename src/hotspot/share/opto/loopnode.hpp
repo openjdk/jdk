@@ -1465,26 +1465,22 @@ public:
 
   bool is_iv(Node* exp, Node* iv, BasicType bt);
 
-  // Return true if exp is a scaled induction var plus (or minus) constant
-  // p_short_scale: set if int multiplication was widened to long (ConvI2L around MulI)
-  // p_short_offset: set if int addition was widened to long (ConvI2L around AddI)
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale = nullptr, bool* p_short_offset = nullptr, int depth = 0);
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
-    jlong long_scale;
-    if (is_scaled_iv_plus_offset(exp, iv, T_INT, &long_scale, p_offset)) {
-      int int_scale = checked_cast<int>(long_scale);
-      if (p_scale != nullptr) {
-        *p_scale = int_scale;
-      }
-      return true;
-    }
-    return false;
-  }
+  // Output parameters for is_scaled_iv_plus_offset.
+  // short_scale: int multiplication was widened to long (ConvI2L around MulI)
+  // short_offset: int addition was widened to long (ConvI2L around AddI)
+  struct ScaledIVInfo {
+    jlong scale = 0;
+    Node* offset = nullptr;
+    bool short_scale = false;
+    bool short_offset = false;
+  };
+
+  // Return true if exp is a scaled induction var plus (or minus) constant.
+  // If info is non-null, the scale, offset, and short flags are stored there.
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, ScaledIVInfo* info = nullptr, int depth = 0);
   // Helper for finding more complex matches to is_scaled_iv_plus_offset.
   bool is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset2, Node* iv,
-                                      BasicType bt,
-                                      jlong* p_scale, Node** p_offset,
-                                      bool* p_short_scale, bool* p_short_offset, int depth);
+                                      BasicType bt, ScaledIVInfo* info, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   IfTrueNode* create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,

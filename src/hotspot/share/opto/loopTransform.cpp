@@ -1250,8 +1250,8 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         // Try to pattern match with either cmp inputs, do not check
         // whether one of the inputs is loop independent as it may not
         // have had a chance to be hoisted yet.
-        if (!phase->is_scaled_iv_plus_offset(cmp->in(1), trip_counter, bt, nullptr, nullptr) &&
-            !phase->is_scaled_iv_plus_offset(cmp->in(2), trip_counter, bt, nullptr, nullptr)) {
+        if (!phase->is_scaled_iv_plus_offset(cmp->in(1), trip_counter, bt) &&
+            !phase->is_scaled_iv_plus_offset(cmp->in(2), trip_counter, bt)) {
           continue;
         }
       } else {
@@ -1271,7 +1271,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
           }
         }
 
-        if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, bt, nullptr, nullptr)) {
+        if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, bt)) {
           continue;
         }
       }
@@ -2509,56 +2509,45 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
 //    SSIV[iv] = (ConvI2X SIV[iv])  -- a "short scale" might occur here
 //    SIV[iv] = [a possibly scaled value of iv; see is_scaled_iv() above]
 //
-// On success, the constant scale value is stored back to *p_scale unless null.
-// Likewise, the addend (perhaps a synthetic AddX node) is stored to *p_offset.
-// Also, (*p_short_scale) reports if a ConvI2L conversion was seen after a MulI,
-// meaning bt is T_LONG but iv was scaled using 32-bit arithmetic.
+// On success, the scale, offset, and short flags are stored to *info unless null.
 // To avoid looping, the match is depth-limited, and so may fail to match the grammar to complex expressions.
-bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale, bool* p_short_offset, int depth) {
+bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, ScaledIVInfo* info, int depth) {
   assert(bt == T_INT || bt == T_LONG, "unexpected int type");
   jlong scale = 0;  // to catch result from is_scaled_iv()
+  bool short_scale = false;
   exp = exp->uncast();
-  if (is_scaled_iv(exp, iv, bt, &scale, p_short_scale)) {
-    if (p_scale != nullptr) {
-      *p_scale = scale;
-    }
-    if (p_offset != nullptr) {
-      Node* zero = zerocon(bt);
-      *p_offset = zero;
+  if (is_scaled_iv(exp, iv, bt, &scale, &short_scale)) {
+    if (info != nullptr) {
+      info->scale = scale;
+      info->offset = zerocon(bt);
+      info->short_scale = short_scale;
     }
     return true;
   }
   // Handle ConvI2L wrapping an int linear expression: ConvI2L(iv + E) or ConvI2L(iv*K + E)
-  // The int arithmetic may overflow, so flag this case via p_short_offset for special
+  // The int arithmetic may overflow, so flag this case via short_offset for special
   // handling at RCE time (clamp at max_jint + 1 instead of max_jint + offset + 1).
   if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
     Node* inner = exp->in(1);
-    jlong inner_scale = 0;
-    Node* inner_offset = nullptr;
-    bool inner_short_scale = false;
-    if (is_scaled_iv_plus_offset(inner, iv, T_INT, &inner_scale, &inner_offset, &inner_short_scale, nullptr, depth + 1)) {
+    ScaledIVInfo inner_info;
+    if (is_scaled_iv_plus_offset(inner, iv, T_INT, &inner_info, depth + 1)) {
       // Found linear int expression inside ConvI2L
-      if (p_scale != nullptr) {
-        *p_scale = inner_scale;
-      }
-      if (p_offset != nullptr) {
+      if (info != nullptr) {
+        info->scale = inner_info.scale;
         // Convert int offset to long
+        Node* inner_offset = inner_info.offset;
         if (inner_offset != nullptr && inner_offset->is_Con()) {
-          *p_offset = longcon(inner_offset->get_int());
+          info->offset = longcon(inner_offset->get_int());
         } else if (inner_offset != nullptr) {
           Node* ctrl = get_ctrl(inner_offset);
           Node* long_offset = new ConvI2LNode(inner_offset);
           register_new_node(long_offset, ctrl);
-          *p_offset = long_offset;
+          info->offset = long_offset;
         } else {
-          *p_offset = longcon(0);
+          info->offset = longcon(0);
         }
-      }
-      if (p_short_scale != nullptr) {
-        *p_short_scale = inner_short_scale;
-      }
-      if (p_short_offset != nullptr) {
-        *p_short_offset = true;
+        info->short_scale = inner_info.short_scale;
+        info->short_offset = true;
       }
       return true;
     }
@@ -2568,25 +2557,24 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
   Node* offset = nullptr;
   if (opc == Op_Add(bt)) {
     // Check for a scaled IV in (AddX (MulX iv S) E) or (AddX E (MulX iv S)).
-    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
-        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
+    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, &short_scale) ||
+        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, &short_scale)) {
       offset = exp->in(which == 1 ? 2 : 1);  // the other argument
-      if (p_scale != nullptr) {
-        *p_scale = scale;
-      }
-      if (p_offset != nullptr) {
-        *p_offset = offset;
+      if (info != nullptr) {
+        info->scale = scale;
+        info->offset = offset;
+        info->short_scale = short_scale;
       }
       return true;
     }
     // Check for more addends, like (AddX (AddX (MulX iv S) E1) E2), etc.
-    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, bt, p_scale, p_offset, p_short_scale, p_short_offset, depth) ||
-        is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, bt, p_scale, p_offset, p_short_scale, p_short_offset, depth)) {
+    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, bt, info, depth) ||
+        is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, bt, info, depth)) {
       return true;
     }
   } else if (opc == Op_Sub(bt)) {
-    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
-        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
+    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, &short_scale) ||
+        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, &short_scale)) {
       // Match (SubX SIV[iv] E) as if (AddX SIV[iv] (SubX 0 E)), and
       // match (SubX E SIV[iv]) as if (AddX E (SubX 0 SIV[iv])).
       offset = exp->in(which == 1 ? 2 : 1);  // the other argument
@@ -2597,17 +2585,16 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
         }
         scale = java_multiply(scale, (jlong)-1);
       }
-      if (p_scale != nullptr) {
-        *p_scale = scale;
-      }
-      if (p_offset != nullptr) {
+      if (info != nullptr) {
+        info->scale = scale;
         if (which == 1) {  // must negate the extracted offset
           Node* zero = integercon(0, bt);
           Node *ctrl_off = get_ctrl(offset);
           offset = SubNode::make(zero, offset, bt);
           register_new_node(offset, ctrl_off);
         }
-        *p_offset = offset;
+        info->offset = offset;
+        info->short_scale = short_scale;
       }
       return true;
     }
@@ -2620,22 +2607,22 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
 // Here, exp1 is inspected to see if it is a simple linear transform of iv.
 // If so, the offset3 is combined with any other offset2 from inside exp1.
 bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, Node* iv,
-                                                    BasicType bt,
-                                                    jlong* p_scale, Node** p_offset,
-                                                    bool* p_short_scale, bool* p_short_offset, int depth) {
+                                                    BasicType bt, ScaledIVInfo* info, int depth) {
   // By the time we reach here, it is unlikely that exp1 is a simple iv*K.
   // If is a linear iv transform, it is probably an add or subtract.
   // Let's collect the internal offset2 from it.
-  Node* offset2 = nullptr;
+  ScaledIVInfo inner_info;
   if (offset3->is_Con() &&
       depth < 2 &&
-      is_scaled_iv_plus_offset(exp1, iv, bt, p_scale,
-                               &offset2, p_short_scale, p_short_offset, depth+1)) {
-    if (p_offset != nullptr) {
-      Node* ctrl_off2 = get_ctrl(offset2);
-      Node* offset = AddNode::make(offset2, offset3, bt);
+      is_scaled_iv_plus_offset(exp1, iv, bt, &inner_info, depth + 1)) {
+    if (info != nullptr) {
+      info->scale = inner_info.scale;
+      info->short_scale = inner_info.short_scale;
+      info->short_offset = inner_info.short_offset;
+      Node* ctrl_off2 = get_ctrl(inner_info.offset);
+      Node* offset = AddNode::make(inner_info.offset, offset3, bt);
       register_new_node(offset, ctrl_off2);
-      *p_offset = offset;
+      info->offset = offset;
     }
     return true;
   }
@@ -2787,10 +2774,12 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
       // Check for scaled induction variable plus an offset
       Node *offset = nullptr;
-
-      if (!is_scaled_iv_plus_offset(rc_exp, trip_counter, &scale_con, &offset)) {
+      ScaledIVInfo info;
+      if (!is_scaled_iv_plus_offset(rc_exp, trip_counter, T_INT, &info)) {
         continue;
       }
+      scale_con = checked_cast<int>(info.scale);
+      offset = info.offset;
 
       Node* offset_ctrl = get_ctrl(offset);
       if (loop->is_member(get_loop(offset_ctrl))) {
