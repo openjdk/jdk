@@ -3528,7 +3528,7 @@ final class FdLibm {
      *
      *
      * Special cases:
-     *      only asinh(&plusmn;0))=&plusmn;0) is exact for finite x.
+     *      only asinh(&plusmn;0)=&plusmn;0 is exact for finite x.
      *      asinh(NaN) is NaN
      *      asinh(&plusmn;&infin;) is &plusmn;&infin;
      */
