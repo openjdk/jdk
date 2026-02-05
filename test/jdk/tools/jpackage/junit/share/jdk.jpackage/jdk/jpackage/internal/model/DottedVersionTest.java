@@ -108,7 +108,11 @@ public class DottedVersionTest {
                 TestConfig.lazy("+1", "+1", 0, ""),
                 TestConfig.lazy("-1", "-1", 0, ""),
                 TestConfig.lazy("-0", "-0", 0, ""),
-                TestConfig.lazy("+0", "+0", 0, "")
+                TestConfig.lazy("+0", "+0", 0, ""),
+                TestConfig.lazy("+0", "+0", 0, ""),
+                TestConfig.lazy("1.2.3+ea", "+ea", 3, "1.2.3"),
+                TestConfig.lazy(".7", ".7", 0, ""),
+                TestConfig.lazy(".+7", ".+7", 0, "")
         ));
 
         return data;
