@@ -35,7 +35,7 @@
 #include "utilities/numberSeq.hpp"
 
 /**
- * ShenanoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
+ * ShenandoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
  * informed estimates of current and future allocation rates based on weighted averages and standard deviations of the
  * truncated history.  More recently sampled allocations are weighted more heavily than older samples when computing
  * averages and standard deviations.
@@ -114,10 +114,6 @@ public:
 
   virtual void post_initialize() override;
 
-  virtual size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                       RegionData* data, size_t size,
-                                                       size_t actual_free) override;
-
   virtual void adjust_penalty(intx step) override;
 
   // At the end of GC(N), we idle GC until necessary to start the next GC.  Compute the threshold of memory that can be allocated
@@ -143,16 +139,21 @@ public:
   size_t accelerated_consumption(double& acceleration, double& current_rate,
                                  double avg_rate_words_per_sec, double predicted_cycle_time) const;
 
-  virtual void record_cycle_start() override;
-  virtual void record_success_concurrent() override;
-  virtual void record_degenerated() override;
-  virtual void record_success_full() override;
 
-  virtual bool should_start_gc() override;
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                       RegionData* data, size_t size,
+                                                       size_t actual_free) override;
 
-  virtual const char* name() override     { return "Adaptive"; }
-  virtual bool is_diagnostic() override   { return false; }
-  virtual bool is_experimental() override { return false; }
+  void record_cycle_start() override;
+  void record_success_concurrent() override;
+  void record_degenerated() override;
+  void record_success_full() override;
+
+  bool should_start_gc() override;
+
+  const char* name() override     { return "Adaptive"; }
+  bool is_diagnostic() override   { return false; }
+  bool is_experimental() override { return false; }
 
  private:
   // These are used to adjust the margin of error and the spike threshold
@@ -285,7 +286,7 @@ protected:
   // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
   size_t min_free_threshold();
 
-  inline void accept_trigger_with_type(Trigger trigger_type) {
+  void accept_trigger_with_type(Trigger trigger_type) {
     _last_trigger = trigger_type;
     ShenandoahHeuristics::accept_trigger();
   }
@@ -293,7 +294,7 @@ protected:
 public:
   // Sample the allocation rate at GC trigger time if possible.  Return the number of allocated bytes that were
   // not accounted for in the sample.  This must be called before resetting bytes allocated since gc start.
-  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) override {
+  size_t force_alloc_rate_sample(size_t bytes_allocated) override {
     size_t unaccounted_bytes;
     _allocation_rate.force_sample(bytes_allocated, unaccounted_bytes);
     return unaccounted_bytes;

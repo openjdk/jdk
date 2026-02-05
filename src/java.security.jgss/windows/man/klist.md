@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ the contents of the credentials cache or keytab using the `klist` tool. The
 
 ## Commands
 
-`-c`
+[`-c`]{#option-c}
 :   Specifies that the credential cache is to be listed.
 
     The following are the options for credential cache entries:
@@ -62,7 +62,7 @@ the contents of the credentials cache or keytab using the `klist` tool. The
     `-n`
     :   If the `-a` option is specified, don't reverse resolve addresses.
 
-`-k`
+[`-k`]{#option-k}
 :   Specifies that key tab is to be listed.
 
     List the keytab entries. The following are the options for keytab entries:

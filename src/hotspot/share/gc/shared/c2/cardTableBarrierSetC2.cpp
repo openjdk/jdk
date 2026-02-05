@@ -116,7 +116,7 @@ Node* CardTableBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access
 
 Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
   // Get base of card map
-  CardTable::CardValue* card_table_base = ci_card_table_address();
+  CardTable::CardValue* card_table_base = ci_card_table_address_const();
    if (card_table_base != nullptr) {
      return kit->makecon(TypeRawPtr::make((address)card_table_base));
    } else {

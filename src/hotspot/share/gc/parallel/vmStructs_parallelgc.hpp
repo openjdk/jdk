@@ -47,8 +47,8 @@
   nonstatic_field(PSVirtualSpace,              _committed_high_addr,                          char*)                                 \
                                                                                                                                      \
   nonstatic_field(MutableSpace,                _bottom,                                       HeapWord*)                             \
-  nonstatic_field(MutableSpace,                _end,                                          HeapWord*)                             \
-  volatile_nonstatic_field(MutableSpace,       _top,                                          HeapWord*)                             \
+  nonstatic_field(MutableSpace,                _end,                                          Atomic<HeapWord*>)                     \
+  volatile_nonstatic_field(MutableSpace,       _top,                                          Atomic<HeapWord*>)                     \
                                                                                                                                      \
   nonstatic_field(PSYoungGen,                  _reserved,                                     MemRegion)                             \
   nonstatic_field(PSYoungGen,                  _virtual_space,                                PSVirtualSpace*)                       \

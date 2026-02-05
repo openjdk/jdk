@@ -191,9 +191,9 @@ void ShenandoahAdaptiveHeuristics::adjust_penalty(intx step) {
   ShenandoahHeuristics::adjust_penalty(step);
 }
 
-size_t ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                           RegionData* data, size_t size,
-                                                                           size_t actual_free) {
+void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                         RegionData* data, size_t size,
+                                                                         size_t actual_free) {
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
 
   // The logic for cset selection in adaptive is as follows:
@@ -248,7 +248,6 @@ size_t ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shena
       cur_garbage = new_garbage;
     }
   }
-  return 0;
 }
 
 void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double timestamp, double gc_time) {
@@ -609,24 +608,31 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // sizes are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 5,
     // spanning 15ms of execution.
 
-    // The test (allocated > available / 5) is intended to prevent accelerated triggers from firing so quickly that there
-    // has not been sufficient time to create garbage that can be reclaimed during the next GC cycle.  If we trigger before
+    // The test (allocated > available / 3) below is intended to prevent accelerated triggers from firing so quickly that there
+    // has not been sufficient time to create garbage that can be reclaimed during the triggered GC cycle.  If we trigger before
     // garbage has been created, the concurrent GC will find no garbage.  This has been observed to result in degens which
-    // experience OOM during evac, which escalate to Full GC.  Note that garbage that was allocated following the
-    // start of the current GC cycle cannot be reclaimed in this GC cycle.  Here is the derivation of this expression:
+    // experience OOM during evac or that experiene "bad progress", both of which escalate to Full GC.  Note that garbage that
+    // was allocated following the start of the current GC cycle cannot be reclaimed in this GC cycle.  Here is the derivation
+    // of this expression:
 
-    // Let R (runway) represent the total amount of memory that can be allocated following the start of GC(N).  At any point
+    // Let R (runway) represent the total amount of memory that can be allocated following the start of GC(N).  The runway
+    // represents memory available at the start of the current GC plus garbage reclaimed by the current GC.  At any point
     // in time following the start of GC(N), the (V) available memory plus the (A) allocated-since-start-of-GC equals R.  In
     // a balanced, fully utilized configuration, we will be starting each new GC cycle immediately following completion of
     // the preceding GC cycle.  In this configuration, we would expect half of R to be consumed during concurrent cycle GC(N)
     // and half to be consumed during concurrent GC(N+1).
     //
-    // Assume we want to delay GC trigger until:    A/V > 0.25
-    //     This is equivalent to enforcing that:      A > 0.25V
-    //                                 which is:     4A > V
-    //              Since A+V equals R, we have: A + 4A > A + V  = R
-    //                     which is to say that:      A > R/5
-    if ((allocated > available / 5) && (consumption_accelerated > allocatable_words)) {
+    // Assume we want to delay GC trigger until:    A/V > 0.33
+    //     This is equivalent to enforcing that:      A > 0.33V
+    //                                 which is:     3A > V
+    //              Since A+V equals R, we have: A + 3A > A + V  = R
+    //                     which is to say that:      A > R/4
+    //
+    // Postponing the trigger until at least 1/4 of the runway has been consumed helps to improve the efficiency of the 
+    // triggered GC.  Under heavy steady state workload, this delay condition generally has no effect: if the allocation
+    // runway is divided "equally" between the current GC and the next GC, then at any potential trigger point (which cannot
+    // happen any sooner than completion of the first GC), it is already the case that roughly A > R/2.
+    if ((allocated > available / 3) && (consumption_accelerated > allocatable_words)) {
       size_t size_t_alloc_rate = (size_t) current_rate_by_acceleration * HeapWordSize;
       if (acceleration > 0) {
         size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
