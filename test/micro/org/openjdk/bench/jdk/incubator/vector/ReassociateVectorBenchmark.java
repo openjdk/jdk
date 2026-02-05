@@ -32,7 +32,7 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:UseAVX=2"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class ReassociateVectorBenchmark {
     @Param({"1024", "2048", "4096"})
     int size;
