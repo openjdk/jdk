@@ -1221,6 +1221,11 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder,
     return false;
   }
   map_info->prepare_for_writing();
+
+  if (CDSConfig::is_dumping_heap()) {
+    HeapShared::write_roots(mapped_heap_info, streamed_heap_info);
+  }
+
   builder->write_archive(map_info, mapped_heap_info, streamed_heap_info);
   return true;
 }

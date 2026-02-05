@@ -59,7 +59,7 @@ bool AOTMappedHeapWriter::_is_writing_deterministic_heap = false;
 size_t AOTMappedHeapWriter::_buffer_used;
 
 // Heap root segments
-HeapRootSegments AOTMappedHeapWriter::_heap_root_segments;
+AOTMappedHeapRootSegments AOTMappedHeapWriter::_heap_root_segments;
 
 address AOTMappedHeapWriter::_requested_bottom;
 address AOTMappedHeapWriter::_requested_top;
@@ -150,13 +150,28 @@ void AOTMappedHeapWriter::add_source_obj(oop src_obj) {
   _source_objs->append(src_obj);
 }
 
-void AOTMappedHeapWriter::write(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                AOTMappedHeapInfo* heap_info) {
+void AOTMappedHeapWriter::write_objects(AOTMappedHeapInfo* heap_info) {
   assert(CDSConfig::is_dumping_heap(), "sanity");
   allocate_buffer();
-  copy_source_objs_to_buffer(roots);
+  copy_source_objs_to_buffer();
   set_requested_address_range(heap_info);
-  relocate_embedded_oops(roots, heap_info);
+  relocate_embedded_oops(heap_info);
+}
+
+void AOTMappedHeapWriter::write_roots(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info) {
+  copy_roots_to_buffer(roots, heap_info);
+
+  size_t total_bytes = (size_t)_buffer->length();
+  log_bitmap_usage("oopmap", heap_info->oopmap(), total_bytes / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop)));
+  log_bitmap_usage("ptrmap", heap_info->ptrmap(), total_bytes / sizeof(address));
+
+  heap_info->set_buffer_region(MemRegion(offset_to_buffered_address<HeapWord*>(0),
+                                         offset_to_buffered_address<HeapWord*>(_buffer_used)));
+  heap_info->set_root_segments(_heap_root_segments);
+
+  log_info(aot)("Size of heap region = %zu bytes, %d + %zu objects, %d roots, %d native ptrs",
+                _buffer_used, HeapShared::archived_object_cache()->number_of_entries(),
+                heap_info->root_segments().count(), roots->length(), _num_native_ptrs);
 }
 
 bool AOTMappedHeapWriter::is_too_large_to_archive(oop o) {
@@ -256,14 +271,13 @@ size_t AOTMappedHeapWriter::size_of_buffered_oop(address buffered_addr) {
     return nbytes / BytesPerWord;
   }
 
-  address hrs = buffer_bottom();
   for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
+    address seg_addr = offset_to_buffered_address<address>(_heap_root_segments.segment_offset(seg_idx));
     nbytes = _heap_root_segments.size_in_bytes(seg_idx);
-    if (hrs == buffered_addr) {
+    if (seg_addr == buffered_addr) {
       assert((nbytes % BytesPerWord) == 0, "should be aligned");
       return nbytes / BytesPerWord;
     }
-    hrs += nbytes;
   }
 
   ShouldNotReachHere();
@@ -307,16 +321,16 @@ objArrayOop AOTMappedHeapWriter::allocate_root_segment(size_t offset, int elemen
   return objArrayOop(cast_to_oop(mem));
 }
 
-void AOTMappedHeapWriter::root_segment_at_put(objArrayOop segment, int index, oop root) {
+void AOTMappedHeapWriter::root_segment_at_put(objArrayOop segment, int index, oop root, CHeapBitMap* oopmap) {
   // Do not use arrayOop->obj_at_put(i, o) as arrayOop is outside the real heap!
   if (UseCompressedOops) {
-    *segment->obj_at_addr<narrowOop>(index) = CompressedOops::encode(root);
+    relocate_field_in_buffer(segment->obj_at_addr<narrowOop>(index), root, oopmap);
   } else {
-    *segment->obj_at_addr<oop>(index) = root;
+    relocate_field_in_buffer(segment->obj_at_addr<oop>(index), root, oopmap);
   }
 }
 
-void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
+void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info) {
   // Depending on the number of classes we are archiving, a single roots array may be
   // larger than MIN_GC_REGION_ALIGNMENT. Roots are allocated first in the buffer, which
   // allows us to chop the large array into a series of "segments". Current layout
@@ -326,17 +340,33 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
   // or immediately after the last segment. This allows starting the object dump immediately
   // after the roots.
 
-  assert((_buffer_used % MIN_GC_REGION_ALIGNMENT) == 0,
-         "Pre-condition: Roots start at aligned boundary: %zu", _buffer_used);
+  // Make sure the first segment can contain at least one element.
+  size_t first_segment_max_size_in_bytes = objArrayOopDesc::object_size(roots->length()) * HeapWordSize;
+  size_t first_segment_min_size_in_bytes = objArrayOopDesc::object_size(1) * HeapWordSize;
+  maybe_fill_gc_region_gap(first_segment_min_size_in_bytes);
+
+  // What's left over in the current region
+  size_t remaining_bytes = MIN_GC_REGION_ALIGNMENT - (_buffer_used % MIN_GC_REGION_ALIGNMENT);
+  precond(remaining_bytes >= first_segment_min_size_in_bytes);
+
+  size_t first_segment_size_in_bytes = MIN2(remaining_bytes, first_segment_max_size_in_bytes);
+  precond(checked_cast<int>(first_segment_size_in_bytes) > arrayOopDesc::header_size_in_bytes());
+
+  int first_segment_size_in_elems = MIN2(roots->length(),
+                                         checked_cast<int>((first_segment_size_in_bytes - arrayOopDesc::header_size_in_bytes()) / heapOopSize));
+  assert(objArrayOopDesc::object_size(first_segment_size_in_elems)*HeapWordSize == first_segment_size_in_bytes,
+         "Should match exactly");
 
   int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
   assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
          "Should match exactly");
 
-  HeapRootSegments segments(_buffer_used,
-                            roots->length(),
-                            MIN_GC_REGION_ALIGNMENT,
-                            max_elem_count);
+  AOTMappedHeapRootSegments segments(roots->length(),
+                                     MIN_GC_REGION_ALIGNMENT,
+                                     max_elem_count,
+                                     _buffer_used,
+                                     first_segment_size_in_bytes,
+                                     first_segment_size_in_elems);
 
   int root_index = 0;
   for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
@@ -345,16 +375,23 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
 
     size_t oop_offset = _buffer_used;
     _buffer_used = oop_offset + size_bytes;
+    _requested_top = _requested_bottom + _buffer_used;
     ensure_buffer_space(_buffer_used);
 
-    assert((oop_offset % MIN_GC_REGION_ALIGNMENT) == 0,
-           "Roots segment %zu start is not aligned: %zu",
-           segments.count(), oop_offset);
+    if (seg_idx > 0) {
+      assert((oop_offset % MIN_GC_REGION_ALIGNMENT) == 0,
+             "Roots segment %zu start is not aligned: %zu",
+             segments.count(), oop_offset);
+    }
 
     objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
     for (int i = 0; i < size_elems; i++) {
-      root_segment_at_put(seg_oop, i, roots->at(root_index++));
+      oop root = roots->at(root_index++).resolve();
+      root_segment_at_put(seg_oop, i, root, heap_info->oopmap());
     }
+
+    objArrayOop requested_obj = (objArrayOop)requested_obj_from_buffer_offset(oop_offset);
+    update_header_for_requested_obj(requested_obj, nullptr, Universe::objectArrayKlass());
 
     log_info(aot, heap)("archived obj root segment [%d] = %zu bytes, obj = " PTR_FORMAT,
                         size_elems, size_bytes, p2i(seg_oop));
@@ -366,15 +403,15 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
 }
 
 // The goal is to sort the objects in increasing order of:
-// - objects that have only oop pointers
-// - objects that have both native and oop pointers
-// - objects that have only native pointers
 // - objects that have no pointers
+// - objects that have only native pointers
+// - objects that have both native and oop pointers
+// - objects that have only oop pointers
 static int oop_sorting_rank(oop o) {
   bool has_oop_ptr, has_native_ptr;
   HeapShared::get_pointer_info(o, has_oop_ptr, has_native_ptr);
 
-  if (has_oop_ptr) {
+  if (!has_oop_ptr) {
     if (!has_native_ptr) {
       return 0;
     } else {
@@ -408,6 +445,7 @@ void AOTMappedHeapWriter::sort_source_objs() {
 
   for (int i = 0; i < len; i++) {
     oop o = _source_objs->at(i);
+    mark_native_pointers(o);
     int rank = oop_sorting_rank(o);
     HeapObjOrder os = {i, rank};
     _source_objs_order->append(os);
@@ -417,11 +455,7 @@ void AOTMappedHeapWriter::sort_source_objs() {
   log_info(aot)("sorting heap objects done");
 }
 
-void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
-  // There could be multiple root segments, which we want to be aligned by region.
-  // Putting them ahead of objects makes sure we waste no space.
-  copy_roots_to_buffer(roots);
-
+void AOTMappedHeapWriter::copy_source_objs_to_buffer() {
   sort_source_objs();
   for (int i = 0; i < _source_objs_order->length(); i++) {
     int src_obj_index = _source_objs_order->at(i)._index;
@@ -439,9 +473,6 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
       Modules::check_archived_module_oop(src_obj);
     }
   }
-
-  log_info(aot)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
-                _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
 }
 
 size_t AOTMappedHeapWriter::filler_array_byte_size(int length) {
@@ -644,10 +675,6 @@ void AOTMappedHeapWriter::set_requested_address_range(AOTMappedHeapInfo* info) {
   assert(is_aligned(_requested_bottom, MIN_GC_REGION_ALIGNMENT), "sanity");
 
   _requested_top = _requested_bottom + _buffer_used;
-
-  info->set_buffer_region(MemRegion(offset_to_buffered_address<HeapWord*>(0),
-                                    offset_to_buffered_address<HeapWord*>(_buffer_used)));
-  info->set_root_segments(_heap_root_segments);
 }
 
 // Oop relocation
@@ -668,7 +695,7 @@ template <typename T> oop AOTMappedHeapWriter::load_source_oop_from_buffer(T* bu
 }
 
 template <typename T> void AOTMappedHeapWriter::store_requested_oop_in_buffer(T* buffered_addr,
-                                                                                   oop request_oop) {
+                                                                              oop request_oop) {
   assert(request_oop == nullptr || is_in_requested_range(request_oop), "must be");
   store_oop_in_buffer(buffered_addr, request_oop);
 }
@@ -779,10 +806,10 @@ private:
   }
 };
 
-static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bits) {
+void AOTMappedHeapWriter::log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bits) {
   // The whole heap is covered by total_bits, but there are only non-zero bits within [start ... end).
   size_t start = bitmap->find_first_set_bit(0);
-  size_t end = bitmap->size();
+  size_t end = bitmap->find_last_set_bit(0);
   log_info(aot)("%s = %7zu ... %7zu (%3zu%% ... %3zu%% = %3zu%%)", which,
                 start, end,
                 start * 100 / total_bits,
@@ -791,11 +818,10 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 }
 
 // Update all oop fields embedded in the buffered objects
-void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                                      AOTMappedHeapInfo* heap_info) {
+void AOTMappedHeapWriter::relocate_embedded_oops(AOTMappedHeapInfo* heap_info) {
   size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
   size_t heap_region_byte_size = _buffer_used;
-  heap_info->oopmap()->resize(heap_region_byte_size   / oopmap_unit);
+  heap_info->oopmap()->resize(heap_region_byte_size * 2 / oopmap_unit);
 
   for (int i = 0; i < _source_objs_order->length(); i++) {
     int src_obj_index = _source_objs_order->at(i)._index;
@@ -807,41 +833,9 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
     address buffered_obj = offset_to_buffered_address<address>(info->buffer_offset());
     EmbeddedOopRelocator relocator(src_obj, buffered_obj, heap_info->oopmap());
     src_obj->oop_iterate(&relocator);
-    mark_native_pointers(src_obj);
   };
 
-  // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
-  // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
-  for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
-    size_t seg_offset = _heap_root_segments.segment_offset(seg_idx);
-
-    objArrayOop requested_obj = (objArrayOop)requested_obj_from_buffer_offset(seg_offset);
-    update_header_for_requested_obj(requested_obj, nullptr, Universe::objectArrayKlass());
-    address buffered_obj = offset_to_buffered_address<address>(seg_offset);
-    int length = _heap_root_segments.size_in_elems(seg_idx);
-
-    size_t elem_size = UseCompressedOops ? sizeof(narrowOop) : sizeof(oop);
-
-    for (int i = 0; i < length; i++) {
-      // There is no source object; these are native oops - load, translate and
-      // write back
-      size_t elem_offset = objArrayOopDesc::base_offset_in_bytes() + elem_size * i;
-      HeapWord* elem_addr = (HeapWord*)(buffered_obj + elem_offset);
-      oop obj = NativeAccess<>::oop_load(elem_addr);
-      obj = HeapShared::maybe_remap_referent(false /* is_reference_field */, elem_offset, obj);
-      if (UseCompressedOops) {
-        relocate_field_in_buffer<narrowOop>((narrowOop*)elem_addr, obj, heap_info->oopmap());
-      } else {
-        relocate_field_in_buffer<oop>((oop*)elem_addr, obj, heap_info->oopmap());
-      }
-    }
-  }
-
   compute_ptrmap(heap_info);
-
-  size_t total_bytes = (size_t)_buffer->length();
-  log_bitmap_usage("oopmap", heap_info->oopmap(), total_bytes / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop)));
-  log_bitmap_usage("ptrmap", heap_info->ptrmap(), total_bytes / sizeof(address));
 }
 
 void AOTMappedHeapWriter::mark_native_pointer(oop src_obj, int field_offset) {
@@ -917,13 +911,13 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapIn
                             address requested_base,
                             address requested_start,
                             int requested_shift,
-                            size_t num_root_segments) :
+                            AOTMappedHeapRootSegments root_segments) :
       AOTMappedHeapOopIterator(buffer_start,
                                buffer_end,
                                requested_base,
                                requested_start,
                                requested_shift,
-                               num_root_segments) {}
+                               root_segments) {}
 
     AOTMapLogger::OopData capture(address buffered_addr) override {
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
@@ -943,6 +937,23 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapIn
                size,
                false };
     }
+
+    GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
+      GrowableArrayCHeap<OopHandle, mtClassShared>* pending_roots = HeapShared::pending_roots();
+      GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* result = new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
+
+      for (int i = 0; i < pending_roots->length(); ++i) {
+        if (i == 0) {
+          result->append(null_data());
+        } else {
+          HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(pending_roots->at(i).resolve());
+          address buffered_addr = _buffer_start + p->buffer_offset();
+          result->append(capture(buffered_addr));
+        }
+      }
+
+      return result;
+    }
   };
 
   MemRegion r = heap_info->buffer_region();
@@ -958,7 +969,7 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapIn
                                      requested_base,
                                      requested_start,
                                      requested_shift,
-                                     heap_info->root_segments().count());
+                                     heap_info->root_segments());
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

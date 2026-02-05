@@ -38,6 +38,7 @@
 #include "utilities/macros.hpp"
 
 struct AOTMappedHeapRegion;
+class  AOTMappedHeapRootSegments;
 class  FileMapInfo;
 
 class AOTMappedHeapLoader : AllStatic {
@@ -135,7 +136,8 @@ private:
 
   // Heap roots
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
-  static int _root_segment_max_size_elems;
+  static int _max_root_segment_elems;
+  static int _first_root_segment_elems;
 
   static MemRegion _mapped_heap_memregion;
   static bool _heap_pointers_need_patching;
@@ -157,7 +159,7 @@ private:
   static objArrayOop root_segment(int segment_idx);
   static void get_segment_indexes(int idx, int& seg_idx, int& int_idx);
   static void add_root_segment(objArrayOop segment_oop);
-  static void init_root_segment_sizes(int max_size_elems);
+  static void init_root_segment_sizes(AOTMappedHeapRootSegments segments);
 
   template<bool IS_MAPPED>
   inline static oop decode_from_archive_impl(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);

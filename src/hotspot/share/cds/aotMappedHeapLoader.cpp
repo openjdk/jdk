@@ -73,10 +73,14 @@ ptrdiff_t AOTMappedHeapLoader::_mapped_heap_delta = 0;
 
 // Heap roots
 GrowableArrayCHeap<OopHandle, mtClassShared>* AOTMappedHeapLoader::_root_segments = nullptr;
-int AOTMappedHeapLoader::_root_segment_max_size_elems;
+int AOTMappedHeapLoader::_max_root_segment_elems;
+int AOTMappedHeapLoader::_first_root_segment_elems;
 
 MemRegion AOTMappedHeapLoader::_mapped_heap_memregion;
 bool AOTMappedHeapLoader::_heap_pointers_need_patching;
+
+// Used for AOT map logging
+static GrowableArrayCHeap<size_t, mtClass>* _root_offsets;
 
 // Every mapped region is offset by _mapped_heap_delta from its requested address.
 // See FileMapInfo::heap_region_requested_address().
@@ -371,19 +375,18 @@ objArrayOop AOTMappedHeapLoader::root_segment(int segment_idx) {
 }
 
 void AOTMappedHeapLoader::get_segment_indexes(int idx, int& seg_idx, int& int_idx) {
-  assert(_root_segment_max_size_elems > 0, "sanity");
+  assert(_max_root_segment_elems > 0, "sanity");
+  assert(_first_root_segment_elems > 0, "sanity");
 
   // Try to avoid divisions for the common case.
-  if (idx < _root_segment_max_size_elems) {
+  if (idx < _first_root_segment_elems) {
     seg_idx = 0;
     int_idx = idx;
   } else {
-    seg_idx = idx / _root_segment_max_size_elems;
-    int_idx = idx % _root_segment_max_size_elems;
+    idx -= _first_root_segment_elems;
+    seg_idx = idx / _max_root_segment_elems + 1;
+    int_idx = idx % _max_root_segment_elems;
   }
-
-  assert(idx == seg_idx * _root_segment_max_size_elems + int_idx,
-         "sanity: %d index maps to %d segment and %d internal", idx, seg_idx, int_idx);
 }
 
 void AOTMappedHeapLoader::add_root_segment(objArrayOop segment_oop) {
@@ -395,16 +398,16 @@ void AOTMappedHeapLoader::add_root_segment(objArrayOop segment_oop) {
   _root_segments->push(OopHandle(Universe::vm_global(), segment_oop));
 }
 
-void AOTMappedHeapLoader::init_root_segment_sizes(int max_size_elems) {
-  _root_segment_max_size_elems = max_size_elems;
+void AOTMappedHeapLoader::init_root_segment_sizes(AOTMappedHeapRootSegments segments) {
+  _max_root_segment_elems = segments.max_size_in_elems();
+  _first_root_segment_elems = segments.first_segment_size_in_elems();
 }
 
 oop AOTMappedHeapLoader::get_root(int index) {
   assert(!_root_segments->is_empty(), "must have loaded shared heap");
   int seg_idx, int_idx;
   get_segment_indexes(index, seg_idx, int_idx);
-  objArrayOop result = objArrayOop(root_segment(seg_idx));
-  return result->obj_at(int_idx);
+  return root_segment(seg_idx)->obj_at(int_idx);
 }
 
 void AOTMappedHeapLoader::clear_root(int index) {
@@ -456,17 +459,30 @@ void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
 
     // The heap roots are stored in one or more segments that are laid out consecutively.
     // The size of each segment (except for the last one) is max_size_in_{elems,bytes}.
-    HeapRootSegments segments = FileMapInfo::current_info()->mapped_heap()->root_segments();
-    init_root_segment_sizes(segments.max_size_in_elems());
-    intptr_t first_segment_addr = bottom + segments.base_offset();
-    for (size_t c = 0; c < segments.count(); c++) {
-      oop segment_oop = cast_to_oop(first_segment_addr + (c * segments.max_size_in_bytes()));
+    AOTMappedHeapRootSegments segments = FileMapInfo::current_info()->mapped_heap()->root_segments();
+    init_root_segment_sizes(segments);
+    for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
+      oop segment_oop = cast_to_oop(bottom + segments.segment_offset(seg_idx));
       assert(segment_oop->is_objArray(), "Must be");
       add_root_segment((objArrayOop)segment_oop);
     }
 
     if (CDSConfig::is_dumping_final_static_archive()) {
       StringTable::move_shared_strings_into_runtime_table();
+    }
+
+    if (AOTMapLogger::is_logging_at_bootstrap()) {
+      _root_offsets = new GrowableArrayCHeap<size_t, mtClass>();
+
+      for (int i = 0; i < segments.roots_count(); i++) {
+        oop root = AOTMappedHeapLoader::get_root(i);
+        if (root == nullptr) {
+          precond(i == 0);
+          _root_offsets->append(0); // Not used.
+        } else {
+          _root_offsets->append(pointer_delta(root, cast_to_oop(bottom), 1));
+        }
+      }
     }
   }
 }
@@ -741,13 +757,13 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                             address requested_base,
                             address requested_start,
                             int requested_shift,
-                            size_t num_root_segments) :
+                            AOTMappedHeapRootSegments root_segments) :
       AOTMappedHeapOopIterator(buffer_start,
                                buffer_end,
                                requested_base,
                                requested_start,
                                requested_shift,
-                               num_root_segments) {}
+                               root_segments) {}
 
     AOTMapLogger::OopData capture(address buffered_addr) override {
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
@@ -767,6 +783,21 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                size,
                false };
     }
+
+    GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
+      GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* result = new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
+
+      for (int i = 0; i < _root_offsets->length(); i++) {
+        if (i == 0) {
+          result->append(null_data());
+        } else {
+          size_t offset = _root_offsets->at(i);
+          result->append(capture(_buffer_start + offset));
+        }
+      }
+
+      return result;
+    }
   };
 
   FileMapRegion* r = info->region_at(AOTMetaspace::hp);
@@ -779,7 +810,7 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                                      requested_base,
                                      requested_start,
                                      requested_shift,
-                                     info->mapped_heap()->root_segments().count());
+                                     info->mapped_heap()->root_segments());
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -23,6 +23,35 @@
  */
 
 #include "cds/aotMappedHeap.hpp"
+#include "oops/objArrayOop.hpp"
+
+size_t AOTMappedHeapRootSegments::size_in_bytes(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
+}
+
+int AOTMappedHeapRootSegments::size_in_elems(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  if (seg_idx == 0) {
+    return _first_segment_size_in_elems;
+  } else if (seg_idx != _count - 1) {
+    return _max_size_in_elems;
+  } else {
+    // Last slice, leftover
+    return (_roots_count - _first_segment_size_in_elems) % _max_size_in_elems;
+  }
+}
+
+size_t AOTMappedHeapRootSegments::segment_offset(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  if (seg_idx == 0) {
+    return _first_segment_offset_in_bytes;
+  } else {
+    return align_up(_first_segment_offset_in_bytes, _max_size_in_bytes) +  
+           (seg_idx - 1) * _max_size_in_bytes;
+  }
+}
+
 
 // Anything that goes in the header must be thoroughly purged from uninitialized memory
 // as it will be written to disk. Therefore, the constructors memset the memory to 0.
@@ -31,7 +60,7 @@
 
 AOTMappedHeapHeader::AOTMappedHeapHeader(size_t ptrmap_start_pos,
                                          size_t oopmap_start_pos,
-                                         HeapRootSegments root_segments) {
+                                         AOTMappedHeapRootSegments root_segments) {
   memset((char*)this, 0, sizeof(*this));
   _ptrmap_start_pos = ptrmap_start_pos;
   _oopmap_start_pos = oopmap_start_pos;

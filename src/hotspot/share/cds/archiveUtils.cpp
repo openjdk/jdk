@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "interpreter/bootstrapInfo.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -386,26 +385,6 @@ bool ArchiveUtils::has_aot_initialized_mirror(InstanceKlass* src_ik) {
     return false;
   }
   return ArchiveBuilder::current()->get_buffered_addr(src_ik)->has_aot_initialized_mirror();
-}
-
-size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
-  assert(seg_idx < _count, "In range");
-  return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
-}
-
-int HeapRootSegments::size_in_elems(size_t seg_idx) {
-  assert(seg_idx < _count, "In range");
-  if (seg_idx != _count - 1) {
-    return _max_size_in_elems;
-  } else {
-    // Last slice, leftover
-    return _roots_count % _max_size_in_elems;
-  }
-}
-
-size_t HeapRootSegments::segment_offset(size_t seg_idx) {
-  assert(seg_idx < _count, "In range");
-  return _base_offset + seg_idx * _max_size_in_bytes;
 }
 
 ArchiveWorkers::ArchiveWorkers() :

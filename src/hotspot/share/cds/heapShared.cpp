@@ -146,7 +146,7 @@ static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
 
 KlassSubGraphInfo* HeapShared::_dump_time_special_subgraph;
 ArchivedKlassSubGraphInfoRecord* HeapShared::_run_time_special_subgraph;
-GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
+GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
 
@@ -175,23 +175,30 @@ oop HeapShared::CachedOopInfo::orig_referrer() const {
 }
 
 unsigned HeapShared::oop_hash(oop const& p) {
-  assert(SafepointSynchronize::is_at_safepoint() ||
-         JavaThread::current()->is_in_no_safepoint_scope(), "sanity");
+  assert(SafepointSynchronize::is_at_safepoint() , "sanity");
   // Do not call p->identity_hash() as that will update the
   // object header.
   return primitive_hash(cast_from_oop<intptr_t>(p));
 }
 
-unsigned int HeapShared::oop_handle_hash_raw(const OopHandle& oh) {
+unsigned HeapShared::oop_handle_hash_raw(const OopHandle& oh) {
   return oop_hash(oh.resolve());
 }
 
-unsigned int HeapShared::oop_handle_hash(const OopHandle& oh) {
+unsigned HeapShared::oop_handle_hash(const OopHandle& oh) {
   oop o = oh.resolve();
   if (o == nullptr) {
     return 0;
   } else {
     return o->identity_hash();
+  }
+}
+
+unsigned HeapShared::archived_object_cache_hash(OopHandle const& oh) {
+  if (_use_identity_cache_for_archived_object_cache) {
+    return oop_handle_hash(oh);
+  } else {
+    return oop_handle_hash_raw(oh);
   }
 }
 
@@ -246,6 +253,7 @@ void HeapShared::reset_archived_object_states(TRAPS) {
   reset_states(boot_loader(), CHECK);
 }
 
+bool HeapShared::_use_identity_cache_for_archived_object_cache = false;
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
 
 bool HeapShared::is_archived_heap_in_use() {
@@ -381,6 +389,20 @@ void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
   }
 }
 
+void HeapShared::make_archived_object_cache_gc_safe() {
+  ArchivedObjectCache* new_cache = new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
+
+  // It's safe to change the behavior of the hash function now, because iterate_all() doesn't call
+  // the hash function.
+  _use_identity_cache_for_archived_object_cache = true;
+  archived_object_cache()->iterate_all([&] (OopHandle oh, CachedOopInfo info) {
+      new_cache->put_when_absent(oh, info);
+    });
+
+  destroy_archived_object_cache();
+  _archived_object_cache = new_cache;
+}
+
 HeapShared::CachedOopInfo* HeapShared::get_cached_oop_info(oop obj) {
   OopHandle oh(Universe::vm_global(), obj);
   CachedOopInfo* result = _archived_object_cache->get(oh);
@@ -394,14 +416,23 @@ bool HeapShared::has_been_archived(oop obj) {
 }
 
 int HeapShared::append_root(oop obj) {
+  assert(SafepointSynchronize::is_at_safepoint() , "todo: need a lock when access outside of safepoint");
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
-  if (obj != nullptr) {
-    assert(has_been_archived(obj), "must be");
+  if (obj == nullptr) {
+    assert(_pending_roots->at(0).is_empty(), "root index 1 is always null");
+    return 0;
   }
-  // No GC should happen since we aren't scanning _pending_roots.
-  assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
+  CachedOopInfo* obj_info = get_cached_oop_info(obj);
+  assert(obj_info != nullptr, "must be archived");
 
-  return _pending_roots->append(obj);
+  if (obj_info->root_index() > 0) {
+    return obj_info->root_index();
+  } else {
+    OopHandle oh(Universe::vm_global(), obj);
+    int i = _pending_roots->append(oh);
+    obj_info->set_root_index(i);
+    return i;
+  }
 }
 
 oop HeapShared::get_root(int index, bool clear) {
@@ -579,7 +610,8 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
 
  void HeapShared::init_dumping() {
    _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
-   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
+   _pending_roots = new GrowableArrayCHeap<OopHandle, mtClassShared>(500);
+   _pending_roots->append(OopHandle());
 }
 
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
@@ -852,14 +884,32 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
 
   if (HeapShared::is_writing_mapping_mode()) {
     StringTable::write_shared_table();
-    AOTMappedHeapWriter::write(_pending_roots, mapped_heap_info);
+  }
+
+  GrowableArrayCHeap<oop, mtClassShared>* roots = new GrowableArrayCHeap<oop, mtClassShared>(_pending_roots->length());
+  for (int i = 0; i < _pending_roots->length(); i++) {
+    roots->append(_pending_roots->at(i).resolve());
+  }
+
+  if (HeapShared::is_writing_mapping_mode()) {
+    AOTMappedHeapWriter::write_objects(mapped_heap_info);
   } else {
     assert(HeapShared::is_writing_streaming_mode(), "are there more modes?");
-    AOTStreamedHeapWriter::write(_pending_roots, streamed_heap_info);
+    AOTStreamedHeapWriter::write(roots, streamed_heap_info);
   }
+
+  delete roots;
 
   ArchiveBuilder::OtherROAllocMark mark;
   write_subgraph_info_table();
+
+  make_archived_object_cache_gc_safe();
+}
+
+void HeapShared::write_roots(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) {
+  if (HeapShared::is_writing_mapping_mode()) {
+    AOTMappedHeapWriter::write_roots(HeapShared::pending_roots(), mapped_heap_info);
+  }
 }
 
 void HeapShared::scan_java_mirror(oop orig_mirror) {

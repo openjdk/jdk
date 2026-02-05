@@ -26,6 +26,7 @@
 #define SHARE_CDS_AOTMAPPEDHEAPWRITER_HPP
 
 #include "cds/aotMapLogger.hpp"
+#include "cds/aotMappedHeap.hpp"
 #include "cds/heapShared.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
@@ -123,7 +124,7 @@ private:
   static size_t _buffer_used;
 
   // The heap root segments information.
-  static HeapRootSegments _heap_root_segments;
+  static AOTMappedHeapRootSegments _heap_root_segments;
 
   // The address range of the requested location of the archived heap objects.
   static address _requested_bottom; // The requested address of the lowest archived heap object
@@ -185,10 +186,10 @@ private:
     return buffered_addr - buffer_bottom();
   }
 
-  static void root_segment_at_put(objArrayOop segment, int index, oop root);
+  static void root_segment_at_put(objArrayOop segment, int index, oop root, CHeapBitMap* oopmap);
   static objArrayOop allocate_root_segment(size_t offset, int element_count);
-  static void copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
-  static void copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
+  static void copy_roots_to_buffer(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info);
+  static void copy_source_objs_to_buffer();
   static size_t copy_one_source_obj_to_buffer(oop src_obj);
 
   static void maybe_fill_gc_region_gap(size_t required_byte_size);
@@ -198,7 +199,7 @@ private:
 
   static void set_requested_address_range(AOTMappedHeapInfo* info);
   static void mark_native_pointers(oop orig_obj);
-  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, AOTMappedHeapInfo* info);
+  static void relocate_embedded_oops(AOTMappedHeapInfo* info);
   static void compute_ptrmap(AOTMappedHeapInfo *info);
   static bool is_in_requested_range(oop o);
   static oop requested_obj_from_buffer_offset(size_t offset);
@@ -219,6 +220,7 @@ private:
 
   static int compare_objs_by_oop_fields(HeapObjOrder* a, HeapObjOrder* b);
   static void sort_source_objs();
+  static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bits);
 
 public:
   static void init() NOT_CDS_JAVA_HEAP_RETURN;
@@ -229,7 +231,8 @@ public:
   static bool is_string_too_large_to_archive(oop string);
   static bool is_dumped_interned_string(oop o);
   static void add_to_dumped_interned_strings(oop string);
-  static void write(GrowableArrayCHeap<oop, mtClassShared>*, AOTMappedHeapInfo* heap_info);
+  static void write_objects(AOTMappedHeapInfo* heap_info);
+  static void write_roots(GrowableArrayCHeap<OopHandle, mtClassShared>* roots, AOTMappedHeapInfo* heap_info);
   static address requested_address();  // requested address of the lowest achived heap object
   static size_t get_filler_size_at(address buffered_addr);
 
