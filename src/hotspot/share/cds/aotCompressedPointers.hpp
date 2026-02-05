@@ -31,11 +31,6 @@
 #include "utilities/macros.hpp"
 
 class AOTCompressedPointers: public AllStatic {
-#if 0
-  static address _encoding_base;
-  static address _encoding_top;
-#endif
-
   static size_t compute_byte_offset(address p);
 
 public:

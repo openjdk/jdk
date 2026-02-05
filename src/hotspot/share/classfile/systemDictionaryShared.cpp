@@ -25,6 +25,7 @@
 
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -1282,11 +1283,10 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
 class CopySharedClassInfoToArchive : StackObj {
   CompactHashtableWriter* _writer;
   bool _is_builtin;
-  ArchiveBuilder *_builder;
 public:
   CopySharedClassInfoToArchive(CompactHashtableWriter* writer,
                                bool is_builtin)
-    : _writer(writer), _is_builtin(is_builtin), _builder(ArchiveBuilder::current()) {}
+    : _writer(writer), _is_builtin(is_builtin) {}
 
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
@@ -1299,7 +1299,7 @@ public:
       Symbol* name = info._klass->name();
       name = ArchiveBuilder::current()->get_buffered_addr(name);
       hash = SystemDictionaryShared::hash_for_shared_dictionary((address)name);
-      u4 delta = _builder->buffer_to_offset_u4((address)record);
+      u4 delta = AOTCompressedPointers::encode_not_null(record);
       if (_is_builtin && info._klass->is_hidden()) {
         // skip
       } else {

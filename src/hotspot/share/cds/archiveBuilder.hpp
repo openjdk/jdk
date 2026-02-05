@@ -25,7 +25,6 @@
 #ifndef SHARE_CDS_ARCHIVEBUILDER_HPP
 #define SHARE_CDS_ARCHIVEBUILDER_HPP
 
-#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "memory/metaspace.hpp"
@@ -124,8 +123,6 @@ public:
   enum FollowMode {
     make_a_copy, point_to_it, set_to_null
   };
-
-  using narrowPtr = AOTCompressedPointers::narrowPtr;
 
 private:
   class SourceObjInfo {
@@ -343,13 +340,10 @@ public:
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
   uintx buffer_to_offset(address p) const;
-  //size_t buffer_to_offset_new(address p) const;
 
   // Same as buffer_to_offset, except that the address p points to either (a) an object
   // inside the output buffer, or (b), an object in the currently mapped static archive.
   uintx any_to_offset(address p) const;
-
-  size_t any_to_offset_new(address p) const;
 
   // The reverse of buffer_to_offset()
   address offset_to_buffered_address(u4 offset) const;
@@ -366,15 +360,6 @@ public:
     uintx offset = any_to_offset((address)p);
     return to_offset_u4(offset);
   }
-
-#if 0
-  template <typename T>
-  narrowPtr encode_any_pointer(T p) const {
-    assert(p != nullptr, "must not be null");
-    size_t offset = any_to_offset_new(reinterpret_cast<address>(p));
-    return to_offset_u4(offset);
-  }
-#endif
 
   template <typename T>
   u4 any_or_null_to_offset_u4(T p) const {
