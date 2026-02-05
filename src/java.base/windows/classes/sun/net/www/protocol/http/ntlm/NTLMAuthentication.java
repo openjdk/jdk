@@ -60,6 +60,8 @@ public final class NTLMAuthentication extends AuthenticationInfo {
     private static final TransparentAuth authMode;
 
     static {
+        jdk.internal.loader.BootLoader.loadLibrary("net");
+
         defaultDomain = System.getProperty("http.auth.ntlm.domain", "domain");
         String ntlmCacheProp = System.getProperty("jdk.ntlm.cache", "true");
         ntlmCache = Boolean.parseBoolean(ntlmCacheProp);

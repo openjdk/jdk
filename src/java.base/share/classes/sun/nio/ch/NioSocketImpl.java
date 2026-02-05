@@ -206,7 +206,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         if (!nonBlocking
             && (timed || Thread.currentThread().isVirtual())) {
             assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
-            IOUtil.configureBlocking(fd, false);
+            NIOUtil.configureBlocking(fd, false);
             nonBlocking = true;
         }
     }
@@ -766,7 +766,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         InetSocketAddress localAddress;
         try {
             localAddress = Net.localAddress(newfd);
-            IOUtil.configureBlocking(newfd, true);
+            NIOUtil.configureBlocking(newfd, true);
         } catch (IOException ioe) {
             nd.close(newfd);
             throw ioe;

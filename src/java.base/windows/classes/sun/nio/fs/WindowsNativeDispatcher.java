@@ -1094,9 +1094,6 @@ class WindowsNativeDispatcher {
     private static native void initIDs();
 
     static {
-        // nio.dll has dependency on net.dll
-        jdk.internal.loader.BootLoader.loadLibrary("net");
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
         initIDs();
     }
 

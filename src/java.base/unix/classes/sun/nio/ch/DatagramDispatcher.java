@@ -35,10 +35,6 @@ import java.io.IOException;
 
 class DatagramDispatcher extends UnixDispatcher {
 
-    static {
-        IOUtil.load();
-    }
-
     @Override
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);

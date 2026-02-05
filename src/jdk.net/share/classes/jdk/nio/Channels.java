@@ -34,6 +34,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Objects;
 
 import sun.nio.ch.IOUtil;
+import sun.nio.ch.NIOUtil;
 import sun.nio.ch.Net;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -233,7 +234,7 @@ public final class Channels {
 
         @Override
         protected void implConfigureBlocking(boolean block) throws IOException {
-            IOUtil.configureBlocking(fd, block);
+            NIOUtil.configureBlocking(fd, block);
         }
 
         @Override

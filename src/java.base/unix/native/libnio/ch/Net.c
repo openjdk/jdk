@@ -42,6 +42,8 @@
 #include "nio_util.h"
 #include "nio.h"
 
+#include "Net.h"
+
 #ifdef _AIX
 #include <stdlib.h>
 #include <sys/utsname.h>

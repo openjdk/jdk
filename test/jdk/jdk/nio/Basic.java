@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.nio.channels.SocketChannel;
 import jdk.nio.Channels;
 import jdk.nio.Channels.SelectableChannelCloser;
 
-import sun.nio.ch.IOUtil;
+import sun.nio.ch.NIOUtil;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -237,7 +237,7 @@ public class Basic {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidFileDescriptor() throws IOException {
-        FileDescriptor fd = IOUtil.newFD(-1);
+        FileDescriptor fd = NIOUtil.newFD(-1);
         Channels.readWriteSelectableChannel(fd, new SelectableChannelCloser() {
             @Override
             public void implCloseChannel(SelectableChannel sc) { }

@@ -559,58 +559,24 @@ public final class IOUtil {
         return NIO_ACCESS.getBufferAddress(buf);
     }
 
-    public static FileDescriptor newFD(int i) {
-        FileDescriptor fd = new FileDescriptor();
-        setfdVal(fd, i);
-        return fd;
-    }
-
-    static native boolean randomBytes(byte[] someBytes);
-
-    /**
-     * Returns two file descriptors for a pipe encoded in a long.
-     * The read end of the pipe is returned in the high 32 bits,
-     * while the write end is returned in the low 32 bits.
-     */
-    static native long makePipe(boolean blocking) throws IOException;
-
-    static native int write1(int fd, byte b) throws IOException;
-
-    /**
-     * Read and discard all bytes.
-     */
-    static native boolean drain(int fd) throws IOException;
-
-    /**
-     * Read and discard at most one byte
-     * @return the number of bytes read or IOS_INTERRUPTED
-     */
-    static native int drain1(int fd) throws IOException;
-
-    public static native void configureBlocking(FileDescriptor fd,
-                                                boolean blocking)
-        throws IOException;
-
     public static native int fdVal(FileDescriptor fd);
 
     static native void setfdVal(FileDescriptor fd, int value);
 
-    static native int fdLimit();
+    private static native int iovMax();
 
-    static native int iovMax();
+    private static native long writevMax();
 
-    static native long writevMax();
-
-    static native void initIDs();
+    private static native void initIDs();
 
     /**
-     * Used to trigger loading of native libraries
+     * Used to trigger initialization of static final fields and of
+     * FileDescriptor field IDs in the native layer
      */
     public static void load() { }
 
     static {
-        jdk.internal.loader.BootLoader.loadLibrary("net");
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
+        // Initialize FileDescriptor field IDs in the native layer
         initIDs();
 
         IOV_MAX = iovMax();

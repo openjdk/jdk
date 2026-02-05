@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ final class KQueuePort
 
         // create socket pair for wakeup mechanism
         try {
-            long fds = IOUtil.makePipe(true);
+            long fds = NIOUtil.makePipe(true);
             this.sp = new int[]{(int) (fds >>> 32), (int) fds};
         } catch (IOException ioe) {
             KQueue.freePollArray(address);
@@ -133,7 +133,7 @@ final class KQueuePort
         if (wakeupCount.incrementAndGet() == 1) {
             // write byte to socketpair to force wakeup
             try {
-                IOUtil.write1(sp[1], (byte)0);
+                NIOUtil.write1(sp[1], (byte)0);
             } catch (IOException x) {
                 throw new AssertionError(x);
             }
@@ -220,7 +220,7 @@ final class KQueuePort
                                     // a wakeup byte queued to wake each thread
                                     int nread;
                                     do {
-                                        nread = IOUtil.drain1(sp[0]);
+                                        nread = NIOUtil.drain1(sp[0]);
                                     } while (nread == IOStatus.INTERRUPTED);
                                 }
 
