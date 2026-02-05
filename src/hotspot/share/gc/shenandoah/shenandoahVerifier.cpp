@@ -664,7 +664,7 @@ public:
       }
     }
 
-    _processed.add_then_fetch(processed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 };
 
