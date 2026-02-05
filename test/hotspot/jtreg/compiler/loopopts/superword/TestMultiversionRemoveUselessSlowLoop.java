@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +65,13 @@ public class TestMultiversionRemoveUselessSlowLoop {
         phase = CompilePhase.PHASEIDEALLOOP1)
     @IR(counts = {"pre .* multiversion_fast",  "= 2",
                   "main .* multiversion_fast", "= 1", // The first main loop is fully unrolled
-                  "post .* multiversion_fast", "= 3", // the second loop is vectorized, and has a vectorized post loop
+                  // Both of loops are vectorized, and have vectorized drain post loops on platforms (<= 32 bytes).
+                  // On platforms (> 32 bytes), the second loop is vectorized, and has a vectorized post loop
+                  "post .* multiversion_fast", "<= 4",
+                  "post .* multiversion_fast", ">= 3",
                   "multiversion_delayed_slow", "= 1", // As a consequence of the first main loop being removed, we constant fold the multiversion_if
-                  "multiversion",              "= 7", // nothing unexpected
+                  "multiversion",              ">= 7", // nothing unexpected
+                  "multiversion",              "<= 8", // nothing unexpected
                   IRNode.OPAQUE_MULTIVERSIONING, "= 1"}, // The multiversion_if of the first loop was constant folded, because the main loop disappeared.
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
@@ -74,10 +79,13 @@ public class TestMultiversionRemoveUselessSlowLoop {
     @IR(counts = {"pre .* multiversion_fast.*", ">= 1", // In some cases, the pre loop of the first loop also disappears because it only has a single iteration
                   "pre .* multiversion_fast.*", "<= 2", // but not in other cases the pre loop of the first loop remains.
                   "main .* multiversion_fast", "= 1",
-                  "post .* multiversion_fast", "= 3",
+                  // After loop-opts, we also constant fold the vectorized drain post loop of the first loop, as it is unreachable on platforms (!= 32bytes).
+                  // But on platforms (== 32bytes), after loop-opts, the vectorized drain post loop of the first loop is reachable.
+                  "post .* multiversion_fast", "<= 4",
+                  "post .* multiversion_fast", ">= 3",
                   "multiversion_delayed_slow", "= 0", // The second loop's multiversion_if was also not used, so it is constant folded after loop opts.
                   "multiversion",              ">= 5", // nothing unexpected
-                  "multiversion",              "<= 6", // nothing unexpected
+                  "multiversion",              "<= 7", // nothing unexpected
                   IRNode.OPAQUE_MULTIVERSIONING, "= 0"}, // After loop-opts, we also constant fold the multiversion_if of the second loop, as it is unused.
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},

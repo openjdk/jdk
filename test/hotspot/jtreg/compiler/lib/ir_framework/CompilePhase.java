@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +112,8 @@ public enum CompilePhase {
     AFTER_ONE_ITERATION_LOOP(       "After Replacing One-Iteration Loop"),
     BEFORE_DUPLICATE_LOOP_BACKEDGE( "Before Duplicate Loop Backedge"),
     AFTER_DUPLICATE_LOOP_BACKEDGE(  "After Duplicate Loop Backedge"),
+    BEFORE_VECTORIZED_DRAIN(        "Before Vectorized Drain Loop"),
+    AFTER_VECTORIZED_DRAIN(         "After Vectorized Drain Loop"),
     PHASEIDEALLOOP1(                "PhaseIdealLoop 1"),
     PHASEIDEALLOOP2(                "PhaseIdealLoop 2"),
     PHASEIDEALLOOP3(                "PhaseIdealLoop 3"),

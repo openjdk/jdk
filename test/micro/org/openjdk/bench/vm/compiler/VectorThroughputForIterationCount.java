@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +78,8 @@ public abstract class VectorThroughputForIterationCount {
 
     // Add enough slack so we can play with offsets / alignment.
     public static int CONTAINER_SIZE = 20_000;
+    public static int WARMUP_LEN = 2048;
+    public static int START_IDX = 0;
 
     private byte[] aB;
     private byte[] bB;
@@ -124,6 +127,36 @@ public abstract class VectorThroughputForIterationCount {
     @Param("42")
     private int seed;
     private Random r = new Random(seed);
+
+    // When enabled, run an additional warm-up phase using a large loop iteration
+    // count to encourage C2 to generate vectorized and unrolled loop bodies.
+    //
+    // Rationale:
+    // Some benchmarks in this suite use small, fixed trip-count loops. During
+    // early profiling, C2 may treat such loops as trivial, avoid vectorization,
+    // or optimize them away entirely. In those cases, changes that affect loop
+    // vectorization behavior, such as the improvement introduced by JDK-8307084,
+    // may not be observable in the generated code.
+    //
+    // As a result, this benchmark suite contains two main classes of
+    // microbenchmarks:
+    //   1) bench_xx_computeBound / bench_xx_memoryBound
+    //      These measure the performance of C2-generated code for the given
+    //      workload without relying on a special warm-up phase.
+    //   2) bench03xx_staticTripCount / bench03xx_dynamicTripCount
+    //      These benchmarks are sensitive to early profiling. Enabling a
+    //      large-loop warm-up forces the optimizer to observe the loop at scale,
+    //      making vectorized code generation more likely and allowing such
+    //      effects to be measured.
+    //
+    // Usage guidance:
+    // - Enable for microbenchmarks that rely on observing vectorization or
+    //   unrolling effects, especially when loop trip counts are small or
+    //   constant (e.g., bench03xx_staticTripCount and bench03xx_dynamicTripCount,
+    //   introduced by JDK-8307084).
+    // - Disable for general regression testing and for other microbenchmarks.
+    @Param({"true", "false"})
+    public static boolean ENABLE_LARGE_LOOP_WARMUP;
 
     @Setup
     public void init() {
@@ -189,6 +222,40 @@ public abstract class VectorThroughputForIterationCount {
                 offsets[i] = FIXED_OFFSET;
             }
         }
+
+        if (ENABLE_LARGE_LOOP_WARMUP) {
+            for (int i = 0; i < 10_000; i++) {
+                byteadd(aB, bB, rB, START_IDX, WARMUP_LEN);
+                shortadd(aS, bS, rS, START_IDX, WARMUP_LEN);
+                intadd(aI, bI, rI, START_IDX, WARMUP_LEN);
+                longadd(aL, bL, rL, START_IDX, WARMUP_LEN);
+            }
+        }
+
+    }
+
+    public void byteadd(byte[] ba, byte[] bb, byte[] bc, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            bc[i] = (byte) (ba[i] + bb[i]);
+        }
+    }
+
+    public void shortadd(short[] sa, short[] sb, short[] sc, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            sc[i] = (short) (sa[i] + sb[i]);
+        }
+    }
+
+    public void intadd(int[] a, int[] b, int[] c, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
+
+    public void longadd(long[] a, long[] b, long[] c, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            c[i] = a[i] + b[i];
+        }
     }
 
     @Benchmark
@@ -225,6 +292,18 @@ public abstract class VectorThroughputForIterationCount {
         }
     }
 
+    @Benchmark
+    public void bench031B_staticTripCount() {
+        byteadd(aB, bB, rB, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench031B_dynamicTripCount() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            byteadd(aB, bB, rB, START_IDX, offsets[r]+ITERATION_COUNT);
+        }
+    }
+
 //    @Benchmark
 //    public void bench002S_aligned_computeBound() {
 //        for (int r = 0; r < REPETITIONS; r++) {
@@ -258,6 +337,19 @@ public abstract class VectorThroughputForIterationCount {
 //            }
 //        }
 //    }
+
+    @Benchmark
+    public void bench032S_staticTripCount() {
+        shortadd(aS, bS, rS, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench032S_dynamicTripCount() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            shortadd(aS, bS, rS, START_IDX, offsets[r]+ITERATION_COUNT);
+        }
+    }
+
 //
 //    @Benchmark
 //    public void bench003C_aligned_computeBound() {
@@ -328,6 +420,18 @@ public abstract class VectorThroughputForIterationCount {
     }
 
     @Benchmark
+    public void bench034I_staticTripCount() {
+        intadd(aI, bI, rI, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench034I_dynamicTripCount() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            intadd(aI, bI, rI, START_IDX, offsets[r]+ITERATION_COUNT);
+        }
+    }
+
+    @Benchmark
     public void bench005L_aligned_computeBound() {
         for (int r = 0; r < REPETITIONS; r++) {
             int init = offsets[r];
@@ -358,6 +462,18 @@ public abstract class VectorThroughputForIterationCount {
             for (int i = init; i < limit; i++) {
                 rL[i] = (long)(aL[i+1] + bL[i+2]);
             }
+        }
+    }
+
+    @Benchmark
+    public void bench035L_staticTripCount() {
+        longadd(aL, bL, rL, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench035L_dynamicTripCount() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            longadd(aL, bL, rL, START_IDX, offsets[r]+ITERATION_COUNT);
         }
     }
 

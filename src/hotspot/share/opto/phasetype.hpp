@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +101,8 @@
   flags(AFTER_ONE_ITERATION_LOOP,       "After Replace One-Iteration Loop") \
   flags(BEFORE_DUPLICATE_LOOP_BACKEDGE, "Before Duplicate Loop Backedge") \
   flags(AFTER_DUPLICATE_LOOP_BACKEDGE,  "After Duplicate Loop Backedge") \
+  flags(BEFORE_VECTORIZED_DRAIN,        "Before Vectorized Drain Loop") \
+  flags(AFTER_VECTORIZED_DRAIN,         "After Vectorized Drain Loop") \
   flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
   flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
   flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \

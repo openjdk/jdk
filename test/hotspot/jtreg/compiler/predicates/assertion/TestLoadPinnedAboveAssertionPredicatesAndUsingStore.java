@@ -25,8 +25,8 @@
 /*
  * @test
  * @bug 8347018
- * @summary Test that stores cloned with clone_up_backedge_goo() are not pinned above Assertion Predicates on which a
- *          load node is pinned at which will later fail in scheduling.
+ * @summary Test that stores cloned with resolve_value_for_preheader() are not pinned above Assertion
+ *          Predicates on which a load node is pinned at which will later fail in scheduling.
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*TestLoadPinnedAboveAssertionPredicatesAndUsingStore::test
  *                   compiler.predicates.assertion.TestLoadPinnedAboveAssertionPredicatesAndUsingStore
  */

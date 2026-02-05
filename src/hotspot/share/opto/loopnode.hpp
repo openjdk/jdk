@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +76,7 @@ protected:
          PassedSlpAnalysis     = 1<<8,
          DoUnrollOnly          = 1<<9,
          VectorizedLoop        = 1<<10,
-         HasAtomicPostLoop     = 1<<11,
+         HasVectorizedDrain    = 1<<11,
          StripMined            = 1<<12,
          SubwordLoop           = 1<<13,
          ProfileTripFailed     = 1<<14,
@@ -114,7 +115,7 @@ public:
   void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
   void mark_loop_vectorized() { _loop_flags |= VectorizedLoop; }
-  void mark_has_atomic_post_loop() { _loop_flags |= HasAtomicPostLoop; }
+  void mark_has_vectorized_drain_loop() { _loop_flags |= HasVectorizedDrain; }
   void mark_strip_mined() { _loop_flags |= StripMined; }
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
@@ -293,6 +294,10 @@ public:
   // so the following main loop 'knows' that it is striding down cache
   // lines.
 
+  // If the 'main' loop is auto-vectorized and super-unrolled, it also
+  // has a 'vectorized drain' loop, which is copied from vectorized but
+  // not super-unrolled 'main' loop and inserted post the 'main' loop.
+
   // A 'main' loop that is ONLY unrolled or peeled, never RCE'd or
   // Aligned, may be missing it's pre-loop.
   bool is_normal_loop   () const { return (_loop_flags&PreMainPostFlagsMask) == Normal; }
@@ -303,7 +308,7 @@ public:
   bool has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
   bool is_unroll_only   () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
   bool is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
-  bool has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
+  bool has_vectorized_drain_loop () const { return (_loop_flags & HasVectorizedDrain) == HasVectorizedDrain; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
   IfNode* find_multiversion_if_from_multiversion_fast_main_loop();
@@ -1394,10 +1399,26 @@ public:
   // entire loop body.  It makes an old_new loop body mapping; with this
   // mapping you can find the new-loop equivalent to an old-loop node.  All
   // new-loop nodes are exactly equal to their old-loop counterparts, all
-  // edges are the same.  All exits from the old-loop now have a RegionNode
-  // that merges the equivalent new-loop path.  This is true even for the
-  // normal "loop-exit" condition.  All uses of loop-invariant old-loop values
-  // now come from (one or more) Phis that merge their new-loop equivalents.
+  // edges are the same.
+  //
+  // For most modes (except InsertVectorizedDrain):
+  // All exits from the old-loop now have a RegionNode that merges the
+  // equivalent new-loop path.  This is true even for the normal "loop-exit"
+  // condition.  All uses of loop-variant old-loop values now come from
+  // (one or more) Phis that merge their new-loop equivalents.
+  //
+  // For InsertVectorizedDrain mode:
+  // Before:
+  // region_old = Region(pre_loop_exit, main_loop_exit)
+  // phi_old = Phi(pre_loop_outputs, main_loop_outputs)
+  // After:
+  // region_old = Region(pre_loop_exit, main_loop_exit)
+  // phi_old = Phi(pre_loop_outputs, main_loop_outputs)
+  // region_new = Region(region_old, drain_loop_exit)
+  // phi_new = Phi(phi_old, drain_loop_outputs)
+  // All control uses of exits from old-loop now should use 'region_new'.
+  // All data uses of outputs from old-loop now should use 'phi_new'.
+  //
   // Parameter side_by_side_idom:
   //   When side_by_size_idom is null, the dominator tree is constructed for
   //      the clone loop to dominate the original.  Used in construction of
@@ -1408,10 +1429,13 @@ public:
   enum CloneLoopMode {
     IgnoreStripMined = 0,        // Only clone inner strip mined loop
     CloneIncludesStripMined = 1, // clone both inner and outer strip mined loops
-    ControlAroundStripMined = 2  // Only clone inner strip mined loop,
-                                 // result control flow branches
-                                 // either to inner clone or outer
-                                 // strip mined loop.
+    ControlAroundStripMined = 2, // Only clone the inner strip-mined loop and insert
+                                 // control flow around it. Exit control flow
+                                 // branches either to inner clone or to the outer
+                                 // strip-mined loop.
+    InsertVectorizedDrain = 3    // Only clone the inner strip-mined vector loop and
+                                 // insert control flow that branches either to the
+                                 // cloned inner loop or to the scalar post loop.
   };
   void clone_loop( IdealLoopTree *loop, Node_List &old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
@@ -1420,9 +1444,22 @@ public:
                                    Node_List*& split_if_set, Node_List*& split_bool_set,
                                    Node_List*& split_cex_set, Node_List& worklist,
                                    uint new_counter, CloneLoopMode mode);
+  void replace_input_with_new_clone(Node* use, Node* old_in, Node* new_in,
+                                    uint& count, uint new_counter);
+  void fix_data_uses_for_vectorized_drain(Node* main_old, Node_List& old_new,
+                                          IdealLoopTree* loop, IdealLoopTree* outer_loop,
+                                          Node_List& worklist, uint new_counter);
+  void clone_outer_nodes_helper(Node* root, uint new_counter, Node_List& old_new,
+                                LoopNode* head, Node_List& extra_data_nodes,
+                                CloneLoopMode mode, IfFalseNode* cle_out);
+  // Determines whether 'n' lies on the control path leading into loop 'cl'.
+  // Such a node would either be a projection of an assertion predicate
+  // or the taken branch of the zero-trip guard.
+  bool is_loop_entry_ctrl(Node* n, CountedLoopNode* cl);
   void clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
                         IdealLoopTree* outer_loop, int dd, Node_List &old_new,
                         Node_List& extra_data_nodes);
+  Node* find_merge_phi_for_vectorized_drain(Node* n, Node* merge_region);
 
   // If we got the effect of peeling, either by actually peeling or by
   // making a pre-loop which must execute at least once, we can remove
@@ -1440,16 +1477,29 @@ public:
   // Find the last store in the body of an OuterStripMinedLoop when following memory uses
   Node *find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop);
 
-  // Add post loop after the given loop.
-  Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
-                         CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node* incr, Node* limit, CountedLoopNode*& post_head);
+  void rewire_ctrl_for_drain_loop_nodes(CountedLoopNode* main_head, CountedLoopNode* post_head,
+                                        uint new_counter);
 
-  // Add a vector post loop between a vector main loop and the current post loop
-  void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
-  // If Node n lives in the back_ctrl block, we clone a private version of n
-  // in preheader_ctrl block and return that, otherwise return n.
-  Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
+  // Add post loop after the given loop.
+  Node* insert_post_or_drain_loop(IdealLoopTree* loop, Node_List& old_new,
+                                  CountedLoopNode* main_head, CountedLoopEndNode* main_end,
+                                  Node* main_incr, Node* limit, CountedLoopNode*& post_head,
+                                  CloneLoopMode mode);
+
+  // Add a vectorized drain loop between the main loop and the current post loop.
+  void insert_vectorized_drain_loop(IdealLoopTree* loop, Node_List& old_new);
+
+  enum ResolveMode {
+      FromPreLoopExit, // Resolve the correct value coming from the pre-loop exit
+      FromBackedge,    // Resolve the correct node coming from the main loop backedge
+  };
+  Node* resolve_value_for_preheader(ResolveMode mode, Node* back_ctrl, Node* preheader_ctrl,
+                                    Node* n, VectorSet& visited, Node_Stack& clones );
+
+  // Determine and obtain the correct fall-in values for either the drain loop or the post loop.
+  Node* resolve_input_for_drain_or_post(Node* post_head_ctrl, VectorSet& visited,
+                                        Node_Stack& clones, Node* main_merge_region,
+                                        Node* main_phi, CloneLoopMode mode);
 
   // Take steps to maximally unroll the loop.  Peel any odd iterations, then
   // unroll to do double iterations.  The next round of major loop transforms
@@ -1940,7 +1990,10 @@ public:
 
   void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
                 Node* side_by_side_idom, CloneMap* cm, Node_List &worklist);
-
+  void fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node_List& old_new,
+                                     IdealLoopTree* use_loop, Node* side_by_side_idom);
+  void fix_ctrl_uses_for_vectorized_drain(Node* main_use, Node* drain_use, Node_List& old_new,
+                                          IdealLoopTree* use_loop);
   void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
                      uint new_counter, Node_List& old_new, Node_List& worklist, Node_List*& split_if_set,
                      Node_List*& split_bool_set, Node_List*& split_cex_set);
