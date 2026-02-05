@@ -469,8 +469,6 @@ size_t ThreadLocalAllocBuffer::cooked_used_bytes() const {
   // Comparing diff with the maximum allowed size will ensure that we don't add
   // the used bytes from a semi-initialized TLAB ending up with implausible values.
   // In this case also just return 0.
-  // There is still a race between incrementing _allocated_bytes and clearing
-  // the TLAB, that might cause incorrectly returning some usage.
   if ((diff <= 0) || (diff > checked_cast<ptrdiff_t>(ThreadLocalAllocBuffer::max_size_in_bytes()))) {
     return 0;
   }

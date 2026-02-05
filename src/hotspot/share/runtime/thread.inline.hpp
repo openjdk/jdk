@@ -39,6 +39,9 @@ inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = AtomicAccess::load_acquire(&_allocated_bytes);
   size_t used_bytes = 0;
   if (UseTLAB) {
+    // cooked_used_bytes() does its best to not return implausible values, but
+    // there is still a potential race between incrementing _allocated_bytes and
+    // clearing the TLAB, that might cause double-counting.
     used_bytes = tlab().cooked_used_bytes();
   }
   return allocated_bytes + used_bytes;
