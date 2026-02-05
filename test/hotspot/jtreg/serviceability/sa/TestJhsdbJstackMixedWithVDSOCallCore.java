@@ -28,6 +28,7 @@ import jtreg.SkippedException;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
@@ -78,6 +79,9 @@ public class TestJhsdbJstackMixedWithVDSOCallCore {
     }
 
     public static void main(String... args) throws Throwable {
+        if (Platform.isMusl()) {
+            throw new SkippedException("musl libc is not supported yet.");
+        }
         checkVDSODebugInfo();
 
         var app = new LingeredAppWithVDSOCall();
