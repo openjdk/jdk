@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,14 @@ public final class ModulePathTest3 {
                 "--no-man-pages",
                 "--strip-native-commands")
         .execute();
+
+        if (TKit.isOSX()) {
+            // MacBundle requires valid bundle
+            if (Files.exists(workDir.resolve("Contents/Home"))) {
+                Files.createFile(workDir.resolve("Contents/Info.plist"));
+                Files.createDirectories(workDir.resolve("Contents/MacOS"));
+            }
+        }
 
         JPackageCommand cmd = new JPackageCommand()
         .setDefaultAppName()

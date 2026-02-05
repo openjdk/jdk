@@ -251,21 +251,18 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public String version() {
         return Optional.ofNullable(getArgumentValue("--app-version")).or(() -> {
             if (isRuntime()) {
-                final Path releaseFile = RuntimeImageUtils.getReleaseFilePath(
+                final var runtimeHome = RuntimeImageUtils.getRuntimeHomeForRuntimeRoot(
                         Path.of(getArgumentValue("--runtime-image")));
-                try {
-                    return RuntimeVersionReader.readVersion(releaseFile).map(releaseVersion -> {
-                        if (TKit.isWindows()) {
-                            return WindowsHelper.getNormalizedVersion(releaseVersion);
-                        } else if (TKit.isOSX()) {
-                            return MacHelper.getNormalizedVersion(releaseVersion);
-                        } else {
-                            return releaseVersion;
-                        }
-                    });
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
+                final var releaseFile = RuntimeImageUtils.getReleaseFilePath(runtimeHome);
+                return RuntimeVersionReader.readVersion(releaseFile).map(releaseVersion -> {
+                    if (TKit.isWindows()) {
+                        return WindowsHelper.getNormalizedVersion(releaseVersion.toString());
+                    } else if (TKit.isOSX()) {
+                        return MacHelper.getNormalizedVersion(releaseVersion.toString());
+                    } else {
+                        return releaseVersion.toString();
+                    }
+                });
             } else {
                 return Optional.empty();
             }

@@ -224,21 +224,43 @@ public final class DottedVersion {
         return Stream.of(components).map(BigInteger::toString).collect(Collectors.joining("."));
     }
 
-    public String toComponentsStringWithPadding(int numberOfComponents) {
-        if (components.length >= numberOfComponents) {
-            return Stream.of(components).map(BigInteger::toString)
-                    .limit(numberOfComponents).collect(Collectors.joining("."));
-        } else {
-            return toComponentsString()
-                    .concat(".0".repeat(numberOfComponents - components.length));
+    public DottedVersion trim(int componentLimit) {
+        if (componentLimit < 0) {
+            throw new IllegalArgumentException();
         }
+
+        if (components.length > componentLimit) {
+            components = Arrays.stream(components).limit(componentLimit)
+                    .toArray(BigInteger[]::new);
+        }
+
+        return this;
+    }
+
+    public DottedVersion pad(int componentLimit) {
+        if (componentLimit <= 0) {
+            throw new IllegalArgumentException();
+        }
+
+        if (components.length < componentLimit) {
+            final int origLength = components.length;
+            components = Arrays.copyOf(components, componentLimit);
+            Arrays.fill(components, origLength, components.length,
+                    new BigInteger("0"));
+        }
+
+        return this;
+    }
+
+    public int getComponentsCount() {
+        return components.length;
     }
 
     public BigInteger[] getComponents() {
         return components;
     }
 
-    private final BigInteger[] components;
+    private BigInteger[] components;
     private final String value;
     private final String suffix;
 }

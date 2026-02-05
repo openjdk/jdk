@@ -37,58 +37,73 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 public class RuntimeVersionReaderTest {
 
-    @Test
-    public void test_release_file_with_version(@TempDir Path workdir) {
-        final Optional<String> version;
-        try {
-            version = RuntimeVersionReader.readVersion(
-                    createPropFileWithValue(workdir, "JAVA_VERSION", "27.1.2"));
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-        assertTrue(version.isPresent());
-        version.ifPresent(ver -> {
-            assertEquals("27.1.2", version.get());
+    @ParameterizedTest
+    @CsvSource({
+        "27.1.2, true",
+        "27.1.2, false",
+        "27.1.2-ea, true",
+        "27.1.2-ea, false"
+    })
+    public void test_release_file_with_version(String version,
+            boolean quoteVersion, @TempDir Path workdir) {
+        final var value = RuntimeVersionReader.readVersion(
+                createPropFileWithValue(workdir, "JAVA_VERSION", version, quoteVersion));
+        assertTrue(value.isPresent());
+        value.ifPresent(val -> {
+            assertEquals(version, value.get().toString());
         });
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "7.1.2+foo, true",
+        "foo, true",
+        "'', true",
+        "7.1.2+foo, false",
+        "foo, false",
+        "'', false"
+    })
+    public void test_release_file_with_invalid_version(String version,
+            boolean quoteVersion, @TempDir Path workdir) {
+        final var value = RuntimeVersionReader.readVersion(
+                createPropFileWithValue(workdir, "JAVA_VERSION", version, quoteVersion));
+        assertFalse(value.isPresent());
     }
 
     @Test
     public void test_release_file_without_version(@TempDir Path workdir) {
-        final Optional<String> version;
-        try {
-            version = RuntimeVersionReader.readVersion(
-                    createPropFileWithValue(workdir, "JDK_VERSION", "27.1.2"));
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-        assertFalse(version.isPresent());
+        final var value = RuntimeVersionReader.readVersion(
+                createPropFileWithValue(workdir, "JDK_VERSION", "27.1.2", true));
+        assertFalse(value.isPresent());
     }
 
     @Test
     public void test_release_file_invalid_input(@TempDir Path workdir) {
-        final Optional<String> version;
-        try {
-            version = RuntimeVersionReader.readVersion(workdir);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-        assertFalse(version.isPresent());
+        final var value = RuntimeVersionReader.readVersion(workdir);
+        assertFalse(value.isPresent());
     }
 
-    private Path createPropFileWithValue(Path workdir, String name, String value)
-            throws IOException {
+    private Path createPropFileWithValue(Path workdir, String name, String value,
+                boolean quoteValue) {
         Path releaseFile = workdir.resolve("release");
         Properties props = new Properties();
-        props.setProperty(name, "\"" + value + "\"");
+        if (quoteValue) {
+            props.setProperty(name, "\"" + value + "\"");
+        } else {
+            props.setProperty(name, value);
+        }
+
         try (Writer writer = Files.newBufferedWriter(releaseFile)) {
             props.store(writer, null);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
 
         return releaseFile;
     }
-
-
 }

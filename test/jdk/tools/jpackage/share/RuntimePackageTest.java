@@ -84,15 +84,15 @@ import jdk.jpackage.test.TKit;
  */
 public class RuntimePackageTest {
 
-    // @Test
-    // public static void test() {
-    //     init().run();
-    // }
+    @Test
+    public static void test() {
+        init().run();
+    }
 
-    // @Test(ifOS = MACOS)
-    // public static void testFromBundle() {
-    //     init(MacHelper::createRuntimeBundle).run();
-    // }
+    @Test(ifOS = MACOS)
+    public static void testFromBundle() {
+        init(MacHelper::createRuntimeBundle).run();
+    }
 
     @Test(ifOS = LINUX)
     @Parameter("/usr")
@@ -103,34 +103,50 @@ public class RuntimePackageTest {
         .run();
     }
 
-    // @Test
-    // public static void testName() {
-    //     // Test that jpackage can derive package name from the path to runtime image.
-    //     init()
-    //     .addInitializer(cmd -> cmd.removeArgumentWithValue("--name"))
-    //     // Don't attempt to install this package as it may have an odd name derived from
-    //     // the runtime image path. Say, on Linux for `--runtime-image foo/bar/sed`
-    //     // command line jpackage will create a package named 'sed' that will conflict
-    //     // with the default 'sed' package.
-    //     .run(Action.CREATE_AND_UNPACK);
-    // }
+    @Test
+    public static void testName() {
+        // Test that jpackage can derive package name from the path to runtime image.
+        init()
+        .addInitializer(cmd -> cmd.removeArgumentWithValue("--name"))
+        // Don't attempt to install this package as it may have an odd name derived from
+        // the runtime image path. Say, on Linux for `--runtime-image foo/bar/sed`
+        // command line jpackage will create a package named 'sed' that will conflict
+        // with the default 'sed' package.
+        .run(Action.CREATE_AND_UNPACK);
+    }
 
     @Test
     // 27
-    @Parameter(value = {"27", ""}, ifOS = {LINUX, MACOS})
-    @Parameter(value = {"27", "27.0.0.0"}, ifOS = WINDOWS)
+    @Parameter(value = {"27"}, ifOS = {LINUX, MACOS})
     // 27.1
-    @Parameter(value = {"27.1", ""})
+    @Parameter(value = {"27.1"})
     // 27.1.2
-    @Parameter(value = {"27.1.2", ""}, ifOS = {LINUX, MACOS})
+    @Parameter(value = {"27.1.2"}, ifOS = {LINUX, MACOS})
+    // 27.1.2.3
+    @Parameter(value = {"27.1.2.3"}, ifOS = {LINUX, WINDOWS})
+    // 27.1.2.3.4
+    @Parameter(value = {"27.1.2.3.4"}, ifOS = LINUX)
+    // 17.21.3+foo
+    @Parameter(value = {"17.21.3+foo"}, ifOS = LINUX)
+    // 17.21.3-ea
+    @Parameter(value = {"17.21.3-ea"}, ifOS = LINUX)
+    public static void testReleaseFileVersion(String version) {
+        testReleaseFileVersion(version, version);
+    }
+
+    @Test
+    // 27
+    @Parameter(value = {"27", "27.0.0.0"}, ifOS = WINDOWS)
+    // 27.1.2
     @Parameter(value = {"27.1.2", "27.1.2.0"}, ifOS = WINDOWS)
     // 27.1.2.3
-    @Parameter(value = {"27.1.2.3", ""}, ifOS = {LINUX, WINDOWS})
     @Parameter(value = {"27.1.2.3", "27.1.2"}, ifOS = MACOS)
     // 27.1.2.3.4
-    @Parameter(value = {"27.1.2.3.4", ""}, ifOS = LINUX)
     @Parameter(value = {"27.1.2.3.4", "27.1.2"}, ifOS = MACOS)
     @Parameter(value = {"27.1.2.3.4", "27.1.2.3"}, ifOS = WINDOWS)
+    // 17.21.3-ea
+    @Parameter(value = {"17.21.3-ea", "17.21.3"}, ifOS = MACOS)
+    @Parameter(value = {"17.21.3-ea", "17.21.3.0"}, ifOS = WINDOWS)
     public static void testReleaseFileVersion(String version, String normalizedVersion) {
         new PackageTest()
         .addInitializer(cmd -> {
@@ -157,7 +173,8 @@ public class RuntimePackageTest {
             cmd.validateOutput(JPackageStringBundle.MAIN
                     .cannedFormattedString("message.release-version",
                     version, runtimeImage.toString()));
-            if (!normalizedVersion.isEmpty()) {
+            // Normalization message is only printed if we did normalization.
+            if (!version.equals(normalizedVersion)) {
                 cmd.validateOutput(JPackageStringBundle.MAIN
                     .cannedFormattedString("message.version-normalized",
                     normalizedVersion, version));

@@ -61,7 +61,9 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
         // is linked in the runtime by simply analysing the data
         // of `release` file.
 
-        final Path releaseFile = RuntimeImageUtils.getReleaseFilePath(cookedRuntime);
+        final var runtimeHome = RuntimeImageUtils.getRuntimeHomeForRuntimeRoot(
+                        cookedRuntime);
+        final var releaseFile = RuntimeImageUtils.getReleaseFilePath(runtimeHome);
         try (Reader reader = Files.newBufferedReader(releaseFile)) {
             Properties props = new Properties();
             props.load(reader);

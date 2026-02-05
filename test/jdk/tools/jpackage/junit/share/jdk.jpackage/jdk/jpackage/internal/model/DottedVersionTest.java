@@ -66,6 +66,10 @@ public class DottedVersionTest {
         static TestConfig lazy(String input, String expectedSuffix, int expectedComponentCount, String expectedToComponent) {
             return new TestConfig(input, Type.LAZY.createVersion, expectedSuffix, expectedComponentCount, expectedToComponent, -1);
         }
+
+        static TestConfig lazy(String input, String expectedToComponent, int numberOfComponents) {
+            return new TestConfig(input, Type.LAZY.createVersion, "", -1, expectedToComponent, numberOfComponents);
+        }
     }
 
     @ParameterizedTest
@@ -120,24 +124,41 @@ public class DottedVersionTest {
 
     @ParameterizedTest
     @MethodSource
-    public void testComponentsStringWithPadding(TestConfig cfg) {
+    public void testTrim(TestConfig cfg) {
         var dv = cfg.createVersion.apply(cfg.input());
         assertEquals(cfg.expectedToComponent(),
-                dv.toComponentsStringWithPadding(cfg.numberOfComponents()));
+                dv.trim(cfg.numberOfComponents()).toComponentsString());
     }
 
-    private static List<TestConfig> testComponentsStringWithPadding() {
+    private static List<TestConfig> testTrim() {
         List<TestConfig> data = new ArrayList<>();
-        for (var type : Type.values()) {
-            data.addAll(List.of(
-                    new TestConfig("1", type, "1.0.0.0", 4),
-                    new TestConfig("1.2", type, "1.2.0.0", 4),
-                    new TestConfig("1.2.3", type, "1.2.3.0", 4),
-                    new TestConfig("1.2.3.4", type, "1.2.3.4", 4),
-                    new TestConfig("1.2.3.4.5", type, "1.2.3.4", 4)
-            ));
-        }
+        data.addAll(List.of(
+                TestConfig.lazy("", "", 0),
+                TestConfig.lazy("1", "", 0),
+                TestConfig.lazy("1.2.3", "1", 1),
+                TestConfig.lazy("1.2.3", "1.2", 2),
+                TestConfig.lazy("1.2.3", "1.2.3", 3),
+                TestConfig.lazy("1.2.3", "1.2.3", 4)
+        ));
+        return data;
+    }
 
+    @ParameterizedTest
+    @MethodSource
+    public void testPad(TestConfig cfg) {
+        var dv = cfg.createVersion.apply(cfg.input());
+        assertEquals(cfg.expectedToComponent(),
+                dv.pad(cfg.numberOfComponents()).toComponentsString());
+    }
+
+    private static List<TestConfig> testPad() {
+        List<TestConfig> data = new ArrayList<>();
+        data.addAll(List.of(
+                TestConfig.lazy("", "0", 1),
+                TestConfig.lazy("1", "1", 1),
+                TestConfig.lazy("1", "1.0", 2),
+                TestConfig.lazy("1.2.3", "1.2.3.0.0", 5)
+        ));
         return data;
     }
 

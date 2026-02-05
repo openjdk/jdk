@@ -34,19 +34,31 @@ import java.util.Properties;
 
 public final class RuntimeVersionReader {
 
-    public static Optional<String> readVersion(Path releaseFilePath) throws IOException {
-        if (!Files.isRegularFile(releaseFilePath)) {
-            return Optional.empty();
-        }
-
+    // jdk.tools.jlink.internal.plugins.ReleaseInfoPlugin uses java.util.Properties
+    // to read/write "release" file and puts quotes around version string.
+    // Implementation of this function is based on behavior of ReleaseInfoPlugin.
+    public static Optional<Runtime.Version> readVersion(Path releaseFilePath) {
         try (Reader reader = Files.newBufferedReader(releaseFilePath)) {
             Properties props = new Properties();
             props.load(reader);
             String version = props.getProperty("JAVA_VERSION");
             if (version != null) {
+                // "JAVA_VERSION" value is set to quoted string in "release"
+                // file. getProperty() will include leading and trailing quote
+                // when returning value. We should remove them, since they are
+                // not part of version.
                 version = version.replaceAll("^\"|\"$", "");
             }
-            return Optional.ofNullable(version);
+            return Optional.of(Runtime.Version.parse(version));
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            // In case of Runtime.Version.parse() fails return empty optional.
+            // It will fail for "" or "foo" strings. ReleaseInfoPlugin class
+            // uses Runtime.Version class to create version for "release" file, so
+            // if Runtime.Version.parse() fails something is wrong and we should
+            // just ignore such version from "release" file.
+            return Optional.empty();
+        } catch (IOException ex) {
+            return Optional.empty();
         }
     }
 }

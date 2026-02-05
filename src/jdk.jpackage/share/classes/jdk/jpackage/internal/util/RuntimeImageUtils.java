@@ -31,19 +31,22 @@ import jdk.internal.util.OperatingSystem;
 
 public final class RuntimeImageUtils {
 
-    public static Path getReleaseFilePath(Path runtimePath) {
-        final Path releaseFile;
-        if (!OperatingSystem.isMacOS()) {
-            releaseFile = runtimePath.resolve("release");
-        } else {
-            // On Mac `runtimePath` can be runtime root or runtime home.
-            Path runtimeHome = runtimePath.resolve("Contents/Home");
-            if (!Files.isDirectory(runtimeHome)) {
-                runtimeHome = runtimePath;
-            }
-            releaseFile = runtimeHome.resolve("release");
-        }
+    public static Path getReleaseFilePath(Path runtimeHomePath) {
+        return runtimeHomePath.resolve("release");
+    }
 
-        return releaseFile;
+    /**
+     * Returns platform specific runtime "Home" location for given runtime root.
+     * <p>
+     * On Windows and Linux it will return value of runtimeRoot. On macOS for
+     * runtime image it will return runtimeRoot and for runtime bundle it will
+     * return path to "Home" folder.
+     *
+     * @param runtimeRoot the runtime root path
+     * @return platform specific runtime "Home" location for given runtime root
+     */
+    public static Path getRuntimeHomeForRuntimeRoot(Path runtimeRoot) {
+        return MacBundle.fromPath(runtimeRoot).map(MacBundle::homeDir)
+                .orElse(runtimeRoot);
     }
 }

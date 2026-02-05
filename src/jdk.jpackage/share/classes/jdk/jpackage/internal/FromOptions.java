@@ -188,18 +188,15 @@ final class FromOptions {
             appBuilder.appImageLayout(runtimeLayout);
             if (!APP_VERSION.containsIn(options)) {
                 // Version is not specified explicitly. Try to get it from the release file.
-                final Path releaseFile = RuntimeImageUtils.getReleaseFilePath(
-                        PREDEFINED_RUNTIME_IMAGE.getFrom(options));
-                try {
-                    RuntimeVersionReader.readVersion(releaseFile)
-                            .ifPresent(version -> {
-                                appBuilder.version(version);
-                                Log.verbose(I18N.format("message.release-version",
-                                        version, PREDEFINED_RUNTIME_IMAGE.getFrom(options)));
-                            });
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
+                final var runtimeHome = RuntimeImageUtils.getRuntimeHomeForRuntimeRoot(
+                        predefinedRuntimeImage.orElseThrow());
+                final var releaseFile = RuntimeImageUtils.getReleaseFilePath(runtimeHome);
+                RuntimeVersionReader.readVersion(releaseFile)
+                        .ifPresent(version -> {
+                            appBuilder.version(version.toString());
+                            Log.verbose(I18N.format("message.release-version",
+                                    version.toString(), predefinedRuntimeImage.orElseThrow()));
+                        });
             }
         } else {
             appBuilder.appImageLayout(appLayout);
