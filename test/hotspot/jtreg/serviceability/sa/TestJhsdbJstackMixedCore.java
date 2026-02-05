@@ -71,7 +71,7 @@ public class TestJhsdbJstackMixedCore {
 
     public static void main(String... args) throws Throwable {
         if (Platform.isMusl()) {
-            throw new SkippedException("musl libc is not supported yet.");
+            throw new SkippedException("This test does not work on musl libc.");
         }
 
         // Check whether the symbol of signal trampoline is available.
