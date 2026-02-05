@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,13 +201,13 @@ char* DumpRegion::expand_top_to(char* newtop) {
   commit_to(newtop);
   _top = newtop;
 
-  if (_max_delta > 0) {
+  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(_base)) {
     uintx delta = ArchiveBuilder::current()->buffer_to_offset((address)(newtop-1));
-    if (delta > _max_delta) {
+    if (delta > AOTCompressedPointers::MaxMetadataOffsetBytes) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
-      aot_log_error(aot)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
+      aot_log_error(aot)("Out of memory in the %s: Please reduce the number of shared classes.", CDSConfig::type_of_archive_being_written());
       AOTMetaspace::unrecoverable_writing_error();
     }
   }

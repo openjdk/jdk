@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 #define SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/cds_globals.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -375,7 +376,7 @@ public:
 
 template <typename V>
 inline V read_value_from_compact_hashtable(address base_address, u4 offset) {
-  return (V)(base_address + offset);
+  return AOTCompressedPointers::decode_not_null<V>(base_address, offset);
 }
 
 template <

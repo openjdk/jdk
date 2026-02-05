@@ -176,10 +176,10 @@ ArchiveBuilder::ArchiveBuilder() :
   _mapped_static_archive_bottom(nullptr),
   _mapped_static_archive_top(nullptr),
   _buffer_to_requested_delta(0),
-  _pz_region("pz", MAX_SHARED_DELTA), // protection zone -- used only during dumping; does NOT exist in cds archive.
-  _rw_region("rw", MAX_SHARED_DELTA),
-  _ro_region("ro", MAX_SHARED_DELTA),
-  _ac_region("ac", MAX_SHARED_DELTA),
+  _pz_region("pz"), // protection zone -- used only during dumping; does NOT exist in cds archive.
+  _rw_region("rw"),
+  _ro_region("ro"),
+  _ac_region("ac"),
   _ptrmap(mtClassShared),
   _rw_ptrmap(mtClassShared),
   _ro_ptrmap(mtClassShared),

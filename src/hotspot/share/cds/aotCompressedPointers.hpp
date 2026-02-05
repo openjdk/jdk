@@ -93,11 +93,16 @@ public:
   // Decoding -----
 
   template <typename T>
-  static T decode_not_null(narrowPtr narrowp) {
+  static T decode_not_null(address base_address, narrowPtr narrowp) {
     assert(narrowp != 0, "sanity");
-    T p = (T)(SharedBaseAddress + narrowp);
+    T p = (T)(base_address + narrowp);
     assert(Metaspace::in_aot_cache(p), "must be");
     return p;
+  }
+
+  template <typename T>
+  static T decode_not_null(narrowPtr narrowp) {
+    return decode_not_null<T>(reinterpret_cast<address>(SharedBaseAddress), narrowp);
   }
 
   template <typename T>
