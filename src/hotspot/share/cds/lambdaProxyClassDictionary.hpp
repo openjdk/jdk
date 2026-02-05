@@ -175,12 +175,12 @@ public:
                                                      Symbol*        instantiated_method_type) {
     // All parameters must be in shared space, or else you'd get an assert in
     // ArchiveUtils::to_offset().
-    return RunTimeLambdaProxyClassKey(ArchiveUtils::archived_address_to_offset(caller_ik),
-                                      ArchiveUtils::archived_address_to_offset(invoked_name),
-                                      ArchiveUtils::archived_address_to_offset(invoked_type),
-                                      ArchiveUtils::archived_address_to_offset(method_type),
-                                      ArchiveUtils::archived_address_or_null_to_offset(member_method), // could be null
-                                      ArchiveUtils::archived_address_to_offset(instantiated_method_type));
+    return RunTimeLambdaProxyClassKey(AOTCompressedPointers::encode_address_in_cache(caller_ik),
+                                      AOTCompressedPointers::encode_address_in_cache(invoked_name),
+                                      AOTCompressedPointers::encode_address_in_cache(invoked_type),
+                                      AOTCompressedPointers::encode_address_in_cache(method_type),
+                                      AOTCompressedPointers::encode_null_or_address_cache(member_method), // could be null
+                                      AOTCompressedPointers::encode_address_in_cache(instantiated_method_type));
   }
 
   unsigned int hash() const;

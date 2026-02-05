@@ -25,7 +25,9 @@
 #ifndef SHARE_CDS_AOTCOMPRESSEDPOINTERS_HPP
 #define SHARE_CDS_AOTCOMPRESSEDPOINTERS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/metaspace.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -41,7 +43,8 @@ public:
   typedef u4 narrowPtr;
   static constexpr uintx MaxMetadataOffsetBytes = 0x7FFFFFFF;
 
-  // Encoding
+  // Encoding ------
+
   static void set_encoding_range(address encoding_base, address encoding_top);
 
   static narrowPtr encode_byte_offset(size_t offset) {
@@ -52,7 +55,7 @@ public:
 
   // ptr can point to one of the following
   // - an object in the ArchiveBuilder's buffer.
-  // - an object in the currently mapped AOT cache.
+  // - an object in the currently mapped AOT cache rw/ro regions.
   // - an object that has been copied into the ArchiveBuilder's buffer.
   template <typename T>
   static narrowPtr encode_not_null(T ptr) {
@@ -66,6 +69,43 @@ public:
       return 0;
     } else {
       return encode_not_null(ptr);
+    }
+  }
+
+  // ptr must be in the currently mapped AOT cache rw/ro regions.
+  template <typename T>
+  static narrowPtr encode_address_in_cache(T ptr) {
+    assert(Metaspace::in_aot_cache(ptr), "must be");
+    address p = reinterpret_cast<address>(ptr);
+    address base = reinterpret_cast<address>(SharedBaseAddress);
+    return encode_byte_offset(pointer_delta(p, base, 1));
+  }
+
+  template <typename T>
+  static narrowPtr encode_null_or_address_cache(T p) {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return encode_address_in_cache<T>(p);
+    }
+  }
+
+  // Decoding -----
+
+  template <typename T>
+  static T decode_not_null(narrowPtr narrowp) {
+    assert(narrowp != 0, "sanity");
+    T p = (T)(SharedBaseAddress + narrowp);
+    assert(Metaspace::in_aot_cache(p), "must be");
+    return p;
+  }
+
+  template <typename T>
+  static T decode(narrowPtr narrowp) {
+    if (narrowp == 0) {
+      return nullptr;
+    } else {
+      return decode_not_null<T>(narrowp);
     }
   }
 };

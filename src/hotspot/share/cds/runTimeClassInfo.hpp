@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_RUNTIMECLASSINFO_HPP
 #define SHARE_CDS_RUNTIMECLASSINFO_HPP
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -58,9 +59,9 @@ class RunTimeClassInfo {
   struct RTVerifierConstraint {
     u4 _name;
     u4 _from_name;
-    Symbol* name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_name); }
+    Symbol* name() { return AOTCompressedPointers::decode_not_null<Symbol*>(_name); }
     Symbol* from_name() {
-      return (_from_name == 0) ? nullptr : ArchiveUtils::offset_to_archived_address<Symbol*>(_from_name);
+      return (_from_name == 0) ? nullptr : AOTCompressedPointers::decode_not_null<Symbol*>(_from_name);
     }
   };
 
@@ -68,7 +69,7 @@ class RunTimeClassInfo {
     u4   _name;
     char _loader_type1;
     char _loader_type2;
-    Symbol* constraint_name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_name); }
+    Symbol* constraint_name() { return AOTCompressedPointers::decode_not_null<Symbol*>(_name); }
   };
   struct RTEnumKlassStaticFields {
     int _num;
@@ -185,7 +186,7 @@ public:
 
   InstanceKlass* nest_host() {
     assert(!ArchiveBuilder::is_active(), "not called when dumping archive");
-    return ArchiveUtils::offset_to_archived_address_or_null<InstanceKlass*>(_nest_host_offset);
+    return AOTCompressedPointers::decode<InstanceKlass*>(_nest_host_offset); // may be null
   }
 
   RTLoaderConstraint* loader_constraints() {

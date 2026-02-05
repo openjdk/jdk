@@ -276,7 +276,7 @@ void LambdaFormInvokers::read_static_archive_invokers() {
   if (_static_archive_invokers != nullptr) {
     for (int i = 0; i < _static_archive_invokers->length(); i++) {
       u4 offset = _static_archive_invokers->at(i);
-      Array<char>* line = ArchiveUtils::offset_to_archived_address<Array<char>*>(offset);
+      Array<char>* line = AOTCompressedPointers::decode_not_null<Array<char>*>(offset);
       char* str = line->adr_at(0);
       append(str);
     }

@@ -83,7 +83,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
 InstanceKlass* RunTimeClassInfo::klass() const {
   if (AOTMetaspace::in_aot_cache(this)) {
     // <this> is inside a mmaped CDS archive.
-    return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
+    return AOTCompressedPointers::decode_not_null<InstanceKlass*>(_klass_offset);
   } else {
     // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
     // by the ArchiveBuilder.
