@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.test.lib.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -136,6 +137,7 @@ class ConnectTimeoutTest {
         List<Socket> sockets = new ArrayList<>();
         int maxSocketCount = BACKLOG   // To fill up the backlog
                 + 512;                 // Giving some slack, should be enough to exhaust the admission queue.
+        int connectTimeout = Math.toIntExact(Math.addExact(500, Utils.adjustTimeout(500)));
         int socketIndex = 0;
         for (; socketIndex < maxSocketCount; socketIndex++) {
             try {
@@ -143,7 +145,7 @@ class ConnectTimeoutTest {
                         "Creating client socket %s/%s to exhaust the server socket admission%n",
                         (socketIndex + 1), maxSocketCount);
                 Socket socket = new Socket();
-                socket.connect(SERVER_SOCKET.getLocalSocketAddress(), 5000);
+                socket.connect(SERVER_SOCKET.getLocalSocketAddress(), connectTimeout);
                 sockets.add(socket);
             } catch (ConnectException | SocketTimeoutException exception) {
                 LOGGER.printf(
