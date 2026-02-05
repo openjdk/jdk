@@ -66,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8208391 8375352
  * @summary Verifies behavior on `connect()` timeouts
  * @requires os.family != "windows"
+ * @library /test/lib
  * @run junit/othervm ${test.main.class}
  */
 
@@ -74,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8208391 8375352
  * @summary Verifies behavior on `connect()` timeouts
  * @requires os.family != "windows"
+ * @library /test/lib
  * @run junit/othervm -Dtest.proxy=true ${test.main.class}
  */
 
@@ -82,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8208391 8375352
  * @summary Verifies behavior on `connect()` timeouts
  * @requires os.family != "windows"
+ * @library /test/lib
  * @run junit/othervm -Dtest.async=true ${test.main.class}
  */
 
@@ -90,6 +93,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8208391 8375352
  * @summary Verifies behavior on `connect()` timeouts
  * @requires os.family != "windows"
+ * @library /test/lib
  * @run junit/othervm -Dtest.async=true -Dtest.proxy=true ${test.main.class}
  */
 
