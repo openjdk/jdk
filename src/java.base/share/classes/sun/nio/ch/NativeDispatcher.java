@@ -85,7 +85,9 @@ abstract class NativeDispatcher {
             writer = null;
         }
         // dup2 and signal platform threads
-        implPreClose(fd, reader, writer);
+        if (reader != null || writer != null) {
+            implPreClose(fd, reader, writer);
+        }
     }
 
     /**
