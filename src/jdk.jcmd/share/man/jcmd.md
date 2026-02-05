@@ -810,7 +810,7 @@ The following commands are available:
         (BOOLEAN, false)
 
     -   `-location`: (Optional) Print the location of the class file from which the class is loaded (if available)
-         If provided by its defining ClassLoader, this option will print a URL specifying the location of the 
+         If provided by its defining ClassLoader, this option will print a URL specifying the location of the
          class file (directory, jar or other URL location) from which this class was initially loaded.
 
          Note: JDK (and other classes) loaded by a ClassLoader that does not provide a location URL to the JVM will omit this field.
@@ -819,7 +819,7 @@ The following commands are available:
                url from which they were loaded at the time of the training run that created the AOT cache,
                additionally the flags will also be annotated to indicate the AOT cache origin (static or dynamic).
 
-               The total number of classes loaded (if any) from either AOT cache (and the associated cache filepath) are summarized. 
+               The total number of classes loaded (if any) from either AOT cache (and the associated cache filepath) are summarized.
 
 `VM.classloader_stats`
 :   Print statistics about all ClassLoaders.
