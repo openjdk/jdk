@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,16 +103,19 @@ public class PrimitiveInstanceOfComboTest extends ComboInstance<PrimitiveInstanc
         ComboTask task1 = newCompilationTask()
                 .withSourceFromTemplate(test1.replace("#{TYPE1}", type1.code).replace("#{TYPE2}", type2.code))
                 .withOption("--enable-preview")
+                .withOption("-XDexhaustivityMaxBaseChecks=0")
                 .withOption("-source").withOption(JAVA_VERSION);
 
         ComboTask task2 = newCompilationTask()
                 .withSourceFromTemplate(test2.replace("#{TYPE1}", type1.code).replace("#{TYPE2}", type2.code))
                 .withOption("--enable-preview")
+                .withOption("-XDexhaustivityMaxBaseChecks=0")
                 .withOption("-source").withOption(JAVA_VERSION);
 
         ComboTask task3 = newCompilationTask()
                 .withSourceFromTemplate(test3.replace("#{TYPE1}", type1.code).replace("#{TYPE2}", type2.code))
                 .withOption("--enable-preview")
+                .withOption("-XDexhaustivityMaxBaseChecks=0")
                 .withOption("-source").withOption(JAVA_VERSION);
 
         task1.generate(result1 -> {

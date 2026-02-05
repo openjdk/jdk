@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@
 #include "oops/typeArrayOop.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -888,6 +889,7 @@
   declare_unsigned_integer_type(unsigned short)                           \
   declare_unsigned_integer_type(jushort)                                  \
   declare_unsigned_integer_type(unsigned long)                            \
+  declare_unsigned_integer_type(Atomic<size_t>)                           \
   /* The compiler thinks this is a different type than */                 \
   /* unsigned short on Win32 */                                           \
   declare_unsigned_integer_type(u1)                                       \
@@ -901,6 +903,7 @@
   /*****************************/                                         \
                                                                           \
   declare_toplevel_type(void*)                                            \
+  declare_toplevel_type(Atomic<HeapWord*>)                                \
   declare_toplevel_type(int*)                                             \
   declare_toplevel_type(char*)                                            \
   declare_toplevel_type(char**)                                           \

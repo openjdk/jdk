@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,15 +73,15 @@ CardTableBarrierSet::CardTableBarrierSet(CardTable* card_table) :
 {}
 
 CardTableBarrierSet::~CardTableBarrierSet() {
-  delete _card_table;
+  delete card_table();
 }
 
 void CardTableBarrierSet::write_region(MemRegion mr) {
-  _card_table->dirty_MemRegion(mr);
+  card_table()->dirty_MemRegion(mr);
 }
 
 void CardTableBarrierSet::print_on(outputStream* st) const {
-  _card_table->print_on(st);
+  card_table()->print_on(st);
 }
 
 // Helper for ReduceInitialCardMarks. For performance,
@@ -116,7 +116,7 @@ void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop ne
   if (!ReduceInitialCardMarks) {
     return;
   }
-  if (new_obj->is_typeArray() || _card_table->is_in_young(new_obj)) {
+  if (new_obj->is_typeArray() || card_table()->is_in_young(new_obj)) {
     // Arrays of non-references don't need a post-barrier.
   } else {
     MemRegion mr(cast_from_oop<HeapWord*>(new_obj), new_obj->size());

@@ -42,6 +42,16 @@ frame JavaThread::pd_last_frame() {
 void JavaThread::cache_global_variables() {
   BarrierSet* bs = BarrierSet::barrier_set();
 
+#if INCLUDE_G1GC
+  if (bs->is_a(BarrierSet::G1BarrierSet)) {
+    _card_table_base = nullptr;
+  } else
+#endif
+#if INCLUDE_SHENANDOAHGC
+  if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    _card_table_base = nullptr;
+  } else
+#endif
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
     _card_table_base = (address)ctbs->card_table_base_const();

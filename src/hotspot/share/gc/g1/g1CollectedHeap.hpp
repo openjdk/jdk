@@ -823,7 +823,6 @@ public:
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
-  G1ConcurrentMarkThread* _cm_thread;
 
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;

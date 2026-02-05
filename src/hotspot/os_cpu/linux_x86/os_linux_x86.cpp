@@ -52,6 +52,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
+#include "runtime/vm_version.hpp"
 
 // put OS-includes here
 # include <sys/types.h>
@@ -380,6 +381,43 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
+// XSAVE constants - from Intel SDM Vol. 1, Chapter 13
+#define XSAVE_HDR_OFFSET 512
+#define XFEATURE_APX     (1ULL << 19)
+
+// XSAVE header structure
+// See: Intel SDM Vol. 1, Section 13.4.2 "XSAVE Header"
+// Also: Linux kernel arch/x86/include/asm/fpu/types.h
+struct xstate_header {
+    uint64_t xfeatures;
+    uint64_t xcomp_bv;
+    uint64_t reserved[6];
+};
+
+// APX extended state - R16-R31 (16 x 64-bit registers)
+// See: Intel APX Architecture Specification
+struct apx_state {
+    uint64_t regs[16];  // r16-r31
+};
+
+static apx_state* get_apx_state(const ucontext_t* uc) {
+    uint32_t offset = VM_Version::apx_xstate_offset();
+    if (offset == 0 || uc->uc_mcontext.fpregs == nullptr) {
+        return nullptr;
+    }
+
+    char* xsave = (char*)uc->uc_mcontext.fpregs;
+    xstate_header* hdr = (xstate_header*)(xsave + XSAVE_HDR_OFFSET);
+
+    // Check if APX state is present in this context
+    if (!(hdr->xfeatures & XFEATURE_APX)) {
+        return nullptr;
+    }
+
+    return (apx_state*)(xsave + offset);
+}
+
+
 void os::print_context(outputStream *st, const void *context) {
   if (context == nullptr) return;
 
@@ -406,6 +444,14 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", R14=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R14]);
   st->print(", R15=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R15]);
   st->cr();
+  // Dump APX EGPRs (R16-R31)
+  apx_state* apx = UseAPX ? get_apx_state(uc) : nullptr;
+  if (apx != nullptr) {
+    for (int i = 0; i < 16; i++) {
+      st->print("%sR%d=" INTPTR_FORMAT, (i % 4 == 0) ? "" : ", ", 16 + i, (intptr_t)apx->regs[i]);
+      if (i % 4 == 3) st->cr();
+    }
+  }
   st->print(  "RIP=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RIP]);
   st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_EFL]);
   st->print(", CSGSFS=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_CSGSFS]);
@@ -432,37 +478,50 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = 16;
+  if (context == nullptr) {
+    return;
+  }
+  const ucontext_t *uc = (const ucontext_t*)context;
+  apx_state* apx = UseAPX ? get_apx_state(uc) : nullptr;
+
+  const int register_count = 16 + (apx != nullptr ? 16 : 0);
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
-  if (context == nullptr || n == register_count) {
+  if (n == register_count) {
     return;
   }
 
-  const ucontext_t *uc = (const ucontext_t*)context;
   while (n < register_count) {
     // Update continuation with next index before printing location
     continuation = n + 1;
+
+    if (n < 16) {
+      // Standard registers (RAX-R15)
 # define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->uc_mcontext.gregs[REG_##id]);
-    switch (n) {
-    CASE_PRINT_REG( 0, "RAX=", RAX); break;
-    CASE_PRINT_REG( 1, "RBX=", RBX); break;
-    CASE_PRINT_REG( 2, "RCX=", RCX); break;
-    CASE_PRINT_REG( 3, "RDX=", RDX); break;
-    CASE_PRINT_REG( 4, "RSP=", RSP); break;
-    CASE_PRINT_REG( 5, "RBP=", RBP); break;
-    CASE_PRINT_REG( 6, "RSI=", RSI); break;
-    CASE_PRINT_REG( 7, "RDI=", RDI); break;
-    CASE_PRINT_REG( 8, "R8 =", R8); break;
-    CASE_PRINT_REG( 9, "R9 =", R9); break;
-    CASE_PRINT_REG(10, "R10=", R10); break;
-    CASE_PRINT_REG(11, "R11=", R11); break;
-    CASE_PRINT_REG(12, "R12=", R12); break;
-    CASE_PRINT_REG(13, "R13=", R13); break;
-    CASE_PRINT_REG(14, "R14=", R14); break;
-    CASE_PRINT_REG(15, "R15=", R15); break;
-    }
+      switch (n) {
+        CASE_PRINT_REG( 0, "RAX=", RAX); break;
+        CASE_PRINT_REG( 1, "RBX=", RBX); break;
+        CASE_PRINT_REG( 2, "RCX=", RCX); break;
+        CASE_PRINT_REG( 3, "RDX=", RDX); break;
+        CASE_PRINT_REG( 4, "RSP=", RSP); break;
+        CASE_PRINT_REG( 5, "RBP=", RBP); break;
+        CASE_PRINT_REG( 6, "RSI=", RSI); break;
+        CASE_PRINT_REG( 7, "RDI=", RDI); break;
+        CASE_PRINT_REG( 8, "R8 =", R8); break;
+        CASE_PRINT_REG( 9, "R9 =", R9); break;
+        CASE_PRINT_REG(10, "R10=", R10); break;
+        CASE_PRINT_REG(11, "R11=", R11); break;
+        CASE_PRINT_REG(12, "R12=", R12); break;
+        CASE_PRINT_REG(13, "R13=", R13); break;
+        CASE_PRINT_REG(14, "R14=", R14); break;
+        CASE_PRINT_REG(15, "R15=", R15); break;
+      }
 # undef CASE_PRINT_REG
+    } else {
+      // APX extended general purpose registers (R16-R31)
+      st->print("R%d=", n);
+      print_location(st, apx->regs[n - 16]);
+    }
     ++n;
   }
 }

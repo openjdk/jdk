@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@ inline void G1BarrierSet::write_ref_field_post(T* field) {
   // Make sure that the card table reference is read only once. Otherwise the compiler
   // might reload that value in the two accesses below, that could cause writes to
   // the wrong card table.
-  CardTable* card_table = AtomicAccess::load(&_card_table);
-  CardValue* byte = card_table->byte_for(field);
+  CardTable* local_card_table = card_table();
+  CardValue* byte = local_card_table->byte_for(field);
   if (*byte == G1CardTable::clean_card_val()) {
     *byte = G1CardTable::dirty_card_val();
   }

@@ -174,24 +174,14 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
   }
 }
 
-void ShenandoahBarrierSetAssembler::shenandoah_write_barrier_pre(MacroAssembler* masm,
-                                                                 Register obj,
-                                                                 Register pre_val,
-                                                                 Register tmp,
-                                                                 bool tosca_live,
-                                                                 bool expand_call) {
+void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
+                                                 Register obj,
+                                                 Register pre_val,
+                                                 Register tmp,
+                                                 bool tosca_live,
+                                                 bool expand_call) {
+  assert(ShenandoahSATBBarrier, "Should be checked by caller");
 
-  if (ShenandoahSATBBarrier) {
-    satb_write_barrier_pre(masm, obj, pre_val, tmp, tosca_live, expand_call);
-  }
-}
-
-void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
-                                                           Register obj,
-                                                           Register pre_val,
-                                                           Register tmp,
-                                                           bool tosca_live,
-                                                           bool expand_call) {
   // If expand_call is true then we expand the call_VM_leaf macro
   // directly to skip generating the check by
   // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
@@ -533,18 +523,18 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     assert_different_registers(dst, tmp1, r15_thread);
     // Generate the SATB pre-barrier code to log the value of
     // the referent field in an SATB buffer.
-    shenandoah_write_barrier_pre(masm /* masm */,
-                                 noreg /* obj */,
-                                 dst /* pre_val */,
-                                 tmp1 /* tmp */,
-                                 true /* tosca_live */,
-                                 true /* expand_call */);
+    satb_barrier(masm /* masm */,
+                 noreg /* obj */,
+                 dst /* pre_val */,
+                 tmp1 /* tmp */,
+                 true /* tosca_live */,
+                 true /* expand_call */);
 
     restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
   }
 }
 
-void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj) {
+void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
 
   // Does a store check for the oop in register obj. The content of
@@ -575,41 +565,40 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
               Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
 
-  bool on_oop = is_reference_type(type);
-  bool in_heap = (decorators & IN_HEAP) != 0;
-  bool as_normal = (decorators & AS_NORMAL) != 0;
-  if (on_oop && in_heap) {
-    bool needs_pre_barrier = as_normal;
+  // 1: non-reference types require no barriers
+  if (!is_reference_type(type)) {
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+    return;
+  }
 
-    // flatten object address if needed
-    // We do it regardless of precise because we need the registers
-    if (dst.index() == noreg && dst.disp() == 0) {
-      if (dst.base() != tmp1) {
-        __ movptr(tmp1, dst.base());
-      }
-    } else {
-      __ lea(tmp1, dst);
-    }
-
-    assert_different_registers(val, tmp1, tmp2, tmp3, r15_thread);
-
-    if (needs_pre_barrier) {
-      shenandoah_write_barrier_pre(masm /*masm*/,
-                                   tmp1 /* obj */,
-                                   tmp2 /* pre_val */,
-                                   tmp3  /* tmp */,
-                                   val != noreg /* tosca_live */,
-                                   false /* expand_call */);
-    }
-
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
-    if (val != noreg) {
-      if (ShenandoahCardBarrier) {
-        store_check(masm, tmp1);
-      }
+  // Flatten object address right away for simplicity: likely needed by barriers
+  assert_different_registers(val, tmp1, tmp2, tmp3, r15_thread);
+  if (dst.index() == noreg && dst.disp() == 0) {
+    if (dst.base() != tmp1) {
+      __ movptr(tmp1, dst.base());
     }
   } else {
-    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+    __ lea(tmp1, dst);
+  }
+
+  bool storing_non_null = (val != noreg);
+
+  // 2: pre-barrier: SATB needs the previous value
+  if (ShenandoahBarrierSet::need_satb_barrier(decorators, type)) {
+    satb_barrier(masm,
+                 tmp1 /* obj */,
+                 tmp2 /* pre_val */,
+                 tmp3 /* tmp */,
+                 storing_non_null /* tosca_live */,
+                 false /* expand_call */);
+  }
+
+  // Store!
+  BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
+
+  // 3: post-barrier: card barrier needs store address
+  if (ShenandoahBarrierSet::need_card_barrier(decorators, type) && storing_non_null) {
+    card_barrier(masm, tmp1);
   }
 }
 

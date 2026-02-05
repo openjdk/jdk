@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2338,6 +2337,11 @@ public final class System {
             @Override
             public boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
                 return string.bytesCompatible(charset, srcIndex, numChars);
+            }
+
+            @Override
+            public void finishInit(StackTraceElement[] stackTrace) {
+                StackTraceElement.finishInit(stackTrace);
             }
         });
     }
