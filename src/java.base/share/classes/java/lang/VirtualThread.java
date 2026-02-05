@@ -154,9 +154,6 @@ final class VirtualThread extends BaseVirtualThread {
 
     private static final int TERMINATED = 99;  // final state
 
-    // can be suspended from scheduling when unmounted
-    private static final int SUSPENDED = 1 << 8;
-
     // parking permit made available by LockSupport.unpark
     private volatile boolean parkPermit;
 
@@ -495,7 +492,7 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     @ReservedStackAccess
     private void mount() {
-        startTransition(/*is_mount*/true);
+        startTransition(/*mount*/true);
         // We assume following volatile accesses provide equivalent
         // of acquire ordering, otherwise we need U.loadFence() here.
 
@@ -540,7 +537,7 @@ final class VirtualThread extends BaseVirtualThread {
 
         // We assume previous volatile accesses provide equivalent
         // of release ordering, otherwise we need U.storeFence() here.
-        endTransition(/*is_mount*/false);
+        endTransition(/*mount*/false);
     }
 
     /**
@@ -549,11 +546,11 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @Hidden
     private boolean yieldContinuation() {
-        startTransition(/*is_mount*/false);
+        startTransition(/*mount*/false);
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
-            endTransition(/*is_mount*/true);
+            endTransition(/*mount*/true);
         }
     }
 
@@ -931,28 +928,19 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private void waitTimeoutExpired(byte seqNo) {
         assert !Thread.currentThread().isVirtual();
-        for (;;) {
-            boolean unblocked = false;
-            synchronized (timedWaitLock()) {
-                if (seqNo != timedWaitSeqNo) {
-                    // this timeout task is for a past timed-wait
-                    return;
-                }
-                int s = state();
-                if (s == TIMED_WAIT) {
-                    unblocked = compareAndSetState(TIMED_WAIT, UNBLOCKED);
-                } else if (s != (TIMED_WAIT | SUSPENDED)) {
-                    // notified or interrupted, no longer waiting
-                    return;
-                }
-            }
-            if (unblocked) {
-                lazySubmitRunContinuation();
+
+        synchronized (timedWaitLock()) {
+            if (seqNo != timedWaitSeqNo) {
+                // this timeout task is for a past timed-wait
                 return;
             }
-            // need to retry when thread is suspended in time-wait
-            Thread.yield();
+            if (!compareAndSetState(TIMED_WAIT, UNBLOCKED)) {
+                // already notified (or interrupted)
+                return;
+            }
         }
+
+        lazySubmitRunContinuation();
     }
 
     /**
@@ -1120,8 +1108,7 @@ final class VirtualThread extends BaseVirtualThread {
 
     @Override
     Thread.State threadState() {
-        int s = state();
-        switch (s & ~SUSPENDED) {
+        switch (state()) {
             case NEW:
                 return Thread.State.NEW;
             case STARTED:
@@ -1187,85 +1174,6 @@ final class VirtualThread extends BaseVirtualThread {
     @Override
     boolean isTerminated() {
         return (state == TERMINATED);
-    }
-
-    @Override
-    StackTraceElement[] asyncGetStackTrace() {
-        StackTraceElement[] stackTrace;
-        do {
-            stackTrace = (carrierThread != null)
-                    ? super.asyncGetStackTrace()  // mounted
-                    : tryGetStackTrace();         // unmounted
-            if (stackTrace == null) {
-                Thread.yield();
-            }
-        } while (stackTrace == null);
-        return stackTrace;
-    }
-
-    /**
-     * Returns the stack trace for this virtual thread if it is unmounted.
-     * Returns null if the thread is mounted or in transition.
-     */
-    private StackTraceElement[] tryGetStackTrace() {
-        int initialState = state() & ~SUSPENDED;
-        switch (initialState) {
-            case NEW, STARTED, TERMINATED -> {
-                return new StackTraceElement[0];  // unmounted, empty stack
-            }
-            case RUNNING, PINNED, TIMED_PINNED -> {
-                return null;   // mounted
-            }
-            case PARKED, TIMED_PARKED, BLOCKED, WAIT, TIMED_WAIT -> {
-                // unmounted, not runnable
-            }
-            case UNPARKED, UNBLOCKED, YIELDED -> {
-                // unmounted, runnable
-            }
-            case PARKING, TIMED_PARKING, BLOCKING, YIELDING, WAITING, TIMED_WAITING -> {
-                return null;  // in transition
-            }
-            default -> throw new InternalError("" + initialState);
-        }
-
-        // thread is unmounted, prevent it from continuing
-        int suspendedState = initialState | SUSPENDED;
-        if (!compareAndSetState(initialState, suspendedState)) {
-            return null;
-        }
-
-        // get stack trace and restore state
-        StackTraceElement[] stack;
-        try {
-            stack = cont.getStackTrace();
-        } finally {
-            assert state == suspendedState;
-            setState(initialState);
-        }
-        boolean resubmit = switch (initialState) {
-            case UNPARKED, UNBLOCKED, YIELDED -> {
-                // resubmit as task may have run while suspended
-                yield true;
-            }
-            case PARKED, TIMED_PARKED -> {
-                // resubmit if unparked while suspended
-                yield parkPermit && compareAndSetState(initialState, UNPARKED);
-            }
-            case BLOCKED -> {
-                // resubmit if unblocked while suspended
-                yield blockPermit && compareAndSetState(BLOCKED, UNBLOCKED);
-            }
-            case WAIT, TIMED_WAIT -> {
-                // resubmit if notified or interrupted while waiting (Object.wait)
-                // waitTimeoutExpired will retry if the timed expired when suspended
-                yield (notified || interrupted) && compareAndSetState(initialState, UNBLOCKED);
-            }
-            default -> throw new InternalError();
-        };
-        if (resubmit) {
-            submitRunContinuation();
-        }
-        return stack;
     }
 
     @Override
@@ -1438,11 +1346,11 @@ final class VirtualThread extends BaseVirtualThread {
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void startTransition(boolean is_mount);
+    private native void startTransition(boolean mount);
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void endTransition(boolean is_mount);
+    private native void endTransition(boolean mount);
 
     @IntrinsicCandidate
     private static native void notifyJvmtiDisableSuspend(boolean enter);

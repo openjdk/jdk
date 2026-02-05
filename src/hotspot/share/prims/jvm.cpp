@@ -2910,18 +2910,14 @@ JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))
   return ObjectSynchronizer::current_thread_holds_lock(thread, h_obj);
 JVM_END
 
-JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
+JVM_ENTRY(jobjectArray, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   oop trace = java_lang_Thread::async_get_stack_trace(jthread, THREAD);
-  return JNIHandles::make_local(THREAD, trace);
+  return (jobjectArray) JNIHandles::make_local(THREAD, trace);
 JVM_END
 
 JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
-#if INCLUDE_JVMTI
   oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, THREAD);
   return JNIHandles::make_local(THREAD, snapshot);
-#else
-  THROW_NULL(vmSymbols::java_lang_UnsupportedOperationException());
-#endif
 JVM_END
 
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))
