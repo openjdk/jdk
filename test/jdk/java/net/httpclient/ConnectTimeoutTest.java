@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
-import java.net.NoRouteToHostException;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.ServerSocket;
@@ -45,7 +44,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.channels.UnresolvedAddressException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -289,13 +287,8 @@ class ConnectTimeoutTest {
                 long elapsedTime = NANOSECONDS.toMillis(System.nanoTime() - startTime);
                 LOGGER.printf("Client: received in %d millis%n", elapsedTime);
                 Throwable t = e.getCause().getCause();  // blocking thread-specific exception
-                if (!isAcceptableCause(t)) { // tolerate only NRTHE or UAE
-                    e.printStackTrace(LOGGER);
-                    fail("Unexpected exception:" + e);
-                } else {
-                    LOGGER.printf("Caught ConnectException with "
-                            + " cause: %s - skipping%n", t.getCause());
-                }
+                e.printStackTrace(LOGGER);
+                fail("Unexpected exception:" + e);
             }
         }
     }
@@ -319,21 +312,9 @@ class ConnectTimeoutTest {
                 long elapsedTime = NANOSECONDS.toMillis(System.nanoTime() - startTime);
                 LOGGER.printf("Client: received in %d millis%n", elapsedTime);
                 Throwable t = e.getCause();
-                if (t instanceof ConnectException && isAcceptableCause(t.getCause())) {
-                    // tolerate only NRTHE and UAE
-                    LOGGER.printf("Caught ConnectException with "
-                            + "cause: %s - skipping%n", t.getCause());
-                } else {
-                    assertExceptionTypeAndCause(t);
-                }
+                assertExceptionTypeAndCause(t);
             }
         }
-    }
-
-    private static boolean isAcceptableCause(Throwable cause) {
-        if (cause instanceof NoRouteToHostException) return true;
-        if (cause instanceof UnresolvedAddressException) return true;
-        return false;
     }
 
     private static HttpClient newClient(Duration connectTimeout, ProxySelector proxy) {
