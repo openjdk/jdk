@@ -819,7 +819,7 @@ void JvmtiExport::post_vm_death() {
     }
   }
 
-  Events::log(Thread::current_or_null(), "JVMTI - dead phase");
+  Events::log(Thread::current_or_null(), "JVMTI - enter dead phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
 }
 
