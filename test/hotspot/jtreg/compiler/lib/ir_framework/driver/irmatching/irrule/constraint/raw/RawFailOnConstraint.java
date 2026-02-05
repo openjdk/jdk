@@ -60,5 +60,8 @@ public class RawFailOnConstraint implements RawConstraint {
             return Constraint.createSuccess();
         }
     }
-}
 
+    public String nodeIdentifier() {
+        return rawIRNode.nodeIdentifier();
+    }
+}
