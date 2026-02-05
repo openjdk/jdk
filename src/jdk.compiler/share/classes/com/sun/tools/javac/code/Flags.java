@@ -156,6 +156,11 @@ public class Flags {
     @Use({FlagTarget.CLASS})
     public static final int IMPLICIT_CLASS    = 1<<19;
 
+    /** Variable with implicit/inferred type.
+     */
+    @Use({FlagTarget.VARIABLE})
+    public static final int VAR_VARIABLE     = 1<<19;
+
     /** Flag is set for compiler-generated anonymous method symbols
      *  that `own' an initializer block.
      */

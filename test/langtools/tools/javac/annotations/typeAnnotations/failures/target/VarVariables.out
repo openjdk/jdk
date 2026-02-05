@@ -1,0 +1,9 @@
+VarVariables.java:17:9: compiler.err.annotation.type.not.applicable
+VarVariables.java:20:32: compiler.err.annotation.type.not.applicable
+VarVariables.java:23:14: compiler.err.annotation.type.not.applicable
+VarVariables.java:26:14: compiler.err.annotation.type.not.applicable
+VarVariables.java:31:14: compiler.err.annotation.type.not.applicable
+VarVariables.java:35:37: compiler.err.annotation.type.not.applicable
+VarVariables.java:31:18: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @VarVariables.TA), java.lang, @VarVariables.TA java.lang.AutoCloseable
+VarVariables.java:35:41: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @VarVariables.TA), java.lang, @VarVariables.TA java.lang.String
+8 errors

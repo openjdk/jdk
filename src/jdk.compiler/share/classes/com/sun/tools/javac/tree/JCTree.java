@@ -1012,9 +1012,16 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCVariableDecl extends JCStatement implements VariableTree {
 
         public enum DeclKind {
-            EXPLICIT,       // "SomeType name"
-            IMPLICIT,       // "name"
-            VAR,            // "var name"
+            EXPLICIT(0),                        // "SomeType name"
+            IMPLICIT(Flags.VAR_VARIABLE),       // "name"
+            VAR(Flags.VAR_VARIABLE),            // "var name"
+            ;
+
+            public final long additionalSymbolFlags;
+
+            private DeclKind(long additionalSymbolFlags) {
+                this.additionalSymbolFlags = additionalSymbolFlags;
+            }
         }
 
         /** variable modifiers */

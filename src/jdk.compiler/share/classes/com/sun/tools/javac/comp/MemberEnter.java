@@ -281,7 +281,7 @@ public class MemberEnter extends JCTree.Visitor {
                 : tree.vartype.type;
         Name name = tree.name;
         VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
-        v.flags_field = chk.checkFlags(tree.mods.flags, v, tree);
+        v.flags_field = chk.checkFlags(tree.mods.flags | tree.declKind.additionalSymbolFlags, v, tree);
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
