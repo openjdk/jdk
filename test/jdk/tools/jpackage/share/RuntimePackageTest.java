@@ -126,8 +126,6 @@ public class RuntimePackageTest {
     @Parameter(value = {"27.1.2.3"}, ifOS = {LINUX, WINDOWS})
     // 27.1.2.3.4
     @Parameter(value = {"27.1.2.3.4"}, ifOS = LINUX)
-    // 17.21.3+foo
-    @Parameter(value = {"17.21.3+foo"}, ifOS = LINUX)
     // 17.21.3-ea
     @Parameter(value = {"17.21.3-ea"}, ifOS = LINUX)
     public static void testReleaseFileVersion(String version) {

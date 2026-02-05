@@ -90,6 +90,14 @@ public final class NoMPathRuntimeTest {
 
         jlink.execute();
 
+        if (TKit.isOSX()) {
+            // MacBundle requires valid bundle
+            if (Files.exists(workDir.resolve("Contents/Home"))) {
+                Files.createFile(workDir.resolve("Contents/Info.plist"));
+                Files.createDirectories(workDir.resolve("Contents/MacOS"));
+            }
+        }
+
         // non-modular jar in current dir caused error whe no module-path given
         cmd.removeArgumentWithValue("--module-path");
 
