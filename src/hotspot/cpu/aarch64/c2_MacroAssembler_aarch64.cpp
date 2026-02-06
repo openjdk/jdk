@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliate.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1926,16 +1926,16 @@ void C2_MacroAssembler::neon_reduce_add_fp16(FloatRegister dst, FloatRegister fs
     faddh(dst, dst, vtmp);
     ext(vtmp, T8B, vsrc, vsrc, 6);
     faddh(dst, dst, vtmp);
-      if (isQ) {
-        ext(vtmp, T16B, vsrc, vsrc, 8);
-        faddh(dst, dst, vtmp);
-        ext(vtmp, T16B, vsrc, vsrc, 10);
-        faddh(dst, dst, vtmp);
-        ext(vtmp, T16B, vsrc, vsrc, 12);
-        faddh(dst, dst, vtmp);
-        ext(vtmp, T16B, vsrc, vsrc, 14);
-        faddh(dst, dst, vtmp);
-      }
+    if (isQ) {
+      ext(vtmp, T16B, vsrc, vsrc, 8);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 10);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 12);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 14);
+      faddh(dst, dst, vtmp);
+    }
   BLOCK_COMMENT("} neon_reduce_add_fp16");
 }
 

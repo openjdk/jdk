@@ -1600,9 +1600,10 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
           return nullptr;
       }
       break;
+    case Op_AddReductionVHF:
+      return gvn.makecon(TypeH::ZERO);
     case Op_AddReductionVI: // fallthrough
     case Op_AddReductionVL: // fallthrough
-    case Op_AddReductionVHF: // fallthrough
     case Op_AddReductionVF: // fallthrough
     case Op_AddReductionVD:
     case Op_OrReductionV:

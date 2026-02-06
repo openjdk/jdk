@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Arm Limited. All rights reserved.
+ * Copyright (c) 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class TestFloat16VectorOperations {
     private short[] input1;
     private short[] input2;
     private short[] input3;
+    private Float16[] input4;
     private short[] output;
     private static short FP16_SCALAR = (short)0x7777;
     private static final int LEN = 2048;
@@ -78,6 +79,7 @@ public class TestFloat16VectorOperations {
         input1 = new short[LEN];
         input2 = new short[LEN];
         input3 = new short[LEN];
+        input4 = new Float16[LEN];
         output = new short[LEN];
 
         short min_value = float16ToRawShortBits(Float16.MIN_VALUE);
@@ -87,6 +89,7 @@ public class TestFloat16VectorOperations {
             input1[i] = gen.next();
             input2[i] = gen.next();
             input3[i] = gen.next();
+            input4[i] = shortBitsToFloat16(gen.next());
         }
     }
 
@@ -548,4 +551,104 @@ public class TestFloat16VectorOperations {
         }
         Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMulReductionFloat16Partial()));
     }
+
+    // This testcase verifies that autovectorization does NOT take place when using Float16
+    // Filed RFE: JDK-8375321
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.ADD_REDUCTION_VHF, " =0 "},
+        applyIfCPUFeature = {"sve", "true"})
+    @IR(counts = {IRNode.ADD_REDUCTION_VHF, " =0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public Float16 vectorAddReductionFloat16NotVectorized() {
+        Float16 result = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; i++) {
+            result = add(result, input4[i]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorAddReductionFloat16NotVectorized")
+    public void checkResultAddReductionFloat16NotVectorized() {
+        Float16 expected = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; ++i) {
+            expected = Float16.valueOf(expected.floatValue() + input4[i].floatValue());
+        }
+        Verify.checkEQ(expected, vectorAddReductionFloat16NotVectorized());
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MUL_REDUCTION_VHF, " =0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
+        applyIf = {"MaxVectorSize", "<=16"})
+    public Float16 vectorMulReductionFloat16NotVectorized() {
+        Float16 result = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; i++) {
+            result = multiply(result, input4[i]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorMulReductionFloat16NotVectorized")
+    public void checkResultMulReductionFloat16NotVectorized() {
+        Float16 expected = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; ++i) {
+            expected = Float16.valueOf(expected.floatValue() * input4[i].floatValue());
+        }
+        Verify.checkEQ(expected, vectorMulReductionFloat16NotVectorized());
+    }
+
+    @Test
+    @Warmup(500)
+    @IR(counts = {"reduce_addFHF_masked", " =0 "}, phase = {CompilePhase.FINAL_CODE},
+        applyIfCPUFeature = {"sve", "true"})
+    public Float16 vectorAddReductionFloat16PartialNotVectorized() {
+        Float16 result = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            result = add(result, input4[i]);
+            result = add(result, input4[i + 1]);
+            result = add(result, input4[i + 2]);
+            result = add(result, input4[i + 3]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorAddReductionFloat16PartialNotVectorized")
+    public void checkResultAddReductionFloat16PartialNotVectorized() {
+        Float16 expected = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            expected = Float16.valueOf(expected.floatValue() + input4[i].floatValue());
+            expected = Float16.valueOf(expected.floatValue() + input4[i + 1].floatValue());
+            expected = Float16.valueOf(expected.floatValue() + input4[i + 2].floatValue());
+            expected = Float16.valueOf(expected.floatValue() + input4[i + 3].floatValue());
+        }
+        Verify.checkEQ(expected, vectorAddReductionFloat16PartialNotVectorized());
+    }
+
+    @Test
+    @Warmup(500)
+    public Float16 vectorMulReductionFloat16PartialNotVectorized() {
+        Float16 result = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            result = multiply(result, input4[i]);
+            result = multiply(result, input4[i + 1]);
+            result = multiply(result, input4[i + 2]);
+            result = multiply(result, input4[i + 3]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorMulReductionFloat16PartialNotVectorized")
+    public void checkResultMulReductionFloat16PartialNotVectorized() {
+        Float16 expected = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            expected = Float16.valueOf(expected.floatValue() * input4[i].floatValue());
+            expected = Float16.valueOf(expected.floatValue() * input4[i + 1].floatValue());
+            expected = Float16.valueOf(expected.floatValue() * input4[i + 2].floatValue());
+            expected = Float16.valueOf(expected.floatValue() * input4[i + 3].floatValue());
+        }
+        Verify.checkEQ(expected, vectorMulReductionFloat16PartialNotVectorized());
+    }
+
 }
