@@ -100,6 +100,7 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
 
         pixelPreCheck(robot, loc, currentAwtControl);
 
+        loc.translate(-15, -15);
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
