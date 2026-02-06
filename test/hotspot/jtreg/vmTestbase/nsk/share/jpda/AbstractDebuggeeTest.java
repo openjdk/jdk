@@ -30,6 +30,7 @@ import java.util.*;
 import nsk.share.*;
 import nsk.share.test.*;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import jdk.test.lib.classloader.CustomClassLoader;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 /*
