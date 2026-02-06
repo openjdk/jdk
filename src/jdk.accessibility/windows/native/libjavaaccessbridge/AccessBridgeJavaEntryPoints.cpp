@@ -1205,7 +1205,7 @@ AccessBridgeJavaEntryPoints::getVirtualAccessibleName (
 
     jstring js = NULL;
     const wchar_t * stringBytes = NULL;
-    jsize length = 0;
+ // jsize length = 0;
     PrintDebugString("[INFO]:  getVirtualAccessibleName called.");
     if (getVirtualAccessibleNameFromContextMethod != (jmethodID) 0)
     {
@@ -1219,7 +1219,7 @@ AccessBridgeJavaEntryPoints::getVirtualAccessibleName (
             stringBytes = (const wchar_t *) jniEnv->GetStringChars (js, 0);
             EXCEPTION_CHECK("Getting AccessibleName - call to GetStringChars()", FALSE);
             wcsncpy(name, stringBytes, nameSize - 1);
-            length = jniEnv->GetStringLength(js);
+         // length = jniEnv->GetStringLength(js);
             EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleName", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod (
                 accessBridgeObject,

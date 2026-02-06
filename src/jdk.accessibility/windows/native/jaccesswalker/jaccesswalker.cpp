@@ -252,12 +252,13 @@ LRESULT CALLBACK AccessInfoWindowProc(HWND hWnd, UINT message,
     switch (message) {
     case WM_CREATE:
         RECT rcClient;    // dimensions of client area
-        HWND hwndEdit;    // handle of tree-view control
+     // HWND hwndEdit;    // handle of tree-view control
 
         // Get the dimensions of the parent window's client area,
         // and create the edit control.
         GetClientRect(hWnd, &rcClient);
-        hwndEdit = CreateWindow("Edit",
+     // hwndEdit =
+                   CreateWindow("Edit",
                                 "",
                                 WS_VISIBLE | WS_TABSTOP | WS_CHILD |
                                 ES_MULTILINE | ES_AUTOVSCROLL |
@@ -557,7 +558,7 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
         tvis.hInsertAfter = TVI_LAST;  // make tree in order given
         tvis.item = tvi;
 
-        HTREEITEM treeNodeItem = TreeView_InsertItem(treeWnd, &tvis);
+        /* HTREEITEM treeNodeItem = */ TreeView_InsertItem(treeWnd, &tvis);
     }
 }
 

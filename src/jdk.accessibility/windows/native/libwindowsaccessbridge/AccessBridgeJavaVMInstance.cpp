@@ -268,7 +268,7 @@ AccessBridgeJavaVMInstance::sendMemoryPackage(char *buffer, long bufsize) {
             DEBUG_CODE(PackageType *type = (PackageType *) memoryMappedView);
             DEBUG_CODE(if (*type == cGetAccessibleTextItemsPackage) {)
                 DEBUG_CODE(AppendToCallInfo("  'memoryMappedView' now contains:"));
-                DEBUG_CODE(GetAccessibleTextItemsPackage *pkg = (GetAccessibleTextItemsPackage *) (buffer + sizeof(PackageType)));
+                DEBUG_CODE([[maybe_unused]] GetAccessibleTextItemsPackage *pkg = (GetAccessibleTextItemsPackage *) (buffer + sizeof(PackageType)));
                 DEBUG_CODE(snprintf(outputBuf, sizeof(outputBuf), "    PackageType = %X", *type));
                 DEBUG_CODE(AppendToCallInfo(outputBuf));
             DEBUG_CODE(})
