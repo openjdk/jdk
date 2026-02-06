@@ -38,6 +38,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,47 +51,169 @@ import jdk.test.lib.Utils;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class FailAndStopTest implements HttpHandler {
-    private static final int HTTP_STATUS_CODE_OK = 200;
     private static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
-    private final HttpServer server;
+    private static final String BODY = "OK";
 
+    static enum TestCases {
+        FAILNOW("failNow", true),
+        ASSERTNOW("assertNow", true),
+        RESPANDFAIL("failAfterResponseStatus", true),
+        RESPANDASSERT("failAfterResponseStatus", true),
+        CLOSEAFTERRESP("closeExchangeAfterResponseStatus", true),
+        BODYANDFAIL("failAfterResponseStatus", true),
+        BODYANDASSERT("assertAfterResponseStatus", true),
+        CLOSEBEFOREOS("closeExchangeBeforeOS", false),
+        CLOSEANDRETURN("closeAndReturn", false),
+        CLOSEANDFAIL("closeAndFail", false),
+        CLOSEANDASSERT("closeAndAssert", false);
 
-    public FailAndStopTest(HttpServer server) {
-        this.server = server;
+        private final String query;
+        private final boolean shouldFail;
+        TestCases(String query, boolean shouldFail) {
+            this.query = query;
+            this.shouldFail = shouldFail;
+        }
+        boolean shouldFail(String method) {
+            // in case of HEAD method the client should not
+            // fail if we throw after sending response headers
+            return switch (this) {
+                case FAILNOW -> shouldFail;
+                case ASSERTNOW -> shouldFail;
+                default -> shouldFail && !"HEAD".equals(method);
+            };
+        }
     }
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
-        throw new NullPointerException("Got you!");
+        String query = ex.getRequestURI().getRawQuery();
+        TestCases step = TestCases.FAILNOW;
+        if (query == null || query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new NullPointerException("Got you!");
+        }
+        step = TestCases.ASSERTNOW;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new AssertionError("Got you!");
+        }
+        byte[] body = BODY.getBytes(StandardCharsets.UTF_8);
+        ex.sendResponseHeaders(200, body.length);
+        step = TestCases.RESPANDFAIL;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new NullPointerException("Got you!");
+        }
+        step = TestCases.RESPANDASSERT;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new AssertionError("Got you!");
+        }
+        step = TestCases.CLOSEAFTERRESP;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            ex.close();
+            return;
+        }
+        if (!"HEAD".equals(ex.getRequestMethod())) {
+            ex.getResponseBody().write(body);
+        }
+        step = TestCases.BODYANDFAIL;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new NullPointerException("Got you!");
+        }
+        step = TestCases.BODYANDASSERT;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new AssertionError("Got you!");
+        }
+        step = TestCases.CLOSEBEFOREOS;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            ex.close();
+            return;
+        }
+        System.out.println("Server: closing response body");
+        ex.getResponseBody().close();
+        step = TestCases.CLOSEANDRETURN;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            ex.close();
+            return;
+        }
+        step = TestCases.CLOSEANDFAIL;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new NullPointerException("Got you!");
+        }
+        step = TestCases.CLOSEANDASSERT;
+        if (query.equals(step.query)) {
+            System.out.println("Server: " + step);
+            throw new AssertionError("Got you!");
+        }
     }
 
 
     public static void main(String[] args) throws Exception {
         LOGGER.setLevel(Level.ALL);
         Logger.getLogger("").getHandlers()[0].setLevel(Level.ALL);
+        // test with GET
+        for (var test : TestCases.values()) {
+            test(test, Optional.empty());
+        }
+        // test with HEAD
+        for (var test : TestCases.values()) {
+            test(test, Optional.of("HEAD"));
+        }
+    }
+    private static void test(TestCases test, Optional<String> method) throws Exception {
+
         HttpServer server = HttpServer.create(
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
 
+        System.out.println("Test: " + method.orElse("GET") + " " + test.query);
+        System.out.println("Server listening at: " + server.getAddress());
         try {
-            server.createContext("/context", new FailAndStopTest(server));
+            server.createContext("/FailAndStopTest/", new FailAndStopTest());
             server.start();
 
             URL url = URIBuilder.newBuilder()
                     .scheme("http")
                     .loopback()
                     .port(server.getAddress().getPort())
-                    .path("/context")
+                    .path("/FailAndStopTest/")
+                    .query(test.query)
                     .toURLUnchecked();
 
             HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
+            if (method.isPresent()) urlc.setRequestMethod(method.get());
             try {
                 System.out.println("Client: Response code received: " + urlc.getResponseCode());
                 InputStream is = urlc.getInputStream();
-                is.readAllBytes();
+                String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                 is.close();
+                if (test.shouldFail(urlc.getRequestMethod())) {
+                    throw new AssertionError("%s: test did not fail"
+                            .formatted(test.query));
+                }
+                System.out.println("Client: read body: \"%s\"".formatted(body));
+                if (!method.orElse("GET").equals("HEAD")) {
+                    if (!BODY.equals(body)) {
+                        throw new AssertionError("\"%s\" != \"%s\""
+                                .formatted(body, BODY));
+                    }
+                } else if (!body.isEmpty()) {
+                    throw new AssertionError("Body is not empty: " + body);
+                }
             } catch (SocketException so) {
-                // expected
-                System.out.println("Got expected exception: " + so);
+                if (test.shouldFail(urlc.getRequestMethod())) {
+                    // expected
+                    System.out.println(test.query + ": Got expected exception: " + so);
+                } else {
+                    throw new AssertionError("%s: test failed with %s"
+                            .formatted(test.query, so), so);
+                }
             }
         } finally {
             // if not fixed will cause the test to fail in jtreg timeout
