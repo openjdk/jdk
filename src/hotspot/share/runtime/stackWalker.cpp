@@ -662,7 +662,8 @@ public:
   u4 max_frames() const { return _request.max_frames(); }
 
   void report_frame(const Method* method, int bci, StackWalkerFrameType type) const {
-    _request.callback()->stack_frame(method, bci, type);
+    int line_no = method->line_number_from_bci(bci);
+    _request.callback()->stack_frame(method, bci, line_no, type);
   }
 };
 
@@ -739,35 +740,19 @@ static void report_thread(StackWalkRequest& request, const StackWalkerThreadLoca
   bool biased = false;
   bool in_continuation = false;
   bool could_compute_top_frame = compute_top_frame(request, top_frame, in_continuation, jt, biased);
-  //const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
 
   if (!could_compute_top_frame) {
-    // TODO: Handle failure
-    Unimplemented();
-    // JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period, request._jvmti, request._begin_stack_trace_callback, request._end_stack_trace_callback, request._user_data);
+    request.callback()->failure();
     return;
   }
-  //traceid sid;
-  {
-    //ResourceMark rm(current);
-    StackWalkState state(request);
-    if (!report(state, jt, top_frame, in_continuation, request)) {
-      // Unable to record stacktrace. Fail.
-      // TODO: Handle failure
-      Unimplemented();
-      //JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period, request._jvmti, request._begin_stack_trace_callback, request._end_stack_trace_callback, request._user_data);
-      return;
-    }
-    //if (!request._jvmti) {
-    //  sid = JfrStackTraceRepository::add(stacktrace);
-    //}
-    //assert(sid != 0, "invariant");
-    //JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased, request._jvmti, request._begin_stack_trace_callback, request._end_stack_trace_callback, request._stack_frame_callback, stacktrace, request._user_data);
-  }
 
-  //if (current == jt) {
-  //  send_safepoint_latency_event(request._request, now, sid, jt);
-  //}
+  request.callback()->begin_stacktrace(jt, in_continuation, biased);
+  StackWalkState state(request);
+  if (!report(state, jt, top_frame, in_continuation, request)) {
+    request.callback()->failure();
+    return;
+  }
+  request.callback()->end_stacktrace(state._truncated);
 }
 #endif
 

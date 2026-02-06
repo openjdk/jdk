@@ -88,6 +88,10 @@ class JfrStackTrace : public JfrCHeapObj {
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request);
   bool should_write() const { return !_written; }
+
+  void start_record_frames();
+  void record_frame(const Method* method, int bci, int line_no, u1 type);
+  void end_record_frames(bool truncated);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP

@@ -234,6 +234,25 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
   return _count > 0;
 }
 
+void JfrStackTrace::start_record_frames() {
+  if (_hash == 0) {
+    _hash = 1;
+  }
+}
+
+void JfrStackTrace::end_record_frames(bool truncated) {
+  _reached_root = !truncated;
+}
+
+void JfrStackTrace::record_frame(const Method* method, int bci, int line_no, u1 type) {
+  const traceid mid = JfrTraceId::load(method);
+  _hash = (_hash * 31) + mid;
+  _hash = (_hash * 31) + bci;
+  _hash = (_hash * 31) + type;
+  _frames->append(JfrStackFrame(mid, bci, type, method->method_holder()));
+  _count++;
+}
+
 void JfrStackTrace::resolve_linenos() const {
   assert(!_lineno, "invariant");
   for (int i = 0; i < _frames->length(); i++) {

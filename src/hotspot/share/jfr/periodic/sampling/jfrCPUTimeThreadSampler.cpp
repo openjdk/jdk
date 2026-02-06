@@ -247,7 +247,6 @@ class JfrCPUSamplerThread : public NonJavaThread {
   void recompute_period_if_needed();
 
   void set_throttle(JfrCPUSamplerThrottle& throttle);
-  int64_t get_sampling_period() const { return AtomicAccess::load(&_current_sampling_period_ns); };
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl, JfrTicks& now);
 
@@ -279,6 +278,8 @@ public:
   virtual void print_on(outputStream* st) const;
 
   void trigger_async_processing_of_cpu_time_jfr_requests();
+
+  int64_t get_sampling_period() const { return AtomicAccess::load(&_current_sampling_period_ns); };
 
   #ifdef ASSERT
   void set_out_of_stack_walking_enabled(bool runnable) {
@@ -619,6 +620,93 @@ void handle_timer_signal(int signo, siginfo_t* info, void* context) {
   _instance->handle_timer_signal(info, context);
 }
 
+class JfrCPUTimeStackWalkerCallback : public StackWalkerCallback {
+  JavaThread* _requested_thread;
+  JfrTicks _sample_ticks;
+  Tickspan _cpu_time_period;
+  JfrStackTrace* _stack_trace;
+  traceid _tid;
+  bool _biased;
+  bool _failed;
+
+  static u1 convert_type(StackWalkerFrameType type) {
+    switch (type) {
+      case StackWalkerFrameType::FRAME_INTERPRETER: return JfrStackFrame::FRAME_INTERPRETER;
+      case StackWalkerFrameType::FRAME_JIT:         return JfrStackFrame::FRAME_JIT;
+      case StackWalkerFrameType::FRAME_INLINE:      return JfrStackFrame::FRAME_INLINE;
+      case StackWalkerFrameType::FRAME_NATIVE:      return JfrStackFrame::FRAME_NATIVE;
+    }
+    ShouldNotReachHere();
+  }
+
+  void send_safepoint_latency_event(traceid sid) {
+    assert(_requested_thread != nullptr, "invariant");
+    assert(!_requested_thread->jfr_thread_local()->has_cached_stack_trace(), "invariant");
+    const JfrTicks end_time = JfrTicks::now();
+    EventSafepointLatency event(UNTIMED);
+    event.set_starttime(_sample_ticks);
+    event.set_endtime(end_time);
+    if (event.should_commit()) {
+      event.set_threadState(_thread_in_Java);
+      _requested_thread->jfr_thread_local()->set_cached_stack_trace_id(sid);
+      event.commit();
+      _requested_thread->jfr_thread_local()->clear_cached_stack_trace();
+    }
+  }
+
+public:
+  JfrCPUTimeStackWalkerCallback(JfrTicks sample_ticks, Tickspan cpu_time_period) :
+    _requested_thread(nullptr),
+    _sample_ticks(sample_ticks),
+    _cpu_time_period(cpu_time_period),
+    _stack_trace(nullptr),
+    _tid(0),
+    _biased(false),
+    _failed(false) {
+  }
+
+  ~JfrCPUTimeStackWalkerCallback() {
+    if (_stack_trace != nullptr) {
+      delete _stack_trace;
+    }
+  }
+
+  void begin_stacktrace(JavaThread* jt, bool continuation, bool biased) final {
+    assert(_stack_trace == nullptr, "invariant");
+    _requested_thread = jt;
+    _stack_trace = new JfrStackTrace;
+    _stack_trace->start_record_frames();
+    _biased = biased;
+    JfrThreadLocal* tl = jt->jfr_thread_local();
+    _tid = continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+  }
+
+  void end_stacktrace(bool truncated) final {
+    assert(_stack_trace != nullptr, "invariant");
+    if (!_failed) {
+      _stack_trace->end_record_frames(truncated);
+      traceid sid = JfrStackTraceRepository::add(*_stack_trace);
+      assert(sid != 0, "invariant");
+      JfrCPUTimeThreadSampling::send_event(_sample_ticks, sid, _tid, _cpu_time_period, _biased, false, nullptr, nullptr, nullptr, *_stack_trace, nullptr);
+
+      if (Thread::current() == _requested_thread) {
+        // TODO: Safepoint latency would be better and more generically tracked in the
+        // safepoint/handshake implementation.
+        send_safepoint_latency_event(sid);
+      }
+    }
+}
+
+  void stack_frame(const Method* method, int bci, int line_no, StackWalkerFrameType type) final {
+    assert(_stack_trace != nullptr, "invariant");
+    _stack_trace->record_frame(method, bci, line_no, convert_type(type));
+  }
+
+  void failure() final {
+    JfrCPUTimeThreadSampling::send_empty_event(_sample_ticks, _tid,  _cpu_time_period, false, nullptr, nullptr, nullptr);
+  }
+
+};
 
 void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* context) {
   if (info->si_code != SI_TIMER) {
@@ -635,7 +723,18 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   if (!_sampler->increment_signal_handler_count()) {
     return;
   }
-  _sampler->handle_request(info->si_overrun, context, false, nullptr, nullptr, nullptr, nullptr);
+
+  JfrTicks now = JfrTicks::now();
+  // The sampling period might be too low for the current Linux configuration
+  // so samples might be skipped and we have to compute the actual period.
+  int64_t period = _sampler->get_sampling_period() * (info->si_overrun + 1);
+  Tickspan cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
+
+  JfrCPUTimeStackWalkerCallback* callback = new JfrCPUTimeStackWalkerCallback(now, cpu_time_period);
+  JavaThread* current = JavaThread::current();
+  StackWalker::request_stack_trace(callback, current, context, JfrOptionSet::stackdepth());
+  //_sampler->handle_request(info->si_overrun, context, false, nullptr, nullptr, nullptr, nullptr);
+
   _sampler->decrement_signal_handler_count();
 }
 

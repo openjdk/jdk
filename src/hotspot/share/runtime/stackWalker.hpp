@@ -37,13 +37,13 @@ enum class StackWalkerFrameType {
   FRAME_NATIVE,
 };
 
-class StackWalkerCallback {
+class StackWalkerCallback : public CHeapObj<mtOther> {
 public:
   virtual ~StackWalkerCallback() =default;
 
-  virtual void begin_stacktrace(bool biased) = 0;
+  virtual void begin_stacktrace(JavaThread* jt, bool continuation, bool biased) = 0;
   virtual void end_stacktrace(bool truncated) = 0;
-  virtual void stack_frame(const Method* method, int bci, StackWalkerFrameType type) = 0;
+  virtual void stack_frame(const Method* method, int bci, int line_no, StackWalkerFrameType type) = 0;
   virtual void failure() = 0;
 };
 
