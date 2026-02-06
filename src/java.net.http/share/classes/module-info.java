@@ -144,21 +144,20 @@
  * The value for HTTP/2 and HTTP/3 can be overridden with the
  * {@code jdk.httpclient.keepalive.timeout.h2} and {@code jdk.httpclient.keepalive.timeout.h3}
  * properties respectively. The value specified for HTTP/2 acts as default value for HTTP/3.
- * If the provided value is negative, the default value is used. A value of 0 causes
- * the timeout to fire immediately.
+ * If the provided value is negative, the default value is used. A value of 0 is valid and
+ * has no special meaning, the connection is closed when it becomes idle.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h2}</b> (default: see
- * below)<br>The number of seconds to keep idle HTTP/2 connections alive. If not set, then the
- * {@code jdk.httpclient.keepalive.timeout} setting is used.
- * If the provided value is negative, the default value is used. A value of 0 causes
- * the timeout to fire immediately.
+ * below)<br>The number of seconds to keep idle HTTP/2 connections alive. If not set, or negative,
+ * then the {@code jdk.httpclient.keepalive.timeout} setting is used.
+ * A value of 0 is valid and has no special meaning, the connection is closed when it
+ * becomes idle.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h3}</b> (default: see
- * below)<br>The number of seconds to keep idle HTTP/3 connections alive. If not set, then the
- * {@code jdk.httpclient.keepalive.timeout.h2} setting is used.
- * If the provided value is negative, the default value is used. A value of 0 causes
- * the timeout to fire immediately.
- * </li>
+ * below)<br>The number of seconds to keep idle HTTP/3 connections alive. If not set,
+ * or negative, then the {@code jdk.httpclient.keepalive.timeout.h2} setting is used.
+ * A value of 0 is valid and has no special meaning, the connection is closed when it
+ * becomes idle.
  * <li><p><b>{@systemProperty jdk.httpclient.maxframesize}</b> (default: 16384 or 16kB)<br>
  * The HTTP/2 client maximum frame size in bytes. The server is not permitted to send a frame
  * larger than this.
