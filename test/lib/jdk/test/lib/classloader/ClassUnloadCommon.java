@@ -54,7 +54,7 @@ public class ClassUnloadCommon {
     /**
      * Class name of default class loader.
      */
-    public static final String INTERNAL_CLASS_LOADER_NAME = "nsk.share.CustomClassLoader";
+    public static final String INTERNAL_CLASS_LOADER_NAME = "jdk.test.lib.classloader.CustomClassLoader";
 
     /**
      * Phantom reference to the class loader.
