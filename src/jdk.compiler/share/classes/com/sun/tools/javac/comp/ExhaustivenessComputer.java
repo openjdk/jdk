@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,17 @@ import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Type.TypeVar;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.SequencedSet;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
+import static com.sun.tools.javac.code.Flags.RECORD;
 
 /** A class to compute exhaustiveness of set of switch cases.
  *
@@ -55,6 +61,14 @@ import static java.util.stream.Collectors.groupingBy;
  *  deletion without notice.</b>
  */
 public class ExhaustivenessComputer {
+    private static final long DEFAULT_MAX_BASE_CHECKS = 4_000_000;
+
+    //when baseChecks is set to a value different that this, the checks
+    //will be counter, and if too many will happen, the process will be stopped
+    //when baseChecks is set to this value, there's no counting, and the
+    //process will not continue as long as needed
+    private static final long NO_BASE_CHECKS_COUNTING = -1;
+
     protected static final Context.Key<ExhaustivenessComputer> exhaustivenessKey = new Context.Key<>();
 
     private final Symtab syms;
@@ -62,6 +76,8 @@ public class ExhaustivenessComputer {
     private final Check chk;
     private final Infer infer;
     private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new HashMap<>();
+    private final long maxBaseChecks;
+    private long baseChecks = NO_BASE_CHECKS_COUNTING;
 
     public static ExhaustivenessComputer instance(Context context) {
         ExhaustivenessComputer instance = context.get(exhaustivenessKey);
@@ -77,9 +93,22 @@ public class ExhaustivenessComputer {
         types = Types.instance(context);
         chk = Check.instance(context);
         infer = Infer.instance(context);
+        Options options = Options.instance(context);
+        String baseChecks = options.get("exhaustivityMaxBaseChecks");
+        long computedMaxBaseChecks = DEFAULT_MAX_BASE_CHECKS;
+
+        if (baseChecks != null) {
+            try {
+                computedMaxBaseChecks = Long.parseLong(baseChecks);
+            } catch (NumberFormatException _) {
+                //ignore invalid values and use the default maximum number of checks
+            }
+        }
+
+        maxBaseChecks = computedMaxBaseChecks;
     }
 
-    public boolean exhausts(JCExpression selector, List<JCCase> cases) {
+    public ExhaustivenessResult exhausts(JCExpression selector, List<JCCase> cases) {
         Set<PatternDescription> patternSet = new HashSet<>();
         Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
         Set<Object> booleanLiterals = new HashSet<>(Set.of(0, 1));
@@ -113,7 +142,7 @@ public class ExhaustivenessComputer {
         }
 
         if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
-            return true;
+            return ExhaustivenessResult.ofExhaustive();
         }
 
         for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
@@ -121,46 +150,76 @@ public class ExhaustivenessComputer {
                 patternSet.add(new BindingPattern(e.getKey().type));
             }
         }
-        Set<PatternDescription> patterns = patternSet;
-        Set<Set<PatternDescription>> seenFallback = new HashSet<>();
-        boolean useHashes = true;
         try {
-            boolean repeat = true;
-            while (repeat) {
-                Set<PatternDescription> updatedPatterns;
-                updatedPatterns = reduceBindingPatterns(selector.type, patterns);
-                updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes);
-                updatedPatterns = reduceRecordPatterns(updatedPatterns);
-                updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
-                repeat = !updatedPatterns.equals(patterns);
-                if (checkCovered(selector.type, patterns)) {
-                    return true;
-                }
-                if (!repeat) {
-                    //there may be situation like:
-                    //class B permits S1, S2
-                    //patterns: R(S1, B), R(S2, S2)
-                    //this might be joined to R(B, S2), as B could be rewritten to S2
-                    //but hashing in reduceNestedPatterns will not allow that
-                    //disable the use of hashing, and use subtyping in
-                    //reduceNestedPatterns to handle situations like this:
-                    repeat = useHashes && seenFallback.add(updatedPatterns);
-                    useHashes = false;
-                } else {
-                    //if a reduction happened, make sure hashing in reduceNestedPatterns
-                    //is enabled, as the hashing speeds up the process significantly:
-                    useHashes = true;
-                }
-                patterns = updatedPatterns;
+            CoverageResult coveredResult = computeCoverage(selector.type, patternSet, PatternEquivalence.STRICT);
+            if (coveredResult.covered()) {
+                return ExhaustivenessResult.ofExhaustive();
             }
-            return checkCovered(selector.type, patterns);
+
+            Set<PatternDescription> details =
+                    this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
+                        .stream()
+                        .flatMap(pd -> {
+                            if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
+                                Symbol enumType = bp.type.tsym;
+                                return enum2Constants.get(enumType).stream().map(c -> new EnumConstantPattern(bp.type, c.name));
+                            } else {
+                                return Stream.of(pd);
+                            }
+                        })
+                        .collect(Collectors.toSet());
+
+            return ExhaustivenessResult.ofDetails(details);
         } catch (CompletionFailure cf) {
             chk.completionError(selector.pos(), cf);
-            return true; //error recovery
-        } finally {
-            isSubtypeCache.clear();
+            return ExhaustivenessResult.ofExhaustive(); //error recovery
         }
     }
+
+    /* Given the set of patterns, runs the reductions of it as long as possible.
+     * If the (reduced) set of patterns covers the given selector type, returns
+     * covered == true, and incompletePatterns == null.
+     * If the (reduced) set of patterns does not cover the given selector type,
+     * returns covered == false, and incompletePatterns == the reduced set of patterns.
+     */
+    private CoverageResult computeCoverage(Type selectorType, Set<PatternDescription> patterns, PatternEquivalence patternEquivalence) {
+        Set<PatternDescription> updatedPatterns;
+        Set<Set<PatternDescription>> seenPatterns = new HashSet<>();
+        boolean useHashes = true;
+        boolean repeat = true;
+        do {
+            updatedPatterns = reduceBindingPatterns(selectorType, patterns);
+            updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes, patternEquivalence);
+            updatedPatterns = reduceRecordPatterns(updatedPatterns);
+            updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
+            repeat = !updatedPatterns.equals(patterns);
+            if (checkCovered(selectorType, patterns)) {
+                return new CoverageResult(true, null);
+            }
+            if (!repeat) {
+                //there may be situation like:
+                //class B permits S1, S2
+                //patterns: R(S1, B), R(S2, S2)
+                //this might be joined to R(B, S2), as B could be rewritten to S2
+                //but hashing in reduceNestedPatterns will not allow that
+                //disable the use of hashing, and use subtyping in
+                //reduceNestedPatterns to handle situations like this:
+                repeat = useHashes && seenPatterns.add(updatedPatterns);
+                useHashes = false;
+            } else {
+                //if a reduction happened, make sure hashing in reduceNestedPatterns
+                //is enabled, as the hashing speeds up the process significantly:
+                useHashes = true;
+            }
+            patterns = updatedPatterns;
+        } while (repeat);
+        if (checkCovered(selectorType, patterns)) {
+            return new CoverageResult(true, null);
+        }
+        return new CoverageResult(false, patterns);
+    }
+
+    private record CoverageResult(boolean covered, Set<PatternDescription> incompletePatterns) {}
 
     private boolean checkCovered(Type seltype, Iterable<PatternDescription> patterns) {
         for (Type seltypeComponent : components(seltype)) {
@@ -215,6 +274,7 @@ public class ExhaustivenessComputer {
                     if (clazz.isSealed() && clazz.isAbstract() &&
                         //if a binding pattern for clazz already exists, no need to analyze it again:
                         !existingBindings.contains(clazz)) {
+                        ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         //do not reduce to types unrelated to the selector type:
                         Type clazzType = clazz.type;
                         if (components(selectorType).stream()
@@ -222,16 +282,7 @@ public class ExhaustivenessComputer {
                             continue;
                         }
 
-                        Set<Symbol> permitted = allPermittedSubTypes(clazz, csym -> {
-                            Type instantiated;
-                            if (csym.type.allparams().isEmpty()) {
-                                instantiated = csym.type;
-                            } else {
-                                instantiated = infer.instantiatePatternType(selectorType, csym);
-                            }
-
-                            return instantiated != null && types.isCastable(selectorType, instantiated);
-                        });
+                        Set<Symbol> permitted = allPermittedSubTypes(clazz, isApplicableSubtypePredicate(selectorType));
 
                         //the set of pending permitted subtypes needed to cover clazz:
                         Set<Symbol> pendingPermitted = new HashSet<>(permitted);
@@ -263,7 +314,7 @@ public class ExhaustivenessComputer {
                         }
 
                         if (pendingPermitted.isEmpty()) {
-                            toAdd.add(new BindingPattern(clazz.type));
+                            toAdd.add(new BindingPattern(clazz.type, Set.of()));
                         }
                     }
                 }
@@ -304,6 +355,49 @@ public class ExhaustivenessComputer {
         return permitted;
     }
 
+    private <C extends TypeSymbol> Predicate<C> isApplicableSubtypePredicate(Type targetType) {
+        return csym -> {
+            Type instantiated = instantiatePatternType(targetType, csym);
+
+            return instantiated != null && types.isCastable(targetType, instantiated);
+        };
+    }
+
+    private Type instantiatePatternType(Type targetType, TypeSymbol csym) {
+        if (csym.type.allparams().isEmpty()) {
+            return csym.type;
+        } else {
+            return infer.instantiatePatternType(targetType, csym);
+        }
+    }
+
+    private Set<ClassSymbol> leafPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
+        Set<ClassSymbol> permitted = new HashSet<>();
+        List<ClassSymbol> permittedSubtypesClosure = baseClasses(root);
+
+        while (permittedSubtypesClosure.nonEmpty()) {
+            ClassSymbol current = permittedSubtypesClosure.head;
+
+            permittedSubtypesClosure = permittedSubtypesClosure.tail;
+
+            current.complete();
+
+            if (current.isSealed() && current.isAbstract()) {
+                for (Type t : current.getPermittedSubclasses()) {
+                    ClassSymbol csym = (ClassSymbol) t.tsym;
+
+                    if (accept.test(csym)) {
+                        permittedSubtypesClosure = permittedSubtypesClosure.prepend(csym);
+                    }
+                }
+            } else {
+                permitted.add(current);
+            }
+        }
+
+        return permitted;
+    }
+
     private List<ClassSymbol> baseClasses(TypeSymbol root) {
         if (root instanceof ClassSymbol clazz) {
             return List.of(clazz);
@@ -336,7 +430,8 @@ public class ExhaustivenessComputer {
      *            as pattern hashes cannot be used to speed up the matching process
      */
     private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
-                                                         boolean useHashes) {
+                                                         boolean useHashes,
+                                                         PatternEquivalence patternEquivalence) {
         /* implementation note:
          * finding a sub-set of patterns that only differ in a single
          * column is time-consuming task, so this method speeds it up by:
@@ -386,13 +481,13 @@ public class ExhaustivenessComputer {
                             RecordPattern rpOther = candidatesArr[nextCandidate];
 
                             if (rpOne.recordType.tsym == rpOther.recordType.tsym &&
-                                nestedComponentsEquivalent(rpOne, rpOther, mismatchingCandidate, useHashes)) {
+                                nestedComponentsEquivalent(rpOne, rpOther, mismatchingCandidate, useHashes, patternEquivalence)) {
                                 join.append(rpOther);
                             }
                         }
 
                         var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                        var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes);
+                        var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes, patternEquivalence);
 
                         updatedPatterns = reduceRecordPatterns(updatedPatterns);
                         updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
@@ -403,16 +498,11 @@ public class ExhaustivenessComputer {
                                 current.removeAll(join);
                             }
 
-                            for (PatternDescription nested : updatedPatterns) {
-                                PatternDescription[] newNested =
-                                        Arrays.copyOf(rpOne.nested, rpOne.nested.length);
-                                newNested[mismatchingCandidateFin] = nested;
-                                RecordPattern nue = new RecordPattern(rpOne.recordType(),
-                                                                rpOne.fullComponentTypes(),
-                                                                newNested,
-                                                                new HashSet<>(join));
-                                current.add(nue);
-                            }
+                            generatePatternsWithReplacedNestedPattern(rpOne,
+                                                                      mismatchingCandidateFin,
+                                                                      updatedPatterns,
+                                                                      Set.copyOf(join),
+                                                                      current::add);
                         }
                     }
                 }
@@ -434,11 +524,32 @@ public class ExhaustivenessComputer {
      * - it's type is a supertype of the existing pattern's type
      * - it was produced by a reduction from a record pattern that is equivalent to
      *   the existing pattern
+     * - only if PatternEquivalence is LOOSE and the type is the same of the type
+     *   of an existing record pattern (the binding pattern may stand in place of
+     *   a record pattern). This is only used to compute the missing patterns that
+     *   would make the original pattern set exhaustive.
+     *
+     * For example, having (with mismatchingCandidate == 0):
+     * existing: R(A _, Box(var _)) {}
+     * cadidate: R(B _, Box(var _)) {}
+     * these are always equivalent; as all nested patterns except of
+     * component 0 are exactly equivalent
+     *
+     * existing: R(A _, SubtypeOfBox _) {}
+     * cadidate: R(A _, Box _) {}
+     * this is only equivalent when useHashes == false; Box _ could be replaced
+     * with a more specific SubtypeOfBox _
+     *
+     * existing: R(A _, Box(var _)) {}
+     * cadidate: R(A _, Box _) {}
+     * this is only equivalent when useHashes == false and patternEquivalence == LOOSE;
+     * Box _ is accepted in place of the more specific record pattern
      */
     private boolean nestedComponentsEquivalent(RecordPattern existing,
                                                RecordPattern candidate,
                                                int mismatchingCandidate,
-                                               boolean useHashes) {
+                                               boolean useHashes,
+                                               PatternEquivalence patternEquivalence) {
         NEXT_NESTED:
         for (int i = 0; i < existing.nested.length; i++) {
             if (i != mismatchingCandidate) {
@@ -457,22 +568,28 @@ public class ExhaustivenessComputer {
                             return false;
                         }
                     } else if (existing.nested[i] instanceof RecordPattern nestedExisting) {
-                        java.util.List<PatternDescription> pendingReplacedPatterns =
-                                new ArrayList<>(nestedCandidate.sourcePatterns());
+                        if (patternEquivalence == PatternEquivalence.LOOSE) {
+                            if (!isSubtypeErasure(nestedExisting.recordType(), nestedCandidate.type)) {
+                                return false;
+                            }
+                        } else {
+                            java.util.List<PatternDescription> pendingReplacedPatterns =
+                                    new ArrayList<>(nestedCandidate.sourcePatterns());
 
-                        while (!pendingReplacedPatterns.isEmpty()) {
-                            PatternDescription currentReplaced = pendingReplacedPatterns.removeLast();
+                            while (!pendingReplacedPatterns.isEmpty()) {
+                                PatternDescription currentReplaced = pendingReplacedPatterns.removeLast();
 
-                            if (nestedExisting.equals(currentReplaced)) {
-                                //candidate.nested[i] is substitutable for existing.nested[i]
-                                //continue with the next nested pattern:
-                                continue NEXT_NESTED;
+                                if (nestedExisting.equals(currentReplaced)) {
+                                    //candidate.nested[i] is substitutable for existing.nested[i]
+                                    //continue with the next nested pattern:
+                                    continue NEXT_NESTED;
+                                }
+
+                                pendingReplacedPatterns.addAll(currentReplaced.sourcePatterns());
                             }
 
-                            pendingReplacedPatterns.addAll(currentReplaced.sourcePatterns());
+                            return false;
                         }
-
-                        return false;
                     } else {
                         return false;
                     }
@@ -563,6 +680,8 @@ public class ExhaustivenessComputer {
     }
 
     private boolean isBpCovered(Type componentType, PatternDescription newNested) {
+        reportCheck();
+
         if (newNested instanceof BindingPattern bp) {
             Type seltype = types.erasure(componentType);
             Type pattype = types.erasure(bp.type);
@@ -574,9 +693,18 @@ public class ExhaustivenessComputer {
         return false;
     }
 
-    sealed interface PatternDescription {
+    protected void reportCheck() {
+        if (baseChecks != NO_BASE_CHECKS_COUNTING &&
+            ++baseChecks > maxBaseChecks) {
+            throw new TooManyChecksException(null);
+        }
+    }
+
+    public sealed interface PatternDescription {
+        public Type type();
         public Set<PatternDescription> sourcePatterns();
     }
+
     public PatternDescription makePatternDescription(Type selectorType, JCPattern pattern) {
         if (pattern instanceof JCBindingPattern binding) {
             Type type = !selectorType.isPrimitive() && types.isSubtype(selectorType, binding.type)
@@ -586,9 +714,7 @@ public class ExhaustivenessComputer {
             Type[] componentTypes;
 
             if (!record.type.isErroneous()) {
-                componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
-                        .map(r -> types.memberType(record.type, r))
-                        .toArray(s -> new Type[s]);
+                componentTypes = instantiatedComponentTypes(record.type);
             }
             else {
                 componentTypes = record.nested.map(t -> types.createErrorType(t.type)).toArray(s -> new Type[s]);;
@@ -611,7 +737,7 @@ public class ExhaustivenessComputer {
             throw Assert.error();
         }
     }
-    record BindingPattern(Type type, Set<PatternDescription> sourcePatterns) implements PatternDescription {
+    public record BindingPattern(Type type, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public BindingPattern(Type type) {
             this(type, Set.of());
@@ -631,7 +757,7 @@ public class ExhaustivenessComputer {
             return type.tsym + " _";
         }
     }
-    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) implements PatternDescription {
+    public record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
             this(recordType, fullComponentTypes, nested, Set.of());
@@ -672,6 +798,451 @@ public class ExhaustivenessComputer {
             return recordType.tsym + "(" + Arrays.stream(nested)
                     .map(pd -> pd.toString())
                     .collect(Collectors.joining(", ")) + ")";
+        }
+
+        @Override
+        public Type type() {
+            return recordType;
+        }
+    }
+
+    public record EnumConstantPattern(Type enumType, Name enumConstant) implements PatternDescription {
+
+        @Override
+        public Type type() {
+            return enumType();
+        }
+
+        @Override
+        public Set<PatternDescription> sourcePatterns() {
+            return Set.of();
+        }
+        public String toString() {
+            return enumType() + "." + enumConstant();
+        }
+    }
+
+    public record ExhaustivenessResult(boolean exhaustive, Set<PatternDescription> notExhaustiveDetails) {
+        public static ExhaustivenessResult ofExhaustive() {
+            return new ExhaustivenessResult(true, null);
+        }
+        public static ExhaustivenessResult ofDetails(Set<PatternDescription> notExhaustiveDetails) {
+            return new ExhaustivenessResult(false, notExhaustiveDetails != null ? notExhaustiveDetails : Set.of());
+        }
+    }
+
+    //computation of missing patterns:
+    protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType,
+                                                                        Set<PatternDescription> incompletePatterns) {
+        if (maxBaseChecks == 0) {
+            return Set.of();
+        }
+        try {
+            baseChecks = 0;
+            PatternDescription defaultPattern = new BindingPattern(selectorType);
+            return expandMissingPatternDescriptions(selectorType,
+                                                    selectorType,
+                                                    defaultPattern,
+                                                    incompletePatterns,
+                                                    Set.of(defaultPattern));
+        } catch (TooManyChecksException ex) {
+            return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
+        } finally {
+            baseChecks = NO_BASE_CHECKS_COUNTING;
+        }
+    }
+
+    private Set<PatternDescription> expandMissingPatternDescriptions(Type selectorType,
+                                                                     Type targetType,
+                                                                     PatternDescription toExpand,
+                                                                     Set<? extends PatternDescription> basePatterns,
+                                                                     Set<PatternDescription> inMissingPatterns) {
+        try {
+            return doExpandMissingPatternDescriptions(selectorType, targetType,
+                                                      toExpand, basePatterns,
+                                                      inMissingPatterns);
+        } catch (TooManyChecksException ex) {
+            if (ex.missingPatterns == null) {
+                ex = new TooManyChecksException(inMissingPatterns);
+            }
+            throw ex;
+        }
+    }
+
+    private Set<PatternDescription> doExpandMissingPatternDescriptions(Type selectorType,
+                                                                       Type targetType,
+                                                                       PatternDescription toExpand,
+                                                                       Set<? extends PatternDescription> basePatterns,
+                                                                       Set<PatternDescription> inMissingPatterns) {
+        if (toExpand instanceof BindingPattern bp) {
+            if (bp.type.tsym.isSealed()) {
+                //try to replace binding patterns for sealed types with all their immediate permitted applicable types:
+                List<Type> permitted = ((ClassSymbol) bp.type.tsym).getPermittedSubclasses();
+                Set<PatternDescription> applicableDirectPermittedPatterns =
+                        permitted.stream()
+                                 .map(type -> type.tsym)
+                                 .filter(isApplicableSubtypePredicate(targetType))
+                                 .map(csym -> new BindingPattern(types.erasure(csym.type)))
+                                 .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                //remove the permitted subtypes that are not needed to achieve exhaustivity
+                boolean reduced =
+                        removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, applicableDirectPermittedPatterns);
+
+                if (!reduced && !hasMatchingRecordPattern(basePatterns, inMissingPatterns, toExpand)) {
+                    //if all immediate permitted subtypes are needed
+                    //give up, and simply use the current pattern:
+                    return inMissingPatterns;
+                }
+
+                Set<PatternDescription> currentMissingPatterns =
+                        replace(inMissingPatterns, toExpand, applicableDirectPermittedPatterns);
+
+                //try to recursively expand on each viable pattern:
+                for (PatternDescription viable : applicableDirectPermittedPatterns) {
+                    currentMissingPatterns = expandMissingPatternDescriptions(selectorType, targetType,
+                                                                              viable, basePatterns,
+                                                                              currentMissingPatterns);
+                }
+
+                return currentMissingPatterns;
+            } else if ((bp.type.tsym.flags_field & Flags.RECORD) != 0 &&
+                       //only expand record types into record patterns if there's a chance it may change the outcome
+                       //i.e. there is a record pattern in at the spot in the original base patterns:
+                       hasMatchingRecordPattern(basePatterns, inMissingPatterns, toExpand)) {
+                //if there is a binding pattern at a place where the original based patterns
+                //have a record pattern, try to expand the binding pattern into a record pattern
+                //create all possible combinations of record pattern components:
+                Type[] componentTypes = instantiatedComponentTypes(bp.type);
+                List<List<Type>> combinatorialNestedTypes = List.of(List.nil());
+
+                for (Type componentType : componentTypes) {
+                    List<Type> applicableLeafPermittedSubtypes;
+
+                    if (componentType.tsym.isSealed()) {
+                        applicableLeafPermittedSubtypes =
+                                leafPermittedSubTypes(componentType.tsym,
+                                                      isApplicableSubtypePredicate(componentType))
+                                    .stream()
+                                    .map(csym -> instantiatePatternType(componentType, csym))
+                                    .collect(List.collector());
+                    } else {
+                        applicableLeafPermittedSubtypes = List.of(componentType);
+                    }
+
+                    List<List<Type>> newCombinatorialNestedTypes = List.nil();
+
+                    for (List<Type> existing : combinatorialNestedTypes) {
+                        for (Type nue : applicableLeafPermittedSubtypes) {
+                            newCombinatorialNestedTypes = newCombinatorialNestedTypes.prepend(existing.append(nue));
+                        }
+                    }
+
+                    combinatorialNestedTypes = newCombinatorialNestedTypes;
+                }
+
+                Set<PatternDescription> combinatorialPatterns =
+                        combinatorialNestedTypes.stream()
+                                                .map(combination -> new RecordPattern(bp.type,
+                                                                                      componentTypes,
+                                                                                      combination.map(BindingPattern::new)
+                                                                                                 .toArray(PatternDescription[]::new)))
+                                                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, combinatorialPatterns);
+
+                CoverageResult coverageResult = computeCoverage(targetType, combinatorialPatterns, PatternEquivalence.LOOSE);
+
+                if (!coverageResult.covered()) {
+                    //use the partially merged/combined patterns:
+                    combinatorialPatterns = coverageResult.incompletePatterns();
+                }
+
+                //combine sealed subtypes into the supertype, if all is covered.
+                //but preserve more specific record types in positions where there are record patterns in the original patterns
+                //this is particularly important for the case where the sealed supertype only has one permitted type, the record
+                //the base type could be used instead of the record otherwise, which would produce less specific missing pattern:
+                Set<PatternDescription> sortedCandidates =
+                        partialSortPattern(combinatorialPatterns, basePatterns, replace(inMissingPatterns, toExpand, combinatorialPatterns));
+
+                removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, sortedCandidates);
+
+                Set<PatternDescription> currentMissingPatterns =
+                        replace(inMissingPatterns, toExpand, sortedCandidates);
+
+                for (PatternDescription addedPattern : sortedCandidates) {
+                    if (addedPattern instanceof RecordPattern addedRP) {
+                        for (int c = 0; c < addedRP.nested.length; c++) {
+                            currentMissingPatterns = expandMissingPatternDescriptions(selectorType,
+                                                                                      addedRP.fullComponentTypes[c],
+                                                                                      addedRP.nested[c],
+                                                                                      basePatterns,
+                                                                                      currentMissingPatterns);
+                        }
+                    }
+                }
+
+                return currentMissingPatterns;
+            }
+        }
+        return inMissingPatterns;
+    }
+
+    /*
+     * Inside any pattern in {@code in}, in any nesting depth, replace
+     * pattern {@code what} with patterns {@code to}.
+     */
+    private Set<PatternDescription> replace(Iterable<? extends PatternDescription> in,
+                                            PatternDescription what,
+                                            Collection<? extends PatternDescription> to) {
+        Set<PatternDescription> result = new HashSet<>();
+
+        for (PatternDescription pd : in) {
+            Collection<? extends PatternDescription> replaced = replace(pd, what, to);
+            if (replaced != null) {
+                result.addAll(replaced);
+            } else {
+                result.add(pd);
+            }
+        }
+
+        return result;
+    }
+    //where:
+        //null: no change
+        private Collection<? extends PatternDescription> replace(PatternDescription in,
+                                                                 PatternDescription what,
+                                                                 Collection<? extends PatternDescription> to) {
+            if (in == what) {
+                return to;
+            } else if (in instanceof RecordPattern rp) {
+                for (int c = 0; c < rp.nested.length; c++) {
+                    Collection<? extends PatternDescription> replaced = replace(rp.nested[c], what, to);
+                    if (replaced != null) {
+                        Set<PatternDescription> withReplaced = new HashSet<>();
+
+                        generatePatternsWithReplacedNestedPattern(rp, c, replaced, Set.of(), withReplaced::add);
+
+                        return replace(withReplaced, what, to);
+                    }
+                }
+                return null;
+            } else {
+                return null; //binding patterns have no children
+            }
+        }
+
+    /* Out of "candidates" remove patterns that are not necessary to achieve exhaustiveness.
+     * Note that iteration order of "candidates" is important - if the set contains
+     * two pattern, out of which either, but not both, is needed to achieve exhaustiveness,
+     * the first one in the iteration order will be removed.
+     */
+    private boolean removeUnnecessaryPatterns(Type selectorType,
+                                              PatternDescription toExpand,
+                                              Set<? extends PatternDescription> basePatterns,
+                                              Set<PatternDescription> inMissingPatterns,
+                                              Set<PatternDescription> candidates) {
+        boolean reduced = false;
+
+        for (Iterator<PatternDescription> it = candidates.iterator(); it.hasNext(); ) {
+            PatternDescription current = it.next();
+            Set<PatternDescription> reducedAdded = new HashSet<>(candidates);
+
+            reducedAdded.remove(current);
+
+            Set<PatternDescription> combinedPatterns =
+                    Stream.concat(basePatterns.stream(),
+                                  replace(inMissingPatterns, toExpand, reducedAdded).stream())
+                          .collect(Collectors.toSet());
+
+            if (computeCoverage(selectorType, combinedPatterns, PatternEquivalence.LOOSE).covered()) {
+                it.remove();
+                reduced = true;
+            }
+        }
+
+        return reduced;
+    }
+    /*
+     * Sort patterns so that those that are preferred for removal are in front
+     * of those that are preferred to remain (when there's a choice).
+     */
+    private SequencedSet<PatternDescription> partialSortPattern(Set<PatternDescription> candidates,
+                                                                Set<? extends PatternDescription> basePatterns,
+                                                                Set<PatternDescription> missingPatterns) {
+        SequencedSet<PatternDescription> sortedCandidates = new LinkedHashSet<>();
+
+        while (!candidates.isEmpty()) {
+            PatternDescription mostSpecific = null;
+            for (PatternDescription current : candidates) {
+                if (mostSpecific == null ||
+                    shouldAppearBefore(current, mostSpecific, basePatterns, missingPatterns)) {
+                    mostSpecific = current;
+                }
+            }
+            sortedCandidates.add(mostSpecific);
+            candidates.remove(mostSpecific);
+        }
+        return sortedCandidates;
+    }
+    //where:
+        //true iff pd1 should appear before pd2
+        //false otherwise
+        private boolean shouldAppearBefore(PatternDescription pd1,
+                                           PatternDescription pd2,
+                                           Set<? extends PatternDescription> basePatterns,
+                                           Set<? extends PatternDescription> missingPatterns) {
+            if (pd1 instanceof RecordPattern rp1 && pd2 instanceof RecordPattern rp2) {
+                for (int c = 0; c < rp1.nested.length; c++) {
+                    if (shouldAppearBefore((BindingPattern) rp1.nested[c],
+                                           (BindingPattern) rp2.nested[c],
+                                           basePatterns,
+                                           missingPatterns)) {
+                        return true;
+                    }
+                }
+            } else if (pd1 instanceof BindingPattern bp1 && pd2 instanceof BindingPattern bp2) {
+                Type t1 = bp1.type();
+                Type t2 = bp2.type();
+                boolean t1IsImportantRecord =
+                        (t1.tsym.flags_field & RECORD) != 0 &&
+                        hasMatchingRecordPattern(basePatterns, missingPatterns, bp1);
+                boolean t2IsImportantRecord =
+                        (t2.tsym.flags_field & RECORD) != 0 &&
+                        hasMatchingRecordPattern(basePatterns, missingPatterns, bp2);
+                if (t1IsImportantRecord && !t2IsImportantRecord) {
+                    return false;
+                }
+                if (!t1IsImportantRecord && t2IsImportantRecord) {
+                    return true;
+                }
+                if (!types.isSameType(t1, t2) && types.isSubtype(t1, t2)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    /*
+     * Do the {@code basePatterns} have a record pattern at a place that corresponds to
+     * position of pattern {@code query} inside {@code missingPatterns}?
+     */
+    private boolean hasMatchingRecordPattern(Set<? extends PatternDescription> basePatterns,
+                                             Set<? extends PatternDescription> missingPatterns,
+                                             PatternDescription query) {
+        PatternDescription root = findRootContaining(missingPatterns, query);
+
+        if (root == null) {
+            return false;
+        }
+        return basePatternsHaveRecordPatternOnThisSpot(basePatterns, root, query);
+    }
+    //where:
+        private PatternDescription findRootContaining(Set<? extends PatternDescription> rootPatterns,
+                                                      PatternDescription added) {
+            for (PatternDescription pd : rootPatterns) {
+                if (isUnderRoot(pd, added)) {
+                    return pd;
+                }
+            }
+
+            return null;
+        }
+
+        private boolean basePatternsHaveRecordPatternOnThisSpot(Set<? extends PatternDescription> basePatterns,
+                                                                PatternDescription rootPattern,
+                                                                PatternDescription added) {
+            if (rootPattern == added) {
+                return basePatterns.stream().anyMatch(pd -> pd instanceof RecordPattern);
+            }
+            if (!(rootPattern instanceof RecordPattern rootPatternRecord)) {
+                return false;
+            }
+            int index = -1;
+            for (int c = 0; c < rootPatternRecord.nested.length; c++) {
+                if (isUnderRoot(rootPatternRecord.nested[c], added)) {
+                    index = c;
+                    break;
+                }
+            }
+            // 'index' must be one of rootPatternRecord.nested; if not, `isUnderRoot` is inconsistent.
+            Assert.check(index != (-1));
+
+            int indexFin = index;
+            Set<PatternDescription> filteredBasePatterns =
+                    basePatterns.stream()
+                                .filter(pd -> pd instanceof RecordPattern)
+                                .map(rp -> (RecordPattern) rp)
+                                .filter(rp -> types.isSameType(rp.recordType(), rootPatternRecord.recordType()))
+                                .map(rp -> rp.nested[indexFin])
+                                .collect(Collectors.toSet());
+
+            return basePatternsHaveRecordPatternOnThisSpot(filteredBasePatterns, rootPatternRecord.nested[index], added);
+        }
+
+        private boolean isUnderRoot(PatternDescription root, PatternDescription searchFor) {
+            if (root == searchFor) {
+                return true;
+            } else if (root instanceof RecordPattern rp) {
+                for (int c = 0; c < rp.nested.length; c++) {
+                    if (isUnderRoot(rp.nested[c], searchFor)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+    /*
+     * Using {@code basePattern} as a starting point, generate new {@code
+     * RecordPattern}s, such that all corresponding components but one, are the
+     * same. The component described by the {@code replaceComponent} index is
+     * replaced with all {@code PatternDescription}s taken from {@code
+     * updatedNestedPatterns} and the resulting {@code RecordPatterns}s are sent
+     * to {@code target}.
+     */
+    private void generatePatternsWithReplacedNestedPattern(RecordPattern basePattern,
+                                                           int replaceComponent,
+                                                           Iterable<? extends PatternDescription> updatedNestedPatterns,
+                                                           Set<PatternDescription> sourcePatterns,
+                                                           Consumer<RecordPattern> target) {
+        for (PatternDescription nested : updatedNestedPatterns) {
+            PatternDescription[] newNested =
+                    Arrays.copyOf(basePattern.nested, basePattern.nested.length);
+            newNested[replaceComponent] = nested;
+            target.accept(new RecordPattern(basePattern.recordType(),
+                                            basePattern.fullComponentTypes(),
+                                            newNested,
+                                            sourcePatterns));
+        }
+    }
+
+    /* For a given record type, return the record's component types, with their
+     * types instatiated according to the exact record type.
+     */
+    private Type[] instantiatedComponentTypes(Type recordType) {
+        Type[] componentTypes = ((ClassSymbol) recordType.tsym).getRecordComponents()
+                .map(r -> types.memberType(recordType, r))
+                .toArray(s -> new Type[s]);
+        return componentTypes;
+    }
+
+    /* The strictness of determining the equivalent of patterns, used in
+     * nestedComponentsEquivalent.
+     */
+    private enum PatternEquivalence {
+        STRICT,
+        LOOSE;
+    }
+
+    protected static class TooManyChecksException extends RuntimeException {
+        private static final long serialVersionUID = 0L;
+        private transient final Set<PatternDescription> missingPatterns;
+
+        public TooManyChecksException(Set<PatternDescription> missingPatterns) {
+            super(null, null, false, false);
+            this.missingPatterns = missingPatterns;
         }
     }
 }

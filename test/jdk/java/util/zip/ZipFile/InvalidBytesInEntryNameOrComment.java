@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ public class InvalidBytesInEntryNameOrComment {
     }
 
     /**
-     * The DataProvider of CEN offsets to modify with an invalid UTF-8 byte
+     * The MethodSource of CEN offsets to modify with an invalid UTF-8 byte
      * sequence
      *
      * @return Arguments used in each test run

@@ -124,6 +124,13 @@ final class IntVector128 extends IntVector {
         return (int[])getPayload();
     }
 
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
+    }
+
     // Virtualized constructors
 
     @Override
@@ -547,7 +554,7 @@ final class IntVector128 extends IntVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                                VCLASS, LT_INT, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     int[] vecarr = vec.vec();
@@ -570,7 +577,7 @@ final class IntVector128 extends IntVector {
     @ForceInline
     public IntVector128 withLaneHelper(int i, int e) {
         return VectorSupport.insert(
-                                VCLASS, LT_INT, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     int[] res = v.vec().clone();
@@ -675,8 +682,8 @@ final class IntVector128 extends IntVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_INT, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -686,7 +693,7 @@ final class IntVector128 extends IntVector {
         /*package-private*/
         IntMask128 indexPartiallyInUpperRange(long offset, long limit) {
             return (IntMask128) VectorSupport.indexPartiallyInUpperRange(
-                IntMask128.class, LT_INT, VLENGTH, offset, limit,
+                IntMask128.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (IntMask128) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -702,7 +709,7 @@ final class IntVector128 extends IntVector {
         @ForceInline
         public IntMask128 compress() {
             return (IntMask128)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                IntVector128.class, IntMask128.class, LT_INT, VLENGTH, null, this,
+                IntVector128.class, IntMask128.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 m1.trueCount()));
         }
@@ -715,7 +722,7 @@ final class IntVector128 extends IntVector {
         public IntMask128 and(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMask128 m = (IntMask128)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, IntMask128.class, null, LT_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, IntMask128.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -725,7 +732,7 @@ final class IntVector128 extends IntVector {
         public IntMask128 or(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMask128 m = (IntMask128)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, IntMask128.class, null, LT_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, IntMask128.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -735,7 +742,7 @@ final class IntVector128 extends IntVector {
         public IntMask128 xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMask128 m = (IntMask128)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMask128.class, null, LT_INT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMask128.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -745,21 +752,21 @@ final class IntVector128 extends IntVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, IntMask128.class, LT_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, IntMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, IntMask128.class, LT_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, IntMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, IntMask128.class, LT_INT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, IntMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -769,7 +776,7 @@ final class IntVector128 extends IntVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMask128.class, LT_INT, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -779,7 +786,7 @@ final class IntVector128 extends IntVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(IntMask128.class, LT_INT, VLENGTH,
+            return VectorSupport.extract(IntMask128.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -788,7 +795,7 @@ final class IntVector128 extends IntVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, IntMask128.class, LT_INT, VLENGTH,
+            return VectorSupport.test(BT_ne, IntMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((IntMask128)m).getBits()));
         }
@@ -796,7 +803,7 @@ final class IntVector128 extends IntVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, IntMask128.class, LT_INT, VLENGTH,
+            return VectorSupport.test(BT_overflow, IntMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((IntMask128)m).getBits()));
         }
@@ -804,7 +811,7 @@ final class IntVector128 extends IntVector {
         @ForceInline
         /*package-private*/
         static IntMask128 maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(IntMask128.class, LT_INT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(IntMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

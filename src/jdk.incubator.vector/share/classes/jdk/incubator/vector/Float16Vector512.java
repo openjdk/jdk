@@ -124,6 +124,13 @@ final class Float16Vector512 extends Float16Vector {
         return (short[])getPayload();
     }
 
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
+    }
+
     // Virtualized constructors
 
     @Override
@@ -564,7 +571,7 @@ final class Float16Vector512 extends Float16Vector {
     @ForceInline
     public short laneHelper(int i) {
         return (short) VectorSupport.extract(
-                     VCLASS, LT_FLOAT16, VLENGTH,
+                     VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      short[] vecarr = vec.vec();
@@ -615,7 +622,7 @@ final class Float16Vector512 extends Float16Vector {
     @ForceInline
     public Float16Vector512 withLaneHelper(int i, short e) {
         return VectorSupport.insert(
-                                VCLASS, LT_FLOAT16, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     short[] res = v.vec().clone();
@@ -720,8 +727,8 @@ final class Float16Vector512 extends Float16Vector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_FLOAT16, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -731,7 +738,7 @@ final class Float16Vector512 extends Float16Vector {
         /*package-private*/
         Float16Mask512 indexPartiallyInUpperRange(long offset, long limit) {
             return (Float16Mask512) VectorSupport.indexPartiallyInUpperRange(
-                Float16Mask512.class, LT_FLOAT16, VLENGTH, offset, limit,
+                Float16Mask512.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (Float16Mask512) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -747,7 +754,7 @@ final class Float16Vector512 extends Float16Vector {
         @ForceInline
         public Float16Mask512 compress() {
             return (Float16Mask512)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Float16Vector512.class, Float16Mask512.class, LT_FLOAT16, VLENGTH, null, this,
+                Float16Vector512.class, Float16Mask512.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount()))));
         }
@@ -760,7 +767,7 @@ final class Float16Vector512 extends Float16Vector {
         public Float16Mask512 and(VectorMask<Float16> mask) {
             Objects.requireNonNull(mask);
             Float16Mask512 m = (Float16Mask512)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Float16Mask512.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Float16Mask512.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -770,7 +777,7 @@ final class Float16Vector512 extends Float16Vector {
         public Float16Mask512 or(VectorMask<Float16> mask) {
             Objects.requireNonNull(mask);
             Float16Mask512 m = (Float16Mask512)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Float16Mask512.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Float16Mask512.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -780,7 +787,7 @@ final class Float16Vector512 extends Float16Vector {
         public Float16Mask512 xor(VectorMask<Float16> mask) {
             Objects.requireNonNull(mask);
             Float16Mask512 m = (Float16Mask512)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float16Mask512.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float16Mask512.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -790,21 +797,21 @@ final class Float16Vector512 extends Float16Vector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float16Mask512.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float16Mask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float16Mask512.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float16Mask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float16Mask512.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float16Mask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -814,7 +821,7 @@ final class Float16Vector512 extends Float16Vector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float16Mask512.class, LT_SHORT, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float16Mask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -824,7 +831,7 @@ final class Float16Vector512 extends Float16Vector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Float16Mask512.class, LT_FLOAT16, VLENGTH,
+            return VectorSupport.extract(Float16Mask512.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -833,7 +840,7 @@ final class Float16Vector512 extends Float16Vector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Float16Mask512.class, LT_SHORT, VLENGTH,
+            return VectorSupport.test(BT_ne, Float16Mask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((Float16Mask512)m).getBits()));
         }
@@ -841,7 +848,7 @@ final class Float16Vector512 extends Float16Vector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Float16Mask512.class, LT_SHORT, VLENGTH,
+            return VectorSupport.test(BT_overflow, Float16Mask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((Float16Mask512)m).getBits()));
         }
@@ -849,7 +856,7 @@ final class Float16Vector512 extends Float16Vector {
         @ForceInline
         /*package-private*/
         static Float16Mask512 maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Float16Mask512.class, LT_SHORT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Float16Mask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

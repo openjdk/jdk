@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -891,13 +891,16 @@ inline Node* LibraryCallKit::generate_fair_guard(Node* test, RegionNode* region)
 }
 
 inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* region,
-                                                     Node* *pos_index) {
+                                                     Node** pos_index, bool with_opaque) {
   if (stopped())
     return nullptr;                // already stopped
   if (_gvn.type(index)->higher_equal(TypeInt::POS)) // [0,maxint]
     return nullptr;                // index is already adequately typed
   Node* cmp_lt = _gvn.transform(new CmpINode(index, intcon(0)));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
+  if (with_opaque) {
+    bol_lt = _gvn.transform(new OpaqueConstantBoolNode(C, bol_lt, false));
+  }
   Node* is_neg = generate_guard(bol_lt, region, PROB_MIN);
   if (is_neg != nullptr && pos_index != nullptr) {
     // Emulate effect of Parse::adjust_map_after_if.
@@ -924,7 +927,8 @@ inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* re
 inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
                                                   Node* subseq_length,
                                                   Node* array_length,
-                                                  RegionNode* region) {
+                                                  RegionNode* region,
+                                                  bool with_opaque) {
   if (stopped())
     return nullptr;                // already stopped
   bool zero_offset = _gvn.type(offset) == TypeInt::ZERO;
@@ -935,12 +939,19 @@ inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
     last = _gvn.transform(new AddINode(last, offset));
   Node* cmp_lt = _gvn.transform(new CmpUNode(array_length, last));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
+  if (with_opaque) {
+    bol_lt = _gvn.transform(new OpaqueConstantBoolNode(C, bol_lt, false));
+  }
   Node* is_over = generate_guard(bol_lt, region, PROB_MIN);
   return is_over;
 }
 
 // Emit range checks for the given String.value byte array
-void LibraryCallKit::generate_string_range_check(Node* array, Node* offset, Node* count, bool char_count) {
+void LibraryCallKit::generate_string_range_check(Node* array,
+                                                 Node* offset,
+                                                 Node* count,
+                                                 bool char_count,
+                                                 bool halt_on_oob) {
   if (stopped()) {
     return; // already stopped
   }
@@ -952,16 +963,23 @@ void LibraryCallKit::generate_string_range_check(Node* array, Node* offset, Node
   }
 
   // Offset and count must not be negative
-  generate_negative_guard(offset, bailout);
-  generate_negative_guard(count, bailout);
+  generate_negative_guard(offset, bailout, nullptr, halt_on_oob);
+  generate_negative_guard(count, bailout, nullptr, halt_on_oob);
   // Offset + count must not exceed length of array
-  generate_limit_guard(offset, count, load_array_length(array), bailout);
+  generate_limit_guard(offset, count, load_array_length(array), bailout, halt_on_oob);
 
   if (bailout->req() > 1) {
-    PreserveJVMState pjvms(this);
-    set_control(_gvn.transform(bailout));
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
+    if (halt_on_oob) {
+      bailout = _gvn.transform(bailout)->as_Region();
+      Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+      Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
+      C->root()->add_req(halt);
+    } else {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(bailout));
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_maybe_recompile);
+    }
   }
 }
 
@@ -1119,6 +1137,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 
 
 //------------------------------inline_countPositives------------------------------
+// int java.lang.StringCoding#countPositives0(byte[] ba, int off, int len)
 bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1131,12 +1150,11 @@ bool LibraryCallKit::inline_countPositives() {
   Node* len        = argument(2);
 
   ba = must_be_not_null(ba, true);
-
-  // Range checks
-  generate_string_range_check(ba, offset, len, false);
+  generate_string_range_check(ba, offset, len, false, true);
   if (stopped()) {
     return true;
   }
+
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
@@ -6171,6 +6189,9 @@ CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* no
 }
 
 //-------------inline_encodeISOArray-----------------------------------
+// int sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+// int java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+// int java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
 // encode char[] to byte[] in ISO_8859_1 or ASCII
 bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   assert(callee()->signature()->size() == 5, "encodeISOArray has 5 parameters");
@@ -6181,8 +6202,12 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   Node *dst_offset  = argument(3);
   Node *length      = argument(4);
 
+  // Cast source & target arrays to not-null
   src = must_be_not_null(src, true);
   dst = must_be_not_null(dst, true);
+  if (stopped()) {
+    return true;
+  }
 
   const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
   const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
@@ -6197,6 +6222,13 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
+  }
+
+  // Check source & target bounds
+  generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true);
+  generate_string_range_check(dst, dst_offset, length, false, true);
+  if (stopped()) {
+    return true;
   }
 
   Node* src_start = array_element_address(src, src_offset, T_CHAR);

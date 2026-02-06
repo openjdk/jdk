@@ -290,12 +290,12 @@ class G1CMRootMemRegions {
   MemRegion* _root_regions;
   size_t const _max_regions;
 
-  volatile size_t _num_root_regions; // Actual number of root regions.
+  Atomic<size_t> _num_root_regions;  // Actual number of root regions.
 
-  volatile size_t _claimed_root_regions; // Number of root regions currently claimed.
+  Atomic<size_t> _claimed_root_regions; // Number of root regions currently claimed.
 
-  volatile bool _scan_in_progress;
-  volatile bool _should_abort;
+  Atomic<bool> _scan_in_progress;
+  Atomic<bool> _should_abort;
 
   void notify_scan_done();
 
@@ -312,11 +312,11 @@ public:
   void prepare_for_scan();
 
   // Forces get_next() to return null so that the iteration aborts early.
-  void abort() { _should_abort = true; }
+  void abort() { _should_abort.store_relaxed(true); }
 
   // Return true if the CM thread are actively scanning root regions,
   // false otherwise.
-  bool scan_in_progress() { return _scan_in_progress; }
+  bool scan_in_progress() { return _scan_in_progress.load_relaxed(); }
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
@@ -555,6 +555,9 @@ public:
 
   uint worker_id_offset() const { return _worker_id_offset; }
 
+  void fully_initialize();
+  bool is_fully_initialized() const { return _cm_thread != nullptr; }
+  bool in_progress() const;
   uint max_num_tasks() const {return _max_num_tasks; }
 
   // Clear statistics gathered during the concurrent cycle for the given region after
@@ -841,8 +844,10 @@ private:
   // Apply the closure to the given range of elements in the objArray.
   inline void process_array_chunk(objArrayOop obj, size_t start, size_t end);
 public:
-  // Resets the task; should be called right at the beginning of a marking phase.
+  // Resets the task completely for a new marking; should be called right at the beginning of a marking phase.
   void reset(G1CMBitMap* mark_bitmap);
+  // Minimal reset of the task, making it ready for continuing to mark.
+  void reset_for_restart();
   // Register/unregister Partial Array Splitter Allocator with the PartialArrayStateManager.
   // This allows us to discard memory arenas used for partial object array states at the end
   // of a concurrent mark cycle.

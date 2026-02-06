@@ -149,15 +149,15 @@ public class VectorSupport {
     public static final int MODE_BROADCAST = 0;
     public static final int MODE_BITS_COERCED_LONG_TO_MASK = 1;
 
-    // BasicType codes, for primitives only:
+    // Values correspond to jdk.incubator.vector.LaneType ordinals
     public static final int
-        LT_FLOAT     = 6,
-        LT_DOUBLE    = 7,
-        LT_BYTE      = 8,
-        LT_SHORT     = 9,
-        LT_INT       = 10,
-        LT_LONG      = 11,
-        LT_FLOAT16   = 12;
+        LT_FLOAT     = 0,
+        LT_DOUBLE    = 1,
+        LT_BYTE      = 2,
+        LT_SHORT     = 3,
+        LT_INT       = 4,
+        LT_LONG      = 5,
+        LT_FLOAT16   = 6;
 
     /* ============================================================================ */
 

@@ -124,6 +124,13 @@ final class ShortVectorMax extends ShortVector {
         return (short[])getPayload();
     }
 
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
+    }
+
     // Virtualized constructors
 
     @Override
@@ -544,7 +551,7 @@ final class ShortVectorMax extends ShortVector {
     @ForceInline
     public short laneHelper(int i) {
         return (short) VectorSupport.extract(
-                                VCLASS, LT_SHORT, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     short[] vecarr = vec.vec();
@@ -564,7 +571,7 @@ final class ShortVectorMax extends ShortVector {
     @ForceInline
     public ShortVectorMax withLaneHelper(int i, short e) {
         return VectorSupport.insert(
-                                VCLASS, LT_SHORT, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     short[] res = v.vec().clone();
@@ -669,8 +676,8 @@ final class ShortVectorMax extends ShortVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), LT_SHORT, VLENGTH,
-                species.maskType(), species.laneBasicType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -680,7 +687,7 @@ final class ShortVectorMax extends ShortVector {
         /*package-private*/
         ShortMaskMax indexPartiallyInUpperRange(long offset, long limit) {
             return (ShortMaskMax) VectorSupport.indexPartiallyInUpperRange(
-                ShortMaskMax.class, LT_SHORT, VLENGTH, offset, limit,
+                ShortMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (ShortMaskMax) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -696,7 +703,7 @@ final class ShortVectorMax extends ShortVector {
         @ForceInline
         public ShortMaskMax compress() {
             return (ShortMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                ShortVectorMax.class, ShortMaskMax.class, LT_SHORT, VLENGTH, null, this,
+                ShortVectorMax.class, ShortMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
                 m1.trueCount()));
         }
@@ -709,7 +716,7 @@ final class ShortVectorMax extends ShortVector {
         public ShortMaskMax and(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             ShortMaskMax m = (ShortMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, ShortMaskMax.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, ShortMaskMax.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -719,7 +726,7 @@ final class ShortVectorMax extends ShortVector {
         public ShortMaskMax or(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             ShortMaskMax m = (ShortMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, ShortMaskMax.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, ShortMaskMax.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -729,7 +736,7 @@ final class ShortVectorMax extends ShortVector {
         public ShortMaskMax xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             ShortMaskMax m = (ShortMaskMax)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, ShortMaskMax.class, null, LT_SHORT, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, ShortMaskMax.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -739,21 +746,21 @@ final class ShortVectorMax extends ShortVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ShortMaskMax.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ShortMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ShortMaskMax.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ShortMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ShortMaskMax.class, LT_SHORT, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ShortMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -763,7 +770,7 @@ final class ShortVectorMax extends ShortVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, ShortMaskMax.class, LT_SHORT, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, ShortMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -773,7 +780,7 @@ final class ShortVectorMax extends ShortVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(ShortMaskMax.class, LT_SHORT, VLENGTH,
+            return VectorSupport.extract(ShortMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -782,7 +789,7 @@ final class ShortVectorMax extends ShortVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, ShortMaskMax.class, LT_SHORT, VLENGTH,
+            return VectorSupport.test(BT_ne, ShortMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((ShortMaskMax)m).getBits()));
         }
@@ -790,7 +797,7 @@ final class ShortVectorMax extends ShortVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, ShortMaskMax.class, LT_SHORT, VLENGTH,
+            return VectorSupport.test(BT_overflow, ShortMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((ShortMaskMax)m).getBits()));
         }
@@ -798,7 +805,7 @@ final class ShortVectorMax extends ShortVector {
         @ForceInline
         /*package-private*/
         static ShortMaskMax maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(ShortMaskMax.class, LT_SHORT, VLENGTH,
+            return VectorSupport.fromBitsCoerced(ShortMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }

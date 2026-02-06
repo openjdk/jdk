@@ -703,7 +703,7 @@ static void *thread_native_entry(Thread *thread) {
   log_info(os, thread)("Thread finished (tid: %zu, kernel thread id: %zu).",
     os::current_thread_id(), (uintx) kernel_thread_id);
 
-  return 0;
+  return nullptr;
 }
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,

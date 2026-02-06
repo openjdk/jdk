@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1198,7 +1198,9 @@ final class P11Cipher extends CipherSpi {
     }
 
     private void handleException(PKCS11Exception e)
-            throws ShortBufferException, IllegalBlockSizeException {
+            throws ShortBufferException, IllegalBlockSizeException,
+            BadPaddingException {
+
         if (e.match(CKR_BUFFER_TOO_SMALL)) {
             throw (ShortBufferException)
                     (new ShortBufferException().initCause(e));
@@ -1206,6 +1208,9 @@ final class P11Cipher extends CipherSpi {
                 e.match(CKR_ENCRYPTED_DATA_LEN_RANGE)) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
+        } else if (e.match(CKR_ENCRYPTED_DATA_INVALID)) {
+            throw (BadPaddingException)
+                    (new BadPaddingException(e.toString()).initCause(e));
         }
     }
 

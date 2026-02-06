@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
+import compiler.lib.ir_framework.driver.network.testvm.java.IRRuleIds;
 
 import java.lang.reflect.Method;
 
@@ -40,9 +41,9 @@ import java.lang.reflect.Method;
 public class TestMethod {
     private final Method method;
     private final IR[] irAnnos;
-    private final int[] irRuleIds;
+    private final IRRuleIds irRuleIds;
 
-    public TestMethod(Method m, IR[] irAnnos, int[] irRuleIds) {
+    public TestMethod(Method m, IR[] irAnnos, IRRuleIds irRuleIds) {
         this.method = m;
         this.irAnnos = irAnnos;
         this.irRuleIds = irRuleIds;
@@ -56,7 +57,7 @@ public class TestMethod {
         return irAnnos;
     }
 
-    public int[] irRuleIds() {
+    public IRRuleIds irRuleIds() {
         return irRuleIds;
     }
 }

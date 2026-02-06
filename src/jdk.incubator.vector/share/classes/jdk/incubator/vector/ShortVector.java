@@ -59,6 +59,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     static final ValueLayout.OfShort ELEMENT_LAYOUT = ValueLayout.JAVA_SHORT.withByteAlignment(1);
 
+    static final int LANE_TYPE_ORDINAL = LT_SHORT;
+
+    static final int LANEBITS_TYPE_ORDINAL = LT_SHORT;
+
     @ForceInline
     static int opCode(Operator op) {
         return VectorOperators.opCode(op, VO_OPCODE_VALID, FORBID_OPCODE_KIND);
@@ -612,7 +616,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     public static ShortVector zero(VectorSpecies<Short> species) {
         ShortSpecies vsp = (ShortSpecies) species;
-        return VectorSupport.fromBitsCoerced(vsp.vectorType(), LT_SHORT, species.length(),
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), LANE_TYPE_ORDINAL, species.length(),
                                 0, MODE_BROADCAST, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
@@ -734,7 +738,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
-            opc, getClass(), null, LT_SHORT, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, null,
             UN_IMPL.find(op, opc, ShortVector::unaryOperations));
     }
@@ -762,7 +766,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
-            opc, getClass(), maskClass, LT_SHORT, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, m,
             UN_IMPL.find(op, opc, ShortVector::unaryOperations));
     }
@@ -835,7 +839,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         int opc = opCode(op);
         return VectorSupport.binaryOp(
-            opc, getClass(), null, LT_SHORT, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, that, null,
             BIN_IMPL.find(op, opc, ShortVector::binaryOperations));
     }
@@ -886,7 +890,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         int opc = opCode(op);
         return VectorSupport.binaryOp(
-            opc, getClass(), maskClass, LT_SHORT, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, that, m,
             BIN_IMPL.find(op, opc, ShortVector::binaryOperations));
     }
@@ -1073,7 +1077,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         e &= SHIFT_MASK;
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
-            opc, getClass(), null, LT_SHORT, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, e, null,
             BIN_INT_IMPL.find(op, opc, ShortVector::broadcastIntOperations));
     }
@@ -1094,7 +1098,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         e &= SHIFT_MASK;
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
-            opc, getClass(), maskClass, LT_SHORT, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, e, m,
             BIN_INT_IMPL.find(op, opc, ShortVector::broadcastIntOperations));
     }
@@ -1171,7 +1175,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
         int opc = opCode(op);
         return VectorSupport.ternaryOp(
-            opc, getClass(), null, LT_SHORT, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, that, tother, null,
             TERN_IMPL.find(op, opc, ShortVector::ternaryOperations));
     }
@@ -1211,7 +1215,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
         int opc = opCode(op);
         return VectorSupport.ternaryOp(
-            opc, getClass(), maskClass, LT_SHORT, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, that, tother, m,
             TERN_IMPL.find(op, opc, ShortVector::ternaryOperations));
     }
@@ -2110,7 +2114,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         that.check(this);
         int opc = opCode(op);
         return VectorSupport.compare(
-            opc, getClass(), maskType, LT_SHORT, length(),
+            opc, getClass(), maskType, laneTypeOrdinal(), length(),
             this, that, null,
             (cond, v0, v1, m1) -> {
                 AbstractMask<Short> m
@@ -2132,7 +2136,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         m.check(maskType, this);
         int opc = opCode(op);
         return VectorSupport.compare(
-            opc, getClass(), maskType, LT_SHORT, length(),
+            opc, getClass(), maskType, laneTypeOrdinal(), length(),
             this, that, m,
             (cond, v0, v1, m1) -> {
                 AbstractMask<Short> cmpM
@@ -2263,7 +2267,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     blendTemplate(Class<M> maskType, ShortVector v, M m) {
         v.check(this);
         return VectorSupport.blend(
-            getClass(), maskType, LT_SHORT, length(),
+            getClass(), maskType, laneTypeOrdinal(), length(),
             this, v, m,
             (v0, v1, m_) -> v0.bOp(v1, m_, (i, a, b) -> b));
     }
@@ -2280,7 +2284,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         // make sure VLENGTH*scale doesn't overflow:
         vsp.checkScale(scale);
         return VectorSupport.indexVector(
-            getClass(), LT_SHORT, length(),
+            getClass(), laneTypeOrdinal(), length(),
             this, scale, vsp,
             (v, scale_, s)
             -> {
@@ -2472,7 +2476,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
         Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
-            getClass(), shuffletype, null, LT_SHORT, length(),
+            getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
             (v1, s_, m_) -> v1.sOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
@@ -2499,7 +2503,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
-                   getClass(), shuffletype, masktype, LT_SHORT, length(),
+                   getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
                    (v1, s_, m_) -> v1.sOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
@@ -2525,7 +2529,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         VectorMask<Short> valid = shuffle.laneIsValid();
         ShortVector r0 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, null, LT_SHORT, length(),
+                getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
                 (v0, s_, m_) -> v0.sOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
@@ -2533,7 +2537,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 }));
         ShortVector r1 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, null, LT_SHORT, length(),
+                getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
                 (v1, s_, m_) -> v1.sOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
@@ -2583,7 +2587,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector compressTemplate(Class<M> masktype, M m) {
       m.check(masktype, this);
       return (ShortVector) VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_COMPRESS, getClass(), masktype,
-                                                        LT_SHORT, length(), this, m,
+                                                        laneTypeOrdinal(), length(), this, m,
                                                         (v1, m1) -> compressHelper(v1, m1));
     }
 
@@ -2602,7 +2606,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector expandTemplate(Class<M> masktype, M m) {
       m.check(masktype, this);
       return (ShortVector) VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_EXPAND, getClass(), masktype,
-                                                        LT_SHORT, length(), this, m,
+                                                        laneTypeOrdinal(), length(), this, m,
                                                         (v1, m1) -> expandHelper(v1, m1));
     }
 
@@ -2617,7 +2621,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     @ForceInline
     final ShortVector selectFromTemplate(ShortVector v) {
-        return (ShortVector)VectorSupport.selectFromOp(getClass(), null, LT_SHORT,
+        return (ShortVector)VectorSupport.selectFromOp(getClass(), null, laneTypeOrdinal(),
                                                         length(), this, v, null,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle()));
@@ -2637,7 +2641,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector selectFromTemplate(ShortVector v,
                                             Class<M> masktype, M m) {
         m.check(masktype, this);
-        return (ShortVector)VectorSupport.selectFromOp(getClass(), masktype, LT_SHORT,
+        return (ShortVector)VectorSupport.selectFromOp(getClass(), masktype, laneTypeOrdinal(),
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
@@ -2655,7 +2659,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     @ForceInline
     final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
-        return VectorSupport.selectFromTwoVectorOp(getClass(), LT_SHORT, length(), this, v1, v2,
+        return VectorSupport.selectFromTwoVectorOp(getClass(), laneTypeOrdinal(), length(), this, v1, v2,
                                                    (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
@@ -2875,7 +2879,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
-            opc, getClass(), maskClass, LT_SHORT, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, m,
             REDUCE_IMPL.find(op, opc, ShortVector::reductionOperations)));
     }
@@ -2893,7 +2897,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
-            opc, getClass(), null, LT_SHORT, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, null,
             REDUCE_IMPL.find(op, opc, ShortVector::reductionOperations)));
     }
@@ -3177,7 +3181,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
 
         return VectorSupport.loadWithMap(
-            vectorType, null, LT_SHORT, vsp.laneCount(),
+            vectorType, null, LANE_TYPE_ORDINAL, vsp.laneCount(),
             lsp.vectorType(), lsp.length(),
             a, ARRAY_BASE, vix0, vix1, null, null, null,
             a, offset, indexMap, mapOffset, vsp,
@@ -3510,7 +3514,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         offset = checkFromIndexSize(offset, length(), a.length);
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3659,7 +3663,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         offset = checkFromIndexSize(offset, length(), a.length);
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3864,7 +3868,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector fromArray0Template(short[] a, int offset) {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3881,7 +3885,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         m.check(species());
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3928,7 +3932,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
 
         return VectorSupport.loadWithMap(
-            vectorType, maskClass, LT_SHORT, vsp.laneCount(),
+            vectorType, maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             lsp.vectorType(), lsp.length(),
             a, ARRAY_BASE, vix0, vix1, null, null, m,
             a, offset, indexMap, mapOffset, vsp,
@@ -3944,7 +3948,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector fromCharArray0Template(char[] a, int offset) {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3961,7 +3965,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         m.check(species());
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 a, charArrayAddress(a, offset), false, m, offsetInRange,
                 a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3976,7 +3980,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector fromMemorySegment0Template(MemorySegment ms, long offset) {
         ShortSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
+                vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, ShortVector::memorySegmentGet);
@@ -3992,7 +3996,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, ShortVector::memorySegmentGet);
@@ -4010,7 +4014,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     void intoArray0Template(short[] a, int offset) {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -4027,7 +4031,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         m.check(species());
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -4042,7 +4046,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         ShortSpecies vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
+                vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -4059,7 +4063,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -4077,7 +4081,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         m.check(species());
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -4112,6 +4116,18 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 .reinterpretAsShorts();
         }
         return this;
+    }
+
+    @Override
+    @ForceInline
+    final
+    ShortVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<Short> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (ShortVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =
@@ -4296,7 +4312,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         final ShortVector broadcastBits(long bits) {
             return (ShortVector)
                 VectorSupport.fromBitsCoerced(
-                    vectorType, LT_SHORT, laneCount,
+                    vectorType, laneTypeOrdinal(), laneCount,
                     bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
