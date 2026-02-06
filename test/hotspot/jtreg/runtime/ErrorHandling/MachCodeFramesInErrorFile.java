@@ -67,9 +67,9 @@ public class MachCodeFramesInErrorFile {
         public static void main(String[] args) throws Exception {
             if (args[0].equals("crashInJava")) {
                 // This test relies on Unsafe.putLong(Object, long, long) being intrinsified
-                if (!Stream.of(Unsafe.class.getDeclaredMethod("putLong", Object.class, long.class, long.class).getAnnotations()).
+                if (!Stream.of(Unsafe.class.getDeclaredMethod("putPrimitiveBitsMONative", byte.class, byte.class, Object.class, long.class, long.class).getAnnotations()).
                     anyMatch(a -> a.annotationType().getName().equals("jdk.internal.vm.annotation.IntrinsicCandidate"))) {
-                    throw new RuntimeException("Unsafe.putLong(Object, long, long) is not an intrinsic");
+                    throw new RuntimeException("Unsafe.putPrimitiveBitsMONative(byte, byte, Object, long, long) is not an intrinsic");
                 }
                 crashInJava1(10);
             } else {
