@@ -1313,6 +1313,8 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = nullptr;
   }
 
+  // ArrayCopyNode right after an allocation operates on the raw result projection for the Allocate node so it's not
+  // safe to remove such an allocation even if it has no result cast.
   bool allocation_has_use = (alloc->result_cast() != nullptr) || (alloc->initialization() != nullptr && alloc->initialization()->is_complete_with_arraycopy());
   if (!allocation_has_use) {
     InitializeNode* init = alloc->initialization();

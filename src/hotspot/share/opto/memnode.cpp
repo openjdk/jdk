@@ -947,7 +947,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
                      ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
   Compile* C = gvn.C;
-  assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "");
+  assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
 
   // sanity check the alias category against the created node type
   assert(!(adr_type->isa_oopptr() &&
@@ -2697,7 +2697,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
   assert((mo == unordered || mo == release), "unexpected");
   Compile* C = gvn.C;
-  assert(adr_type == nullptr || adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "");
+  assert(adr_type == nullptr || adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
   assert(C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
          ctl != nullptr, "raw memory operations should have control edge");
 

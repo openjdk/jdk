@@ -412,7 +412,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
       assert(dest->is_CheckCastPP(), "sanity");
       assert(dest->in(0)->in(0) == init, "dest pinned");
       adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
-      dest = dest->in(1);
+      dest = dest->in(1); // writing to raw memory requires a raw base
       // From this point on, every exit path is responsible for
       // initializing any non-copied parts of the object to zero.
       // Also, if this flag is set we make sure that arraycopy interacts properly

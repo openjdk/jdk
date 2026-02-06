@@ -426,8 +426,12 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
       for (int i = 1; i < count; i++) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
+        // We may have narrowed the type of next_src right before calling this method but because this runs with
+        // PhaseIterGVN::_delay_transform true, explicitly update the type of the AddP so it's consistent  with its
+        // base and load() picks the right memory slice.
         phase->set_type(next_src, next_src->Value(phase));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
+        // Same as above
         phase->set_type(next_dest, next_dest->Value(phase));
         v = load(bs, phase, forward_ctl, mm, next_src, atp_src, value_type, copy_type);
         store(bs, phase, forward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
@@ -466,6 +470,9 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
       for (int i = count-1; i >= 1; i--) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
+        // We may have narrowed the type of next_src right before calling this method but because this runs with
+        // PhaseIterGVN::_delay_transform true, explicitly update the type of the AddP so it's consistent  with its
+        // base and store() picks the right memory slice.
         phase->set_type(next_src, next_src->Value(phase));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
         phase->set_type(next_dest, next_dest->Value(phase));
@@ -598,6 +605,10 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* src = in(ArrayCopyNode::Src);
   Node* dest = in(ArrayCopyNode::Dest);
+  // EA may have moved an input to a new slice. EA stores the new address types in the ArrayCopy node itself
+  // (_src_type/_dest_type). phase->type(src) and _src_type or phase->type(dest) and _dest_type may be different
+  // when this transformation runs if igvn hasn't had a chance to propagate the new types yet. Make sure the new
+  // types are taken into account so new Load/Store nodes are created on the right slice.
   const TypePtr* atp_src = get_address_type(phase, _src_type, src);
   const TypePtr* atp_dest = get_address_type(phase, _dest_type, dest);
   phase->set_type(src, phase->type(src)->join_speculative(atp_src));
