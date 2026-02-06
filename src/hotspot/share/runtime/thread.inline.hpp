@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,25 +37,14 @@
 
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = AtomicAccess::load_acquire(&_allocated_bytes);
+  size_t used_bytes = 0;
   if (UseTLAB) {
-    // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
-    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
-    const HeapWord* const top = tlab().top_relaxed();
-    const HeapWord* const start = tlab().start_relaxed();
-    if (top <= start) {
-      return allocated_bytes;
-    }
-    const size_t used_bytes = pointer_delta(top, start, 1);
-    if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
-      // Comparing used_bytes with the maximum allowed size will ensure
-      // that we don't add the used bytes from a semi-initialized TLAB
-      // ending up with incorrect values. There is still a race between
-      // incrementing _allocated_bytes and clearing the TLAB, that might
-      // cause double counting in rare cases.
-      return allocated_bytes + used_bytes;
-    }
+    // cooked_used_bytes() does its best to not return implausible values, but
+    // there is still a potential race between incrementing _allocated_bytes and
+    // clearing the TLAB, that might cause double-counting.
+    used_bytes = tlab().estimated_used_bytes();
   }
-  return allocated_bytes;
+  return allocated_bytes + used_bytes;
 }
 
 inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value) {
