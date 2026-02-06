@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package java.time.format;
+
+final class DateTimePrinterFactory {
+    private DateTimePrinterFactory() {
+    }
+
+    /**
+     * Creates a DateTimePrinter based on the number of printer parsers.
+     * This method efficiently creates specialized formatters for different numbers of printer parsers,
+     * optimizing performance by avoiding loops for small numbers of parsers.
+     * The manual expansion of cases (rather than using a loop) is designed to allow the TypeProfile optimizer to be effective.
+     *
+     * @param printerParsers an array of DateTimePrinterParser instances to format
+     * @return a DateTimePrinter that formats according to the provided printer parsers
+     */
+    static DateTimeFormatterBuilder.DateTimePrinter createFormatter(DateTimeFormatterBuilder.DateTimePrinterParser[] printerParsers) {
+        int length = printerParsers.length;
+        return switch (length) {
+            case 1 -> printerParsers[0]::format;
+            case 2 -> (context, buf, optional)
+                    -> printerParsers[0].format(context, buf, optional)
+                    && printerParsers[1].format(context, buf, optional);
+            case 3 -> (context, buf, optional)
+                    -> printerParsers[0].format(context, buf, optional)
+                    && printerParsers[1].format(context, buf, optional)
+                    && printerParsers[2].format(context, buf, optional);
+%%%%CASES:4-16%%%%
+            default -> createDefaultDateTimePrinter(printerParsers);
+        };
+    }
+
+    /**
+     * Creates a default DateTimePrinter that iterates through all printer parsers.
+     * This method is used when there are more than the optimized number of printer parsers.
+     * It sequentially applies each printer parser, returning false if any fails to format.
+     * The manual expansion of cases is designed to allow the TypeProfile optimizer to be effective.
+     *
+     * @param printerParsers an array of DateTimePrinterParser instances to format
+     * @return a DateTimePrinter that formats according to the provided printer parsers
+     */
+    static DateTimeFormatterBuilder.DateTimePrinter createDefaultDateTimePrinter(DateTimeFormatterBuilder.DateTimePrinterParser[] printerParsers) {
+        return (context, buf, optional) -> {
+            for (DateTimeFormatterBuilder.DateTimePrinterParser pp : printerParsers) {
+                if (!pp.format(context, buf, optional)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+    }
+}
