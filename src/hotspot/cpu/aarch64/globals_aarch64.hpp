@@ -115,8 +115,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Value -1 means off.")                                        \
           range(-1, 4096)                                               \
   product(ccstr, OnSpinWaitInst, "yield", DIAGNOSTIC,                   \
-          "The instruction to use for "                                 \
-          "java.lang.Thread.onSpinWait()."                              \
+          "The instruction to use for java.lang.Thread.onSpinWait()."   \
           "Valid values are: none, nop, isb, yield, sb, wfet.")         \
           constraint(OnSpinWaitInstNameConstraintFunc, AtParse)         \
   product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
@@ -126,7 +125,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, 99)                                                  \
   product(uint, OnSpinWaitDelay, 1, EXPERIMENTAL,                       \
           "The target delay (in nanoseconds) of the OnSpinWait loop."   \
-          "It can only be used with OnSpinWaitInst=wfet.")              \
+          "It can only be used with -XX:OnSpinWaitInst=wfet.")          \
           range(1, 1000)                                                \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \

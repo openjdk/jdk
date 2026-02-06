@@ -160,7 +160,7 @@ JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
     } else {
       JVMFlag::printError(verbose,
                           "'wfet' value for OnSpinWaitInst is experimental and "
-                          "must be enabled via -XX:+UnlockExperimentalVMOptions\n"
+                          "must be enabled via -XX:+UnlockExperimentalVMOptions.\n"
                           "Error: The unlock option must precede 'OnSpinWaitInst'.\n");
       return JVMFlag::VIOLATES_CONSTRAINT;
     }

@@ -43,7 +43,7 @@
 
 /**
  * @test id=TestOnSpinWaitAArch64-wfet
- * @summary Checks that java.lang.Thread.onSpinWait with -XX:OnSpinWaitInst=wfet is intrinsified'
+ * @summary Checks that java.lang.Thread.onSpinWait is intrinsified when -XX:OnSpinWaitInst=wfet is used
  * @bug 8366441
  * @library /test/lib
  *
@@ -109,10 +109,10 @@ public class TestOnSpinWaitAArch64 {
         }
 
         if ("wfet".equals(spinWaitInst) &&
-            (analyzer.contains("CPU does not support SB") ||
-             analyzer.contains("CPU does not support FEAT_ECV") ||
-             analyzer.contains("CPU does not support WFET"))) {
-            System.out.println("Skipping the test. The current CPU does not support SB, WFET instructions or FEAT_ECV.");
+            (analyzer.contains("the CPU does not support the SB instruction") ||
+             analyzer.contains("the CPU does not support the FEAT_ECV") ||
+             analyzer.contains("the CPU does not support the WFET instruction"))) {
+            System.out.println("Skipping the test. The CPU does not support SB or WFET instruction, or FEAT_ECV.");
             return;
         }
 

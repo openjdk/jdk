@@ -66,11 +66,11 @@ static SpinWait get_spin_wait_desc() {
     }
 
     if (!VM_Version::supports_ecv()) {
-      vm_exit_during_initialization("OnSpinWaitInst is WFET but current CPU does not support FEAT_ECV");
+      vm_exit_during_initialization("OnSpinWaitInst is WFET but the CPU does not support the FEAT_ECV");
     }
 
     if (!VM_Version::supports_sb()) {
-      vm_exit_during_initialization("OnSpinWaitInst is WFET but current CPU does not support SB instruction");
+      vm_exit_during_initialization("OnSpinWaitInst is WFET but the CPU does not support the SB instruction");
     }
 
     if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount != 1) {
