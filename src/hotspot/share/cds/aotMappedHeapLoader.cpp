@@ -26,7 +26,9 @@
 #include "cds/aotMappedHeapLoader.inline.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "cds/narrowKlassRemapper.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -41,7 +43,10 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/markWord.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -546,14 +551,143 @@ void AOTMappedHeapLoader::patch_native_pointers() {
 // that was pre-computed at dump time. If the narrow klass encoding changed at runtime
 // (e.g., due to ASLR mapping the archive at a different address), we need to remap
 // these IDs.
+
+// Helper function to get the Klass* for an archived object during patching.
+// When remapping is needed, the object's mark word contains dump-time nKlass
+// which cannot be decoded directly. We must remap it first.
+static inline Klass* klass_for_archived_object(oop obj) {
+  markWord mark = obj->mark();
+  narrowKlass nk = mark.narrow_klass();
+  if (NarrowKlassRemapper::needs_remapping()) {
+    nk = NarrowKlassRemapper::remap(nk);
+  }
+  return CompressedKlassPointers::decode_not_null(nk);
+}
+
+// Helper function to get the size of an archived object during patching.
+// This handles the case where the narrow Klass encoding has changed.
+static inline size_t size_for_archived_object(oop obj) {
+  Klass* k = klass_for_archived_object(obj);
+  return obj->size_given_klass(k);
+}
+
+// Helper function to patch narrow Klass IDs in a range of heap objects.
+// Returns the number of objects patched.
+static size_t patch_narrow_klass_ids_in_range(HeapWord* start, HeapWord* end) {
+  size_t patched_count = 0;
+  for (HeapWord* p = start; p < end; ) {
+    oop obj = cast_to_oop(p);
+    markWord mark = obj->mark();
+
+    narrowKlass dump_nk = mark.narrow_klass();
+    narrowKlass runtime_nk = NarrowKlassRemapper::remap(dump_nk);
+
+    if (dump_nk != runtime_nk) {
+      markWord new_mark = mark.set_narrow_klass(runtime_nk);
+      obj->set_mark(new_mark);
+      patched_count++;
+    }
+
+    // Use runtime_nk (which we already computed above) to decode the Klass.
+    // We cannot call size_for_archived_object() here because it would re-read
+    // the mark word and potentially double-remap the narrow Klass ID (since
+    // the mark word now contains runtime_nk after patching).
+    Klass* k = CompressedKlassPointers::decode_not_null(runtime_nk);
+    p += obj->size_given_klass(k);
+  }
+  return patched_count;
+}
+
+// Task for parallel patching of narrow Klass IDs in archived heap objects.
+// Follows the ArchiveWorkerTask pattern used by SharedDataRelocationTask.
+//
+// Strategy: Pre-compute object boundaries at chunk splits, then each worker
+// processes objects in their range using the pre-computed boundaries.
+// This ensures efficient O(N/workers) work per worker.
+//
+// Note: ArchiveWorkers may dispatch more chunk indices than we pre-computed
+// boundaries for (it uses _num_workers * CHUNKS_PER_WORKER). We handle this
+// by checking bounds and returning early for extra chunks.
+class PatchNarrowKlassIdsTask : public ArchiveWorkerTask {
+private:
+  HeapWord** const _chunk_boundaries;  // Pre-computed object start addresses for each chunk
+  const int _num_chunks;
+  Atomic<size_t> _patched_count;
+
+public:
+  PatchNarrowKlassIdsTask(HeapWord** chunk_boundaries, int num_chunks) :
+      ArchiveWorkerTask("Patch Narrow Klass IDs"),
+      _chunk_boundaries(chunk_boundaries),
+      _num_chunks(num_chunks),
+      _patched_count(0) {}
+
+  size_t patched_count() const { return _patched_count.load_acquire(); }
+
+  void work(int chunk, int max_chunks) override {
+    // ArchiveWorkers may dispatch more chunks than we have boundaries for.
+    // Extra chunks simply do no work.
+    if (chunk >= _num_chunks) {
+      return;
+    }
+
+    HeapWord* start = _chunk_boundaries[chunk];
+    HeapWord* end = _chunk_boundaries[chunk + 1];
+
+    size_t local_patched = patch_narrow_klass_ids_in_range(start, end);
+    _patched_count.fetch_then_add(local_patched);
+  }
+};
+
+// Pre-compute chunk boundaries for parallel heap walking.
+// Returns an array of (num_chunks + 1) HeapWord* pointers, where
+// boundaries[i] is the start of chunk i and boundaries[num_chunks] is top.
+// The caller must free the returned array with FREE_C_HEAP_ARRAY.
+static HeapWord** compute_parallel_chunk_boundaries(HeapWord* bottom, HeapWord* top, int num_chunks) {
+  size_t heap_word_size = pointer_delta(top, bottom, sizeof(HeapWord));
+
+  HeapWord** boundaries = NEW_C_HEAP_ARRAY(HeapWord*, num_chunks + 1, mtClassShared);
+  boundaries[0] = bottom;
+  boundaries[num_chunks] = top;
+
+  // Walk through the heap once to find object boundaries near chunk splits.
+  // Note: We must use size_for_archived_object() instead of obj->size() because
+  // the narrow Klass IDs haven't been patched yet.
+  int next_chunk = 1;
+  size_t next_boundary_offset = heap_word_size * next_chunk / num_chunks;
+  HeapWord* next_boundary_addr = bottom + next_boundary_offset;
+
+  for (HeapWord* p = bottom; p < top && next_chunk < num_chunks; ) {
+    oop obj = cast_to_oop(p);
+    size_t obj_size = size_for_archived_object(obj);
+    HeapWord* obj_end = p + obj_size;
+
+    // If this object's end passes the boundary, the next chunk starts at obj_end
+    while (next_chunk < num_chunks && obj_end >= next_boundary_addr) {
+      boundaries[next_chunk] = obj_end;
+      next_chunk++;
+      if (next_chunk < num_chunks) {
+        next_boundary_offset = heap_word_size * next_chunk / num_chunks;
+        next_boundary_addr = bottom + next_boundary_offset;
+      }
+    }
+
+    p = obj_end;
+  }
+
+  // Fill any remaining boundaries (in case heap is smaller than expected)
+  while (next_chunk < num_chunks) {
+    boundaries[next_chunk++] = top;
+  }
+
+  return boundaries;
+}
+
 void AOTMappedHeapLoader::patch_narrow_klass_ids() {
   if (!UseCompactObjectHeaders || !NarrowKlassRemapper::needs_remapping()) {
     log_debug(aot, heap)("Skip patch_narrow_klass_ids: UseCompactObjectHeaders=%d, needs_remapping=%d",
                          UseCompactObjectHeaders, NarrowKlassRemapper::needs_remapping());
     return;
   }
-
-  log_info(aot, heap)("Patching narrow Klass IDs in mapped heap region");
 
   HeapWord* bottom;
   HeapWord* top;
@@ -568,25 +702,32 @@ void AOTMappedHeapLoader::patch_narrow_klass_ids() {
     return; // No heap to patch
   }
 
-  // Iterate through all objects in the heap region and update their mark words
-  size_t patched_count = 0;
-  for (HeapWord* p = bottom; p < top; ) {
-    oop obj = cast_to_oop(p);
-    markWord mark = obj->mark();
+  size_t heap_size = pointer_delta(top, bottom, sizeof(HeapWord)) * sizeof(HeapWord);
+  log_info(aot, heap)("Patching narrow Klass IDs in %s heap region (%zu bytes)",
+                      is_loaded() ? "loaded" : "mapped", heap_size);
 
-    narrowKlass dump_nk = mark.narrow_klass();
-    narrowKlass runtime_nk = NarrowKlassRemapper::remap(dump_nk);
+  // Use parallel patching for larger heaps when enabled.
+  // The threshold of 1MB ensures we don't waste time on parallelization overhead for small heaps.
+  if (AOTCacheParallelRelocation && heap_size >= 1 * M) {
+    // Determine number of chunks based on heap size.
+    // Use ~256KB per chunk as a reasonable granularity, with min 2 and max 32 chunks.
+    int num_chunks = MAX2(2, MIN2(32, (int)(heap_size / (256 * K))));
 
-    if (dump_nk != runtime_nk) {
-      markWord new_mark = mark.set_narrow_klass(runtime_nk);
-      obj->set_mark(new_mark);
-      patched_count++;
-    }
+    // Pre-compute object boundaries at chunk splits (single sequential pass)
+    HeapWord** chunk_boundaries = compute_parallel_chunk_boundaries(bottom, top, num_chunks);
 
-    p += obj->size();
+    // Parallel patch using pre-computed boundaries
+    ArchiveWorkers workers;
+    PatchNarrowKlassIdsTask task(chunk_boundaries, num_chunks);
+    workers.run_task(&task);
+
+    FREE_C_HEAP_ARRAY(HeapWord*, chunk_boundaries);
+    log_info(aot, heap)("Patched %zu narrow Klass IDs in heap (parallel, %d chunks)", task.patched_count(), num_chunks);
+  } else {
+    // Sequential patching for small heaps or when parallel is disabled
+    size_t patched_count = patch_narrow_klass_ids_in_range(bottom, top);
+    log_info(aot, heap)("Patched %zu narrow Klass IDs in heap (sequential)", patched_count);
   }
-
-  log_info(aot, heap)("Patched %zu narrow Klass IDs in mapped heap", patched_count);
 }
 
 // The actual address of this region during dump time.
