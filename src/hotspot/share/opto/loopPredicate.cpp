@@ -27,6 +27,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
@@ -1315,6 +1316,10 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 #endif
 
   head->verify_strip_mined(1);
+
+  if (hoisted) {
+    C->record_optimization_event(OptEvent_LoopPredication);
+  }
 
   return hoisted;
 }
