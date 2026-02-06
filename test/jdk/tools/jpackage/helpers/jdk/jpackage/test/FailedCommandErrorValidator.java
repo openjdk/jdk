@@ -30,11 +30,11 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * Verifies failed command error in jpackage's output.
+ * Validates failed command error in jpackage's output.
  */
-public final class FailedCommandErrorVerifier {
+public final class FailedCommandErrorValidator {
 
-    public FailedCommandErrorVerifier(Pattern cmdlinePattern) {
+    public FailedCommandErrorValidator(Pattern cmdlinePattern) {
         this.cmdlinePattern = Objects.requireNonNull(cmdlinePattern);
     }
 
@@ -73,30 +73,30 @@ public final class FailedCommandErrorVerifier {
         cmd.validateOutput(createGroup().create());
     }
 
-    public FailedCommandErrorVerifier outputVerifier(TKit.TextStreamVerifier.Group v) {
-        outputVerifier = v;
+    public FailedCommandErrorValidator validator(TKit.TextStreamVerifier.Group v) {
+        outputValidator = v;
         return this;
     }
 
-    public FailedCommandErrorVerifier outputVerifiers(List<TKit.TextStreamVerifier> verifiers) {
+    public FailedCommandErrorValidator validator(List<TKit.TextStreamVerifier> validators) {
         var group = TKit.TextStreamVerifier.group();
-        verifiers.forEach(group::add);
-        return outputVerifier(group);
+        validators.forEach(group::add);
+        return validator(group);
     }
 
-    public FailedCommandErrorVerifier outputVerifiers(TKit.TextStreamVerifier... verifiers) {
-        return outputVerifiers(List.of(verifiers));
+    public FailedCommandErrorValidator validators(TKit.TextStreamVerifier... validators) {
+        return validator(List.of(validators));
     }
 
-    public FailedCommandErrorVerifier output(List<String> v) {
-        return outputVerifiers(v.stream().map(TKit::assertTextStream).toList());
+    public FailedCommandErrorValidator output(List<String> v) {
+        return validator(v.stream().map(TKit::assertTextStream).toList());
     }
 
-    public FailedCommandErrorVerifier output(String... output) {
+    public FailedCommandErrorValidator output(String... output) {
         return output(List.of(output));
     }
 
-    public FailedCommandErrorVerifier exitCode(int v) {
+    public FailedCommandErrorValidator exitCode(int v) {
         exitCode = v;
         return this;
     }
@@ -106,10 +106,10 @@ public final class FailedCommandErrorVerifier {
     }
 
     private Optional<TKit.TextStreamVerifier.Group> outputVerifier() {
-        return Optional.ofNullable(outputVerifier);
+        return Optional.ofNullable(outputValidator);
     }
 
     private final Pattern cmdlinePattern;
-    private TKit.TextStreamVerifier.Group outputVerifier;
+    private TKit.TextStreamVerifier.Group outputValidator;
     private Integer exitCode;
 }

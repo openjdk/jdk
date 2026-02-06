@@ -38,7 +38,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
-import jdk.jpackage.test.FailedCommandErrorVerifier;
+import jdk.jpackage.test.FailedCommandErrorValidator;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
@@ -94,7 +94,7 @@ public class MacSignTest {
                 SigningBase.StandardCertificateRequest.CODESIGN,
                 keychain);
 
-        new FailedCommandErrorVerifier(Pattern.compile(String.format(
+        new FailedCommandErrorValidator(Pattern.compile(String.format(
                 "/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s --entitlements \\S+ \\S+",
                 Pattern.quote(String.format("'%s'", signingKeyOption.certRequest().name())),
                 Pattern.quote(keychain.name())
@@ -136,7 +136,7 @@ public class MacSignTest {
         MacSign.withKeychain(keychain -> {
 
             // Build a matcher for jpackage's failed command output.
-            var outputVerifier = new FailedCommandErrorVerifier(Pattern.compile(String.format(
+            var errorValidator = new FailedCommandErrorValidator(Pattern.compile(String.format(
                     "/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s",
                     Pattern.quote(String.format("'%s'", signingKeyOption.certRequest().name())),
                     Pattern.quote(keychain.name())
@@ -145,7 +145,7 @@ public class MacSignTest {
             JPackageCommand.helloAppImage()
                     .setFakeRuntime()
                     .ignoreDefaultVerbose(true)
-                    .validateOutput(outputVerifier.create())
+                    .validateOutput(errorValidator.create())
                     .mutate(signingKeyOption::addTo)
                     .mutate(MacHelper.useKeychain(keychain))
                     .execute(1);
