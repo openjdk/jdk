@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ do
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
   args="-K$type -Dtype=$type -DType=$Type -DTYPE=$TYPE"
 
+  VectorPrefix=$Type
   Boxtype=$Type
   Wideboxtype=$Boxtype
   MaxValue=MAX_VALUE
@@ -121,9 +122,9 @@ do
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
 
-  abstractvectortype=${typeprefix}${Type}Vector
-  abstractvectorteststype=${typeprefix}${Type}VectorTests
-  abstractbitsvectortype=${typeprefix}${Bitstype}Vector
+  abstractvectortype=${typeprefix}${VectorPrefix}Vector
+  abstractvectorteststype=${typeprefix}${VectorPrefix}VectorTests
+  abstractbitsvectortype=${typeprefix}${VectorPrefixe}Vector
   abstractfpvectortype=${typeprefix}${Fptype}Vector
   args="$args -Dabstractvectortype=$abstractvectortype -Dabstractvectorteststype=$abstractvectorteststype -Dabstractbitsvectortype=$abstractbitsvectortype -Dabstractfpvectortype=$abstractfpvectortype"
 
@@ -133,12 +134,12 @@ do
 
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorTests
-    vectorbenchtype=${typeprefix}${Type}${bits}Vector
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${VectorPrefix}$Vector{bits}
+    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}Tests
+    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}
+    masktype=${typeprefix}${Type}$Mask{bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
@@ -208,12 +209,12 @@ do
   # For each size
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorLoadStoreTests
-    vectorbenchtype=${typeprefix}${Type}${bits}VectorLoadStore
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${VectorPrefix}Vector${bits}
+    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}LoadStoreTests
+    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}LoadStore
+    masktype=${typeprefix}${Type}Mask${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
