@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.text.*;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import com.sun.net.httpserver.*;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
@@ -87,6 +87,9 @@ class ExchangeImpl {
     HttpPrincipal principal;
     ServerImpl server;
 
+    final AtomicBoolean ended = new AtomicBoolean();
+    final AtomicBoolean finished = new AtomicBoolean();
+
     ExchangeImpl(
         String m, URI u, Request req, long len, HttpConnection connection
     ) throws IOException {
@@ -105,6 +108,32 @@ class ExchangeImpl {
         this.ris = req.inputStream();
         server = getServerImpl();
         server.startExchange();
+    }
+
+    public int endExchange() {
+        // only call server.endExchange(); once per exchange
+        if (ended.compareAndSet(false, true)) {
+            return server.endExchange();
+        }
+        return server.getExchangeCount();
+    }
+
+    public void postWriteFinished() {
+        // only post one of WriteFinished / ExchangeFinished once
+        // per exchange
+        if (finished.compareAndSet(false, true)) {
+            Event e = new Event.WriteFinished(this);
+            getHttpContext().getServerImpl().addEvent(e);
+        }
+    }
+
+    public void postExchangeFinished() {
+        // only post one of WriteFinished / ExchangeFinished once
+        // per exchange
+        if (finished.compareAndSet(false, true)) {
+            Event e = new Event.ExchangeFinished(this);
+            getHttpContext().getServerImpl().addEvent(e);
+        }
     }
 
     public Headers getRequestHeaders() {
@@ -135,12 +164,13 @@ class ExchangeImpl {
         if (closed) {
             return;
         }
+        System.err.println("Closing exchange");
         closed = true;
 
         /* close the underlying connection if,
          * a) the streams not set up yet, no response can be sent, or
          * b) if the wrapper output stream is not set up, or
-         * c) if the close of the input/outpu stream fails
+         * c) if the close of the input/output stream fails
          */
         try {
             if (uis_orig == null || uos == null) {
@@ -157,6 +187,8 @@ class ExchangeImpl {
             uos.close();
         } catch (IOException e) {
             connection.close();
+        } finally {
+            postExchangeFinished();
         }
     }
 
