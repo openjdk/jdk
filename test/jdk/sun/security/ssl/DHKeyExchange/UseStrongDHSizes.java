@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 8140436
+ * @bug 8140436 8373426
  * @modules jdk.crypto.ec
  * @library /javax/net/ssl/templates
  * @summary Negotiated Finite Field Diffie-Hellman Ephemeral Parameters for TLS
