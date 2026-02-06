@@ -4429,6 +4429,45 @@ public final class Arrays {
     }
 
     /**
+     * Returns a hash code based on the contents of the specified range of the
+     * specified {@code byte} array.
+     * For any two {@code byte} arrays {@code a} and {@code b} and ranges
+     * {@code aFromIndex}..{@code aToIndex} and {@code bFromIndex}..{@code bToIndex}
+     * such that
+     * {@link #equals(byte[], int, int, byte[], int, int)
+     * Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex)}
+     * returns {@code true}, it is also the case that
+     * {@code hashCodeOfRange(a, aFromIndex, aToIndex) ==
+     * hashCodeOfRange(b, bFromIndex, bToIndex)}.
+     *
+     * <p>The value returned by this method is the same value that would be
+     * obtained by invoking the {@link List#hashCode() hashCode}
+     * method on a {@link List} containing a sequence of {@link Byte}
+     * instances representing the elements of the specified range in the same
+     * order. If {@code a} is {@code null}, this method treats the array as
+     * having length {@code 0} for range checking and returns {@code 0} only
+     * for the empty range {@code [0,0)}.
+     *
+     * @param a the array from which to compute the range hash code
+     * @param fromIndex the initial index of the range to be hashed, inclusive
+     * @param toIndex the final index of the range to be hashed, exclusive
+     * @return a content-based hash code for the specified range of the array,
+     *         or {@code 0} if {@code a} is {@code null} and the range is empty
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
+     *         {@code toIndex} is greater than the array length
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @since 27
+     */
+    public static int hashCodeOfRange(byte[] a, int fromIndex, int toIndex) {
+        if (a == null) {
+            rangeCheck(0, fromIndex, toIndex);
+            return 0;
+        }
+        rangeCheck(a.length, fromIndex, toIndex);
+        return ArraysSupport.hashCode(a, fromIndex, toIndex - fromIndex, 1);
+    }
+
+    /**
      * Returns a hash code based on the contents of the specified array.
      * For any two {@code boolean} arrays {@code a} and {@code b}
      * such that {@code Arrays.equals(a, b)}, it is also the case that
