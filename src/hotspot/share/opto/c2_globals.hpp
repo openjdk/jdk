@@ -893,6 +893,37 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
+                                                                            \
+  product(bool, HotCodeHeap, false, EXPERIMENTAL,                           \
+          "Enable the code heap for hot C2 nmethods")                       \
+                                                                            \
+  product(double, HotCodeSampleRatio, 0.8,                                  \
+          "Ratio of samples from hot nmethods to consider grouping done")   \
+          range(0.0, 1.0)                                                   \
+                                                                            \
+  product(double, HotCodeSteadyThreshold, 0.05,                             \
+          "Ratio of new to total C2 nmethods to be considered steady")      \
+          range(0.0, 1.0)                                                   \
+                                                                            \
+  product(uintx, HotCodeIntervalSeconds, 300,                               \
+          "Time between hot code grouping runs")                            \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uintx, HotCodeSampleSeconds, 120,                                 \
+          "Amount of time to sample application")                           \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uintx, HotCodeStartupDelaySeconds, 120,                           \
+          "Amount of time before starting HotCodeGrouper")                  \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uintx, HotCodeMinSamplingMs, 5,                                   \
+          "Amount of time before starting HotCodeGrouper")                  \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uintx, HotCodeMaxSamplingMs, 15,                                  \
+          "Amount of time before starting HotCodeGrouper")                  \
+          range(0, max_juint)                                               \
 
 // end of C2_FLAGS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,15 @@ import java.util.EnumSet;
 public class TestCodeHeapSizeOptions extends CodeCacheCLITestBase {
     private static final CodeCacheCLITestCase JVM_STARTUP
             = new CodeCacheCLITestCase(new CodeCacheCLITestCase.Description(
-                            options -> options.segmented,
+                            options -> options.segmented
+                                    && options.hot == 0,
                             EnumSet.noneOf(BlobType.class)),
                     new JVMStartupRunner());
 
     private static final CodeCacheCLITestCase CODE_CACHE_FREE_SPACE
             = new CodeCacheCLITestCase(new CodeCacheCLITestCase.Description(
                             options -> options.segmented
+                                    && options.hot == 0
                                     && Platform.isDebugBuild(),
                             EnumSet.noneOf(BlobType.class)),
                     new CodeCacheFreeSpaceRunner());
@@ -65,13 +67,19 @@ public class TestCodeHeapSizeOptions extends CodeCacheCLITestBase {
     private TestCodeHeapSizeOptions() {
         super(CodeCacheCLITestBase.OPTIONS_SET,
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
-                        .CommonDescriptions.NON_TIERED.description,
+                        .CommonDescriptions.NON_TIERED_WO_HOT.description,
                         GENERIC_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
                         .CommonDescriptions.TIERED_LEVEL_1.description,
                         GENERIC_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
-                        .CommonDescriptions.TIERED_LEVEL_4.description,
+                        .CommonDescriptions.TIERED_LEVEL_4_WO_HOT.description,
+                        GENERIC_RUNNER),
+                new CodeCacheCLITestCase(CodeCacheCLITestCase
+                        .CommonDescriptions.NON_TIERED_W_HOT.description,
+                        GENERIC_RUNNER),
+                new CodeCacheCLITestCase(CodeCacheCLITestCase
+                        .CommonDescriptions.TIERED_LEVEL_4_W_HOT.description,
                         GENERIC_RUNNER),
                 JVM_STARTUP,
                 CODE_CACHE_FREE_SPACE);
