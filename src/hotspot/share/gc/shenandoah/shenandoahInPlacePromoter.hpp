@@ -63,8 +63,13 @@ class ShenandoahInPlacePromotionPlanner {
 public:
   explicit ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap);
 
+  // Returns true if this region has garbage below and usage above the configurable thresholds
   bool is_eligible(const ShenandoahHeapRegion* region) const;
+
+  // Prepares the region for promotion by moving top to the end to prevent allocations
   void prepare(ShenandoahHeapRegion* region);
+
+  // Notifies the free set of in place promotions
   void update_free_set() const;
 
   size_t old_garbage_threshold() const { return _old_garbage_threshold; }
@@ -75,6 +80,7 @@ class ShenandoahInPlacePromoter {
 public:
   explicit ShenandoahInPlacePromoter(ShenandoahGenerationalHeap* heap) : _heap(heap) {}
 
+  // If the region still meets the criteria for promotion in place, it will be promoted
   void maybe_promote_region(ShenandoahHeapRegion* region) const;
 
 private:
