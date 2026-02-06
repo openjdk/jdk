@@ -4976,17 +4976,6 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
-static AddNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
-  switch (opcode) {
-    case Op_MinL:
-      return new MinLNode(phase->C, a, b);
-    case Op_MaxL:
-      return new MaxLNode(phase->C, a, b);
-    default:
-      ShouldNotReachHere();
-  }
-}
-
 static bool is_associative(Node* node) {
   return node->Opcode() == Op_MinL || node->Opcode() == Op_MaxL;
 }
@@ -5010,7 +4999,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
     right = reassociate_chain(add_opcode, node->in(2), phi, loop_head, phase);
   }
 
-  Node* reassoc = build_min_max(add_opcode, left, right, phase);
+  Node* reassoc = MinMaxNode::build_min_max_long(&phase->igvn(), left, right, add_opcode == Op_MaxL);
   phase->register_new_node(reassoc, loop_head);
   return reassoc;
 }
@@ -5061,7 +5050,7 @@ static void try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
   Node* loop_head = lpt->head();
   Node* reassociated = reassociate_chain(opcode, chain_head, phi, loop_head, phase);
 
-  Node* new_chain_head = build_min_max(opcode, phi, reassociated, phase);
+  Node* new_chain_head = MinMaxNode::build_min_max_long(&phase->igvn(), phi, reassociated, opcode == Op_MaxL);
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
 }
