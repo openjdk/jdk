@@ -507,15 +507,13 @@ GetJavaProperties(JNIEnv *env)
         char* pwent_user_name = pwent ? pwent->pw_name : NULL;
         char* env_user_name = getenv("USER");
 
-        if ((pwent_user_home == NULL) != (env_user_home == NULL) /* xor */ ||
-            (pwent_user_home != NULL && env_user_home != NULL
-                && strcmp(pwent_user_home, env_user_home) != 0) /* content is not same */) {
+        if ((pwent_user_home != NULL && env_user_home != NULL
+                && strcmp(pwent_user_home, env_user_home) != 0)) {
             fprintf(stderr, "[Warning] detected a difference between $HOME and getpwuid entry. Future releases will use $HOME over getpwuid. $HOME: %s, getpwuid->pw_dir: %s\n", env_user_home ? env_user_home : "NULL", pwent_user_home ? pwent_user_home : "NULL");
         }
 
-        if ((pwent_user_name == NULL) != (env_user_name == NULL) /* xor */ ||
-            (pwent_user_name != NULL && env_user_name != NULL
-                && strcmp(pwent_user_name, env_user_name) != 0) /* content is not same */) {
+        if ((pwent_user_name != NULL && env_user_name != NULL
+                && strcmp(pwent_user_name, env_user_name) != 0)) {
             fprintf(stderr, "[Warning] detected a difference between $USER and getpwuid entry. Future releases will use $USER over getpwuid. $USER: %s, getpwuid->pw_name: %s\n", env_user_name ? env_user_name : "NULL", pwent_user_name ? pwent_user_name : "NULL");
         }
 
