@@ -167,7 +167,7 @@ public class Flags {
     @Use({FlagTarget.METHOD})
     public static final int BLOCK            = 1<<20;
 
-    /** Variable with implicit/inferred type.
+    /** A parameter of a lambda function.
      */
     @Use(FlagTarget.VARIABLE)
     public static final int LAMBDA_PARAMETER     = 1<<20;
