@@ -781,6 +781,114 @@ const Type* CmpUNode::sub(const Type* t1, const Type* t2) const {
   return TypeInt::CC;
 }
 
+// We use the following Lemmas/insights for the following two transformations (1) and (2):
+//   x & y <=u y, for any x and y           (Lemma 1, masking always results in a smaller unsigned number)
+//   y <u y + 1 is always true if y != -1   (Lemma 2, (uint)(-1 + 1) == (uint)(UINT_MAX + 1) which overflows)
+//   y <u 0 is always false for any y       (Lemma 3, 0 == UINT_MIN and nothing can be smaller than that)
+//
+// (1a) Always:     Change ((x & m) <=u m  ) or ((m & x) <=u m  ) to always true   (true by Lemma 1)
+// (1b) If m != -1: Change ((x & m) <u  m + 1) or ((m & x) <u  m + 1) to always true:
+//    x & m <=u m          is always true   // (Lemma 1)
+//    x & m <=u m <u m + 1 is always true   // (Lemma 2: m <u m + 1, if m != -1)
+//
+// A counter example for (1b), if we allowed m == -1:
+//     (x & m)  <u m + 1
+//     (x & -1) <u 0
+//      x       <u 0
+//   which is false for any x (Lemma 3)
+//
+// (2) Change ((x & (m - 1)) <u m) or (((m - 1) & x) <u m) to (m >u 0)
+// This is the off-by-one variant of the above.
+//
+// We now prove that this replacement is correct. This is the same as proving
+//   "m >u 0" if and only if "x & (m - 1) <u m", i.e. "m >u 0 <=> x & (m - 1) <u m"
+//
+// We use (Lemma 1) and (Lemma 3) from above.
+//
+// Case "x & (m - 1) <u m => m >u 0":
+//   We prove this by contradiction:
+//     Assume m <=u 0 which is equivalent to m == 0:
+//   and thus
+//     x & (m - 1) <u m = 0               // m == 0
+//     y           <u     0               // y = x & (m - 1)
+//   by Lemma 3, this is always false, i.e. a contradiction to our assumption.
+//
+// Case "m >u 0 => x & (m - 1) <u m":
+//   x & (m - 1) <=u (m - 1)              // (Lemma 1)
+//   x & (m - 1) <=u (m - 1) <u m         // Using assumption m >u 0, no underflow of "m - 1"
+//
+//
+// Note that the signed version of "m > 0":
+//   m > 0 <=> x & (m - 1) <u m
+// does not hold:
+//   Assume m == -1 and x == -1:
+//     x  & (m - 1) <u m
+//     -1 & -2      <u -1
+//     -2           <u -1
+//     UINT_MAX - 1 <u UINT_MAX           // Signed to unsigned numbers
+// which is true while
+//   m > 0
+// is false which is a contradiction.
+//
+// (1a) and (1b) is covered by this method since we can directly return the
+// corresponding TypeInt::CC_* while (2) is covered in BoolNode::Ideal since
+// we create a new non-constant node (see [CMPU_MASK]).
+//
+// Depending on the _test of the child(ren) Bool node(s) of CmpU, the following
+// optimizations will be later performed in BoolTest::cc2logical.
+//
+// (1a) "(x & m) <=u m" is always true, so type(CmpU) = CC_LE.
+//
+//      | BoolTest | CmpU + Bool expression  |      Result       |
+//      |----------|-------------------------|-------------------|
+//      |    eq    |     (x & m)  ==u  m     |      unknown      |
+//      |    ne    |     (x & m)  !=u  m     |      unknown      |
+//      |~~~ le ~~~|~~~~ (x & m)  <=u  m ~~~~|~~~~~~ true ~~~~~~~|
+//      |    ge    |     (x & m)  >=u  m     |      unknown      |
+//      |    lt    |     (x & m)   <u  m     |      unknown      |
+//      |    gt    |     (x & m)   >u  m     |       false       |
+//
+// (1b) "(x & m) <u m + 1" is always true (if m != -1), so type(CmpU) = CC_LT.
+//
+//      | BoolTest | CmpU + Bool expression  | Result if m != -1 |
+//      |----------|-------------------------|-------------------|
+//      |    eq    |   (x & m)  ==u  m + 1   |       false       |
+//      |    ne    |   (x & m)  !=u  m + 1   |       true        |
+//      |    le    |   (x & m)  <=u  m + 1   |       true        |
+//      |    ge    |   (x & m)  >=u  m + 1   |       false       |
+//      |~~~ lt ~~~|~~ (x & m)   <u  m + 1 ~~|~~~~~~ true ~~~~~~~|
+//      |    gt    |   (x & m)   >u  m + 1   |       false       |
+//
+// NOTE: all the cases with "m & x" also apply.
+//
+const Type* CmpUNode::Value_cmpu_and_mask(PhaseValues* phase, const Node* andI, const Node* rhs) {
+  if (andI->Opcode() == Op_AndI) {
+    // (1a) "(x & m) <=u m" and "(m & x) <=u m" are always true,
+    // so CmpU(x & m, m) and CmpU(m & x, m) are known to be LE.
+    // NOTE: any CCP update to "m" will push the CmpUNode to the worklist,
+    // since rhs_m is a direct input of it.
+    const Node* rhs_m = rhs;
+    if (andI->in(2) == rhs_m || andI->in(1) == rhs_m) {
+      return TypeInt::CC_LE;
+    }
+    // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1" are always true for m != -1,
+    // so CmpU(x & m, m + 1) and CmpU(m & x, m + 1) are known to be LT.
+    // NOTE: any CCP update to "m" or "1" will push the CmpUNode to the worklist,
+    // this granchild push is handled by PhaseCCP::push_cmpu.
+    if (rhs->Opcode() == Op_AddI && rhs->in(2)->find_int_con(0) == 1) {
+      rhs_m = rhs->in(1);
+      const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
+      // Exclude any case where m == -1 is possible.
+      if (rhs_m_type != nullptr && !rhs_m_type->contains(-1)) {
+        if (andI->in(2) == rhs_m || andI->in(1) == rhs_m) {
+          return TypeInt::CC_LT;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
 const Type* CmpUNode::Value(PhaseGVN* phase) const {
   const Type* t = SubNode::Value_common(phase);
   if (t != nullptr) {
@@ -788,6 +896,10 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
   }
   const Node* in1 = in(1);
   const Node* in2 = in(2);
+  t = Value_cmpu_and_mask(phase, in1, in2);
+  if (t != nullptr) {
+    return t;
+  }
   const Type* t1 = phase->type(in1);
   const Type* t2 = phase->type(in2);
   assert(t1->isa_int(), "CmpU has only Int type inputs");
@@ -1619,7 +1731,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Transform: "((x & (m - 1)) <u m)" or "(((m - 1) & x) <u m)" into "(m >u 0)"
-  // This is case [CMPU_MASK] which is further described at the method comment of BoolNode::Value_cmpu_and_mask().
+  // This is case [CMPU_MASK] which is further described at the method comment of CmpUNode::Value_cmpu_and_mask().
   if (cop == Op_CmpU && _test._test == BoolTest::lt && cmp1_op == Op_AndI) {
     Node* m = cmp2; // RHS: m
     for (int add_idx = 1; add_idx <= 2; add_idx++) { // LHS: "(m + (-1)) & x" or "x & (m + (-1))"?
@@ -1794,100 +1906,10 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    }
 }
 
-// We use the following Lemmas/insights for the following two transformations (1) and (2):
-//   x & y <=u y, for any x and y           (Lemma 1, masking always results in a smaller unsigned number)
-//   y <u y + 1 is always true if y != -1   (Lemma 2, (uint)(-1 + 1) == (uint)(UINT_MAX + 1) which overflows)
-//   y <u 0 is always false for any y       (Lemma 3, 0 == UINT_MIN and nothing can be smaller than that)
-//
-// (1a) Always:     Change ((x & m) <=u m  ) or ((m & x) <=u m  ) to always true   (true by Lemma 1)
-// (1b) If m != -1: Change ((x & m) <u  m + 1) or ((m & x) <u  m + 1) to always true:
-//    x & m <=u m          is always true   // (Lemma 1)
-//    x & m <=u m <u m + 1 is always true   // (Lemma 2: m <u m + 1, if m != -1)
-//
-// A counter example for (1b), if we allowed m == -1:
-//     (x & m)  <u m + 1
-//     (x & -1) <u 0
-//      x       <u 0
-//   which is false for any x (Lemma 3)
-//
-// (2) Change ((x & (m - 1)) <u m) or (((m - 1) & x) <u m) to (m >u 0)
-// This is the off-by-one variant of the above.
-//
-// We now prove that this replacement is correct. This is the same as proving
-//   "m >u 0" if and only if "x & (m - 1) <u m", i.e. "m >u 0 <=> x & (m - 1) <u m"
-//
-// We use (Lemma 1) and (Lemma 3) from above.
-//
-// Case "x & (m - 1) <u m => m >u 0":
-//   We prove this by contradiction:
-//     Assume m <=u 0 which is equivalent to m == 0:
-//   and thus
-//     x & (m - 1) <u m = 0               // m == 0
-//     y           <u     0               // y = x & (m - 1)
-//   by Lemma 3, this is always false, i.e. a contradiction to our assumption.
-//
-// Case "m >u 0 => x & (m - 1) <u m":
-//   x & (m - 1) <=u (m - 1)              // (Lemma 1)
-//   x & (m - 1) <=u (m - 1) <u m         // Using assumption m >u 0, no underflow of "m - 1"
-//
-//
-// Note that the signed version of "m > 0":
-//   m > 0 <=> x & (m - 1) <u m
-// does not hold:
-//   Assume m == -1 and x == -1:
-//     x  & (m - 1) <u m
-//     -1 & -2      <u -1
-//     -2           <u -1
-//     UINT_MAX - 1 <u UINT_MAX           // Signed to unsigned numbers
-// which is true while
-//   m > 0
-// is false which is a contradiction.
-//
-// (1a) and (1b) is covered by this method since we can directly return a true value as type while (2) is covered
-// in BoolNode::Ideal since we create a new non-constant node (see [CMPU_MASK]).
-const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
-  Node* cmp = in(1);
-  if (cmp != nullptr && cmp->Opcode() == Op_CmpU) {
-    Node* cmp1 = cmp->in(1);
-    Node* cmp2 = cmp->in(2);
-
-    if (cmp1->Opcode() == Op_AndI) {
-      Node* m = nullptr;
-      if (_test._test == BoolTest::le) {
-        // (1a) "((x & m) <=u m)", cmp2 = m
-        m = cmp2;
-      } else if (_test._test == BoolTest::lt && cmp2->Opcode() == Op_AddI && cmp2->in(2)->find_int_con(0) == 1) {
-        // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1", cmp2 = m + 1
-        Node* rhs_m = cmp2->in(1);
-        const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
-        if (rhs_m_type != nullptr && (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1)) {
-          // Exclude any case where m == -1 is possible.
-          m = rhs_m;
-        }
-      }
-
-      if (cmp1->in(2) == m || cmp1->in(1) == m) {
-        return TypeInt::ONE;
-      }
-    }
-  }
-
-  return nullptr;
-}
-
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
-  const Type* input_type = phase->type(in(1));
-  if (input_type == Type::TOP) {
-    return Type::TOP;
-  }
-  const Type* t = Value_cmpu_and_mask(phase);
-  if (t != nullptr) {
-    return t;
-  }
-
-  return _test.cc2logical(input_type);
+  return _test.cc2logical(phase->type(in(1)));
 }
 
 #ifndef PRODUCT
