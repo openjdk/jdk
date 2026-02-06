@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2023, 2025, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -966,10 +966,15 @@ void VMError::report(outputStream* st, bool _verbose) {
     frame fr = _context ? os::fetch_frame_from_context(_context)
                         : os::current_frame();
 
-    if (fr.sp()) {
-      st->print(",  sp=" PTR_FORMAT, p2i(fr.sp()));
-      size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
-      st->print(",  free space=%zuk", free_stack_size);
+    address sp = (address)fr.sp();
+    if (sp != nullptr) {
+      st->print(",  sp=" PTR_FORMAT, p2i(sp));
+      if (sp >= stack_bottom && sp < stack_top) {
+        size_t free_stack_size = pointer_delta(sp, stack_bottom, 1024);
+        st->print(",  free space=%zuk", free_stack_size);
+      } else {
+        st->print(" **OUTSIDE STACK**.");
+      }
     }
 
     st->cr();
@@ -1898,7 +1903,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     log.set_fd(-1);
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL, true);)
+  JFR_ONLY(Jfr::on_vm_shutdown(true, false, static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL);)
 
   if (PrintNMTStatistics) {
     fdStream fds(fd_out);

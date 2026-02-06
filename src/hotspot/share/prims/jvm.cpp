@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,9 +114,6 @@
 #endif
 #if INCLUDE_MANAGEMENT
 #include "services/finalizerService.hpp"
-#endif
-#ifdef LINUX
-#include "osContainer_linux.hpp"
 #endif
 
 #include <errno.h>
@@ -500,11 +497,9 @@ JVM_LEAF(jboolean, JVM_IsUseContainerSupport(void))
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsContainerized(void))
-#ifdef LINUX
-  if (OSContainer::is_containerized()) {
+  if (os::is_containerized()) {
     return JNI_TRUE;
   }
-#endif
   return JNI_FALSE;
 JVM_END
 
@@ -2915,18 +2910,14 @@ JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))
   return ObjectSynchronizer::current_thread_holds_lock(thread, h_obj);
 JVM_END
 
-JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
+JVM_ENTRY(jobjectArray, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   oop trace = java_lang_Thread::async_get_stack_trace(jthread, THREAD);
-  return JNIHandles::make_local(THREAD, trace);
+  return (jobjectArray) JNIHandles::make_local(THREAD, trace);
 JVM_END
 
 JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
-#if INCLUDE_JVMTI
   oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, THREAD);
   return JNIHandles::make_local(THREAD, snapshot);
-#else
-  THROW_NULL(vmSymbols::java_lang_UnsupportedOperationException());
-#endif
 JVM_END
 
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))

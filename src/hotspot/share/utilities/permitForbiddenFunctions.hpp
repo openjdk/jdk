@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_PERMITFORBIDDENFUNCTIONS_HPP
 #define SHARE_UTILITIES_PERMITFORBIDDENFUNCTIONS_HPP
 
+#include "cppstdlib/cstdlib.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -33,6 +34,9 @@
 #else
 #include "permitForbiddenFunctions_posix.hpp"
 #endif
+
+#include <stdio.h>
+#include <string.h>
 
 // Provide wrappers for some functions otherwise forbidden from use in HotSpot.
 //
@@ -53,7 +57,6 @@ namespace permit_forbidden_function {
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 
 [[noreturn]] inline void exit(int status) { ::exit(status); }
-[[noreturn]] inline void _exit(int status) { ::_exit(status); }
 
 ATTRIBUTE_PRINTF(3, 0)
 inline int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
@@ -66,6 +69,10 @@ inline void* calloc(size_t nmemb, size_t size) { return ::calloc(nmemb, size); }
 inline void* realloc(void* ptr, size_t size) { return ::realloc(ptr, size); }
 
 inline char* strdup(const char* s) { return ::strdup(s); }
+
+MACOS_AARCH64_ONLY( \
+  inline void pthread_jit_write_protect_np(int enabled) { return ::pthread_jit_write_protect_np(enabled); } \
+)
 
 END_ALLOW_FORBIDDEN_FUNCTIONS
 } // namespace permit_forbidden_function

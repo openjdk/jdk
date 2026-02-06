@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,7 +557,7 @@ bool MethodHandles::is_basic_type_signature(Symbol* sig) {
     switch (ss.type()) {
     case T_OBJECT:
       // only java/lang/Object is valid here
-      if (strncmp((char*) ss.raw_bytes(), OBJ_SIG, OBJ_SIG_LEN) != 0)
+      if (strncmp((char*) ss.raw_bytes(), OBJ_SIG, ss.raw_length()) != 0)
         return false;
       break;
     case T_VOID:

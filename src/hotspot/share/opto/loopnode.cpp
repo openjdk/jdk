@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,7 +590,7 @@ Node* PhaseIdealLoop::loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, 
 // Add a Parse Predicate with an uncommon trap on the failing/false path. Normal control will continue on the true path.
 void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop,
                                          SafePointNode* sfpt) {
-  if (!C->too_many_traps(reason)) {
+  if (!C->too_many_traps(sfpt->jvms()->method(), sfpt->jvms()->bci(), reason)) {
     ParsePredicateNode* parse_predicate = new ParsePredicateNode(inner_head->in(LoopNode::EntryControl), reason, &_igvn);
     register_control(parse_predicate, loop, inner_head->in(LoopNode::EntryControl));
     Node* if_false = new IfFalseNode(parse_predicate);
@@ -758,6 +758,24 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 #endif
   }
   return safepoint;
+}
+
+void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* inner_head, SafePointNode* cloned_sfpt) {
+  if (ShortRunningLongLoop) {
+    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
+  }
+  if (UseLoopPredicate) {
+    add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
+    if (UseProfiledLoopPredicate) {
+      add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+    }
+  }
+
+  if (UseAutoVectorizationPredicate) {
+    add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+  }
+
+  add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
 }
 
 // If the loop has the shape of a counted loop but with a long
@@ -979,9 +997,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   Node* inner_iters_max = nullptr;
   if (stride_con > 0) {
-    inner_iters_max = MaxNode::max_diff_with_zero(limit, outer_phi, TypeInteger::bottom(bt), _igvn);
+    inner_iters_max = MinMaxNode::max_diff_with_zero(limit, outer_phi, TypeInteger::bottom(bt), _igvn);
   } else {
-    inner_iters_max = MaxNode::max_diff_with_zero(outer_phi, limit, TypeInteger::bottom(bt), _igvn);
+    inner_iters_max = MinMaxNode::max_diff_with_zero(outer_phi, limit, TypeInteger::bottom(bt), _igvn);
   }
 
   Node* inner_iters_limit = _igvn.integercon(iters_limit, bt);
@@ -989,7 +1007,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
   // min.
   const TypeInteger* inner_iters_actual_range = TypeInteger::make(0, iters_limit, Type::WidenMin, bt);
-  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
+  Node* inner_iters_actual = MinMaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
 
   Node* inner_iters_actual_int;
   if (bt == T_LONG) {
@@ -1123,26 +1141,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   if (safepoint != nullptr) {
     SafePointNode* cloned_sfpt = old_new[safepoint->_idx]->as_SafePoint();
 
-    if (ShortRunningLongLoop) {
-      add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
-    }
-    if (UseLoopPredicate) {
-      add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
-      if (UseProfiledLoopPredicate) {
-        add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
-      }
-    }
-
-    if (UseAutoVectorizationPredicate) {
-      // We only want to use the auto-vectorization check as a trap once per bci. And
-      // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
-      // we do a custom check here.
-      if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
-        add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
-      }
-    }
-
-    add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+    add_parse_predicates(outer_ilt, inner_head, cloned_sfpt);
   }
 
 #ifndef PRODUCT
@@ -1618,7 +1617,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       Node* max_jint_plus_one_long = longcon((jlong)max_jint + 1);
       Node* max_range = new AddLNode(max_jint_plus_one_long, L);
       register_new_node(max_range, entry_control);
-      R = MaxNode::unsigned_min(R, max_range, TypeLong::POS, _igvn);
+      R = MinMaxNode::unsigned_min(R, max_range, TypeLong::POS, _igvn);
       set_subtree_ctrl(R, true);
     }
 
@@ -1717,9 +1716,9 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
 }
 
 Node* PhaseIdealLoop::clamp(Node* R, Node* L, Node* H) {
-  Node* min = MaxNode::signed_min(R, H, TypeLong::LONG, _igvn);
+  Node* min = MinMaxNode::signed_min(R, H, TypeLong::LONG, _igvn);
   set_subtree_ctrl(min, true);
-  Node* max = MaxNode::signed_max(L, min, TypeLong::LONG, _igvn);
+  Node* max = MinMaxNode::signed_max(L, min, TypeLong::LONG, _igvn);
   set_subtree_ctrl(max, true);
   return max;
 }
@@ -1893,7 +1892,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
 #endif
 
 //------------------------------is_counted_loop--------------------------------
-bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
+bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop, BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
   Node* back_control = loop_exit_control(x, loop);
@@ -3485,14 +3484,14 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     // the loop body to be run for LoopStripMiningIter.
     Node* max = nullptr;
     if (stride > 0) {
-      max = MaxNode::max_diff_with_zero(limit, iv_phi, TypeInt::INT, *igvn);
+      max = MinMaxNode::max_diff_with_zero(limit, iv_phi, TypeInt::INT, *igvn);
     } else {
-      max = MaxNode::max_diff_with_zero(iv_phi, limit, TypeInt::INT, *igvn);
+      max = MinMaxNode::max_diff_with_zero(iv_phi, limit, TypeInt::INT, *igvn);
     }
     // sub is positive and can be larger than the max signed int
     // value. Use an unsigned min.
     Node* const_iters = igvn->intcon(scaled_iters);
-    Node* min = MaxNode::unsigned_min(max, const_iters, TypeInt::make(0, scaled_iters, Type::WidenMin), *igvn);
+    Node* min = MinMaxNode::unsigned_min(max, const_iters, TypeInt::make(0, scaled_iters, Type::WidenMin), *igvn);
     // min is the number of iterations for the next inner loop execution:
     // unsigned_min(max(limit - iv_phi, 0), scaled_iters) if stride > 0
     // unsigned_min(max(iv_phi - limit, 0), scaled_iters) if stride < 0
@@ -3528,7 +3527,6 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   CountedLoopEndNode* cle = inner_cl->loopexit();
   Node* inner_test = cle->in(1);
   IfNode* outer_le = outer_loop_end();
-  CountedLoopEndNode* inner_cle = inner_cl->loopexit();
   Node* safepoint = outer_safepoint();
 
   fix_sunk_stores_when_back_to_counted_loop(igvn, iloop);
@@ -3753,6 +3751,20 @@ void CountedLoopEndNode::dump_spec(outputStream *st) const {
   IfNode::dump_spec(st);
 }
 #endif
+
+IdealLoopTree::IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail): _parent(nullptr), _next(nullptr), _child(nullptr),
+                                                                             _head(head), _tail(tail),
+                                                                             _phase(phase),
+                                                                             _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
+                                                                             _body(phase->arena()),
+                                                                             _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
+                                                                             _has_range_checks(0), _has_range_checks_computed(0),
+                                                                             _safepts(nullptr),
+                                                                             _required_safept(nullptr),
+                                                                             _allow_optimizations(true) {
+  precond(_head != nullptr);
+  precond(_tail != nullptr);
+}
 
 //=============================================================================
 //------------------------------is_member--------------------------------------
@@ -5091,8 +5103,8 @@ void PhaseIdealLoop::build_and_optimize() {
   // Since nodes do not have a slot for immediate dominator, make
   // a persistent side array for that info indexed on node->_idx.
   _idom_size = C->unique();
-  _idom      = NEW_RESOURCE_ARRAY( Node*, _idom_size );
-  _dom_depth = NEW_RESOURCE_ARRAY( uint,  _idom_size );
+  _idom      = NEW_ARENA_ARRAY(&_arena, Node*, _idom_size);
+  _dom_depth = NEW_ARENA_ARRAY(&_arena, uint,  _idom_size);
   _dom_stk   = nullptr; // Allocated on demand in recompute_dom_depth
   memset( _dom_depth, 0, _idom_size * sizeof(uint) );
 
@@ -5693,8 +5705,8 @@ void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
   uint idx = d->_idx;
   if (idx >= _idom_size) {
     uint newsize = next_power_of_2(idx);
-    _idom      = REALLOC_RESOURCE_ARRAY( Node*,     _idom,_idom_size,newsize);
-    _dom_depth = REALLOC_RESOURCE_ARRAY( uint, _dom_depth,_idom_size,newsize);
+    _idom      = REALLOC_ARENA_ARRAY(&_arena, Node*,     _idom,_idom_size,newsize);
+    _dom_depth = REALLOC_ARENA_ARRAY(&_arena,  uint, _dom_depth,_idom_size,newsize);
     memset( _dom_depth + _idom_size, 0, (newsize - _idom_size) * sizeof(uint) );
     _idom_size = newsize;
   }

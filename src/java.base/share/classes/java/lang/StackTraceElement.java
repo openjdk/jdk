@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,7 +561,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         // VM to fill in StackTraceElement
         initStackTraceElements(stackTrace, x, depth);
-        return of(stackTrace);
+        return finishInit(stackTrace);
     }
 
     /*
@@ -575,7 +575,7 @@ public final class StackTraceElement implements java.io.Serializable {
         return ste;
     }
 
-    static StackTraceElement[] of(StackTraceElement[] stackTrace) {
+    static StackTraceElement[] finishInit(StackTraceElement[] stackTrace) {
         // ensure the proper StackTraceElement initialization
         for (StackTraceElement ste : stackTrace) {
             ste.computeFormat();
