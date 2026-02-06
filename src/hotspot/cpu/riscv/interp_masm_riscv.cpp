@@ -810,7 +810,7 @@ void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
                                                          Label& zero_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   ld(mdp, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
-  beqz(mdp, zero_continue);
+  beqz(mdp, zero_continue, /* is_far */ true);
 }
 
 // Set the method data pointer for the current bcp.
@@ -886,15 +886,12 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
                                                       int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
 
-  assert_different_registers(t1, t0, mdp_in, index);
+  assert_different_registers(t0, t1, mdp_in, index);
 
-  Address addr1(mdp_in, constant);
-  Address addr2(t1, 0);
-  Address &addr = addr1;
+  Address addr(t1);
+  la(t1, Address(mdp_in, constant));
   if (index != noreg) {
-    la(t1, addr1);
     add(t1, t1, index);
-    addr = addr2;
   }
 
   ld(t0, addr);

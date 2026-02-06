@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 import jdk.test.lib.Platform;
 public class IntxTest {
     private static final String FLAG_NAME = "OnStackReplacePercentage";
-    private static final String FLAG_DEBUG_NAME = "BciProfileWidth";
+    private static final String FLAG_DEBUG_NAME = "BinarySwitchThreshold";
     private static final long COMPILE_THRESHOLD = VmFlagTest.WHITE_BOX.getIntxVMFlag("CompileThreshold");
     private static final Long[] TESTS = {0L, 100L, (long)(Integer.MAX_VALUE>>3)*100L};
 

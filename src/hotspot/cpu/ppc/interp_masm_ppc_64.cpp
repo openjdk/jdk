@@ -1092,10 +1092,14 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
 }
 
 // Test ImethodDataPtr. If it is null, continue at the specified label.
-void InterpreterMacroAssembler::test_method_data_pointer(Label& zero_continue) {
+void InterpreterMacroAssembler::test_method_data_pointer(Label& zero_continue, bool may_be_far) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   cmpdi(CR0, R28_mdx, 0);
-  beq(CR0, zero_continue);
+  if (may_be_far) {
+    bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CR0, Assembler::equal), zero_continue);
+  } else {
+    beq(CR0, zero_continue);
+  }
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {
@@ -1398,7 +1402,7 @@ void InterpreterMacroAssembler::profile_ret(TosState state, Register return_bci,
     uint row;
 
     // If no method data exists, go to profile_continue.
-    test_method_data_pointer(profile_continue);
+    test_method_data_pointer(profile_continue, true);
 
     // Update the total ret count.
     increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2 );
