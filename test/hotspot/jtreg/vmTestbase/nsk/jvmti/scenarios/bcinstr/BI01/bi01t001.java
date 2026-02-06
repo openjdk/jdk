@@ -33,7 +33,7 @@ import java.lang.reflect.Field;
 import nsk.share.Consts;
 import nsk.share.Log;
 import nsk.share.Failure;
-import nsk.share.CustomClassLoader;
+import jdk.test.lib.classloader.CustomClassLoader;
 
 import nsk.share.jvmti.ArgumentHandler;
 import nsk.share.jvmti.DebugeeClass;

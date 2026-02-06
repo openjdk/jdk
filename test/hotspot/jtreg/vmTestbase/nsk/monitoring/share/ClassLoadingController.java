@@ -26,7 +26,7 @@ package nsk.monitoring.share;
 import java.util.*;
 import nsk.share.log.Log;
 import jdk.test.lib.classloader.ClassUnloadCommon;
-import nsk.share.CustomClassLoader;
+import jdk.test.lib.classloader.CustomClassLoader;
 import nsk.share.test.Stresser;
 
 /**
