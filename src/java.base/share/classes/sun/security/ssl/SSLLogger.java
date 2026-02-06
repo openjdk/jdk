@@ -234,9 +234,9 @@ public final class SSLLogger implements System.Logger {
                 "print trust manager tracing");
         System.err.printf("%nIf \"ssl\" is specified by itself," +
                 " all non-widening filters are enabled.%n");
-        System.err.printf("%nSpecifying filter options with \"ssl\"" +
-                " includes messages for the selected categories, as well" +
-                " as all general SSL debug messages.%n");
+        System.err.printf("%nSpecifying \"ssl\" with additional filter" +
+                " options produces general%nSSL debug messages plus just" +
+                " the selected categories.%n%n");
         System.exit(0);
     }
 
