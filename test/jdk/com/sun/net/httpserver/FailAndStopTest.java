@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6666666
+ * @bug 8377302
  * @summary HttpServer.stop() blocks indefinitely if handler throws
  * @modules jdk.httpserver java.logging
  * @library /test/lib

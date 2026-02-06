@@ -164,7 +164,6 @@ class ExchangeImpl {
         if (closed) {
             return;
         }
-        System.err.println("Closing exchange");
         closed = true;
 
         /* close the underlying connection if,
