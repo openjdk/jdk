@@ -2383,6 +2383,7 @@ BSMAttributeEntries::start_extension(int number_of_entries, int array_length,
   deallocate_contents(loader_data);
   _offsets = new_offsets;
   _bootstrap_methods = new_array;
+  assert((_offsets == nullptr) == (_bootstrap_methods == nullptr), "inconsistent state");
   return extension_iterator;
 }
 
@@ -2421,4 +2422,5 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
   deallocate_contents(loader_data);
   _offsets = new_offsets;
   _bootstrap_methods = new_array;
+  assert((_offsets == nullptr) == (_bootstrap_methods == nullptr), "inconsistent state");
 }
