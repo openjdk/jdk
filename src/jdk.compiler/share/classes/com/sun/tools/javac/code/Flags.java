@@ -158,7 +158,7 @@ public class Flags {
 
     /** Variable with implicit/inferred type.
      */
-    @Use({FlagTarget.VARIABLE})
+    @Use(FlagTarget.VARIABLE)
     public static final int VAR_VARIABLE     = 1<<19;
 
     /** Flag is set for compiler-generated anonymous method symbols
@@ -166,6 +166,11 @@ public class Flags {
      */
     @Use({FlagTarget.METHOD})
     public static final int BLOCK            = 1<<20;
+
+    /** Variable with implicit/inferred type.
+     */
+    @Use(FlagTarget.VARIABLE)
+    public static final int LAMBDA_PARAMETER     = 1<<20;
 
     /** Flag is set for ClassSymbols that are being compiled from source.
      */

@@ -3,6 +3,7 @@
  * @bug 8371683
  * @summary Test that type annotations cannot appears on 'var' variables
  * @compile/fail/ref=VarVariables.out -XDrawDiagnostics VarVariables.java
+ * @compile/fail/ref=VarVariables-old.out --release 19 -XDrawDiagnostics -XDshould-stop.at=FLOW VarVariables.java
  */
 
 import java.lang.annotation.Target;

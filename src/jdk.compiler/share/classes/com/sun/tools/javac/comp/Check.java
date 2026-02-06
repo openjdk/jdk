@@ -3544,7 +3544,10 @@ public class Check {
                 if (s.kind == PCK)
                     applicableTargets.add(names.PACKAGE);
             } else if (target == names.TYPE_USE) {
-                if (s.kind == VAR && (s.flags() & Flags.VAR_VARIABLE) != 0) {
+                if (s.kind == VAR &&
+                    (s.flags() & Flags.VAR_VARIABLE) != 0 &&
+                    (!Feature.TYPE_ANNOTATIONS_ON_VAR_LAMBDA_PARAMETER.allowedInSource(source) ||
+                     ((s.flags() & Flags.LAMBDA_PARAMETER) == 0))) {
                     //cannot type annotate implicitly typed locals
                     continue;
                 } else if (s.kind == TYP || s.kind == VAR ||

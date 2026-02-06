@@ -5405,7 +5405,13 @@ public class JavacParser implements Parser {
      *  LastFormalParameter = { FINAL | '@' Annotation } Type '...' Ident | FormalParameter
      */
     protected JCVariableDecl formalParameter(boolean lambdaParameter, boolean recordComponent) {
-        JCModifiers mods = !recordComponent ? optFinal(Flags.PARAMETER) : modifiersOpt();
+        JCModifiers mods; 
+
+        if (recordComponent) {
+            mods = modifiersOpt();
+        } else {
+            mods = optFinal(Flags.PARAMETER | (lambdaParameter ? Flags.LAMBDA_PARAMETER : 0));
+        }
         if (recordComponent && mods.flags != 0) {
             log.error(mods.pos, Errors.RecordCantDeclareFieldModifiers);
         }
@@ -5436,7 +5442,7 @@ public class JavacParser implements Parser {
     }
 
     protected JCVariableDecl implicitParameter() {
-        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
+        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER | Flags.LAMBDA_PARAMETER);
         return variableDeclaratorId(mods, null, false, true, false);
     }
 
