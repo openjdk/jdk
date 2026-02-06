@@ -53,10 +53,19 @@ public final class KeyUtil {
 
     /**
      * Returns the key size of the given key object in bits.
+     * <p>
+     * Traditionally, the key size of an asymmetric key refers to the size of
+     * its modulus. For example, a 2048-bit RSA key or a 256-bit NIST P-256 EC
+     * key. However, new algorithms based on lattice cryptography,
+     * such as ML-KEM, do not use a modulus, and the sizes of their public and
+     * private keys can differ significantly from their security strength.
+     * Instead of specifying a key length, NIST assigns a security category to
+     * each standardized parameter set. For example, ML-KEM-768 is assigned to
+     * category 3, and ML-DSA-87 to category 5.
      *
      * @param key the key object, cannot be null
-     * @return the key size of the given key object in bits, or -1 if the
-     *       key size is not accessible
+     * @return the key size of the given key object in bits, or -1 if the key
+     *       size is not accessible (Ex: PKCS #11) or undefined (Ex: ML-KEM)
      */
     public static int getKeySize(Key key) {
         int size = -1;
@@ -122,6 +131,33 @@ public final class KeyUtil {
             // a key we are not able to handle.
 
         return size;
+    }
+
+    /**
+     * Returns the NIST security categories defined for PQC algorithms. It is
+     * defined in Section 4.A.5 of "Submission Requirements and Evaluation Criteria
+     * for the Post-Quantum Cryptography Standardization Process" which is available
+     * at https://csrc.nist.gov/CSRC/media/Projects/Post-Quantum-Cryptography/documents/call-for-proposals-final-dec-2016.pdf.
+     *
+     * Sources:
+     * ML-KEM: https://doi.org/10.6028/NIST.FIPS.203 Section 8
+     * ML-DSA: https://doi.org/10.6028/NIST.FIPS.204 Section 4
+     *
+     * @param k the key
+     * @return the security category, -1 if unknown or undefined
+     */
+    public static final int getNistCategory(Key k) {
+        String pname = (k instanceof AsymmetricKey ak
+                    && ak.getParams() instanceof NamedParameterSpec nps)
+                ? nps.getName()
+                : k.getAlgorithm();
+        return switch (pname) {
+            case "ML-KEM-512" -> 1;
+            case "ML-DSA-44" -> 2;
+            case "ML-KEM-768", "ML-DSA-65" -> 3;
+            case "ML-KEM-1024", "ML-DSA-87" -> 5;
+            default -> -1;
+        };
     }
 
     /**
