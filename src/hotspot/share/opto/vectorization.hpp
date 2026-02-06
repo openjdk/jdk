@@ -505,6 +505,7 @@ private:
 class VLoopMemorySlices : public StackObj {
 private:
   static constexpr char const* FAILURE_DIFFERENT_MEMORY_INPUT = "Load only slice has multiple memory inputs";
+  static constexpr char const* FAILURE_NO_MEM_PHI_FOR_STORE  = "Store slice has no memory phi";
 
   const VLoop& _vloop;
   const VLoopBody& _body;
