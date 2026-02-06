@@ -5015,15 +5015,7 @@ static void try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
       break;
     }
 
-    Node* use = nullptr;
-    for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
-      Node* n = current->fast_out(i);
-      if (n->Opcode() == opcode) {
-        use = n;
-        break;
-      }
-    }
-
+    Node* use = current->unique_out();
     if (use != nullptr) {
       if (!phase->ctrl_is_member(lpt, use)) {
         // Only interested in commutative add nodes that are in use in the loop
