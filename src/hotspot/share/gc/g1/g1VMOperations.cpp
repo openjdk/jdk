@@ -178,14 +178,12 @@ void VM_G1PauseCleanup::work() {
 }
 
 void VM_G1ShrinkHeap::doit() {
-  // Re-evaluate which regions are still eligible for uncommit at safepoint time.
-  // Heap state may have changed since the request was made.
+  // Re-evaluate candidates at safepoint since heap state may have changed
   log_debug(gc, ergo, heap)("VM_G1ShrinkHeap: re-evaluating heap state at safepoint");
 
-  // Calculate maximum regions we can shrink based on original request.
+  // Max regions based on original request
   uint max_regions_to_shrink = (uint)(_bytes / G1HeapRegion::GrainBytes);
 
-  // Re-evaluate candidates at safepoint - heap state may have changed.
   GrowableArray<G1HeapRegion*> candidates(max_regions_to_shrink);
   _g1h->heap_sizing_policy()->find_uncommit_candidates_by_time(&candidates, max_regions_to_shrink);
 
@@ -194,7 +192,7 @@ void VM_G1ShrinkHeap::doit() {
     return;
   }
 
-  // Validate each candidate is still free and empty at safepoint.
+  // Validate candidates are still free at safepoint
   uint valid_count = 0;
   for (int i = 0; i < candidates.length(); i++) {
     G1HeapRegion* hr = candidates.at(i);
@@ -215,7 +213,4 @@ void VM_G1ShrinkHeap::doit() {
                            valid_count, shrink_bytes / M);
 
   _g1h->shrink_with_time_based_selection(shrink_bytes);
-
-  // Note: No timestamp reset needed - remaining free regions should continue aging naturally
-  // from when they originally became free for accurate time-based selection.
 }

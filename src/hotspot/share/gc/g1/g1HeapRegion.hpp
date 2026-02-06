@@ -560,22 +560,12 @@ public:
   void set_node_index(uint node_index) { _node_index = node_index; }
 
   // Time-based heap sizing methods
-  void record_activity() {
-    _last_access_timestamp = Ticks::now();
-  }
-
   Ticks last_access_time() const {
     return _last_access_timestamp;
   }
 
-  // Returns true if the region has been inactive for longer than the uncommit delay
-  bool should_uncommit(Tickspan delay) const {
-    if (!is_empty()) {
-      return false;
-    }
-    Ticks current_time = Ticks::now();
-    Tickspan elapsed = current_time - _last_access_timestamp;
-    return elapsed > delay;
+  void update_last_access_timestamp() {
+    _last_access_timestamp = Ticks::now();
   }
 
   // Verify that the entries on the code root list for this

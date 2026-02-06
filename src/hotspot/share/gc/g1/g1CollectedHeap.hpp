@@ -619,9 +619,8 @@ public:
   bool expand_single_region(uint node_index);
 
   // Request an immediate heap contraction of (at most) the given number of bytes.
-  // Returns true if any pages were actually uncommitted.
   // Uses time-based region selection to shrink oldest eligible regions.
-  bool request_heap_shrink(size_t shrink_bytes);
+  void request_heap_shrink(size_t shrink_bytes);
 
   // Returns the PLAB statistics for a given destination.
   inline G1EvacStats* alloc_buffer_stats(G1HeapRegionAttr dest);
@@ -1021,9 +1020,6 @@ public:
 
   // The number of inactive regions.
   uint num_inactive_regions() const { return _hrm.num_inactive_regions(); }
-
-  // Deactivate a specific region by index.
-  void deactivate_region_at(uint region_index) { _hrm.shrink_at(region_index, 1); }
 
   // The current number of regions in the heap.
   uint num_committed_regions() const { return _hrm.num_committed_regions(); }

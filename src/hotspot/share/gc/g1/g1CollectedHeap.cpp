@@ -856,8 +856,10 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
 
-  // Note: Region timestamps are updated automatically when regions transition to free state
-  // via set_free() calls, so no blanket reset is needed here
+  // Reset timestamps for time-based heap sizing
+  if (G1UseTimeBasedHeapSizing) {
+    _hrm.reset_free_region_timestamps();
+  }
 
   // Post collection state updates.
   MetaspaceGC::compute_new_size();
@@ -1248,8 +1250,6 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
 
   // Always perform normal heap shrinking when requested
   // This preserves the original GC-triggered shrinking behavior
-  log_debug(gc, ergo, heap)("Heap shrink requested: removing %u regions (%zuB)",
-                            num_regions_to_remove, shrink_bytes);
   num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
 
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
@@ -1308,16 +1308,15 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
   _verifier->verify_region_sets_optional();
 }
 
-bool G1CollectedHeap::request_heap_shrink(size_t shrink_bytes) {
+void G1CollectedHeap::request_heap_shrink(size_t shrink_bytes) {
   if (shrink_bytes == 0) {
-    return false;
+    return;
   }
 
   // Always schedule a VM operation for proper synchronization with GC.
   // The VM operation will re-evaluate which regions to uncommit at the time of execution.
   VM_G1ShrinkHeap op(this, shrink_bytes);
   VMThread::execute(&op);
-  return true;                       // Pages were requested to be released.
 }
 
 class OldRegionSetChecker : public G1HeapRegionSetChecker {
@@ -1389,6 +1388,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _old_set("Old Region Set", new OldRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(nullptr),
+  _heap_evaluation_task(nullptr),
   _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
@@ -1428,8 +1428,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _is_alive_closure_cm(),
   _is_subject_to_discovery_cm(this),
   _region_attr() {
-
-  _heap_evaluation_task = nullptr;
 
   _verifier = new G1HeapVerifier(this);
 
@@ -1691,17 +1689,14 @@ jint G1CollectedHeap::initialize() {
   _free_arena_memory_task = new G1MonotonicArenaFreeMemoryTask("Card Set Free Memory Task");
   _service_thread->register_task(_free_arena_memory_task);
 
-  if (G1UseTimeBasedHeapSizing) {
-    _heap_evaluation_task = new G1HeapEvaluationTask(this, _heap_sizing_policy);
-    _service_thread->register_task(_heap_evaluation_task);
-    log_debug(gc, init)("G1 Time-Based Heap Evaluation task registered and scheduled");
-  } else {
-    assert(_heap_evaluation_task == nullptr, "pre-condition");
-  }
-
   if (policy()->use_adaptive_young_list_length()) {
     _revise_young_length_task = new G1ReviseYoungLengthTask("Revise Young Length List Task");
     _service_thread->register_task(_revise_young_length_task);
+  }
+
+  if (G1UseTimeBasedHeapSizing) {
+    _heap_evaluation_task = new G1HeapEvaluationTask(this, _heap_sizing_policy);
+    _service_thread->register_task(_heap_evaluation_task);
   }
 
   // Here we allocate the dummy G1HeapRegion that is required by the
@@ -2806,8 +2801,10 @@ void G1CollectedHeap::prepare_for_mutator_after_young_collection() {
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
 
-  // Note: Region timestamps are updated automatically when regions transition to free state
-  // via set_free() calls, so no blanket reset is needed here
+  // Reset timestamps for time-based heap sizing
+  if (G1UseTimeBasedHeapSizing) {
+    _hrm.reset_free_region_timestamps();
+  }
 
   phase_times()->record_prepare_for_mutator_time_ms((Ticks::now() - start).seconds() * 1000.0);
 }

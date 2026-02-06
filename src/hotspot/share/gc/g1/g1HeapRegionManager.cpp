@@ -69,7 +69,8 @@ G1HeapRegionManager::G1HeapRegionManager() :
   _next_highest_used_hrm_index(0),
   _regions(), _heap_mapper(nullptr),
   _bitmap_mapper(nullptr),
-  _free_list("Free list", new G1MasterFreeRegionListChecker())
+  _free_list("Free list", new G1MasterFreeRegionListChecker()),
+  _last_gc_timestamp()
 { }
 
 void G1HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
@@ -627,36 +628,57 @@ uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove, bool use_time_ba
   return removed;
 }
 
+void G1HeapRegionManager::reset_free_region_timestamps() {
+  _last_gc_timestamp = Ticks::now();
+  log_trace(gc, heap)("Updated GC timestamp baseline for time-based heap sizing");
+}
+
 uint G1HeapRegionManager::shrink_by_time_based_selection(uint num_regions_to_remove) {
   // Collect all empty regions with their access times for sorting
   GrowableArray<G1HeapRegion*> empty_regions;
 
   // Scan all committed regions to find free ones.
-  for (uint i = 0; i < _next_highest_used_hrm_index; i++) {
-    if (is_available(i)) {
-      G1HeapRegion* hr = at(i);
-      if (hr != nullptr && hr->is_free()) {
-        // Check if this region should be considered for time-based uncommit.
-        Ticks current_time = Ticks::now();
-        Tickspan elapsed = current_time - hr->last_access_time();
+  Ticks current_time = Ticks::now();
+  Ticks last_gc_time = _last_gc_timestamp;
+
+  class CollectIdleRegionsClosure : public G1HeapRegionClosure {
+    GrowableArray<G1HeapRegion*>* _empty_regions;
+    Ticks _current_time;
+    Ticks _last_gc_time;
+  public:
+    CollectIdleRegionsClosure(GrowableArray<G1HeapRegion*>* empty_regions,
+                              Ticks current_time,
+                              Ticks last_gc_time) :
+      _empty_regions(empty_regions),
+      _current_time(current_time),
+      _last_gc_time(last_gc_time) {}
+
+    virtual bool do_heap_region(G1HeapRegion* r) {
+      if (r->is_free()) {
+        // Effective time is later of region timestamp or last GC time
+        Ticks region_time = r->last_access_time();
+        Ticks effective_time = MAX2(region_time, _last_gc_time);
+        Tickspan elapsed = _current_time - effective_time;
         if (elapsed.milliseconds() > G1UncommitDelayMillis) {
-          empty_regions.append(hr);
+          _empty_regions->append(r);
         }
       }
+      return false;
     }
-  }
+  } cl(&empty_regions, current_time, last_gc_time);
+
+  iterate(&cl);
 
   if (empty_regions.length() == 0) {
     log_debug(gc, sizing)("Time-based shrink: no eligible empty regions found");
     return 0;
   }
 
-  // Sort regions by access time (oldest first).
-  // Use qsort for standard library sorting.
+  // Sort by access time (oldest first)
   static auto compare_region_age = [](G1HeapRegion** a, G1HeapRegion** b) -> int {
     Ticks time_a = (*a)->last_access_time();
     Ticks time_b = (*b)->last_access_time();
-    if (time_a < time_b) return -1;  // Older first.
+    if (time_a < time_b) return -1;
     if (time_a > time_b) return 1;
     return 0;
   };

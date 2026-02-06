@@ -120,7 +120,6 @@ void G1HeapRegion::unlink_from_list() {
 
 void G1HeapRegion::hr_clear(bool clear_space) {
   set_top(bottom());
-  record_activity(); // Update timestamp when region becomes available
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
@@ -157,7 +156,7 @@ void G1HeapRegion::clear_both_card_tables() {
 void G1HeapRegion::set_free() {
   if (!is_free()) {
     report_region_type_change(G1HeapRegionTraceType::Free);
-    record_activity(); // Record timestamp when region becomes free
+    update_last_access_timestamp(); // Record timestamp when region becomes free
   }
   _type.set_free();
 }
@@ -262,7 +261,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
   _node_index(G1NUMA::UnknownNodeIndex),
-  _last_access_timestamp(Ticks::now()), // Initialize timestamp with current time
+  _last_access_timestamp(),  // Default-initialized (0); set properly when region transitions to free after first use
   _pinned_object_count(0)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
