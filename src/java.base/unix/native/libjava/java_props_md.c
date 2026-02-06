@@ -500,8 +500,27 @@ GetJavaProperties(JNIEnv *env)
 
     /* user properties */
     {
-        struct passwd *pwent = getpwuid(getuid());
+        struct passwd *pwent = getenv("TEST") ? getpwuid(getuid()) : NULL;
+
+        char* pwent_user_home = pwent ? pwent->pw_dir : NULL;
+        char* env_user_home = getenv("HOME");
+        char* pwent_user_name = pwent ? pwent->pw_name : NULL;
+        char* env_user_name = getenv("USER");
+
+        if ((pwent_user_home == NULL) != (env_user_home == NULL) /* xor */ ||
+            (pwent_user_home != NULL && env_user_home != NULL
+                && strcmp(pwent_user_home, env_user_home) != 0) /* content is not same */) {
+            fprintf(stderr, "[Warning] detected a difference between $HOME and getpwuid entry. Future releases will use $HOME over getpwuid. $HOME: %s, getpwuid->pw_dir: %s\n", env_user_home ? env_user_home : "NULL", pwent_user_home ? pwent_user_home : "NULL");
+        }
+
+        if ((pwent_user_name == NULL) != (env_user_name == NULL) /* xor */ ||
+            (pwent_user_name != NULL && env_user_name != NULL
+                && strcmp(pwent_user_name, env_user_name) != 0) /* content is not same */) {
+            fprintf(stderr, "[Warning] detected a difference between $USER and getpwuid entry. Future releases will use $USER over getpwuid. $USER: %s, getpwuid->pw_name: %s\n", env_user_name ? env_user_name : "NULL", pwent_user_name ? pwent_user_name : "NULL");
+        }
+
         sprops.user_name = pwent ? strdup(pwent->pw_name) : "?";
+
 #ifdef MACOSX
         setUserHome(&sprops);
 #else
@@ -511,9 +530,8 @@ GetJavaProperties(JNIEnv *env)
             sprops.user_home[1] == '\0') {
             // If the OS supplied home directory is not defined or less than two characters long
             // $HOME is the backup source for the home directory, if defined
-            char* user_home = getenv("HOME");
-            if ((user_home != NULL) && (user_home[0] != '\0')) {
-                sprops.user_home = user_home;
+            if ((env_user_home != NULL) && (env_user_home[0] != '\0')) {
+                sprops.user_home = env_user_home;
             } else {
                 sprops.user_home = "?";
             }
