@@ -3636,7 +3636,7 @@ encode %{
       int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      call = __ trampoline_call(Address(addr, rspec));
+      call = __ trampoline_call(Address(addr, rspec), _method);
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;

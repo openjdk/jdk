@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +25,11 @@
 
 #include "asm/codeBuffer.inline.hpp"
 #include "asm/macroAssembler.hpp"
+#include "code/relocInfo.hpp"
+#include "runtime/sharedRuntime.hpp"
 
-void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
+void CodeBuffer::share_trampoline_for(address key, address dest, int caller_offset) {
+  assert(_finalize_stubs || _shared_trampoline_requests == nullptr, "stubs have been finalized already");
   if (_shared_trampoline_requests == nullptr) {
     constexpr unsigned init_size = 8;
     constexpr unsigned max_size  = 256;
@@ -33,11 +37,14 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   }
 
   bool created;
-  Offsets* offsets = _shared_trampoline_requests->put_if_absent(dest, &created);
+  SharedTrampolineRequestsValue* value = _shared_trampoline_requests->put_if_absent(key, &created);
   if (created) {
     _shared_trampoline_requests->maybe_grow();
+    value->dest = dest;
+  } else {
+    assert(value->dest == dest, "Another destination for the same key already exists");
   }
-  offsets->add(caller_offset);
+  value->offsets.add(caller_offset);
   _finalize_stubs = true;
 }
 
@@ -50,9 +57,11 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
   MacroAssembler masm(cb);
 
-  auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
+  auto emit = [&](address key, const CodeBuffer::SharedTrampolineRequestsValue &value) {
     assert(cb->stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(), "pre-allocated trampolines");
-    LinkedListIterator<int> it(offsets.head());
+    assert(!value.offsets.is_empty(), "missing call sites offsets");
+    address dest = value.dest;
+    LinkedListIterator<int> it(value.offsets.head());
     int offset = *it.next();
     address stub = __ emit_trampoline_stub(offset, dest);
     assert(stub, "pre-allocated trampolines");

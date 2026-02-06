@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1315,10 +1316,16 @@ public:
   // - relocInfo::opt_virtual_call_type
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
+  // Trampolines may be emitted immediately or deferred until CodeBuffer
+  // finalization, enabling reuse across call sites to reduce code size.
+  // Runtime call trampolines are shared based on the value of entry.target()
+  // while callee remains unused and must be omitted.
+  // Static call trampolines are shared based on the callee value which must be
+  // provided.
   //
   // Return: the call PC or null if CodeCache is full.
   // Clobbers: rscratch1
-  address trampoline_call(Address entry);
+  address trampoline_call(Address entry, ciMethod* callee = nullptr);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
