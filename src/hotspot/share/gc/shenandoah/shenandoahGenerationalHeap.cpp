@@ -636,14 +636,33 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     old_available - (old_generation()->free_unaffiliated_regions() + old_trashed_regions) * region_size_bytes;
 
   if (old_fragmented_available > proposed_max_old) {
-    // After we've promoted regions in place, there may be an abundance of old-fragmented available memory,
-    // even more than the desired percentage for old reserve.  We cannot transfer these fragmented regions back
-    // to young.  Instead we make the best of the situation by using this fragmented memory for both promotions
-    // and evacuations.
+    // In this case, the old_fragmented_available is greater than the desired amount of evacuation to old.
+    // We'll use all of this memory to hold results of old evacuation, and we'll give back to the young generation
+    // any old regions that are not fragmented.
+    //
+    // This scenario may happen after we have promoted many regions in place, and each of these regions had non-zero
+    // unused memory, so there is now an abundance of old-fragmented available memory, even more than the desired
+    // percentage for old reserve.  We cannot transfer these fragmented regions back to young.  Instead we make the
+    // best of the situation by using this fragmented memory for both promotions and evacuations.
+
     proposed_max_old = old_fragmented_available;
   }
   size_t reserve_for_promo = old_fragmented_available;
   const size_t max_old_reserve = proposed_max_old;
+
+  // KELVIN WONDERS:
+  //  WHAT IF old_fragmented_available <= proposed_max_old?
+  // In that case:
+  //   We do not shrink proposed_max_old from the original computation
+  //   We leave max_old_reserve as a smaller fraction of proposed_max_old
+  //   Below, if doing_mixed, we should choose either to:
+  //     a) Expand reserve_for_promo, or
+  //     b) Shrink max_old_reserve?
+
+  // DO WE NEED TO CHECK bound_on_old_reserve?  I think not at this time.
+  //   proposed_max_old was initialized to be no larger than bound_on_old_reserve
+  //   we only increase proposed_max_old to equal old_fragmented_available if that is greater
+
   const size_t mixed_candidate_live_memory = old_generation()->unprocessed_collection_candidates_live_memory();
   const bool doing_mixed = (mixed_candidate_live_memory > 0);
   if (doing_mixed) {
@@ -657,17 +676,38 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     // we already have too much fragmented available memory in old.
     reserve_for_mixed = max_evac_need;
     if (reserve_for_mixed + reserve_for_promo > max_old_reserve) {
-      // In this case, we'll allow old-evac to target some of the fragmented old memory.
+      // We're trying to reserve more memory than is available.  So we need to shrink our reserves.
       size_t excess_reserves = (reserve_for_mixed + reserve_for_promo) - max_old_reserve;
+
+      // KELVIN SUSPECTS PROBLEM IS HERE.
+
+      // We need to shrink reserves by excess_reserves.  We prefer to shrink by reducing promotion, giving priority
+      // to mixed evacuation.  If the promotion reserve is larger than the amount we need to shrink by, do all the
+      // shrinkage there.
       if (reserve_for_promo > excess_reserves) {
         reserve_for_promo -= excess_reserves;
       } else {
+        // Otherwise, we'll shrink promotion reserve to zero and we'll shrink the mixed-evac reserve by the remaining excess.
         excess_reserves -= reserve_for_promo;
         reserve_for_promo = 0;
         reserve_for_mixed -= excess_reserves;
       }
+
+      // KELVIN WANTS TO ASSERT THAT:
+      //  (reserve_for_mixed + reserve_for_promo <= max_old_reserve)
+      // Note that max_old_reserve
     }
   }
+  // KELVIN SAYS, WHAT IF WE'RE NOT DOING MIXED?  MAYBE THIS IS WHERE WE STILL NEED TO SHRINK reserve_for_promo?
+  // SHOULD WE ASSERT HERE THAT
+  //  (reserve_for_mixed + reserve_for_promo <= max_old_reserve)
+  // BUT THIS SHOULD BE TRIVIALLY TRUE, BECAUSE WE HAVE
+  //   reserve_for_promo = old_fragmented_available
+  //   max_old_reserve = proposed_max_old
+  //   proposed_max_old >= old_fragmented_available
+  //   reserve_for_mixed = 0
+
+
 
   // Decide how much additional space we should reserve for promotions from young.  We give priority to mixed evacations
   // over promotions.
@@ -681,6 +721,8 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     // evacuation workloa.
 
     // We're promoting and have an estimate of memory to be promoted from aged regions
+
+    // KELVIN NOTES THAT THS ASSERT WAS SUCCESSFUL
     assert(max_old_reserve >= (reserve_for_mixed + reserve_for_promo), "Sanity");
     const size_t available_for_additional_promotions = max_old_reserve - (reserve_for_mixed + reserve_for_promo);
     size_t promo_need = (size_t)(promo_load * ShenandoahPromoEvacWaste);
@@ -689,6 +731,9 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     }
     // We've already reserved all the memory required for the promo_load, and possibly more.  The excess
     // can be consumed by objects promoted from regions that have not yet reached tenure age.
+
+    // KELVIN NOTES THAT WE ARE INCREASING reserve_for_promo here
+    // BUT WE ARE NOT INCREASING old_available
   }
 
   // This is the total old we want to reserve (initialized to the ideal reserve)
@@ -702,6 +747,15 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // align the mutator_xfer_limit on region size
   mutator_xfer_limit = mutator_region_xfer_limit * region_size_bytes;
 
+  // KELVIN WANTS TO ASSERT HERE THE SAME THINK THAT IS ASSERTED BELOW (AND FAILS):
+  // assert(young_reserve + reserve_for_mixed + reserve_for_promo <= old_available + young_available,
+  //         "Cannot reserve more memory than is available: %zu + %zu + %zu <= %zu + %zu",
+  //         young_reserve, reserve_for_mixed, reserve_for_promo, old_available, young_available);
+  // if it succeeds here and fails below, that means we screwed up the adjustments.
+
+  // KELVIN SUSPICION:
+  //  When I am setting region_balance() below, I need to make adjustments to old_available and young_available.
+
   if (old_available >= old_reserve) {
     // We are running a surplus, so the old region surplus can go to young
     const size_t old_surplus = old_available - old_reserve;
@@ -709,15 +763,32 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_trashed_regions;
     old_region_surplus = MIN2(old_region_surplus, unaffiliated_old_regions);
     old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
+
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("kelvin says compute_old_generation() should decrease old_available by %zu regions", old_region_surplus);
+#endif
+    // KELVIN SAYS I SHOULD INCREASE young_available and decrease old_available by old_region_surplus * region_size_bytes
+
   } else if (old_available + mutator_xfer_limit >= old_reserve) {
+    // We know that old_available < old_reserve because above test failed.  So we need to expand old_available.
     // Mutator's xfer limit is sufficient to satisfy our need: transfer all memory from there
     size_t old_deficit = old_reserve - old_available;
     old_region_deficit = (old_deficit + region_size_bytes - 1) / region_size_bytes;
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
+
+    // KELVIN SAYS I SHOULD INCREASE old_available AND DECREASE young_available by old_region_deficit * region_size_bytes
+#ifdef KELVIN_DEBUG
+    log_info(gc)("kelvin says compute_old_generation() should increase old_available by %zu regions", old_region_deficit);
+#endif
   } else {
-   // We'll try to xfer from both mutator excess and from young collector reserve
+    // We know that old_available < old_reserve because above test failed so we need to expand old_available.
+    // We also know that mutator's xfer limit is not sufficient to satisfy our need so we'll try to xfer from both
+    // mutator excess and from young collector reserve
     size_t available_reserves = old_available + young_reserve + mutator_xfer_limit;
-    size_t old_entitlement = (available_reserves  * ShenandoahOldEvacPercent) / 100;
+
+    // Of the available_reserves, ShenandoahOldEvacPercent represents the fraction that can be targeted by old
+    size_t old_entitlement = (available_reserves * ShenandoahOldEvacPercent) / 100;
 
     // Round old_entitlement down to nearest multiple of regions to be transferred to old
     size_t entitled_xfer = old_entitlement - old_available;
@@ -729,7 +800,9 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     }
     old_entitlement = old_available + entitled_xfer;
     if (old_entitlement < old_reserve) {
-      // There's not enough memory to satisfy our desire.  Scale back our old-gen intentions.
+      // There's not enough memory to satisfy our desire.  Scale back our old-gen intentions.  We prefer to satisfy
+      // the budget_overrun entirely from the promotion reserve, if that is large enough.  Otherwise, we'll satisfy
+      // the overrun from a combination of promotion and mixed-evacuation reserves.
       size_t budget_overrun = old_reserve - old_entitlement;;
       if (reserve_for_promo > budget_overrun) {
         reserve_for_promo -= budget_overrun;
@@ -753,9 +826,16 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     const size_t reserve_xfer_regions = old_region_deficit - mutator_region_xfer_limit;
     young_reserve -= reserve_xfer_regions * region_size_bytes;
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
+
+    // KELVIN SAYS I SHOULD INCREASE old_available AND DECREASE young_vailable by old_region_defiit * region_size_bytes
+#ifdef KELVIN_DEBUG
+    log_info(gc)("kelvin says compute_old_generation() should increase old_available by %zu regions", old_region_deficit);
+#endif
   }
 
   assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
+
+  // KELVIN SAYS THIS IS THE ASSERT THAT IS FAILING.
   assert(young_reserve + reserve_for_mixed + reserve_for_promo <= old_available + young_available,
          "Cannot reserve more memory than is available: %zu + %zu + %zu <= %zu + %zu",
          young_reserve, reserve_for_mixed, reserve_for_promo, old_available, young_available);
