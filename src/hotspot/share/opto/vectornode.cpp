@@ -27,6 +27,7 @@
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/divnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
@@ -1214,14 +1215,26 @@ Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* control, Node*
       return new AddINode(in1, in2);
     case Op_AddL:
       return new AddLNode(in1, in2);
+    case Op_AddF:
+      return new AddFNode(in1, in2);
+    case Op_AddD:
+      return new AddDNode(in1, in2);
     case Op_MulI:
       return new MulINode(in1, in2);
     case Op_MulL:
       return new MulLNode(in1, in2);
+    case Op_MulF:
+      return new MulFNode(in1, in2);
+    case Op_MulD:
+      return new MulDNode(in1, in2);
     case Op_AndI:
       return new AndINode(in1, in2);
     case Op_AndL:
       return new AndLNode(in1, in2);
+    case Op_DivF:
+      return new DivFNode(control, in1, in2);
+    case Op_DivD:
+      return new DivDNode(control, in1, in2);
     case Op_OrI:
       return new OrINode(in1, in2);
     case Op_OrL:
@@ -1234,6 +1247,10 @@ Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* control, Node*
       return new SubINode(in1, in2);
     case Op_SubL:
       return new SubLNode(in1, in2);
+    case Op_SubF:
+      return new SubFNode(in1, in2);
+    case Op_SubD:
+      return new SubDNode(in1, in2);
     case Op_MinI:
       return new MinINode(in1, in2);
     case Op_MinL:

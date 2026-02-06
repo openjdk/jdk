@@ -34,7 +34,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Thread)
 @Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class ReassociateVectorBenchmark {
-    @Param({"1024", "2048", "4096"})
+    @Param({"1024", "2048"})
     int size;
 
     int [] intIn1;
@@ -75,41 +75,59 @@ public class ReassociateVectorBenchmark {
         return res.lane(0);
     }
 
-   @Benchmark
-   public double pushBroadcastsAcrossVectorKernel2() {
-       DoubleVector res = DoubleVector.broadcast(dspecies, 0.0f);
-       for (int i = 0; i < size; i++) {
-           DoubleVector vec1 = DoubleVector.broadcast(dspecies, (double)i);
-           res = res.lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.SQRT));
-       }
-       return res.lane(0);
-   }
+    @Benchmark
+    public double pushBroadcastsAcrossVectorKernel2() {
+        DoubleVector res = DoubleVector.broadcast(dspecies, 0.0f);
+        for (int i = 0; i < size; i++) {
+            DoubleVector vec1 = DoubleVector.broadcast(dspecies, (double)i);
+            res = res.lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.SQRT));
+        }
+        return res.lane(0);
+    }
 
-   @Benchmark
-   public void reassociateVectorsKernel1() {
-       for (int i = 0; i < ispecies.loopBound(size); i += ispecies.length()) {
-           IntVector.broadcast(ispecies, i)
-                    .lanewise(VectorOperators.MUL,
-                              IntVector.broadcast(ispecies, i + 1)
-                                       .lanewise(VectorOperators.MUL,
-                                                 IntVector.broadcast(ispecies, i + 2)
-                                                          .lanewise(VectorOperators.MUL,
-                                                                    IntVector.fromArray(ispecies, intIn1, i))))
-           .intoArray(intOut, i);
-       }
-   }
+    @Benchmark
+    public void reassociateVectorsKernel1() {
+        for (int i = 0; i < ispecies.loopBound(size); i += ispecies.length()) {
+            IntVector.broadcast(ispecies, i)
+                     .lanewise(VectorOperators.MUL,
+                               IntVector.broadcast(ispecies, i + 1)
+                                        .lanewise(VectorOperators.MUL,
+                                                  IntVector.broadcast(ispecies, i + 2)
+                                                           .lanewise(VectorOperators.MUL,
+                                                                     IntVector.fromArray(ispecies, intIn1, i))))
+            .intoArray(intOut, i);
+        }
+    }
 
-   @Benchmark
-   public void reassociateVectorsKernel2() {
-       for (int i = 0; i < lspecies.loopBound(size); i += lspecies.length()) {
-           LongVector.broadcast(lspecies, i)
-                     .lanewise(VectorOperators.ADD,
-                               LongVector.broadcast(lspecies, i + 1)
-                                         .lanewise(VectorOperators.ADD,
-                                                   LongVector.broadcast(lspecies, i + 2)
-                                                             .lanewise(VectorOperators.ADD,
-                                                                       LongVector.fromArray(lspecies, longIn1, i))))
-           .intoArray(longOut, i);
-       }
-   }
+    @Benchmark
+    public void reassociateVectorsKernel2() {
+        for (int i = 0; i < lspecies.loopBound(size); i += lspecies.length()) {
+            LongVector.broadcast(lspecies, i)
+                      .lanewise(VectorOperators.ADD,
+                                LongVector.broadcast(lspecies, i + 1)
+                                          .lanewise(VectorOperators.ADD,
+                                                    LongVector.broadcast(lspecies, i + 2)
+                                                              .lanewise(VectorOperators.ADD,
+                                                                        LongVector.fromArray(lspecies, longIn1, i))))
+            .intoArray(longOut, i);
+        }
+    }
+
+    @Benchmark
+    public void reassociateVectorsKernel3() {
+        for (int i = 0; i < ispecies.loopBound(size); i += ispecies.length()) {
+            IntVector left =
+                IntVector.broadcast(ispecies, i)
+                         .lanewise(VectorOperators.MUL,
+                                   IntVector.broadcast(ispecies, i + 1));
+
+            IntVector right =
+                IntVector.broadcast(ispecies, i + 2)
+                         .lanewise(VectorOperators.MUL,
+                                   IntVector.fromArray(ispecies, intIn1, i));
+
+            left.lanewise(VectorOperators.MUL, right)
+                .intoArray(intOut, i);
+        }
+    }
 }
