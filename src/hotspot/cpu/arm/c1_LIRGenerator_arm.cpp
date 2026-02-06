@@ -1318,7 +1318,7 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
   __ store(value, address, info, lir_patch_none);
 }
 
-void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
+bool LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   if (result->is_double_cpu()) {
     assert(address->index()->is_illegal(), "should have a constant displacement");
@@ -1332,7 +1332,8 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
       load_addr = address;
     }
     __ volatile_load_mem_reg(load_addr, result, info);
-    return;
+  } else {
+    __ load(address, result, info, lir_patch_none);
   }
-  __ load(address, result, info, lir_patch_none);
+  return true;
 }

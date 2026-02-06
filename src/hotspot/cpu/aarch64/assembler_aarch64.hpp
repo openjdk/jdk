@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1272,6 +1273,13 @@ public:
                        enum operand_size sz, bool ordered) {
     load_store_exclusive(status, new_val, dummy_reg, addr,
                          sz, 0b000, ordered);
+  }
+
+  void load_store_volatile(Register data, BasicType type, Register addr,
+                           bool is_load) {
+     load_store_exclusive(dummy_reg, data, dummy_reg, addr,
+                          (Assembler::operand_size)exact_log2(type2aelembytes(type)),
+                          is_load ? 0b110: 0b100, 1);
   }
 
 #define INSN4(NAME, sz, op, o0) /* Four registers */                    \
