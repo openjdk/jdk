@@ -438,7 +438,7 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
     log_debug(gc)("GC Overhead Limit: GC Time %f Free Space Young %f Old %f Counter %zu",
                   (100 - _size_policy->mutator_time_percent()),
                   percent_of(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
-                  percent_of(_old_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
+                  percent_of(_old_gen->free_in_bytes(), _old_gen->capacity_in_bytes()),
                   _gc_overhead_counter);
 
     if (little_mutator_time && little_free_space) {
