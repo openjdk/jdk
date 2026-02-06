@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -817,8 +817,8 @@ public abstract class VectorOperators {
 
     private static <E,F> ConversionImpl<E,F>
     convert(String name, char kind, Class<E> dom, Class<F> ran, int opCode, int flags) {
-        int domran = ((LaneType.of(dom).basicType << VO_DOM_SHIFT) +
-                      (LaneType.of(ran).basicType << VO_RAN_SHIFT));
+        int domran = ((LaneType.of(dom).ordinal() << VO_DOM_SHIFT) +
+                      (LaneType.of(ran).ordinal() << VO_RAN_SHIFT));
         if (opCode >= 0) {
             if ((opCode & VO_DOM_RAN_MASK) == 0) {
                 opCode += domran;
@@ -945,10 +945,10 @@ public abstract class VectorOperators {
 
         @ForceInline
         /*package-private*/
-        boolean compatibleWith(LaneType laneType) {
-            if (laneType.elementKind == 'F') {
+        boolean compatibleWith(LaneType type) {
+            if (type.elementKind == 'F') {
                 return !opKind(VO_NOFP);
-            } else if (laneType.elementKind == 'I') {
+            } else if (type.elementKind == 'I') {
                 return !opKind(VO_ONLYFP);
             } else {
                 throw new AssertionError();
@@ -1077,8 +1077,8 @@ public abstract class VectorOperators {
             String name;
             Class<?> domType = dom.elementType;
             Class<?> ranType = ran.elementType;
-            int domCode = (dom.basicType << VO_DOM_SHIFT);
-            int ranCode = (ran.basicType << VO_RAN_SHIFT);
+            int domCode = (dom.ordinal() << VO_DOM_SHIFT);
+            int ranCode = (ran.ordinal() << VO_RAN_SHIFT);
             int opCode = domCode + ranCode;
             switch (kind) {
             case 'I':
@@ -1156,16 +1156,16 @@ public abstract class VectorOperators {
                 switch (conv.kind) {
                 case 'W':
                     int domCode = (opc >> VO_DOM_SHIFT) & 0xF;
-                    dom = LaneType.ofBasicType(domCode);
+                    dom = LaneType.ofLaneTypeOrdinal(domCode);
                     break;
                 case 'N':
                     int ranCode = (opc >> VO_RAN_SHIFT) & 0xF;
-                    ran = LaneType.ofBasicType(ranCode);
+                    ran = LaneType.ofLaneTypeOrdinal(ranCode);
                     break;
                 }
                 assert((opc & VO_DOM_RAN_MASK) ==
-                       ((dom.basicType << VO_DOM_SHIFT) +
-                        (ran.basicType << VO_RAN_SHIFT)));
+                       ((dom.ordinal() << VO_DOM_SHIFT) +
+                        (ran.ordinal() << VO_RAN_SHIFT)));
                 ConversionImpl<?,?>[] cache = cacheOf(conv.kind, dom);
                 int ranKey = ran.switchKey;
                 if (cache[ranKey] != conv) {
@@ -1233,12 +1233,12 @@ public abstract class VectorOperators {
                 break;
             case 'W':
                 doc = "In-place widen {@code _domVal} inside _ran to {@code (_ran)_domVal}";
-                LaneType logdom = LaneType.ofBasicType(domran >> VO_DOM_SHIFT & 0xF);
+                LaneType logdom = LaneType.ofLaneTypeOrdinal(domran >> VO_DOM_SHIFT & 0xF);
                 doc = doc.replace("_dom", logdom.elementType.getSimpleName());
                 break;
             case 'N':
                 doc = "In-place narrow {@code _domVal} to {@code (_ran)_domVal} inside _dom";
-                LaneType logran = LaneType.ofBasicType(domran >> VO_RAN_SHIFT & 0xF);
+                LaneType logran = LaneType.ofLaneTypeOrdinal(domran >> VO_RAN_SHIFT & 0xF);
                 doc = doc.replace("_ran", logran.elementType.getSimpleName());
                 break;
             default:
