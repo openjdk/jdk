@@ -5001,6 +5001,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
 
   Node* reassoc = MinMaxNode::build_min_max_long(&phase->igvn(), left, right, add_opcode == Op_MaxL);
   phase->register_new_node(reassoc, loop_head);
+  phase->C->copy_node_notes_to(reassoc, node);
   return reassoc;
 }
 
@@ -5045,6 +5046,7 @@ static bool try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
   Node* new_chain_head = MinMaxNode::build_min_max_long(&phase->igvn(), phi, reassociated, opcode == Op_MaxL);
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
+  phase->C->copy_node_notes_to(new_chain_head, chain_head);
   return true;
 }
 
