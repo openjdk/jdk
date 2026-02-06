@@ -74,6 +74,8 @@
 
 #include <awt_DnDDT.h>
 
+static LPCTSTR DrawingStateProp = TEXT("SunAwtDrawingStateProp");
+
 LPCTSTR szAwtComponentClassName = TEXT("SunAwtComponent");
 // register a message that no other window in the process (even in a plugin
 // scenario) will be using
@@ -3557,7 +3559,7 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
                     // Shift state bits returned by ::VkKeyScan in HIBYTE
                     static const UINT _VKS_SHIFT_MASK = 0x01;
                     static const UINT _VKS_CTRL_MASK = 0x02;
-                    static const UINT _VKS_ALT_MASK = 0x04;
+                 // static const UINT _VKS_ALT_MASK = 0x04;
 
                     // Check to see whether there is a meaningful translation
                     TCHAR ch;

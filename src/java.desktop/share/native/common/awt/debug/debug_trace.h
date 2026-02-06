@@ -62,6 +62,9 @@ JNIEXPORT void JNICALL DTrace_VPrint(const char * file, int line, int argc, cons
 JNIEXPORT void JNICALL DTrace_VPrintln(const char * file, int line, int argc, const char * fmt, va_list arglist);
 
 /* each file includes this flag indicating module trace status */
+#ifdef __cplusplus
+[[maybe_unused]]
+#endif
 static dtrace_id        _Dt_FileTraceId = UNDEFINED_TRACE_ID;
 
 /* not meant to be called from client code--
