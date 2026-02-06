@@ -298,11 +298,11 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- compressed_class_ptrs:                    %d", _compressed_class_ptrs);
   st->print_cr("- narrow_klass_pointer_bits:                %d", _narrow_klass_pointer_bits);
   st->print_cr("- narrow_klass_shift:                       %d", _narrow_klass_shift);
-  st->print_cr("- cloned_vtables:                           %u", to_u4(_cloned_vtables));
-  st->print_cr("- early_serialized_data:                    %u", to_u4(_early_serialized_data));
-  st->print_cr("- serialized_data:                          %u", to_u4(_serialized_data));
+  st->print_cr("- cloned_vtables:                           %u", cast_to_u4(_cloned_vtables));
+  st->print_cr("- early_serialized_data:                    %u", cast_to_u4(_early_serialized_data));
+  st->print_cr("- serialized_data:                          %u", cast_to_u4(_serialized_data));
   st->print_cr("- jvm_ident:                                %s", _jvm_ident);
-  st->print_cr("- class_location_config:                    %d", to_u4(_class_location_config));
+  st->print_cr("- class_location_config:                    %d", cast_to_u4(_class_location_config));
   st->print_cr("- verify_local:                             %d", _verify_local);
   st->print_cr("- verify_remote:                            %d", _verify_remote);
   st->print_cr("- has_platform_or_app_classes:              %d", _has_platform_or_app_classes);

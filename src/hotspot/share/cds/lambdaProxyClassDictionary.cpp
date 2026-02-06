@@ -50,11 +50,11 @@ unsigned int LambdaProxyClassKey::hash() const {
 }
 
 unsigned int RunTimeLambdaProxyClassKey::hash() const {
-  return primitive_hash<u4>(to_u4(_caller_ik)) +
-         primitive_hash<u4>(to_u4(_invoked_name)) +
-         primitive_hash<u4>(to_u4(_invoked_type)) +
-         primitive_hash<u4>(to_u4(_method_type)) +
-         primitive_hash<u4>(to_u4(_instantiated_method_type));
+  return primitive_hash<u4>(cast_to_u4(_caller_ik)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_name)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_type)) +
+         primitive_hash<u4>(cast_to_u4(_method_type)) +
+         primitive_hash<u4>(cast_to_u4(_instantiated_method_type));
 }
 
 #ifndef PRODUCT
@@ -72,12 +72,12 @@ void LambdaProxyClassKey::print_on(outputStream* st) const {
 void RunTimeLambdaProxyClassKey::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("LambdaProxyClassKey       : " INTPTR_FORMAT " hash: %0x08x", p2i(this), hash());
-  st->print_cr("_caller_ik                : %d", to_u4(_caller_ik));
-  st->print_cr("_instantiated_method_type : %d", to_u4(_instantiated_method_type));
-  st->print_cr("_invoked_name             : %d", to_u4(_invoked_name));
-  st->print_cr("_invoked_type             : %d", to_u4(_invoked_type));
-  st->print_cr("_member_method            : %d", to_u4(_member_method));
-  st->print_cr("_method_type              : %d", to_u4(_method_type));
+  st->print_cr("_caller_ik                : %d", cast_to_u4(_caller_ik));
+  st->print_cr("_instantiated_method_type : %d", cast_to_u4(_instantiated_method_type));
+  st->print_cr("_invoked_name             : %d", cast_to_u4(_invoked_name));
+  st->print_cr("_invoked_type             : %d", cast_to_u4(_invoked_type));
+  st->print_cr("_member_method            : %d", cast_to_u4(_member_method));
+  st->print_cr("_method_type              : %d", cast_to_u4(_method_type));
 }
 
 void RunTimeLambdaProxyClassInfo::print_on(outputStream* st) const {

@@ -87,7 +87,7 @@ InstanceKlass* RunTimeClassInfo::klass() const {
   } else {
     // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
     // by the ArchiveBuilder.
-    uintx byte_offset = AOTCompressedPointers::get_byte_offset<uintx>(_klass);
+    size_t byte_offset = AOTCompressedPointers::get_byte_offset(_klass);
     return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(byte_offset);
   }
 }

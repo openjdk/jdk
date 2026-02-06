@@ -179,7 +179,7 @@ public:
                                       AOTCompressedPointers::encode_address_in_cache(invoked_name),
                                       AOTCompressedPointers::encode_address_in_cache(invoked_type),
                                       AOTCompressedPointers::encode_address_in_cache(method_type),
-                                      AOTCompressedPointers::encode_null_or_address_cache(member_method), // could be null
+                                      AOTCompressedPointers::encode_address_in_cache_or_null(member_method), // could be null
                                       AOTCompressedPointers::encode_address_in_cache(instantiated_method_type));
   }
 

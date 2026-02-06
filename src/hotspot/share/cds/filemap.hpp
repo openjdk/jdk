@@ -160,7 +160,7 @@ private:
   int     _spec_trap_limit_extra_entries;
 
   template <typename T> T decode(narrowPtr narrowp) const {
-    return AOTCompressedPointers::decode_not_null<T>((address)mapped_base_address(), narrowp);
+    return AOTCompressedPointers::decode_not_null<T>(narrowp, reinterpret_cast<address>(mapped_base_address()));
   }
 
 public:

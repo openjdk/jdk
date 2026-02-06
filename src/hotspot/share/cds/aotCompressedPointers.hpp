@@ -42,31 +42,14 @@ public:
   enum class narrowPtr : u4;
   static constexpr size_t MaxMetadataOffsetBytes = 0x7FFFFFFF;
 
-  // Type conversion -----
-
-  // T must be an unsigned type whose value is less than 0xFFFFFFFF.
-  // A simple type cast. No change in numerical value.
-  template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
-  static narrowPtr cast_to_narrowPtr(T narrowp) {
-    return checked_cast<narrowPtr>(narrowp);
+  // In the future, this could return a different numerical value than
+  // narrowp if the encoding contains shifts.
+  inline static size_t get_byte_offset(narrowPtr narrowp) {
+    return checked_cast<size_t>(narrowp);
   }
 
-  // T must be an unsigned type of at least 32 bits.
-  // A simple type cast. No change in numerical value.
-  template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
-  static T cast_from_narrowPtr(narrowPtr narrowp) {
-    return checked_cast<T>(narrowp);
-  }
-
-  // Convert narrowp to a byte offset. In the future, this could return
-  // a different integer than narrowp if the encoding contains shifts.
-  template <typename T, ENABLE_IF(!std::is_signed<T>::value)>
-  static T get_byte_offset(narrowPtr narrowp) {
-    return checked_cast<T>(narrowp);
-  }
-
-  static narrowPtr null_narrowPtr() {
-    return cast_to_narrowPtr<u4>(0);
+  inline static narrowPtr null() {
+    return static_cast<narrowPtr>(0);
   }
 
   // Encoding ------
@@ -84,7 +67,7 @@ public:
   template <typename T>
   static narrowPtr encode(T ptr) { // may be null
     if (ptr == nullptr) {
-      return null_narrowPtr();
+      return null();
     } else {
       return encode_not_null(ptr);
     }
@@ -100,9 +83,9 @@ public:
   }
 
   template <typename T>
-  static narrowPtr encode_null_or_address_cache(T ptr) { // may be null
+  static narrowPtr encode_address_in_cache_or_null(T ptr) {
     if (ptr == nullptr) {
-      return null_narrowPtr();
+      return null();
     } else {
       return encode_address_in_cache<T>(ptr);
     }
@@ -111,36 +94,23 @@ public:
   // Decoding -----
 
   template <typename T>
-  static T decode_not_null(address base_address, narrowPtr narrowp) {
-    assert(narrowp != null_narrowPtr(), "sanity");
-    T p = reinterpret_cast<T>(base_address + cast_from_narrowPtr<size_t>(narrowp));
+  static T decode_not_null(narrowPtr narrowp, address base_address = nullptr) {
+    assert(narrowp != null(), "sanity");
+    if (base_address == nullptr) {
+      base_address = reinterpret_cast<address>(SharedBaseAddress);
+    }
+    T p = reinterpret_cast<T>(base_address + get_byte_offset(narrowp));
     // p may not be in AOT cache as this function may be called before the
     // AOT cache is mapped.
     return p;
   }
 
   template <typename T>
-  static T decode_not_null(narrowPtr narrowp) {
-    T fullp = decode_not_null<T>(reinterpret_cast<address>(SharedBaseAddress), narrowp);
-    assert(Metaspace::in_aot_cache(fullp), "must be");
-    return fullp;
-  }
-
-  template <typename T>
-  static T decode(narrowPtr narrowp) { // may be null
-    if (narrowp == null_narrowPtr()) {
+  static T decode(narrowPtr narrowp, address base_address = nullptr) { // may be null
+    if (narrowp == null()) {
       return nullptr;
     } else {
-      return decode_not_null<T>(narrowp);
-    }
-  }
-
-  template <typename T>
-  static T decode(address base_address, narrowPtr narrowp) { // may be null
-    if (narrowp == null_narrowPtr()) {
-      return nullptr;
-    } else {
-      return decode_not_null<T>(base_address, narrowp);
+      return decode_not_null<T>(narrowp, base_address);
     }
   }
 
@@ -154,18 +124,17 @@ private:
   }
 };
 
-// Global functions to save a few keystrokes
+// Type casts -- declared as global functions to save a few keystrokes
 
-template <typename T> AOTCompressedPointers::narrowPtr cast_to_narrowPtr(T narrowp) {
-  return AOTCompressedPointers::cast_to_narrowPtr<T>(narrowp);
+// A simple type cast. No change in numerical value.
+inline AOTCompressedPointers::narrowPtr cast_from_u4(u4 narrowp) {
+  return checked_cast<AOTCompressedPointers::narrowPtr>(narrowp);
 }
 
-template <typename T> T cast_from_narrowPtr(AOTCompressedPointers::narrowPtr narrowp) {
-  return AOTCompressedPointers::cast_from_narrowPtr<T>(narrowp);
-}
-
-inline u4 to_u4(AOTCompressedPointers::narrowPtr narrowp) {
-  return cast_from_narrowPtr<u4>(narrowp);
+// A simple type cast. No change in numerical value.
+// !!!DO NOT CALL THIS if you want a byte offset!!!
+inline u4 cast_to_u4(AOTCompressedPointers::narrowPtr narrowp) {
+  return checked_cast<u4>(narrowp);
 }
 
 #endif // SHARE_CDS_AOTCOMPRESSEDPOINTERS_HPP
