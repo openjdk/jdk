@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ import java.util.Objects;
  * and footer.
  *
  * <p> Encoding can be performed on cryptographic objects that
- * implement {@link DEREncodable}. The {@link #encode(DEREncodable)}
- * and {@link #encodeToString(DEREncodable)} methods encode a {@code DEREncodable}
+ * implement {@link BinaryEncodable}. The {@link #encode(BinaryEncodable)}
+ * and {@link #encodeToString(BinaryEncodable)} methods encode a {@code BinaryEncodable}
  * into PEM and return the data in a byte array or {@code String}.
  *
  * <p> Private keys can be encrypted and encoded by configuring a
@@ -72,7 +72,7 @@ import java.util.Objects;
  * {@link PEM#type()}. The value returned by {@link PEM#leadingData()} is not
  * included in the output.
  *
- * <p> The following lists the supported {@code DEREncodable} classes and
+ * <p> The following lists the supported {@code BinaryEncodable} classes and
  * the PEM types they encode as:
  * <ul>
  *   <li>{@link X509Certificate} : CERTIFICATE</li>
@@ -139,7 +139,7 @@ public final class PEMEncoder {
                 key = SecretKeyFactory.getInstance(Pem.DEFAULT_ALGO).
                     generateSecret(keySpec);
             } catch (GeneralSecurityException e) {
-                throw new IllegalArgumentException("Operation failed: " +
+                throw new CryptoException("Operation failed: " +
                     "unable to generate key or locate a valid algorithm. " +
                     "Check the jdk.epkcs8.defaultAlgorithm security " +
                     "property for a valid configuration.", e);
@@ -159,16 +159,18 @@ public final class PEMEncoder {
     }
 
     /**
-     * Encodes the specified {@code DEREncodable} and returns a PEM-encoded
+     * Encodes the specified {@code BinaryEncodable} and returns a PEM-encoded
      * string.
      *
-     * @param de the {@code DEREncodable} to be encoded
+     * @param de the {@code BinaryEncodable} to encode
      * @return a {@code String} containing the PEM-encoded data
-     * @throws IllegalArgumentException if the {@code DEREncodable} cannot be encoded
+     * @throws IllegalArgumentException if {@code de} lacks encoding data, is
+     *         an unsupported class, or cannot be used with encryption
      * @throws NullPointerException if {@code de} is {@code null}
+     * @throws CryptoException if an error occurs during encryption
      * @see #withEncryption(char[])
      */
-    public String encodeToString(DEREncodable de) {
+    public String encodeToString(BinaryEncodable de) {
         Objects.requireNonNull(de);
         return switch (de) {
             case PublicKey pu -> buildKey(pu.getEncoded(), null);
@@ -254,16 +256,18 @@ public final class PEMEncoder {
     }
 
     /**
-     * Encodes the specified {@code DEREncodable} and returns a PEM-encoded
+     * Encodes the specified {@code BinaryEncodable} and returns a PEM-encoded
      * byte array.
      *
-     * @param de the {@code DEREncodable} to be encoded
+     * @param de the {@code BinaryEncodable} to be encoded
      * @return a PEM-encoded byte array
-     * @throws IllegalArgumentException if the {@code DEREncodable} cannot be encoded
+     * @throws IllegalArgumentException if {@code de} lacks encoding data, is
+     *         an unsupported class, or cannot be used with encryption
      * @throws NullPointerException if {@code de} is {@code null}
+     * @throws CryptoException if an error occurs during encryption
      * @see #withEncryption(char[])
      */
-    public byte[] encode(DEREncodable de) {
+    public byte[] encode(BinaryEncodable de) {
         return encodeToString(de).getBytes(StandardCharsets.ISO_8859_1);
     }
 
@@ -273,22 +277,22 @@ public final class PEMEncoder {
      *
      * <p> Only {@code PrivateKey}, {@code KeyPair}, and
      * {@code PKCS8EncodedKeySpec} objects can be encoded with this newly
-     * configured instance.  Encoding other {@code DEREncodable} objects will
-     * throw an {@code IllegalArgumentException}.
+     * configured instance.  Encoding other {@code BinaryEncodable} objects will
+     * throw an {@code PEMException}.
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
      * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
      * defaults are determined by the provider. To use non-default encryption
      * parameters, or to encrypt with a different encryption provider, use
-     * {@link EncryptedPrivateKeyInfo#encrypt(DEREncodable, Key,
+     * {@link EncryptedPrivateKeyInfo#encrypt(BinaryEncodable, Key,
      * String, AlgorithmParameterSpec, Provider, SecureRandom)} and use the
-     * returned object with {@link #encode(DEREncodable)}.
+     * returned object with {@link #encode(BinaryEncodable)}.
      *
      * @param password the encryption password.  The array is cloned and
      *                 stored in the new instance.
      * @return a new {@code PEMEncoder} instance configured for encryption
      * @throws NullPointerException if password is {@code null}
-     * @throws IllegalArgumentException if generating the encryption key fails
+     * @throws CryptoException if generating the encryption key fails
      */
     public PEMEncoder withEncryption(char[] password) {
         Objects.requireNonNull(password, "password cannot be null.");
@@ -308,7 +312,7 @@ public final class PEMEncoder {
     private String buildKey(byte[] publicEncoding, byte[] privateEncoding) {
         if (publicEncoding == null && privateEncoding == null) {
             throw new IllegalArgumentException("No encoded data given by the " +
-                "DEREncodable.");
+                "BinaryEncodable.");
         }
 
         if (publicEncoding != null && publicEncoding.length == 0) {
@@ -322,7 +326,7 @@ public final class PEMEncoder {
         }
 
         if (key != null && privateEncoding == null) {
-            throw new IllegalArgumentException("This DEREncodable cannot " +
+            throw new IllegalArgumentException("This BinaryEncodable cannot " +
                 "be encrypted.");
         }
 
@@ -348,7 +352,7 @@ public final class PEMEncoder {
             }
             if (encoding.length == 0) {
                 throw new IllegalArgumentException("No private key encoding " +
-                    "given by the DEREncodable.");
+                    "given by the BinaryEncodable.");
             }
             return Pem.pemEncoded(
                 (key == null ? Pem.PRIVATE_KEY : Pem.ENCRYPTED_PRIVATE_KEY),

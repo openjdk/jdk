@@ -129,7 +129,7 @@ public class Encrypt {
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and SecureRandom
         e = EncryptedPrivateKeyInfo.encrypt(priKey, key2, "AES_128/GCM/NoPadding",
             null, p, new SecureRandom());
-        PrivateKey key3 = e.getKey(key2, null);
+        PrivateKey key3 = e.getKey(key2);
         assertEquals(key3, priKey, "AES encryption failed");
     }
 }

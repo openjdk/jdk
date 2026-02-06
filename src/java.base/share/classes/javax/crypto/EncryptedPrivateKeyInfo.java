@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import java.util.Objects;
  * @since 1.4
  */
 
-public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
+public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
 
     // The "encryptionAlgorithm" is stored in either the algid or
     // the params field. Precisely, if this object is created by
@@ -275,7 +275,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @param cipher the initialized {@code Cipher} object which will be
      * used for decrypting the encrypted data.
-     * @return the PKCS8EncodedKeySpec object.
+     * @return the PKCS8EncodedKeySpec object with a specified algorithm
      * @exception NullPointerException if {@code cipher} is {@code null}.
      * @exception InvalidKeySpecException if the given cipher is
      * inappropriate for the encrypted data or the encrypted
@@ -338,7 +338,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates an {@code EncryptedPrivateKeyInfo} by encrypting the specified
-     * {@code DEREncodable}.  A valid password-based encryption (PBE) algorithm
+     * {@code BinaryEncodable}.  A valid password-based encryption (PBE) algorithm
      * and password must be specified.
      *
      * <p>The format of the PBE algorithm string is described in the
@@ -346,7 +346,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Cipher Algorithms</a> section of the Java Security Standard Algorithm Names
      * Specification.
      *
-     * @param de the {@code DEREncodable} to encrypt. Supported types include
+     * @param de the {@code BinaryEncodable} to encrypt. Supported types include
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param password the password used for PBE encryption. This array is cloned
      *                 before use.
@@ -354,21 +354,22 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param params the {@code AlgorithmParameterSpec} used for encryption. If
      *               {@code null}, the provider’s default parameters are applied.
      * @param provider the {@code Provider} for {@code SecretKeyFactory} and
-     *                 {@code Cipher} operations. If {@code null}, provider
-     *                 defaults are used.
+     *                 {@code Cipher} operations. If {@code null}, the default
+     *                 provider list is used.
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code de}, {@code password}, or
      *         {@code algorithm} is {@code null}
      * @throws IllegalArgumentException if {@code de} is an unsupported
-     *         {@code DEREncodable}, if an error occurs while generating the
+     *         {@code BinaryEncodable}
+     * @throws CryptoException if an error occurs while generating the
      *         PBE key, if {@code algorithm} or {@code params} are
      *         not supported by any provider, or if an error occurs during
      *         encryption.
      *
-     * @since 26
+     * @since 27
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-    public static EncryptedPrivateKeyInfo encrypt(DEREncodable de,
+    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
         char[] password, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
 
@@ -387,27 +388,29 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
     }
     /**
      * Creates an {@code EncryptedPrivateKeyInfo} by encrypting the specified
-     * {@code DEREncodable}. A valid password must be specified. A default
+     * {@code BinaryEncodable}. A valid password must be specified. A default
      * password-based encryption (PBE) algorithm and provider are used.
      *
-     * @param de the {@code DEREncodable} to encrypt. Supported types include
+     * @param de the {@code BinaryEncodable} to encrypt. Supported types include
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param password the password used for PBE encryption. This array is cloned
      *                 before use.
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code de} or {@code password} is {@code null}
      * @throws IllegalArgumentException if {@code de} is an unsupported
-     *         {@code DEREncodable}, if an error occurs while generating the
-     *         PBE key, or if the default algorithm is misconfigured
+     *         {@code BinaryEncodable}
+     * @throws CryptoException if an error occurs while generating the
+     *         PBE key, if the default algorithm is misconfigured, or if an
+     *         error occurs during encryption.
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
      * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
      * defaults are determined by the provider.
      *
-     * @since 26
+     * @since 27
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-    public static EncryptedPrivateKeyInfo encrypt(DEREncodable de,
+    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
         char[] password) {
         return encrypt(de, password, Pem.DEFAULT_ALGO, null,
             null);
@@ -415,7 +418,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates an {@code EncryptedPrivateKeyInfo} by encrypting the specified
-     * {@code DEREncodable}. A valid encryption algorithm and {@code Key} must
+     * {@code BinaryEncodable}. A valid encryption algorithm and {@code Key} must
      * be specified.
      *
      * <p>The format of the algorithm string is described in the
@@ -423,7 +426,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Cipher Algorithms</a> section of the Java Security Standard Algorithm Names
      * Specification.
      *
-     * @param de the {@code DEREncodable} to encrypt. Supported types include
+     * @param de the {@code BinaryEncodable} to encrypt. Supported types include
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param encryptKey the key used to encrypt the encoding
      * @param algorithm the encryption algorithm, such as a password-based
@@ -438,14 +441,15 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @throws NullPointerException if {@code de}, {@code encryptKey}, or
      *         {@code algorithm} is {@code null}
      * @throws IllegalArgumentException if {@code de} is an unsupported
-     *         {@code DEREncodable}, if {@code encryptKey} is invalid, if
+     *         {@code BinaryEncodable}
+     * @throws CryptoException if {@code encryptKey} is invalid, if
      *         {@code algorithm} or {@code params} are not supported by any
      *         provider, or if an error occurs during encryption
      *
-     * @since 26
+     * @since 27
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-    public static EncryptedPrivateKeyInfo encrypt(DEREncodable de,
+    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
         Key encryptKey, String algorithm, AlgorithmParameterSpec params,
         Provider provider, SecureRandom random) {
 
@@ -489,7 +493,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException |
                  IllegalStateException | NoSuchPaddingException |
                  IllegalBlockSizeException | InvalidKeyException e) {
-            throw new IllegalArgumentException(e);
+            throw new CryptoException(e);
         } catch (BadPaddingException e) {
             throw new AssertionError(e);
         } finally {
@@ -528,28 +532,24 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Extracts and returns the enclosed {@code PrivateKey} using the specified
-     * decryption key and provider.
+     * decryption key.
      *
-     * @param decryptKey the decryption key. Must not be {@code null}.
-     * @param provider the {@code Provider} for {@code Cipher} decryption
-     *                 and {@code PrivateKey} generation. If {@code null}, the
-     *                 default provider configuration is used.
+     * @param decryptKey the decryption key. Must not be {@code null}
      * @return the decrypted {@code PrivateKey}
      * @throws NullPointerException if {@code decryptKey} is {@code null}
      * @throws NoSuchAlgorithmException if the decryption algorithm is unsupported
      * @throws InvalidKeyException if an error occurs during parsing,
      *         decryption, or key generation
      *
-     * @since 25
+     * @since 27
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-    public PrivateKey getKey(Key decryptKey, Provider provider)
+    public PrivateKey getKey(Key decryptKey)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(decryptKey,"a decryptKey must be specified.");
         byte[] encoding = null;
         try {
-            encoding = decryptData(decryptKey, provider);
-            return PKCS8Key.parseKey(encoding, provider);
+            encoding = decryptData(decryptKey, null);
+            return PKCS8Key.parseKey(encoding, null);
         } finally {
             KeyUtil.clear(encoding);
         }
@@ -570,15 +570,14 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @since 26
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public KeyPair getKeyPair(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(password, "a password must be specified.");
 
         PBEKeySpec keySpec = new PBEKeySpec(password);
-        DEREncodable d;
+        BinaryEncodable d;
         try {
-            d = Pem.toDEREncodable(Pem.decryptEncoding(this, keySpec), true, null);
+            d = Pem.toPKCS8Encodable(Pem.decryptEncoding(this, keySpec), true, null);
         } finally {
             keySpec.clearPassword();
         }
@@ -593,28 +592,24 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Extracts and returns the enclosed {@code KeyPair} using the specified
-     * decryption key and provider. If the encoded data does not contain both a
+     * decryption key. If the encoded data does not contain both a
      * public and private key, an {@code InvalidKeyException} is thrown.
      *
-     * @param decryptKey the decryption key. Must not be {@code null}.
-     * @param provider the {@code Provider} for {@code Cipher} decryption
-     *                 and key generation. If {@code null}, the default provider
-     *                 configuration is used.
+     * @param decryptKey the decryption key. Must not be {@code null}
      * @return a decrypted {@code KeyPair}
      * @throws NullPointerException if {@code decryptKey} is {@code null}
      * @throws NoSuchAlgorithmException if the decryption algorithm is unsupported
      * @throws InvalidKeyException if the encoded data lacks a public key, or if
      *         an error occurs during parsing, decryption, or key generation
      *
-     * @since 26
+     * @since 27
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
-    public KeyPair getKeyPair(Key decryptKey, Provider provider)
+    public KeyPair getKeyPair(Key decryptKey)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(decryptKey,"a decryptKey must be specified.");
 
-        DEREncodable d = Pem.toDEREncodable(
-            decryptData(decryptKey, provider),true, provider);
+        BinaryEncodable d = Pem.toPKCS8Encodable(
+            decryptData(decryptKey, null),true, null);
         return switch (d) {
             case KeyPair kp -> kp;
             case PrivateKey ignored -> throw new InvalidKeyException(
@@ -628,7 +623,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Extract the enclosed PKCS8EncodedKeySpec object from the
      * encrypted data and return it.
      * @param decryptKey key used for decrypting the encrypted data.
-     * @return the PKCS8EncodedKeySpec object.
+     * @return the PKCS8EncodedKeySpec object with a specified algorithm
      * @exception NullPointerException if {@code decryptKey}
      * is {@code null}.
      * @exception NoSuchAlgorithmException if cannot find appropriate
@@ -653,7 +648,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param decryptKey key used for decrypting the encrypted data.
      * @param providerName the name of provider whose cipher
      * implementation will be used.
-     * @return the PKCS8EncodedKeySpec object
+     * @return the PKCS8EncodedKeySpec object with a specified algorithm
      * @exception NullPointerException if {@code decryptKey}
      * or {@code providerName} is {@code null}.
      * @exception NoSuchProviderException if no provider
@@ -685,7 +680,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param decryptKey key used for decrypting the encrypted data.
      * @param provider the name of provider whose cipher implementation
      * will be used.
-     * @return the PKCS8EncodedKeySpec object.
+     * @return the PKCS8EncodedKeySpec object with a specified algorithm
      * @exception NullPointerException if {@code decryptKey}
      * or {@code provider} is {@code null}.
      * @exception NoSuchAlgorithmException if cannot find appropriate
@@ -745,8 +740,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
                 KeyUtil.getAlgorithm(encodedKey));
     }
 
-    // Return the PKCS#8 encoding from a DEREncodable
-    private static byte[] getEncoding(DEREncodable d) {
+    // Return the PKCS#8 encoding from a BinaryEncodable
+    private static byte[] getEncoding(BinaryEncodable d) {
         return switch (d) {
             case PrivateKey p -> p.getEncoded();
             case PKCS8EncodedKeySpec p8 -> p8.getEncoded();

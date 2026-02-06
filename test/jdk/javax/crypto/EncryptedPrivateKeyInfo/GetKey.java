@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.PEMDecoder;
 import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.Security;
 import java.util.Arrays;
 
 public class GetKey {
@@ -71,9 +69,6 @@ public class GetKey {
         passwdText.getBytes(), "PBE");
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider(
-            System.getProperty("test.provider.name", "SunJCE"));
-
         EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(encEdECKey,
             EncryptedPrivateKeyInfo.class);
         PrivateKey priKey = PEMDecoder.of().withDecryption(password).
@@ -86,9 +81,9 @@ public class GetKey {
                 + "match with expected.");
         }
 
-        // Test getKey(key, provider) provider null
+        // Test getKey(key) provider null
         if (!Arrays.equals(priKey.getEncoded(),
-            ekpi.getKey(key, null).getEncoded())) {
+            ekpi.getKey(key).getEncoded())) {
             throw new AssertionError("getKey(key, provider) " +
                 "didn't match with expected.");
         }
@@ -100,7 +95,7 @@ public class GetKey {
                 decode(encDHECKey, PrivateKey.class);
 
         if (!Arrays.equals(priKeyDH.getEncoded(),
-                ekpiDH.getKey(key, p).getEncoded())) {
+                ekpiDH.getKey(key).getEncoded())) {
             throw new AssertionError("getKey(key, provider) " +
                     "didn't match with expected.");
         }

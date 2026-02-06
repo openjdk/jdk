@@ -53,7 +53,7 @@ public class BadPem {
                 pass.toCharArray());
         byte[] cert = keyStore.getCertificate(alias).getEncoded();
 
-        // 8074935
+        // Revert 8074935.  RFC 7468 allows non-base64 chars
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         PrintStream pout = new PrintStream(bout);
         byte[] CRLF = new byte[] {'\r', '\n'};
@@ -67,9 +67,8 @@ public class BadPem {
 
         try {
             cf.generateCertificate(new ByteArrayInputStream(bout.toByteArray()));
-            throw new Exception("Should fail");
         } catch (CertificateException e) {
-            // Good
+            throw new Exception("Should not fail");
         }
 
         // 8208602

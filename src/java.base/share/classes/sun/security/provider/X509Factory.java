@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -565,7 +565,7 @@ public class X509Factory extends CertificateFactorySpi {
                 } catch (EOFException e) {
                     return null;
                 }
-                return Base64.getDecoder().decode(rec.content());
+                return rec.content();
             } catch (IllegalArgumentException e) {
                 throw new IOException(e);
             }
