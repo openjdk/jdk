@@ -41,7 +41,8 @@ private:
 public:
   static const size_t Offset = 4 * K;
 
-  static uintptr_t alloc(size_t size);
+  template <typename T>
+  static uintptr_t alloc();
 };
 
 class ZContendedStorage : public ZValueStorage<ZContendedStorage> {
