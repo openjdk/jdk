@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, NTT DATA.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ class DwarfParser {
     int _cfa_offset;
     int _ra_cfa_offset;
     int _bp_cfa_offset;
-    bool _bp_offset_available;
 
     uintptr_t read_leb(bool sign);
     uint64_t get_entry_length();
@@ -86,15 +85,14 @@ class DwarfParser {
     DwarfParser(lib_info *lib) : _lib(lib),
                                  _buf(NULL),
                                  _encoding(0),
-                                 _cfa_reg(RSP),
+                                 _cfa_reg(MAX_VALUE),
                                  _return_address_reg(RA),
                                  _code_factor(0),
                                  _data_factor(0),
                                  _current_pc(0L),
                                  _cfa_offset(0),
-                                 _ra_cfa_offset(0),
-                                 _bp_cfa_offset(0),
-                                 _bp_offset_available(false) {};
+                                 _ra_cfa_offset(8),
+                                 _bp_cfa_offset(INT_MAX) {};
 
     ~DwarfParser() {}
     bool process_dwarf(const uintptr_t pc);
@@ -102,7 +100,6 @@ class DwarfParser {
     int get_cfa_offset() { return _cfa_offset; }
     int get_ra_cfa_offset() { return _ra_cfa_offset; }
     int get_bp_cfa_offset() { return _bp_cfa_offset; }
-    bool is_bp_offset_available() { return _bp_offset_available; }
 
     bool is_in(long pc) {
       return (_lib->exec_start <= pc) && (pc < _lib->exec_end);
