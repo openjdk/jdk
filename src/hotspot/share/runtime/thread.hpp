@@ -410,7 +410,6 @@ class Thread: public ThreadShadow {
   void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
   jlong allocated_bytes()               { return _allocated_bytes; }
-  void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
   inline jlong cooked_allocated_bytes();
 
