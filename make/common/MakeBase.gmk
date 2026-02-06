@@ -178,11 +178,8 @@ quoteAppend = $(if $(findstring +=,$1),$(error you can not have += in a variable
 # $(call unquoteAppendIndex,name#+some#svalue,2) -> some value
 unquoteAppendIndex = $(call unQuote,$(word $2,$(subst $(appendQ),$(SPACE),$1)))
 
-# $(call recurseFiles,dir) -> header.hpp file1.cpp file2.cpp
-recurseFiles = $(strip $(foreach f,$(wildcard $1/*),$(call recurseFiles,$f) $f))
-
 # $(call filterFiles,dir,%.cpp) -> file1.cpp file2.cpp (without path)
-filterFiles = $(filter $2,$(notdir $(call recurseFiles,$1)))
+filterFiles = $(filter $2,$(notdir $(call FindFiles,$1)))
 
 # $(call unpack module_,file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion) -> module_file1.cpp_CXXFLAGS += -Wconversion
 #                                                                                             module_file2.cpp_CXXFLAGS += -Wconversion
