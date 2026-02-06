@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,29 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
 
-import java.io.IOException;
+import java.io.*;
+import jdk.jshell.tool.*;
 
-/**
- * Default PollerProvider for macOS.
- */
-class DefaultPollerProvider extends PollerProvider {
-    DefaultPollerProvider(Poller.Mode mode) {
-        super(mode);
-    }
+public class WXHealing {
 
-    DefaultPollerProvider() {
-        this(Poller.Mode.SYSTEM_THREADS);
-    }
-
-    @Override
-    Poller readPoller(boolean subPoller) throws IOException {
-        return new KQueuePoller(pollerMode(), subPoller, true);
-    }
-
-    @Override
-    Poller writePoller(boolean subPoller) throws IOException {
-        return new KQueuePoller(pollerMode(), subPoller, false);
+    // There's nothing special about jshell here: we just need an
+    // application that does a lot of compilation and class loading.
+    public static void main(String[] args) throws Throwable {
+        JavaShellToolBuilder
+            .builder()
+            .in(new ByteArrayInputStream
+                ("""
+                 void main() {
+                     System.out.println("Hello, World!");
+                 }
+                 main()
+                 2+2
+                 Math.sqrt(2)
+                 4 * Math.atan(1)
+                 Math.exp(1)
+                 """
+                 .getBytes()), null)
+            .start();
     }
 }
