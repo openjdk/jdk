@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
@@ -1122,8 +1121,6 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
 
 
 // jdk.internal.vm.ThreadSnapshot support
-#if INCLUDE_JVMTI
-
 class GetThreadSnapshotHandshakeClosure: public HandshakeClosure {
 private:
   static OopStorage* oop_storage() {
@@ -1300,7 +1297,7 @@ public:
       return;
     }
 
-    bool vthread_carrier = !is_virtual && (_java_thread != nullptr) && (_java_thread->vthread_continuation() != nullptr);
+    bool vthread_carrier = !is_virtual && (_java_thread->vthread_continuation() != nullptr);
 
     oop park_blocker = java_lang_Thread::park_blocker(_thread_h());
     if (park_blocker != nullptr) {
@@ -1458,13 +1455,13 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   HandleMark   hm(THREAD);
 
   JavaThread* java_thread = nullptr;
-  oop thread_oop;
+  oop thread_oop = nullptr;
   bool has_javathread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
-  assert((has_javathread && thread_oop != nullptr) || !has_javathread, "Missing Thread oop");
+  assert(thread_oop != nullptr, "Missing Thread oop");
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);  // Deals with null
 
   if (!has_javathread && !is_virtual) {
-    return nullptr; // thread terminated so not of interest
+    return nullptr; // platform thread terminated
   }
 
   // Handshake with target
@@ -1474,6 +1471,11 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     Handshake::execute(&cl, thread_oop);
   } else {
     Handshake::execute(&cl, &tlh, java_thread);
+  }
+
+  assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
+  if (is_virtual && (cl._thread_status == JavaThreadStatus::TERMINATED)) {
+    return nullptr; // virtual thread terminated
   }
 
   // StackTrace
@@ -1505,17 +1507,6 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     }
   }
 
-  // call static StackTraceElement[] StackTraceElement.of(StackTraceElement[] stackTrace)
-  // to properly initialize STEs.
-  JavaValue result(T_OBJECT);
-  JavaCalls::call_static(&result,
-    ste_klass,
-    vmSymbols::java_lang_StackTraceElement_of_name(),
-    vmSymbols::java_lang_StackTraceElement_of_signature(),
-    trace,
-    CHECK_NULL);
-  // the method return the same trace array
-
   Symbol* snapshot_klass_name = vmSymbols::jdk_internal_vm_ThreadSnapshot();
   Klass* snapshot_klass = SystemDictionary::resolve_or_fail(snapshot_klass_name, true, CHECK_NULL);
   if (snapshot_klass->should_be_initialized()) {
@@ -1534,5 +1525,3 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   }
   return snapshot();
 }
-
-#endif // INCLUDE_JVMTI

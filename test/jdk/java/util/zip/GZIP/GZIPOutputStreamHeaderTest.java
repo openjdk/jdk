@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,7 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,12 +29,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 /**
  * @test
  * @bug 8244706
  * @summary Verify that the OS header flag in the stream written out by java.util.zip.GZIPOutputStream
  * has the correct expected value
- * @run testng GZIPOutputStreamHeaderTest
+ * @run junit GZIPOutputStreamHeaderTest
  */
 public class GZIPOutputStreamHeaderTest {
 
@@ -54,8 +56,8 @@ public class GZIPOutputStreamHeaderTest {
             gzipOutputStream.write(data.getBytes(StandardCharsets.UTF_8));
         }
         final byte[] compressed = baos.toByteArray();
-        Assert.assertNotNull(compressed, "Compressed data is null");
-        Assert.assertEquals(toUnsignedByte(compressed[OS_HEADER_INDEX]), HEADER_VALUE_OS_UNKNOWN,
+        assertNotNull(compressed, "Compressed data is null");
+        assertEquals(HEADER_VALUE_OS_UNKNOWN, toUnsignedByte(compressed[OS_HEADER_INDEX]),
                 "Unexpected value for OS header");
         // finally verify that the compressed data is readable back to the original
         final String uncompressed;
@@ -65,7 +67,7 @@ public class GZIPOutputStreamHeaderTest {
             gzipInputStream.transferTo(os);
             uncompressed = new String(os.toByteArray(), StandardCharsets.UTF_8);
         }
-        Assert.assertEquals(uncompressed, data, "Unexpected data read from GZIPInputStream");
+        assertEquals(data, uncompressed, "Unexpected data read from GZIPInputStream");
     }
 
     private static int toUnsignedByte(final byte b) {

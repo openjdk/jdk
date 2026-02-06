@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,8 @@ public:
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
   static bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
+  // Returns true if the platform efficiently implements the given masked vector
+  // operation using predicate features, false otherwise.
   static bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
   // Determines if a vector operation needs to be partially implemented with a mask

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         int laneCount = vsp.laneCount();
         i = VectorIntrinsics.checkFromIndexSize(i, laneCount, bits.length);
         VectorSupport.store(
-            vsp.maskType(), vsp.elementType(), laneCount,
+            vsp.maskType(), vsp.laneTypeOrdinal(), laneCount,
             bits, (long) i + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
             this, bits, i,
             (c, idx, s) -> System.arraycopy(s.getBits(), 0, c, (int) idx, s.length()));

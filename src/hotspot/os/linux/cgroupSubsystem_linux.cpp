@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,22 +631,20 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  * return:
  *    true if there were no errors. false otherwise.
  */
-bool CgroupSubsystem::active_processor_count(int& value) {
-  int cpu_count;
-  int result = -1;
-
+bool CgroupSubsystem::active_processor_count(double& value) {
   // We use a cache with a timeout to avoid performing expensive
   // computations in the event this function is called frequently.
   // [See 8227006].
-  CachingCgroupController<CgroupCpuController>* contrl = cpu_controller();
-  CachedMetric* cpu_limit = contrl->metrics_cache();
+  CachingCgroupController<CgroupCpuController, double>* contrl = cpu_controller();
+  CachedMetric<double>* cpu_limit = contrl->metrics_cache();
   if (!cpu_limit->should_check_metric()) {
-    value = (int)cpu_limit->value();
-    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %d", value);
+    value = cpu_limit->value();
+    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %.2f", value);
     return true;
   }
 
-  cpu_count = os::Linux::active_processor_count();
+  int cpu_count = os::Linux::active_processor_count();
+  double result = -1;
   if (!CgroupUtil::processor_count(contrl->controller(), cpu_count, result)) {
     return false;
   }
@@ -671,8 +669,8 @@ bool CgroupSubsystem::active_processor_count(int& value) {
  */
 bool CgroupSubsystem::memory_limit_in_bytes(physical_memory_size_type upper_bound,
                                             physical_memory_size_type& value) {
-  CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
-  CachedMetric* memory_limit = contrl->metrics_cache();
+  CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* contrl = memory_controller();
+  CachedMetric<physical_memory_size_type>* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
     value = memory_limit->value();
     return true;

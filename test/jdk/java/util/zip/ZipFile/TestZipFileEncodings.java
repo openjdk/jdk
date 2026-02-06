@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  * @bug 8243254
  * @summary Tests a simple set of operations on Zip files in various encodings
  *          focusing on ensuring metadata is properly encoded and read.
- * @run testng/timeout=480 TestZipFileEncodings
+ * @run junit/timeout=480 TestZipFileEncodings
  */
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -38,7 +40,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,8 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -60,7 +59,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestZipFileEncodings {
 
@@ -76,50 +78,49 @@ public class TestZipFileEncodings {
         return ThreadLocalRandom.current();
     }
 
-    @DataProvider(name = "non-unicode-charsets")
-    public Object[][] nonUnicodeCharsets() {
-        return new Object[][] {
-                { "ISO-8859-1" },
-                { "IBM01149" },
-                { "IBM037" },
-                { "IBM-Thai" }
-        };
+    public static Stream<String> nonUnicodeCharsets() {
+        return Stream.of(
+                "ISO-8859-1",
+                "IBM01149",
+                "IBM037",
+                "IBM-Thai"
+        );
     }
 
-    @DataProvider(name = "unicode-charsets")
-    public Object[][] unicodeCharsets() {
-        return new Object[][] {
-                { "UTF-8" },
-                { "UTF-16" },
-                { "UTF-16LE" },
-                { "UTF-16BE" },
-                { "UTF-32" }
-        };
+    public static Stream<String> unicodeCharsets() {
+        return Stream.of(
+                "UTF-8",
+                "UTF-16",
+                "UTF-16LE",
+                "UTF-16BE",
+                "UTF-32"
+        );
     }
 
-    @DataProvider(name = "all-charsets")
-    public Object[][] allCharsets() {
-        return Stream.concat(Stream.of(nonUnicodeCharsets()),
-                        Stream.of(unicodeCharsets()))
-                .toArray(Object[][]::new);
+    public static Stream<String> allCharsets() {
+        return Stream.concat(nonUnicodeCharsets(), unicodeCharsets());
     }
 
-    @Test(dataProvider = "non-unicode-charsets")
+    @ParameterizedTest
+    @MethodSource("nonUnicodeCharsets")
     public void testNonUnicode(String charsetName) throws Throwable {
         test(NUM_ENTRIES, 100 + random().nextInt(ENTRY_SIZE), false, Charset.forName(charsetName));
     }
 
-    @Test(dataProvider = "unicode-charsets")
+    @ParameterizedTest
+    @MethodSource("unicodeCharsets")
     public void testUnicode(String charsetName) throws Throwable {
         test(NUM_ENTRIES, 100 + random().nextInt(ENTRY_SIZE), true, Charset.forName(charsetName));
     }
 
-    @Test(dataProvider = "non-unicode-charsets")
+    @ParameterizedTest
+    @MethodSource("nonUnicodeCharsets")
     public void testNonUnicodeManyEntries(String charsetName) throws Throwable {
         test(70000, 10, false, Charset.forName(charsetName));
     }
 
-    @Test(dataProvider = "unicode-charsets")
+    @ParameterizedTest
+    @MethodSource("unicodeCharsets")
     public void testUnicodeManyEntries(String charsetName) throws Throwable {
         test(70000, 10, true, Charset.forName(charsetName));
     }
@@ -160,7 +161,8 @@ public class TestZipFileEncodings {
      * since it explicity provokes this rare condition.
      *
      */
-    @Test(dataProvider = "all-charsets")
+    @ParameterizedTest
+    @MethodSource("allCharsets")
     public void sameHashAndLengthDirLookup(String charsetName) throws IOException {
         // Two directory names with colliding hash codes and same length
         // (found in a brute force search)
@@ -187,15 +189,15 @@ public class TestZipFileEncodings {
         try (ZipFile z = new ZipFile(zip.toFile(), charset)) {
 
             ZipEntry second = z.getEntry("_____-408231241");
-            assertEquals(second.getComment(), "Entry two");
+            assertEquals("Entry two", second.getComment());
 
             ZipEntry first = z.getEntry("_____1637461950");
-            assertEquals(first.getComment(), "Entry one");
+            assertEquals("Entry one", first.getComment());
         }
     }
 
-    @AfterClass
-    public void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         for (Path path : paths) {
             path.toFile().deleteOnExit();
         }
@@ -208,14 +210,14 @@ public class TestZipFileEncodings {
     }
 
     static void checkEqual(ZipEntry x, ZipEntry y) {
-        assertEquals(x.getName(), y.getName());
-        assertEquals(x.isDirectory(), y.isDirectory());
-        assertEquals(x.getMethod(), y.getMethod());
-        assertEquals((x.getTime() / 2000), y.getTime() / 2000);
-        assertEquals(x.getSize(), y.getSize());
-        assertEquals(x.getCompressedSize(), y.getCompressedSize());
-        assertEquals(x.getCrc(), y.getCrc());
-        assertEquals(x.getComment(), y.getComment());
+        assertEquals(y.getName(), x.getName());
+        assertEquals(y.isDirectory(), x.isDirectory());
+        assertEquals(y.getMethod(), x.getMethod());
+        assertEquals(y.getTime() / 2000, (x.getTime() / 2000));
+        assertEquals(y.getSize(), x.getSize());
+        assertEquals(y.getCompressedSize(), x.getCompressedSize());
+        assertEquals(y.getCrc(), x.getCrc());
+        assertEquals(y.getComment(), x.getComment());
     }
 
     static void doTest(Zip zip) throws Throwable {
@@ -226,7 +228,7 @@ public class TestZipFileEncodings {
 
     static void doTest0(Zip zip, ZipFile zf) throws Throwable {
         // (0) check zero-length entry name, no AIOOBE
-        assertEquals(zf.getEntry(""), null);
+        assertEquals(null, zf.getEntry(""));
 
         List<ZipEntry> list = new ArrayList(zip.entries.keySet());
         // check each entry and its bytes
@@ -238,7 +240,7 @@ public class TestZipFileEncodings {
             if (!e.isDirectory()) {
                 // check with readAllBytes
                 try (InputStream is = zf.getInputStream(e)) {
-                    assertEquals(data, is.readAllBytes());
+                    assertArrayEquals(is.readAllBytes(), data);
                 }
                 int slash = name.indexOf('/');
                 if (slash > 0) {
