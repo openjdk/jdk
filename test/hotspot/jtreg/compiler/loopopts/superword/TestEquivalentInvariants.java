@@ -113,6 +113,10 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aB.clone());
           return testMemorySegmentBInvarI2Adr(data, 42, 10, RANGE-200);
         });
+        tests.put("testMemorySegmentBInvarIMulAdd", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarIMulAdd(data, 10, RANGE/2 - 100);
+        });
         tests.put("testMemorySegmentBInvarLAdr", () -> {
           MemorySegment data = MemorySegment.ofArray(aB.clone());
           return testMemorySegmentBInvarLAdr(data, 101, RANGE-200);
@@ -243,6 +247,7 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentBInvarIAdr",
                  "testMemorySegmentBInvarISub",
                  "testMemorySegmentBInvarI2Adr",
+                 "testMemorySegmentBInvarIMulAdd",
                  "testMemorySegmentBInvarLAdr",
                  "testMemorySegmentBInvarI3a",
                  "testMemorySegmentBInvarI3b",
@@ -507,6 +512,21 @@ public class TestEquivalentInvariants {
     static Object[] testMemorySegmentBInvarI2Adr(MemorySegment m, int invar1, int invar2, int size) {
         for (int i = 0; i < size; i++) {
             long adr = (i + invar1) + invar2;
+            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
+            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(failOn = {IRNode.RANGE_CHECK_TRAP},
+        applyIfPlatform = {"64-bit", "true"})
+    // Scaled iv plus offset inside ConvI2L: ConvI2L(iv * K + E)
+    // Tests the short_scale code path in RCE (range check elimination).
+    // Not expected to vectorize due to stride-2 access pattern.
+    static Object[] testMemorySegmentBInvarIMulAdd(MemorySegment m, int invar, int size) {
+        for (int i = 0; i < size; i++) {
+            long adr = i * 2 + invar;
             byte v = m.get(ValueLayout.JAVA_BYTE, adr);
             m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
         }
