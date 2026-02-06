@@ -127,6 +127,7 @@ PerfCounter*    ClassLoader::_perf_ik_link_methods_count = nullptr;
 PerfCounter*    ClassLoader::_perf_method_adapters_count = nullptr;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = nullptr;
 PerfCounter*    ClassLoader::_perf_secondary_hash_time = nullptr;
+PerfCounter*    ClassLoader::_perf_change_wx_time = nullptr;
 
 PerfCounter*    ClassLoader::_perf_resolve_indy_time = nullptr;
 PerfCounter*    ClassLoader::_perf_resolve_invokehandle_time = nullptr;
@@ -1370,6 +1371,7 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFBYTECOUNTER(_perf_sys_classfile_bytes_read, SUN_CLS, "sysClassBytes");
     NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS, "unsafeDefineClassCalls");
     NEWPERFTICKCOUNTER(_perf_secondary_hash_time, SUN_CLS, "secondarySuperHashTime");
+    NEWPERFTICKCOUNTER(_perf_change_wx_time, SUN_CLS, "changeWXTime");
 
     if (log_is_enabled(Info, perf, class, link)) {
       NEWPERFTICKCOUNTER(_perf_ik_link_methods_time, SUN_CLS, "linkMethodsTime");

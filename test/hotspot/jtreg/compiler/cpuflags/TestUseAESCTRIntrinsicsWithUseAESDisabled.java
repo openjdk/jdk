@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,29 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
-
-import java.io.IOException;
 
 /**
- * Default PollerProvider for macOS.
+ * @test
+ * @bug 8374516
+ * @summary Regression test for -XX:+UseAESCTRIntrinsics -XX:-UseAES crash
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires vm.debug
+ * @run main/othervm -XX:+UseAESCTRIntrinsics -XX:-UseAES compiler.cpuflags.TestUseAESCTRIntrinsicsWithUseAESDisabled
  */
-class DefaultPollerProvider extends PollerProvider {
-    DefaultPollerProvider(Poller.Mode mode) {
-        super(mode);
-    }
+package compiler.cpuflags;
 
-    DefaultPollerProvider() {
-        this(Poller.Mode.SYSTEM_THREADS);
-    }
+public class TestUseAESCTRIntrinsicsWithUseAESDisabled {
 
-    @Override
-    Poller readPoller(boolean subPoller) throws IOException {
-        return new KQueuePoller(pollerMode(), subPoller, true);
-    }
-
-    @Override
-    Poller writePoller(boolean subPoller) throws IOException {
-        return new KQueuePoller(pollerMode(), subPoller, false);
+    public static void main(String[] args) {
+        System.out.println("passed");
     }
 }

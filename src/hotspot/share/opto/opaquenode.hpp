@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,15 +130,26 @@ public:
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
 // the compiler cannot prove it. We therefore add a corresponding cast to propagate this implicit knowledge. However,
 // this cast could become top during optimizations (input to cast becomes null) and the data path is folded. To ensure
-// that the control path is also properly folded, we insert an If node with a OpaqueNotNullNode as condition. During
-// macro expansion, we replace the OpaqueNotNullNodes with true in product builds such that the actually unneeded checks
-// are folded and do not end up in the emitted code. In debug builds, we keep the actual checks as additional
-// verification code (i.e. removing OpaqueNotNullNodes and use the BoolNode inputs instead). For more details, also see
-// GraphKit::must_be_not_null().
-class OpaqueNotNullNode : public Node {
+// that the control path is also properly folded, we insert an If node with a OpaqueConstantBoolNode as condition.
+// During macro expansion, we replace the OpaqueConstantBoolNodes with true in product builds such that the actually
+// unneeded checks are folded and do not end up in the emitted code. In debug builds, we keep the actual checks as
+// additional verification code (i.e. removing OpaqueConstantBoolNodes and use the BoolNode inputs instead). For more
+// details, also see GraphKit::must_be_not_null().
+// Similarly, sometimes we know that a size or limit guard is checked (e.g. there is already a guard in the caller) but
+// the compiler cannot prove it. We could in principle avoid adding a guard in the intrinsic but in some cases (e.g.
+// when the input is a constant that breaks the guard and the caller guard is not inlined) the input of the intrinsic
+// can become top and the data path is folded. To ensure that the control path is also properly folded, we insert an
+// OpaqueConstantBoolNode before the If node in the guard. During macro expansion, we replace the OpaqueConstantBoolNode
+// with false in product builds such that the actually unneeded guards are folded and do not end up in the emitted code.
+// In debug builds, we keep the actual checks as additional verification code (i.e. removing OpaqueConstantBoolNodes and
+// use the BoolNode inputs instead).
+class OpaqueConstantBoolNode : public Node {
+ private:
+  const bool _constant;
  public:
-  OpaqueNotNullNode(Compile* C, Node* tst) : Node(nullptr, tst) {
-    init_class_id(Class_OpaqueNotNull);
+  OpaqueConstantBoolNode(Compile* C, Node* tst, bool constant) : Node(nullptr, tst), _constant(constant) {
+    assert(tst->is_Bool() || tst->is_Con(), "Test node must be a BoolNode or a constant");
+    init_class_id(Class_OpaqueConstantBool);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
@@ -146,6 +157,9 @@ class OpaqueNotNullNode : public Node {
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  int constant() const { return _constant ? 1 : 0; }
+  virtual uint size_of() const { return sizeof(OpaqueConstantBoolNode); }
+  NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };
 
 // This node is used for Template Assertion Predicate BoolNodes. A Template Assertion Predicate is always removed

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,27 +32,41 @@ import static sun.nio.ch.WEPoll.*;
  */
 class WEPollPoller extends Poller {
     private static final int MAX_EVENTS_TO_POLL = 256;
-    private static final int ENOENT = 2;
 
     private final long handle;
     private final int event;
     private final long address;
 
     WEPollPoller(boolean read) throws IOException {
-        this.handle = WEPoll.create();
+        long handle =  WEPoll.create();
+        long address;
+        try {
+            address = WEPoll.allocatePollArray(MAX_EVENTS_TO_POLL);
+        } catch (Throwable e) {
+            WEPoll.close(handle);
+            throw e;
+        }
+
         this.event = (read) ? EPOLLIN : EPOLLOUT;
-        this.address = WEPoll.allocatePollArray(MAX_EVENTS_TO_POLL);
+        this.handle = handle;
+        this.address = address;
     }
 
     @Override
-    void implRegister(int fdVal) throws IOException {
+    void close() {
+        WEPoll.close(handle);
+        WEPoll.freePollArray(address);
+    }
+
+    @Override
+    void implStartPoll(int fdVal) throws IOException {
         int err = WEPoll.ctl(handle, EPOLL_CTL_ADD, fdVal, (event | EPOLLONESHOT));
         if (err != 0)
             throw new IOException("epoll_ctl failed: " + err);
     }
 
     @Override
-    void implDeregister(int fdVal, boolean polled) {
+    void implStopPoll(int fdVal, boolean polled) {
         WEPoll.ctl(handle, EPOLL_CTL_DEL, fdVal, 0);
     }
 
