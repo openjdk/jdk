@@ -1728,7 +1728,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // x12: temporary
     __ beqz(x10, dispatch);     // test result -- no osr if null
     // nmethod may have been invalidated (VM may block upon call_VM return)
-    __ lbu(x12, Address(x10, nmethod::state_offset()));
+    // Load the _hdr pointer from the nmethod
+    __ ld(x12, Address(x10, nmethod::hdr_offset()));
+    // Load _state value from _hdr at an offset specified by nmethod::state_offset()
+    __ lbu(x12, Address(x12, nmethod::state_offset()));
     if (nmethod::in_use != 0) {
       __ sub(x12, x12, nmethod::in_use);
     }
@@ -1760,7 +1763,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ andi(sp, esp, -16);
 
     // and begin the OSR nmethod
-    __ ld(t1, Address(x9, nmethod::osr_entry_point_offset()));
+    // Load the _hdr pointer from the nmethod
+    __ ld(t1, Address(x9, nmethod::hdr_offset()));
+    // Load _osr_entry_point address from _hdr at an offset specified
+    // by nmethod::osr_entry_point_offset()
+    __ ld(t1, Address(t1, nmethod::osr_entry_point_offset()));
     __ jr(t1);
   }
 }

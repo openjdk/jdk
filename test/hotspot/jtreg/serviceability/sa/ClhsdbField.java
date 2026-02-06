@@ -60,7 +60,7 @@ public class ClhsdbField {
                 "field TenuredGeneration _the_space ContiguousSpace*",
                 "field VirtualSpace _low_boundary char*",
                 "field MethodCounters _backedge_counter InvocationCounter",
-                "field nmethod _entry_bci int",
+                "field nmethod::NMethodHeader _entry_bci int",
                 "field Universe _collectedHeap CollectedHeap"));
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (SkippedException se) {

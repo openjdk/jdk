@@ -534,27 +534,29 @@
   /* NMethods (NOTE: incomplete, but only a little) */                                                                               \
   /**************************************************/                                                                               \
                                                                                                                                      \
-  nonstatic_field(nmethod,                     _method,                                       Method*)                               \
-  nonstatic_field(nmethod,                     _entry_bci,                                    int)                                   \
-  nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
-  nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
-  nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
-  nonstatic_field(nmethod,                     _deopt_handler_entry_offset,                   int)                                   \
-  nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
-  nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
-  nonstatic_field(nmethod,                     _immutable_data_ref_count_offset,              int)                                   \
-  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
-  nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
-  nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
-  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         u2)                                    \
-  nonstatic_field(nmethod,                     _entry_offset,                                 u2)                                    \
-  nonstatic_field(nmethod,                     _verified_entry_offset,                        u2)                                    \
-  nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
-  nonstatic_field(nmethod,                     _immutable_data,                               address)                               \
-  nonstatic_field(nmethod,                     _immutable_data_size,                          int)                                   \
-  nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
-  nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
-  volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
+  nonstatic_field(nmethod,                           _hdr,                                   nmethod::NMethodHeader*)                \
+  nonstatic_field(nmethod::NMethodHeader,            _method,                                Method*)                                \
+  nonstatic_field(nmethod::NMethodHeader,            _entry_bci,                             int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _osr_link,                              nmethod*)                               \
+  nonstatic_field(nmethod::NMethodHeader,            _state,                                 volatile signed char)                   \
+  nonstatic_field(nmethod::NMethodHeader,            _exception_offset,                      int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _deopt_handler_entry_offset,            int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _orig_pc_offset,                        int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _stub_offset,                           int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _immutable_data_ref_count_offset,       int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _scopes_pcs_offset,                     int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _scopes_data_offset,                    int)                                    \
+  JVMCI_ONLY(nonstatic_field(nmethod::NMethodHeader, _speculations_offset,                   int))                                   \
+  nonstatic_field(nmethod::NMethodHeader,            _handler_table_offset,                  u2)                                     \
+  nonstatic_field(nmethod::NMethodHeader,            _nul_chk_table_offset,                  u2)                                     \
+  nonstatic_field(nmethod::NMethodHeader,            _entry_offset,                          u2)                                     \
+  nonstatic_field(nmethod::NMethodHeader,            _verified_entry_offset,                 u2)                                     \
+  nonstatic_field(nmethod::NMethodHeader,            _osr_entry_point,                       address)                                \
+  nonstatic_field(nmethod::NMethodHeader,            _immutable_data,                        address)                                \
+  nonstatic_field(nmethod::NMethodHeader,            _immutable_data_size,                   int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _compile_id,                            int)                                    \
+  nonstatic_field(nmethod::NMethodHeader,            _comp_level,                            CompLevel)                              \
+  volatile_nonstatic_field(nmethod::NMethodHeader,   _exception_cache,                       ExceptionCache*)                        \
                                                                                                                                      \
   nonstatic_field(Deoptimization::UnrollBlock, _size_of_deoptimized_frame,                    int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _caller_adjustment,                            int)                                   \
@@ -1083,6 +1085,12 @@
   declare_toplevel_type(HeapBlock)                                        \
   declare_toplevel_type(HeapBlock::Header)                                \
            declare_type(FreeBlock, HeapBlock)                             \
+                                                                          \
+  /************/                                                          \
+  /* nmethod */                                                           \
+  /************/                                                          \
+                                                                          \
+  declare_toplevel_type(nmethod::NMethodHeader)                           \
                                                                           \
   /*************************************************************/         \
   /* CodeBlob hierarchy (needed for run-time type information) */         \

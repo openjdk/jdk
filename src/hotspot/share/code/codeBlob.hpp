@@ -174,9 +174,7 @@ protected:
 
 public:
 
-  ~CodeBlob() {
-    assert(_oop_maps == nullptr, "Not flushed");
-  }
+  ~CodeBlob();
 
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);
