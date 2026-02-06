@@ -312,6 +312,7 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   JfrThreadLocal* tl = thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
   tl->cpu_time_jfr_queue().init();
+  thread->stackwalker_thread_local().queue().init();
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
@@ -733,7 +734,6 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   JfrCPUTimeStackWalkerCallback* callback = new JfrCPUTimeStackWalkerCallback(now, cpu_time_period);
   JavaThread* current = JavaThread::current();
   StackWalker::request_stack_trace(callback, current, context, JfrOptionSet::stackdepth());
-  //_sampler->handle_request(info->si_overrun, context, false, nullptr, nullptr, nullptr, nullptr);
 
   _sampler->decrement_signal_handler_count();
 }

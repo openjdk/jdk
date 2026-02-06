@@ -132,6 +132,23 @@ StackWalkRequest& StackWalkerRequestQueue::at(u4 index) {
   return _data[index];
 }
 
+void StackWalkerRequestQueue::set_capacity(u4 capacity) {
+  if (capacity == AtomicAccess::load(&_capacity)) {
+    return;
+  }
+  _head = 0;
+  if (_data != nullptr) {
+    assert(_capacity != 0, "invariant");
+    FREE_C_HEAP_ARRAY(StackWalkRequest, _data);
+  }
+  if (capacity != 0) {
+    _data = NEW_C_HEAP_ARRAY(StackWalkRequest, capacity, mtOther);
+  } else {
+    _data = nullptr;
+  }
+  AtomicAccess::release_store(&_capacity, capacity);
+}
+
 bool StackWalkerRequestQueue::is_empty() const {
   return AtomicAccess::load_acquire(&_head) == 0;
 }
@@ -149,8 +166,41 @@ void StackWalkerRequestQueue::increment_lost_requests_due_to_queue_full() {
   AtomicAccess::inc(&_lost_requests_due_to_queue_full);
 }
 
+u4 StackWalkerRequestQueue::get_and_reset_lost_requests_due_to_queue_full() {
+  return AtomicAccess::xchg(&_lost_requests_due_to_queue_full, (u4)0);
+}
+
+void StackWalkerRequestQueue::init() {
+  set_capacity(INITIAL_CAPACITY);
+}
+
 void StackWalkerRequestQueue::clear() {
   AtomicAccess::release_store(&_head, (u4)0);
+}
+
+void StackWalkerRequestQueue::resize_if_needed() {
+  u4 lost_requests_due_to_queue_full = get_and_reset_lost_requests_due_to_queue_full();
+  if (lost_requests_due_to_queue_full == 0) {
+    return;
+  }
+  u4 capacity = AtomicAccess::load(&_capacity);
+  if (capacity < MAX_CAPACITY) {
+    float ratio = (float)lost_requests_due_to_queue_full / (float)capacity;
+    int factor = 1;
+    if (ratio > 8) { // idea is to quickly scale the queue in the worst case
+      factor = ratio;
+    } else if (ratio > 2) {
+      factor = 8;
+    } else if (ratio > 0.5) {
+      factor = 4;
+    } else if (ratio > 0.01) {
+      factor = 2;
+    }
+    if (factor > 1) {
+      u4 new_capacity = MIN2(MAX_CAPACITY, capacity * factor);
+      set_capacity(new_capacity);
+    }
+  }
 }
 
 bool StackWalkerThreadLocal::is_enqueue_locked() const {
@@ -776,7 +826,7 @@ void StackWalker::process_requests(const Thread* current, JavaThread* jt, bool l
   tl.set_has_requests(false);
   if (queue.lost_requests() > 0) {
     // TODO: Implement reporting of lost requests.
-    Unimplemented();
+    // This should be done on the JFR side.
     //StackWalker::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
     queue.resize_if_needed();
   }

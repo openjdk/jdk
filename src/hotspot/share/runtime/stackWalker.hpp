@@ -70,8 +70,8 @@ public:
 // Designed to be only used under lock and read linearly
 class StackWalkerRequestQueue {
 
-  static const u4 INITIAL_CAPACITY = 20;
-  static const u4 MAX_CAPACITY     = 2000;
+  static constexpr u4 INITIAL_CAPACITY = 20;
+  static constexpr u4 MAX_CAPACITY     = 2000;
 
   StackWalkRequest* _data;
   volatile u4 _capacity;
