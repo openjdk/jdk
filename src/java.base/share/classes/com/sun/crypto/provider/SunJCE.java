@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -460,6 +460,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA384");
         ps("KDF", "HKDF-SHA512",
                 "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA512");
+        ps("KDF", "Argon2id", "com.sun.crypto.provider.Argon2ID");
 
         /*
          * Algorithm Parameter engines

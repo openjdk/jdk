@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.nio.ByteOrder;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
-final class ByteArrayAccess {
+public final class ByteArrayAccess {
 
     private ByteArrayAccess() {
         // empty
@@ -80,10 +80,14 @@ final class ByteArrayAccess {
         }
     }
 
-    // Store one 32-bit value into out[outOfs..outOfs+3] in little endian order.
-    static void i2bLittle4(int val, byte[] out, int outOfs) {
+    /**
+     * special optimized int to byte[] conversion, stores 4-byte value into
+     * out[outOfs..outOfs+3], little endian order.
+     */
+    public static void i2bLittle4(int val, byte[] out, int outOfs) {
         LE.INT_ARRAY.set(out, outOfs, val);
     }
+
 
     /**
      * byte[] to int[] conversion, big endian byte order.
@@ -96,7 +100,9 @@ final class ByteArrayAccess {
         }
     }
 
-    // Special optimization of b2iBig(in, inOfs, out, 0, 64)
+    /**
+     * special optimization of b2iBig(in, inOfs, out, 0, 64)
+     */
     static void b2iBig64(byte[] in, int inOfs, int[] out) {
         out[ 0] = (int) BE.INT_ARRAY.get(in, inOfs     );
         out[ 1] = (int) BE.INT_ARRAY.get(in, inOfs +  4);
@@ -127,7 +133,10 @@ final class ByteArrayAccess {
         }
     }
 
-    // Store one 32-bit value into out[outOfs..outOfs+3] in big endian order.
+    /**
+     * special optimized int to byte[] conversion, stores 4-byte value into
+     * out[outOfs..outOfs+3], big endian order.
+     */
     static void i2bBig4(int val, byte[] out, int outOfs) {
         BE.INT_ARRAY.set(out, outOfs, val);
     }
@@ -177,7 +186,7 @@ final class ByteArrayAccess {
     /**
      * byte[] to long[] conversion, little endian byte order
      */
-    static void b2lLittle(byte[] in, int inOfs, long[] out, int outOfs, int len) {
+    public static void b2lLittle(byte[] in, int inOfs, long[] out, int outOfs, int len) {
         len += inOfs;
         while (inOfs < len) {
             out[outOfs++] = (long) LE.LONG_ARRAY.get(in, inOfs);
@@ -189,11 +198,25 @@ final class ByteArrayAccess {
     /**
      * long[] to byte[] conversion, little endian byte order
      */
-    static void l2bLittle(long[] in, int inOfs, byte[] out, int outOfs, int len) {
+    public static void l2bLittle(long[] in, int inOfs, byte[] out, int outOfs, int len) {
         len += outOfs;
         while (outOfs < len) {
             LE.LONG_ARRAY.set(out, outOfs, in[inOfs++]);
             outOfs += 8;
         }
+    }
+
+    //
+    // special optimized byte[] to long conversion, little endian byte order
+    //
+    //static long b2lLittle8(byte[] in, int inOfs) {
+    //    return (long) LE.LONG_ARRAY.get(in, inOfs);
+    //}
+
+    /**
+     * special optimized long to byte[] conversion, little endian byte order
+     */
+    public static void l2bLittle8(long value, byte[] in, int inOfs) {
+        LE.LONG_ARRAY.set(in, inOfs, value);
     }
 }
