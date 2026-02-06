@@ -216,7 +216,7 @@ public final class JceKeyStore extends KeyStoreSpi {
      */
     public Date engineGetCreationDate(String alias) {
         final Instant instant = this.engineGetCreationInstant(alias);
-        if (instant == null){
+        if (instant == null) {
             return null;
         }
         return Date.from(instant);

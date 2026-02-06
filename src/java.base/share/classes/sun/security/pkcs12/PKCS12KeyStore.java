@@ -544,7 +544,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     public Date engineGetCreationDate(String alias) {
         final Instant instant = this.engineGetCreationInstant(alias);
-        if (instant == null){
+        if (instant == null) {
             return null;
         }
         return Date.from(instant);
@@ -2438,7 +2438,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 if (keyIdStr.startsWith("Time ")) {
                     try {
                         instant = Instant.ofEpochMilli(
-                                Long.parseLong(keyIdStr.substring(5)));
+                                Long.parseLong(keyIdStr.substring(5))
+                        );
                     } catch (Exception e) {
                         // instant has been initialized to null
                     }
