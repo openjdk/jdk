@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,90 +21,76 @@
  * questions.
  */
 
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-
-import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.MacHelper.SignKeyOption;
+import jdk.jpackage.test.MacHelper.SignKeyOptionWithKeychain;
 import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSignVerify;
 
 /**
- * Tests generation of app image with --mac-sign and related arguments. Test will
- * generate app image and verify signature of main launcher and app bundle itself.
- * This test requires that machine is configured with test certificate for
- * "Developer ID Application: jpackage.openjdk.java.net" or alternately
- * "Developer ID Application: " + name specified by system property:
- * "jpackage.mac.signing.key.user.name"
- * in the jpackagerTest keychain (or alternately the keychain specified with
- * the system property "jpackage.mac.signing.keychain".
- * If this certificate is self-signed, it must have be set to
- * always allowed access to this keychain" for user which runs test.
- * (If cert is real (not self signed), the do not set trust to allow.)
+ * Tests signing of an app image.
+ *
+ * <p>
+ * Prerequisites: Keychains with self-signed certificates as specified in
+ * {@link SigningBase.StandardKeychain#MAIN} and
+ * {@link SigningBase.StandardKeychain#SINGLE}.
  */
 
 /*
  * @test
  * @summary jpackage with --type app-image --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build SigningAppImageTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror SigningAppImageTest.java
  * @requires (jpackage.test.MacSignTests == "run")
- * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningAppImageTest
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningAppImageTest {
 
     @Test
-    // ({"sign or not", "signing-key or sign-identity", "certificate index"})
-    // Sign, signing-key and ASCII certificate
-    @Parameter({"true", "true", "ASCII_INDEX"})
-    // Sign, signing-key and UNICODE certificate
-    @Parameter({"true", "true", "UNICODE_INDEX"})
-    // Sign, signing-indentity and UNICODE certificate
-    @Parameter({"true", "false", "UNICODE_INDEX"})
-    // Unsigned
-    @Parameter({"false", "true", "INVALID_INDEX"})
-    public void test(boolean doSign, boolean signingKey, SigningBase.CertIndex certEnum) throws Exception {
-        MacSign.withKeychain(toConsumer(keychain -> {
-            test(keychain, doSign, signingKey, certEnum);
-        }), SigningBase.StandardKeychain.MAIN.keychain());
-    }
+    @ParameterSupplier
+    public static void test(SignKeyOptionWithKeychain sign) {
 
-    private void test(MacSign.ResolvedKeychain keychain, boolean doSign, boolean signingKey, SigningBase.CertIndex certEnum) throws Exception {
-        final var certIndex = certEnum.value();
+        var cmd = JPackageCommand.helloAppImage();
 
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        if (doSign) {
-            cmd.addArguments("--mac-sign",
-                    "--mac-signing-keychain",
-                    keychain.name());
-            if (signingKey) {
-                cmd.addArguments("--mac-signing-key-user-name",
-                        SigningBase.getDevName(certIndex));
-            } else {
-                cmd.addArguments("--mac-app-image-sign-identity",
-                        SigningBase.getAppCert(certIndex));
-            }
-        }
-        AdditionalLauncher testAL = new AdditionalLauncher("testAL");
+        var testAL = new AdditionalLauncher("testAL");
         testAL.applyTo(cmd);
         cmd.executeAndAssertHelloAppImageCreated();
 
-        Path launcherPath = cmd.appLauncherPath();
-        SigningBase.verifyCodesign(launcherPath, doSign, certIndex);
+        MacSign.withKeychain(keychain -> {
+            sign.addTo(cmd);
+            cmd.executeAndAssertHelloAppImageCreated();
+            MacSignVerify.verifyAppImageSigned(cmd, sign.certRequest());
+        }, sign.keychain());
+    }
 
-        Path testALPath = launcherPath.getParent().resolve("testAL");
-        SigningBase.verifyCodesign(testALPath, doSign, certIndex);
+    public static Collection<Object[]> test() {
 
-        Path appImage = cmd.outputBundle();
-        SigningBase.verifyCodesign(appImage, doSign, certIndex);
-        if (doSign) {
-            SigningBase.verifySpctl(appImage, "exec", certIndex);
+        List<SignKeyOptionWithKeychain> data = new ArrayList<>();
+
+        for (var certRequest : List.of(
+                SigningBase.StandardCertificateRequest.CODESIGN,
+                SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
+        )) {
+            for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
+                data.add(new SignKeyOptionWithKeychain(
+                        signIdentityType,
+                        certRequest,
+                        SigningBase.StandardKeychain.MAIN.keychain()));
+            }
         }
+
+        return data.stream().map(v -> {
+            return new Object[] {v};
+        }).toList();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -884,7 +884,6 @@ class LinearScanStatistic : public StackObj {
     counter_throw,
     counter_unwind,
     counter_typecheck,
-    counter_fpu_stack,
     counter_misc_inst,
     counter_other_inst,
     blank_line_2,

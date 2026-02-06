@@ -63,9 +63,7 @@ public class TestLimitsUpdating {
         try {
             testLimitUpdates();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
@@ -128,12 +126,12 @@ public class TestLimitsUpdating {
 
         // Do assertions based on the output in target container
         OutputAnalyzer targetOut = out[0];
-        targetOut.shouldContain("active_processor_count: 2"); // initial value
-        targetOut.shouldContain("active_processor_count: 3"); // updated value
-        targetOut.shouldContain("memory_limit_in_bytes: 512000 k"); // initial value
-        targetOut.shouldContain("memory_and_swap_limit_in_bytes: 512000 k"); // initial value
-        targetOut.shouldContain("memory_limit_in_bytes: 307200 k"); // updated value
-        targetOut.shouldContain("memory_and_swap_limit_in_bytes: 307200 k"); // updated value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "active_processor_count", "2"); // initial value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "active_processor_count", "3"); // updated value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "memory_limit", "512000 kB"); // initial value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "memory_and_swap_limit", "512000 kB"); // initial value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "memory_limit", "307200 kB"); // updated value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "memory_and_swap_limit", "307200 kB"); // updated value
     }
 
     private static List<String> getContainerUpdate(int cpuQuota, int cpuPeriod, String memory) {

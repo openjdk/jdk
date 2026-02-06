@@ -114,12 +114,12 @@ source %{
       case Op_VectorCastHF2F:
       case Op_VectorCastF2HF:
       case Op_AddVHF:
+      case Op_SubVHF:
+      case Op_MulVHF:
       case Op_DivVHF:
       case Op_MaxVHF:
       case Op_MinVHF:
-      case Op_MulVHF:
       case Op_SqrtVHF:
-      case Op_SubVHF:
         return UseZvfh;
       case Op_FmaVHF:
         return UseZvfh && UseFMA;
@@ -147,13 +147,28 @@ source %{
     if (!UseRVV) {
       return false;
     }
+
     switch (opcode) {
       case Op_SelectFromTwoVector:
         // There is no masked version of selectFrom two vector, i.e. selectFrom(av, bv, mask) in vector API.
         return false;
+      // Currently, the masked versions of the following 8 Float16 operations are disabled.
+      // When the support for Float16 vector classes is added in VectorAPI and the masked
+      // Float16 IR can be generated, these masked operations will be enabled and relevant
+      // backend support added.
+      case Op_AddVHF:
+      case Op_SubVHF:
+      case Op_MulVHF:
+      case Op_DivVHF:
+      case Op_MaxVHF:
+      case Op_MinVHF:
+      case Op_SqrtVHF:
+      case Op_FmaVHF:
+        return false;
       default:
         break;
     }
+
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 

@@ -34,11 +34,14 @@ package sun.util.locale;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ReferencedKeySet;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
 import java.util.function.Supplier;
 
+@AOTSafeClassInitializer
 public final class BaseLocale {
 
     public static @Stable BaseLocale[] constantBaseLocales;
@@ -63,6 +66,7 @@ public final class BaseLocale {
             CANADA_FRENCH = 18,
             NUM_CONSTANTS = 19;
     static {
+        // Legacy CDS archive support (to be deprecated)
         CDS.initializeFromArchive(BaseLocale.class);
         BaseLocale[] baseLocales = constantBaseLocales;
         if (baseLocales == null) {
@@ -91,13 +95,21 @@ public final class BaseLocale {
     }
 
     // Interned BaseLocale cache
-    private static final LazyConstant<ReferencedKeySet<BaseLocale>> CACHE =
+    @Stable private static LazyConstant<ReferencedKeySet<BaseLocale>> CACHE;
+    static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
+        CACHE =
             LazyConstant.of(new Supplier<>() {
                 @Override
                 public ReferencedKeySet<BaseLocale> get() {
                     return ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
                 }
             });
+    }
 
     public static final String SEP = "_";
 

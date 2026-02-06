@@ -215,7 +215,7 @@ protected:
   enum class StaticLookupMode   { find, skip };
   enum class PrivateLookupMode  { find, skip };
 
-  virtual bool is_klass() const { return true; }
+  bool is_klass() const override { return true; }
 
   // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
   // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"
@@ -510,18 +510,20 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // Want a pattern to quickly diff against layout header in register
-  // find something less clever!
+  // Return a value containing a single set bit that is in the bitset difference between the
+  // layout helpers for array-of-boolean and array-of-byte.
   static int layout_helper_boolean_diffbit() {
-    jint zlh = array_layout_helper(T_BOOLEAN);
-    jint blh = array_layout_helper(T_BYTE);
-    assert(zlh != blh, "array layout helpers must differ");
-    int diffbit = 1;
-    while ((diffbit & (zlh ^ blh)) == 0 && (diffbit & zlh) == 0) {
-      diffbit <<= 1;
-      assert(diffbit != 0, "make sure T_BOOLEAN has a different bit than T_BYTE");
-    }
-    return diffbit;
+    uint zlh = static_cast<uint>(array_layout_helper(T_BOOLEAN));
+    uint blh = static_cast<uint>(array_layout_helper(T_BYTE));
+    // get all the bits that are set in zlh and clear in blh
+    uint candidates = (zlh & ~blh);
+    assert(candidates != 0, "must be"); // must be some if there is a solution.
+    // Use well known bit hack to isolate the low bit of candidates.
+    uint result = candidates & (-candidates);
+    assert(is_power_of_2(result), "must be power of 2");
+    assert((result & zlh) != 0, "must be set in alh of T_BOOLEAN");
+    assert((result & blh) == 0, "must be clear in alh of T_BYTE");
+    return static_cast<int>(result);
   }
 
   static int layout_helper_log2_element_size(jint lh) {
@@ -649,9 +651,6 @@ public:
   // actual oop size of obj in memory in word size.
   virtual size_t oop_size(oop obj) const = 0;
 
-  // Size of klass in word size.
-  virtual int size() const = 0;
-
   // Returns the Java name for a class (Resource allocated)
   // For arrays, this returns the name of the element with a leading '['.
   // For classes, this returns the name with the package separators
@@ -728,8 +727,8 @@ public:
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
-  virtual MetaspaceObj::Type type() const { return ClassType; }
+  void metaspace_pointers_do(MetaspaceClosure* iter) override;
+  MetaspaceObj::Type type() const override { return ClassType; }
 
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
@@ -764,14 +763,12 @@ public:
   virtual jint jvmti_class_status() const;
 
   // Printing
-  virtual void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
 
   virtual void oop_print_value_on(oop obj, outputStream* st);
   virtual void oop_print_on      (oop obj, outputStream* st);
 
   void print_secondary_supers_on(outputStream* st) const;
-
-  virtual const char* internal_name() const = 0;
 
   // Verification
   virtual void verify_on(outputStream* st);

@@ -749,6 +749,7 @@ private:
   // Move objects to new locations.
   static void compact();
 
+  static void report_object_count_after_gc();
   // Add available regions to the stack and draining tasks to the task queue.
   static void prepare_region_draining_tasks(uint parallel_gc_threads);
 

@@ -114,7 +114,7 @@ EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
 
 ################################################################################
 # This macro works just like EscapeDollar above, but for #.
-EscapeHash = $(subst \#,\\\#,$(subst \\\#,\#,$(strip $1)))
+EscapeHash = $(subst $(HASH),\$(HASH),$(subst \$(HASH),$(HASH),$(strip $1)))
 
 ################################################################################
 # This macro translates $ into $$ to protect the string from make itself.

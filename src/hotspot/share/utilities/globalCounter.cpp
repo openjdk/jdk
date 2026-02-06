@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "memory/iterator.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmThread.hpp"
@@ -41,7 +41,7 @@ class GlobalCounter::CounterThreadCheck : public ThreadClosure {
     SpinYield yield;
     // Loops on this thread until it has exited the critical read section.
     while(true) {
-      uintx cnt = AtomicAccess::load_acquire(thread->get_rcu_counter());
+      uintx cnt = thread->get_rcu_counter()->load_acquire();
       // This checks if the thread's counter is active. And if so is the counter
       // for a pre-existing reader (belongs to this grace period). A pre-existing
       // reader will have a lower counter than the global counter version for this
@@ -57,9 +57,9 @@ class GlobalCounter::CounterThreadCheck : public ThreadClosure {
 };
 
 void GlobalCounter::write_synchronize() {
-  assert((*Thread::current()->get_rcu_counter() & COUNTER_ACTIVE) == 0x0, "must be outside a critcal section");
-  // AtomicAccess::add must provide fence since we have storeload dependency.
-  uintx gbl_cnt = AtomicAccess::add(&_global_counter._counter, COUNTER_INCREMENT);
+  assert((Thread::current()->get_rcu_counter()->load_relaxed() & COUNTER_ACTIVE) == 0x0, "must be outside a critcal section");
+  // Atomic add must provide fence since we have storeload dependency.
+  uintx gbl_cnt = _global_counter._counter.add_then_fetch(COUNTER_INCREMENT);
 
   // Do all RCU threads.
   CounterThreadCheck ctc(gbl_cnt);

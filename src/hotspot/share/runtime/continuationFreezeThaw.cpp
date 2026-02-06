@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1736,8 +1736,8 @@ static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kin
       m = top.interpreter_frame_method();
       assert(!m->is_native() || m->is_synchronized(), "invalid method %s", m->external_name());
       address bcp = top.interpreter_frame_bcp();
-      assert(bcp != 0 || m->is_native(), "");
-      at_sync_method = m->is_synchronized() && (bcp == 0 || bcp == m->code_base());
+      assert(bcp != nullptr || m->is_native(), "");
+      at_sync_method = m->is_synchronized() && (bcp == nullptr || bcp == m->code_base());
       // bcp is advanced on monitorenter before making the VM call, adjust for that.
       bool at_sync_bytecode = bcp > m->code_base() && Bytecode(m, bcp - 1).code() == Bytecodes::Code::_monitorenter;
       assert(at_sync_method || at_sync_bytecode, "");

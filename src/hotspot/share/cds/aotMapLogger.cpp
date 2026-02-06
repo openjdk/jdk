@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
@@ -141,7 +143,7 @@ public:
       info._buffered_addr = ref->obj();
       info._requested_addr = ref->obj();
       info._bytes = ref->size() * BytesPerWord;
-      info._type = ref->msotype();
+      info._type = ref->type();
       _objs.append(info);
     }
 
@@ -214,7 +216,7 @@ void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* r
       info._buffered_addr = src_info->buffered_addr();
       info._requested_addr = info._buffered_addr + _buffer_to_requested_delta;
       info._bytes = src_info->size_in_bytes();
-      info._type = src_info->msotype();
+      info._type = src_info->type();
       objs.append(info);
     }
 
@@ -332,43 +334,52 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     address buffered_addr = info._buffered_addr;
     address requested_addr = info._requested_addr;
     int bytes = info._bytes;
-    MetaspaceObj::Type type = info._type;
-    const char* type_name = MetaspaceObj::type_name(type);
+    MetaspaceClosureType type = info._type;
+    const char* type_name = MetaspaceClosure::type_name(type);
 
     log_as_hex(last_obj_base, buffered_addr, last_obj_base + _buffer_to_requested_delta);
 
     switch (type) {
-    case MetaspaceObj::ClassType:
+    case MetaspaceClosureType::ClassType:
       log_klass((Klass*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::ConstantPoolType:
+    case MetaspaceClosureType::ConstantPoolType:
       log_constant_pool((ConstantPool*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::ConstantPoolCacheType:
+    case MetaspaceClosureType::ConstantPoolCacheType:
       log_constant_pool_cache((ConstantPoolCache*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::ConstMethodType:
+    case MetaspaceClosureType::ConstMethodType:
       log_const_method((ConstMethod*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodType:
+    case MetaspaceClosureType::MethodType:
       log_method((Method*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodCountersType:
+    case MetaspaceClosureType::MethodCountersType:
       log_method_counters((MethodCounters*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodDataType:
+    case MetaspaceClosureType::MethodDataType:
       log_method_data((MethodData*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::SymbolType:
+    case MetaspaceClosureType::ModuleEntryType:
+      log_module_entry((ModuleEntry*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceClosureType::PackageEntryType:
+      log_package_entry((PackageEntry*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceClosureType::GrowableArrayType:
+      log_growable_array((GrowableArrayBase*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceClosureType::SymbolType:
       log_symbol((Symbol*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::KlassTrainingDataType:
+    case MetaspaceClosureType::KlassTrainingDataType:
       log_klass_training_data((KlassTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodTrainingDataType:
+    case MetaspaceClosureType::MethodTrainingDataType:
       log_method_training_data((MethodTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::CompileTrainingDataType:
+    case MetaspaceClosureType::CompileTrainingDataType:
       log_compile_training_data((CompileTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
     default:
@@ -419,6 +430,27 @@ void AOTMapLogger::log_method_data(MethodData* md, address requested_addr, const
                                    int bytes, Thread* current) {
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  md->method()->external_name());
+}
+
+void AOTMapLogger::log_module_entry(ModuleEntry* mod, address requested_addr, const char* type_name,
+                                   int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
+                      mod->name_as_C_string());
+}
+
+void AOTMapLogger::log_package_entry(PackageEntry* pkg, address requested_addr, const char* type_name,
+                                   int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s - %s", p2i(requested_addr), type_name, bytes,
+                      pkg->module()->name_as_C_string(), pkg->name_as_C_string());
+}
+
+void AOTMapLogger::log_growable_array(GrowableArrayBase* arr, address requested_addr, const char* type_name,
+                                      int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %d (%d)", p2i(requested_addr), type_name, bytes,
+                      arr->length(), arr->capacity());
 }
 
 void AOTMapLogger::log_klass(Klass* k, address requested_addr, const char* type_name,

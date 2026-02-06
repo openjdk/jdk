@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8238763 8246774
  * @summary ObjectInputStream readUnshared method handling of Records
- * @run testng UnsharedTest
+ * @run junit UnsharedTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -35,10 +35,11 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import org.junit.jupiter.api.Assertions;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests OOS::writeUnshared and OIS::readUnshared to verify that records
@@ -56,16 +57,16 @@ public class UnsharedTest {
         {  // shared - sanity to ensure the second foo is a ref
             var byteStream = serialize(foo, foo);
             var foo1 = (Foo) deserializeOne(byteStream);
-            assertEquals(foo1.x, foo.x);
+            assertEquals(foo.x, foo1.x);
             var foo2 = (Foo) deserializeOne(byteStream);
-            assertEquals(foo2.x, foo.x);
+            assertEquals(foo.x, foo2.x);
             assertTrue(foo2 == foo1);
         }
         {  // unshared
             var byteStream = serialize(foo, foo);
             var foo1 = (Foo) deserializeOneUnshared(byteStream);
-            assertEquals(foo1.x, foo.x);
-            var expected = expectThrows(IOE, () -> deserializeOne(byteStream));
+            assertEquals(foo.x, foo1.x);
+            var expected = Assertions.assertThrows(IOE, () -> deserializeOne(byteStream));
             assertTrue(expected.getMessage().contains("cannot read back reference to unshared object"));
         }
     }
@@ -76,17 +77,17 @@ public class UnsharedTest {
         {  // shared - sanity to ensure the second foo is NOT a ref
             var byteStream = serializeUnshared(foo, foo);
             var foo1 = (Foo) deserializeOne(byteStream);
-            assertEquals(foo1.x, foo.x);
+            assertEquals(foo.x, foo1.x);
             var foo2 = (Foo) deserializeOne(byteStream);
-            assertEquals(foo2.x, foo.x);
+            assertEquals(foo.x, foo2.x);
             assertTrue(foo2 != foo1);
         }
         {  // unshared
             var byteStream = serializeUnshared(foo, foo);
             var foo1 = (Foo) deserializeOneUnshared(byteStream);
-            assertEquals(foo1.x, foo.x);
+            assertEquals(foo.x, foo1.x);
             var foo2 = (Foo) deserializeOneUnshared(byteStream);
-            assertEquals(foo2.x, foo.x);
+            assertEquals(foo.x, foo2.x);
             assertTrue(foo2 != foo1);
         }
     }

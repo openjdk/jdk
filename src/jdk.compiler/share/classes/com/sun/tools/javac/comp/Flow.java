@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,15 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.BindingPattern;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.EnumConstantPattern;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.ExhaustivenessResult;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.PatternDescription;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.RecordPattern;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import java.util.Arrays;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -696,9 +702,18 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                tree.isExhaustive |= exhaustiveness.exhausts(tree.selector, tree.cases);
                 if (!tree.isExhaustive) {
-                    log.error(tree, Errors.NotExhaustiveStatement);
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+
+                    tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                    if (!tree.isExhaustive) {
+                        if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                            log.error(tree, Errors.NotExhaustiveStatement);
+                        } else {
+                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveStatementDetails);
+                        }
+                    }
                 }
             }
             if (!tree.hasUnconditionalPattern && !exhaustiveSwitch) {
@@ -735,14 +750,52 @@ public class Flow {
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                tree.isExhaustive = exhaustiveness.exhausts(tree.selector, tree.cases);
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+
+                tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                if (!tree.isExhaustive) {
+                    if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                        log.error(tree, Errors.NotExhaustive);
+                    } else {
+                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveDetails);
+                    }
+                }
             }
 
-            if (!tree.isExhaustive) {
-                log.error(tree, Errors.NotExhaustive);
-            }
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
+        }
+
+        private void logNotExhaustiveError(DiagnosticPosition pos,
+                                           ExhaustivenessResult exhaustivenessResult,
+                                           Error errorKey) {
+            List<JCDiagnostic> details =
+                    exhaustivenessResult.notExhaustiveDetails()
+                                       .stream()
+                                       .map(this::patternToDiagnostic)
+                                       .sorted((d1, d2) -> d1.toString()
+                                                             .compareTo(d2.toString()))
+                                       .collect(List.collector());
+            JCDiagnostic main = diags.error(null, log.currentSource(), pos, errorKey);
+            JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, details);
+            log.report(d);
+        }
+
+        private JCDiagnostic patternToDiagnostic(PatternDescription desc) {
+            Type patternType = types.erasure(desc.type());
+            return diags.fragment(switch (desc) {
+                case BindingPattern _ ->
+                    Fragments.BindingPattern(patternType);
+                case RecordPattern rp ->
+                    Fragments.RecordPattern(patternType,
+                                            Arrays.stream(rp.nested())
+                                                  .map(this::patternToDiagnostic)
+                                                  .toList());
+                case EnumConstantPattern ep ->
+                    Fragments.EnumConstantPattern(patternType,
+                                                  ep.enumConstant());
+            });
         }
 
         public void visitTry(JCTry tree) {
