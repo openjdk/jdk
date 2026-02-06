@@ -92,7 +92,7 @@ Thread::Thread(MemTag mem_tag) {
   DEBUG_ONLY(_owned_locks = nullptr;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
-  set_allocated_bytes(0);
+  _allocated_bytes = 0;
   _current_pending_raw_monitor = nullptr;
   _vm_error_callbacks = nullptr;
 

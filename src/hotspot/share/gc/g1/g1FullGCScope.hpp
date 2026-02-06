@@ -48,7 +48,6 @@ public:
 class G1FullGCScope : public StackObj {
   bool                    _should_clear_soft_refs;
   bool                    _do_maximal_compaction;
-  G1CollectedHeap*        _g1h;
   STWGCTimer              _timer;
   GCTracer*               _tracer;
   G1FullGCJFRTracerMark   _tracer_mark;

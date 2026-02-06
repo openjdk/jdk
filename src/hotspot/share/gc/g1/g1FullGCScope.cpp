@@ -41,12 +41,11 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              GCTracer* tracer) :
     _should_clear_soft_refs(clear_soft),
     _do_maximal_compaction(do_maximal_compaction),
-    _g1h(G1CollectedHeap::heap()),
     _timer(),
     _tracer(tracer),
     _tracer_mark(&_timer, _tracer),
     _monitoring_scope(monitoring_support),
-    _heap_printer(_g1h),
+    _heap_printer(G1CollectedHeap::heap()),
     _region_compaction_threshold(do_maximal_compaction ?
                                  G1HeapRegion::GrainWords :
                                  (1 - MarkSweepDeadRatio / 100.0) * G1HeapRegion::GrainWords) { }
