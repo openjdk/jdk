@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,16 @@
   @run        main ButtonActionKeyTest
 */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.FlowLayout;
+import java.awt.Robot;
+import javax.swing.AbstractAction;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
 import test.java.awt.regtesthelpers.Util;
 
@@ -42,7 +49,7 @@ public class ButtonActionKeyTest {
     JFrame frame = new JFrame("Frame");
     JButton button = new JButton("button");
     JTextField text = new JTextField("text");
-    AtomicBoolean gotEvent = new AtomicBoolean(false);
+    final AtomicBoolean gotEvent = new AtomicBoolean(false);
 
     public static void main(String[] args) {
         ButtonActionKeyTest app = new ButtonActionKeyTest();
@@ -82,9 +89,11 @@ public class ButtonActionKeyTest {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         Util.waitForIdle(robot);
+        robot.delay(1000);
 
         Util.clickOnComp(button, robot);
         Util.waitForIdle(robot);
+        robot.delay(500);
 
         if (!button.isFocusOwner()) {
             throw new Error("Test error: a button didn't gain focus.");

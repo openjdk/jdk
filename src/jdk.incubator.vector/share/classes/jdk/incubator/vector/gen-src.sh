@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,11 +77,15 @@ do
     byte)
       Wideboxtype=Integer
       sizeInBytes=1
+      laneType=LT_BYTE
+      lanebitsType=LT_BYTE
       args="$args -KbyteOrShort"
       ;;
     short)
       Wideboxtype=Integer
       sizeInBytes=2
+      laneType=LT_SHORT
+      lanebitsType=LT_SHORT
       args="$args -KbyteOrShort"
       ;;
     int)
@@ -92,6 +96,8 @@ do
       Fptype=Float
       Boxfptype=Float
       sizeInBytes=4
+      laneType=LT_INT
+      lanebitsType=LT_INT
       args="$args -KintOrLong -KintOrFP -KintOrFloat"
       ;;
     long)
@@ -99,6 +105,8 @@ do
       Fptype=Double
       Boxfptype=Double
       sizeInBytes=8
+      laneType=LT_LONG
+      lanebitsType=LT_LONG
       args="$args -KintOrLong -KlongOrDouble"
       ;;
     float)
@@ -107,6 +115,8 @@ do
       Bitstype=Int
       Boxbitstype=Integer
       sizeInBytes=4
+      laneType=LT_FLOAT
+      lanebitsType=LT_INT
       args="$args -KintOrFP -KintOrFloat"
       ;;
     double)
@@ -115,11 +125,13 @@ do
       Bitstype=Long
       Boxbitstype=Long
       sizeInBytes=8
+      laneType=LT_DOUBLE
+      lanebitsType=LT_LONG
       args="$args -KintOrFP -KlongOrDouble"
       ;;
   esac
 
-  args="$args -K$kind -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
+  args="$args -K$kind -DlaneType=$laneType -DlanebitsType=$lanebitsType -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
   args="$args -DsizeInBytes=$sizeInBytes"

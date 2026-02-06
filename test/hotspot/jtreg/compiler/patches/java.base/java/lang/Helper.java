@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,6 @@ public class Helper {
     @jdk.internal.vm.annotation.ForceInline
     public static int StringCodingCountPositives(byte[] ba, int off, int len) {
         return StringCoding.countPositives(ba, off, len);
-    }
-
-    @jdk.internal.vm.annotation.ForceInline
-    public static int StringCodingEncodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len) {
-        return StringCoding.encodeAsciiArray0(sa, sp, da, dp, len);
     }
 
     @jdk.internal.vm.annotation.ForceInline

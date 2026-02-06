@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,13 @@
 class ThreadLocalAllocStats;
 
 // ThreadLocalAllocBuffer: a descriptor for thread-local storage used by
-// the threads for allocation.
-//            It is thread-private at any time, but maybe multiplexed over
-//            time across multiple threads. The park()/unpark() pair is
-//            used to make it available for such multiplexing.
+// the threads for allocation. It is thread-private at any time.
 //
-//            Heap sampling is performed via the end and allocation_end
-//            fields.
-//            allocation_end contains the real end of the tlab allocation,
-//            whereas end can be set to an arbitrary spot in the tlab to
-//            trip the return and sample the allocation.
+// Heap sampling is performed via the end and allocation_end
+// fields.
+// allocation_end contains the real end of the tlab allocation,
+// whereas end can be set to an arbitrary spot in the tlab to
+// trip the return and sample the allocation.
 class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -58,6 +55,7 @@ private:
   size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
   static size_t   _max_size;                          // maximum size of any TLAB
+  static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
   static unsigned _target_refills;                    // expected number of refills between GCs
 
   unsigned  _number_of_refills;
@@ -115,17 +113,18 @@ public:
   HeapWord* end() const                          { return _end; }
   HeapWord* top() const                          { return _top; }
   HeapWord* hard_end();
-  HeapWord* pf_top() const                       { return _pf_top; }
   size_t desired_size() const                    { return _desired_size; }
-  size_t used() const                            { return pointer_delta(top(), start()); }
   size_t used_bytes() const                      { return pointer_delta(top(), start(), 1); }
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
 
-  // For external inspection.
-  const HeapWord* start_relaxed() const;
-  const HeapWord* top_relaxed() const;
+  // Returns an estimate of the number of bytes currently used in the TLAB.
+  // Due to races with concurrent allocations and/or resetting the TLAB the return
+  // value may be inconsistent with any other metrics (e.g. total allocated
+  // bytes), and may just incorrectly return 0.
+  // Intented fo external inspection only where accuracy is not 100% required.
+  size_t estimated_used_bytes() const;
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
@@ -169,14 +168,6 @@ public:
   void set_sampling_point(HeapWord* sampling_point);
 
   static size_t refill_waste_limit_increment();
-
-  template <typename T> void addresses_do(T f) {
-    f(&_start);
-    f(&_top);
-    f(&_pf_top);
-    f(&_end);
-    f(&_allocation_end);
-  }
 
   // Code generation support
   static ByteSize start_offset()                 { return byte_offset_of(ThreadLocalAllocBuffer, _start); }

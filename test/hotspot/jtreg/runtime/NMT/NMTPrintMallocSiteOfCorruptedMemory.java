@@ -24,6 +24,8 @@
 /*
  * @test
  * @summary Check the allocation-site stack trace of a corrupted memory at free() time
+ * @comment Under ASAN build, memory corruption is reported by ASAN runtime and not JVM.
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox

@@ -25,6 +25,9 @@
 
 package sun.nio.ch;
 
+import java.util.concurrent.locks.LockSupport;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 // Signalling operations on native threads
 //
@@ -37,45 +40,38 @@ package sun.nio.ch;
 // always returns -1 and the signal(long) method has no effect.
 
 public class NativeThread {
-    private static final long VIRTUAL_THREAD_ID = -1L;
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    private NativeThread() { }
 
     /**
-     * Returns the id of the current native thread if the platform can signal
-     * native threads, 0 if the platform can not signal native threads, or
-     * -1L if the current thread is a virtual thread.
-     */
-    public static long current() {
-        if (Thread.currentThread().isVirtual()) {
-            return VIRTUAL_THREAD_ID;
-        } else {
-            return current0();
-        }
-    }
-
-    /**
-     * Signals the given native thread.
+     * Returns the Thread to signal the current thread.
      *
-     * @throws IllegalArgumentException if tid is not a token to a native thread
+     * The first use of this method on a platform thread will capture the thread's
+     * native thread ID.
      */
-    public static void signal(long tid) {
-        if (tid == 0 || tid == VIRTUAL_THREAD_ID)
-            throw new IllegalArgumentException();
-        signal0(tid);
+    public static Thread threadToSignal() {
+        Thread t = Thread.currentThread();
+        if (!t.isVirtual() && JLA.nativeThreadID(t) == 0) {
+            JLA.setThreadNativeID(current0());
+        }
+        return t;
     }
 
     /**
-     * Returns true the tid is the id of a native thread.
+     * Signals the given thread. For a platform thread it sends a signal to the thread.
+     * For a virtual thread it just unparks it.
+     * @throws IllegalStateException if the thread is a platform thread that hasn't set its native ID
      */
-    static boolean isNativeThread(long tid) {
-        return (tid != 0 && tid != VIRTUAL_THREAD_ID);
-    }
-
-    /**
-     * Returns true if tid is -1L.
-     * @see #current()
-     */
-    static boolean isVirtualThread(long tid) {
-        return (tid == VIRTUAL_THREAD_ID);
+    public static void signal(Thread thread) {
+        if (thread.isVirtual()) {
+            LockSupport.unpark(thread);
+        } else {
+            long id = JLA.nativeThreadID(thread);
+            if (id == 0)
+                throw new IllegalStateException("Native thread ID not set");
+            signal0(id);
+        }
     }
 
     /**

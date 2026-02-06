@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -664,7 +664,8 @@ jdk_core_manual_interactive = \
 jdk_security_manual_interactive = \
     sun/security/tools/keytool/i18n.java \
     com/sun/security/auth/callback/TextCallbackHandler/Password.java \
-    sun/security/krb5/config/native/TestDynamicStore.java
+    sun/security/krb5/config/native/TestDynamicStore.java \
+    sun/security/tools/keytool/EchoPassword.java
 
 # Test sets for running inside container environment
 jdk_containers_extended = \

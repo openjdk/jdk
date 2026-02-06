@@ -89,9 +89,6 @@
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
-#if INCLUDE_JFR
-#include "jfr/support/jfrTraceIdExtension.hpp"
-#endif
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -156,6 +153,8 @@
 #define JAVA_25_VERSION                   69
 
 #define JAVA_26_VERSION                   70
+
+#define JAVA_27_VERSION                   71
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -944,6 +943,7 @@ public:
     _java_lang_Deprecated_for_removal,
     _jdk_internal_vm_annotation_AOTSafeClassInitializer,
     _method_AOTRuntimeSetup,
+    _jdk_internal_vm_annotation_TrustFinalFields,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1879,6 +1879,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _field_Stable;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_TrustFinalFields_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_TrustFinalFields;
+    }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
       if (_location != _in_field && _location != _in_class) {
         break;  // only allow for fields and classes
@@ -1992,6 +1997,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   }
   if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
     ik->set_has_aot_safe_initializer();
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_TrustFinalFields)) {
+    ik->set_trust_final_fields(true);
   }
 }
 
@@ -5271,8 +5279,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
       }
     }
   }
-
-  JFR_ONLY(INIT_ID(ik);)
 
   // If we reach here, all is well.
   // Now remove the InstanceKlass* from the _klass_to_deallocate field

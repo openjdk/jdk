@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #import "SpinboxAccessibility.h"
+#import "ThreadUtilities.h"
 
 #define INCREMENT 0
 #define DECREMENT 1
@@ -44,7 +45,15 @@
 
 - (id _Nullable)accessibilityValue
 {
-    return [super accessibilityValue];
+    id val = [super accessibilityValue];
+    NSArray *clist = [super accessibilityChildren];
+    for (NSUInteger i = 0; i < [clist count]; i++) {
+        id child = [clist objectAtIndex:i];
+        if ([child conformsToProtocol:@protocol(NSAccessibilityNavigableStaticText)]) {
+            val = [child accessibilityValue];
+        }
+    }
+    return val;
 }
 
 - (BOOL)accessibilityPerformIncrement
@@ -66,6 +75,20 @@
 - (id)accessibilityParent
 {
     return [super accessibilityParent];
+}
+
+- (void)postValueChanged
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, NSAccessibilityValueChangedNotification);
+    NSArray *clist = [super accessibilityChildren];
+    for (NSUInteger i = 0; i < [clist count]; i++) {
+        id child = [clist objectAtIndex:i];
+        if ([child conformsToProtocol:@protocol(NSAccessibilityNavigableStaticText)]) {
+            NSAccessibilityPostNotification(child, NSAccessibilityLayoutChangedNotification);
+            [child suppressEditUpdates];
+        }
+    }
 }
 
 @end

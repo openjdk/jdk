@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, NTT DATA.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,12 +99,11 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
 
   // Clear state
   _current_pc = 0L;
-  _cfa_reg = RSP;
+  _cfa_reg = MAX_VALUE;
   _return_address_reg = RA;
   _cfa_offset = 0;
-  _ra_cfa_offset = 0;
-  _bp_cfa_offset = 0;
-  _bp_offset_available = false;
+  _ra_cfa_offset = 8;
+  _bp_cfa_offset = INT_MAX;
 
   parse_dwarf_instructions(0L, static_cast<uintptr_t>(-1L), end);
 
@@ -119,8 +118,8 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
   /* for remember state */
   enum DWARF_Register rem_cfa_reg = MAX_VALUE;
   int rem_cfa_offset = 0;
-  int rem_ra_cfa_offset = 0;
-  int rem_bp_cfa_offset = 0;
+  int rem_ra_cfa_offset = 8;
+  int rem_bp_cfa_offset = INT_MAX;
 
   while ((_buf < end) && (_current_pc < pc)) {
     unsigned char op = *_buf++;
@@ -147,7 +146,6 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(opa);
         if (reg == RBP) {
           _bp_cfa_offset = operand1 * _data_factor;
-          _bp_offset_available = true;
         } else if (reg == RA) {
           _ra_cfa_offset = operand1 * _data_factor;
         }
@@ -181,6 +179,14 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         _buf += 4;
         if (_current_pc != 0L) {
           _current_pc += ofs * _code_factor;
+        }
+        break;
+      }
+      case 0x07: { // DW_CFA_undefined
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        // We are only interested in BP here because CFA and RA should not be undefined.
+        if (reg == RBP) {
+          _bp_cfa_offset = INT_MAX;
         }
         break;
       }
