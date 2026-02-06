@@ -359,36 +359,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AddReductionVHFNode-------------------------------------
-// Vector add half float as a reduction
-class AddReductionVHFNode : public ReductionNode {
-private:
-  // True if add reduction operation for half floats requires strict ordering.
-  // As an example - The value is true when add reduction for half floats is auto-vectorized
-  // as auto-vectorization mandates strict ordering but the value is false when this node
-  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
-  const bool _requires_strict_order;
-
-public:
-  // _requires_strict_order is set to true by default as mandated by auto-vectorization
-  AddReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
-    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
-
-  int Opcode() const override;
-  bool requires_strict_order() const override { return _requires_strict_order; }
-
-  uint hash() const override { return Node::hash() + _requires_strict_order; }
-
-  bool cmp(const Node& n) const override {
-    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
-  }
-
-  uint size_of() const override { return sizeof(*this); }
-
-  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
-  uint ideal_reg() const override { return Op_RegF; }
-};
-
 // Vector add half float as a reduction
 class AddReductionVHFNode : public ReductionNode {
 private:
@@ -636,37 +606,6 @@ public:
   MulReductionVLNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
-
-//------------------------------MulReductionVHFNode-------------------------------------
-// Vector multiply half float as a reduction
-class MulReductionVHFNode : public ReductionNode {
-private:
-  // True if mul reduction operation for half floats requires strict ordering.
-  // As an example - The value is true when add reduction for half floats is auto-vectorized
-  // as auto-vectorization mandates strict ordering but the value is false when this node
-  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
-  const bool _requires_strict_order;
-
-public:
-  // _requires_strict_order is set to true by default as mandated by auto-vectorization
-  MulReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
-    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
-
-  int Opcode() const override;
-  bool requires_strict_order() const override { return _requires_strict_order; }
-
-  uint hash() const override { return Node::hash() + _requires_strict_order; }
-
-  bool cmp(const Node& n) const override {
-    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
-  }
-
-  uint size_of() const override { return sizeof(*this); }
-
-  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
-  uint ideal_reg() const override { return Op_RegF; }
-};
-
 
 // Vector multiply half float as a reduction
 class MulReductionVHFNode : public ReductionNode {
