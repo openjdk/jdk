@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1677,11 +1677,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 if (method.equals("HEAD") || cl == 0 ||
                     respCode == HTTP_NOT_MODIFIED ||
                     respCode == HTTP_NO_CONTENT) {
-
-                    http.finished();
-                    http = null;
-                    inputStream = new EmptyInputStream();
-                    connected = false;
+                    noResponseBody();
                 }
 
                 if (respCode == 200 || respCode == 203 || respCode == 206 ||
@@ -1761,6 +1757,24 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 serverAuthentication.disposeContext();
             }
         }
+    }
+
+    /**
+     * This method is called when a response with no response
+     * body is received, and arrange for the http client to
+     * be returned to the pool (or released) immediately when
+     * possible.
+     * @apiNote Used by {@link sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection}
+     * to preserve the TLS information after receiving an empty body.
+     * @implSpec
+     * Subclasses that override this method should call the super class
+     * implementation.
+     */
+    protected void noResponseBody() {
+        http.finished();
+        http = null;
+        inputStream = new EmptyInputStream();
+        connected = false;
     }
 
     /*

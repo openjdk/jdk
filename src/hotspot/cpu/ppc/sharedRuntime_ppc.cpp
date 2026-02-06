@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,7 +775,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return stk;
 }
 
-#if defined(COMPILER1) || defined(COMPILER2)
 // Calling convention for calling C code.
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
@@ -913,7 +912,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return MAX2(arg, 8) * 2 + additional_frame_header_slots;
 #endif
 }
-#endif // COMPILER2
 
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint num_bits,
@@ -2874,7 +2872,6 @@ void SharedRuntime::generate_deopt_blob() {
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
-  int frame_size_in_words;
   OopMap* map = nullptr;
   OopMapSet *oop_maps = new OopMapSet();
 
@@ -2886,6 +2883,9 @@ void SharedRuntime::generate_deopt_blob() {
   const Register exec_mode_reg = R21_tmp1;
 
   const address start = __ pc();
+  int exception_offset = 0;
+  int exception_in_tls_offset = 0;
+  int reexecute_offset = 0;
 
 #if defined(COMPILER1) || defined(COMPILER2)
   // --------------------------------------------------------------------------
@@ -2925,7 +2925,7 @@ void SharedRuntime::generate_deopt_blob() {
   // - R3_ARG1: exception oop
   // - R4_ARG2: exception pc
 
-  int exception_offset = __ pc() - start;
+  exception_offset = __ pc() - start;
 
   BLOCK_COMMENT("Prolog for exception case");
 
@@ -2936,7 +2936,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ std(R4_ARG2, _abi0(lr), R1_SP);
 
   // Vanilla deoptimization with an exception pending in exception_oop.
-  int exception_in_tls_offset = __ pc() - start;
+  exception_in_tls_offset = __ pc() - start;
 
   // Push the "unpack frame".
   // Save everything in sight.
@@ -2949,8 +2949,6 @@ void SharedRuntime::generate_deopt_blob() {
   __ li(exec_mode_reg, Deoptimization::Unpack_exception);
 
   // fall through
-
-  int reexecute_offset = 0;
 #ifdef COMPILER1
   __ b(exec_mode_initialized);
 
@@ -3068,11 +3066,12 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Return to the interpreter entry point.
   __ blr();
-  __ flush();
-#else // COMPILER2
+#else // !defined(COMPILER1) && !defined(COMPILER2)
   __ unimplemented("deopt blob needed only with compiler");
-  int exception_offset = __ pc() - start;
-#endif // COMPILER2
+#endif
+
+  // Make sure all code is generated
+  __ flush();
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
                                            reexecute_offset, first_frame_size_in_bytes / wordSize);

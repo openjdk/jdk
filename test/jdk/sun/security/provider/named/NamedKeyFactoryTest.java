@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8340327
+ * @bug 8340327 8347938
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.pkcs
  *          java.base/sun.security.provider
@@ -41,10 +41,13 @@ import sun.security.x509.NamedX509Key;
 
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 public class NamedKeyFactoryTest {
 
     private static final SeededSecureRandom RAND = SeededSecureRandom.one();
+    private static final byte[] RAW_SK = RAND.nBytes(16);
+    private static final byte[] RAW_PK = RAND.nBytes(16);
 
     public static void main(String[] args) throws Exception {
         Security.addProvider(new ProviderImpl());
@@ -78,8 +81,8 @@ public class NamedKeyFactoryTest {
         g.initialize(new NamedParameterSpec("ShA-256"));
         checkKeyPair(g.generateKeyPair(), "SHA", "SHA-256");
 
-        var pk = new NamedX509Key("sHa", "ShA-256", RAND.nBytes(2));
-        var sk = new NamedPKCS8Key("sHa", "SHa-256", RAND.nBytes(2));
+        var pk = new NamedX509Key("sHa", "ShA-256", RAW_PK);
+        var sk = NamedPKCS8Key.internalCreate("sHa", "SHa-256", RAW_SK, null);
         checkKey(pk, "sHa", "ShA-256");
         checkKey(sk, "sHa", "SHa-256");
 
@@ -134,25 +137,27 @@ public class NamedKeyFactoryTest {
         Asserts.assertEquals("RAW", srk2.getFormat());
         Asserts.assertEqualsByteArray(srk2.getEncoded(), sk.getRawBytes());
 
+        checkKey(kf2.generatePrivate(srk), "SHA", "SHA-256");
         Asserts.assertEqualsByteArray(kf2.generatePrivate(srk).getEncoded(), sk.getEncoded());
         Utils.runAndCheckException(() -> kf.generatePrivate(srk), InvalidKeySpecException.class); // no pname
+        checkKey(kf2.generatePrivate(srk), "SHA", "SHA-256");
         Asserts.assertEqualsByteArray(kf2.generatePrivate(srk2).getEncoded(), sk.getEncoded());
         Utils.runAndCheckException(() -> kf.generatePrivate(srk2), InvalidKeySpecException.class); // no pname
 
         var pk1 = new PublicKey() {
             public String getAlgorithm() { return "SHA"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return RAND.nBytes(2); }
+            public byte[] getEncoded() { return RAW_PK; }
         };
         var pk2 = new PublicKey() {
             public String getAlgorithm() { return "sHA-256"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return RAND.nBytes(2); }
+            public byte[] getEncoded() { return RAW_PK; }
         };
         var pk3 = new PublicKey() {
             public String getAlgorithm() { return "SHA"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return RAND.nBytes(2); }
+            public byte[] getEncoded() { return RAW_PK; }
             public AlgorithmParameterSpec getParams() { return new NamedParameterSpec("sHA-256"); }
         };
 
@@ -167,17 +172,17 @@ public class NamedKeyFactoryTest {
         var sk1 = new PrivateKey() {
             public String getAlgorithm() { return "SHA"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return RAND.nBytes(2); }
+            public byte[] getEncoded() { return RAW_SK; }
         };
         var sk2 = new PrivateKey() {
             public String getAlgorithm() { return "sHA-256"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return RAND.nBytes(2); }
+            public byte[] getEncoded() { return RAW_SK; }
         };
         var sk3 = new PrivateKey() {
             public String getAlgorithm() { return "SHA"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return RAND.nBytes(2); }
+            public byte[] getEncoded() { return RAW_SK; }
             public AlgorithmParameterSpec getParams() { return new NamedParameterSpec("sHA-256"); }
         };
 
@@ -201,6 +206,14 @@ public class NamedKeyFactoryTest {
         if (k instanceof AsymmetricKey ak && ak.getParams() instanceof NamedParameterSpec nps) {
             Asserts.assertEquals(pname, nps.getName());
         }
+        if (k instanceof NamedPKCS8Key nsk) {
+            var raw = nsk.getRawBytes();
+            Asserts.assertEqualsByteArray(Arrays.copyOf(RAW_SK, raw.length), raw);
+        }
+        if (k instanceof NamedX509Key npk) {
+            var raw = npk.getRawBytes();
+            Asserts.assertEqualsByteArray(Arrays.copyOf(RAW_PK, raw.length), raw);
+        }
     }
 
     // Provider
@@ -220,15 +233,24 @@ public class NamedKeyFactoryTest {
         public KF() {
             super("SHA", "SHA-256", "SHA-512");
         }
-    }
-    public static class KF1 extends NamedKeyFactory {
-        public KF1() {
-            super("SHA", "SHA-256");
+
+        public KF(String name) {
+            super("SHA", name);
+        }
+
+        @Override
+        protected byte[] implExpand(String pname, byte[] input) throws InvalidKeyException {
+            return null;
         }
     }
-    public static class KF2 extends NamedKeyFactory {
+    public static class KF1 extends KF {
+        public KF1() {
+            super("SHA-256");
+        }
+    }
+    public static class KF2 extends KF {
         public KF2() {
-            super("SHA", "SHA-512");
+            super("SHA-512");
         }
     }
     public static class KPG extends NamedKeyPairGenerator {
@@ -243,8 +265,8 @@ public class NamedKeyFactoryTest {
         @Override
         public byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
             var out = new byte[2][];
-            out[0] = RAND.nBytes(name.endsWith("256") ? 2 : 4);
-            out[1] = RAND.nBytes(name.endsWith("256") ? 2 : 4);
+            out[0] = name.endsWith("256") ? Arrays.copyOf(RAW_PK, 8) : RAW_PK;
+            out[1] = name.endsWith("256") ? Arrays.copyOf(RAW_SK, 8) : RAW_SK;
             return out;
         }
     }

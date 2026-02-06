@@ -610,7 +610,7 @@ public class DoubleByte {
 
             try {
                 if (isASCIICompatible) {
-                    int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     sp += n;
                     dp += n;
                 }

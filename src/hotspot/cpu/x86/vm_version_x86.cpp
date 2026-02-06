@@ -1152,6 +1152,10 @@ void VM_Version::get_processor_features() {
         warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     } else {
       if (UseSSE > 2) {
         if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
@@ -1170,8 +1174,8 @@ void VM_Version::get_processor_features() {
       if (!UseAESIntrinsics) {
         if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
           warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
-          FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
         }
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
       } else {
         if (supports_sse4_1()) {
           if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
@@ -1191,16 +1195,16 @@ void VM_Version::get_processor_features() {
   } else if (UseAES || UseAESIntrinsics || UseAESCTRIntrinsics) {
     if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
       warning("AES instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAES, false);
     }
+    FLAG_SET_DEFAULT(UseAES, false);
     if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
       warning("AES intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
       warning("AES-CTR intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
   // Use CLMUL instructions if available.

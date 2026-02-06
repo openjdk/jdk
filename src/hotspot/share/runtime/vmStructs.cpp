@@ -79,6 +79,7 @@
 #include "oops/typeArrayOop.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -888,6 +889,7 @@
   declare_unsigned_integer_type(unsigned short)                           \
   declare_unsigned_integer_type(jushort)                                  \
   declare_unsigned_integer_type(unsigned long)                            \
+  declare_unsigned_integer_type(Atomic<size_t>)                           \
   /* The compiler thinks this is a different type than */                 \
   /* unsigned short on Win32 */                                           \
   declare_unsigned_integer_type(u1)                                       \

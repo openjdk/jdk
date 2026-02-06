@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,4 +50,18 @@ public class AttachOperationFailedException extends IOException {
     public AttachOperationFailedException(String message) {
         super(message);
     }
+
+    /**
+     * Constructs an <code>AttachOperationFailedException</code> with
+     * the specified cause.
+     *
+     * @param   message the detail message.
+     * @param   cause   the cause of this exception.
+     *
+     * @since 27
+     */
+    public AttachOperationFailedException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }
