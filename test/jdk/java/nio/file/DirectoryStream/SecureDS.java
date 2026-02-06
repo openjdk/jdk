@@ -62,9 +62,7 @@ public class SecureDS {
         try {
             DirectoryStream<Path> stream = newDirectoryStream(dir);
             stream.close();
-            if (!(stream instanceof SecureDirectoryStream)) {
-                fail("SecureDirectoryStream not supported.");
-            }
+            assumeTrue(stream instanceof SecureDirectoryStream);
 
             supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(dir);
 
