@@ -93,16 +93,18 @@ public:
 
   // Decoding -----
 
+  // If base_address is null, decode an address within the mapped aot cache range.
   template <typename T>
   static T decode_not_null(narrowPtr narrowp, address base_address = nullptr) {
     assert(narrowp != null(), "sanity");
     if (base_address == nullptr) {
-      base_address = reinterpret_cast<address>(SharedBaseAddress);
+      T p = reinterpret_cast<T>(reinterpret_cast<address>(SharedBaseAddress) + get_byte_offset(narrowp));
+      assert(Metaspace::in_aot_cache(p), "must be");
+      return p;
+    } else {
+      // This is usually called before the cache is fully mapped.
+      return reinterpret_cast<T>(base_address + get_byte_offset(narrowp));
     }
-    T p = reinterpret_cast<T>(base_address + get_byte_offset(narrowp));
-    // p may not be in AOT cache as this function may be called before the
-    // AOT cache is mapped.
-    return p;
   }
 
   template <typename T>
