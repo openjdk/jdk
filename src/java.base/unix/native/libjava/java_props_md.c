@@ -500,7 +500,7 @@ GetJavaProperties(JNIEnv *env)
 
     /* user properties */
     {
-        struct passwd *pwent = getenv("TEST") ? getpwuid(getuid()) : NULL;
+        struct passwd *pwent = getpwuid(getuid());
 
         char* pwent_user_home = pwent ? pwent->pw_dir : NULL;
         char* env_user_home = getenv("HOME");
