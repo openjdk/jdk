@@ -841,6 +841,7 @@ jlong os::javaTimeNanos() {
   // We might also condition (c) on the magnitude of the delta between obsv and now.
   // Avoiding excessive CAS operations to hot RW locations is critical.
   // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
+  // https://web.archive.org/web/20131214182431/https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
   return (prev == obsv) ? now : obsv;
 }
 
