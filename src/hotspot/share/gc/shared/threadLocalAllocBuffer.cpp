@@ -465,7 +465,7 @@ size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
   if (_top < _start) {
     return 0;
   }
-  size_t used_bytes = pointer_delta(_start, _top, 1);
+  size_t used_bytes = pointer_delta(_top, _start, 1);
   // Comparing diff with the maximum allowed size will ensure that we don't add
   // the used bytes from a semi-initialized TLAB ending up with implausible values.
   // In this case also just return 0.
