@@ -1058,13 +1058,8 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
   Node* arg1 = argument(0);
   Node* arg2 = argument(1);
 
-  if (VerifyIntrinsicChecks) {
-    arg1 = must_be_not_null(arg1, true);
-    arg2 = must_be_not_null(arg2, true);
-    if (stopped()) {
-      return true;
-    }
-  }
+  arg1 = must_be_not_null(arg1, true);
+  arg2 = must_be_not_null(arg2, true);
 
   // Get start addr and length of first argument
   Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
@@ -1090,13 +1085,8 @@ bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
 
   if (!stopped()) {
 
-    if (VerifyIntrinsicChecks) {
-      arg1 = must_be_not_null(arg1, true);
-      arg2 = must_be_not_null(arg2, true);
-      if (stopped()) {
-        return true;
-      }
-    }
+    arg1 = must_be_not_null(arg1, true);
+    arg2 = must_be_not_null(arg2, true);
 
     // Get start addr and length of first argument
     Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
@@ -1247,13 +1237,8 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* result_rgn = new RegionNode(4);
   Node*       result_phi = new PhiNode(result_rgn, TypeInt::INT);
 
-  if (VerifyIntrinsicChecks) {
-    src = must_be_not_null(src, true);
-    tgt = must_be_not_null(tgt, true);
-    if (stopped()) {
-      return true;
-    }
-  }
+  src = must_be_not_null(src, true);
+  tgt = must_be_not_null(tgt, true);
 
   // Get start addr and length of source string
   Node* src_start = array_element_address(src, intcon(0), T_BYTE);
@@ -1312,13 +1297,8 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_count   = argument(3); // char count
   Node* from_index  = argument(4); // char index
 
-  if (VerifyIntrinsicChecks) {
-    src = must_be_not_null(src, true);
-    tgt = must_be_not_null(tgt, true);
-    if (stopped()) {
-      return true;
-    }
-  }
+  src = must_be_not_null(src, true);
+  tgt = must_be_not_null(tgt, true);
 
   // Multiply byte array index by 2 if String is UTF16 encoded
   Node* src_offset = (ae == StrIntrinsicNode::LL) ? from_index : _gvn.transform(new LShiftINode(from_index, intcon(1)));
@@ -1327,12 +1307,10 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
 
   // Range checks
-  if (VerifyIntrinsicChecks) {
-    generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, true);
-    generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, true);
-    if (stopped()) {
-      return true;
-    }
+  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, true);
+  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, true);
+  if (stopped()) {
+    return true;
   }
 
   RegionNode* region = new RegionNode(5);
@@ -1419,24 +1397,14 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   Node* from_index  = argument(2);
   Node* max         = argument(3);
 
-  if (VerifyIntrinsicChecks) {
-    src = must_be_not_null(src, true);
-    if (stopped()) {
-      return true;
-    }
-  }
+  src = must_be_not_null(src, true);
 
   Node* src_offset = ae == StrIntrinsicNode::L ? from_index : _gvn.transform(new LShiftINode(from_index, intcon(1)));
   Node* src_start = array_element_address(src, src_offset, T_BYTE);
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
 
   // Range checks
-  if (VerifyIntrinsicChecks) {
-    generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, true);
-    if (stopped()) {
-      return true;
-    }
-  }
+  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, true);
 
   // Check for int_ch >= 0
   Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
@@ -1514,13 +1482,8 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
 
-  if (VerifyIntrinsicChecks) {
-      src = must_be_not_null(src, true);
-      dst = must_be_not_null(dst, true);
-      if (stopped()) {
-        return true;
-      }
-    }
+  src = must_be_not_null(src, true);
+  dst = must_be_not_null(dst, true);
 
   // Convert char[] offsets to byte[] offsets
   bool convert_src = (compress && src_elem == T_BYTE);
@@ -1532,12 +1495,10 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   }
 
   // Range checks
-  if (VerifyIntrinsicChecks) {
-    generate_string_range_check(src, src_offset, length, convert_src, true);
-    generate_string_range_check(dst, dst_offset, length, convert_dst, true);
-    if (stopped()) {
-      return true;
-    }
+  generate_string_range_check(src, src_offset, length, convert_src, true);
+  generate_string_range_check(dst, dst_offset, length, convert_dst, true);
+  if (stopped()) {
+    return true;
   }
 
   Node* src_start = array_element_address(src, src_offset, src_elem);
