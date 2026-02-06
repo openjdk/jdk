@@ -54,7 +54,7 @@ public:
   int inst_count() const { return _count; }
   int delay() const {
     assert(_inst == WFET, "Specifying the delay value is only supported for WFET");
-    assert(_delay > 0, "The delay value should be positive");
+    assert(_delay > 0, "The delay value must be positive");
     return _delay;
   }
 

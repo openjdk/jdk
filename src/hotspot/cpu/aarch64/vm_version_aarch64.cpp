@@ -62,7 +62,7 @@ static SpinWait get_spin_wait_desc() {
 
   if (spin_wait.inst() == SpinWait::WFET) {
     if (!VM_Version::supports_wfxt()) {
-      vm_exit_during_initialization("OnSpinWaitInst is WFET but current CPU does not support WFET instruction");
+      vm_exit_during_initialization("OnSpinWaitInst is WFET but the CPU does not support the WFET instruction");
     }
 
     if (!VM_Version::supports_ecv()) {
@@ -74,11 +74,11 @@ static SpinWait get_spin_wait_desc() {
     }
 
     if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount != 1) {
-      vm_exit_during_initialization("OnSpinWaitInstCount value other than one cannot be used for OnSpinWaitInst 'wfet'");
+      vm_exit_during_initialization("OnSpinWaitInstCount for OnSpinWaitInst 'wfet' must be 1");
     }
   } else {
     if (!FLAG_IS_DEFAULT(OnSpinWaitDelay)) {
-      vm_exit_during_initialization("OnSpinWaitDelay can only be used with OnSpinWaitInst 'wfet'");
+      vm_exit_during_initialization("OnSpinWaitDelay can only be used with -XX:OnSpinWaitInst=wfet");
     }
   }
 
