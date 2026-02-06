@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals.hpp"
@@ -59,14 +60,136 @@ const double ShenandoahAdaptiveHeuristics::HIGHEST_EXPECTED_AVAILABLE_AT_END = 0
 const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
+
+// To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
+// for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
+// allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
+const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
+
+// We also keep separate track of recently sampled allocation rates for two purposes:
+//  1. The number of samples examined to determine acceleration of allocation is represented by
+//     ShenandoahRateAccelerationSampleSize
+//  2. The number of most recent samples averaged to determine a momentary allocation spike is represented by
+//     ShenandoahMomentaryAllocationRateSpikeSampleSize
+
+// Allocation rates are sampled by the regulator thread, which typically runs every ms.  There may be jitter in the scheduling
+// of the regulator thread.  To reduce signal noise and synchronization overhead, we do not sample allocation rate with every
+// iteration of the regulator.  We prefer sample time longer than 1 ms so that there can be a statistically significant number
+// of allocations occuring within each sample period.  The regulator thread samples allocation rate only if at least
+// ShenandoahAccelerationSamplePeriod seconds have passed since it previously sampled the allocation rate.
+//
+// This trigger responds much more quickly than the traditional trigger, which monitors 100 ms spans.  When acceleration is
+// detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
+// than the assumed constant allocation rate consumption of available memory.
+
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER),
-  _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor) { }
+  _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
+  _free_set(nullptr),
+  _is_generational(ShenandoahHeap::heap()->mode()->is_generational()),
+  _regulator_thread(nullptr),
+  _previous_allocation_timestamp(0.0),
+  _gc_time_first_sample_index(0),
+  _gc_time_num_samples(0),
+  _gc_time_timestamps(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
+  _gc_time_samples(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
+  _gc_time_xy(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
+  _gc_time_xx(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
+  _gc_time_sum_of_timestamps(0),
+  _gc_time_sum_of_samples(0),
+  _gc_time_sum_of_xy(0),
+  _gc_time_sum_of_xx(0),
+  _gc_time_m(0.0),
+  _gc_time_b(0.0),
+  _gc_time_sd(0.0),
+  _spike_acceleration_buffer_size(MAX2(ShenandoahRateAccelerationSampleSize, 1+ShenandoahMomentaryAllocationRateSpikeSampleSize)),
+  _spike_acceleration_first_sample_index(0),
+  _spike_acceleration_num_samples(0),
+  _spike_acceleration_rate_samples(NEW_C_HEAP_ARRAY(double, _spike_acceleration_buffer_size, mtGC)),
+  _spike_acceleration_rate_timestamps(NEW_C_HEAP_ARRAY(double, _spike_acceleration_buffer_size, mtGC)),
+  _most_recent_headroom_at_start_of_idle((size_t) 0) {
+  }
 
-ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {}
+ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {
+  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_samples);
+  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_timestamps);
+  FREE_C_HEAP_ARRAY(double, _gc_time_timestamps);
+  FREE_C_HEAP_ARRAY(double, _gc_time_samples);
+  FREE_C_HEAP_ARRAY(double, _gc_time_xy);
+  FREE_C_HEAP_ARRAY(double, _gc_time_xx);
+}
+
+void ShenandoahAdaptiveHeuristics::initialize() {
+  ShenandoahHeuristics::initialize();
+}
+
+void ShenandoahAdaptiveHeuristics::post_initialize() {
+  ShenandoahHeuristics::post_initialize();
+  _free_set = ShenandoahHeap::heap()->free_set();
+  assert(!_is_generational, "ShenandoahGenerationalHeuristics overrides this method");
+  _control_thread = ShenandoahHeap::heap()->control_thread();
+  size_t global_available = (ShenandoahHeap::heap()->global_generation()->max_capacity() -
+                             (ShenandoahHeap::heap()->global_generation()->used() + _free_set->reserved()));
+  recalculate_trigger_threshold(global_available);
+}
+
+void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_available) {
+  // The trigger threshold represents mutator available - "head room".
+  // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
+  // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
+  // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
+  // our trigger.
+  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
+  size_t penalties      = capacity / 100 * _gc_time_penalties;
+
+  size_t bytes_allocated_at_start_of_idle_span = _free_set->get_bytes_allocated_since_gc_start();
+
+  // make headroom adjustments
+  _headroom_adjustment = spike_headroom + penalties;
+  size_t adjusted_mutator_available;
+  if (mutator_available >= _headroom_adjustment) {
+    adjusted_mutator_available = mutator_available - _headroom_adjustment;
+  } else {
+    adjusted_mutator_available = 0;
+  }
+
+  assert(!_is_generational || !strcmp(_space_info->name(), "Young") || !strcmp(_space_info->name(), "Global"),
+         "Assumed young or global space, but got: %s", _space_info->name());
+  assert(_is_generational || !strcmp(_space_info->name(), ""), "Assumed global (unnamed) space, but got: %s", _space_info->name());
+  log_info(gc)("At start or resumption of idle gc span for %s, mutator available adjusted to: " PROPERFMT
+               " after adjusting for spike_headroom: " PROPERFMT " and penalties: " PROPERFMT,
+               _is_generational? _space_info->name(): "Global",
+               PROPERFMTARGS(adjusted_mutator_available), PROPERFMTARGS(spike_headroom), PROPERFMTARGS(penalties));
+
+  _most_recent_headroom_at_start_of_idle = adjusted_mutator_available;
+  // _trigger_threshold is expressed in words
+  _trigger_threshold = (bytes_allocated_at_start_of_idle_span + adjusted_mutator_available) / HeapWordSize;
+}
+
+void ShenandoahAdaptiveHeuristics::start_idle_span() {
+  size_t mutator_available = _free_set->available();
+  recalculate_trigger_threshold(mutator_available);
+}
+
+void ShenandoahAdaptiveHeuristics::resume_idle_span() {
+  size_t mutator_available = _free_set->available_holding_lock();
+  recalculate_trigger_threshold(mutator_available);
+}
+
+// There is no headroom during evacuation and update refs.  This information is not used to trigger the next GC.
+// In future implementations, this information may feed into worker surge calculations.
+void ShenandoahAdaptiveHeuristics::start_evac_span() {
+  size_t mutator_available = _free_set->available_holding_lock();
+  _trigger_threshold = mutator_available;
+}
+
+void ShenandoahAdaptiveHeuristics::adjust_penalty(intx step) {
+  ShenandoahHeuristics::adjust_penalty(step);
+}
 
 void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                          RegionData* data, size_t size,
@@ -76,8 +199,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // The logic for cset selection in adaptive is as follows:
   //
   //   1. We cannot get cset larger than available free space. Otherwise we guarantee OOME
-  //      during evacuation, and thus guarantee full GC. In practice, we also want to let
-  //      application to allocate something. This is why we limit CSet to some fraction of
+  //      during evacuation, and thus guarantee full GC. In practice, we also want to let the
+  //      application allocate during concurrent GC. This is why we limit CSet to some fraction of
   //      available space. In non-overloaded heap, max_cset would contain all plausible candidates
   //      over garbage threshold.
   //
@@ -108,6 +231,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   size_t cur_cset = 0;
   size_t cur_garbage = 0;
 
+  // Regions are sorted in order of decreasing garbage
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
 
@@ -126,6 +250,88 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
+void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double timestamp, double gc_time) {
+  // Conservatively add sample into linear model If this time is above the predicted concurrent gc time
+  if (predict_gc_time(timestamp) < gc_time) {
+    add_gc_time(timestamp, gc_time);
+  }
+}
+
+void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time) {
+  // Update best-fit linear predictor of GC time
+  uint index = (_gc_time_first_sample_index + _gc_time_num_samples) % GC_TIME_SAMPLE_SIZE;
+  if (_gc_time_num_samples == GC_TIME_SAMPLE_SIZE) {
+    _gc_time_sum_of_timestamps -= _gc_time_timestamps[index];
+    _gc_time_sum_of_samples -= _gc_time_samples[index];
+    _gc_time_sum_of_xy -= _gc_time_xy[index];
+    _gc_time_sum_of_xx -= _gc_time_xx[index];
+  }
+  _gc_time_timestamps[index] = timestamp;
+  _gc_time_samples[index] = gc_time;
+  _gc_time_xy[index] = timestamp * gc_time;
+  _gc_time_xx[index] = timestamp * timestamp;
+
+  _gc_time_sum_of_timestamps += _gc_time_timestamps[index];
+  _gc_time_sum_of_samples += _gc_time_samples[index];
+  _gc_time_sum_of_xy += _gc_time_xy[index];
+  _gc_time_sum_of_xx += _gc_time_xx[index];
+
+  if (_gc_time_num_samples < GC_TIME_SAMPLE_SIZE) {
+    _gc_time_num_samples++;
+  } else {
+    _gc_time_first_sample_index = (_gc_time_first_sample_index + 1) % GC_TIME_SAMPLE_SIZE;
+  }
+
+  if (_gc_time_num_samples == 1) {
+    // The predictor is constant (horizontal line)
+    _gc_time_m = 0;
+    _gc_time_b = gc_time;
+    _gc_time_sd = 0.0;
+  } else if (_gc_time_num_samples == 2) {
+    // Two points define a line
+    double delta_y = gc_time - _gc_time_samples[_gc_time_first_sample_index];
+    double delta_x = timestamp - _gc_time_timestamps[_gc_time_first_sample_index];
+    _gc_time_m = delta_y / delta_x;
+
+    // y = mx + b
+    // so b = y0 - mx0
+    _gc_time_b = gc_time - _gc_time_m * timestamp;
+    _gc_time_sd = 0.0;
+  } else {
+    _gc_time_m = ((_gc_time_num_samples * _gc_time_sum_of_xy - _gc_time_sum_of_timestamps * _gc_time_sum_of_samples) /
+                  (_gc_time_num_samples * _gc_time_sum_of_xx - _gc_time_sum_of_timestamps * _gc_time_sum_of_timestamps));
+    _gc_time_b = (_gc_time_sum_of_samples - _gc_time_m * _gc_time_sum_of_timestamps) / _gc_time_num_samples;
+    double sum_of_squared_deviations = 0.0;
+    for (size_t i = 0; i < _gc_time_num_samples; i++) {
+      uint index = (_gc_time_first_sample_index + i) % GC_TIME_SAMPLE_SIZE;
+      double x = _gc_time_timestamps[index];
+      double predicted_y = _gc_time_m * x + _gc_time_b;
+      double deviation = predicted_y - _gc_time_samples[index];
+      sum_of_squared_deviations += deviation * deviation;
+    }
+    _gc_time_sd = sqrt(sum_of_squared_deviations / _gc_time_num_samples);
+  }
+}
+
+double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) {
+  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;;
+}
+
+void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
+  uint new_sample_index =
+    (_spike_acceleration_first_sample_index + _spike_acceleration_num_samples) % _spike_acceleration_buffer_size;
+  _spike_acceleration_rate_timestamps[new_sample_index] = timestamp;
+  _spike_acceleration_rate_samples[new_sample_index] = rate;
+  if (_spike_acceleration_num_samples == _spike_acceleration_buffer_size) {
+    _spike_acceleration_first_sample_index++;
+    if (_spike_acceleration_first_sample_index == _spike_acceleration_buffer_size) {
+      _spike_acceleration_first_sample_index = 0;
+    }
+  } else {
+    _spike_acceleration_num_samples++;
+  }
+}
+
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   ShenandoahHeuristics::record_cycle_start();
   _allocation_rate.allocation_counter_reset();
@@ -133,6 +339,10 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
 
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
+  double now = os::elapsedTime();
+
+  // Should we not add GC time if this was an abbreviated cycle?
+  add_gc_time(_cycle_start, elapsed_cycle_time());
 
   size_t available = _space_info->available();
 
@@ -185,6 +395,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
 
 void ShenandoahAdaptiveHeuristics::record_degenerated() {
   ShenandoahHeuristics::record_degenerated();
+  add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
   // Adjust both trigger's parameters in the case of a degenerated GC because
   // either of them should have triggered earlier to avoid this case.
   adjust_margin_of_error(DEGENERATE_PENALTY_SD);
@@ -236,6 +447,24 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t available = _space_info->soft_mutator_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
+  double avg_cycle_time = 0;
+  double avg_alloc_rate = 0;
+  double now = get_most_recent_wake_time();
+  size_t allocatable_words = this->allocatable(available);
+  double predicted_future_accelerated_gc_time = 0.0;
+  size_t allocated_bytes_since_last_sample = 0;
+  double instantaneous_rate_words_per_second = 0.0;
+  size_t consumption_accelerated = 0;
+  double acceleration = 0.0;
+  double current_rate_by_acceleration = 0.0;
+  size_t min_threshold = min_free_threshold();
+  double predicted_future_gc_time = 0;
+  double future_planned_gc_time = 0;
+  bool future_planned_gc_time_is_average = false;
+  double avg_time_to_deplete_available = 0.0;
+  bool is_spiking = false;
+  double spike_time_to_deplete_available = 0.0;
+
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
                 "allocated_since_gc_start: "  PROPERFMT,
                 PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(allocated));
@@ -250,7 +479,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   _last_trigger = OTHER;
 
-  size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
     log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
                  PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
@@ -271,29 +499,201 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       return true;
     }
   }
-  // Check if allocation headroom is still okay. This also factors in:
-  //   1. Some space to absorb allocation spikes (ShenandoahAllocSpikeFactor)
-  //   2. Accumulated penalties from Degenerated and Full GC
-  size_t allocation_headroom = available;
 
-  size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-  size_t penalties      = capacity / 100 * _gc_time_penalties;
+  avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+  avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  if ((now - _previous_allocation_timestamp) >= ShenandoahAccelerationSamplePeriod) {
+    predicted_future_accelerated_gc_time =
+      predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod));
+    double future_accelerated_planned_gc_time;
+    bool future_accelerated_planned_gc_time_is_average;
+    if (predicted_future_accelerated_gc_time > avg_cycle_time) {
+      future_accelerated_planned_gc_time = predicted_future_accelerated_gc_time;
+      future_accelerated_planned_gc_time_is_average = false;
+    } else {
+      future_accelerated_planned_gc_time = avg_cycle_time;
+      future_accelerated_planned_gc_time_is_average = true;
+    }
+    allocated_bytes_since_last_sample = _free_set->get_bytes_allocated_since_previous_sample();
+    instantaneous_rate_words_per_second =
+      (allocated_bytes_since_last_sample / HeapWordSize) / (now - _previous_allocation_timestamp);
 
-  allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
-  allocation_headroom -= MIN2(allocation_headroom, penalties);
+    _previous_allocation_timestamp = now;
+    add_rate_to_acceleration_history(now, instantaneous_rate_words_per_second);
+    current_rate_by_acceleration = instantaneous_rate_words_per_second;
+    consumption_accelerated =
+      accelerated_consumption(acceleration, current_rate_by_acceleration, avg_alloc_rate / HeapWordSize,
+                              ShenandoahAccelerationSamplePeriod + future_accelerated_planned_gc_time);
 
-  double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
-  double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+    // Note that even a single thread that wakes up and begins to allocate excessively can manifest as accelerating allocation
+    // rate. This thread will initially allocate a TLAB of minimum size.  Then it will allocate a TLAB twice as big a bit later,
+    // and then twice as big again after another short delay.  When a phase change causes many threads to increase their
+    // allocation behavior, this effect is multiplied, and compounded by jitter in the times that individual threads experience
+    // the phase change.
+    //
+    // The following trace represents an actual workload, with allocation rates sampled at 10 Hz, the default behavior before
+    // introduction of accelerated allocation rate detection.  Though the allocation rate is seen to be increasing at times
+    // 101.907 and 102.007 and 102.108, the newly sampled allocation rate is not enough to trigger GC because the headroom is
+    // still quite large.  In fact, GC is not triggered until time 102.409s, and this GC degenerates.
+    //
+    //    Sample Time (s)      Allocation Rate (MB/s)       Headroom (GB)
+    //       101.807                       0.0                  26.93
+    //                                                                  <--- accelerated spike can trigger here, around time 101.9s
+    //       101.907                     477.6                  26.85
+    //       102.007                   3,206.0                  26.35
+    //       102.108                  23,797.8                  24.19
+    //       102.208                  24,164.5                  21.83
+    //       102.309                  23,965.0                  19.47
+    //       102.409                  24,624.35                 17.05   <--- without accelerated rate detection, we trigger here
+    //
+    // Though the above measurements are from actual workload, the following details regarding sampled allocation rates at 3ms
+    // period were not measured directly for this run-time sample.  These are hypothetical, though they represent a plausible
+    // result that correlates with the actual measurements.
+    //
+    // For most of the 100 ms time span that precedes the sample at 101.907, the allocation rate still remains at zero.  The phase
+    // change that causes increasing allocations occurs near the end ot this time segment.  When sampled with a 3 ms period,
+    // acceration of allocation can be triggered at approximately time 101.88s.
+    //
+    // In the default configuration, accelerated allocation rate is detected by examining a sequence of 5 allocation rate samples.
+    //
+    // Even a single allocation rate sample above the norm can be interpreted as acceleration of allocation rate.  For example, the
+    // the best-fit line for the following samples has an acceleration rate of 3,553.3 MB/s/s.  This is not enough to trigger GC,
+    // especially given the abundance of Headroom at this moment in time.
+    //
+    //    TimeStamp (s)     Alloc rate (MB/s)
+    //    101.857                 0
+    //    101.860                 0
+    //    101.863                 0
+    //    101.866                 0
+    //    101.869                53.3
+    //
+    // At the next sample time, we will compute a slightly higher acceration, 9,150 MB/s/s.  This is also insufficient to trigger
+    // GC.
+    //
+    //    TimeStamp (s)     Alloc rate (MB/s)
+    //    101.860                 0
+    //    101.863                 0
+    //    101.866                 0
+    //    101.869                53.3
+    //    101.872               110.6
+    //
+    // Eventually, we will observe a full history of accelerating rate samples, computing acceleration of 18,500 MB/s/s.  This will
+    // trigger GC over 500 ms earlier than was previously possible.
+    //
+    //    TimeStamp (s)     Alloc rate (MB/s)
+    //    101.866                 0
+    //    101.869                53.3
+    //    101.872               110.6
+    //    101.875               165.9
+    //    101.878               221.2
+    //
+    // The accelerated rate heuristic is based on the following idea:
+    //
+    //    Assume allocation rate is accelerating at a constant rate.  If we postpone the spike trigger until the subsequent
+    //    sample point, will there be enough memory to satisfy allocations that occur during the anticipated concurrent GC
+    //    cycle?  If not, we should trigger right now.
+    //
+    // Outline of this heuristic triggering technique:
+    //
+    //  1. We remember the N (e.g. N=3) most recent samples of spike allocation rate r0, r1, r2 samples at t0, t1, and t2
+    //  2. if r1 < r0 or r2 < r1, approximate Acceleration = 0.0, Rate = Average(r0, r1, r2)
+    //  3. Otherwise, use least squares method to compute best-fit line of rate vs time
+    //  4. The slope of this line represents Acceleration. The y-intercept of this line represents "initial rate"
+    //  5. Use r2 to rrpresent CurrentRate
+    //  6. Use Consumption = CurrentRate * GCTime + 1/2 * Acceleration * GCTime * GCTime
+    //     (See High School physics discussions on constant acceleration: D = v0 * t + 1/2 * a * t^2)
+    //  7. if Consumption exceeds headroom, trigger now
+    //
+    // Though larger sample size may improve quality of predictor, it would delay our trigger response as well.  Smaller sample
+    // sizes are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 5,
+    // spanning 15ms of execution.
 
-  log_debug(gc)("average GC time: %.2f ms, allocation rate: %.0f %s/s",
-          avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
-  if (avg_cycle_time * avg_alloc_rate > allocation_headroom) {
-    log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
-                 " to deplete free headroom (%zu%s) (margin of error = %.2f)",
-                 avg_cycle_time * 1000,
-                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
-                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                 _margin_of_error_sd);
+    // The test (allocated > available / 3) below is intended to prevent accelerated triggers from firing so quickly that there
+    // has not been sufficient time to create garbage that can be reclaimed during the triggered GC cycle.  If we trigger before
+    // garbage has been created, the concurrent GC will find no garbage.  This has been observed to result in degens which
+    // experience OOM during evac or that experiene "bad progress", both of which escalate to Full GC.  Note that garbage that
+    // was allocated following the start of the current GC cycle cannot be reclaimed in this GC cycle.  Here is the derivation
+    // of this expression:
+
+    // Let R (runway) represent the total amount of memory that can be allocated following the start of GC(N).  The runway
+    // represents memory available at the start of the current GC plus garbage reclaimed by the current GC.  At any point
+    // in time following the start of GC(N), the (V) available memory plus the (A) allocated-since-start-of-GC equals R.  In
+    // a balanced, fully utilized configuration, we will be starting each new GC cycle immediately following completion of
+    // the preceding GC cycle.  In this configuration, we would expect half of R to be consumed during concurrent cycle GC(N)
+    // and half to be consumed during concurrent GC(N+1).
+    //
+    // Assume we want to delay GC trigger until:    A/V > 0.33
+    //     This is equivalent to enforcing that:      A > 0.33V
+    //                                 which is:     3A > V
+    //              Since A+V equals R, we have: A + 3A > A + V  = R
+    //                     which is to say that:      A > R/4
+    //
+    // Postponing the trigger until at least 1/4 of the runway has been consumed helps to improve the efficiency of the 
+    // triggered GC.  Under heavy steady state workload, this delay condition generally has no effect: if the allocation
+    // runway is divided "equally" between the current GC and the next GC, then at any potential trigger point (which cannot
+    // happen any sooner than completion of the first GC), it is already the case that roughly A > R/2.
+    if ((allocated > available / 3) && (consumption_accelerated > allocatable_words)) {
+      size_t size_t_alloc_rate = (size_t) current_rate_by_acceleration * HeapWordSize;
+      if (acceleration > 0) {
+        size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
+        log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
+                    "current rate (" PROPERFMT "/s) with acceleration (" PROPERFMT "/s/s) for planned %s GC time (%.2f ms)",
+                    PROPERFMTARGS(consumption_accelerated * HeapWordSize),
+                    PROPERFMTARGS(allocatable_words * HeapWordSize),
+                    PROPERFMTARGS(size_t_alloc_rate),
+                    PROPERFMTARGS(size_t_acceleration),
+                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
+                    future_accelerated_planned_gc_time * 1000);
+      } else {
+        log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
+                    "current rate (" PROPERFMT "/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
+                    PROPERFMTARGS(consumption_accelerated * HeapWordSize),
+                    PROPERFMTARGS(allocatable_words * HeapWordSize),
+                    PROPERFMTARGS(size_t_alloc_rate),
+                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
+                    future_accelerated_planned_gc_time * 1000, _spike_threshold_sd);
+
+
+      }
+      _spike_acceleration_num_samples = 0;
+      _spike_acceleration_first_sample_index = 0;
+
+      // Count this as a form of RATE trigger for purposes of adjusting heuristic triggering configuration because this
+      // trigger is influenced more by margin_of_error_sd than by spike_threshold_sd.
+      accept_trigger_with_type(RATE);
+      return true;
+    }
+  }
+
+  // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
+  predicted_future_gc_time = predict_gc_time(now + get_planned_sleep_interval());
+  if (predicted_future_gc_time > avg_cycle_time) {
+    future_planned_gc_time = predicted_future_gc_time;
+    future_planned_gc_time_is_average = false;
+  } else {
+    future_planned_gc_time = avg_cycle_time;
+    future_planned_gc_time_is_average = true;
+  }
+
+  log_debug(gc)("%s: average GC time: %.2f ms, predicted GC time: %.2f ms, allocation rate: %.0f %s/s",
+                _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000,
+                byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
+  size_t allocatable_bytes = allocatable_words * HeapWordSize;
+  avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
+
+  if (future_planned_gc_time > avg_time_to_deplete_available) {
+    log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
+                " to deplete free headroom (%zu%s) (margin of error = %.2f)",
+                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
+                byte_size_in_proper_unit(avg_alloc_rate),    proper_unit_for_byte_size(avg_alloc_rate),
+                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
+                _margin_of_error_sd);
+
+    size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
+    size_t penalties      = capacity / 100 * _gc_time_penalties;
+    size_t allocation_headroom = available;
+    allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
+    allocation_headroom -= MIN2(allocation_headroom, penalties);
     log_info(gc, ergo)("Free headroom: %zu%s (free) - %zu%s (spike) - %zu%s (penalties) = %zu%s",
                        byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
@@ -303,23 +703,19 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-  bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
-  if (is_spiking && avg_cycle_time > allocation_headroom / rate) {
-    log_trigger("Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (%zu%s) (spike threshold = %.2f)",
-                 avg_cycle_time * 1000,
-                 byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
-                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                 _spike_threshold_sd);
+  is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
+  spike_time_to_deplete_available = (rate == 0)? 0: allocatable_bytes / rate;
+  if (is_spiking && (rate != 0) && (future_planned_gc_time > spike_time_to_deplete_available)) {
+    log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
+                " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
+                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
+                byte_size_in_proper_unit(rate),        proper_unit_for_byte_size(rate),
+                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
+                _spike_threshold_sd);
     accept_trigger_with_type(SPIKE);
     return true;
   }
-
-  if (ShenandoahHeuristics::should_start_gc()) {
-    _start_gc_is_pending = true;
-    return true;
-  } else {
-    return false;
-  }
+  return ShenandoahHeuristics::should_start_gc();
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {
@@ -352,6 +748,108 @@ size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
   return ShenandoahHeap::heap()->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
 }
 
+// This is called each time a new rate sample has been gathered, as governed by MINMUM_ALLOC_RATE_SAMPLE_INTERVAL.
+// There is no adjustment for standard deviation of the accelerated rate prediction.
+size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleration, double& current_rate,
+                                                             double avg_alloc_rate_words_per_second,
+                                                             double predicted_cycle_time) const
+{
+  double *x_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
+  double *y_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
+  double x_sum = 0.0;
+  double y_sum = 0.0;
+
+  assert(_spike_acceleration_num_samples > 0, "At minimum, we should have sample from this period");
+
+  double weighted_average_alloc;
+  if (_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize) {
+    double weighted_y_sum = 0;
+    double total_weight = 0;
+    double previous_x = 0;
+    uint delta = _spike_acceleration_num_samples - ShenandoahRateAccelerationSampleSize;
+    for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
+      uint index = (_spike_acceleration_first_sample_index + delta + i) % _spike_acceleration_buffer_size;
+      x_array[i] = _spike_acceleration_rate_timestamps[index];
+      x_sum += x_array[i];
+      y_array[i] = _spike_acceleration_rate_samples[index];
+      if (i > 0) {
+        // first sample not included in weighted average because it has no weight.
+        double sample_weight = x_array[i] - x_array[i-1];
+        weighted_y_sum = y_array[i] * sample_weight;
+        total_weight += sample_weight;
+      }
+      y_sum += y_array[i];
+    }
+    weighted_average_alloc = (total_weight > 0)? weighted_y_sum / total_weight: 0;
+  } else {
+    weighted_average_alloc = 0;
+  }
+
+  double momentary_rate;
+  if (_spike_acceleration_num_samples > ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+    // Num samples must be strictly greater than sample size, because we need one extra sample to compute rate and weights
+    double weighted_y_sum = 0;
+    double total_weight = 0;
+    double sum_for_average = 0.0;
+    uint delta = _spike_acceleration_num_samples - ShenandoahMomentaryAllocationRateSpikeSampleSize;
+    for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize; i++) {
+      uint sample_index = (_spike_acceleration_first_sample_index + delta + i) % _spike_acceleration_buffer_size;
+      uint preceding_index = (sample_index == 0)? _spike_acceleration_buffer_size - 1: sample_index - 1;
+      double sample_weight = (_spike_acceleration_rate_timestamps[sample_index]
+                              - _spike_acceleration_rate_timestamps[preceding_index]);
+      weighted_y_sum += _spike_acceleration_rate_samples[sample_index] * sample_weight;
+      total_weight += sample_weight;
+    }
+    momentary_rate = weighted_y_sum / total_weight;
+    bool is_spiking = _allocation_rate.is_spiking(momentary_rate, _spike_threshold_sd);
+    if (!is_spiking) {
+      // Disable momentary spike trigger unless allocation rate delta from average exceeds sd
+      momentary_rate = 0.0;
+    }
+  } else {
+    momentary_rate = 0.0;
+  }
+
+  // By default, use momentary_rate for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
+  current_rate = momentary_rate;
+  acceleration = 0.0;
+  if ((_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize)
+      && (weighted_average_alloc >= avg_alloc_rate_words_per_second))  {
+    // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
+    //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
+
+    double *xy_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
+    double *x2_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
+    double xy_sum = 0.0;
+    double x2_sum = 0.0;
+    for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
+      xy_array[i] = x_array[i] * y_array[i];
+      xy_sum += xy_array[i];
+      x2_array[i] = x_array[i] * x_array[i];
+      x2_sum += x2_array[i];
+    }
+    // Find the best-fit least-squares linear representation of rate vs time
+    double m;                 /* slope */
+    double b;                 /* y-intercept */
+
+    m = ((ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum)
+         / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum));
+    b = (y_sum - m * x_sum) / ShenandoahRateAccelerationSampleSize;
+
+    if (m > 0) {
+      double proposed_current_rate = m * x_array[ShenandoahRateAccelerationSampleSize - 1] + b;
+      acceleration = m;
+      current_rate = proposed_current_rate;
+    }
+    // else, leave current_rate = y_max, acceleration = 0
+  }
+  // and here also, leave current_rate = y_max, acceleration = 0
+
+  double time_delta = get_planned_sleep_interval() + predicted_cycle_time;
+  size_t words_to_be_consumed = (size_t) (current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
+  return words_to_be_consumed;
+}
+
 ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _last_sample_time(os::elapsedTime()),
   _last_sample_value(0),
@@ -363,7 +861,7 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
 double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
   const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
   double now = os::elapsedTime();
-  double time_since_last_update = now -_last_sample_time;
+  double time_since_last_update = now - _last_sample_time;
   if (time_since_last_update < MinSampleTime) {
     unaccounted_bytes_allocated = allocated - _last_sample_value;
     _last_sample_value = 0;
@@ -412,8 +910,10 @@ bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
 
   double sd = _rate.sd();
   if (sd > 0) {
-    // There is a small chance that that rate has already been sampled, but it
-    // seems not to matter in practice.
+    // There is a small chance that that rate has already been sampled, but it seems not to matter in practice.
+    // Note that z_score reports how close the rate is to the average.  A value between -1 and 1 means we are within one
+    // standard deviation.  A value between -3 and +3 means we are within 3 standard deviations.  We only check for z_score
+    // greater than threshold because we are looking for an allocation spike which is greater than the mean.
     double z_score = (rate - _rate.avg()) / sd;
     if (z_score > threshold) {
       return true;
@@ -429,3 +929,4 @@ double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocate
   double time_delta_sec = time - last_time;
   return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
 }
+

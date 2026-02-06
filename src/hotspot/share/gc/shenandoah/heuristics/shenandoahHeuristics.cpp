@@ -46,13 +46,16 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 }
 
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
+  _most_recent_trigger_evaluation_time(os::elapsedTime()),
+  _most_recent_planned_sleep_interval(0.0),
   _start_gc_is_pending(false),
   _declined_trigger_count(0),
   _most_recent_declined_trigger_count(0),
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
-  _cycle_start(os::elapsedTime()),
+  _precursor_cycle_start(os::elapsedTime()),
+  _cycle_start(_precursor_cycle_start),
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
@@ -156,6 +159,27 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 }
 
+void ShenandoahHeuristics::start_idle_span() {
+  // do nothing
+}
+
+void ShenandoahHeuristics::start_evac_span() {
+  // do nothing
+}
+
+void ShenandoahHeuristics::resume_idle_span() {
+  // do nothing
+}
+
+void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
+  if (out_of_cycle) {
+    _precursor_cycle_start = _cycle_start = os::elapsedTime();
+  } else {
+    _precursor_cycle_start = _cycle_start;
+    _cycle_start = os::elapsedTime();
+  }
+}
+
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
 }
@@ -197,7 +221,6 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
-
   if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
     // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
     // previous GC for self calibration without penalty.
@@ -274,6 +297,17 @@ void ShenandoahHeuristics::initialize() {
   // Nothing to do by default.
 }
 
+void ShenandoahHeuristics::post_initialize() {
+  // Nothing to do by default.
+}
+
 double ShenandoahHeuristics::elapsed_cycle_time() const {
   return os::elapsedTime() - _cycle_start;
+}
+
+
+// Includes the time spent in abandoned concurrent GC cycle that may have triggered this degenerated cycle.
+double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
+  double now = os::elapsedTime();
+  return now - _precursor_cycle_start;
 }

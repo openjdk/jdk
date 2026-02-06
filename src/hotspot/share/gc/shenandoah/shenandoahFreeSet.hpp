@@ -434,6 +434,12 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
+  size_t _total_bytes_previously_allocated;
+  size_t _mutator_bytes_at_last_sample;
+
+  // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
+  size_t _prepare_to_rebuild_mutator_free;
+
   // This locks the rebuild process (in combination with the global heap lock).  Whenever we rebuild the free set,
   // we first acquire the global heap lock and then we acquire this _rebuild_lock in a nested context.  Threads that
   // need to check available, acquire only the _rebuild_lock to make sure that they are not obtaining the value of
@@ -443,9 +449,9 @@ private:
   // locks will acquire them in the same order: first the global heap lock and then the rebuild lock.
   ShenandoahRebuildLock _rebuild_lock;
 
-  size_t _total_humongous_waste;
-
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
+
+  size_t _total_humongous_waste;
 
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
   // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate
@@ -659,8 +665,45 @@ public:
 
   void increase_bytes_allocated(size_t bytes);
 
+  // Return an approximation of the bytes allocated since GC start.  The value returned is monotonically non-decreasing
+  // in time within each GC cycle.  For certain GC cycles, the value returned may include some bytes allocated before
+  // the start of the current GC cycle.
   inline size_t get_bytes_allocated_since_gc_start() const {
     return _mutator_bytes_allocated_since_gc_start;
+  }
+
+  inline size_t get_total_bytes_allocated() {
+    return  _mutator_bytes_allocated_since_gc_start + _total_bytes_previously_allocated;
+  }
+
+  inline size_t get_bytes_allocated_since_previous_sample() {
+    size_t total_bytes = get_total_bytes_allocated();
+    size_t result;
+    if (total_bytes < _mutator_bytes_at_last_sample) {
+      // This rare condition may occur if bytes allocated overflows (wraps around) size_t tally of allocations.
+      // This may also occur in the very rare situation that get_total_bytes_allocated() is queried in the middle of
+      // reset_bytes_allocated_since_gc_start().  Note that there is no lock to assure that the two global variables
+      // it modifies are modified atomically (_total_bytes_previously_allocated and _mutator_byts_allocated_since_gc_start)
+      // This has been observed to occur when an out-of-cycle degenerated cycle is starting (and thus calls
+      // reset_bytes_allocated_since_gc_start()) at the same time that the control (non-generational mode) or
+      // regulator (generational-mode) thread calls should_start_gc() (which invokes get_bytes_allocated_since_previous_sample()).
+      //
+      // Handle this rare situation by responding with the "innocent" value 0 and resetting internal state so that the
+      // the next query can recalibrate.
+      result = 0;
+    } else {
+      // Note: there's always the possibility that the tally of total allocations exceeds the 64-bit capacity of our size_t
+      // counter.  We assume that the difference between relevant samples does not exceed this count.  Example:
+      //   Suppose _mutator_words_at_last_sample is 0xffff_ffff_ffff_fff0 (18,446,744,073,709,551,600 Decimal)
+      //                        and _total_words is 0x0000_0000_0000_0800 (                    32,768 Decimal)
+      // Then, total_words - _mutator_words_at_last_sample can be done adding 1's complement of subtrahend:
+      //   1's complement of _mutator_words_at_last_sample is: 0x0000_0000_0000_0010 (    16 Decimal))
+      //                                     plus total_words: 0x0000_0000_0000_0800 (32,768 Decimal)
+      //                                                  sum: 0x0000_0000_0000_0810 (32,784 Decimal)
+      result = total_bytes - _mutator_bytes_at_last_sample;
+    }
+    _mutator_bytes_at_last_sample = total_bytes;
+    return result;
   }
 
   // Public because ShenandoahRegionPartitions assertions require access.
@@ -778,15 +821,15 @@ public:
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
 
-  // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
-  // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
-  // rebuild are not counted as part of capacity.)
-
-  // All three of the following functions may produce stale data if called without owning the global heap lock.
+  // All four of the following functions may produce stale data if called without owning the global heap lock.
   // Changes to the values of these variables are performed with a lock.  A change to capacity or used "atomically"
   // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
   // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
   // locked action can be seen by these unlocked functions.
+
+  // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
+  // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
+  // rebuild are not counted as part of capacity.)
   inline size_t capacity_holding_lock() const {
     shenandoah_assert_heaplocked();
     return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
@@ -805,11 +848,14 @@ public:
     ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
   }
+  inline size_t reserved()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);           }
   inline size_t available() {
     shenandoah_assert_not_heaplocked();
     ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
+  inline size_t available_holding_lock() const
+                                  { return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator); }
 
   // Use this version of available() if the heap lock is held.
   inline size_t available_locked() const {
@@ -877,13 +923,17 @@ public:
   //   first_old_region is the index of the first region that is part of the OldCollector set
   //    last_old_region is the index of the last region that is part of the OldCollector set
   //   old_region_count is the number of regions in the OldCollector set that have memory available to be allocated
-  void find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
-                                        size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
+                                          size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
 
   // Ensure that Collector has at least to_reserve bytes of available memory, and OldCollector has at least old_reserve
   // bytes of available memory.  On input, old_region_count holds the number of regions already present in the
   // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition.
-  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count,
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count,
                        size_t &young_used_regions, size_t &old_used_regions, size_t &young_used_bytes, size_t &old_used_bytes);
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right

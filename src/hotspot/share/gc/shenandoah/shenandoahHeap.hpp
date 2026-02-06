@@ -181,6 +181,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize() override;
   void post_initialize() override;
+  virtual void initialize_generations();
   void initialize_mode();
   virtual void initialize_heuristics();
   virtual void post_initialize_heuristics();
@@ -378,6 +379,8 @@ public:
   bool has_changed() {
     return _heap_changed.try_unset();
   }
+
+  virtual void start_idle_span();
 
   void set_concurrent_young_mark_in_progress(bool in_progress);
   void set_concurrent_old_mark_in_progress(bool in_progress);

@@ -51,6 +51,15 @@ static int compare_by_aged_live(AgedRegionData a, AgedRegionData b) {
   return 0;
 }
 
+void ShenandoahGenerationalHeuristics::post_initialize() {
+  ShenandoahHeuristics::post_initialize();
+  _free_set = ShenandoahHeap::heap()->free_set();
+  _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
+  size_t young_available = (ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
+                            (ShenandoahGenerationalHeap::heap()->young_generation()->used() + _free_set->reserved()));
+  recalculate_trigger_threshold(young_available);
+}
+
 inline void assert_no_in_place_promotions() {
 #ifdef ASSERT
   class ShenandoahNoInPlacePromotions : public ShenandoahHeapRegionClosure {

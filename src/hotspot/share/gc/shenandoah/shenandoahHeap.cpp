@@ -434,7 +434,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     _free_set = new ShenandoahFreeSet(this, _num_regions);
-    post_initialize_heuristics();
+    initialize_generations();
 
     // We are initializing free set.  We ignore cset region tallies.
     size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
@@ -491,16 +491,17 @@ jint ShenandoahHeap::initialize() {
   _phase_timings = new ShenandoahPhaseTimings(max_workers());
   ShenandoahCodeRoots::initialize();
 
+  // Initialization of controller makes use of variables established by initialize_heuristics.
   initialize_controller();
 
+  // Certain initialization of heuristics must be deferred until after controller is initialized.
+  post_initialize_heuristics();
+  start_idle_span();
   if (ShenandoahUncommit) {
     _uncommit_thread = new ShenandoahUncommitThread(this);
   }
-
   print_init_logger();
-
   FullGCForwarding::initialize(_heap_region);
-
   return JNI_OK;
 }
 
@@ -542,10 +543,6 @@ void ShenandoahHeap::initialize_mode() {
 void ShenandoahHeap::initialize_heuristics() {
   _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers());
   _global_generation->initialize_heuristics(mode());
-}
-
-void ShenandoahHeap::post_initialize_heuristics() {
-  _global_generation->post_initialize(this);
 }
 
 #ifdef _MSC_VER
@@ -689,6 +686,11 @@ public:
   }
 };
 
+void ShenandoahHeap::initialize_generations() {
+  _global_generation->post_initialize(this);
+}
+
+// We do not call this explicitly  It is called by Hotspot infrastructure.
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
@@ -714,6 +716,10 @@ void ShenandoahHeap::post_initialize() {
   }
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
+}
+
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize_heuristics();
 }
 
 ShenandoahHeuristics* ShenandoahHeap::heuristics() {
@@ -832,6 +838,10 @@ void ShenandoahHeap::notify_heap_changed() {
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
   _heap_changed.try_set();
+}
+
+void ShenandoahHeap::start_idle_span() {
+  heuristics()->start_idle_span();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {

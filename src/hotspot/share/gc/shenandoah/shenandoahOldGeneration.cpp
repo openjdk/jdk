@@ -422,6 +422,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
     // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
     // the OldCollector reserve in order to make room for these mixed evacuations.
+
     assert(ShenandoahHeap::heap()->mode()->is_generational(), "sanity");
     assert(young_trash_regions == 0, "sanity");
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
@@ -429,6 +430,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions, young_trash_regions);
     heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
+    ((ShenandoahAdaptiveHeuristics *) (heap->young_generation()->heuristics()))->resume_idle_span();
   }
 }
 
@@ -765,6 +767,7 @@ size_t ShenandoahOldGeneration::used_regions_size() const {
   return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
+// For the old generation, max_capacity() equals soft_max_capacity()
 size_t ShenandoahOldGeneration::max_capacity() const {
   size_t total_regions = _free_set->total_old_regions();
   return total_regions * ShenandoahHeapRegion::region_size_bytes();
