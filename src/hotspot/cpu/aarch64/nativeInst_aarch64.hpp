@@ -75,6 +75,7 @@ public:
     return (encoding() & 0xff000000) == 0x10000000;
   }
 
+  inline bool is_nop() const;
   bool is_jump();
   bool is_general_jump();
   inline bool is_cond_jump();
@@ -392,6 +393,11 @@ public:
   // Insert illegal opcode as specific address
   static void insert(address code_pos);
 };
+
+inline bool NativeInstruction::is_nop() const{
+  uint32_t insn = *(uint32_t*)addr_at(0);
+  return insn == 0xd503201f;
+}
 
 inline bool NativeInstruction::is_jump() {
   uint32_t insn = *(uint32_t*)addr_at(0);
