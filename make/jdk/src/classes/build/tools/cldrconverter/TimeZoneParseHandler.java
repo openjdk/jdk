@@ -42,6 +42,9 @@ import org.xml.sax.SAXException;
 
 class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
     private static final String PREF_PREFIX = "preferred:";
+
+    // CLDR aliases to IANA ids map. The initial capacity is estimated
+    // from the number of aliases in timezone.xml as of CLDR v48
     private final Map<String, String> ianaAliasMap = HashMap.newHashMap(32);
 
     @Override
@@ -69,7 +72,9 @@ class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
                     var iana = attributes.getValue("iana");
                     if (iana != null) {
                         for (var a : alias.split("\\s+")) {
-                            ianaAliasMap.put(a, iana);
+                            if (!a.equals(iana)) {
+                                ianaAliasMap.put(a, iana);
+                            }
                         }
                     }
                     put(attributes.getValue("name"), alias);

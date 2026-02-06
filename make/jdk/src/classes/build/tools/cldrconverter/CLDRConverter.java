@@ -293,6 +293,8 @@ public class CLDRConverter {
         bundleGenerator = new ResourceBundleGenerator();
 
         // Parse data independent of locales
+        // parseBCP47() must precede parseSupplemental(). The latter depends
+        // on IANA alias map, which is produced by the former.
         parseBCP47();
         parseSupplemental();
 
