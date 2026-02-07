@@ -3076,7 +3076,8 @@ bool LibraryCallKit::inline_native_vthread_start_transition(address funcAddr, co
   Node* global_disable_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::global_vthread_transition_disable_count_address()));
   Node* global_disable = ideal.load(ideal.ctrl(), global_disable_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, true /*require_atomic_access*/);
   Node* vt_disable_addr = basic_plus_adr(vt_oop, java_lang_Thread::vthread_transition_disable_count_offset());
-  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, true /*require_atomic_access*/);
+  const TypePtr* vt_disable_addr_t = _gvn.type(vt_disable_addr)->is_ptr();
+  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, C->get_alias_index(vt_disable_addr_t), true /*require_atomic_access*/);
   Node* disabled = _gvn.transform(new AddINode(global_disable, vt_disable));
 
   ideal.if_then(disabled, BoolTest::ne, ideal.ConI(0)); {
