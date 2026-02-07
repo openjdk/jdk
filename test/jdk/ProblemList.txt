@@ -709,6 +709,24 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 
 # jdk_jfr
 
+jdk/jfr/api/consumer/TestRecordingFileWrite.java                8286300 linux-s390x
+jdk/jfr/api/consumer/streaming/TestCrossProcessStreaming.java   8286300 linux-s390x
+jdk/jfr/api/consumer/streaming/TestFilledChunks.java            8286300 linux-s390x
+jdk/jfr/api/consumer/streaming/TestRemovedChunks.java           8286300 linux-s390x
+jdk/jfr/api/recording/misc/TestGetStreamWithFailure.java        8286300 linux-s390x
+jdk/jfr/api/settings/TestSettingControl.java                    8286300 linux-s390x
+jdk/jfr/event/runtime/TestBackToBackSensitive.java              8286300 linux-s390x
+jdk/jfr/event/runtime/TestSyncOnValueBasedClassEvent.java       8286300 linux-s390x
+jdk/jfr/event/tracing/TestMultipleThreads.java                  8286300 linux-s390x
+jdk/jfr/event/tracing/TestTracedString.java                     8286300 linux-s390x
+jdk/jfr/javaagent/TestLoadedAgent.java                          8286300 linux-s390x
+jdk/jfr/javaagent/TestPremainAgent.java                         8286300 linux-s390x
+jdk/jfr/jmx/streaming/TestClose.java                            8286300 linux-s390x
+jdk/jfr/jmx/streaming/TestMaxSize.java                          8286300 linux-s390x
+jdk/jfr/jvm/TestChunkIntegrity.java                             8286300 linux-s390x
+jdk/jfr/jvm/TestJFRIntrinsic.java                               8286300 linux-s390x
+jdk/jfr/tool/TestDisassemble.java                               8286300 linux-s390x
+jdk/jfr/tool/TestScrub.java                                     8286300 linux-s390x
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
