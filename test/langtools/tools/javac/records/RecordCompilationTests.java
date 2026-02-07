@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,7 @@ class RecordCompilationTests extends CompilationTestCase {
 
         assertFail("compiler.err.invalid.accessor.method.in.record",
                 "public record R(int x) {\n" +
-                        "    static private final j = 0;" +
+                        "    static private final int j = 0;" +
                         "    static public int x() { return j; };" +
                         "}");
     }
@@ -539,10 +539,10 @@ class RecordCompilationTests extends CompilationTestCase {
                 "record R() { void test1() { class X { U u; } } }",
 
                 "interface I { default void test1() { class X { void test2() { System.err.println(localVar); } } } }",
-                "interface I() { default void test1() { class X { void test2() {System.err.println(param);} } } }",
+                "interface I { default void test1() { class X { void test2() {System.err.println(param);} } } }",
                 "interface I { default void test1() { class X { void test2() { System.err.println(instanceField); } } } }",
                 "interface I { default void test1() { class X { T t; } } }",
-                "interface I() { default void test1() { class X {U u;} } }",
+                "interface I { default void test1() { class X {U u;} } }",
 
                 "enum E { A; void test1() { class X { void test2() { System.err.println(localVar); } } } }",
                 "enum E { A; void test1() { class X { void test2() {System.err.println(param);} } } }",
