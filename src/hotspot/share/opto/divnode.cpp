@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,6 +637,23 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Dividing by MININT does not optimize as a power-of-2 shift.
   if( i == min_jint ) return nullptr;
 
+  // Keep this node as-is initially; we want Value() and
+  // other optimizations checking for this node type to work.
+  // Consider the following expression:
+  //  x / 100_000 >= 21_475, x in TypeInt::INT
+  // This will always be false since max_jint / 100_000 == 21_474.
+  // After transform_int_divide, we have a Sub node to round towards 0.
+  // That means we subtract -1 if the dividend is negative, and 0 otherwise.
+  // As the Sub node is not aware of representing a division, it overapproximates
+  // [-21_475, 21_474] - [-1, 0] = [-21_475, 21_475], which prevents constant folding.
+  //
+  // Less precise comparisons still work after transform_int_divide, e.g.,
+  // comparing with >= 21_476 does not conflict with the off-by-one overapproximation.
+  if (!can_reshape) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
+  }
+
   return transform_int_divide( phase, in(1), i );
 }
 
@@ -703,6 +720,14 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 
   // Dividing by MINLONG does not optimize as a power-of-2 shift.
   if( l == min_jlong ) return nullptr;
+
+  // Keep this node as-is initially; we want Value() and
+  // other optimizations checking for this node type to work.
+  // See DivINode::Ideal for an explanation.
+  if (!can_reshape) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
+  }
 
   return transform_long_divide( phase, in(1), l );
 }
@@ -1108,8 +1133,23 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
+
   // See if we are MOD'ing by 2^k or 2^k-1.
-  if( !ti->is_con() ) return nullptr;
+  if (!ti->is_con()) {
+    return nullptr;
+  }
+
+  // Keep this node as-is initially; we want Value() and
+  // other optimizations checking for this node type to work.
+  // Consider the following expression:
+  //  x % 2, x in TypeInt::INT
+  // With ModINode::Value, we can trivially tell the resulting range is [-1,1].
+  // After idealizing, we have a subtraction from x, which means without
+  // recognizing that as a modulo operation, we end up with a range of TypeInt::INT.
+  if (!can_reshape) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
+  }
   jint con = ti->get_con();
 
   // First, special check for modulo 2^k-1
@@ -1405,7 +1445,18 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // See if we are MOD'ing by 2^k or 2^k-1.
-  if( !tl->is_con() ) return nullptr;
+  if (!tl->is_con()) {
+    return nullptr;
+  }
+
+  // Keep this node as-is initially; we want Value() and
+  // other optimizations checking for this node type to work.
+  // See ModINode::Ideal for an explanation.
+  if (!can_reshape) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
+  }
+
   jlong con = tl->get_con();
 
   // Expand mod

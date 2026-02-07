@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8356813
+ * @bug 8356813 8366815
  * @summary Test that Value method of ModLNode is working as expected.
  * @key randomness
  * @library /test/lib /
@@ -53,6 +53,8 @@ public class ModLNodeValueTests {
     @Run(test = {
         "nonNegativeDividend", "nonNegativeDividendInRange",
         "negativeDividend", "negativeDividendInRange",
+        "positiveDivisor", "positiveDivisor2",
+        "negativeDivisor", "negativeDivisor2",
         "modByKnownBoundsUpper", "modByKnownBoundsUpperInRange",
         "modByKnownBoundsLower", "modByKnownBoundsLowerInRange",
         "modByKnownBoundsLimitedByDividendUpper", "modByKnownBoundsLimitedByDividendUpperInRange",
@@ -78,6 +80,10 @@ public class ModLNodeValueTests {
         Asserts.assertEQ(x != 0 && POS_LONG % x <= 0, nonNegativeDividendInRange(x));
         Asserts.assertEQ(x != 0 && NEG_LONG % x > 0, negativeDividend(x));
         Asserts.assertEQ(x != 0 && NEG_LONG % x >= 0, negativeDividendInRange(x));
+        Asserts.assertEQ(x % POS_LONG >= POS_LONG, positiveDivisor(x));
+        Asserts.assertEQ(x % POS_LONG <= -POS_LONG, positiveDivisor2(x));
+        Asserts.assertEQ(x % NEG_LONG <= NEG_LONG, negativeDivisor(x));
+        Asserts.assertEQ(x % NEG_LONG > -(NEG_LONG + 1), negativeDivisor2(x));
         Asserts.assertEQ(x % (((byte) y) + 129L) > 255, modByKnownBoundsUpper(x, y));
         Asserts.assertEQ(x % (((byte) y) + 129L) >= 255, modByKnownBoundsUpperInRange(x, y));
         Asserts.assertEQ(x % (((byte) y) + 129L) < -255, modByKnownBoundsLower(x, y));
@@ -134,6 +140,39 @@ public class ModLNodeValueTests {
     // This uses >= to verify the % is not optimized away
     public boolean negativeDividendInRange(long x) {
         return x != 0 && NEG_LONG % x >= 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_L, IRNode.CMP_L, IRNode.AND_L, IRNode.RSHIFT_L})
+    // The result is always smaller than the positive divisor.
+    // Constant fold to false.
+    public boolean positiveDivisor(long x) {
+        return x % POS_LONG >= POS_LONG;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_L, IRNode.CMP_L, IRNode.AND_L, IRNode.RSHIFT_L})
+    // The result is always bigger than the negated positive divisor.
+    // Constant fold to false.
+    public boolean positiveDivisor2(long x) {
+        return x % POS_LONG <= -POS_LONG;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_L, IRNode.CMP_L, IRNode.AND_L, IRNode.RSHIFT_L})
+    // The result is always smaller than the negated negative divisor with exception if MIN_VALUE.
+    // Constant fold to false.
+    public boolean negativeDivisor(long x) {
+        // > with + 1 to avoid -MIN_VALUE == MIN_VALUE
+        return x % NEG_LONG > -(NEG_LONG + 1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_L, IRNode.CMP_L, IRNode.AND_L, IRNode.RSHIFT_L})
+    // The result is always bigger than the negative divisor.
+    // Constant fold to false.
+    public boolean negativeDivisor2(long x) {
+        return x % NEG_LONG <= NEG_LONG;
     }
 
     @Test
