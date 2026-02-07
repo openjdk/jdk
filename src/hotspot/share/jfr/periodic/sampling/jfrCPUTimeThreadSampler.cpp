@@ -90,6 +90,7 @@ bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
     }
   } while (AtomicAccess::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
   _data[elementIndex] = request;
+  _data[elementIndex]._request._native_pcs = _data[elementIndex]._native_pcs;
   return true;
 }
 
@@ -428,6 +429,7 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
   event.set_starttime(start_time);
   event.set_eventThread(tid);
   event.set_stackTrace(0);
+  event.set_nativeStackTrace(0);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(false);
   event.commit();
@@ -436,12 +438,13 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
 
 static volatile size_t biased_count = 0;
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool has_native_frames) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
   event.set_starttime(start_time);
   event.set_eventThread(tid);
   event.set_stackTrace(sid);
+  event.set_nativeStackTrace(has_native_frames ? sid : 0);
   event.set_samplingPeriod(cpu_time_period);
   event.set_biased(biased);
   event.commit();
@@ -624,6 +627,10 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   }
 
   JfrCPUTimeSampleRequest request;
+  // Point to stack-allocated array in JfrCPUTimeSampleRequest to avoid
+  // heap allocation in signal handler context.
+  request._request._native_pcs = request._native_pcs;
+
   // the sampling period might be too low for the current Linux configuration
   // so samples might be skipped and we have to compute the actual period
   int64_t period = get_sampling_period() * (info->si_overrun + 1);

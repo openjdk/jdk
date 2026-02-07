@@ -406,6 +406,12 @@ frame frame::real_sender(RegisterMap* map) const {
 
 Method* frame::interpreter_frame_method() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
+  Method** mp = interpreter_frame_method_addr();
+  if (mp == nullptr) {
+    // print_on_error can handle this case without segfaulting.
+    fprintf(stderr, "interpreter_frame_method: method_addr is nullptr\n");
+    return nullptr;
+  }
   Method* m = *interpreter_frame_method_addr();
   assert(m->is_method(), "not a Method*");
   return m;
@@ -1552,7 +1558,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
  *
  * @returns an invalid frame (i.e. fr.pc() === 0) if the caller cannot be obtained
  */
-frame frame::next_frame(frame fr, Thread* t) {
+frame frame::next_frame(frame fr, Thread* t, RegisterMap::ProcessFrames process_frames /* = RegisterMap::ProcessFrames::include */) {
   // Compiled code may use EBP register on x86 so it looks like
   // non-walkable C frame. Use frame.sender() for java frames.
   frame invalid;
@@ -1565,7 +1571,7 @@ frame frame::next_frame(frame fr, Thread* t) {
     if (fr.is_interpreted_frame() || (fr.cb() != nullptr && fr.cb()->frame_size() > 0)) {
       RegisterMap map(JavaThread::cast(t),
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::include,
+                      process_frames,
                       RegisterMap::WalkContinuation::skip); // No update
       return fr.sender(&map);
     } else {

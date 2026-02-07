@@ -32,11 +32,15 @@ class JavaThread;
 #if defined(LINUX)
 
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
 struct JfrCPUTimeSampleRequest {
   JfrSampleRequest _request;
   Tickspan _cpu_time_period;
+
+  // Native frame PCs captured in signal handler
+  address _native_pcs[JfrStackTrace::MAX_NATIVE_FRAMES];
 
   JfrCPUTimeSampleRequest() {}
 };
@@ -134,7 +138,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   void handle_timer_signal(siginfo_t* info, void* context);
 
   static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period);
-  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
+  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool has_native_frames);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();

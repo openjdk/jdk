@@ -39,6 +39,8 @@ import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedMethod;
+import jdk.jfr.consumer.RecordedNativeFrame;
+import jdk.jfr.consumer.RecordedNativeStackTrace;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
@@ -91,6 +93,10 @@ public abstract class JdkJfrConsumer {
     public abstract RecordedThreadGroup newRecordedThreadGroup(ObjectContext objectContext, Object[] values);
 
     public abstract RecordedFrame newRecordedFrame(ObjectContext objectContext, Object[] values);
+
+    public abstract RecordedNativeFrame newRecordedNativeFrame(ObjectContext objectContext, Object[] values);
+
+    public abstract RecordedNativeStackTrace newRecordedNativeStackTrace(ObjectContext objectContext, Object[] values);
 
     public abstract RecordedThread newRecordedThread(ObjectContext objectContext, long id, Object[] values);
 

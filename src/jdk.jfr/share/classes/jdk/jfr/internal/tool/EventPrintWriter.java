@@ -52,6 +52,7 @@ abstract class EventPrintWriter extends StructuredWriter {
         TIMESPAN, TIMESTAMP, UNSIGNED, OTHER
     }
 
+    protected static final String NATIVE_STACK_TRACE_FIELD = "nativeStackTrace";
     protected static final String STACK_TRACE_FIELD = "stackTrace";
     protected static final String EVENT_THREAD_FIELD = "eventThread";
     private static final JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
@@ -107,7 +108,7 @@ abstract class EventPrintWriter extends StructuredWriter {
     }
 
     protected final boolean isLateField(String name) {
-        return name.equals(EVENT_THREAD_FIELD) || name.equals(STACK_TRACE_FIELD);
+        return name.equals(EVENT_THREAD_FIELD) || name.equals(STACK_TRACE_FIELD) || name.equals(NATIVE_STACK_TRACE_FIELD);
     }
 
     public void setStackDepth(int stackDepth) {

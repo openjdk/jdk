@@ -63,7 +63,8 @@ import jdk.jfr.internal.tool.PrettyWriter;
  */
 public sealed class RecordedObject
    permits RecordedEvent, RecordedClassLoader, RecordedClass, RecordedMethod,
-           RecordedStackTrace, RecordedFrame, RecordedThread, RecordedThreadGroup {
+           RecordedStackTrace, RecordedFrame, RecordedNativeStackTrace, RecordedNativeFrame,
+           RecordedThread, RecordedThreadGroup {
     static{
         JdkJfrConsumer access = new JdkJfrConsumer() {
             @Override
@@ -114,6 +115,16 @@ public sealed class RecordedObject
             @Override
             public RecordedFrame newRecordedFrame(ObjectContext objectContext, Object[] values) {
                 return new RecordedFrame(objectContext, values);
+            }
+
+            @Override
+            public RecordedNativeFrame newRecordedNativeFrame(ObjectContext objectContext, Object[] values) {
+                return new RecordedNativeFrame(objectContext, values);
+            }
+
+            @Override
+            public RecordedNativeStackTrace newRecordedNativeStackTrace(ObjectContext objectContext, Object[] values) {
+                return new RecordedNativeStackTrace(objectContext, values);
             }
 
             @Override
@@ -269,6 +280,15 @@ public sealed class RecordedObject
                     // error or missing
                     return null;
                 }
+                if (object instanceof RecordedObject) {
+                    return object;
+                }
+                // Check if array BEFORE checking v.getFields().isEmpty()
+                // because simpleType arrays have empty getFields() but may still need structifyArray()
+                if (v.isArray()) {
+                    Object[] array = (Object[]) object;
+                    return structifyArray(v, array, 0);
+                }
                 if (v.getFields().isEmpty()) {
                     if (allowUnsigned && PrivateAccess.getInstance().isUnsigned(v)) {
                         // Types that are meaningless to widen
@@ -278,20 +298,9 @@ public sealed class RecordedObject
                         return new UnsignedValue(object);
                     }
                     return object; // primitives and primitive arrays
-                } else {
-                    if (object instanceof RecordedObject) {
-                        // known types from factory
-                        return object;
-                    }
-                    // must be array type
-                    Object[] array = (Object[]) object;
-                    if (v.isArray()) {
-                        // struct array
-                        return structifyArray(v, array, 0);
-                    }
-                    // struct
-                    return new RecordedObject(objectContext.getInstance(v), (Object[]) object);
                 }
+                // struct
+                return new RecordedObject(objectContext.getInstance(v), (Object[]) object);
             }
             index++;
         }
@@ -359,6 +368,10 @@ public sealed class RecordedObject
         if (array == null) {
             return null;
         }
+        // For simpleTypes, v.getTypeName() returns the primitive type (e.g., "long").
+        // Here we need the original struct type, even for simple types.
+        String typeName = !v.getFields().isEmpty() ? v.getTypeName() : PrivateAccess.getInstance().getType(v).getName();
+
         Object[] structArray = new Object[array.length];
         ObjectContext objContext = objectContext.getInstance(v);
         for (int i = 0; i < structArray.length; i++) {
@@ -366,8 +379,10 @@ public sealed class RecordedObject
             if (dimension == 0) {
                 // No general way to handle structarrays
                 // without invoking ObjectFactory for every instance (which may require id)
-                if (isStackFrameType(v.getTypeName())) {
+                if (isStackFrameType(typeName)) {
                     structArray[i] = new RecordedFrame(objContext, (Object[]) arrayElement);
+                } else if (isNativeStackFrameType(typeName)) {
+                    structArray[i] = new RecordedNativeFrame(objContext, (Object[]) arrayElement);
                 } else {
                     structArray[i] = new RecordedObject(objContext, (Object[]) arrayElement);
                 }
@@ -386,6 +401,10 @@ public sealed class RecordedObject
             return true;
         }
         return false;
+    }
+
+    private boolean isNativeStackFrameType(String typeName) {
+        return ObjectFactory.NATIVE_STACK_FRAME_VERSION_2.equals(typeName);
     }
 
     /**

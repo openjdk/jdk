@@ -52,7 +52,7 @@ JfrStackTraceRepository& JfrStackTraceRepository::leak_profiler_instance() {
   return *_leak_profiler_instance;
 }
 
-JfrStackTraceRepository::JfrStackTraceRepository() : _last_entries(0), _entries(0) {
+JfrStackTraceRepository::JfrStackTraceRepository() : _last_native_entries(0), _last_entries(0), _entries(0) {
   memset(_table, 0, sizeof(_table));
 }
 
@@ -94,31 +94,45 @@ void JfrStackTraceRepository::destroy() {
   _leak_profiler_instance = nullptr;
 }
 
-size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
+size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear, StacksKind kind) {
+  assert(!clear || (kind == StacksKind::java), "invariant");
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  if ((_entries == _last_entries) && !clear) {
+  if (!clear && (kind == StacksKind::native ? (_entries == _last_native_entries) : (_entries == _last_entries))) {
     return 0;
   }
+
   int count = 0;
   for (u4 i = 0; i < TABLE_SIZE; ++i) {
     JfrStackTrace* stacktrace = _table[i];
     while (stacktrace != nullptr) {
       JfrStackTrace* next = const_cast<JfrStackTrace*>(stacktrace->next());
-      if (stacktrace->should_write()) {
+
+      if (kind == StacksKind::java && stacktrace->should_write()) {
         stacktrace->write(sw);
         ++count;
+      } else if (kind == StacksKind::native && stacktrace->should_write_natives()) {
+        stacktrace->write_natives(sw);
+        ++count;
       }
+
       if (clear) {
         delete stacktrace;
       }
       stacktrace = next;
     }
   }
+  if (kind == StacksKind::java) {
+    _last_entries = _entries;
+  } else if (kind == StacksKind::native) {
+    _last_native_entries = _entries;
+  }
+
   if (clear) {
     memset(_table, 0, sizeof(_table));
     _entries = 0;
+    _last_entries = 0;
+    _last_native_entries = 0;
   }
-  _last_entries = _entries;
   return count;
 }
 
@@ -139,6 +153,7 @@ size_t JfrStackTraceRepository::clear(JfrStackTraceRepository& repo) {
   const size_t processed = repo._entries;
   repo._entries = 0;
   repo._last_entries = 0;
+  repo._last_native_entries = 0;
   return processed;
 }
 

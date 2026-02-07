@@ -57,7 +57,8 @@ final class ParserFactory {
         List<Type> typeList = new ArrayList<>();
         types.forEach(typeList::add);
         for (Type t : typeList) {
-            if (!t.getFields().isEmpty()) { // Avoid primitives
+            boolean isEmpty = t.getFields().isEmpty();
+            if (!isEmpty) { // Avoid primitives
                 CompositeParser cp = createCompositeParser(t, false);
                 if (t.isSimpleType()) { // Reduce to nested parser
                     parsers.put(t.getId(), cp.parsers[0]);
@@ -112,12 +113,14 @@ final class ParserFactory {
         }
         Parser parser = parsers.get(id);
         if (parser == null) {
-            if (!v.getFields().isEmpty()) {
+            // For simpleTypes, v.getFields() is empty but type.getFields() contains the actual field
+            if (!type.getFields().isEmpty()) {
                 return createCompositeParser(type, event);
             } else {
                 return registerParserType(type, createPrimitiveParser(type, constantPool));
             }
         }
+
         return parser;
     }
 
