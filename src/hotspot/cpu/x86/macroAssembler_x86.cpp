@@ -5992,9 +5992,9 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
 
 void MacroAssembler::generate_fill(BasicType t, bool aligned,
                                    Register to, Register value, Register count,
-                                   Register rtmp, XMMRegister xtmp) {
+                                   Register rtmp, Register rtmp2, XMMRegister xtmp) {
   ShortBranchVerifier sbv(this);
-  assert_different_registers(to, value, count, rtmp);
+  assert_different_registers(to, value, count, rtmp, rtmp2);
   Label L_exit;
   Label L_fill_2_bytes, L_fill_4_bytes;
 
@@ -6002,7 +6002,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
   if(MaxVectorSize >=32 &&
      VM_Version::supports_avx512vlbw() &&
      VM_Version::supports_bmi2()) {
-    generate_fill_avx3(t, to, value, count, rtmp, xtmp);
+    generate_fill_avx3(t, to, value, count, rtmp, rtmp2, xtmp);
     return;
   }
 #endif
@@ -9425,6 +9425,10 @@ void MacroAssembler::fill32(Register dst, int disp, XMMRegister xmm) {
   fill32(Address(dst, disp), xmm);
 }
 
+void MacroAssembler::fill32(Register dst, Register disp, XMMRegister xmm) {
+  fill32(Address(dst, disp), xmm);
+}
+
 void MacroAssembler::fill64(Address dst, XMMRegister xmm, bool use64byteVector) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
   if (!use64byteVector) {
@@ -9439,21 +9443,95 @@ void MacroAssembler::fill64(Register dst, int disp, XMMRegister xmm, bool use64b
   fill64(Address(dst, disp), xmm, use64byteVector);
 }
 
-void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register value,
-                                        Register count, Register rtmp, XMMRegister xtmp) {
-  Label L_exit;
-  Label L_fill_start;
-  Label L_fill_64_bytes;
-  Label L_fill_96_bytes;
-  Label L_fill_128_bytes;
-  Label L_fill_128_bytes_loop;
-  Label L_fill_128_loop_header;
-  Label L_fill_128_bytes_loop_header;
-  Label L_fill_128_bytes_loop_pre_header;
-  Label L_fill_zmm_sequence;
+void MacroAssembler::fill32_tail(uint shift, Register dst, Register disp, XMMRegister xmm,
+                                      Register length, Register temp) {
+  // This stub assumes that fill size <= 32 bytes (i.e. length <= (32 >> shift))
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  Label L16, L8, L4, L2, L1, L_done;
+  // Fastpath for fill size <= 4 bytes
+  cmpq(length, 4 >> shift);
+  jcc(Assembler::lessEqual, L4);
 
+  // 32-byte store
+  cmpq(length, 32 >> shift);
+  jcc(Assembler::less, L16);
+  vmovdqu(Address(dst, disp), xmm);
+  addq(disp, 32);
+  subq(length, 32 >> shift);
+  jcc(Assembler::zero, L_done);
+
+  // 16-byte store
+  bind(L16);
+  cmpq(length, 16 >> shift);
+  jcc(Assembler::less, L8);
+  movdqu(Address(dst, disp), xmm);
+  addq(disp, 16);
+  subq(length, 16 >> shift);
+  jcc(Assembler::zero, L_done);
+
+  // 8-byte store
+  bind(L8);
+  cmpq(length, 8 >> shift);
+  jcc(Assembler::less, L4);
+  movq(Address(dst, disp), xmm);
+  addq(disp, 8);
+  subq(length, 8 >> shift);
+  jcc(Assembler::zero, L_done);
+
+  // 4-byte store
+  bind(L4);
+  // temp holds low 8 bytes of xmm for 4/2/1B stores
+  movq(temp, xmm);
+  cmpq(length, 4 >> shift);
+  jcc(Assembler::less, L2);
+  movl(Address(dst, disp), temp);
+  addq(disp, 4);
+  subq(length, 4 >> shift);
+  jcc(Assembler::zero, L_done);
+
+  bind(L2);
+  if (shift < 2) {
+    // 2-byte store
+    cmpq(length, 2 >> shift);
+    jcc(Assembler::less, L1);
+    movw(Address(dst, disp), temp);
+    addq(disp, 2);
+    subq(length, 2 >> shift);
+    jcc(Assembler::zero, L_done);
+
+    bind(L1);
+    if (shift == 0) {
+      // 1-byte store
+      testq(length, length);
+      jcc(Assembler::zero, L_done);
+      movb(Address(dst, disp), temp);
+      subq(length, 1 >> shift);
+    }
+  }
+
+  bind(L_done);
+}
+
+void MacroAssembler::fill64_tail(uint shift, Register dst, Register disp,
+                                     XMMRegister xmm, Register length,
+                                     Register temp) {
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  Label L32, L_exit;
+  // Check if size > 32B
+  cmpq(length, 32 >> shift);
+  jcc(Assembler::less, L32);
+  fill32(dst, disp, xmm);
+  subq(length, 32 >> shift);
+  jcc(Assembler::zero, L_exit);
+  addq(disp, 32);
+  bind(L32);
+  fill32_tail(shift, dst, disp, xmm, length, temp);
+  bind(L_exit);
+}
+
+void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register value,
+                                        Register count, Register rtmp, Register rtmp2, XMMRegister xtmp) {
   int shift = -1;
-  int avx3threshold = VM_Version::avx3_threshold();
   switch(type) {
     case T_BYTE:  shift = 0;
       break;
@@ -9469,35 +9547,66 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
       fatal("Unhandled type: %s\n", type2name(type));
   }
 
+  Label L_exit;
+  // Fastpath for fill count <= 4 bytes.
+  if (type == T_BYTE) {
+    Label L_done;
+    cmpq(count, 4);
+    jccb(Assembler::greater, L_done);
+    movb(Address(to, 0), value);
+    cmpq(count, 1);
+    jcc(Assembler::equal, L_exit);
+    movb(Address(to, 1), value);
+    cmpq(count, 2);
+    jcc(Assembler::equal, L_exit);
+    movb(Address(to, 2), value);
+    cmpq(count, 3);
+    jcc(Assembler::equal, L_exit);
+    movb(Address(to, 3), value);
+    jmp(L_exit);
+    bind(L_done);
+  }
+
+  Label L_fill_32_tail;
+  Label L_fill_zmm_sequence;
+  Register disp = rtmp2;
+  int avx3threshold = VM_Version::avx3_threshold();
+
   if ((avx3threshold != 0)  || (MaxVectorSize == 32)) {
+    Label L_fill_start;
+    Label L_fill_96_bytes;
+    Label L_fill_128_bytes;
+    Label L_fill_128_bytes_loop;
+    Label L_fill_128_loop_header;
+    Label L_fill_128_bytes_loop_header;
+    Label L_fill_128_bytes_loop_pre_header;
+
+    evpbroadcast(type, xtmp, value, Assembler::AVX_256bit);
+
+    bind(L_fill_start);
+    cmpq(count, 32 >> shift);
+    movq(disp, 0);
+    jcc(Assembler::lessEqual, L_fill_32_tail);
 
     if (MaxVectorSize == 64) {
       cmpq(count, avx3threshold >> shift);
       jcc(Assembler::greater, L_fill_zmm_sequence);
     }
 
-    evpbroadcast(type, xtmp, value, Assembler::AVX_256bit);
-
-    bind(L_fill_start);
-
-    cmpq(count, 32 >> shift);
-    jccb(Assembler::greater, L_fill_64_bytes);
-    fill32_masked(shift, to, 0, xtmp, k2, count, rtmp);
-    jmp(L_exit);
-
-    bind(L_fill_64_bytes);
     cmpq(count, 64 >> shift);
     jccb(Assembler::greater, L_fill_96_bytes);
-    fill64_masked(shift, to, 0, xtmp, k2, count, rtmp);
-    jmp(L_exit);
+    fill32(to, 0, xtmp);
+    subq(count, 32 >> shift);
+    movq(disp, 32);
+    jmp(L_fill_32_tail);
 
     bind(L_fill_96_bytes);
     cmpq(count, 96 >> shift);
     jccb(Assembler::greater, L_fill_128_bytes);
     fill64(to, 0, xtmp);
     subq(count, 64 >> shift);
-    fill32_masked(shift, to, 64, xtmp, k2, count, rtmp);
-    jmp(L_exit);
+    movq(disp, 64);
+    jmp(L_fill_32_tail);
 
     bind(L_fill_128_bytes);
     cmpq(count, 128 >> shift);
@@ -9505,8 +9614,8 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
     fill64(to, 0, xtmp);
     fill32(to, 64, xtmp);
     subq(count, 96 >> shift);
-    fill32_masked(shift, to, 96, xtmp, k2, count, rtmp);
-    jmp(L_exit);
+    movq(disp, 96);
+    jmp(L_fill_32_tail);
 
     bind(L_fill_128_bytes_loop_pre_header);
     {
@@ -9545,6 +9654,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
   if (MaxVectorSize == 64) {
     // Sequence using 64 byte ZMM register.
+    Label L_fill_64_tail;
     Label L_fill_128_bytes_zmm;
     Label L_fill_192_bytes_zmm;
     Label L_fill_192_bytes_loop_zmm;
@@ -9558,16 +9668,16 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
     bind(L_fill_start_zmm_sequence);
     cmpq(count, 64 >> shift);
     jccb(Assembler::greater, L_fill_128_bytes_zmm);
-    fill64_masked(shift, to, 0, xtmp, k2, count, rtmp, true);
-    jmp(L_exit);
+    movq(disp, 0);
+    jmp(L_fill_64_tail);
 
     bind(L_fill_128_bytes_zmm);
     cmpq(count, 128 >> shift);
     jccb(Assembler::greater, L_fill_192_bytes_zmm);
     fill64(to, 0, xtmp, true);
     subq(count, 64 >> shift);
-    fill64_masked(shift, to, 64, xtmp, k2, count, rtmp, true);
-    jmp(L_exit);
+    movq(disp, 64);
+    jmp(L_fill_64_tail);
 
     bind(L_fill_192_bytes_zmm);
     cmpq(count, 192 >> shift);
@@ -9575,8 +9685,8 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
     fill64(to, 0, xtmp, true);
     fill64(to, 64, xtmp, true);
     subq(count, 128 >> shift);
-    fill64_masked(shift, to, 128, xtmp, k2, count, rtmp, true);
-    jmp(L_exit);
+    movq(disp, 128);
+    jmp(L_fill_64_tail);
 
     bind(L_fill_192_bytes_loop_pre_header_zmm);
     {
@@ -9612,7 +9722,19 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
     addq(count, 192 >> shift);
     jcc(Assembler::zero, L_exit);
     jmp(L_fill_start_zmm_sequence);
+
+    bind(L_fill_64_tail);
+    cmpq(count, 32 >> shift);
+    jcc(Assembler::less, L_fill_32_tail);
+    fill32(to, disp, xtmp);
+    jcc(Assembler::equal, L_exit);
+    subq(count, 32 >> shift);
+    addq(disp, 32);
   }
+
+  bind(L_fill_32_tail);
+  fill32_tail(shift, to, disp, xtmp, count, rtmp);
+
   bind(L_exit);
 }
 #endif //COMPILER2_OR_JVMCI

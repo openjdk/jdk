@@ -1917,7 +1917,7 @@ public:
   // Fill primitive arrays
   void generate_fill(BasicType t, bool aligned,
                      Register to, Register value, Register count,
-                     Register rtmp, XMMRegister xtmp);
+                     Register rtmp, Register rtmp2, XMMRegister xtmp);
 
   void encode_iso_array(Register src, Register dst, Register len,
                         XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
@@ -2030,9 +2030,17 @@ public:
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp);
 
+  void fill64_tail(uint shift, Register dst, Register disp,
+                         XMMRegister xmm, Register length, Register temp);
+
+  void fill32_tail(uint shift, Register dst, Register disp,
+                         XMMRegister xmm, Register length, Register temp);
+
   void fill32(Address dst, XMMRegister xmm);
 
   void fill32(Register dst, int disp, XMMRegister xmm);
+
+  void fill32(Register dst, Register disp, XMMRegister xmm);
 
   void fill64(Address dst, XMMRegister xmm, bool use64byteVector = false);
 
@@ -2050,7 +2058,7 @@ public:
 
 #ifdef COMPILER2_OR_JVMCI
   void generate_fill_avx3(BasicType type, Register to, Register value,
-                          Register count, Register rtmp, XMMRegister xtmp);
+                          Register count, Register rtmp, Register rtmp2, XMMRegister xtmp);
 #endif // COMPILER2_OR_JVMCI
 
   void vallones(XMMRegister dst, int vector_len);
