@@ -1393,11 +1393,18 @@ static bool is_pointer_bad(intptr_t* ptr) {
 // stack is walkable beyond current frame.
 // Returns true if this is not the case, i.e. the frame is possibly
 // the first C frame on the stack.
-bool os::is_first_C_frame(frame* fr) {
+bool os::is_first_C_frame(const frame* fr) {
 
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
 #endif
+
+  // Check for a user-specified first frame, which can be used to prevent
+  // walking through signal handlers, etc.
+  if (FirstNativeFrameMark::is_first_native_frame(*fr)) {
+    return true;
+  }
+
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
@@ -2668,3 +2675,5 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   }
   return agent_entry_name;
 }
+
+THREAD_LOCAL address os::FirstNativeFrameMark::_first_frame_stack_pointer = nullptr;
