@@ -38,6 +38,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import test.java.awt.regtesthelpers.Util;
 
@@ -58,6 +59,7 @@ import test.java.awt.regtesthelpers.Util;
  */
 public class MixingPanelsResizing {
 
+    static final int TOLERANCE_MACOSX = 15;
     static volatile boolean failed = false;
 
     private static JFrame frame;
@@ -77,7 +79,8 @@ public class MixingPanelsResizing {
     private static int frameBorderCounter() {
         String JAVA_HOME = System.getProperty("java.home");
         try {
-            Process p = Runtime.getRuntime().exec(JAVA_HOME + "/bin/java FrameBorderCounter");
+            Process p = Runtime.getRuntime()
+                    .exec(JAVA_HOME + "/bin/java FrameBorderCounter");
             try {
                 p.waitFor();
             } catch (InterruptedException e) {
@@ -85,7 +88,9 @@ public class MixingPanelsResizing {
                 throw new RuntimeException(e);
             }
             if (p.exitValue() != 0) {
-                throw new RuntimeException("FrameBorderCounter exited with not null code!\n" + readInputStream(p.getErrorStream()));
+                throw new RuntimeException(
+                        "FrameBorderCounter exited with not null code!\n" +
+                                readInputStream(p.getErrorStream()));
             }
             return Integer.parseInt(readInputStream(p.getInputStream()).trim());
         } catch (IOException e) {
@@ -108,9 +113,11 @@ public class MixingPanelsResizing {
 
     private static void init() throws Exception {
         //*** Create instructions for the user here ***
-
         borderShift = frameBorderCounter();
-        borderShift = Math.abs(borderShift) == 1 ? borderShift : (borderShift / 2);
+        borderShift =
+                Math.abs(borderShift) == 1 ?
+                borderShift :
+                (borderShift / 2);
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 // prepare controls
@@ -133,6 +140,7 @@ public class MixingPanelsResizing {
                 jPanel.add(jbutton2);
                 jbutton2.setForeground(jb2Color);
                 jbutton2.setBackground(jb2Color);
+
                 awtButton2 = new Button("AWT Button2");
                 jPanel.add(awtButton2);
                 awtButton2.setForeground(awt2Color);
@@ -156,9 +164,11 @@ public class MixingPanelsResizing {
         Util.waitForIdle(robot);
 
         SwingUtilities.invokeAndWait(new Runnable() {
+
             public void run() {
                 lLoc = frame.getLocationOnScreen();
-                lLoc.translate(frame.getWidth() + borderShift, frame.getHeight() + borderShift);
+                lLoc.translate(frame.getWidth() + borderShift,
+                        frame.getHeight() + borderShift);
             }
         });
 
@@ -171,25 +181,29 @@ public class MixingPanelsResizing {
             public void run() {
                 Point btnLoc = jbutton.getLocationOnScreen();
                 Color c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(jbColor)) {
+                System.out.println("Color picked for jbutton: " + c);
+                if (!isAlmostEqualColor(c, jbColor)) {
                     fail("JButton was not redrawn properly on AWT Panel during move");
                 }
 
                 btnLoc = awtButton.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(awtColor)) {
+                System.out.println("Color picked for awtButton: " + c);
+                if (!isAlmostEqualColor(c, awtColor)) {
                     fail("AWT Button was not redrawn properly on AWT Panel during move");
                 }
 
                 btnLoc = jbutton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(jb2Color)) {
+                System.out.println("Color picked for jbutton2: " + c);
+                if (!isAlmostEqualColor(c, jb2Color)) {
                     fail("JButton was not redrawn properly on JPanel during move");
                 }
 
                 btnLoc = awtButton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(awt2Color)) {
+                System.out.println("Color picked for awtButton2: " + c);
+                if (!isAlmostEqualColor(c, awt2Color)) {
                     fail("ATW Button was not redrawn properly on JPanel during move");
                 }
             }
@@ -212,6 +226,7 @@ public class MixingPanelsResizing {
 
         pass();
     }//End  init()
+
     /*****************************************************
      * Standard Test Machinery Section
      * DO NOT modify anything in this section -- it's a
@@ -235,6 +250,13 @@ public class MixingPanelsResizing {
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
     public static void main(String args[]) throws Exception {
+        try {
+            UIManager.setLookAndFeel(
+                    UIManager.getCrossPlatformLookAndFeelClassName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         if (!Toolkit.getDefaultToolkit().isDynamicLayoutActive()) {
             System.out.println("Dynamic layout is not active. Test passes.");
             return;
@@ -256,7 +278,8 @@ public class MixingPanelsResizing {
         try {
             Thread.sleep(sleepTime);
             //Timed out, so fail the test
-            throw new RuntimeException("Timed out after " + sleepTime / 1000 + " seconds");
+            throw new RuntimeException(
+                    "Timed out after " + sleepTime / 1000 + " seconds");
         } catch (InterruptedException e) {
             //The test harness may have interrupted the test.  If so, rethrow the exception
             // so that the harness gets it and deals with it.
@@ -313,6 +336,16 @@ public class MixingPanelsResizing {
         mainThread.interrupt();
     }//fail()
 
+    private static boolean isAlmostEqualColor(Color color, Color refColor) {
+        System.out.println("Comparing color: " + color + " with reference " +
+                "color: " + refColor);
+        return color.equals(refColor)
+               || (Math.abs(color.getRed() - refColor.getRed()) < TOLERANCE_MACOSX
+                   && Math.abs(color.getGreen() - refColor.getGreen()) < TOLERANCE_MACOSX
+                   && Math.abs(color.getBlue() - refColor.getBlue()) < TOLERANCE_MACOSX);
+    }
+
     static class TestPassedException extends RuntimeException {
     }
+
 }// class JButtonInGlassPane

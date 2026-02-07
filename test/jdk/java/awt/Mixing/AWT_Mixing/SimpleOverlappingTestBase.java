@@ -157,25 +157,27 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
            tests fail starting after failing mixing tests but always pass alone.
          */
         JFrame ancestor = (JFrame) (testedComponent.getTopLevelAncestor());
+        final CountDownLatch latch = new CountDownLatch(1);
         if (ancestor != null) {
-            final CountDownLatch latch = new CountDownLatch(1);
             ancestor.addFocusListener(new FocusAdapter() {
                 @Override public void focusGained(FocusEvent e) {
                     latch.countDown();
                 }
             });
             ancestor.requestFocus();
-            try {
-                if (!latch.await(1L, TimeUnit.SECONDS)) {
-                    throw new RuntimeException(
-                            "Ancestor frame didn't receive focus");
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        } else {
+            latch.countDown();
         }
-
-        clickAndBlink(robot, lLoc);
+        try {
+            boolean await = latch.await(1, TimeUnit.SECONDS);
+            if (!await) {
+                throw new RuntimeException("Ancestor frame didn't receive " +
+                        "focus");
+            }
+            clickAndBlink(robot, lLoc);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         if (ancestor != null && isMultiFramesTest()) {
             ancestor.dispose();
         }
