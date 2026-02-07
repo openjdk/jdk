@@ -156,7 +156,9 @@ public:
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \
     decl(SVE2,          sve2,          28)    \
-    decl(A53MAC,        a53mac,        31)
+    decl(A53MAC,        a53mac,        31)    \
+    decl(ECV,           ecv,           32)    \
+    decl(WFXT,          wfxt,          33)
 
   enum Feature_Flag {
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = bit,

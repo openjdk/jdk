@@ -1095,6 +1095,10 @@ public:
 
 #undef INSN
 
+  void wfet(Register rt) {
+    system(0b00, 0b011, 0b0001, 0b0000, 0b000, rt);
+  }
+
   // we only provide mrs and msr for the special purpose system
   // registers where op1 (instr[20:19]) == 11
   // n.b msr has L (instr[21]) == 0 mrs has L == 1

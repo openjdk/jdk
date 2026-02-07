@@ -55,9 +55,31 @@ SpinWait VM_Version::_spin_wait;
 const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
 
 static SpinWait get_spin_wait_desc() {
-  SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount);
+  SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount, OnSpinWaitDelay);
   if (spin_wait.inst() == SpinWait::SB && !VM_Version::supports_sb()) {
     vm_exit_during_initialization("OnSpinWaitInst is SB but current CPU does not support SB instruction");
+  }
+
+  if (spin_wait.inst() == SpinWait::WFET) {
+    if (!VM_Version::supports_wfxt()) {
+      vm_exit_during_initialization("OnSpinWaitInst is WFET but the CPU does not support the WFET instruction");
+    }
+
+    if (!VM_Version::supports_ecv()) {
+      vm_exit_during_initialization("OnSpinWaitInst is WFET but the CPU does not support the FEAT_ECV");
+    }
+
+    if (!VM_Version::supports_sb()) {
+      vm_exit_during_initialization("OnSpinWaitInst is WFET but the CPU does not support the SB instruction");
+    }
+
+    if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount != 1) {
+      vm_exit_during_initialization("OnSpinWaitInstCount for OnSpinWaitInst 'wfet' must be 1");
+    }
+  } else {
+    if (!FLAG_IS_DEFAULT(OnSpinWaitDelay)) {
+      vm_exit_during_initialization("OnSpinWaitDelay can only be used with -XX:OnSpinWaitInst=wfet");
+    }
   }
 
   return spin_wait;

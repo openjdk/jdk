@@ -660,6 +660,14 @@ public:
     msr(0b011, 0b0100, 0b0010, 0b000, reg);
   }
 
+  // CNTVCTSS_EL0:   op1 == 011
+  //                 CRn == 1110
+  //                 CRm == 0000
+  //                 op2 == 110
+  inline void get_cntvctss_el0(Register reg) {
+    mrs(0b011, 0b1110, 0b0000, 0b110, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -1722,6 +1730,7 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+  void spin_wait_wfet(int delay_ns);
 
   void fast_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
   void fast_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
