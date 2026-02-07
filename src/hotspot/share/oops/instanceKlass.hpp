@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1212,8 +1212,12 @@ class PrintClassClosure : public KlassClosure {
 private:
   outputStream* _st;
   bool _verbose;
+  bool _location;
 public:
-  PrintClassClosure(outputStream* st, bool verbose);
+  unsigned int _aot_statics;
+  unsigned int _aot_dynamics;
+
+  PrintClassClosure(outputStream* st, bool verbose, bool location);
 
   void do_klass(Klass* k);
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -950,35 +951,46 @@ void ClassHierarchyDCmd::execute(DCmdSource source, TRAPS) {
 ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _verbose("-verbose",
-           "Dump the detailed content of a Java class. "
-           "Some classes are annotated with flags: "
-           "F = has, or inherits, a non-empty finalize method, "
-           "f = has final method, "
-           "W = methods rewritten, "
-           "C = marked with @Contended annotation, "
-           "R = has been redefined, "
-           "S = is shared class",
-           "BOOLEAN", false, "false") {
+           "Dump the detailed content of a Java class.\n"
+           "\t\t   classes are annotated with flags:\n"
+           "\t\t   F = has, or inherits, a non-empty finalize method,\n"
+           "\t\t   f = has final method,\n"
+           "\t\t   W = methods rewritten,\n"
+           "\t\t   C = marked with @Contended annotation,\n"
+           "\t\t   R = has been redefined,\n"
+           "\t\t   S = is an (App)CDS shared class,\n"
+           "\t\t       (if -location is also specified, (either) 's' indicating static (or) 'd' indicating dynamic AOT cache locations, are appended)\n\t",
+           "BOOLEAN", false, "false"),
+  _location("-location", "Print class file location url (if available)", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_verbose);
+  _dcmdparser.add_dcmd_option(&_location);
 }
 
 class VM_PrintClasses : public VM_Operation {
 private:
   outputStream* _out;
   bool _verbose;
+  bool _location;
 public:
-  VM_PrintClasses(outputStream* out, bool verbose) : _out(out), _verbose(verbose) {}
+  VM_PrintClasses(outputStream* out, bool verbose, bool location) : _out(out), _verbose(verbose), _location(location) {}
 
   virtual VMOp_Type type() const { return VMOp_PrintClasses; }
 
   virtual void doit() {
-    PrintClassClosure closure(_out, _verbose);
+    PrintClassClosure closure(_out, _verbose, _location);
     ClassLoaderDataGraph::classes_do(&closure);
+
+    if (_location) {
+      if (closure._aot_statics > 0)
+        _out->print_cr("\n%d classes shared from static cache: %s", closure._aot_statics, FileMapInfo::current_info()->full_path());
+      if (closure._aot_dynamics > 0)
+        _out->print_cr("\n%d classes shared from dynamic cache: %s", closure._aot_dynamics, FileMapInfo::dynamic_info()->full_path());
+    }
   }
 };
 
 void ClassesDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintClasses vmop(output(), _verbose.value());
+  VM_PrintClasses vmop(output(), _verbose.value(), _location.value());
   VMThread::execute(&vmop);
 }
 
