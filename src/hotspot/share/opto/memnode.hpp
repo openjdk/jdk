@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,6 +91,82 @@ protected:
     init_class_id(Class_Mem);
     DEBUG_ONLY(_adr_type=at; adr_type();)
   }
+
+  // During igvn, in order to reason about the state of the memory a MemNode accesses, we can
+  // inspect the escape status of that memory. A memory location is said to escape the compilation
+  // unit if it is made visible outside the compilation unit, which is equivalent to the object
+  // containing that memory visible outside the compilation unit. An object is in the not-escaped
+  // state when it is just allocated, and stay so until its reference or a derived pointer of its
+  // is stored into the memory, passed into a method invocation, or used as an input to a node we
+  // do not know.
+  //
+  // If an object has not escaped, it cannot be modified during a method invocation, and the
+  // reordering of memory accesses into it is invisible to other threads. As a result, to find the
+  // value that is stored at one of its fields, we can aggressively walk the memory graph past
+  // CallNodes and MemBarNodes, this gives a much better chance to fold a load or a store.
+  //
+  // This analysis is local, which means it only inspects a small part of the graph to determine
+  // the escape status of an object. It is context-aware, which means it does not just try to find
+  // a global escape status of an object, but it also tries to determine which node must observe
+  // that the object has escaped. If an access into an object does not observe that the object has
+  // escaped, it can try folding aggressively even though the object may escape afterwards.
+  //
+  // It can be proved that if a node must observe that an object has escaped, then there is a path
+  // of use-def edges from that node to the node which makes the object escape. This approach,
+  // however, requires a global analysis as we need to walk the whole graph. As a result, we go for
+  // a more conservative approach which inspects only the control subgraph of the IR graph. See
+  // check_escape_status below.
+  //
+  // Perform this local analysis during igvn has the advantage that it allows the folding to happen
+  // earlier, before incremental inlining. This means that devirtualized method invocations can get
+  // inlined. On the other hand, if the folding happens during the escape analysis phase, inlining
+  // is already over.
+  class LocalEA {
+  private:
+    PhaseIterGVN* _phase;
+
+    // If the node being inspected p is eligible for escape analysis. For example, if p is the
+    // result cast of an allocation, or if it is a Phi and its inputs are the result casts of some
+    // allocations, then it is eligible for escape analysis. On the other hand, if p is a load from
+    // memory, or the return value of a Java call, then we cannot do escape analysis on it.
+    bool _is_candidate;
+
+    // If the node being inspected p has not escaped from the compilation unit, this is the set of
+    // all nodes that can alias p (i.e. may have the same value as p at runtime). This is the set
+    // of all allocations that may alias p (if p is the result cast of an allocation, then that is
+    // the only allocation that may alias p, otherwise, if p is a Phi and its inputs are the result
+    // casts of some allocations, then those inputs may alias p) and all nodes q such that, there
+    // is an allocation alloc such that alloc may alias p and there is a path of def-use edges from
+    // the result cast of alloc to q consisting of ConstraintCasts, EncodePs, DecodeNs, Phis, and
+    // CMoves.
+    Unique_Node_List _aliases;
+
+    // If it is known that the node being inspected p has not escaped at a control node c1, then it
+    // must be the case that p has not escaped at all of the transitive control inputs of c1.
+    // Otherwise, there will be a control flow following the path from a transitive input c2 of c1
+    // to c1 in which p has escaped at c2 but has also not escaped at a later point c1, which is
+    // impossible. As a result, when p is determined that it has not escaped at a control node, we
+    // record that node as well as all of its transitive control inputs here.
+    Unique_Node_List _not_escaped_controls;
+
+  public:
+    LocalEA(PhaseIterGVN* phase, Node* base);
+
+    bool is_candidate() const { return _is_candidate; }
+    const Unique_Node_List& aliases() const { return _aliases; }
+    const Unique_Node_List& not_escaped_controls() const { return _not_escaped_controls; }
+
+    // The result of the analysis whether an object has escaped at a control node
+    enum EscapeStatus {
+      ESCAPED,
+      NOT_ESCAPED,
+      DEAD_PATH
+    };
+
+    // Check the escape status of the node being inspected p at a control node ctl. As this is
+    // called during igvn, be prepared for non-canonical graph (dead paths, etc).
+    EscapeStatus check_escape_status(Node* ctl);
+  };
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
   ArrayCopyNode* find_array_copy_clone(Node* ld_alloc, Node* mem) const;
