@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1147,9 +1148,31 @@ void MacroAssembler::post_call_nop() {
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
+  uint32_t offs = offset() + CodeBlob::align_code_offset(sizeof(nmethod));
+  offs += code()->total_offset_of(code()->insts());
+  uint32_t chunks_count = NativePostCallNop::metadata_chunks_count(offs);
+  if (code_section()->scratch_emit()) {
+    // Review
+    // For size estimation, conservatively assume two slots will be required.
+    chunks_count = 2;
+  }
   nop();
-  movk(zr, 0);
-  movk(zr, 0);
+  if (chunks_count == 1) {
+    if (UsePostCallSequenceWithADRP) {
+      adr(zr, pc());
+    } else {
+      movk(zr, 0);
+    }
+  } else if (chunks_count > 1) {
+    assert(chunks_count == 2, "either 1 or 2");
+    if (UsePostCallSequenceWithADRP) {
+      _adrp(zr, pc());
+      adr(zr, pc());
+    } else {
+      movz(zr, 0);
+      movk(zr, 0);
+    }
+  }
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
@@ -2434,17 +2457,28 @@ void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64) {
   }
 }
 
-void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
+template<bool count_only> ALWAYSINLINE
+int MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 {
 #ifndef PRODUCT
-  {
+  if (!count_only) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
     block_comment(buffer);
   }
 #endif
+
+  int insns_count = 0;
+  int start_offset = offset();
+#define DO(op) do { \
+      insns_count++; \
+      if (!count_only) { \
+        op; \
+      } \
+    } while (0)
+
   if (operand_valid_for_logical_immediate(false, imm64)) {
-    orr(dst, zr, imm64);
+    DO(orr(dst, zr, imm64));
   } else {
     // we can use a combination of MOVZ or MOVN with
     // MOVK to build up the constant
@@ -2462,14 +2496,14 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
     }
     if (zero_count == 4) {
       // one MOVZ will do
-      movz(dst, 0);
+      DO(movz(dst, 0));
     } else if (neg_count == 4) {
       // one MOVN will do
-      movn(dst, 0);
+      DO(movn(dst, 0));
     } else if (zero_count == 3) {
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0L) {
-          movz(dst, (uint32_t)imm_h[i], (i << 4));
+          DO(movz(dst, (uint32_t)imm_h[i], (i << 4)));
           break;
         }
       }
@@ -2477,7 +2511,7 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
       // one MOVN will do
       for (int i = 0; i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4));
+          DO(movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4)));
           break;
         }
       }
@@ -2485,66 +2519,87 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
       // one MOVZ and one MOVK will do
       for (i = 0; i < 3; i++) {
         if (imm_h[i] != 0L) {
-          movz(dst, (uint32_t)imm_h[i], (i << 4));
+          DO(movz(dst, (uint32_t)imm_h[i], (i << 4)));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0L) {
-          movk(dst, (uint32_t)imm_h[i], (i << 4));
+          DO(movk(dst, (uint32_t)imm_h[i], (i << 4)));
         }
       }
     } else if (neg_count == 2) {
       // one MOVN and one MOVK will do
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4));
+          DO(movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4)));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movk(dst, (uint32_t)imm_h[i], (i << 4));
+          DO(movk(dst, (uint32_t)imm_h[i], (i << 4)));
         }
       }
     } else if (zero_count == 1) {
       // one MOVZ and two MOVKs will do
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0L) {
-          movz(dst, (uint32_t)imm_h[i], (i << 4));
+          DO(movz(dst, (uint32_t)imm_h[i], (i << 4)));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0x0L) {
-          movk(dst, (uint32_t)imm_h[i], (i << 4));
+          DO(movk(dst, (uint32_t)imm_h[i], (i << 4)));
         }
       }
     } else if (neg_count == 1) {
       // one MOVN and two MOVKs will do
       for (i = 0; i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4));
+          DO(movn(dst, (uint32_t)imm_h[i] ^ 0xffffL, (i << 4)));
           i++;
           break;
         }
       }
       for (;i < 4; i++) {
         if (imm_h[i] != 0xffffL) {
-          movk(dst, (uint32_t)imm_h[i], (i << 4));
+          DO(movk(dst, (uint32_t)imm_h[i], (i << 4)));
         }
       }
     } else {
       // use a MOVZ and 3 MOVKs (makes it easier to debug)
-      movz(dst, (uint32_t)imm_h[0], 0);
+      DO(movz(dst, (uint32_t)imm_h[0], 0));
       for (i = 1; i < 4; i++) {
-        movk(dst, (uint32_t)imm_h[i], (i << 4));
+        DO(movk(dst, (uint32_t)imm_h[i], (i << 4)));
       }
     }
   }
+
+#undef DO
+
+  assert(insns_count != 0, "expected at least one instruction");
+
+  int emitted = offset() - start_offset;
+  if (count_only) {
+    assert(emitted == 0, "no instruction should be emitted if counting only");
+  } else {
+    assert(emitted == insns_count * NativeInstruction::instruction_size, "incorrect count");
+  }
+
+  return insns_count;
+}
+
+int MacroAssembler::mov_immediate64(Register dst, uint64_t imm64) {
+  return mov_immediate64</*count_only=*/false>(dst, imm64);
+}
+
+int MacroAssembler::mov_immediate64_insts_count(Register dst, uint64_t imm64) {
+  return mov_immediate64</*count_only=*/true>(dst, imm64);
 }
 
 void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)

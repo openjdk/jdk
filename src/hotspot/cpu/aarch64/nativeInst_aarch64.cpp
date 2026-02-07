@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,23 +393,88 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
-  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
-    return false; // cannot encode
-  }
-  uint32_t data = ((uint32_t)oopmap_slot << 24) | cb_offset;
+template<typename Variant>
+bool NativePostCallNop::patch_helper(int32_t oopmap_slot, int32_t cb_offset) {
+  constexpr size_t block_size = HeapBlock::minimum_alignment();
+  const int32_t cb_offset_to_segment = cb_offset + CodeHeap::header_size();
+  const int32_t cb_blocks_offset = cb_offset_to_segment / block_size;
+
+  const uint32_t chunk1 = *(uint32_t*)addr_at(first_check_size);
+  uint32_t data1 = Variant::extract_metadata(chunk1);
+
+  const uint32_t chunks_count = Variant::two_chunks_flag.extract(data1) + 1;
 #ifdef ASSERT
-  assert(data != 0, "must be");
-  uint32_t insn1 = uint_at(4);
-  uint32_t insn2 = uint_at(8);
-  assert (is_movk_to_zr(insn1) && is_movk_to_zr(insn2), "must be");
+  const uint32_t req_chunks_count = metadata_chunks_count<Variant>(cb_offset);
+
+  assert(block_size <= CodeCacheSegmentSize, "incorrect block size value");
+
+  uintptr_t code_blob_address = (uintptr_t) this - cb_offset;
+  uint32_t code_blob_offset_from_segment = code_blob_address % block_size;
+  assert(CodeHeap::header_size() == code_blob_offset_from_segment, "unexpected offset value");
+
+  bool is_empty;
+
+  if (chunks_count == 1) {
+    is_empty = (data1 == 0);
+    assert(req_chunks_count == 1, "one metadata chunk is sufficient");
+  } else {
+    assert(req_chunks_count <= 2, "two metadata chunks are sufficient");
+    assert(chunks_count == 2, "unexpected number of chunks");
+
+    const uint32_t chunk2_offset = first_check_size + NativeInstruction::instruction_size;
+    const uint32_t chunk2 = *(uint32_t*)addr_at(chunk2_offset);
+    uint32_t data2 = Variant::extract_metadata(chunk2);
+
+    is_empty = (data1 == 1 && data2 == 0);
+  }
+
+  if (!is_empty) {
+    // If not empty, it can be a copy of the nmethod, in which case the
+    // contents should already match the values requested from this method.
+    verify(cb_offset, oopmap_slot);
+  }
 #endif
 
-  uint32_t lo = data & 0xffff;
-  uint32_t hi = data >> 16;
-  Instruction_aarch64::patch(addr_at(4), 20, 5, lo);
-  Instruction_aarch64::patch(addr_at(8), 20, 5, hi);
+  uint64_t data = Variant::two_chunks_flag.insert(0, chunks_count - 1);
+
+  if (chunks_count == 1) {
+    if (!pack<typename Variant::one_chunk>(/* output */ data,
+                                           oopmap_slot, cb_blocks_offset)) {
+      return false;
+    }
+  } else {
+    if (!pack<typename Variant::two_chunks>(/* output */ data,
+                                            oopmap_slot, cb_blocks_offset)) {
+      return false;
+    }
+  }
+
+#ifdef ASSERT
+  const uint32_t metadata_bits_count = chunks_count * Variant::metadata_chunk_width;
+  const uint64_t metadata_mask = (1ull << metadata_bits_count) - 1;
+  assert((data & metadata_mask) == data, "insufficient metadata bits");
+#endif
+
+  address addr = addr_at(first_check_size);
+
+  data = Variant::patch_chunk(addr, data);
+
+  if (chunks_count == 2) {
+    data = Variant::patch_chunk(addr + NativeInstruction::instruction_size, data);
+  }
+
+  verify(cb_offset, oopmap_slot);
+
   return true; // successfully encoded
+}
+
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  const uint32_t chunk = *(uint32_t*)addr_at(first_check_size);
+  if (VariantADR::is_match(chunk)) {
+    return patch_helper<VariantADR>(oopmap_slot, cb_offset);
+  } else {
+    return patch_helper<VariantMOV>(oopmap_slot, cb_offset);
+  }
 }
 
 void NativeDeoptInstruction::verify() {

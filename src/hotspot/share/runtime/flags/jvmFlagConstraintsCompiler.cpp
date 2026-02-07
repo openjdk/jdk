@@ -26,6 +26,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "memory/heap.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -170,6 +171,14 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
                         "to align entry points\n",
                         CodeCacheSegmentSize, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if (CodeCacheSegmentSize < HeapBlock::minimum_alignment()) {
+      JVMFlag::printError(verbose,
+                          "CodeCacheSegmentSize (%zu) must be "
+                          "greater than or equal to %zu\n",
+                          CodeCacheSegmentSize, HeapBlock::minimum_alignment());
+      return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
   if (CodeCacheSegmentSize < sizeof(jdouble)) {

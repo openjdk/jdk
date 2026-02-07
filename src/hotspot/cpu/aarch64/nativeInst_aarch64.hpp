@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,7 @@
 #define CPU_AARCH64_NATIVEINST_AARCH64_HPP
 
 #include "asm/assembler.hpp"
+#include "memory/heap.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
@@ -519,52 +521,313 @@ inline NativeLdSt* NativeLdSt_at(address addr) {
   return (NativeLdSt*)addr;
 }
 
-// A NativePostCallNop takes the form of three instructions:
-//     nop; movk zr, lo; movk zr, hi
+// A NativePostCallNop takes the form of NOP followed by one or two instruction
+// slots holding metadata chunks represented as instructions with no side
+// effects.
 //
-// The nop is patchable for a deoptimization trap. The two movk
-// instructions execute as nops but have a 16-bit payload in which we
-// can store an offset from the initial nop to the nmethod.
+// The options are:
+//   - variant MOV
+//     - nop; movk zr, metadata (18-bit payload)
+//     - nop; movz zr, metadata_lo; movk/movz zr, metadata_hi (37-bit payload)
+//   - variant ADR
+//     - nop; adr zr, metadata (21-bit payload)
+//     - nop; adrp zr, metadata_lo; adr/adrp zr, metadata_hi (43-bit payload)
+//
+// The nop is patchable for a deoptimization trap. The subsequent movk/movz/adr/adrp
+// execute as nops but contain metadata payload.
+//
+// The metadata layout is as follows:
+//  - 1-bit field indicating whether one or two metadata chunks are present;
+//  - cb_blocks_offset (9 or 19 bits for MOV variant; 11 or 22 bits for ADR variant)
+//   - offset from the start of the code heap's space allocated for the method,
+//     in HeapBlock::minimum_alignment() blocks.
+//  - oopmap_slot (9 or 18 bits for MOV variant; 10 or 21 bits for ADR variant)
+//
+// The metadata layout for these options is described via VariantMOV / VariantADR helpers,
+// which also provide variant-specific implementation for matching format, extracting and
+// patching metadata.
+class NativePostCallNopMetadataField {
+public:
+  constexpr NativePostCallNopMetadataField(uint32_t shift, uint32_t width)
+    : _shift(shift), _width(width), _mask((1ull << width) - 1) {
+    assert(_shift + _width <= sizeof(uint64_t) * BitsPerByte, "overflow");
+  }
+
+  constexpr NativePostCallNopMetadataField(NativePostCallNopMetadataField previous_field, uint32_t width)
+    : NativePostCallNopMetadataField(previous_field.end_pos(), width) {}
+
+  constexpr uint32_t end_pos() const {
+    return _shift + _width;
+  }
+
+  constexpr bool can_hold(int32_t value) const {
+    return (static_cast<int32_t>(value & _mask) == value);
+  }
+
+  constexpr uint64_t extract(uint64_t data) const {
+    return ((data >> _shift) & _mask);
+  }
+
+  constexpr uint64_t insert(uint64_t data, uint32_t value) const {
+    return data | ((uint64_t) value << _shift);
+  }
+
+private:
+  const uint32_t _shift;
+  const uint32_t _width;
+  const uint64_t _mask;
+};
 
 class NativePostCallNop: public NativeInstruction {
 private:
-  static bool is_movk_to_zr(uint32_t insn) {
-    return ((insn & 0xffe0001f) == 0xf280001f);
+  struct VariantADR {
+    static constexpr uint32_t metadata_chunk_width = 22;
+
+    static constexpr NativePostCallNopMetadataField two_chunks_flag { 0, 1 };
+
+    struct one_chunk {
+      static constexpr NativePostCallNopMetadataField cb_blocks_offset { two_chunks_flag, 11 };
+      static constexpr NativePostCallNopMetadataField oopmap_slot { cb_blocks_offset, 10 };
+      static_assert(oopmap_slot.end_pos() == metadata_chunk_width,
+                    "Should take exactly the width of one metadata chunk.");
+    };
+
+    struct two_chunks {
+      static constexpr NativePostCallNopMetadataField cb_blocks_offset { two_chunks_flag, 22 };
+      static constexpr NativePostCallNopMetadataField oopmap_slot { cb_blocks_offset, 21 };
+      static_assert(oopmap_slot.end_pos() == 2 * metadata_chunk_width,
+                    "Should take exactly the width of two metadata chunks.");
+    };
+
+    static bool is_match(uint32_t chunk, bool assertion = true) {
+      // Metadata chunks are in form of ADRP/ADR XZR, <data>.
+      bool matches = ((chunk & 0x1f00001f) == 0x1000001f);
+      if (assertion) {
+        assert(matches == UsePostCallSequenceWithADRP, "mismatch with configuration");
+      }
+      return matches;
+    }
+
+    static uint32_t extract_metadata(uint32_t chunk) {
+      uint32_t field1 = Instruction_aarch64::extract(chunk, 31, 31);
+      uint32_t field2 = Instruction_aarch64::extract(chunk, 30, 29);
+      uint32_t field3 = Instruction_aarch64::extract(chunk, 23, 5);
+
+      uint32_t data = field3;
+      data <<= 2;
+      data |= field2;
+      data <<= 1;
+      data |= field1;
+
+      return data;
+    }
+
+    static uint64_t patch_chunk(address addr, uint64_t data) {
+      uint32_t field1 = data & 1;
+      data >>= 1;
+      uint32_t field2 = data & 3;
+      data >>= 2;
+      uint32_t field3 = data & 0x7ffff;
+      data >>= 19;
+
+      Instruction_aarch64::patch(addr, 31, 31, field1);
+      Instruction_aarch64::patch(addr, 30, 29, field2);
+      Instruction_aarch64::patch(addr, 23, 5, field3);
+
+      return data;
+    }
+  };
+
+  struct VariantMOV {
+    static constexpr uint32_t metadata_chunk_width = 19;
+
+    static constexpr NativePostCallNopMetadataField two_chunks_flag { 0, 1 };
+
+    struct one_chunk {
+      static constexpr NativePostCallNopMetadataField cb_blocks_offset { two_chunks_flag, 9 };
+      static constexpr NativePostCallNopMetadataField oopmap_slot { cb_blocks_offset, 9 };
+      static_assert(oopmap_slot.end_pos() == metadata_chunk_width,
+                    "Should take exactly the width of one metadata chunk.");
+    };
+
+    struct two_chunks {
+      static constexpr NativePostCallNopMetadataField cb_blocks_offset { two_chunks_flag, 19 } ;
+      static constexpr NativePostCallNopMetadataField oopmap_slot { cb_blocks_offset, 18 };
+      static_assert(oopmap_slot.end_pos() == 2 * metadata_chunk_width,
+                    "Should take exactly the width of two metadata chunks.");
+    };
+
+    static bool is_match(uint32_t chunk, bool assertion = true) {
+      // Metadata chunks are in form of MOVK/MOVZ XZR, <data>.
+      bool matches = ((chunk & 0xdf80001f) == 0xd280001f);
+      if (assertion) {
+        assert(matches == !UsePostCallSequenceWithADRP, "mismatch with configuration");
+      }
+      return matches;
+    }
+
+    static uint32_t extract_metadata(uint32_t chunk) {
+      uint32_t field1 = Instruction_aarch64::extract(chunk, 29, 29) ^ 1;
+      uint32_t field2 = Instruction_aarch64::extract(chunk, 22, 21);
+      uint32_t field3 = Instruction_aarch64::extract(chunk, 20, 5);
+
+      uint32_t data = field3;
+      data <<= 2;
+      data |= field2;
+      data <<= 1;
+      data |= field1;
+
+      return data;
+    }
+
+    static uint64_t patch_chunk(address addr, uint64_t data) {
+      uint32_t field1 = data & 1;
+      data >>= 1;
+      uint32_t field2 = data & 3;
+      data >>= 2;
+      uint32_t field3 = data & 0xffff;
+      data >>= 16;
+
+      Instruction_aarch64::patch(addr, 29, 29, field1 ^ 1);
+      Instruction_aarch64::patch(addr, 22, 21, field2);
+      Instruction_aarch64::patch(addr, 20, 5, field3);
+
+      return data;
+    }
+  };
+
+  template<typename FieldsDescription>
+  static bool unpack(uint64_t data, int32_t& oopmap_slot, int32_t& cb_blocks_offset) {
+    oopmap_slot = FieldsDescription::oopmap_slot.extract(data);
+    cb_blocks_offset = FieldsDescription::cb_blocks_offset.extract(data);
+
+    if (cb_blocks_offset == 0) {
+      if (oopmap_slot == 0) {
+        return false; // no information stored
+      }
+
+      oopmap_slot--;
+    }
+
+    return true;
+  }
+
+  template<typename FieldsDescription>
+  static bool pack(uint64_t& data, int32_t oopmap_slot, int32_t cb_blocks_offset) {
+    if (!FieldsDescription::cb_blocks_offset.can_hold(cb_blocks_offset)) {
+      return false;
+    }
+
+    if (cb_blocks_offset == 0) {
+      // Distinguish from the case when the fields are empty.
+      oopmap_slot++;
+    }
+
+    if (!FieldsDescription::oopmap_slot.can_hold(oopmap_slot)) {
+      return false;
+    }
+
+    data = FieldsDescription::cb_blocks_offset.insert(data, cb_blocks_offset);
+    data = FieldsDescription::oopmap_slot.insert(data, oopmap_slot);
+
+    return true;
+  }
+
+  template<typename Variant>
+  bool patch_helper(int32_t oopmap_slot, int32_t cb_offset);
+
+  void verify(int32_t cb_offset, int32_t oopmap_slot) const {
+    int32_t test_oopmap_slot;
+    int32_t test_cb_offset;
+    assert(decode(test_oopmap_slot, test_cb_offset), "unpacking values failed");
+    assert(test_oopmap_slot == oopmap_slot, "oopmap_slot mismatch");
+    assert(test_cb_offset == cb_offset, "cb_offset mismatch");
   }
 
 public:
   enum AArch64_specific_constants {
     // The two parts should be checked separately to prevent out of bounds access in case
     // the return address points to the deopt handler stub code entry point which could be
-    // at the end of page.
+    // at the end of a page.
     first_check_size = instruction_size
   };
 
   bool check() const {
-    // Check the first instruction is NOP.
+    // Check for a NOP followed by a metadata chunk.
+    // This sequence only ever appears in a post-call
+    // NOP, so it's unnecessary to check whether there is
+    // a second metadata chunk following the sequence.
     if (is_nop()) {
-      uint32_t insn = *(uint32_t*)addr_at(first_check_size);
-      // Check next instruction is MOVK zr, xx.
-      // These instructions only ever appear together in a post-call
-      // NOP, so it's unnecessary to check that the third instruction is
-      // a MOVK as well.
-      return is_movk_to_zr(insn);
+      uint32_t chunk = *(uint32_t*)addr_at(first_check_size);
+      if (VariantADR::is_match(chunk, /* assertion = */false)) {
+        return true;
+      } else if (VariantMOV::is_match(chunk, /* assertion = */false)) {
+        return true;
+      }
     }
 
     return false;
   }
 
+  template<typename Variant>
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
-    uint64_t movk_insns = *(uint64_t*)addr_at(4);
-    uint32_t lo = (movk_insns >> 5) & 0xffff;
-    uint32_t hi = (movk_insns >> (5 + 32)) & 0xffff;
-    uint32_t data = (hi << 16) | lo;
-    if (data == 0) {
-      return false; // no information encoded
+    uint32_t chunk_offset = first_check_size;
+    const uint32_t chunk = *(uint32_t*)addr_at(chunk_offset);
+
+    assert(Variant::is_match(chunk), "unexpected format");
+
+    uint64_t data = Variant::extract_metadata(chunk);
+    const uint32_t chunks_count = Variant::two_chunks_flag.extract(data) + 1;
+
+    int32_t cb_blocks_offset;
+    if (chunks_count == 1) {
+      if (!unpack<typename Variant::one_chunk>(data, oopmap_slot, cb_blocks_offset)) {
+        return false;
+      }
+    } else {
+      assert(chunks_count == 2, "expected either one or two chunks");
+
+      chunk_offset += NativeInstruction::instruction_size;
+
+      uint64_t data2 = Variant::extract_metadata(*(uint32_t*)addr_at(chunk_offset));
+      data2 <<= Variant::metadata_chunk_width;
+      data |= data2;
+
+      if (!unpack<typename Variant::two_chunks>(data, oopmap_slot, cb_blocks_offset)) {
+        return false;
+      }
     }
-    cb_offset = (data & 0xffffff);
-    oopmap_slot = (data >> 24) & 0xff;
-    return true; // decoding succeeded
+
+    constexpr size_t block_size = HeapBlock::minimum_alignment();
+    cb_offset = cb_blocks_offset * block_size;
+    cb_offset += (uintptr_t) this % block_size;
+    cb_offset -= CodeHeap::header_size();
+
+    return true;
+  }
+
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
+    const uint32_t chunk = *(uint32_t*)addr_at(first_check_size);
+    if (VariantADR::is_match(chunk)) {
+      return decode<VariantADR>(oopmap_slot, cb_offset);
+    } else {
+      return decode<VariantMOV>(oopmap_slot, cb_offset);
+    }
+  }
+
+  template<typename Variant>
+  static uint32_t metadata_chunks_count(int32_t cb_offset) {
+    constexpr size_t block_size = HeapBlock::minimum_alignment();
+    uint32_t cb_blocks_offset = (cb_offset + CodeHeap::header_size()) / block_size;
+    return Variant::one_chunk::cb_blocks_offset.can_hold(cb_blocks_offset) ? 1 : 2;
+  }
+
+  static uint32_t metadata_chunks_count(int32_t cb_offset) {
+    if (UsePostCallSequenceWithADRP) {
+      return metadata_chunks_count<VariantADR>(cb_offset);
+    } else {
+      return metadata_chunks_count<VariantMOV>(cb_offset);
+    }
   }
 
   bool patch(int32_t oopmap_slot, int32_t cb_offset);

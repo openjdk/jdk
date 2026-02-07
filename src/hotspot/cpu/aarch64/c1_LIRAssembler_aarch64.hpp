@@ -33,13 +33,6 @@ friend class ArrayCopyStub;
 
   int array_element_size(BasicType type) const;
 
-  // helper functions which checks for overflow and sets bailout if it
-  // occurs.  Always returns a valid embeddable pointer but in the
-  // bailout case the pointer won't be to unique storage.
-  address float_constant(float f);
-  address double_constant(double d);
-
-  address int_constant(jlong n);
 
   bool is_literal_address(LIR_Address* addr);
 
