@@ -1068,6 +1068,15 @@ public final class MacSign {
         return !missingKeychain && !missingCertificates && !invalidCertificates;
     }
 
+    /**
+     * Creates an empty keychain with unique name in the work directory of the current test.
+     */
+    public static Keychain createEmptyKeychain() {
+        return new Keychain.Builder()
+                .name(TKit.createUniquePath(TKit.workDir().resolve("empty.keychain")).toAbsolutePath().toString())
+                .create().create();
+    }
+
     public static Keychain.UsageBuilder withKeychains(KeychainWithCertsSpec... keychains) {
         return withKeychains(Stream.of(keychains).map(KeychainWithCertsSpec::keychain).toArray(Keychain[]::new));
     }
