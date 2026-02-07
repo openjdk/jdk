@@ -79,6 +79,166 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+// Constant data definitions
+
+static const uint32_t _sha256_round_consts[64] = {
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+  0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+  0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+  0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+  0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+  0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+  0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+  0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+  0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+};
+
+static const uint64_t _sha512_round_consts[80] = {
+  0x428A2F98D728AE22L, 0x7137449123EF65CDL, 0xB5C0FBCFEC4D3B2FL,
+  0xE9B5DBA58189DBBCL, 0x3956C25BF348B538L, 0x59F111F1B605D019L,
+  0x923F82A4AF194F9BL, 0xAB1C5ED5DA6D8118L, 0xD807AA98A3030242L,
+  0x12835B0145706FBEL, 0x243185BE4EE4B28CL, 0x550C7DC3D5FFB4E2L,
+  0x72BE5D74F27B896FL, 0x80DEB1FE3B1696B1L, 0x9BDC06A725C71235L,
+  0xC19BF174CF692694L, 0xE49B69C19EF14AD2L, 0xEFBE4786384F25E3L,
+  0x0FC19DC68B8CD5B5L, 0x240CA1CC77AC9C65L, 0x2DE92C6F592B0275L,
+  0x4A7484AA6EA6E483L, 0x5CB0A9DCBD41FBD4L, 0x76F988DA831153B5L,
+  0x983E5152EE66DFABL, 0xA831C66D2DB43210L, 0xB00327C898FB213FL,
+  0xBF597FC7BEEF0EE4L, 0xC6E00BF33DA88FC2L, 0xD5A79147930AA725L,
+  0x06CA6351E003826FL, 0x142929670A0E6E70L, 0x27B70A8546D22FFCL,
+  0x2E1B21385C26C926L, 0x4D2C6DFC5AC42AEDL, 0x53380D139D95B3DFL,
+  0x650A73548BAF63DEL, 0x766A0ABB3C77B2A8L, 0x81C2C92E47EDAEE6L,
+  0x92722C851482353BL, 0xA2BFE8A14CF10364L, 0xA81A664BBC423001L,
+  0xC24B8B70D0F89791L, 0xC76C51A30654BE30L, 0xD192E819D6EF5218L,
+  0xD69906245565A910L, 0xF40E35855771202AL, 0x106AA07032BBD1B8L,
+  0x19A4C116B8D2D0C8L, 0x1E376C085141AB53L, 0x2748774CDF8EEB99L,
+  0x34B0BCB5E19B48A8L, 0x391C0CB3C5C95A63L, 0x4ED8AA4AE3418ACBL,
+  0x5B9CCA4F7763E373L, 0x682E6FF3D6B2B8A3L, 0x748F82EE5DEFB2FCL,
+  0x78A5636F43172F60L, 0x84C87814A1F0AB72L, 0x8CC702081A6439ECL,
+  0x90BEFFFA23631E28L, 0xA4506CEBDE82BDE9L, 0xBEF9A3F7B2C67915L,
+  0xC67178F2E372532BL, 0xCA273ECEEA26619CL, 0xD186B8C721C0C207L,
+  0xEADA7DD6CDE0EB1EL, 0xF57D4F7FEE6ED178L, 0x06F067AA72176FBAL,
+  0x0A637DC5A2C898A6L, 0x113F9804BEF90DAEL, 0x1B710B35131C471BL,
+  0x28DB77F523047D84L, 0x32CAAB7B40C72493L, 0x3C9EBE0A15C9BEBCL,
+  0x431D67C49C100D4CL, 0x4CC5D4BECB3E42B6L, 0x597F299CFC657E2AL,
+  0x5FCB6FAB3AD6FAECL, 0x6C44198C4A475817L
+};
+
+static const uint64_t _sha3_round_consts[24] = {
+  0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+  0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+  0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+  0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+  0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+  0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+  0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+  0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+};
+
+static const uint64_t _double_keccak_round_consts[24] = {
+  0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+  0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+  0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+  0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+  0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+  0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+  0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+  0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+};
+
+static const char _encodeBlock_toBase64[64] = {
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+};
+
+static const char _encodeBlock_toBase64URL[64] = {
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+};
+
+// Non-SIMD lookup tables are mostly dumped from fromBase64 array used in java.util.Base64,
+// except the trailing character '=' is also treated illegal value in this intrinsic. That
+// is java.util.Base64.fromBase64['='] = -2, while fromBase(URL)64ForNoSIMD['='] = 255 here.
+static const uint8_t _decodeBlock_fromBase64ForNoSIMD[256] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
+  255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+};
+
+static const uint8_t _decodeBlock_fromBase64URLForNoSIMD[256] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
+  255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+};
+
+// A legal value of base64 code is in range [0, 127].  We need two lookups
+// with tbl/tbx and combine them to get the decode data. The 1st table vector
+// lookup use tbl, out of range indices are set to 0 in destination. The 2nd
+// table vector lookup use tbx, out of range indices are unchanged in
+// destination. Input [64..126] is mapped to index [65, 127] in second lookup.
+// The value of index 64 is set to 0, so that we know that we already get the
+// decoded data with the 1st lookup.
+static const uint8_t _decodeBlock_fromBase64ForSIMD[128] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+  14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+  255u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+  40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+};
+
+static const uint8_t _decodeBlock_fromBase64URLForSIMD[128] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+  14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+  63u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+  40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+};
+
+
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
@@ -203,8 +363,17 @@ class StubGenerator: public StubCodeGenerator {
            "adjust this code");
 
     StubId stub_id = StubId::stubgen_call_stub_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 2, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == 1, "expected 1 extra entry");
+      return_address = entries.at(0);
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     const Address sp_after_call (rfp, sp_after_call_off * wordSize);
 
@@ -323,6 +492,7 @@ class StubGenerator: public StubCodeGenerator {
     // save current address for use by exception handling code
 
     return_address = __ pc();
+    entries.append(return_address);
 
     // store result depending on type (everything that is not
     // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
@@ -406,6 +576,9 @@ class StubGenerator: public StubCodeGenerator {
     __ strd(j_farg0, Address(j_rarg2, 0));
     __ br(Assembler::AL, exit);
 
+    // record the stub entry and end plus the auxiliary entry
+    store_archive_data(stub_id, start, __ pc(), &entries);
+
     return start;
   }
 
@@ -423,8 +596,14 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_catch_exception() {
     StubId stub_id = StubId::stubgen_catch_exception_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     // same as in generate_call_stub():
     const Address sp_after_call(rfp, sp_after_call_off * wordSize);
@@ -450,7 +629,9 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_oop(r0);
 
     __ str(r0, Address(rthread, Thread::pending_exception_offset()));
-    __ mov(rscratch1, (address)__FILE__);
+    // special case -- add file name string to AOT address table
+    address file = (address)AOTCodeCache::add_C_string(__FILE__);
+    __ lea(rscratch1, ExternalAddress(file));
     __ str(rscratch1, Address(rthread, Thread::exception_file_offset()));
     __ movw(rscratch1, (int)__LINE__);
     __ strw(rscratch1, Address(rthread, Thread::exception_line_offset()));
@@ -459,6 +640,9 @@ class StubGenerator: public StubCodeGenerator {
     assert(StubRoutines::_call_stub_return_address != nullptr,
            "_call_stub_return_address must have been generated before");
     __ b(StubRoutines::_call_stub_return_address);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -479,8 +663,14 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_forward_exception() {
     StubId stub_id = StubId::stubgen_forward_exception_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     // Upon entry, LR points to the return address returning into
     // Java (interpreted or compiled) code; i.e., the return address
@@ -551,6 +741,9 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_oop(r0);
     __ br(r19);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -569,8 +762,14 @@ class StubGenerator: public StubCodeGenerator {
   //    [tos + 5]: saved rscratch1
   address generate_verify_oop() {
     StubId stub_id = StubId::stubgen_verify_oop_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label exit, error;
 
@@ -613,14 +812,23 @@ class StubGenerator: public StubCodeGenerator {
     __ blr(rscratch1);
     __ hlt(0);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   // Generate indices for iota vector.
   address generate_iota_indices(StubId stub_id) {
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     // B
     __ emit_data64(0x0706050403020100, relocInfo::none);
     __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
@@ -639,6 +847,10 @@ class StubGenerator: public StubCodeGenerator {
     // D - FP
     __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
     __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -656,15 +868,21 @@ class StubGenerator: public StubCodeGenerator {
   //      r11 < MacroAssembler::zero_words_block_size.
 
   address generate_zero_blocks() {
+    StubId stub_id = StubId::stubgen_zero_blocks_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    StubCodeMark mark(this, stub_id);
     Label done;
     Label base_aligned;
 
     Register base = r10, cnt = r11;
 
     __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_zero_blocks_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     if (UseBlockZeroing) {
       int zva_length = VM_Version::zva_length();
@@ -706,6 +924,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -803,6 +1024,12 @@ class StubGenerator: public StubCodeGenerator {
   // s and d are adjusted to point to the remaining words to copy
   //
   address generate_copy_longs(StubId stub_id, DecoratorSet decorators, Register s, Register d, Register count) {
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     BasicType type;
     copy_direction direction;
 
@@ -854,7 +1081,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     Label unaligned_copy_long;
     if (AvoidUnalignedAccesses) {
@@ -1153,6 +1380,9 @@ class StubGenerator: public StubCodeGenerator {
 
       __ ret(lr);
     }
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -1508,8 +1738,8 @@ class StubGenerator: public StubCodeGenerator {
   //   stub_id - is used to name the stub and identify all details of
   //             how to perform the copy.
   //
-  //   entry - is assigned to the stub's post push entry point unless
-  //           it is null
+  //   nopush_entry - is assigned to the stub's post push entry point
+  //                  unless it is null
   //
   // Inputs:
   //   c_rarg0   - source array address
@@ -1525,8 +1755,6 @@ class StubGenerator: public StubCodeGenerator {
   //               copy method
   //
   address generate_disjoint_copy(StubId stub_id, address *nopush_entry) {
-    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
-    RegSet saved_reg = RegSet::of(s, d, count);
     int size;
     bool aligned;
     bool is_oop;
@@ -1607,17 +1835,45 @@ class StubGenerator: public StubCodeGenerator {
       ShouldNotReachHere();
       break;
     }
+    // all stubs provide a 2nd entry which omits the frame push for
+    // use when bailing out from a conjoint copy. However we may also
+    // need some extra addressses for memory access protection.
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 2, "sanity check");
+    assert(nopush_entry != nullptr, "all disjoint copy stubs export a nopush entry");
+
+    bool add_extras = !is_oop && (!aligned || sizeof(jlong) == size);
+    int extra_count = ((add_extras ? 1 : 0) * 3);
+    GrowableArray<address> entries;
+    GrowableArray<address> extras;
+    GrowableArray<address> *extras_ptr = (extra_count > 0 ? &extras : nullptr);
+    address start = load_archive_data(stub_id, &entries, extras_ptr);
+    if (start != nullptr) {
+      assert(entries.length() == entry_count - 1,
+             "unexpected entries count %d", entries.length());
+      *nopush_entry = entries.at(0);
+      assert(extras.length() == extra_count,
+             "unexpected extra count %d", extras.length());
+      if (add_extras) {
+        // register one handler at offset 0
+        register_unsafe_access_handlers(extras, 0, 1);
+      }
+      return start;
+    }
+
+    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
+    RegSet saved_reg = RegSet::of(s, d, count);
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
-    if (nopush_entry != nullptr) {
-      *nopush_entry = __ pc();
-      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
-      BLOCK_COMMENT("Entry:");
-    }
+    *nopush_entry = __ pc();
+    entries.append(*nopush_entry);
+
+    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+    BLOCK_COMMENT("Post-Push Entry:");
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
@@ -1636,8 +1892,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     {
       // UnsafeMemoryAccess page error: continue after unsafe access
-      bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryAccessMark umam(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_extras, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1652,6 +1907,20 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    address end = __ pc();
+
+    if (add_extras) {
+      // retrieve the registered handler addresses
+      retrieve_unsafe_access_handlers(start, end, extras);
+      assert(extras.length() == extra_count
+             , "incorrect handlers count %d", extras.length());
+    }
+
+    // record the stub entry and end plus the no_push entry and any
+    // extra handler addresses
+    store_archive_data(stub_id, start, end, &entries, extras_ptr);
+
     return start;
   }
 
@@ -1663,8 +1932,8 @@ class StubGenerator: public StubCodeGenerator {
   //             corresponding disjoint copy routine which can be
   //             jumped to if the ranges do not actually overlap
   //
-  //   entry - is assigned to the stub's post push entry point unless
-  //           it is null
+  //   nopush_entry - is assigned to the stub's post push entry point
+  //                  unless it is null
   //
   //
   // Inputs:
@@ -1681,8 +1950,6 @@ class StubGenerator: public StubCodeGenerator {
   //   used by some other conjoint copy method
   //
   address generate_conjoint_copy(StubId stub_id, address nooverlap_target, address *nopush_entry) {
-    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
-    RegSet saved_regs = RegSet::of(s, d, count);
     int size;
     bool aligned;
     bool is_oop;
@@ -1762,15 +2029,47 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
+    // only some conjoint stubs generate a 2nd entry
+    int entry_count = StubInfo::entry_count(stub_id);
+    int expected_entry_count = (nopush_entry == nullptr ? 1 : 2);
+    assert(entry_count == expected_entry_count,
+           "expected entry count %d does not match declared entry count %d for stub %s",
+           expected_entry_count, entry_count, StubInfo::name(stub_id));
 
+    // We need to protect memory accesses in certain cases
+    bool add_extras = !is_oop && (!aligned || sizeof(jlong) == size);
+    int extra_count = ((add_extras ? 1 : 0) * 3);
+    GrowableArray<address> entries;
+    GrowableArray<address> extras;
+    GrowableArray<address> *entries_ptr = (nopush_entry != nullptr ? &entries : nullptr);
+    GrowableArray<address> *extras_ptr = (extra_count > 0 ? &extras : nullptr);
+    address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+    if (start != nullptr) {
+      assert(entries.length() == expected_entry_count - 1,
+             "unexpected entries count %d", entries.length());
+      assert(extras.length() == extra_count,
+             "unexpected extra count %d", extras.length());
+      if (nopush_entry != nullptr) {
+        *nopush_entry = entries.at(0);
+      }
+      if (add_extras) {
+        // register one handler at offset 0
+        register_unsafe_access_handlers(extras, 0, 1);
+      }
+      return start;
+    }
+
+    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
+    RegSet saved_regs = RegSet::of(s, d, count);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     if (nopush_entry != nullptr) {
       *nopush_entry = __ pc();
+      entries.append(*nopush_entry);
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
-      BLOCK_COMMENT("Entry:");
+      BLOCK_COMMENT("Post-Push Entry:");
     }
 
     // use fwd copy when (d-s) above_equal (count*size)
@@ -1798,8 +2097,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     {
       // UnsafeMemoryAccess page error: continue after unsafe access
-      bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryAccessMark umam(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_extras, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
     if (is_oop) {
@@ -1811,6 +2109,23 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entries count %d", entries.length());
+
+    address end = __ pc();
+
+    if (add_extras) {
+      // retrieve the registered handler addresses
+      retrieve_unsafe_access_handlers(start, end, extras);
+      assert(extras.length() == extra_count,
+             "incorrect handlers count %d", extras.length());
+    }
+
+    // record the stub entry and end plus any no_push entry and/or
+    // extra handler addresses
+    store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+
     return start;
   }
 
@@ -1864,6 +2179,27 @@ class StubGenerator: public StubCodeGenerator {
       ShouldNotReachHere();
     }
 
+    // The normal stub provides a 2nd entry which omits the frame push
+    // for use when bailing out from a disjoint copy.
+    // Only some conjoint stubs generate a 2nd entry
+    int entry_count = StubInfo::entry_count(stub_id);
+    int expected_entry_count = (nopush_entry == nullptr ? 1 : 2);
+    GrowableArray<address> entries;
+    GrowableArray<address> *entries_ptr = (expected_entry_count == 1 ? nullptr : &entries);
+    assert(entry_count == expected_entry_count,
+           "expected entry count %d does not match declared entry count %d for stub %s",
+           expected_entry_count, entry_count, StubInfo::name(stub_id));
+    address start = load_archive_data(stub_id, entries_ptr);
+    if (start != nullptr) {
+      assert(entries.length() + 1 == expected_entry_count,
+             "expected entry count %d does not match return entry count %d for stub %s",
+             expected_entry_count, entries.length() + 1, StubInfo::name(stub_id));
+      if (nopush_entry != nullptr) {
+        *nopush_entry = entries.at(0);
+      }
+      return start;
+    }
+
     Label L_load_element, L_store_element, L_do_card_marks, L_done, L_done_pop;
 
     // Input registers (after setup_arg_regs)
@@ -1896,7 +2232,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -1913,6 +2249,7 @@ class StubGenerator: public StubCodeGenerator {
     // Caller of this entry point must set up the argument registers.
     if (nopush_entry != nullptr) {
       *nopush_entry = __ pc();
+      entries.append(*nopush_entry);
       BLOCK_COMMENT("Entry:");
     }
 
@@ -2010,6 +2347,8 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end plus any no_push entry
+    store_archive_data(stub_id, start, __ pc() , entries_ptr);
     return start;
   }
 
@@ -2072,13 +2411,18 @@ class StubGenerator: public StubCodeGenerator {
                                address int_copy_entry,
                                address long_copy_entry) {
     StubId stub_id = StubId::stubgen_unsafe_arraycopy_id;
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label L_long_aligned, L_int_aligned, L_short_aligned;
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     // bump this on entry, not on exit:
@@ -2104,6 +2448,9 @@ class StubGenerator: public StubCodeGenerator {
     __ lsr(count, count, LogBytesPerLong);   // size => long_count
     __ b(RuntimeAddress(long_copy_entry));
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -2125,7 +2472,12 @@ class StubGenerator: public StubCodeGenerator {
                                 address int_copy_entry, address oop_copy_entry,
                                 address long_copy_entry, address checkcast_copy_entry) {
     StubId stub_id = StubId::stubgen_generic_arraycopy_id;
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label L_failed, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
 
@@ -2144,7 +2496,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -2383,6 +2735,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();   // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -2427,10 +2782,15 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     BLOCK_COMMENT("Entry:");
 
@@ -2563,15 +2923,30 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_exit2);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_unsafecopy_common_error_exit() {
-    address start_pc = __ pc();
+    StubId stub_id = StubId::stubgen_unsafecopy_common_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    start = __ pc();
       __ leave();
       __ mov(r0, 0);
       __ ret(lr);
-    return start_pc;
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
   }
 
   //
@@ -2589,13 +2964,28 @@ class StubGenerator: public StubCodeGenerator {
   //    c_rarg2   - byte value
   //
   address generate_unsafe_setmemory() {
+    StubId stub_id = StubId::stubgen_unsafe_setmemory_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    // we expect one set of extra unsafememory access handler entries
+    GrowableArray<address> extras;
+    int extra_count = 3;
+    address start = load_archive_data(stub_id, nullptr, &extras);
+    if (start != nullptr) {
+      assert(extras.length() == extra_count,
+             "unexpected extra entry count %d", extras.length());
+      register_unsafe_access_handlers(extras, 0, 1);
+      return start;
+    }
+
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, StubId::stubgen_unsafe_setmemory_id);
-    address start = __ pc();
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
 
     Register dest = c_rarg0, count = c_rarg1, value = c_rarg2;
     Label tail;
 
+    {
     UnsafeMemoryAccessMark umam(this, true, false);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -2679,6 +3069,17 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(finished);
     __ leave();
     __ ret(lr);
+    // have to exit the block and destroy the UnsafeMemoryAccessMark
+    // in order to retrieve the handler end address
+    }
+
+    // install saved handler addresses in extras
+    address end = __ pc();
+    retrieve_unsafe_access_handlers(start, end, extras);
+    assert(extras.length() == extra_count,
+           "incorrect handlers count %d", extras.length());
+    // record the stub entry and end plus the extras
+    store_archive_data(stub_id, start, end, nullptr, &extras);
 
     return start;
   }
@@ -2686,39 +3087,54 @@ class StubGenerator: public StubCodeGenerator {
   address generate_data_cache_writeback() {
     const Register line        = c_rarg0;  // address of line to write back
 
-    __ align(CodeEntryAlignment);
-
     StubId stub_id = StubId::stubgen_data_cache_writeback_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
     __ enter();
     __ cache_wb(Address(line, 0));
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_data_cache_writeback_sync() {
-    const Register is_pre     = c_rarg0;  // pre or post sync
-
-    __ align(CodeEntryAlignment);
-
     StubId stub_id = StubId::stubgen_data_cache_writeback_sync_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    const Register is_pre     = c_rarg0;  // pre or post sync
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
     // pre wbsync is a no-op
     // post wbsync translates to an sfence
 
     Label skip;
-    address start = __ pc();
+    start = __ pc();
     __ enter();
     __ cbnz(is_pre, skip);
     __ cache_wbsync(false);
     __ bind(skip);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -2882,8 +3298,15 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_encryptBlock() {
-    __ align(CodeEntryAlignment);
+    assert(UseAES, "need AES cryptographic extension support");
     StubId stub_id = StubId::stubgen_aescrypt_encryptBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
     const Register from        = c_rarg0;  // source array address
@@ -2891,7 +3314,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -2903,6 +3326,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -2916,8 +3342,14 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_aescrypt_decryptBlock() {
     assert(UseAES, "need AES cryptographic extension support");
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     Label L_doLast;
 
@@ -2926,7 +3358,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -2937,6 +3369,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -2955,8 +3390,14 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
     assert(UseAES, "need AES cryptographic extension support");
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
@@ -2969,7 +3410,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
 
       __ enter();
 
@@ -3043,6 +3484,9 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ ret(lr);
 
+      // record the stub entry and end
+      store_archive_data(stub_id, start, __ pc());
+
       return start;
   }
 
@@ -3060,8 +3504,14 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
     assert(UseAES, "need AES cryptographic extension support");
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
@@ -3074,7 +3524,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
 
       __ enter();
 
@@ -3152,6 +3602,9 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3188,6 +3641,13 @@ class StubGenerator: public StubCodeGenerator {
   //   r0       - input length
   //
   address generate_counterMode_AESCrypt() {
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     const Register in = c_rarg0;
     const Register out = c_rarg1;
     const Register key = c_rarg2;
@@ -3248,9 +3708,8 @@ class StubGenerator: public StubCodeGenerator {
     //    Wide bulk encryption of whole blocks.
 
     __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
-    const address start = __ pc();
+    start = __ pc();
     __ enter();
 
     Label DONE, CTR_large_block, large_block_return;
@@ -3435,6 +3894,9 @@ class StubGenerator: public StubCodeGenerator {
     __ strw(used, Address(used_ptr));
     __ b(large_block_return);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3451,11 +3913,16 @@ class StubGenerator: public StubCodeGenerator {
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
     Label ghash_polynomial; // local data generated after code
-
-   __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register in = c_rarg0;
@@ -3566,6 +4033,9 @@ class StubGenerator: public StubCodeGenerator {
                           // repeated in the low and high parts of a
                           // 128-bit vector
     __ emit_int64(0x87);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -3685,10 +4155,16 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
 
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf       = c_rarg0;
     Register state     = c_rarg1;
@@ -3815,6 +4291,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3838,11 +4317,16 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
 
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf   = c_rarg0;
     Register state = c_rarg1;
@@ -3919,6 +4403,9 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_int32(0x8f1bbcdc);
     __ emit_int32(0xca62c1d6);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3943,30 +4430,15 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
-
-    static const uint32_t round_consts[64] = {
-      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-      0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-      0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-      0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-      0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-      0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-      0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-      0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-      0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-    };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf   = c_rarg0;
     Register state = c_rarg1;
@@ -3987,7 +4459,7 @@ class StubGenerator: public StubCodeGenerator {
 // t1 == v7
 
     // load 16 keys to v16..v31
-    __ lea(rscratch1, ExternalAddress((address)round_consts));
+    __ lea(rscratch1, ExternalAddress((address)_sha256_round_consts));
     __ ld1(v16, v17, v18, v19, __ T4S, __ post(rscratch1, 64));
     __ ld1(v20, v21, v22, v23, __ T4S, __ post(rscratch1, 64));
     __ ld1(v24, v25, v26, v27, __ T4S, __ post(rscratch1, 64));
@@ -4048,6 +4520,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -4099,41 +4574,15 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
-
-    static const uint64_t round_consts[80] = {
-      0x428A2F98D728AE22L, 0x7137449123EF65CDL, 0xB5C0FBCFEC4D3B2FL,
-      0xE9B5DBA58189DBBCL, 0x3956C25BF348B538L, 0x59F111F1B605D019L,
-      0x923F82A4AF194F9BL, 0xAB1C5ED5DA6D8118L, 0xD807AA98A3030242L,
-      0x12835B0145706FBEL, 0x243185BE4EE4B28CL, 0x550C7DC3D5FFB4E2L,
-      0x72BE5D74F27B896FL, 0x80DEB1FE3B1696B1L, 0x9BDC06A725C71235L,
-      0xC19BF174CF692694L, 0xE49B69C19EF14AD2L, 0xEFBE4786384F25E3L,
-      0x0FC19DC68B8CD5B5L, 0x240CA1CC77AC9C65L, 0x2DE92C6F592B0275L,
-      0x4A7484AA6EA6E483L, 0x5CB0A9DCBD41FBD4L, 0x76F988DA831153B5L,
-      0x983E5152EE66DFABL, 0xA831C66D2DB43210L, 0xB00327C898FB213FL,
-      0xBF597FC7BEEF0EE4L, 0xC6E00BF33DA88FC2L, 0xD5A79147930AA725L,
-      0x06CA6351E003826FL, 0x142929670A0E6E70L, 0x27B70A8546D22FFCL,
-      0x2E1B21385C26C926L, 0x4D2C6DFC5AC42AEDL, 0x53380D139D95B3DFL,
-      0x650A73548BAF63DEL, 0x766A0ABB3C77B2A8L, 0x81C2C92E47EDAEE6L,
-      0x92722C851482353BL, 0xA2BFE8A14CF10364L, 0xA81A664BBC423001L,
-      0xC24B8B70D0F89791L, 0xC76C51A30654BE30L, 0xD192E819D6EF5218L,
-      0xD69906245565A910L, 0xF40E35855771202AL, 0x106AA07032BBD1B8L,
-      0x19A4C116B8D2D0C8L, 0x1E376C085141AB53L, 0x2748774CDF8EEB99L,
-      0x34B0BCB5E19B48A8L, 0x391C0CB3C5C95A63L, 0x4ED8AA4AE3418ACBL,
-      0x5B9CCA4F7763E373L, 0x682E6FF3D6B2B8A3L, 0x748F82EE5DEFB2FCL,
-      0x78A5636F43172F60L, 0x84C87814A1F0AB72L, 0x8CC702081A6439ECL,
-      0x90BEFFFA23631E28L, 0xA4506CEBDE82BDE9L, 0xBEF9A3F7B2C67915L,
-      0xC67178F2E372532BL, 0xCA273ECEEA26619CL, 0xD186B8C721C0C207L,
-      0xEADA7DD6CDE0EB1EL, 0xF57D4F7FEE6ED178L, 0x06F067AA72176FBAL,
-      0x0A637DC5A2C898A6L, 0x113F9804BEF90DAEL, 0x1B710B35131C471BL,
-      0x28DB77F523047D84L, 0x32CAAB7B40C72493L, 0x3C9EBE0A15C9BEBCL,
-      0x431D67C49C100D4CL, 0x4CC5D4BECB3E42B6L, 0x597F299CFC657E2AL,
-      0x5FCB6FAB3AD6FAECL, 0x6C44198C4A475817L
-    };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf   = c_rarg0;
     Register state = c_rarg1;
@@ -4151,7 +4600,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ld1(v8, v9, v10, v11, __ T2D, state);
 
     // load first 4 round constants
-    __ lea(rscratch1, ExternalAddress((address)round_consts));
+    __ lea(rscratch1, ExternalAddress((address)_sha512_round_consts));
     __ ld1(v20, v21, v22, v23, __ T2D, __ post(rscratch1, 64));
 
     __ BIND(sha512_loop);
@@ -4235,6 +4684,9 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -4349,22 +4801,15 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
-
-    static const uint64_t round_consts[24] = {
-      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
-      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
-      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
-      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
-      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
-      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
-      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
-      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
-    };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf           = c_rarg0;
     Register state         = c_rarg1;
@@ -4396,7 +4841,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, 24);
 
     // load round_constants base
-    __ lea(rscratch1, ExternalAddress((address) round_consts));
+    __ lea(rscratch1, ExternalAddress((address) _sha3_round_consts));
 
     // load input
     __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
@@ -4488,6 +4933,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -4495,22 +4943,18 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg0   - long[]  state0
   //   c_rarg1   - long[]  state1
   address generate_double_keccak() {
-    static const uint64_t round_consts[24] = {
-      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
-      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
-      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
-      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
-      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
-      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
-      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
-      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
-    };
-
+    StubId stub_id = StubId::stubgen_double_keccak_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     // Implements the double_keccak() method of the
     // sun.secyrity.provider.SHA3Parallel class
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "double_keccak");
-    address start = __ pc();
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
     __ enter();
 
     Register state0        = c_rarg0;
@@ -4546,7 +4990,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, 24);
 
     // load round_constants base
-    __ lea(rscratch1, ExternalAddress((address) round_consts));
+    __ lea(rscratch1, ExternalAddress((address) _double_keccak_round_consts));
 
     __ BIND(rounds24_loop);
     __ subw(rscratch2, rscratch2, 1);
@@ -4577,6 +5021,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -4611,11 +5058,17 @@ class StubGenerator: public StubCodeGenerator {
   // vectors write their first lane back to the keystream buffer, followed
   // by the second lane from all vectors and so on.
   address generate_chacha20Block_blockpar() {
+    StubId stub_id = StubId::stubgen_chacha20Block_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label L_twoRounds, L_cc20_const;
     __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_chacha20Block_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     int i, j;
@@ -4769,6 +5222,9 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_int64(0x0000000300000002UL);
     __ emit_int64(0x0605040702010003UL);
     __ emit_int64(0x0E0D0C0F0A09080BUL);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -5258,11 +5714,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (short[256]) = c_rarg0
   // ntt_zetas (short[256]) = c_rarg1
   address generate_kyberNtt() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyberNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -5486,6 +5947,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -5496,11 +5960,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (short[256]) = c_rarg0
   // ntt_zetas (short[256]) = c_rarg1
   address generate_kyberInverseNtt() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -5770,6 +6239,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -5783,11 +6255,16 @@ class StubGenerator: public StubCodeGenerator {
   // nttb (short[256]) = c_rarg2
   // zetas (short[128]) = c_rarg3
   address generate_kyberNttMult() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyberNttMult_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register result = c_rarg0;
@@ -5889,6 +6366,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -5900,11 +6380,16 @@ class StubGenerator: public StubCodeGenerator {
   // a (short[256]) = c_rarg1
   // b (short[256]) = c_rarg2
   address generate_kyberAddPoly_2() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register result = c_rarg0;
@@ -5973,6 +6458,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -5985,11 +6473,16 @@ class StubGenerator: public StubCodeGenerator {
   // b (short[256]) = c_rarg2
   // c (short[256]) = c_rarg3
   address generate_kyberAddPoly_3() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register result = c_rarg0;
@@ -6072,6 +6565,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -6092,12 +6588,18 @@ class StubGenerator: public StubCodeGenerator {
   // parsed (short[]) = c_rarg2
   // parsedLength = c_rarg3
   address generate_kyber12To16() {
+    StubId stub_id = StubId::stubgen_kyber12To16_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label L_F00, L_loop;
 
     __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_kyber12To16_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register condensed = c_rarg0;
@@ -6225,6 +6727,9 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_int64(0x0f000f000f000f00);
     __ emit_int64(0x0f000f000f000f00);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -6234,11 +6739,16 @@ class StubGenerator: public StubCodeGenerator {
   //
   // coeffs (short[256]) = c_rarg0
   address generate_kyberBarrettReduce() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -6317,6 +6827,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -6481,11 +6994,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (int[256]) = c_rarg0
   // zetas (int[256]) = c_rarg1
   address generate_dilithiumAlmostNtt() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_dilithiumAlmostNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -6596,6 +7114,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -6688,11 +7209,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (int[256]) = c_rarg0
   // zetas (int[256]) = c_rarg1
   address generate_dilithiumAlmostInverseNtt() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -6788,6 +7314,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -6801,11 +7330,16 @@ class StubGenerator: public StubCodeGenerator {
   // poly1 (int[256]) = c_rarg1
   // poly2 (int[256]) = c_rarg2
   address generate_dilithiumNttMult() {
-
-        __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_dilithiumNttMult_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     Label L_loop;
@@ -6854,6 +7388,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -6865,11 +7402,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (int[256]) = c_rarg0
   // constant (int) = c_rarg1
   address generate_dilithiumMontMulByConstant() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_dilithiumMontMulByConstant_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     Label L_loop;
@@ -6915,6 +7457,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -6929,11 +7474,16 @@ class StubGenerator: public StubCodeGenerator {
   // twoGamma2  (int) = c_rarg3
   // multiplier (int) = c_rarg4
   address generate_dilithiumDecomposePoly() {
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_dilithiumDecomposePoly_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     Label L_loop;
 
     const Register input = c_rarg0;
@@ -7072,6 +7622,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -7212,21 +7765,15 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
-
-    static const uint64_t round_consts[24] = {
-      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
-      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
-      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
-      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
-      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
-      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
-      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
-      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
-    };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf           = c_rarg0;
     Register state         = c_rarg1;
@@ -7378,7 +7925,7 @@ class StubGenerator: public StubCodeGenerator {
     __ fmovs(v1, 1.0);  // exact representation
 
     __ str(buf, Address(sp, 16));
-    __ lea(tmp3, ExternalAddress((address) round_consts));
+    __ lea(tmp3, ExternalAddress((address) _sha3_round_consts));
 
     __ BIND(loop_body);
     keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
@@ -7433,6 +7980,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7449,12 +7999,17 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_updateBytesCRC32() {
     assert(UseCRC32Intrinsics, "what are we doing here?");
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_updateBytesCRC32_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     const Register crc   = c_rarg0;  // crc
     const Register buf   = c_rarg1;  // source java byte array address
@@ -7474,6 +8029,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7491,12 +8049,17 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_updateBytesCRC32C() {
     assert(UseCRC32CIntrinsics, "what are we doing here?");
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     const Register crc   = c_rarg0;  // crc
     const Register buf   = c_rarg1;  // source java byte array address
@@ -7516,6 +8079,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7531,10 +8097,16 @@ class StubGenerator: public StubCodeGenerator {
    *   c_rarg0   - int adler result
    */
   address generate_updateBytesAdler32() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
 
@@ -7702,6 +8274,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7753,11 +8328,17 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg4   - z address
    */
   address generate_multiplyToLen() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_multiplyToLen_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
     const Register x     = r0;
     const Register xlen  = r1;
     const Register y     = r2;
@@ -7779,6 +8360,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7786,10 +8370,16 @@ class StubGenerator: public StubCodeGenerator {
     // squareToLen algorithm for sizes 1..127 described in java code works
     // faster than multiply_to_len on some CPUs and slower on others, but
     // multiply_to_len shows a bit better overall results
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_squareToLen_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     const Register x     = r0;
     const Register xlen  = r1;
@@ -7816,15 +8406,25 @@ class StubGenerator: public StubCodeGenerator {
     __ pop(spilled_regs, sp);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_mulAdd() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_mulAdd_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     const Register out     = r0;
     const Register in      = r1;
@@ -7837,6 +8437,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mul_add(out, in, offset, len, k);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -7851,10 +8454,16 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - numIter
   //
   address generate_bigIntegerRightShift() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_bigIntegerRightShiftWorker_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
 
@@ -7961,6 +8570,9 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(Exit);
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7976,8 +8588,14 @@ class StubGenerator: public StubCodeGenerator {
   address generate_bigIntegerLeftShift() {
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_bigIntegerLeftShiftWorker_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
 
@@ -8072,10 +8690,25 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(Exit);
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_count_positives(address &count_positives_long) {
+    StubId stub_id = StubId::stubgen_count_positives_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    // We have an extra entry for count_positives_long.
+    assert(entry_count == 2, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == 1,
+             "unexpected extra entry count %d", entries.length());
+      count_positives_long = entries.at(0);
+      return start;
+    }
     const u1 large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
@@ -8083,8 +8716,6 @@ class StubGenerator: public StubCodeGenerator {
     Register ary1 = r1, len = r2, result = r0;
 
     __ align(CodeEntryAlignment);
-
-    StubId stub_id = StubId::stubgen_count_positives_id;
     StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
@@ -8127,6 +8758,7 @@ class StubGenerator: public StubCodeGenerator {
   const RegSet spilled_regs = RegSet::range(tmp1, tmp5) + tmp6;
 
   count_positives_long = __ pc(); // 2nd entry point
+  entries.append(count_positives_long);
 
   __ enter();
 
@@ -8241,6 +8873,9 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(result, result, len);
     __ ret(lr);
 
+    // record the stub entry and end plus the extra entry
+    store_archive_data(stub_id, entry, __ pc(), &entries);
+
     return entry;
   }
 
@@ -8331,6 +8966,13 @@ class StubGenerator: public StubCodeGenerator {
   // r3-r5 are reserved temporary registers
   // Clobbers: v0-v7 when UseSIMDForArrayEquals, rscratch1, rscratch2
   address generate_large_array_equals() {
+    StubId stub_id = StubId::stubgen_large_array_equals_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
         tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
         tmp7 = r12, tmp8 = r13;
@@ -8346,7 +8988,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubId stub_id = StubId::stubgen_large_array_equals_id;
     StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
@@ -8421,6 +9062,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(NOT_EQUAL_NO_POP);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -8429,6 +9074,33 @@ class StubGenerator: public StubCodeGenerator {
   // cnt = r2 - elements count
   // Clobbers: v0-v13, rscratch1, rscratch2
   address generate_large_arrays_hashcode(BasicType eltype) {
+    StubId stub_id;
+    switch (eltype) {
+    case T_BOOLEAN:
+      stub_id = StubId::stubgen_large_arrays_hashcode_boolean_id;
+      break;
+    case T_BYTE:
+      stub_id = StubId::stubgen_large_arrays_hashcode_byte_id;
+      break;
+    case T_CHAR:
+      stub_id = StubId::stubgen_large_arrays_hashcode_char_id;
+      break;
+    case T_SHORT:
+      stub_id = StubId::stubgen_large_arrays_hashcode_short_id;
+      break;
+    case T_INT:
+      stub_id = StubId::stubgen_large_arrays_hashcode_int_id;
+      break;
+    default:
+      stub_id = StubId::NO_STUBID;
+      ShouldNotReachHere();
+    };
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     const Register result = r0, ary = r1, cnt = r2;
     const FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
     const FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
@@ -8471,28 +9143,6 @@ class StubGenerator: public StubCodeGenerator {
     const unsigned evf = vf * uf;
 
     __ align(CodeEntryAlignment);
-
-    StubId stub_id;
-    switch (eltype) {
-    case T_BOOLEAN:
-      stub_id = StubId::stubgen_large_arrays_hashcode_boolean_id;
-      break;
-    case T_BYTE:
-      stub_id = StubId::stubgen_large_arrays_hashcode_byte_id;
-      break;
-    case T_CHAR:
-      stub_id = StubId::stubgen_large_arrays_hashcode_char_id;
-      break;
-    case T_SHORT:
-      stub_id = StubId::stubgen_large_arrays_hashcode_short_id;
-      break;
-    case T_INT:
-      stub_id = StubId::stubgen_large_arrays_hashcode_int_id;
-      break;
-    default:
-      stub_id = StubId::NO_STUBID;
-      ShouldNotReachHere();
-    };
 
     StubCodeMark mark(this, stub_id);
 
@@ -8728,19 +9378,32 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
   address generate_dsin_dcos(bool isCos) {
-    __ align(CodeEntryAlignment);
     StubId stub_id = (isCos ? StubId::stubgen_dcos_id : StubId::stubgen_dsin_id);
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ generate_dsin_dcos(isCos, (address)StubRoutines::aarch64::_npio2_hw,
         (address)StubRoutines::aarch64::_two_over_pi,
         (address)StubRoutines::aarch64::_pio2,
         (address)StubRoutines::aarch64::_dsin_coef,
         (address)StubRoutines::aarch64::_dcos_coef);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -8784,8 +9447,14 @@ class StubGenerator: public StubCodeGenerator {
   // r10 = tmp1
   // r11 = tmp2
   address generate_compare_long_string_different_encoding(bool isLU) {
-    __ align(CodeEntryAlignment);
     StubId stub_id = (isLU ? StubId::stubgen_compare_long_string_LU_id : StubId::stubgen_compare_long_string_UL_id);
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label SMALL_LOOP, TAIL, TAIL_LOAD_16, LOAD_LAST, DIFF1, DIFF2,
@@ -8887,20 +9556,34 @@ class StubGenerator: public StubCodeGenerator {
       __ subw(result, tmp1, rscratch1);
     __ bind(DONE);
       __ ret(lr);
-    return entry;
+
+      // record the stub entry and end
+      store_archive_data(stub_id, entry, __ pc());
+
+      return entry;
   }
 
   // r0 = input (float16)
   // v0 = result (float)
   // v1 = temporary float register
   address generate_float16ToFloat() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_hf2f_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
     __ flt16_to_flt(v0, r0, v1);
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -8908,24 +9591,38 @@ class StubGenerator: public StubCodeGenerator {
   // r0 = result (float16)
   // v1 = temporary float register
   address generate_floatToFloat16() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_f2hf_id;
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
     __ flt_to_flt16(r0, v0, v1);
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
   address generate_method_entry_barrier() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_method_entry_barrier_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
 
     Label deoptimize_label;
 
-    address start = __ pc();
+    start = __ pc();
 
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
 
@@ -8974,6 +9671,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(sp, rscratch1);
     __ br(rscratch2);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -8985,8 +9685,14 @@ class StubGenerator: public StubCodeGenerator {
   // r10 = tmp1
   // r11 = tmp2
   address generate_compare_long_string_same_encoding(bool isLL) {
-    __ align(CodeEntryAlignment);
     StubId stub_id = (isLL ? StubId::stubgen_compare_long_string_LL_id : StubId::stubgen_compare_long_string_UU_id);
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
@@ -9094,6 +9800,10 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(LENGTH_DIFF);
       __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -9125,8 +9835,14 @@ class StubGenerator: public StubCodeGenerator {
       case UU: stub_id = StubId::stubgen_compare_long_string_UU_id; break;
       default: ShouldNotReachHere();
     }
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
              tmp1 = r10, tmp2 = r11;
@@ -9160,8 +9876,6 @@ class StubGenerator: public StubCodeGenerator {
       default:                                                                 \
         ShouldNotReachHere();                                                  \
     }
-
-    StubCodeMark mark(this, stub_id);
 
     __ mov(idx, 0);
     __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
@@ -9206,6 +9920,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(DONE);
     __ ret(lr);
 #undef LOAD_PAIR
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -9266,6 +9984,12 @@ class StubGenerator: public StubCodeGenerator {
       } else {
         stub_id = StubId::stubgen_string_indexof_linear_uu_id;
       }
+    }
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
     }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
@@ -9535,6 +10259,10 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(DONE);
       __ pop(spilled_regs, sp);
       __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -9565,8 +10293,14 @@ class StubGenerator: public StubCodeGenerator {
   // v1 = loaded 8 bytes
   // Clobbers: r0, r1, r3, rscratch1, rflags, v0-v6
   address generate_large_byte_array_inflate() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_large_byte_array_inflate_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label LOOP, LOOP_START, LOOP_PRFM, LOOP_PRFM_START, DONE;
@@ -9605,6 +10339,10 @@ class StubGenerator: public StubCodeGenerator {
       __ br(__ GE, LOOP);
     __ bind(DONE);
       __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -9620,7 +10358,7 @@ class StubGenerator: public StubCodeGenerator {
    *  Output:
    *  Updated state at c_rarg0
    */
-  address generate_ghash_processBlocks() {
+  address generate_ghash_processBlocks_small() {
     // Bafflingly, GCM uses little-endian for the byte order, but
     // big-endian for the bit order.  For example, the polynomial 1 is
     // represented as the 16-byte string 80 00 00 00 | 12 bytes of 00.
@@ -9632,11 +10370,17 @@ class StubGenerator: public StubCodeGenerator {
     // that) and keep the data in little-endian bit order through the
     // calculation, bit-reversing the inputs and outputs.
 
-    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_small_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
     Label polynomial; // local data generated at end of stub
     __ align(CodeEntryAlignment);
-    address start = __ pc();
+    start = __ pc();
 
     Register state   = c_rarg0;
     Register subkeyH = c_rarg1;
@@ -9696,17 +10440,24 @@ class StubGenerator: public StubCodeGenerator {
                           // 128-bit vector
     __ emit_int64(0x87);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
-  address generate_ghash_processBlocks_wide() {
-    address small = generate_ghash_processBlocks();
-
-    StubId stub_id = StubId::stubgen_ghash_processBlocks_wide_id;
-    StubCodeMark mark(this, stub_id);
+  address generate_ghash_processBlocks(address small) {
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label polynomial;           // local data generated after stub
     __ align(CodeEntryAlignment);
-    address start = __ pc();
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
 
     Register state   = c_rarg0;
     Register subkeyH = c_rarg1;
@@ -9748,8 +10499,10 @@ class StubGenerator: public StubCodeGenerator {
                           // 128-bit vector
     __ emit_int64(0x87);
 
-    return start;
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
+    return start;
   }
 
   void generate_base64_encode_simdround(Register src, Register dst,
@@ -9800,26 +10553,16 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_base64_encodeBlock() {
 
-    static const char toBase64[64] = {
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
-    };
-
-    static const char toBase64URL[64] = {
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
-    };
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_base64_encodeBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register src   = c_rarg0;  // source array
     Register soff  = c_rarg1;  // source start offset
@@ -9839,9 +10582,9 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(length, send, soff);
 
     // load the codec base address
-    __ lea(codec, ExternalAddress((address) toBase64));
+    __ lea(codec, ExternalAddress((address) _encodeBlock_toBase64));
     __ cbz(isURL, ProcessData);
-    __ lea(codec, ExternalAddress((address) toBase64URL));
+    __ lea(codec, ExternalAddress((address) _encodeBlock_toBase64URL));
 
     __ BIND(ProcessData);
 
@@ -9893,6 +10636,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(Exit);
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10015,80 +10761,16 @@ class StubGenerator: public StubCodeGenerator {
     // on http://0x80.pl/articles/base64-simd-neon.html#encoding-quadwords, in section
     // titled "Base64 decoding".
 
-    // Non-SIMD lookup tables are mostly dumped from fromBase64 array used in java.util.Base64,
-    // except the trailing character '=' is also treated illegal value in this intrinsic. That
-    // is java.util.Base64.fromBase64['='] = -2, while fromBase(URL)64ForNoSIMD['='] = 255 here.
-    static const uint8_t fromBase64ForNoSIMD[256] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
-       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
-      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
-       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-    };
-
-    static const uint8_t fromBase64URLForNoSIMD[256] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
-       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
-      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
-       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-    };
-
-    // A legal value of base64 code is in range [0, 127].  We need two lookups
-    // with tbl/tbx and combine them to get the decode data. The 1st table vector
-    // lookup use tbl, out of range indices are set to 0 in destination. The 2nd
-    // table vector lookup use tbx, out of range indices are unchanged in
-    // destination. Input [64..126] is mapped to index [65, 127] in second lookup.
-    // The value of index 64 is set to 0, so that we know that we already get the
-    // decoded data with the 1st lookup.
-    static const uint8_t fromBase64ForSIMD[128] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
-       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
-      255u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
-       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
-    };
-
-    static const uint8_t fromBase64URLForSIMD[128] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
-       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
-       63u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
-       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
-    };
-
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_base64_decodeBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register src    = c_rarg0;  // source array
     Register soff   = c_rarg1;  // source start offset
@@ -10115,9 +10797,9 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(length, send, soff);
     __ bfm(length, zr, 0, 1);
 
-    __ lea(nosimd_codec, ExternalAddress((address) fromBase64ForNoSIMD));
+    __ lea(nosimd_codec, ExternalAddress((address) _decodeBlock_fromBase64ForNoSIMD));
     __ cbz(isURL, ProcessData);
-    __ lea(nosimd_codec, ExternalAddress((address) fromBase64URLForNoSIMD));
+    __ lea(nosimd_codec, ExternalAddress((address) _decodeBlock_fromBase64URLForNoSIMD));
 
     __ BIND(ProcessData);
     __ mov(rscratch1, length);
@@ -10162,9 +10844,9 @@ class StubGenerator: public StubCodeGenerator {
     __ cbzw(rscratch1, Exit);
     __ sub(length, length, 80);
 
-    __ lea(simd_codec, ExternalAddress((address) fromBase64ForSIMD));
+    __ lea(simd_codec, ExternalAddress((address) _decodeBlock_fromBase64ForSIMD));
     __ cbz(isURL, SIMDEnter);
-    __ lea(simd_codec, ExternalAddress((address) fromBase64URLForSIMD));
+    __ lea(simd_codec, ExternalAddress((address) _decodeBlock_fromBase64URLForSIMD));
 
     __ BIND(SIMDEnter);
     __ ld1(v0, v1, v2, v3, __ T16B, __ post(simd_codec, 64));
@@ -10197,24 +10879,50 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   // Support for spin waits.
   address generate_spin_wait() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_spin_wait_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ spin_wait();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
 
   void generate_lookup_secondary_supers_table_stub() {
     StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == Klass::SECONDARY_SUPERS_TABLE_SIZE, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == Klass::SECONDARY_SUPERS_TABLE_SIZE - 1,
+             "unexpected extra entry count %d", entries.length());
+      StubRoutines::_lookup_secondary_supers_table_stubs[0] = start;
+      for (int slot = 1; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+        StubRoutines::_lookup_secondary_supers_table_stubs[0] = entries.at(slot - 1);
+      }
+      return;
+    }
+
     StubCodeMark mark(this, stub_id);
 
     const Register
@@ -10229,7 +10937,13 @@ class StubGenerator: public StubCodeGenerator {
       vtemp          = v0;
 
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
+      address next_entry = __ pc();
+      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = next_entry;
+      if (slot == 0) {
+        start = next_entry;
+      } else {
+        entries.append(next_entry);
+      }
       Label L_success;
       __ enter();
       __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
@@ -10239,14 +10953,21 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ ret(lr);
     }
+    // record the stub entry and end plus all the auxiliary entries
+    store_archive_data(stub_id, start, __ pc(), &entries);
   }
 
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub() {
     StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_slow_path_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-
-    address start = __ pc();
+    start = __ pc();
     const Register
       r_super_klass  = r0,        // argument
       r_array_base   = r1,        // argument
@@ -10257,6 +10978,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, result);
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10397,14 +11121,43 @@ class StubGenerator: public StubCodeGenerator {
     if (! UseLSE) {
       return;
     }
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_atomic_entry_points_id;
-    StubCodeMark mark(this, stub_id);
-    address first_entry = __ pc();
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == entry_count - 1,
+             "unexpected extra entry count %d", entries.length());
+      aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)start;
+      int idx = 0;
+      aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_fetch_add_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_fetch_add_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_1_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      assert(idx == entries.length(), "sanity!");
+      return;
+    }
 
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    address end;
+    {
     // ADD, memory_order_conservative
     AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
     gen_ldadd_entry(Assembler::word, memory_order_conservative);
+
     AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
     gen_ldadd_entry(Assembler::xword, memory_order_conservative);
 
@@ -10412,6 +11165,7 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_fetch_add_4_relaxed
       (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
     gen_ldadd_entry(MacroAssembler::word, memory_order_relaxed);
+
     AtomicStubMark mark_fetch_add_8_relaxed
       (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
     gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
@@ -10419,14 +11173,17 @@ class StubGenerator: public StubCodeGenerator {
     // XCHG, memory_order_conservative
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
     gen_swpal_entry(Assembler::word);
-    AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
+
+    AtomicStubMark mark_xchg_8(_masm, &aarch64_atomic_xchg_8_impl);
     gen_swpal_entry(Assembler::xword);
 
     // CAS, memory_order_conservative
     AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
     gen_cas_entry(MacroAssembler::byte, memory_order_conservative);
+
     AtomicStubMark mark_cmpxchg_4(_masm, &aarch64_atomic_cmpxchg_4_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_conservative);
+
     AtomicStubMark mark_cmpxchg_8(_masm, &aarch64_atomic_cmpxchg_8_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_conservative);
 
@@ -10434,9 +11191,11 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_cmpxchg_1_relaxed
       (_masm, &aarch64_atomic_cmpxchg_1_relaxed_impl);
     gen_cas_entry(MacroAssembler::byte, memory_order_relaxed);
+
     AtomicStubMark mark_cmpxchg_4_relaxed
       (_masm, &aarch64_atomic_cmpxchg_4_relaxed_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_relaxed);
+
     AtomicStubMark mark_cmpxchg_8_relaxed
       (_masm, &aarch64_atomic_cmpxchg_8_relaxed_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_relaxed);
@@ -10444,6 +11203,7 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_cmpxchg_4_release
       (_masm, &aarch64_atomic_cmpxchg_4_release_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_release);
+
     AtomicStubMark mark_cmpxchg_8_release
       (_masm, &aarch64_atomic_cmpxchg_8_release_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_release);
@@ -10451,11 +11211,41 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_cmpxchg_4_seq_cst
       (_masm, &aarch64_atomic_cmpxchg_4_seq_cst_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_seq_cst);
+
     AtomicStubMark mark_cmpxchg_8_seq_cst
       (_masm, &aarch64_atomic_cmpxchg_8_seq_cst_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_seq_cst);
 
-    ICache::invalidate_range(first_entry, __ pc() - first_entry);
+    end = __ pc();
+
+    ICache::invalidate_range(start, end - start);
+    // exit block to force update of AtomicStubMark targets
+    }
+
+    assert(start == (address)aarch64_atomic_fetch_add_4_impl,
+           "atomic stub should be at start of buffer");
+    // record the stub start and end plus all the entries saved by the
+    // AtomicStubMark destructor
+    entries.append((address)aarch64_atomic_fetch_add_8_impl);
+    entries.append((address)aarch64_atomic_fetch_add_4_relaxed_impl);
+    entries.append((address)aarch64_atomic_fetch_add_8_relaxed_impl);
+    entries.append((address)aarch64_atomic_xchg_4_impl);
+    entries.append((address)aarch64_atomic_xchg_8_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_1_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_1_relaxed_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_relaxed_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_relaxed_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_release_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_release_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_seq_cst_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_seq_cst_impl);
+
+    assert(entries.length() == entry_count - 1,
+           "unexpected extra entry count %d", entries.length());
+
+    store_archive_data(stub_id, start, end, &entries);
   }
 #endif // LINUX
 
@@ -10559,9 +11349,19 @@ class StubGenerator: public StubCodeGenerator {
     if (!Continuations::enabled()) return nullptr;
 
     StubId stub_id = StubId::stubgen_cont_thaw_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     generate_cont_thaw(Continuation::thaw_top);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -10570,10 +11370,19 @@ class StubGenerator: public StubCodeGenerator {
 
     // TODO: will probably need multiple return barriers depending on return type
     StubId stub_id = StubId::stubgen_cont_returnBarrier_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10582,10 +11391,19 @@ class StubGenerator: public StubCodeGenerator {
     if (!Continuations::enabled()) return nullptr;
 
     StubId stub_id = StubId::stubgen_cont_returnBarrierExc_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10593,8 +11411,14 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_preempt_stub() {
     if (!Continuations::enabled()) return nullptr;
     StubId stub_id = StubId::stubgen_cont_preempt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ reset_last_Java_frame(true);
 
@@ -10618,6 +11442,9 @@ class StubGenerator: public StubCodeGenerator {
     __ lea(rscratch1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
     __ ldr(rscratch1, Address(rscratch1));
     __ br(rscratch1);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10674,10 +11501,16 @@ class StubGenerator: public StubCodeGenerator {
   // computation.
 
   address generate_poly1305_processBlocks() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     Label here;
     __ enter();
     RegSet callee_saved = RegSet::range(r19, r28);
@@ -10785,14 +11618,23 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     // Native caller has no idea how to handle exceptions,
     // so we just crash here. Up to callee to catch exceptions.
@@ -10800,6 +11642,9 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
     __ blr(rscratch1);
     __ should_not_reach_here();
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10809,8 +11654,14 @@ class StubGenerator: public StubCodeGenerator {
   // rmethod = result
   address generate_upcall_stub_load_target() {
     StubId stub_id = StubId::stubgen_upcall_stub_load_target_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ resolve_global_jobject(j_rarg0, rscratch1, rscratch2);
       // Load target method from receiver
@@ -10823,6 +11674,9 @@ class StubGenerator: public StubCodeGenerator {
     __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 
     __ ret(lr);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -11854,7 +12708,8 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (UseGHASHIntrinsics) {
       // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
+      StubRoutines::aarch64::_ghash_processBlocks_small = generate_ghash_processBlocks_small();
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks(StubRoutines::aarch64::_ghash_processBlocks_small);
     }
     if (UseAESIntrinsics && UseGHASHIntrinsics) {
       StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
@@ -11901,7 +12756,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
     case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
@@ -11923,12 +12778,35 @@ class StubGenerator: public StubCodeGenerator {
       break;
     };
   }
+
+#if INCLUDE_CDS
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+    // external data defined in this file
+#define ADD(addr) external_addresses.append((address)addr);
+    ADD(_sha256_round_consts);
+    ADD(_sha512_round_consts);
+    ADD(_sha3_round_consts);
+    ADD(_double_keccak_round_consts);
+    ADD(_encodeBlock_toBase64);
+    ADD(_encodeBlock_toBase64URL);
+    ADD(_decodeBlock_fromBase64ForNoSIMD);
+    ADD(_decodeBlock_fromBase64URLForNoSIMD);
+    ADD(_decodeBlock_fromBase64ForSIMD);
+    ADD(_decodeBlock_fromBase64URLForSIMD);
+#undef ADD
+  }
+#endif // INCLUDE_CDS
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
-  StubGenerator g(code, blob_id);
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }
 
+#if INCLUDE_CDS
+void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses) {
+  StubGenerator::init_AOTAddressTable(addresses);
+}
+#endif // INCLUDE_CDS
 
 #if defined (LINUX)
 

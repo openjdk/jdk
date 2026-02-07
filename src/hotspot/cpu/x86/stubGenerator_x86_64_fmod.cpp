@@ -72,10 +72,16 @@ ATTRIBUTE_ALIGNED(32) static const uint64_t CONST_e307[] = {
 };
 
 address StubGenerator::generate_libmFmod() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_fmod_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   if (VM_Version::supports_avx512vlbwdq()) {     // AVX512 version
@@ -521,7 +527,22 @@ address StubGenerator::generate_libmFmod() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_fmod(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(CONST_NaN);
+  ADD(CONST_1p260);
+  ADD(CONST_MAX);
+  ADD(CONST_INF);
+  ADD(CONST_e307);
+#undef ADD
+}
+#endif // INCLUDE_CDS

@@ -112,6 +112,8 @@ public:
 
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
+
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
 };
 
 #endif // CPU_X86_STUBROUTINES_X86_HPP

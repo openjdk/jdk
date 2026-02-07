@@ -413,3 +413,39 @@ ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_pio2[] = {
   2.73370053816464559624e-44, // 0x36E3822280000000
   2.16741683877804819444e-51, // 0x3569F31D00000000
 };
+
+#if INCLUDE_CDS
+extern void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses);
+
+void StubRoutines::init_AOTAddressTable() {
+  ResourceMark rm;
+  GrowableArray<address> external_addresses;
+  // publish static addresses referred to by aarch64 generator
+  // n.b. we have to use use an extern call here because class
+  // StubGenerator, which provides the static method that knows how to
+  // add the relevant addresses, is declared in a source file rather
+  // than in a separately includeable header.
+  StubGenerator_init_AOTAddressTable(external_addresses);
+  // publish external data addresses defined in nested aarch64 class
+  StubRoutines::aarch64::init_AOTAddressTable(external_addresses);
+  AOTCodeCache::publish_external_addresses(external_addresses);
+}
+
+
+#define ADD(addr) external_addresses.append((address)addr);
+
+void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+  ADD(_kyberConsts);
+  ADD(_dilithiumConsts);
+  // this is added in generic code
+  // ADD(_crc_table);
+  ADD(_adler_table);
+  ADD(_npio2_hw);
+  ADD(_dsin_coef);
+  ADD(_dcos_coef);
+  ADD(_two_over_pi);
+  ADD(_pio2);
+}
+
+#undef ADD
+#endif // INCLUDE_CDS

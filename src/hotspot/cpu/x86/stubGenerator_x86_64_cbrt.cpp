@@ -191,8 +191,14 @@ ATTRIBUTE_ALIGNED(4) static const juint _D_table[] =
 
 address StubGenerator::generate_libmCbrt() {
   StubId stub_id = StubId::stubgen_dcbrt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1;
   Label B1_1, B1_2, B1_4;
@@ -335,7 +341,34 @@ address StubGenerator::generate_libmCbrt() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_cbrt(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(_ABS_MASK);
+  ADD(_SIG_MASK);
+  ADD(_EXP_MASK);
+  ADD(_EXP_MSK2);
+  ADD(_EXP_MSK3);
+  ADD(_SCALE63);
+  ADD(_ZERON);
+  ADD(_INF);
+  ADD(_NEG_INF);
+  address coeff_table = (address)_coeff_table;
+  ADD(coeff_table);
+  ADD(coeff_table + 16);
+  ADD(coeff_table + 32);
+  ADD(coeff_table + 48);
+  ADD(_rcp_table);
+  ADD(_cbrt_table);
+  ADD(_D_table);
+#undef ADD
+}
+#endif // INCLUDE_CDS

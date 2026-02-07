@@ -26,6 +26,7 @@
 #define SHARE_CODE_AOTCODECACHE_HPP
 
 #include "runtime/stubInfo.hpp"
+#include "utilities/hashTable.hpp"
 
 /*
  * AOT Code Cache collects code from Code Cache and corresponding metadata
@@ -37,6 +38,7 @@
 class CodeBuffer;
 class RelocIterator;
 class AOTCodeCache;
+class AOTCodeReader;
 class AdapterBlob;
 class ExceptionBlob;
 class ImmutableOopMapSet;
@@ -52,6 +54,7 @@ enum CompLevel : signed char;
   Fn(SharedBlob) \
   Fn(C1Blob) \
   Fn(C2Blob) \
+  Fn(StubGenBlob) \
 
 // Descriptor of AOT Code Cache's entry
 class AOTCodeEntry {
@@ -113,54 +116,158 @@ public:
   address dumptime_content_start_addr() const { return _dumptime_content_start_addr; }
 
   static bool is_valid_entry_kind(Kind kind) { return kind > None && kind < Kind_count; }
-  static bool is_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob; }
+  static bool is_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob || kind == StubGenBlob; }
+  static bool is_single_stub_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob || kind == StubGenBlob; }
+  static bool is_multi_stub_blob(Kind kind) { return kind == StubGenBlob; }
   static bool is_adapter(Kind kind) { return kind == Adapter; }
 };
+
+// we use a hash table to speed up translation of external addresses
+// or stub addresses to their corresponding indexes when dumping stubs
+// or nmethods to the AOT code cache.
+class AOTCodeAddressHashTable : public HashTable<
+  address,
+  int,
+  36137, // prime number
+  AnyObj::C_HEAP,
+  mtCode> {};
 
 // Addresses of stubs, blobs and runtime finctions called from compiled code.
 class AOTCodeAddressTable : public CHeapObj<mtCode> {
 private:
   address* _extrs_addr;
   address* _stubs_addr;
-  address* _shared_blobs_addr;
-  address* _C1_blobs_addr;
   uint     _extrs_length;
-  uint     _stubs_length;
-  uint     _shared_blobs_length;
-  uint     _C1_blobs_length;
 
   bool _extrs_complete;
-  bool _early_stubs_complete;
-  bool _shared_blobs_complete;
-  bool _early_c1_complete;
-  bool _complete;
+  bool _shared_stubs_complete;
+  bool _c1_stubs_complete;
+  bool _c2_stubs_complete;
+  bool _stubgen_stubs_complete;
+  AOTCodeAddressHashTable* _hash_table;
 
+  void hash_address(address addr, int idx);
 public:
   AOTCodeAddressTable() :
     _extrs_addr(nullptr),
     _stubs_addr(nullptr),
-    _shared_blobs_addr(nullptr),
-    _C1_blobs_addr(nullptr),
     _extrs_length(0),
-    _stubs_length(0),
-    _shared_blobs_length(0),
-    _C1_blobs_length(0),
     _extrs_complete(false),
-    _early_stubs_complete(false),
-    _shared_blobs_complete(false),
-    _early_c1_complete(false),
-    _complete(false)
+    _shared_stubs_complete(false),
+    _c1_stubs_complete(false),
+    _c2_stubs_complete(false),
+    _stubgen_stubs_complete(false),
+    _hash_table(nullptr)
   { }
   ~AOTCodeAddressTable();
   void init_extrs();
-  void init_early_stubs();
-  void init_shared_blobs();
-  void init_early_c1();
+  void init_extrs2();
+  void add_stub_entry(EntryId entry_id, address entry);
+  void add_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
+  void set_shared_stubs_complete();
+  void set_c1_stubs_complete();
+  void set_c2_stubs_complete();
+  void set_stubgen_stubs_complete();
   const char* add_C_string(const char* str);
   int  id_for_C_string(address str);
   address address_for_C_string(int idx);
   int  id_for_address(address addr, RelocIterator iter, CodeBlob* code_blob);
   address address_for_id(int id);
+};
+
+// Auxiliary class used by AOTStubData to locate addresses owned by a
+// stub in the _address_array.
+
+class StubAddrRange {
+private:
+  // Index of the first address owned by a stub or -1 if none present
+  int _start_index;
+  // Total number of addresses owned by a stub, including in order:
+  // start address for stub code and first entry, (exclusive) end
+  // address for stub code, all secondary entry addresses, any
+  // auxiliary addresses
+  uint _naddr;
+ public:
+  StubAddrRange() : _start_index(-1), _naddr(0) {}
+  int start_index() { return _start_index; }
+  int count() { return _naddr; }
+
+  void default_init() {
+    _start_index = -1;
+    _naddr = 0;
+  }
+
+  void init_entry(int start_index, int naddr) {
+    _start_index = start_index;
+    _naddr = naddr;
+  }
+};
+
+// class used to save and restore details of stubs embedded in a
+// multi-stub (StubGen) blob
+
+class AOTStubData : public StackObj {
+  friend class AOTCodeCache;
+  friend class AOTCodeReader;
+private:
+  BlobId _blob_id; // must be a stubgen blob id
+  // whatever buffer blob was successfully loaded from the AOT cache
+  // following a call to load_code_blob or nullptr
+  CodeBlob *_cached_blob;
+  // Array of addresses owned by stubs. Each stub appends addresses to
+  // this array as a block, whether at the end of generation or at the
+  // end of restoration from the cache. The first two addresses in
+  // each block are the "start" and "end2 address of the stub. Any
+  // other visible addresses located within the range [start,end)
+  // follow, either extra entries, data addresses or SEGV-protected
+  // subrange start, end and handler addresses. In the special case
+  // that the SEGV handler address is the (external) common address
+  // handler the array will hold value nullptr.
+  GrowableArray<address> _address_array;
+  // count of how many stubs exist in the current blob (not all of
+  // which may actually be generated)
+  int _stub_cnt;
+  // array identifying range of entries in _address_array for each stub
+  // indexed by offset of stub in blob
+  StubAddrRange* _ranges;
+
+  // flags indicating whether the AOT code cache is open and, if so,
+  // whether we are loading or storing stubs.the first of those
+  // cases whether we have encountered any invalid stubs or failed to
+  // find a stub that was being generated
+  enum Flags {
+    OPEN    = 1 << 0,            // cache is open for use
+    USING   = 1 << 1,            // open and loading stubs
+    DUMPING = 1 << 2,            // open and storing stubs
+    INVALID = 1 << 3,            // found invalid stub when loading
+  };
+
+  uint32_t _flags;
+
+  void set_invalid() { _flags |= INVALID; }
+
+  StubAddrRange& get_range(int idx) const { return _ranges[idx]; }
+  GrowableArray<address>& address_array() { return _address_array; }
+  // accessor for entry/auxiliary addresses defaults to start entry
+public:
+  AOTStubData(BlobId blob_id) NOT_CDS({});
+
+  ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
+
+  bool is_open()    CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_dumping() CDS_ONLY({ return (_flags & DUMPING) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_aot()     CDS_ONLY({ return is_using() || is_dumping(); }) NOT_CDS_RETURN_(false);
+  bool is_invalid() CDS_ONLY({ return (_flags & INVALID) != 0; }) NOT_CDS_RETURN_(false);
+
+  BlobId blob_id() { return _blob_id; }
+  bool load_code_blob() NOT_CDS_RETURN_(true);
+  bool store_code_blob(CodeBlob& new_blob, CodeBuffer *code_buffer) NOT_CDS_RETURN_(true);
+
+  address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
+  void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
+
+  const AOTStubData* as_const() { return (const AOTStubData*)this; }
 };
 
 class AOTCodeCache : public CHeapObj<mtCode> {
@@ -204,16 +311,18 @@ protected:
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _adapters_count;
     uint   _shared_blobs_count;
+    uint   _stubgen_blobs_count;
     uint   _C1_blobs_count;
     uint   _C2_blobs_count;
     Config _config;
 
   public:
     void init(uint cache_size,
-              uint strings_count,  uint strings_offset,
-              uint entries_count,  uint entries_offset,
-              uint adapters_count, uint shared_blobs_count,
-              uint C1_blobs_count, uint C2_blobs_count) {
+              uint strings_count,       uint strings_offset,
+              uint entries_count,       uint entries_offset,
+              uint adapters_count,      uint shared_blobs_count,
+              uint stubgen_blobs_count, uint C1_blobs_count,
+              uint C2_blobs_count) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -222,6 +331,7 @@ protected:
       _entries_offset = entries_offset;
       _adapters_count = adapters_count;
       _shared_blobs_count = shared_blobs_count;
+      _stubgen_blobs_count = stubgen_blobs_count;
       _C1_blobs_count = C1_blobs_count;
       _C2_blobs_count = C2_blobs_count;
       _config.record();
@@ -234,6 +344,7 @@ protected:
     uint entries_count()  const { return _entries_count; }
     uint entries_offset() const { return _entries_offset; }
     uint adapters_count() const { return _adapters_count; }
+    uint stubgen_blobs_count()   const { return _stubgen_blobs_count; }
     uint shared_blobs_count()    const { return _shared_blobs_count; }
     uint C1_blobs_count() const { return _C1_blobs_count; }
     uint C2_blobs_count() const { return _C2_blobs_count; }
@@ -284,6 +395,7 @@ private:
   void clear_lookup_failed()   { _lookup_failed = false; }
   bool lookup_failed()   const { return _lookup_failed; }
 
+  void add_stub_entry(EntryId entry_id, address entry) NOT_CDS_RETURN;
 public:
   AOTCodeCache(bool is_dumping, bool is_using);
   ~AOTCodeCache();
@@ -300,9 +412,12 @@ public:
   void load_strings();
   int store_strings();
 
-  static void init_early_stubs_table() NOT_CDS_RETURN;
-  static void init_shared_blobs_table() NOT_CDS_RETURN;
-  static void init_early_c1_table() NOT_CDS_RETURN;
+  static void set_shared_stubs_complete() NOT_CDS_RETURN;
+  static void set_c1_stubs_complete() NOT_CDS_RETURN ;
+  static void set_c2_stubs_complete() NOT_CDS_RETURN;
+  static void set_stubgen_stubs_complete() NOT_CDS_RETURN;
+
+  void add_stub_entries(StubId stub_id, address start, GrowableArray<address> *entries = nullptr, int offset = -1) NOT_CDS_RETURN;
 
   address address_for_C_string(int idx) const { return _table->address_for_C_string(idx); }
   address address_for_id(int id) const { return _table->address_for_id(id); }
@@ -322,28 +437,63 @@ public:
 
   bool finish_write();
 
-  bool write_relocations(CodeBlob& code_blob);
+  bool write_relocations(CodeBlob& code_blob, RelocIterator& iter);
   bool write_oop_map_set(CodeBlob& cb);
+  bool write_stub_data(CodeBlob& blob, AOTStubData *stub_data);
 #ifndef PRODUCT
   bool write_asm_remarks(CodeBlob& cb);
   bool write_dbg_strings(CodeBlob& cb);
 #endif // PRODUCT
 
+private:
+  // internal private API to save and restore blobs
+  static bool store_code_blob(CodeBlob& blob,
+                              AOTCodeEntry::Kind entry_kind,
+                              uint id,
+                              const char* name,
+                              AOTStubData* stub_data,
+                              CodeBuffer* code_buffer) NOT_CDS_RETURN_(false);
+
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
+                                  uint id,
+                                  const char* name,
+                                  AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
+
+public:
   // save and restore API for non-enumerable code blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
-                              uint id, const char* name) NOT_CDS_RETURN_(false);
+                              uint id,
+                              const char* name) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
                                   uint id, const char* name) NOT_CDS_RETURN_(nullptr);
 
   // save and restore API for enumerable code blobs
+
+  // API for single-stub blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
                               BlobId id) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
                                   BlobId id) NOT_CDS_RETURN_(nullptr);
+
+  // API for multi-stub blobs -- for use by class StubGenerator.
+
+  static bool store_code_blob(CodeBlob& blob,
+                              AOTCodeEntry::Kind kind,
+                              BlobId id,
+                              AOTStubData* stub_data,
+                              CodeBuffer *code_buffer) NOT_CDS_RETURN_(false);
+
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
+                                  BlobId id,
+                                  AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
+
+  static void publish_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
+  // publish all entries for a code blob in code cache address table
+  static void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data) NOT_CDS_RETURN;
 
   static uint store_entries_cnt() {
     if (is_on_for_dump()) {
@@ -366,9 +516,14 @@ private:
     return true;
   }
 public:
+  // marker used where an address offset needs to be stored for later
+  // retrieval and the address turns out to be null
+  static const uint NULL_ADDRESS_MARKER = UINT_MAX;
+
   static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
+  static void init3() NOT_CDS_RETURN;
   static void close() NOT_CDS_RETURN;
   static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
@@ -389,7 +544,7 @@ public:
 // Concurent AOT code reader
 class AOTCodeReader {
 private:
-  const AOTCodeCache*  _cache;
+  AOTCodeCache*  _cache;
   const AOTCodeEntry*  _entry;
   const char*          _load_buffer; // Loaded cached code buffer
   uint  _read_position;              // Position in _load_buffer
@@ -406,11 +561,14 @@ private:
 public:
   AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
 
-  CodeBlob* compile_code_blob(const char* name);
+  CodeBlob* compile_code_blob(const char* name, AOTCodeEntry::Kind entry_kind, int id, AOTStubData* stub_data = nullptr);
 
   ImmutableOopMapSet* read_oop_map_set();
+  void read_stub_data(CodeBlob* code_blob, AOTStubData *stub_data);
+  void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data);
 
-  void fix_relocations(CodeBlob* code_blob);
+
+  void fix_relocations(CodeBlob* code_blob, RelocIterator& iter);
 #ifndef PRODUCT
   void read_asm_remarks(AsmRemarks& asm_remarks);
   void read_dbg_strings(DbgStrings& dbg_strings);
