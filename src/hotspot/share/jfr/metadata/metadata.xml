@@ -1004,6 +1004,16 @@
     <Field type="Thread" name="eventThread" label="Thread" />
   </Event>
 
+  <Event name="AsyncStackTrace" category="Java Virtual Machine, Profiling" label="JVMTI Async Stack-Trace"
+         description="Snapshot of a threads state, requested by JVMTI call to RequestStackTrace()."
+         thread="false" experimental="true" startTime="false">
+    <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
+    <Field type="Thread" name="eventThread" label="Thread" />
+    <Field type="long" name="userData" label="User-provided data" />
+    <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
+    <Field type="boolean" name="biased" label="Biased" description="The sample is safepoint-biased" />
+  </Event>
+
   <Event name="ThreadDump" category="Java Virtual Machine, Runtime" label="Thread Dump" period="everyChunk">
     <Field type="string" name="result" label="Thread Dump" />
   </Event>

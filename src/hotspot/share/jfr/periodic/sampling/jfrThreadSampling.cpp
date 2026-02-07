@@ -312,7 +312,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
 
   if (!could_compute_top_frame) {
-    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period, request._jvmti);
     return;
   }
   traceid sid;
@@ -321,7 +321,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     JfrStackTrace stacktrace;
     if (!stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
-      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period, request._jvmti);
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
@@ -329,7 +329,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   assert(sid != 0, "invariant");
 
 
-  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased);
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased, request._jvmti, request._user_data);
   if (current == jt) {
     send_safepoint_latency_event(request._request, now, sid, jt);
   }

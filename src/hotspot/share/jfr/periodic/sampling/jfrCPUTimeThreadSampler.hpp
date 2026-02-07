@@ -37,6 +37,8 @@ class JavaThread;
 struct JfrCPUTimeSampleRequest {
   JfrSampleRequest _request;
   Tickspan _cpu_time_period;
+  bool _jvmti;
+  jlong _user_data;
 
   JfrCPUTimeSampleRequest() {}
 };
@@ -126,6 +128,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
+  static void initialize_jvmti();
   static void set_rate(double rate);
   static void set_period(u8 nanos);
 
@@ -133,8 +136,12 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void on_javathread_terminate(JavaThread* thread);
   void handle_timer_signal(siginfo_t* info, void* context);
 
-  static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period);
-  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
+#if INCLUDE_JVMTI
+  static void jvmti_request_stacktrace(void* ucontext, jlong user_data);
+#endif
+
+  static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period, bool jvmti);
+  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool jvmti, jlong user_data);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();
