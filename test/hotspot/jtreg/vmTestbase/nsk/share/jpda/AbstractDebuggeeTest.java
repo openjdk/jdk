@@ -57,7 +57,7 @@ public class AbstractDebuggeeTest {
         return success;
     }
 
-    public final static int DEFAULT_BREAKPOINT_LINE = 63;
+    public final static int DEFAULT_BREAKPOINT_LINE = 65;
 
     public final static String DEFAULT_BREAKPOINT_METHOD_NAME = "breakpointMethod";
 
