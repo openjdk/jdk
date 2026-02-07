@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.JPackageCommand.makeAdvice;
 import static jdk.jpackage.test.JPackageCommand.makeError;
 
@@ -53,6 +53,7 @@ import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageOutputValidator;
+import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -81,10 +82,10 @@ import jdk.jpackage.test.TKit;
 public final class ErrorTest {
 
     enum Token {
-        JAVA_HOME(cmd -> {
+        JAVA_HOME(() -> {
             return System.getProperty("java.home");
         }),
-        APP_IMAGE(cmd -> {
+        APP_IMAGE(() -> {
             final var appImageRoot = TKit.createTempDirectory("appimage");
 
             final var appImageCmd = JPackageCommand.helloAppImage()
@@ -92,28 +93,42 @@ public final class ErrorTest {
 
             appImageCmd.execute();
 
-            return appImageCmd.outputBundle().toString();
+            return appImageCmd.outputBundle();
         }),
-        INVALID_MAC_RUNTIME_BUNDLE(toFunction(cmd -> {
+        APP_IMAGE_WITH_SHORT_NAME(() -> {
+            final var appImageRoot = TKit.createTempDirectory("appimage");
+
+            final var appImageCmd = JPackageCommand.helloAppImage()
+                    .setFakeRuntime().setArgumentValue("--dest", appImageRoot);
+
+            // Let jpackage pick the name from the main class (Hello). It qualifies as the "short" name.
+            appImageCmd.removeArgumentWithValue("--name");
+
+            appImageCmd.execute();
+
+            return appImageCmd.outputBundle();
+        }),
+        INVALID_MAC_RUNTIME_BUNDLE(toSupplier(() -> {
             // Has "Contents/MacOS/libjli.dylib", but missing "Contents/Home/lib/libjli.dylib".
             final Path root = TKit.createTempDirectory("mac-invalid-runtime-bundle");
             Files.createDirectories(root.resolve("Contents/Home"));
             Files.createFile(root.resolve("Contents/Info.plist"));
             Files.createDirectories(root.resolve("Contents/MacOS"));
             Files.createFile(root.resolve("Contents/MacOS/libjli.dylib"));
-            return root.toString();
+            return root;
         })),
-        INVALID_MAC_RUNTIME_IMAGE(toFunction(cmd -> {
+        INVALID_MAC_RUNTIME_IMAGE(toSupplier(() -> {
             // Has some files in the "lib" subdirectory, but doesn't have the "lib/libjli.dylib" file.
             final Path root = TKit.createTempDirectory("mac-invalid-runtime-image");
             Files.createDirectories(root.resolve("lib"));
             Files.createFile(root.resolve("lib/foo"));
-            return root.toString();
+            return root;
         })),
-        EMPTY_DIR(toFunction(cmd -> {
+        EMPTY_DIR(() -> {
             return TKit.createTempDirectory("empty-dir");
-        })),
+        }),
         ADD_LAUNCHER_PROPERTY_FILE,
+        EMPTY_KEYCHAIN,
         ;
 
         private Token() {
@@ -122,6 +137,12 @@ public final class ErrorTest {
 
         private Token(Function<JPackageCommand, Object> valueSupplier) {
             this.valueSupplier = Optional.of(valueSupplier);
+        }
+
+        private Token(Supplier<Object> valueSupplier) {
+            this(_ -> {
+                return valueSupplier.get();
+            });
         }
 
         String token() {
@@ -635,6 +656,64 @@ public final class ErrorTest {
             testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
                     .error("error.launcher-duplicate-name", "foo")
         ));
+    }
+
+    @Test(ifOS = MACOS)
+    @ParameterSupplier
+    public static void testMacSignWithoutIdentity(TestSpec spec) {
+        MacSign.withKeychain(keychain -> {
+            spec.mapExpectedMessages(cannedStr -> {
+                return cannedStr.mapArgs(arg -> {
+                    switch (arg) {
+                        case MacSign.StandardCertificateNamePrefix certPrefix -> {
+                            return certPrefix.value();
+                        }
+                        case Token _ -> {
+                            return keychain.name();
+                        }
+                        default -> {
+                            return arg;
+                        }
+                    }
+                });
+            }).test(Map.of(Token.EMPTY_KEYCHAIN, _ -> keychain.name()));
+        }, MacSign.createEmptyKeychain());
+    }
+
+    public static Collection<Object[]> testMacSignWithoutIdentity() {
+        final List<TestSpec> testCases = new ArrayList<>();
+
+        final var signArgs = List.of("--mac-sign", "--mac-signing-keychain", Token.EMPTY_KEYCHAIN.token());
+        final var appImageArgs = List.of("--app-image", Token.APP_IMAGE_WITH_SHORT_NAME.token());
+
+        for (var withAppImage : List.of(true, false)) {
+            var builder = testSpec();
+            if (withAppImage) {
+                builder.noAppDesc().addArgs(appImageArgs);
+            }
+            builder.addArgs(signArgs);
+
+            for (var type: List.of(PackageType.IMAGE, PackageType.MAC_PKG, PackageType.MAC_DMG)) {
+                builder.setMessages().error("error.cert.not.found",
+                        MacSign.StandardCertificateNamePrefix.CODE_SIGN, Token.EMPTY_KEYCHAIN);
+                switch (type) {
+                    case MAC_PKG -> {
+                        // jpackage must report two errors:
+                        //  1. It can't find signing identity to sign the app image
+                        //  2. It can't find signing identity to sign the PKG installer
+                        builder.error("error.cert.not.found",
+                                MacSign.StandardCertificateNamePrefix.INSTALLER, Token.EMPTY_KEYCHAIN);
+                    }
+                    default -> {
+                        // NOP
+                    }
+                }
+                var testSpec = builder.type(type).create();
+                testCases.add(testSpec);
+            }
+        }
+
+        return toTestArgs(testCases.stream());
     }
 
     @Test
