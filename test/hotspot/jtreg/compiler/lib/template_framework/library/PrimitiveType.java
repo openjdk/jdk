@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.let;
 
 /**
  * The {@link PrimitiveType} models Java's primitive types, and provides a set
@@ -234,6 +235,22 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
                 public static boolean nextBoolean() {
                     return RANDOM.nextBoolean();
                 }
+
+            """,
+            CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type -> scope(
+                let("type", type),
+                """
+                public static void fill(#type[] a) {
+                    for (int i = 0; i < a.length; i++) {
+                """,
+                "        a[i] = ", type.callLibraryRNG(), ";\n",
+                """
+                    }
+                }
+                """
+            )).toList(),
+            """
+
             }
             """
         ));

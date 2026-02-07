@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,18 @@ public class TestPrimitiveTypes {
             "       a[i] = ", type.callLibraryRNG(), ";\n",
             """
                 }
+                boolean allSame = true;
+                for (int i = 0; i < a.length; i++) {
+                    if (a[i] != a[0]) {
+                        allSame = false;
+                        break;
+                    }
+                }
+                if (allSame) { throw new RuntimeException("all values were the same for #type"); }
+            }
+            {
+                #type[] a = new #type[1_000];
+                LibraryRNG.fill(a);
                 boolean allSame = true;
                 for (int i = 0; i < a.length; i++) {
                     if (a[i] != a[0]) {
