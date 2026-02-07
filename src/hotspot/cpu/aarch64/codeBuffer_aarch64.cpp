@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +38,7 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   if (created) {
     _shared_trampoline_requests->maybe_grow();
   }
-  offsets->add(caller_offset);
+  offsets->push(caller_offset);
   _finalize_stubs = true;
 }
 
@@ -52,14 +53,14 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
   auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
     assert(cb->stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(), "pre-allocated trampolines");
-    LinkedListIterator<int> it(offsets.head());
-    int offset = *it.next();
+    assert(offsets.length() > 0, "must be");
+    int offset = offsets.at(0);
     address stub = __ emit_trampoline_stub(offset, dest);
     assert(stub, "pre-allocated trampolines");
 
     address reloc_pc = cb->stubs()->end() - NativeCallTrampolineStub::instruction_size;
-    while (!it.is_empty()) {
-      offset = *it.next();
+    for (int i = 1; i < offsets.length(); i++) {
+      offset = offsets.at(i);
       address caller_pc = cb->insts()->start() + offset;
       cb->stubs()->relocate(reloc_pc, trampoline_stub_Relocation::spec(caller_pc));
     }
