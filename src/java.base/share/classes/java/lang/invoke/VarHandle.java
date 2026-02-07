@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2009,6 +2009,17 @@ public abstract sealed class VarHandle implements Constable
         }
     }
 
+    // Exists for the adaption mechanism of AccessDescriptor
+    // Each VH should report its explicitly (receiver, coordinates) and
+    // implicitly (static declaring class) used class to MethodHandle.isReachableFrom
+    abstract boolean isReachableFrom(ClassLoader cl);
+
+    // An access descriptor represents a (name, type) combination for var handle polymorphic method invocation.
+    // The name is translated to `mode`, and the type is `symbolicMethodTypeExact`.
+    // The access descriptor is created in MethodHandleNatives::varHandleOperationLinkerMethod.
+    // In a class file, the JVM creates one access descriptor for one (name, type) combination.
+    // Many call sites in one class can have the same (name, type) combination.
+    // In this case, they share the same access descriptor.
     static final class AccessDescriptor {
         final MethodType symbolicMethodTypeExact;
         final MethodType symbolicMethodTypeErased;
@@ -2016,14 +2027,72 @@ public abstract sealed class VarHandle implements Constable
         final Class<?> returnType;
         final int type;
         final int mode;
+        // Used by adaption - if there's a caller we can better detect loader safety
+        final Class<?> caller;
 
-        public AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+        // Adaption mechanism to reduce overhead for non-exact access.
+        // We capture a first-come non-exact VarHandle and cache its asType
+        // result in this (name, type) combination for a class file.
+        //
+        // This heuristic assumes that, most of the time:
+        // 1. Only one call site in a class file uses this (name, type) combination
+        // 2. That call site only sees a constant VarHandle instance
+        // 3. That VarHandle does not keep other class loaders alive
+        //
+        // If either condition 1 or 2 doesn't hold, we may see different var
+        // handle instances using the same shared AccessDescriptor. In those
+        // cases we only cache the adaptation for one of the var handle instances
+        // (usually the first one, arbitrary under race).
+        // Other instances will always use the slow path.
+
+        // In the long run, we wish to cache each specific-type invoker that converts
+        // from one fixed type (symbolicMethodTypeInvoker) to another (the
+        // invocation type of the underlying MemberName, or MH for indirect VH),
+        // using a foldable lookup with a hash table, and hope C2 inline it
+        // all. Such an optimization applies to general MethodHandle.asType.
+
+        // Object indirection is the best way to ensure the vh and mh are not
+        // from two writes (they must not be tearable)
+        private record Adaption(VarHandle vh, MethodHandle mh) {}
+        // The adaption must not cause classloader leaks
+        private @Stable Adaption adaption;
+
+        AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+            this(symbolicMethodType, type, mode, null);
+        }
+
+        AccessDescriptor(MethodType symbolicMethodType, int type, int mode, Class<?> caller) {
             this.symbolicMethodTypeExact = symbolicMethodType;
             this.symbolicMethodTypeErased = symbolicMethodType.erase();
             this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
             this.returnType = symbolicMethodType.returnType();
             this.type = type;
             this.mode = mode;
+            this.caller = caller;
+        }
+
+        // Called by VarHandle linkers - see VarHandleGuardMethodGenerator
+        // Currently not used by Invokers::checkVarHandleGenericType but eligible
+        @ForceInline
+        MethodHandle adaptedMethodHandle(VarHandle vh) {
+            var cache = adaption;
+            if (cache != null && cache.vh == vh) {
+                return cache.mh;
+            }
+
+            var mh = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
+            if (cache == null) {
+                var loader = caller == null ? ClassLoader.getSystemClassLoader() : caller.getClassLoader();
+                if (vh.isReachableFrom(loader)) {
+                    // If our assumption stands, this is trivially correct.
+                    // Otherwise, a loader-safe witness is installed.
+                    // Adaption of the witness will constant-fold to fast path `cache.mh`.
+                    // Adaption of the others will fold to slow path `vh.getMethodHandle(mode).asType(...)`.
+                    // Racy installation here is ok - Adaption record is not tearable
+                    adaption = new Adaption(vh, mh);
+                }
+            }
+            return mh;
         }
     }
 
