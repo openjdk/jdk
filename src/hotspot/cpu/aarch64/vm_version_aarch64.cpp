@@ -434,6 +434,10 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+        UseIntPolyIntrinsics = true;
+  }
+
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
     UseBASE64Intrinsics = true;
   }

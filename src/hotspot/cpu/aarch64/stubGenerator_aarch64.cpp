@@ -4829,6 +4829,32 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   template<int N>
+  void vs_shl(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+              const VSeq<N>& v1, int shift) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+
+    for (int i = 0; i < N; i++) {
+      __ shl(v[i], T, v1[i], shift);
+    }
+  }
+
+  template<int N>
+  void vs_ushr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, int shift) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+
+    for (int i = 0; i < N; i++) {
+      __ ushr(v[i], T, v1[i], shift);
+    }
+  }
+
+  template<int N>
   void vs_sshr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, int shift) {
     // output must not be constant
@@ -4849,6 +4875,29 @@ class StubGenerator: public StubCodeGenerator {
     assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ andr(v[i], __ T16B, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_andr(const VSeq<N>& v, const VSeq<N>& v1, const FloatRegister v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ andr(v[i], __ T16B, v1[i], v2);
+    }
+  }
+
+  template<int N>
+  void vs_eor(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ eor(v[i], __ T16B, v1[i], v2[i]);
     }
   }
 
@@ -4905,7 +4954,7 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_ldpq(const VSeq<N>& v, Register base) {
     for (int i = 0; i < N; i += 2) {
-      __ ldpq(v[i], v[i+1], Address(base, 32 * i));
+      __ ldpq(v[i], v[i+1], Address(base, 16 * i));
     }
   }
 
@@ -7073,6 +7122,914 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
+    return start;
+  }
+
+  // Multiply each 32-bit value in bs by the 32-bit values in as[lane_lo] and as[lane_lo + 2]
+  // and store in vs.
+  void neon_partial_mult_64(const VSeq<4>& vs, FloatRegister bs, FloatRegister as, int lane_lo) {
+
+    __ umullv(vs[0], __ T2D, bs, __ T2S, as, __ S, lane_lo);
+    __ umull2v(vs[1], __ T2D, bs, __ T4S, as, __ S, lane_lo);
+    __ umullv(vs[2], __ T2D, bs, __ T2S, as, __ S, lane_lo + 2);
+    __ umull2v(vs[3], __ T2D, bs, __ T4S, as, __ S, lane_lo + 2);
+
+  }
+
+  address generate_intpoly_montgomeryMult_P256() {
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_intpoly_montgomeryMult_P256_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    //Omit 3rd limb of modulus since it is 0
+    static const int64_t modulus[5] = {
+      0x000fffffffffffffL, 0x00000fffffffffffL,
+      0x0000001000000000L, 0x0000ffffffff0000L
+    };
+
+    int shift1 = 12; // 64 - bits per limb
+    int shift2 = 52; // bits per limb
+
+    // Registers that are used throughout entire routine
+    const Register a = c_rarg0;
+    const Register b = c_rarg1;
+    const Register result = c_rarg2;
+    Register limb_mask = r3;
+    Register c_ptr = r4;
+    Register mod_0 = r5;
+    Register mod_1 = r6;
+    Register mod_3 = r7;
+    Register mod_4 = r10;
+    Register b_0 = r11;
+    Register b_1 = r12;
+    Register b_2 = r13;
+    Register b_3 = r14;
+    Register b_4 = r15;
+
+    FloatRegister limb_mask_vec = v0;
+    FloatRegister b_lows = v1;
+    FloatRegister b_highs = v2;
+    FloatRegister a_vals = v3;
+
+    // Push callee saved registers on to the stack
+    RegSet callee_saved = RegSet::range(r19, r28);
+    __ push(callee_saved, sp);
+
+    // Allocate space on the stack for carry values
+    __ sub(sp, sp, 48);
+    __ mov(c_ptr, sp);
+
+    // Calculate limb mask
+    __ mov(limb_mask, -UCONST64(1) >> (64 - shift2));
+    __ dup(limb_mask_vec, __ T2D, limb_mask);
+
+    //Load input arrays and modulus
+    {
+      Register a_ptr = r27;
+      Register mod_ptr = r28;
+      __ add(a_ptr, a, 24);
+      __ lea(mod_ptr, ExternalAddress((address)modulus));
+      __ ldr(b_0, Address(b));
+      __ ldr(b_1, Address(b, 8));
+      __ ldr(b_2, Address(b, 16));
+      __ ldr(b_3, Address(b, 24));
+      __ ldr(b_4, Address(b, 32));
+      __ ldr(mod_0, __ post(mod_ptr, 8));
+      __ ldr(mod_1, __ post(mod_ptr, 8));
+      __ ldr(mod_3, __ post(mod_ptr, 8));
+      __ ldr(mod_4, mod_ptr);
+      __ ld1(a_vals, __ T2D, a_ptr);
+      __ ld2(b_lows, b_highs, __ T4S, b);
+    }
+
+    //Regs used throughout the main "loop", which is partially unrolled here
+    Register high = r19;
+    Register low = r20;
+    Register mul_ptr = r21;
+    Register mod_high = r23;
+    Register mod_low = r24;
+    Register a_i = r25;
+    Register c_i = r26;
+    Register tmp = r27;
+    Register n = r28;
+
+    VSeq<4> A(16);
+    VSeq<4> B(20);
+    VSeq<4> C(24);
+    VSeq<4> D(28);
+
+    /////////////////////////
+
+    __ sub(sp, sp, 128);
+    __ mov(mul_ptr, sp);
+
+    neon_partial_mult_64(A, b_lows, a_vals, 0);
+
+    // Limb 0
+    __ ldr(a_i, __ post(a, 8));
+    __ umulh(high, a_i, b_0);
+    __ mul(low, a_i, b_0);
+    __ lsl(high, high, shift1);
+    __ lsr(tmp, low, shift2);
+    __ orr(high, high, tmp);
+    __ andr(low, low, limb_mask);
+    __ andr(n, low, limb_mask);
+
+    neon_partial_mult_64(B, b_highs, a_vals, 0);
+
+    // Limb 0 cont
+    __ umulh(mod_high, n, mod_0);
+    __ mul(mod_low, n, mod_0);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ lsr(c_i, low, shift2);
+    __ add(c_i, c_i, high);
+
+    neon_partial_mult_64(C, b_lows, a_vals, 1);
+
+    // Limb 1
+    __ umulh(high, a_i, b_1);
+    __ mul(low, a_i, b_1);
+    __ lsl(high, high, shift1);
+    __ lsr(tmp, low, shift2);
+    __ orr(high, high, tmp);
+    __ andr(low, low, limb_mask);
+
+    neon_partial_mult_64(D, b_highs, a_vals, 1);
+
+    __ umulh(mod_high, n, mod_1);
+    __ mul(mod_low, n, mod_1);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, c_ptr);
+    __ mov(c_i, high);
+
+    vs_addv(B, __ T2D, B, C); // Store (B+C) in B
+
+    // Limb 2
+    __ umulh(high, a_i, b_2);
+    __ mul(low, a_i, b_2);
+    __ lsl(high, high, shift1);
+    __ lsr(tmp, low, shift2);
+    __ orr(high, high, tmp);
+    __ andr(low, low, limb_mask);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 8));
+    __ mov(c_i, high);
+
+    vs_shl(D, __ T2D, D, 12);
+
+    // Limb 3
+    __ umulh(high, a_i, b_3); //compute next mult to avoid waiting for result
+    __ mul(low, a_i, b_3);
+    __ lsl(high, high, shift1);
+    __ lsr(tmp, low, shift2);
+    __ orr(high, high, tmp);
+    __ andr(low, low, limb_mask);
+
+    vs_ushr(C, __ T2D, B, 20); // Use C for ((B+C) >>> 20)
+
+    __ umulh(mod_high, n, mod_3);
+    __ mul(mod_low, n, mod_3);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 16));
+    __ mov(c_i, high);
+
+    vs_shl(B, __ T2D, B, 32);
+
+    // Limb 4
+    __ umulh(high, a_i, b_4);
+    __ mul(low, a_i, b_4);
+    __ lsl(high, high, shift1);
+    __ lsr(tmp, low, shift2);
+    __ orr(high, high, tmp);
+    __ andr(low, low, limb_mask);
+
+    vs_addv(D, __ T2D, D, C);
+
+    __ umulh(mod_high, n, mod_4);
+    __ mul(mod_low, n, mod_4);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 24));
+    __ str(high, Address(c_ptr, 32));
+
+    vs_ushr(C, __ T2D, A, 52); // C now holds (A >>> 52)
+    vs_andr(B, B, limb_mask_vec);
+    vs_andr(A, A, limb_mask_vec);
+    vs_addv(D, __ T2D, D, C);
+    vs_addv(A, __ T2D, A, B);
+
+    vs_ushr(B, __ T2D, A, shift2);
+    vs_andr(A, A, limb_mask_vec);
+    vs_addv(D, __ T2D, D, B);
+
+    __ st1(A[0], __ T2D, __ post(mul_ptr, 16));
+    __ st1(D[0], __ T2D, __ post(mul_ptr, 16));
+    __ st1(A[1], __ T2D, __ post(mul_ptr, 16));
+    __ st1(D[1], __ T2D, __ post(mul_ptr, 16));
+
+    __ st1(A[2], __ T2D, __ post(mul_ptr, 16));
+    __ st1(D[2], __ T2D, __ post(mul_ptr, 16));
+    __ st1(A[3], __ T2D, __ post(mul_ptr, 16));
+    __ st1(D[3], __ T2D, mul_ptr);
+
+    /////////////////////////
+    // Loop 2 & 3
+    /////////////////////////
+
+    for (int i = 0; i < 2; i++) {
+      // Load a_i and increment by 8 bytes
+      __ ldr(a_i, __ post(a, 8));
+      __ ldr(c_i, c_ptr); //Load prior c_i
+
+      // Limb 0
+      __ umulh(high, a_i, b_0);
+      __ mul(low, a_i, b_0);
+      __ lsl(high, high, shift1);
+      __ lsr(tmp, low, shift2);
+      __ orr(high, high, tmp);
+      __ andr(low, low, limb_mask);
+      __ add(low, low, c_i);
+      __ ldr(c_i, Address(c_ptr, 8));
+      __ andr(n, low, limb_mask);
+      __ umulh(mod_high, n, mod_0);
+      __ mul(mod_low, n, mod_0);
+      __ lsl(mod_high, mod_high, shift1);
+      __ lsr(tmp, mod_low, shift2);
+      __ orr(mod_high, mod_high, tmp);
+      __ andr(mod_low, mod_low, limb_mask);
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ lsr(tmp, low, shift2);
+      __ add(c_i, c_i, tmp);
+      __ add(c_i, c_i, high);
+
+      // Limb 1
+      __ umulh(high, a_i, b_1);
+      __ mul(low, a_i, b_1);
+      __ lsl(high, high, shift1);
+      __ lsr(tmp, low, shift2);
+      __ orr(high, high, tmp);
+      __ andr(low, low, limb_mask);
+      __ umulh(mod_high, n, mod_1);
+      __ mul(mod_low, n, mod_1);
+      __ lsl(mod_high, mod_high, shift1);
+      __ lsr(tmp, mod_low, shift2);
+      __ orr(mod_high, mod_high, tmp);
+      __ ldr(tmp, Address(c_ptr, 16));
+      __ andr(mod_low, mod_low, limb_mask);
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ add(c_i, c_i, low);
+      __ str(c_i, c_ptr);
+      __ add(c_i, tmp, high);
+
+      // Limb 2
+      __ umulh(high, a_i, b_2);
+      __ mul(low, a_i, b_2);
+      __ lsl(high, high, shift1);
+      __ lsr(tmp, low, shift2);
+      __ orr(high, high, tmp);
+      __ ldr(tmp, Address(c_ptr, 24));
+      __ andr(low, low, limb_mask);
+      __ add(c_i, c_i, low);
+      __ str(c_i, Address(c_ptr, 8));
+      __ add(c_i, tmp, high);
+
+      // Limb 3
+      __ umulh(high, a_i, b_3);
+      __ mul(low, a_i, b_3);
+      __ lsl(high, high, shift1);
+      __ lsr(tmp, low, shift2);
+      __ orr(high, high, tmp);
+      __ andr(low, low, limb_mask);
+      __ umulh(mod_high, n, mod_3);
+      __ mul(mod_low, n, mod_3);
+      __ lsl(mod_high, mod_high, shift1);
+      __ lsr(tmp, mod_low, shift2);
+      __ orr(mod_high, mod_high, tmp);
+      __ ldr(tmp, Address(c_ptr, 32));
+      __ andr(mod_low, mod_low, limb_mask);
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ add(c_i, c_i, low);
+      __ str(c_i, Address(c_ptr, 16));
+      __ add(c_i, tmp, high);
+
+      // Limb 4
+      __ umulh(high, a_i, b_4);
+      __ mul(low, a_i, b_4);
+      __ lsl(high, high, shift1);
+      __ lsr(tmp, low, shift2);
+      __ orr(high, high, tmp);
+      __ andr(low, low, limb_mask);
+      __ umulh(mod_high, n, mod_4);
+      __ mul(mod_low, n, mod_4);
+      __ lsl(mod_high, mod_high, shift1);
+      __ lsr(tmp, mod_low, shift2);
+      __ orr(mod_high, mod_high, tmp);
+      __ andr(mod_low, mod_low, limb_mask);
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ add(c_i, c_i, low);
+      __ str(c_i, Address(c_ptr, 24));
+      __ str(high, Address(c_ptr, 32));
+    }
+
+    Register low_1 = r21;
+    Register high_1 = r22;
+
+    //////////////////////////////
+    // a[3]
+    //////////////////////////////
+
+    __ ldr(low_1, Address(sp));
+    __ ldr(high_1, Address(sp, 16));
+
+    __ ldr(low, Address(sp, 8));
+    __ ldr(high, Address(sp, 24));
+    __ ldr(a_i, __ post(a, 8));
+    __ ldr(c_i, c_ptr);
+
+    // Limb 1
+    __ add(low_1, low_1, c_i);
+    __ ldr(c_i, Address(c_ptr, 8));
+    __ andr(n, low_1, limb_mask);
+    __ umulh(mod_high, n, mod_0);
+    __ mul(mod_low, n, mod_0);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+    __ lsr(tmp, low_1, shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high_1);
+
+    // Limb 2
+    __ ldr(low_1, Address(sp, 32));
+    __ ldr(high_1, Address(sp, 48));
+    __ umulh(mod_high, n, mod_1);
+    __ mul(mod_low, n, mod_1);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ ldr(tmp, Address(c_ptr, 16));
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, c_ptr);
+    __ add(c_i, tmp, high);
+
+    // Limb 2
+    __ ldr(low, Address(sp, 40));
+    __ ldr(high, Address(sp, 56));
+    __ ldr(tmp, Address(c_ptr, 24));
+    __ add(c_i, c_i, low_1);
+    __ str(c_i, Address(c_ptr, 8));
+    __ add(c_i, tmp, high_1);
+
+    // Limb 3
+    __ umulh(mod_high, n, mod_3);
+    __ mul(mod_low, n, mod_3);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ ldr(tmp, Address(c_ptr, 32));
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 16));
+    __ add(c_i, tmp, high);
+
+    // Limb 4
+    __ ldr(low, Address(sp, 64));
+    __ ldr(high, Address(sp, 80));
+    __ umulh(high_1, a_i, b_4);
+    __ mul(low_1, a_i, b_4);
+    __ lsl(high_1, high_1, shift1);
+    __ lsr(tmp, low_1, shift2);
+    __ orr(high_1, high_1, tmp);
+    __ andr(low_1, low_1, limb_mask);
+    __ umulh(mod_high, n, mod_4);
+    __ mul(mod_low, n, mod_4);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+    __ add(c_i, c_i, low_1);
+    __ str(c_i, Address(c_ptr, 24));
+    __ str(high_1, Address(c_ptr, 32));
+
+    //////////////////////////////
+    // a[4]
+    //////////////////////////////
+    __ ldr(a_i, a);
+    __ ldr(c_i, c_ptr);
+
+    // Limb 0
+    __ ldr(low_1, Address(sp, 72));
+    __ ldr(high_1, Address(sp, 88));
+
+    __ add(low, low, c_i);
+    __ ldr(c_i, Address(c_ptr, 8));
+    __ andr(n, low, limb_mask);
+    __ umulh(mod_high, n, mod_0);
+    __ mul(mod_low, n, mod_0);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ lsr(tmp, low, shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high);
+
+    // Limb 1
+    __ ldr(low, Address(sp, 96));
+    __ ldr(high, Address(sp, 112));
+    __ umulh(mod_high, n, mod_1);
+    __ mul(mod_low, n, mod_1);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+
+    Register c5 = r11; //replace b_0
+    __ add(c5, c_i, low_1);
+    __ ldr(c_i, Address(c_ptr, 16));
+    __ lsr(tmp, c5, shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high_1);
+
+    // Limb 2
+    __ ldr(low_1, Address(sp, 104));
+    __ ldr(high_1, Address(sp, 120));
+    Register c6 = r12;
+    __ add(c6, c_i, low);
+    __ ldr(c_i, Address(c_ptr, 24));
+    __ lsr(tmp, c6, shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high);
+
+    // Limb 3
+    __ umulh(mod_high, n, mod_3);
+    __ mul(mod_low, n, mod_3);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+
+    Register c7 = r13;
+    __ add(c7, c_i, low_1);
+    __ ldr(c_i, Address(c_ptr, 32));
+    __ lsr(tmp, c7, shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high_1);
+
+    // Limb 4
+    __ umulh(high, a_i, b_4);
+    __ mul(low, a_i, b_4);
+    __ lsl(high, high, shift1);
+    __ lsr(tmp, low, shift2);
+    __ orr(high, high, tmp);
+    __ andr(low, low, limb_mask);
+    __ umulh(mod_high, n, mod_4);
+    __ mul(mod_low, n, mod_4);
+    __ lsl(mod_high, mod_high, shift1);
+    __ lsr(tmp, mod_low, shift2);
+    __ orr(mod_high, mod_high, tmp);
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+
+    /////////////////////////////
+    // Final carry propagate
+    /////////////////////////////
+
+    // c5 += d1 + dd0 + (d0 >>> BITS_PER_LIMB);
+    // c6 += (c5 >>> BITS_PER_LIMB);
+    // c7 += (c6 >>> BITS_PER_LIMB);
+    // c8 += (c7 >>> BITS_PER_LIMB);
+    // c9 += (c8 >>> BITS_PER_LIMB);
+
+    Register c8 = r14;
+    Register c9 = r15;
+    __ add(c8, c_i, low);
+    __ lsr(c9, c8, shift2);
+    __ add(c9, c9, high);
+
+    __ andr(c5, c5, limb_mask);
+    __ andr(c6, c6, limb_mask);
+    __ andr(c7, c7, limb_mask);
+    __ andr(c8, c8, limb_mask);
+
+    // c0 = c5 - modulus[0];
+    // c1 = c6 - modulus[1] + (c0 >> BITS_PER_LIMB);
+    // c0 &= LIMB_MASK;
+    // c2 = c7 + (c1 >> BITS_PER_LIMB);
+    // c1 &= LIMB_MASK;
+    // c3 = c8 - modulus[3] + (c2 >> BITS_PER_LIMB);
+    // c2 &= LIMB_MASK;
+    // c4 = c9 - modulus[4] + (c3 >> BITS_PER_LIMB);
+    // c3 &= LIMB_MASK;
+
+    Register c0 = r19;
+    Register c1 = r20;
+    Register c2 = r21;
+    Register c3 = r22;
+    Register c4 = r23;
+    Register tmp0 = r24;
+    Register tmp1 = r25;
+    Register tmp2 = r26;
+    Register tmp3 = r27;
+    Register tmp4 = r28;
+
+    __ sub(c0, c5, mod_0);
+    __ sub(c1, c6, mod_1);
+    __ sub(c3, c8, mod_3);
+    __ sub(c4, c9, mod_4);
+    __ add(c1, c1, c0, Assembler::ASR, shift2);
+    __ andr(c0, c0, limb_mask);
+    __ add(c2, c7, c1, Assembler::ASR, shift2);
+    __ andr(c1, c1, limb_mask);
+    __ add(c3, c3, c2, Assembler::ASR, shift2);
+    __ andr(c2, c2, limb_mask);
+    __ add(c4, c4, c3, Assembler::ASR, shift2);
+    __ andr(c3, c3, limb_mask);
+
+    // Final write back
+    // mask = c4 >> 63
+    // r[0] = ((c5 & mask) | (c0 & ~mask));
+    // r[1] = ((c6 & mask) | (c1 & ~mask));
+    // r[2] = ((c7 & mask) | (c2 & ~mask));
+    // r[3] = ((c8 & mask) | (c3 & ~mask));
+    // r[4] = ((c9 & mask) | (c4 & ~mask));
+
+    Register mask = r5;
+    Register nmask = r6;
+
+    __ asr(mask, c4, 63);
+    __ mvn(nmask, mask);
+    __ andr(c5, c5, mask);
+    __ andr(tmp, c0, nmask);
+    __ orr(c5, c5, tmp);
+    __ andr(c6, c6, mask);
+    __ andr(tmp, c1, nmask);
+    __ orr(c6, c6, tmp);
+    __ andr(c7, c7, mask);
+    __ andr(tmp, c2, nmask);
+    __ orr(c7, c7, tmp);
+    __ andr(c8, c8, mask);
+    __ andr(tmp, c3, nmask);
+    __ orr(c8, c8, tmp);
+    __ andr(c9, c9, mask);
+    __ andr(tmp, c4, nmask);
+    __ orr(c9, c9, tmp);
+
+    __ str(c5, result);
+    __ str(c6, Address(result, 8));
+    __ str(c7, Address(result, 16));
+    __ str(c8, Address(result, 24));
+    __ str(c9, Address(result, 32));
+
+    // End intrinsic call
+    __ add(sp, sp, 176);
+    __ pop(callee_saved, sp);
+    __ leave();
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  address generate_intpoly_assign() {
+    // KNOWN Lengths:
+    //   MontgomeryIntPolynP256:  5 = 4 + 1
+    //   IntegerPolynomial1305:   5 = 4 + 1
+    //   IntegerPolynomial25519: 10 = 8 + 2
+    //   IntegerPolynomialP256:  10 = 8 + 2
+    //   Curve25519OrderField:   10 = 8 + 2
+    //   Curve25519OrderField:   10 = 8 + 2
+    //   P256OrderField:         10 = 8 + 2
+    //   IntegerPolynomialP384:  14 = 8 + 4 + 2
+    //   P384OrderField:         14 = 8 + 4 + 2
+    //   IntegerPolynomial448:   16 = 8 + 8
+    //   Curve448OrderField:     16 = 8 + 8
+    //   Curve448OrderField:     16 = 8 + 8
+    //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
+    //   P521OrderField:         19 = 8 + 8 + 2 + 1
+    // Special Cases 5, 10, 14, 16, 19
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_intpoly_assign_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    // Inputs
+    const Register set = c_rarg0;
+    const Register aLimbs = c_rarg1;
+    const Register bLimbs = c_rarg2;
+    const Register length = c_rarg3;
+
+    Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_DefaultLoop, L_Done;
+
+    /*
+    int maskValue = -set;
+    for (int i = 0; i < a.length; i++) {
+        long dummyLimbs = maskValue & (a[i] ^ b[i]);
+        a[i] = dummyLimbs ^ a[i];
+    }
+    */
+    Register mask_scalar = r4;
+    FloatRegister mask_vec = v0;
+
+    __ neg(mask_scalar, set);
+    __ dup(mask_vec, __ T2D, mask_scalar);
+
+    __ cmp(length, (u1)5);
+    __ br(Assembler::EQ, L_Length5);
+    __ cmp(length, (u1)10);
+    __ br(Assembler::EQ, L_Length10);
+    __ cmp(length, (u1)14);
+    __ br(Assembler::EQ, L_Length14);
+    __ cmp(length, (u1)16);
+    __ br(Assembler::EQ, L_Length16);
+    __ cmp(length, (u1)19);
+    __ br(Assembler::EQ, L_Length19);
+
+    // Length = 5
+    // Use 5 GPRs (neon not faster with this few limbs)
+    __ BIND(L_Length5);
+    {
+      Register a0 = r5;
+      Register a1 = r6;
+      Register a2 = r7;
+      Register a3 = r10;
+      Register a4 = r11;
+      Register b0 = r12;
+      Register b1 = r13;
+      Register b2 = r14;
+      Register b3 = r15;
+      Register b4 = r19;
+
+      __ push(r19, sp);
+
+      __ ldr(a0, aLimbs);
+      __ ldr(a1, Address(aLimbs, 8));
+      __ ldr(a2, Address(aLimbs, 16));
+      __ ldr(a3, Address(aLimbs, 24));
+      __ ldr(a4, Address(aLimbs, 32));
+
+      __ ldr(b0, bLimbs);
+      __ ldr(b1, Address(bLimbs, 8));
+      __ ldr(b2, Address(bLimbs, 16));
+      __ ldr(b3, Address(bLimbs, 24));
+      __ ldr(b4, Address(bLimbs, 32));
+
+      __ eor(b0, b0, a0);
+      __ eor(b1, b1, a1);
+      __ eor(b2, b2, a2);
+      __ eor(b3, b3, a3);
+      __ eor(b4, b4, a4);
+
+      __ andr(b0, b0, mask_scalar);
+      __ andr(b1, b1, mask_scalar);
+      __ andr(b2, b2, mask_scalar);
+      __ andr(b3, b3, mask_scalar);
+      __ andr(b4, b4, mask_scalar);
+
+      __ eor(a0, a0, b0);
+      __ eor(a1, a1, b1);
+      __ eor(a2, a2, b2);
+      __ eor(a3, a3, b3);
+      __ eor(a4, a4, b4);
+
+      __ str(a0, aLimbs);
+      __ str(a1, Address(aLimbs, 8));
+      __ str(a2, Address(aLimbs, 16));
+      __ str(a3, Address(aLimbs, 24));
+      __ str(a4, Address(aLimbs, 32));
+
+      __ pop(r19, sp);
+      __ b(L_Done);
+    }
+
+    // Length = 10
+    // Split into 4 neon regs and 2 GPRs
+    __ BIND(L_Length10);
+    {
+      Register a9 = r10;
+      Register a10 = r11;
+      Register b9 = r12;
+      Register b10 = r13;
+
+      VSeq<4> a_vec(16);
+      VSeq<4> b_vec(20);
+
+      __ ldr(a9, Address(aLimbs, 64));
+      __ ldr(a10, Address(aLimbs, 72));
+      __ ldr(b9, Address(bLimbs, 64));
+      __ ldr(b10, Address(bLimbs, 72));
+
+      vs_ldpq(a_vec, aLimbs);
+
+      __ eor(b9, b9, a9);
+      __ eor(b10, b10, a10);
+
+      vs_ldpq(b_vec, bLimbs);
+
+      __ andr(b9, b9, mask_scalar);
+      __ andr(b10, b10, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a9, a9, b9);
+      __ eor(a10, a10, b10);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a9, Address(aLimbs, 64));
+      __ str(a10, Address(aLimbs, 72));
+
+      vs_eor(a_vec, a_vec, b_vec);
+      vs_stpq_post(a_vec, aLimbs);
+
+      __ b(L_Done);
+    }
+
+    // Length = 14
+    // Split into 5 neon regs and 4 GPRs
+    __ BIND(L_Length14);
+    {
+      Register a10 = r5;
+      Register a11 = r6;
+      Register a12 = r7;
+      Register a13 = r8;
+      Register b10 = r9;
+      Register b11 = r10;
+      Register b12 = r11;
+      Register b13 = r12;
+
+      VSeq<5> a_vec(16);
+      VSeq<5> b_vec(22);
+
+      __ ldr(a10, Address(aLimbs, 80));
+      __ ldr(a11, Address(aLimbs, 88));
+      __ ldr(a12, Address(aLimbs, 96));
+      __ ldr(a13, Address(aLimbs, 104));
+
+      __ ldr(b10, Address(bLimbs, 80));
+      __ ldr(b11, Address(bLimbs, 88));
+      __ ldr(b12, Address(bLimbs, 96));
+      __ ldr(b13, Address(bLimbs, 104));
+
+      __ ld1(a_vec[0], __ T2D, aLimbs);
+      __ ldpq(a_vec[1], a_vec[2], Address(aLimbs, 16));
+      __ ldpq(a_vec[3], a_vec[4], Address(aLimbs, 48));
+
+      __ eor(b10, b10, a10);
+      __ eor(b11, b11, a11);
+      __ eor(b12, b12, a12);
+      __ eor(b13, b13, a13);
+
+      __ ld1(b_vec[0], __ T2D, bLimbs);
+      __ ldpq(b_vec[1], b_vec[2], Address(bLimbs, 16));
+      __ ldpq(b_vec[3], b_vec[4], Address(bLimbs, 48));
+
+      __ andr(b10, b10, mask_scalar);
+      __ andr(b11, b11, mask_scalar);
+      __ andr(b12, b12, mask_scalar);
+      __ andr(b13, b13, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a10, a10, b10);
+      __ eor(a11, a11, b11);
+      __ eor(a12, a12, b12);
+      __ eor(a13, a13, b13);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a10, Address(aLimbs, 80));
+      __ str(a11, Address(aLimbs, 88));
+      __ str(a12, Address(aLimbs, 96));
+      __ str(a13, Address(aLimbs, 104));
+
+      vs_eor(a_vec, a_vec, b_vec);
+
+      __ st1(a_vec[0], __ T2D, aLimbs);
+      __ stpq(a_vec[1], a_vec[2], Address(aLimbs, 16));
+      __ stpq(a_vec[3], a_vec[4], Address(aLimbs, 48));
+
+      __ b(L_Done);
+    }
+
+    // Length = 16
+    // Use 8 neon regs
+    __ BIND(L_Length16);
+    {
+      VSeq<8> a_vec(16);
+      VSeq<8> b_vec(24);
+
+      vs_ldpq(a_vec, aLimbs);
+      vs_ldpq(b_vec, bLimbs);
+      vs_eor(b_vec, b_vec, a_vec);
+      vs_andr(b_vec, b_vec, mask_vec);
+      vs_eor(a_vec, a_vec, b_vec);
+      vs_stpq_post(a_vec, aLimbs);
+
+      __ b(L_Done);
+    }
+
+    // Length = 19
+    // Split into 8 neon regs and 3 GPRs
+    __ BIND(L_Length19);
+    {
+      Register a17 = r10;
+      Register a18 = r11;
+      Register a19 = r12;
+      Register b17 = r13;
+      Register b18 = r14;
+      Register b19 = r15;
+
+      VSeq<8> a_vec(16);
+      VSeq<8> b_vec(24);
+
+      __ ldr(a17, Address(aLimbs, 128));
+      __ ldr(a18, Address(aLimbs, 136));
+      __ ldr(a19, Address(aLimbs, 144));
+      __ ldr(b17, Address(bLimbs, 128));
+      __ ldr(b18, Address(bLimbs, 136));
+      __ ldr(b19, Address(bLimbs, 144));
+
+      vs_ldpq(a_vec, aLimbs);
+
+      __ eor(b17, b17, a17);
+      __ eor(b18, b18, a18);
+      __ eor(b19, b19, a19);
+
+      vs_ldpq(b_vec, bLimbs);
+
+      __ andr(b17, b17, mask_scalar);
+      __ andr(b18, b18, mask_scalar);
+      __ andr(b19, b19, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a17, a17, b17);
+      __ eor(a18, a18, b18);
+      __ eor(a19, a19, b19);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a17, Address(aLimbs, 128));
+      __ str(a18, Address(aLimbs, 136));
+      __ str(a19, Address(aLimbs, 144));
+
+      vs_eor(a_vec, a_vec, b_vec);
+      vs_stpq_post(a_vec, aLimbs);
+    }
+
+    __ BIND(L_Done);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
     return start;
   }
 
@@ -11816,6 +12773,11 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseChaCha20Intrinsics) {
       StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
+    }
+
+    if (UseIntPolyIntrinsics) {
+      StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+      StubRoutines::_intpoly_assign = generate_intpoly_assign();
     }
 
     if (UseKyberIntrinsics) {
