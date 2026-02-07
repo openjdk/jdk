@@ -68,7 +68,7 @@ size_t NMTDCmd::get_scale(const char* scale) const {
   return NMTUtil::scale_from_name(scale);
 }
 
-void NMTDCmd::execute(DCmdSource source, TRAPS) {
+void NMTDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   // Check NMT state
   //  native memory tracking has to be on
   if (MemTracker::tracking_level() == NMT_off) {

@@ -57,7 +57,7 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_scale);
 }
 
-void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
+void MetaspaceDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   MetaspaceUtils::print_on(output());
 
   // Parse scale value.

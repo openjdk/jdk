@@ -387,11 +387,11 @@ static jint jcmd(AttachOperation* op, attachStream* out) {
     Executor(DCmdSource source, attachStream* out, bool allow_streaming_output)
         : DCmd::Executor(source, out), _attach_stream(out), _allow_streaming_output(allow_streaming_output) {}
   protected:
-    virtual void execute(DCmd* command, TRAPS) override {
+    void execute(DCmd* command, const JcmdOptions& commonOptions, TRAPS) override {
       if (_allow_streaming_output) {
           _attach_stream->set_result(JNI_OK);
       }
-      DCmd::Executor::execute(command, CHECK);
+      DCmd::Executor::execute(command, commonOptions, CHECK);
     }
   } executor(DCmd_Source_AttachAPI, out, allow_streaming_output);
 

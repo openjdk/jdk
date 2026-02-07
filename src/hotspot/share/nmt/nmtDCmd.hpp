@@ -53,7 +53,7 @@ class NMTDCmd: public DCmdWithParser {
   static const char* impact() {
     return "Medium";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 
  private:
   void report(bool summaryOnly, size_t scale);

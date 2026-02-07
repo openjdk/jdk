@@ -51,7 +51,7 @@ public:
     return "Low";
   }
 
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 
   static int num_arguments() {
     return 0;

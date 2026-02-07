@@ -32,7 +32,7 @@
 
 constexpr const char* malloc_info_unavailable = "Error: malloc_info(3) not available.";
 
-void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
+void MallocInfoDcmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
 #ifdef __GLIBC__
   char* buf;
   size_t size;

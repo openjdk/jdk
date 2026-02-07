@@ -215,7 +215,7 @@ void JfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
   // where parse and execute are called consecutively.
 }
 
-void JfrDCmd::execute(DCmdSource source, TRAPS) {
+void JfrDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   if (invalid_state(output(), THREAD)) {
     return;
   }
@@ -463,7 +463,7 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("");
 }
 
-void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
+void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
 
   if (invalid_state(output(), THREAD)) {
