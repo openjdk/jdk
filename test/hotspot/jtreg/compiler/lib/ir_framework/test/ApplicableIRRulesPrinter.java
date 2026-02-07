@@ -124,7 +124,10 @@ public class ApplicableIRRulesPrinter {
         "zfh",
         "zvbb",
         "zvfh",
-        "zvkn"
+        "zvkn",
+        // PPC64
+        "darn",
+        "brw"
     ));
 
     public ApplicableIRRulesPrinter() {

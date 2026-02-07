@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2026 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2233,6 +2233,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaVF:
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
+
+    case Op_MinF:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MaxD:
+      return (PowerArchitecturePPC64 >= 9);
 
     case Op_Digit:
       return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
@@ -12309,6 +12315,58 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MinF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MinF $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MinD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MinD $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MaxF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MaxF $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MaxD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MaxD $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}

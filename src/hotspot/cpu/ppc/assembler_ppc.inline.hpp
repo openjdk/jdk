@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -907,6 +907,9 @@ inline void Assembler::xvrdpi(    VectorSRegister d, VectorSRegister b)         
 inline void Assembler::xvrdpic(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIC_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
+
+inline void Assembler::xsminjdp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XSMINJDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xsmaxjdp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XSMAXJDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 
 inline void Assembler::xvminsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmindp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
