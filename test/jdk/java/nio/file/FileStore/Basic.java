@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- * @run main Basic
+ * @run junit Basic
  */
 
 import java.nio.file.*;
@@ -38,13 +38,15 @@ import java.io.IOException;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
-import static jdk.test.lib.Asserts.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Basic {
 
     static final long G = 1024L * 1024L * 1024L;
 
-    public static void main(String[] args) throws IOException {
+    @Test
+    public void testBasic() throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
             doTests(dir);
@@ -55,12 +57,10 @@ public class Basic {
 
     static void checkWithin1GB(String space, long expected, long actual) {
         long diff = Math.abs(actual - expected);
-        if (diff > G) {
-            String msg = String.format("%s: |actual %d - expected %d| = %d (%f G)",
+        String msg = String.format("%s: |actual %d - expected %d| = %d (%f G)",
                                        space, actual, expected, diff,
                                        (float)diff/G);
-            throw new RuntimeException(msg);
-        }
+        assertTrue(diff < G, msg);
     }
 
     static <V extends FileAttributeView> void testFileAttributes(Path file,
