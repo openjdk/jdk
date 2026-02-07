@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,7 +78,6 @@ public:
   inline bool is_nop() const;
   bool is_jump();
   bool is_general_jump();
-  inline bool is_jump_or_nop();
   inline bool is_cond_jump();
   bool is_safepoint_poll();
   bool is_movz();
@@ -418,10 +417,6 @@ inline bool NativeInstruction::is_jump() {
     return true;
   } else
     return false;
-}
-
-inline bool NativeInstruction::is_jump_or_nop() {
-  return is_nop() || is_jump();
 }
 
 // Call trampoline stubs.
