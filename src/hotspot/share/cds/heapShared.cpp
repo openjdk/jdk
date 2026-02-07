@@ -1504,7 +1504,11 @@ void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
   if (!do_init) {
     if (k->class_loader_data() == nullptr) {
       Klass* resolved_k = SystemDictionary::resolve_or_null(k->name(), CHECK);
-      assert(resolved_k == k, "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      if (resolved_k->is_array_klass()) {
+        assert(resolved_k == k || resolved_k == k->super(), "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      } else {
+        assert(resolved_k == k, "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      }
     }
   } else {
     assert(k->class_loader_data() != nullptr, "must have been resolved by HeapShared::resolve_classes");

@@ -835,11 +835,14 @@ void ArchiveBuilder::make_klasses_shareable() {
       k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
     }
 #endif //_LP64
-    if (k->is_objArray_klass()) {
+    if (k->is_refArray_klass()) {
+        num_obj_array_klasses ++;
+        type = "ref array";
+    } else if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
       num_obj_array_klasses ++;
-      type = "array";
+      type = "obj array";
     } else if (k->is_typeArray_klass()) {
       num_type_array_klasses ++;
       type = "array";

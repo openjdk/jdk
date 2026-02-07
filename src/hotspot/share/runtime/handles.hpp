@@ -127,6 +127,7 @@ DEF_HANDLE(instance         , is_instance_noinline         )
 DEF_HANDLE(stackChunk       , is_stackChunk_noinline       )
 DEF_HANDLE(array            , is_array_noinline            )
 DEF_HANDLE(objArray         , is_objArray_noinline         )
+DEF_HANDLE(refArray         , is_refArray_noinline         )
 DEF_HANDLE(typeArray        , is_typeArray_noinline        )
 
 //------------------------------------------------------------------------------------------------------------------------

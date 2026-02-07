@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,16 @@
 
 
 class ClassStatsClosure : public KlassClosure {
+  // Some klasses should not be reported by ClassStatistics
+  bool exclude_klass(Klass* k) const {
+    // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
+    // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays, filter them out.
+    if (k->is_objArray_klass() && k->kind() != Klass::KlassKind::ObjArrayKlassKind) {
+      return true;
+    }
+    return false;
+  }
+
 public:
   int _num_classes;
 
@@ -40,8 +50,11 @@ public:
   }
 
   virtual void do_klass(Klass* k) {
-    _num_classes++;
+    if (!exclude_klass(k)) {
+      _num_classes++;
+    }
   }
+
 };
 
 void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {

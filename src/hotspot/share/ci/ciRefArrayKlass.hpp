@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,31 @@
  *
  */
 
-#include "oops/access.inline.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.inline.hpp"
-#include "oops/oop.inline.hpp"
+#ifndef SHARE_VM_CI_CIREFARRAYKLASS_HPP
+#define SHARE_VM_CI_CIREFARRAYKLASS_HPP
 
-Klass* objArrayOopDesc::element_klass() {
-  return ObjArrayKlass::cast(klass())->element_klass();
-}
+#include "ci/ciObjArrayKlass.hpp"
+
+// A ciRefArrayKlass represents the klass of a refined array in which the elements are stored as
+// reference
+class ciRefArrayKlass : public ciObjArrayKlass {
+private:
+  CI_PACKAGE_ACCESS
+  friend class ciEnv;
+
+protected:
+  ciRefArrayKlass(Klass* k) : ciObjArrayKlass(k) {
+    assert(k->is_refArray_klass(), "wrong type");
+  }
+
+  virtual const char* type_string() override { return "ciRefArrayKlass"; }
+
+public:
+  virtual bool is_ref_array_klass() const override { return true; }
+
+  virtual ciKlass* exact_klass() override {
+    return this;
+  }
+};
+
+#endif // SHARE_VM_CI_CIREFARRAYKLASS_HPP

@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/refArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/javaCalls.hpp"
 
@@ -294,7 +295,7 @@ void CDSProtectionDomain::atomic_set_array_index(OopHandle array, int index, oop
   // The important thing here is that all threads pick up the same result.
   // It doesn't matter which racing thread wins, as long as only one
   // result is used by all threads, and all future queries.
-  ((objArrayOop)array.resolve())->replace_if_null(index, o);
+  refArrayOopDesc::cast(array.resolve())->replace_if_null(index, o);
 }
 
 oop CDSProtectionDomain::shared_protection_domain(int index) {

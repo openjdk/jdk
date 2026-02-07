@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,6 +297,15 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
   return fetch_unroll_info_helper(current, exec_mode);
 JRT_END
 
+static Klass* get_refined_array_klass(Klass* k) {
+  // If it's an array, get the properties
+  if (k->is_array_klass() && !k->is_typeArray_klass()) {
+    assert(!k->is_refArray_klass(), "Unexpected refined klass");
+    k = ObjArrayKlass::cast(k)->next_refined_array_klass();
+  }
+  return k;
+}
+
 #if COMPILER2_OR_JVMCI
 // print information about reallocated objects
 static void print_objects(JavaThread* deoptee_thread,
@@ -316,6 +325,7 @@ static void print_objects(JavaThread* deoptee_thread,
     }
 
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
+    k = get_refined_array_klass(k);
 
     st.print("     object <" INTPTR_FORMAT "> of type ", p2i(sv->value()()));
     k->print_value_on(&st);
@@ -1238,6 +1248,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     ObjectValue* sv = (ObjectValue*) objects->at(i);
 
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
+    k = get_refined_array_klass(k);
     oop obj = nullptr;
 
     bool cache_init_error = false;
@@ -1273,9 +1284,10 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       int len = sv->field_size() / type2size[ak->element_type()];
       InternalOOMEMark iom(THREAD);
       obj = ak->allocate_instance(len, THREAD);
-    } else if (k->is_objArray_klass()) {
+    } else {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k);
       InternalOOMEMark iom(THREAD);
+      assert(ak->is_refArray_klass(), "should be");
       obj = ak->allocate_instance(sv->field_size(), THREAD);
     }
 
@@ -1582,6 +1594,8 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
+    k = get_refined_array_klass(k);
+
     Handle obj = sv->value();
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
 #ifndef PRODUCT
@@ -1625,8 +1639,10 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
-    } else if (k->is_objArray_klass()) {
+    } else if (k->is_refArray_klass()) {
       reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());
+    } else {
+      ShouldNotReachHere();  // should not be an object with klass objArrayKlass.
     }
   }
   // These objects may escape when we return to Interpreter after deoptimization.

@@ -294,7 +294,7 @@ void AOTMappedHeapWriter::ensure_buffer_space(size_t min_bytes) {
 
 objArrayOop AOTMappedHeapWriter::allocate_root_segment(size_t offset, int element_count) {
   HeapWord* mem = offset_to_buffered_address<HeapWord *>(offset);
-  memset(mem, 0, objArrayOopDesc::object_size(element_count));
+  memset(mem, 0, refArrayOopDesc::object_size(element_count));
 
   // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
   if (UseCompactObjectHeaders) {
@@ -330,7 +330,7 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
          "Pre-condition: Roots start at aligned boundary: %zu", _buffer_used);
 
   int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
-  assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
+  assert(refArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
          "Should match exactly");
 
   HeapRootSegments segments(_buffer_used,
@@ -445,7 +445,7 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
 }
 
 size_t AOTMappedHeapWriter::filler_array_byte_size(int length) {
-  size_t byte_size = objArrayOopDesc::object_size(length) * HeapWordSize;
+  size_t byte_size = refArrayOopDesc::object_size(length) * HeapWordSize;
   return byte_size;
 }
 

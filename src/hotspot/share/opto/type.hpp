@@ -1962,10 +1962,11 @@ class TypeAryKlassPtr : public TypeKlassPtr {
   friend class TypePtr;
 
   const Type *_elem;
+  const bool _refined_type;
 
   static const TypeInterfaces* _array_interfaces;
-  TypeAryKlassPtr(PTR ptr, const Type *elem, ciKlass* klass, int offset)
-    : TypeKlassPtr(AryKlassPtr, ptr, klass, _array_interfaces, offset), _elem(elem) {
+  TypeAryKlassPtr(PTR ptr, const Type *elem, ciKlass* klass, int offset, bool refined_type)
+    : TypeKlassPtr(AryKlassPtr, ptr, klass, _array_interfaces, offset), _elem(elem), _refined_type(refined_type) {
     assert(klass == nullptr || klass->is_type_array_klass() || !klass->as_obj_array_klass()->base_element_klass()->is_interface(), "");
   }
 
@@ -1980,7 +1981,7 @@ public:
   // returns base element type, an instance klass (and not interface) for object arrays
   const Type* base_element_type(int& dims) const;
 
-  static const TypeAryKlassPtr *make(PTR ptr, ciKlass* k, int offset, InterfaceHandling interface_handling);
+  static const TypeAryKlassPtr *make(PTR ptr, ciKlass* k, int offset, InterfaceHandling interface_handling, bool refined_type = false);
 
   bool is_same_java_type_as_helper(const TypeKlassPtr* other) const;
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
@@ -1988,8 +1989,10 @@ public:
 
   bool  is_loaded() const { return (_elem->isa_klassptr() ? _elem->is_klassptr()->is_loaded() : true); }
 
-  static const TypeAryKlassPtr *make(PTR ptr, const Type *elem, ciKlass* k, int offset);
-  static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling);
+  static const TypeAryKlassPtr *make(PTR ptr, const Type *elem, ciKlass* k, int offset, bool refined_type = false);
+  static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling, bool refined_type = false);
+
+  const TypeAryKlassPtr* cast_to_refined_array_klass_ptr(bool refined = true) const;
 
   const Type *elem() const { return _elem; }
 
@@ -2012,6 +2015,8 @@ public:
   virtual bool empty(void) const {
     return TypeKlassPtr::empty() || _elem->empty();
   }
+
+  bool is_refined_type() const { return _refined_type; }
 
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping

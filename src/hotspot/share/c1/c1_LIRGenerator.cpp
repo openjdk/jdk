@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
+#include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -760,6 +761,11 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
     if (expected_type == nullptr) expected_type = src_declared_type;
     if (expected_type == nullptr) expected_type = dst_declared_type;
 
+    if (expected_type != nullptr && expected_type->is_obj_array_klass()) {
+      // For a direct pointer comparison, we need the refined array klass pointer
+      expected_type = ciObjArrayKlass::make(expected_type->as_array_klass()->element_klass(), /*vm_type*/ true);
+    }
+
     src_objarray = (src_exact_type && src_exact_type->is_obj_array_klass()) || (src_declared_type && src_declared_type->is_obj_array_klass());
     dst_objarray = (dst_exact_type && dst_exact_type->is_obj_array_klass()) || (dst_declared_type && dst_declared_type->is_obj_array_klass());
   }
@@ -875,6 +881,7 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
     }
   }
   *flagsp = flags;
+
   *expected_typep = (ciArrayKlass*)expected_type;
 }
 
@@ -2462,7 +2469,14 @@ ciKlass* LIRGenerator::profile_type(ciMethodData* md, int md_base_offset, int md
         exact_klass = exact_signature_k;
       }
     }
+
     do_update = exact_klass == nullptr || ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
+  }
+
+  if (exact_klass != nullptr && exact_klass->is_obj_array_klass()) {
+    // For a direct pointer comparison, we need the refined array klass pointer
+    exact_klass = ciObjArrayKlass::make(exact_klass->as_array_klass()->element_klass(), /*vm_type*/ true);
+    do_update = ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
   }
 
   if (!do_null && !do_update) {

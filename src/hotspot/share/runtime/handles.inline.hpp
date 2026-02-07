@@ -60,6 +60,7 @@ inline type##Handle::type##Handle (Thread* thread, type##Oop obj) : Handle(threa
 DEF_HANDLE_CONSTR(instance , is_instance_noinline )
 DEF_HANDLE_CONSTR(array    , is_array_noinline    )
 DEF_HANDLE_CONSTR(objArray , is_objArray_noinline )
+DEF_HANDLE_CONSTR(refArray , is_refArray_noinline )
 DEF_HANDLE_CONSTR(typeArray, is_typeArray_noinline)
 
 // Constructor for metadata handles

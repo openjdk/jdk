@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -806,6 +806,15 @@ class DumperSupport : AllStatic {
       }
     }
   }
+
+  // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
+  // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays, filter them out to avoid duplicates.
+  static bool filter_out_klass(Klass* k) {
+    if (k->is_objArray_klass() && k->kind() != Klass::KlassKind::ObjArrayKlassKind) {
+      return true;
+    }
+    return false;
+  }
 };
 
 // Hash table of klasses to the klass metadata. This should greatly improve the
@@ -1502,6 +1511,9 @@ class ClassDumper : public KlassClosure {
   ClassDumper(AbstractDumpWriter* writer) : _writer(writer) {}
 
   void do_klass(Klass* k) {
+    if (DumperSupport::filter_out_klass(k)) {
+      return;
+    }
     if (k->is_instance_klass()) {
       DumperSupport::dump_instance_class(writer(), InstanceKlass::cast(k));
     } else {
@@ -1526,6 +1538,9 @@ class LoadedClassDumper : public LockedClassesDo {
     : _writer(writer), _klass_map(klass_map), _class_serial_num(0) {}
 
   void do_klass(Klass* k) {
+    if (DumperSupport::filter_out_klass(k)) {
+      return;
+    }
     // len of HPROF_LOAD_CLASS record
     u4 remaining = 2 * oopSize + 2 * sizeof(u4);
     DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);

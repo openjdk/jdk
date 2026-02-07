@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class FileMapInfo {
   }
 
   private static void populateMetadataTypeArray(TypeDataBase db) {
-    metadataTypeArray = new Type[11];
+    metadataTypeArray = new Type[12];
     // The order needs to match up with CPP_VTABLE_TYPES_DO in src/hotspot/share/cds/cppVtables.cpp
 
     metadataTypeArray[0] = db.lookupType("ConstantPool");
@@ -129,7 +129,8 @@ public class FileMapInfo {
     metadataTypeArray[7] = db.lookupType("MethodData");
     metadataTypeArray[8] = db.lookupType("MethodCounters");
     metadataTypeArray[9] = db.lookupType("ObjArrayKlass");
-    metadataTypeArray[10] = db.lookupType("TypeArrayKlass");
+    metadataTypeArray[10] = db.lookupType("RefArrayKlass");
+    metadataTypeArray[11] = db.lookupType("TypeArrayKlass");
   }
 
   public FileMapHeader getHeader() {

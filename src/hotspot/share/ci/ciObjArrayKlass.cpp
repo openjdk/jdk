@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciRefArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -65,7 +66,8 @@ ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
                  dimension, T_OBJECT) {
     _base_element_klass = base_element_klass;
     assert(_base_element_klass->is_instance_klass() ||
-           _base_element_klass->is_type_array_klass(), "bad base klass");
+           _base_element_klass->is_type_array_klass() ||
+           _base_element_klass->is_ref_array_klass(), "bad base klass");
     if (dimension == 1) {
       _element_klass = base_element_klass;
     } else {
@@ -133,7 +135,7 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
 // ciObjArrayKlass::make_impl
 //
 // Implementation of make.
-ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass) {
+ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined_type) {
 
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
@@ -144,7 +146,12 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass) {
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
       return ciEnv::unloaded_ciobjarrayklass();
     }
-    return CURRENT_THREAD_ENV->get_obj_array_klass(array);
+    if (!refined_type) {
+      return CURRENT_THREAD_ENV->get_obj_array_klass(array);
+    }
+
+    array = ObjArrayKlass::cast(array)->klass_with_properties(THREAD);
+    return CURRENT_THREAD_ENV->get_ref_array_klass(array);
   }
 
   // The array klass was unable to be made or the element klass was
@@ -162,27 +169,19 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass) {
 // ciObjArrayKlass::make
 //
 // Make an array klass corresponding to the specified primitive type.
-ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass) {
-  GUARDED_VM_ENTRY(return make_impl(element_klass);)
+ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool refined_type) {
+  GUARDED_VM_ENTRY(return make_impl(element_klass, refined_type);)
 }
 
-ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
+ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
   ciKlass* klass = element_klass;
   for (int i = 0; i < dims; i++) {
-    klass = ciObjArrayKlass::make(klass);
+    klass = ciObjArrayKlass::make(klass, /* refined_type = */ false);
   }
-  return klass->as_obj_array_klass();
+  return klass->as_array_klass();
 }
 
 ciKlass* ciObjArrayKlass::exact_klass() {
-  ciType* base = base_element_type();
-  if (base->is_instance_klass()) {
-    ciInstanceKlass* ik = base->as_instance_klass();
-    if (ik->exact_klass() != nullptr) {
-      return this;
-    }
-  } else if (base->is_primitive_type()) {
-    return this;
-  }
+  // This cannot be an exact klass because the refined types subtype it
   return nullptr;
 }

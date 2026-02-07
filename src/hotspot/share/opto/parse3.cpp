@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ void Parse::do_anewarray() {
   // initialize the container class (see Java spec)!!!
   assert(will_link, "anewarray: typeflow responsibility");
 
-  ciObjArrayKlass* array_klass = ciObjArrayKlass::make(klass);
+  ciArrayKlass* array_klass = ciObjArrayKlass::make(klass, false);
   // Check that array_klass object is loaded
   if (!array_klass->is_loaded()) {
     // Generate uncommon_trap for unloaded array_class
@@ -283,7 +283,8 @@ void Parse::do_anewarray() {
 
   kill_dead_locals();
 
-  const TypeKlassPtr* array_klass_type = TypeKlassPtr::make(array_klass, Type::trust_interfaces);
+  const TypeAryKlassPtr* array_klass_type = TypeAryKlassPtr::make(array_klass, Type::trust_interfaces);
+  array_klass_type = array_klass_type->cast_to_refined_array_klass_ptr();
   Node* count_val = pop();
   Node* obj = new_array(makecon(array_klass_type), count_val, 1);
   push(obj);
@@ -305,7 +306,9 @@ void Parse::do_newarray(BasicType elem_type) {
 Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, int ndimensions, int nargs) {
   Node* length = lengths[0];
   assert(length != nullptr, "");
-  Node* array = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length, nargs);
+  const TypeAryKlassPtr* array_klass_type = TypeAryKlassPtr::make(array_klass, Type::trust_interfaces);
+  array_klass_type = array_klass_type->cast_to_refined_array_klass_ptr();
+  Node* array = new_array(makecon(array_klass_type), length, nargs);
   if (ndimensions > 1) {
     jint length_con = find_int_con(length, -1);
     guarantee(length_con >= 0, "non-constant multianewarray");
@@ -403,7 +406,7 @@ void Parse::do_multianewarray() {
     Node* dims = nullptr;
     { PreserveReexecuteState preexecs(this);
       inc_sp(ndimensions);
-      Node* dims_array_klass = makecon(TypeKlassPtr::make(ciArrayKlass::make(ciType::make(T_INT))));
+      Node* dims_array_klass = makecon(TypeKlassPtr::make(ciArrayKlass::make(ciType::make(T_INT), false)));
       dims = new_array(dims_array_klass, intcon(ndimensions), 0);
 
       // Fill-in it with values

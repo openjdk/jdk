@@ -815,7 +815,7 @@
   declare_constant(Klass::_lh_header_size_mask)                           \
   declare_constant(Klass::_lh_array_tag_shift)                            \
   declare_constant(Klass::_lh_array_tag_type_value)                       \
-  declare_constant(Klass::_lh_array_tag_obj_value)                        \
+  declare_constant(Klass::_lh_array_tag_ref_value)                        \
                                                                           \
   declare_constant(markWord::no_hash)                                     \
                                                                           \
