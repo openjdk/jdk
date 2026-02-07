@@ -321,15 +321,15 @@ void IndexSet::swap(IndexSet *set) {
 // Print this set.  Used for debugging.
 
 #ifndef PRODUCT
-void IndexSet::dump() const {
+void IndexSet::dump(outputStream *out) const {
   IndexSetIterator elements(this);
 
-  tty->print("{");
+  out->print("{");
   uint i;
   while ((i = elements.next()) != 0) {
-    tty->print("L%d ", i);
+    out->print("L%d ", i);
   }
-  tty->print_cr("}");
+  out->print_cr("}");
 }
 #endif
 

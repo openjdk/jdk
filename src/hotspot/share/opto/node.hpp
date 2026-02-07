@@ -1326,9 +1326,9 @@ public:
   };
   void dump_idx(bool align = false, outputStream* st = tty, DumpConfig* dc = nullptr) const;
   void dump_name(outputStream* st = tty, DumpConfig* dc = nullptr) const;
-  void dump() const; // print node with newline
+  void dump(outputStream* st = tty) const; // print node with newline
   void dump(const char* suffix, bool mark = false, outputStream* st = tty, DumpConfig* dc = nullptr) const; // Print this node.
-  void dump(int depth) const;        // Print this node, recursively to depth d
+  void dump(int depth, outputStream* st = tty) const;        // Print this node, recursively to depth d
   void dump_ctrl(int depth) const;   // Print control nodes, to depth d
   void dump_comp() const;            // Print this node in compact representation.
   // Print this node in compact representation.
@@ -1717,8 +1717,8 @@ public:
   }
 
   uint size() const { return _cnt; }
-  void dump() const;
-  void dump_simple() const;
+  void dump(outputStream* out = tty) const;
+  void dump_simple(outputStream* out = tty) const;
 };
 
 // Definition must appear after complete type definition of Node_List

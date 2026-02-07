@@ -127,8 +127,8 @@ void Instruction::print() {
 }
 
 
-void Instruction::print_line() {
-  InstructionPrinter ip;
+void Instruction::print_line(outputStream* out) {
+  InstructionPrinter ip(true, out);
   ip.print_line(this);
 }
 

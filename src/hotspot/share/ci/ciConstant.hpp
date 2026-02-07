@@ -27,6 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // ciConstant
 //
@@ -118,7 +119,7 @@ public:
   bool is_loaded() const;
 
   // Debugging output
-  void print();
+  void print(outputStream* out = tty);
 };
 
 #endif // SHARE_CI_CICONSTANT_HPP

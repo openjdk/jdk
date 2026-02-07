@@ -2372,10 +2372,10 @@ void Parse::dump() {
 }
 
 // Dump information associated with a byte code index, 'bci'
-void Parse::dump_bci(int bci) {
+void Parse::dump_bci(int bci, outputStream* out) {
   // Output info on merge-points, cloning, and within _jsr..._ret
   // NYI
-  tty->print(" bci:%d", bci);
+  out->print(" bci:%d", bci);
 }
 
 #endif

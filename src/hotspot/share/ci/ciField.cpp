@@ -411,25 +411,25 @@ bool ciField::is_autobox_cache() {
 
 // ------------------------------------------------------------------
 // ciField::print
-void ciField::print() {
-  tty->print("<ciField name=");
-  _holder->print_name();
-  tty->print(".");
-  _name->print_symbol();
-  tty->print(" signature=");
-  _signature->print_symbol();
-  tty->print(" offset=%d type=", _offset);
+void ciField::print(outputStream* out) {
+  out->print("<ciField name=");
+  _holder->print_name_on(out);
+  out->print(".");
+  _name->print_symbol_on(out);
+  out->print(" signature=");
+  _signature->print_symbol_on(out);
+  out->print(" offset=%d type=", _offset);
   if (_type != nullptr)
-    _type->print_name();
+    _type->print_name_on(out);
   else
-    tty->print("(reference)");
-  tty->print(" flags=%04x", flags().as_int());
-  tty->print(" is_constant=%s", bool_to_str(_is_constant));
+    out->print("(reference)");
+  out->print(" flags=%04x", flags().as_int());
+  out->print(" is_constant=%s", bool_to_str(_is_constant));
   if (_is_constant && is_static()) {
-    tty->print(" constant_value=");
-    _constant_value.print();
+    out->print(" constant_value=");
+    _constant_value.print(out);
   }
-  tty->print(">");
+  out->print(">");
 }
 
 // ------------------------------------------------------------------
