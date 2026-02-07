@@ -22,22 +22,23 @@
  */
 
 import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_IDENTITY;
+import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE;
 import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_USER_FULL_NAME;
 import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME;
-import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.FailedCommandErrorValidator;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
@@ -74,22 +75,32 @@ public class MacSignTest {
         Files.createDirectory(appContent);
         Files.createFile(appContent.resolve("file"));
 
-        final List<CannedFormattedString> expectedStrings = new ArrayList<>();
-        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.app.content"));
+        final var group = TKit.TextStreamVerifier.group();
 
-        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("error.tool.failed.with.output", "codesign"));
+        group.add(TKit.assertTextStream(JPackageStringBundle.MAIN.cannedFormattedString(
+                "message.codesign.failed.reason.app.content").getValue()).predicate(String::equals));
 
-        final var xcodeWarning = JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.xcode.tools");
+        final var xcodeWarning = TKit.assertTextStream(JPackageStringBundle.MAIN.cannedFormattedString(
+                "message.codesign.failed.reason.xcode.tools").getValue()).predicate(String::equals);
+
         if (!MacHelper.isXcodeDevToolsInstalled()) {
-            expectedStrings.add(xcodeWarning);
+            group.add(xcodeWarning);
         }
 
-        MacSign.withKeychain(keychain -> {
+        var keychain = SigningBase.StandardKeychain.MAIN.keychain();
 
-            var signingKeyOption = new SignKeyOptionWithKeychain(
-                    SIGN_KEY_IDENTITY,
-                    SigningBase.StandardCertificateRequest.CODESIGN,
-                    keychain);
+        var signingKeyOption = new SignKeyOptionWithKeychain(
+                SIGN_KEY_IDENTITY,
+                SigningBase.StandardCertificateRequest.CODESIGN,
+                keychain);
+
+        new FailedCommandErrorValidator(Pattern.compile(String.format(
+                "/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s --entitlements \\S+ \\S+",
+                Pattern.quote(String.format("'%s'", signingKeyOption.certRequest().name())),
+                Pattern.quote(keychain.name())
+        ))).exitCode(1).createGroup().mutate(group::add);
+
+        MacSign.withKeychain(_ -> {
 
             // --app-content and --type app-image
             // Expect `message.codesign.failed.reason.app.content` message in the log.
@@ -97,51 +108,49 @@ public class MacSignTest {
             // To make jpackage fail, specify bad additional content.
             JPackageCommand.helloAppImage()
                     .ignoreDefaultVerbose(true)
-                    .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
+                    .validateOutput(group.create())
                     .addArguments("--app-content", appContent)
                     .mutate(signingKeyOption::addTo)
                     .mutate(cmd -> {
                         if (MacHelper.isXcodeDevToolsInstalled()) {
                             // Check there is no warning about missing xcode command line developer tools.
-                            cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
+                            cmd.validateOutput(xcodeWarning.copy().negate());
                         }
                     }).execute(1);
 
-        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
+        }, MacSign.Keychain.UsageBuilder::addToSearchList, keychain);
     }
 
     @Test
-    public static void testCodesignUnspecifiedFailure() throws IOException {
-
-        var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
-
-        appImageCmd.executeIgnoreExitCode().assertExitCodeIsZero();
+    public static void testCodesignUnspecificFailure() throws IOException {
 
         // This test expects jpackage to respond in a specific way on a codesign failure.
-        // The simplest option to trigger codesign failure is to request the signing of an invalid bundle.
-        // Create app content directory with the name known to fail signing.
-        final var appContent = appImageCmd.appLayout().contentDirectory().resolve("foo.1");
-        Files.createDirectory(appContent);
-        Files.createFile(appContent.resolve("file"));
+        // There are a few ways to make jpackage fail signing. One is using an erroneous
+        // combination of a signing key and a keychain.
 
-        final List<CannedFormattedString> expectedStrings = new ArrayList<>();
-        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("error.tool.failed.with.output", "codesign"));
+        var signingKeyOption = new SignKeyOption(
+                SIGN_KEY_IDENTITY,
+                SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.certRequest(
+                        SigningBase.StandardKeychain.MAIN.keychain()));
 
         MacSign.withKeychain(keychain -> {
 
-            var signingKeyOption = new SignKeyOptionWithKeychain(
-                    SIGN_KEY_IDENTITY,
-                    SigningBase.StandardCertificateRequest.CODESIGN,
-                    keychain);
+            // Build a matcher for jpackage's failed command output.
+            var errorValidator = new FailedCommandErrorValidator(Pattern.compile(String.format(
+                    "/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s",
+                    Pattern.quote(String.format("'%s'", signingKeyOption.certRequest().name())),
+                    Pattern.quote(keychain.name())
+            ))).exitCode(1).output(String.format("%s: no identity found", signingKeyOption.certRequest().name())).createGroup();
 
-            new JPackageCommand().setPackageType(PackageType.IMAGE)
+            JPackageCommand.helloAppImage()
+                    .setFakeRuntime()
                     .ignoreDefaultVerbose(true)
-                    .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
-                    .addArguments("--app-image", appImageCmd.outputBundle())
+                    .validateOutput(errorValidator.create())
                     .mutate(signingKeyOption::addTo)
+                    .mutate(MacHelper.useKeychain(keychain))
                     .execute(1);
 
-        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
+        }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.DUPLICATE.keychain());
     }
 
     @Test

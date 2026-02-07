@@ -271,11 +271,9 @@ public final class Main {
             }
 
             messagePrinter.accept(I18N.format("message.error-header", msg));
-            if (!verbose) {
-                messagePrinter.accept(I18N.format("message.failed-command-output-header"));
-                try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
-                    lines.forEach(messagePrinter);
-                }
+            messagePrinter.accept(I18N.format("message.failed-command-output-header"));
+            try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
+                lines.forEach(messagePrinter);
             }
         }
 

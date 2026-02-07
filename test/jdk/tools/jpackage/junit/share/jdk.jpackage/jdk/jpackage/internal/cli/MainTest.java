@@ -279,9 +279,7 @@ public class MainTest extends JUnitAdapter {
                         expectedOutput.add(ExceptionFormatter.STACK_TRACE);
                     }
                     expectedOutput.add(expect.getValue());
-                    if (!verbose) {
-                        expectedOutput.add(ExceptionFormatter.FAILED_COMMAND_OUTPUT);
-                    }
+                    expectedOutput.add(ExceptionFormatter.FAILED_COMMAND_OUTPUT);
                     data.add(new ErrorReporterTestSpec(cause, expect.getKey(), verbose, expectedOutput));
                 }
             }
