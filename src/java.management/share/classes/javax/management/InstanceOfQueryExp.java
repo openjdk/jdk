@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import java.io.Serial;
 
 /**
  * This class is used by the query building mechanism for isInstanceOf expressions.
@@ -35,6 +36,7 @@ package javax.management;
 class InstanceOfQueryExp extends QueryEval implements QueryExp {
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = -1081892073854801359L;
 
     /**

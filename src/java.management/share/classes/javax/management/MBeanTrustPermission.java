@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import java.io.Serial;
 import java.security.BasicPermission;
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -54,6 +55,7 @@ import java.io.ObjectInputStream;
 @Deprecated(since="25", forRemoval=true)
 public class MBeanTrustPermission extends BasicPermission {
 
+    @Serial
     private static final long serialVersionUID = -2952178077029018140L;
 
     /** <p>Create a new MBeanTrustPermission with the given name.</p>
@@ -99,6 +101,7 @@ public class MBeanTrustPermission extends BasicPermission {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream in)
          throws IOException, ClassNotFoundException {
 

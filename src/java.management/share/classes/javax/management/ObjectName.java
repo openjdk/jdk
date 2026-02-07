@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -291,6 +292,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     // Private fields ---------------------------------------->
 
 
+    @Serial
     private static final long serialVersionUID = 1081892073854801359L;
 
     // Class private fields ----------------------------------->
@@ -1055,6 +1057,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *             to the {@link #ObjectName(String)} constructor to
      *             produce an equivalent {@link ObjectName}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException {
 
@@ -1092,6 +1095,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *             to the {@link #ObjectName(String)} constructor to
      *             produce an equivalent {@link ObjectName}.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out)
             throws IOException {
 

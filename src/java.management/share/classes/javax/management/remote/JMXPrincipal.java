@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package javax.management.remote;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.security.Principal;
 
@@ -49,6 +50,7 @@ import java.security.Principal;
  */
 public class JMXPrincipal implements Principal, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -4184480100214577411L;
 
     /**
@@ -124,6 +126,7 @@ public class JMXPrincipal implements Principal, Serializable {
         return name.hashCode();
     }
 
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField gf = ois.readFields();
         String principalName = (String)gf.get("name", null);

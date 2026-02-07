@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 
+import java.io.Serial;
 import java.lang.reflect.Constructor;
 
 import java.util.HashMap;
@@ -81,10 +82,12 @@ public class DescriptorSupport
          implements javax.management.Descriptor
 {
 
+    @Serial
     private static final long serialVersionUID = -6292969195866300415L;
     /**
      * @serialField descriptor HashMap The collection of fields representing this descriptor
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields =
     {
       new ObjectStreamField("descriptor", HashMap.class)
@@ -828,6 +831,7 @@ public class DescriptorSupport
      * Deserializes a {@link DescriptorSupport} from an {@link
      * ObjectInputStream}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = in.readFields();
@@ -842,6 +846,7 @@ public class DescriptorSupport
     /**
      * Serializes a {@link DescriptorSupport} to an {@link ObjectOutputStream}.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         ObjectOutputStream.PutField fields = out.putFields();
 

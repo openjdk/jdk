@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 package javax.management.openmbean;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,7 +49,8 @@ public class CompositeDataSupport
     implements CompositeData, Serializable {
 
     /* Serial version */
-    static final long serialVersionUID = 8003518976613702244L;
+    @Serial
+    private static final long serialVersionUID = 8003518976613702244L;
 
     /**
      * @serial Internal representation of the mapping of item names to their

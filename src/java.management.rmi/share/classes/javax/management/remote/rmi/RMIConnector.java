@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.module.ModuleDescriptor;
 import java.lang.ref.WeakReference;
@@ -120,6 +121,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     private static final ClassLogger logger =
             new ClassLogger("javax.management.remote.rmi", "RMIConnector");
 
+    @Serial
     private static final long serialVersionUID = 817323035842634473L;
 
     static final class Util {
@@ -1662,6 +1664,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * @see #RMIConnector(JMXServiceURL,Map)
      * @see #RMIConnector(RMIServer,Map)
      **/
+    @Serial
     private void readObject(java.io.ObjectInputStream s)
     throws IOException, ClassNotFoundException  {
         s.defaultReadObject();
@@ -1703,6 +1706,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * @see #RMIConnector(JMXServiceURL,Map)
      * @see #RMIConnector(RMIServer,Map)
      **/
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
     throws IOException {
         if (rmiServer == null && jmxServiceURL == null) throw new

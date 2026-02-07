@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.jmx.remote.internal;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -724,6 +725,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
     private static class BroadcasterQuery
             extends QueryEval implements QueryExp {
+        @Serial
         private static final long serialVersionUID = 7378487660587592048L;
 
         public boolean apply(final ObjectName name) {
