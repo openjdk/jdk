@@ -319,12 +319,12 @@ public class Deflater implements AutoCloseable {
             int remaining = Math.max(dictionary.limit() - position, 0);
             ensureOpen();
             if (dictionary.isDirect()) {
-                NIO_ACCESS.acquireSession(dictionary);
+                int ticket = NIO_ACCESS.acquireSession(dictionary);
                 try {
                     long address = NIO_ACCESS.getBufferAddress(dictionary);
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
-                    NIO_ACCESS.releaseSession(dictionary);
+                    NIO_ACCESS.releaseSession(dictionary, ticket);
                 }
             } else {
                 byte[] array = ZipUtils.getBufferArray(dictionary);
@@ -574,7 +574,7 @@ public class Deflater implements AutoCloseable {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    NIO_ACCESS.acquireSession(input);
+                    int ticket = NIO_ACCESS.acquireSession(input);
                     try {
                         long inputAddress = NIO_ACCESS.getBufferAddress(input);
                         result = deflateBufferBytes(zsRef.address(),
@@ -582,7 +582,7 @@ public class Deflater implements AutoCloseable {
                             output, off, len,
                             flush, params);
                     } finally {
-                        NIO_ACCESS.releaseSession(input);
+                        NIO_ACCESS.releaseSession(input, ticket);
                     }
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
@@ -698,7 +698,7 @@ public class Deflater implements AutoCloseable {
             if (input == null) {
                 inputPos = this.inputPos;
                 if (output.isDirect()) {
-                    NIO_ACCESS.acquireSession(output);
+                    int ticket = NIO_ACCESS.acquireSession(output);
                     try {
                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
                         result = deflateBytesBuffer(zsRef.address(),
@@ -706,7 +706,7 @@ public class Deflater implements AutoCloseable {
                             outputAddress + outputPos, outputRem,
                             flush, params);
                     } finally {
-                        NIO_ACCESS.releaseSession(output);
+                        NIO_ACCESS.releaseSession(output, ticket);
                     }
                 } else {
                     byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -720,11 +720,11 @@ public class Deflater implements AutoCloseable {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
                 if (input.isDirect()) {
-                    NIO_ACCESS.acquireSession(input);
+                    int ticket = NIO_ACCESS.acquireSession(input);
                     try {
                         long inputAddress = NIO_ACCESS.getBufferAddress(input);
                         if (output.isDirect()) {
-                            NIO_ACCESS.acquireSession(output);
+                            int ticket2 = NIO_ACCESS.acquireSession(output);
                             try {
                                 long outputAddress = outputPos + NIO_ACCESS.getBufferAddress(output);
                                 result = deflateBufferBuffer(zsRef.address(),
@@ -732,7 +732,7 @@ public class Deflater implements AutoCloseable {
                                     outputAddress, outputRem,
                                     flush, params);
                             } finally {
-                                NIO_ACCESS.releaseSession(output);
+                                NIO_ACCESS.releaseSession(output, ticket2);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -743,13 +743,13 @@ public class Deflater implements AutoCloseable {
                                 flush, params);
                         }
                     } finally {
-                        NIO_ACCESS.releaseSession(input);
+                        NIO_ACCESS.releaseSession(input, ticket);
                     }
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
                     int inputOffset = ZipUtils.getBufferOffset(input);
                     if (output.isDirect()) {
-                        NIO_ACCESS.acquireSession(output);
+                        int ticket = NIO_ACCESS.acquireSession(output);
                         try {
                             long outputAddress = NIO_ACCESS.getBufferAddress(output);
                             result = deflateBytesBuffer(zsRef.address(),
@@ -757,7 +757,7 @@ public class Deflater implements AutoCloseable {
                                 outputAddress + outputPos, outputRem,
                                 flush, params);
                         } finally {
-                            NIO_ACCESS.releaseSession(output);
+                            NIO_ACCESS.releaseSession(output, ticket);
                         }
                     } else {
                         byte[] outputArray = ZipUtils.getBufferArray(output);

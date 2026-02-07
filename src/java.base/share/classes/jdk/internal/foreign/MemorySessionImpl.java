@@ -55,7 +55,7 @@ import java.util.Objects;
  */
 public abstract sealed class MemorySessionImpl
         implements Scope
-        permits ConfinedSession, GlobalSession, SharedSession {
+        permits ConfinedSession, GlobalSession, SharedSession, ImplicitSession {
 
     /**
      * The value of the {@code state} of a {@code MemorySessionImpl}. The only possible transition
@@ -156,17 +156,17 @@ public abstract sealed class MemorySessionImpl
         return new HeapSession(ref);
     }
 
-    public abstract void release0();
+    public abstract void release0(int ticket);
 
-    public abstract void acquire0();
+    public abstract int acquire0();
 
     public void whileAlive(Runnable action) {
         Objects.requireNonNull(action);
-        acquire0();
+        int ticket = acquire0();
         try {
             action.run();
         } finally {
-            release0();
+            release0(ticket);
         }
     }
 
@@ -227,7 +227,7 @@ public abstract sealed class MemorySessionImpl
         throw new CloneNotSupportedException();
     }
 
-    public final boolean isCloseable() {
+    public boolean isCloseable() {
         return state <= OPEN;
     }
 

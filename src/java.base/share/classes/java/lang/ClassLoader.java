@@ -1075,13 +1075,13 @@ public abstract class ClassLoader {
     private Class<?> defineClass(String name, ByteBuffer b, int len, ProtectionDomain pd) {
         pd = preDefineClass(name, pd);
         String source = defineClassSourceLocation(pd);
-        SharedSecrets.getJavaNioAccess().acquireSession(b);
+        int ticket = SharedSecrets.getJavaNioAccess().acquireSession(b);
         try {
             Class<?> c = defineClass2(this, name, b, b.position(), len, pd, source);
             postDefineClass(c, pd);
             return c;
         } finally {
-            SharedSecrets.getJavaNioAccess().releaseSession(b);
+            SharedSecrets.getJavaNioAccess().releaseSession(b, ticket);
         }
     }
 

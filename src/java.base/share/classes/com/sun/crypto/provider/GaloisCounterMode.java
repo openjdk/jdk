@@ -1600,13 +1600,13 @@ abstract class GaloisCounterMode extends CipherSpi {
                         Arrays.fill(dst.array(), ofs, ofs + len,
                             (byte) 0);
                     } else {
-                        NIO_ACCESS.acquireSession(dst);
+                        int ticket = NIO_ACCESS.acquireSession(dst);
                         try {
                             Unsafe.getUnsafe().setMemory(
                                 NIO_ACCESS.getBufferAddress(dst),
                                 len + dst.position(), (byte) 0);
                         } finally {
-                            NIO_ACCESS.releaseSession(dst);
+                            NIO_ACCESS.releaseSession(dst, ticket);
                         }
                     }
                 }

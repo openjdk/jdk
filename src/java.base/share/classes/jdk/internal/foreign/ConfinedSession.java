@@ -49,17 +49,18 @@ final class ConfinedSession extends MemorySessionImpl {
 
     @Override
     @ForceInline
-    public void acquire0() {
+    public int acquire0() {
         checkValidState();
         if (acquireCount == MAX_FORKS) {
             throw tooManyAcquires();
         }
         acquireCount++;
+        return 0;
     }
 
     @Override
     @ForceInline
-    public void release0() {
+    public void release0(int ticket) {
         if (Thread.currentThread() == owner) {
             acquireCount--;
         } else {
