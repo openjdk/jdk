@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
+import sun.security.tools.jarsigner.resources.jarsigner;
+import sun.security.tools.keytool.resources.keytool;
 import sun.security.util.ManifestDigester;
 
 import org.testng.annotations.Test;
@@ -35,6 +37,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Factory;
+import sun.security.util.resources.security;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
