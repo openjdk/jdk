@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,6 +55,12 @@ protected:
   static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
+  // This field controls whether the merging mode should be preferred for SVE
+  // cpy instructions. When it is true, `cpy (imm, zeroing)` is implemented
+  // using `movi + cpy(imm, merging)`. Currently, it is enabled on all AArch64
+  // CPUs. This field is intended for future SVE microarchitectures that may
+  // have different performance characteristics for this optimization.
+  static constexpr bool _prefer_sve_merging_mode_cpy = true;
 
   static SpinWait _spin_wait;
 
@@ -238,6 +244,8 @@ public:
   static void initialize_cpu_information(void);
 
   static bool use_rop_protection() { return _rop_protection; }
+
+  static bool prefer_sve_merging_mode_cpy() { return _prefer_sve_merging_mode_cpy; }
 
   // For common 64/128-bit unpredicated vector operations, we may prefer
   // emitting NEON instructions rather than the corresponding SVE instructions.

@@ -5711,7 +5711,7 @@ instruct vstoremaskB_sve(vReg dst, pReg src, immI_1 size) %{
   match(Set dst (VectorStoreMask src size));
   format %{ "vstoremaskB_sve $dst, $src" %}
   ins_encode %{
-    __ sve_cpy($dst$$FloatRegister, __ B, $src$$PRegister, 1, false);
+    __ sve_cpy_optimized($dst$$FloatRegister, __ B, $src$$PRegister, 1, false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5723,7 +5723,7 @@ instruct vstoremask_narrow_sve(vReg dst, pReg src, immI_gt_1 size, vReg tmp) %{
   format %{ "vstoremask_narrow_sve $dst, $src\t# KILL $tmp" %}
   ins_encode %{
     Assembler::SIMD_RegVariant size = __ elemBytes_to_regVariant((int)$size$$constant);
-    __ sve_cpy($dst$$FloatRegister, size, $src$$PRegister, 1, false);
+    __ sve_cpy_optimized($dst$$FloatRegister, size, $src$$PRegister, 1, false);
     __ sve_vector_narrow($dst$$FloatRegister, __ B,
                          $dst$$FloatRegister, size, $tmp$$FloatRegister);
   %}
@@ -5845,7 +5845,7 @@ instruct storeV_vstoremask(indirect mem, pReg src, immI_gt_1 esize, vReg tmp) %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     assert(type2aelembytes(bt) == (int)$esize$$constant, "unsupported type");
     Assembler::SIMD_RegVariant size = __ elemBytes_to_regVariant($esize$$constant);
-    __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
+    __ sve_cpy_optimized($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
@@ -5866,7 +5866,7 @@ instruct storeV_vstoremask_masked(indirect mem, pReg src, immI_gt_1 esize,
     // as boolean values.
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
+    __ sve_cpy_optimized($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     __ sve_gen_mask_imm($pgtmp$$PRegister, bt, Matcher::vector_length(this, $src));
     loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           $pgtmp$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
@@ -5893,7 +5893,7 @@ instruct storeVMasked_vstoremask(vmemA mem, pReg src, pRegGov pg, immI_gt_1 esiz
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     assert(type2aelembytes(bt) == (int)$esize$$constant, "unsupported type.");
     Assembler::SIMD_RegVariant size = __ elemBytes_to_regVariant($esize$$constant);
-    __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
+    __ sve_cpy_optimized($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
@@ -5919,7 +5919,7 @@ instruct storeVMasked_vstoremask_masked(vmemA mem, pReg src, pRegGov pg, immI_gt
     // here.
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
+    __ sve_cpy_optimized($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     __ sve_gen_mask_imm($pgtmp$$PRegister, bt, Matcher::vector_length(this, $src));
     loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           $pgtmp$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
@@ -6272,7 +6272,7 @@ instruct vmask_reinterpret_diff_esize(pReg dst, pReg src, vReg tmp, rFlagsReg cr
     Assembler::SIMD_RegVariant from_size = __ elemType_to_regVariant(from_bt);
     BasicType to_bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant to_size = __ elemType_to_regVariant(to_bt);
-    __ sve_cpy($tmp$$FloatRegister, from_size, $src$$PRegister, -1, false);
+    __ sve_cpy_optimized($tmp$$FloatRegister, from_size, $src$$PRegister, -1, false);
     __ sve_cmp(Assembler::EQ, $dst$$PRegister, to_size, ptrue, $tmp$$FloatRegister, -1);
   %}
   ins_pipe(pipe_slow);

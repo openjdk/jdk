@@ -2858,3 +2858,18 @@ void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, 
   // dst  = 00 87 00 65 00 43 00 21
   sve_tbl(dst, size, src, dst);
 }
+
+void C2_MacroAssembler::sve_cpy_optimized(FloatRegister dst, SIMD_RegVariant T,
+                                          PRegister pg, int imm8, bool isMerge) {
+  if (VM_Version::prefer_sve_merging_mode_cpy() && !isMerge) {
+    // Generates a NEON instruction `movi V<dst>.2d, #0`.
+    // On AArch64, Z and V registers alias in the low 128 bits, so V<dst> is
+    // the low 128 bits of Z<dst>. A write to V<dst> also clears all bits of
+    // Z<dst> above 128, so this `movi` instruction effectively zeroes the
+    // entire Z<dst> register. According to the Arm Software Optimization
+    // Guide, `movi` is zero latency.
+    movi(dst, T2D, 0);
+    isMerge = true;
+  }
+  sve_cpy(dst, T, pg, imm8, isMerge);
+}
