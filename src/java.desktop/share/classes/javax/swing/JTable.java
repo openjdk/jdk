@@ -52,10 +52,13 @@ import java.beans.BeanProperty;
 import java.beans.JavaBean;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.Serial;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -446,7 +449,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     private SizeSequence rowModel;
     private boolean dragEnabled;
     private boolean surrendersFocusOnKeystroke;
-    private PropertyChangeListener editorRemover = null;
+    private transient PropertyChangeListener editorRemover = null;
     /**
      * The last value of getValueIsAdjusting from the column selection models
      * columnSelectionChanged notification. Used to test if a repaint is
@@ -5556,7 +5559,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     /**
      * Default Editors
      */
-    static class GenericEditor extends DefaultCellEditor {
+    static class GenericEditor extends DefaultCellEditor implements Externalizable {
 
         Class<?>[] argTypes = new Class<?>[]{String.class};
         java.lang.reflect.Constructor<?> constructor;
@@ -5617,6 +5620,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         public Object getCellEditorValue() {
             return value;
         }
+
+        public void writeExternal(ObjectOutput out) throws IOException {}
+
+        public void readExternal(ObjectInput in) throws IOException {}
     }
 
     static class NumberEditor extends GenericEditor {
@@ -5952,6 +5959,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
+        if (this.isEditing()) {
+            this.getCellEditor().cancelCellEditing();
+        }
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
             byte count = JComponent.getWriteObjCounter(this);
@@ -5966,6 +5976,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
+        this.removeAll();
         ObjectInputStream.GetField f = s.readFields();
 
         TableModel newDataModel = (TableModel) f.get("dataModel", null);
@@ -6020,7 +6031,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         dragEnabled = newDragEnabled;
 
         surrendersFocusOnKeystroke = f.get("surrendersFocusOnKeystroke", false);
-        editorRemover = (PropertyChangeListener) f.get("editorRemover", null);
+
         columnSelectionAdjusting = f.get("columnSelectionAdjusting", false);
         rowSelectionAdjusting = f.get("rowSelectionAdjusting", false);
         printError = (Throwable) f.get("printError", null);
@@ -6046,7 +6057,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         // to re-register here
         if (getToolTipText() == null) {
             ToolTipManager.sharedInstance().registerComponent(this);
-         }
+        }
     }
 
     /* Called from the JComponent's EnableSerializationFocusListener to
