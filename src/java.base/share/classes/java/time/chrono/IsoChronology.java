@@ -589,8 +589,8 @@ public final class IsoChronology extends AbstractChronology implements Serializa
 
     @Override  // override for better proleptic algorithm
     void resolveProlepticMonth(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
-        Long pMonth = fieldValues.remove(PROLEPTIC_MONTH);
-        if (pMonth != null) {
+        if (fieldValues.containsKey(PROLEPTIC_MONTH)) {
+            long pMonth = fieldValues.remove(PROLEPTIC_MONTH);
             if (resolverStyle != ResolverStyle.LENIENT) {
                 PROLEPTIC_MONTH.checkValidValue(pMonth);
             }
@@ -601,8 +601,8 @@ public final class IsoChronology extends AbstractChronology implements Serializa
 
     @Override  // override for enhanced behaviour
     LocalDate resolveYearOfEra(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
-        Long yoeLong = fieldValues.remove(YEAR_OF_ERA);
-        if (yoeLong != null) {
+        if (fieldValues.containsKey(YEAR_OF_ERA)) {
+            long yoeLong = fieldValues.remove(YEAR_OF_ERA);
             if (resolverStyle != ResolverStyle.LENIENT) {
                 YEAR_OF_ERA.checkValidValue(yoeLong);
             }
