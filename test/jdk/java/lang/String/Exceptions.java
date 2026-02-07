@@ -397,6 +397,14 @@ public class Exceptions {
                 }});
     }
 
+    private static void getByteLength() {
+        System.out.println("getByteLength(Charset charset)");
+        tryCatch("  null", NullPointerException.class, new Runnable() {
+                public void run() {
+                    "foo".getByteLength((Charset)null);
+                }});
+    }
+
     private static void contentEquals() {
         System.out.println("contentEquals(StringBuffer sb)");
         tryCatch("  null", NullPointerException.class, new Runnable() {
@@ -640,6 +648,7 @@ public class Exceptions {
                               //   getBytes(Locale)
                               //   getBytes(String)
                               //   getBytes(Charset)
+        getByteLength();      // getByteLength(Charset)
         contentEquals();      // contentEquals(StringBuffer)
         compareTo();          // compareTo(String), compareTo(Object)
         compareToIgnoreCase();// compareToIgnoreCase(String)
