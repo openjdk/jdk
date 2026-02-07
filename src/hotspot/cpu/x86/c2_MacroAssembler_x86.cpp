@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -7042,4 +7042,75 @@ void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // result is same as second operand.
     Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
   }
+}
+
+//
+// Efficient LEA-based multiply emulation for immediates not easily handled
+// by shift+add. Uses two fast LEAs based on Intel Optimization Manual,
+// section "3.5.1.2 Using LEA". IMUL latency with register operands is 3 cycles,
+// while fast LEA has 1 cycle. So two fast LEAs often outperform IMUL for
+// specific constants.
+//
+// The pattern table below lists:
+//   - First LEA:  BASE = src, INDEX = src, SCALE = s1
+//   - Second LEA: BASE = (use_src2 ? src : dst), INDEX = dst, SCALE = s2
+//
+// All dst inputs for the second LEA are derived from “terminal” outputs.
+//
+void C2_MacroAssembler::imullq_imm(BasicType bt, Register dst, Register src, int32_t imm) {
+  assert(bt == T_LONG || bt == T_INT, "Unexpected type");
+
+  if (!VM_Version::supports_fast_2op_lea()) {
+    imullq(bt, dst, src, imm);
+    return;
+  }
+
+  // Descriptor for one LEA pattern entry.
+  struct LeaPattern {
+    int32_t imm;
+    // First LEA: dst = src + src * scale1
+    Address::ScaleFactor scale1;
+
+    // Second LEA:
+    // If use_src2 == true:
+    //     dst = src + dst * scale2
+    // else:
+    //     dst = dst + dst * scale2
+    bool use_src_as_base;
+    Address::ScaleFactor scale2;
+  };
+
+  static const LeaPattern patterns[] = {
+    { 11, Address::times_4, true,  Address::times_2 },
+    { 13, Address::times_2, true,  Address::times_4 },
+    { 19, Address::times_8, true,  Address::times_2 },
+    { 21, Address::times_4, true,  Address::times_4 },
+    { 25, Address::times_4, false, Address::times_4 },
+    { 27, Address::times_2, false, Address::times_8 },
+    { 37, Address::times_8, true,  Address::times_4 },
+    { 41, Address::times_4, true,  Address::times_8 },
+    { 45, Address::times_4, false, Address::times_8 },
+    { 73, Address::times_8, true,  Address::times_8 },
+    { 81, Address::times_8, false, Address::times_8 },
+  };
+
+  // Lookup table
+  for (const LeaPattern& p : patterns) {
+    if (p.imm == imm) {
+      assert_different_registers(dst, src);
+      // First LEA → dst = src + src * scale1
+      lealq(bt, dst, Address(src, src, p.scale1));
+
+      // Second LEA
+      if (p.use_src_as_base) {
+        lealq(bt, dst, Address(src, dst, p.scale2));
+      } else {
+        lealq(bt, dst, Address(dst, dst, p.scale2));
+      }
+      return;
+    }
+  }
+
+  // Fallback: unsupported imm use IMUL
+  imullq(bt, dst, src, imm);
 }

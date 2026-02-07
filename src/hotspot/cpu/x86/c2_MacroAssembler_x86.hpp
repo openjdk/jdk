@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,5 +583,7 @@ public:
                           KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
 
   void reconstruct_frame_pointer(Register rtmp);
+
+  void imullq_imm(BasicType bt, Register dst, Register src, int32_t imm);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2063,6 +2063,9 @@ public:
   void save_legacy_gprs();
   void restore_legacy_gprs();
   void setcc(Assembler::Condition comparison, Register dst);
+
+  void imullq(BasicType bt, Register dst, Register src, int32_t imm);
+  void lealq(BasicType bt, Register dst, Address src);
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP
