@@ -90,6 +90,7 @@ public class Parser implements GraphParser {
     public static final String CONTROL_FLOW_ELEMENT = "controlFlow";
     public static final String BLOCK_NAME_PROPERTY = "name";
     public static final String BLOCK_ELEMENT = "block";
+    public static final String BLOCK_DOMINATOR_PROPERTY = "idom";
     public static final String SUCCESSORS_ELEMENT = "successors";
     public static final String SUCCESSOR_ELEMENT = "successor";
     public static final String LIVEOUT_ELEMENT = "liveOut";
@@ -208,7 +209,8 @@ public class Parser implements GraphParser {
         protected InputBlock start() throws SAXException {
             InputGraph graph = getParentObject();
             String name = readRequiredAttribute(BLOCK_NAME_PROPERTY);
-            InputBlock b = graph.addBlock(name);
+            String iDom = readAttribute(BLOCK_DOMINATOR_PROPERTY);
+            InputBlock b = graph.addBlock(name, iDom);
             for (InputNode n : b.getNodes()) {
                 assert graph.getBlock(n).equals(b);
             }
@@ -433,9 +435,12 @@ public class Parser implements GraphParser {
             if (!graph.getBlocks().isEmpty()) {
                 boolean blocksContainNodes = false;
                 for (InputBlock b : graph.getBlocks()) {
-                    if (!b.getNodes().isEmpty()) {
+                    // Add block immediate dominator edge
+                    if (b.getIDom() != null) {
+                        graph.addDominatorBlockEdge(graph.getBlock(b.getIDom()), b);
+                    }
+                    if (!blocksContainNodes && !b.getNodes().isEmpty()) {
                         blocksContainNodes = true;
-                        break;
                     }
                 }
 

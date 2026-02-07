@@ -1551,7 +1551,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
 
         if (getModel().getShowCFG()) {
-            for (BlockConnection blockConnection : getModel().getDiagram().getBlockConnections()) {
+            Set<BlockConnection> connections = getModel().getShowDominatorTree() ?
+                    getModel().getDiagram().getBlockDominatorConnections() :
+                    getModel().getDiagram().getBlockConnections();
+            for (BlockConnection blockConnection : connections) {
                 if (isVisibleBlockConnection(blockConnection)) {
                     processBlockConnection(blockConnection);
                 }
@@ -1779,7 +1782,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private Set<Connection> getVisibleBlockConnections() {
         Set<Connection> clusterLinks = new HashSet<>();
-        for (BlockConnection c : getModel().getDiagram().getBlockConnections()) {
+        DiagramViewModel model = getModel();
+        Diagram diagram = model.getDiagram();
+        Set<BlockConnection> connections = model.getShowDominatorTree() ?
+                diagram.getBlockDominatorConnections() :
+                diagram.getBlockConnections();
+        for (BlockConnection c : connections) {
             if (isVisibleBlockConnection(c)) {
                 clusterLinks.add(c);
             }

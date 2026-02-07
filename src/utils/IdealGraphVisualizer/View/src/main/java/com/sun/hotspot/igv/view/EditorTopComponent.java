@@ -215,6 +215,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
         toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
         toolBar.add(new JToggleButton(new ShowLiveRangesAction(cfgLayoutAction, diagramViewModel.getShowLiveRanges())));
+        toolBar.add(new JToggleButton(new ShowDominatorTreeAction(cfgLayoutAction, diagramViewModel.getShowDominatorTree())));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);

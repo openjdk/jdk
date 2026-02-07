@@ -75,6 +75,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
     private boolean showLiveRanges;
+    private boolean showDominatorTree;
     private static boolean globalSelection = false;
     private static boolean cutEdges = false;
 
@@ -200,6 +201,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         diagramChangedEvent.fire();
     }
 
+    public boolean getShowDominatorTree() {
+        return showDominatorTree;
+    }
+
+    public void setShowDominatorTree(boolean b) {
+        showDominatorTree = b;
+        diagramChangedEvent.fire();
+    }
+
     private void initGroup() {
         group.getChangedEvent().addListener(g -> {
             assert g == group;
@@ -240,6 +250,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         showNodeHull = model.getShowNodeHull();
         showEmptyBlocks = model.getShowEmptyBlocks();
         showLiveRanges = model.getShowLiveRanges();
+        showDominatorTree = model.getShowDominatorTree();
 
         hiddenNodes = new HashSet<>(model.getHiddenNodes());
         selectedNodes = new HashSet<>();
@@ -267,6 +278,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         showNodeHull = true;
         showEmptyBlocks = true;
         showLiveRanges = true;
+        showDominatorTree = false;
 
         hiddenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
@@ -441,6 +453,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             graph.clearBlocks();
             s.schedule(graph);
             graph.ensureNodesInBlocks();
+            graph.setScheduled(true);
         }
         PreProcessor p = Lookup.getDefault().lookup(PreProcessor.class);
         p.preProcess(graph);
