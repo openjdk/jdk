@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1443,15 +1444,13 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 }
 
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::word, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
+  __ cmpxchg_barrier(addr, cmpval, newval, Assembler::word, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
   __ cset(rscratch1, Assembler::NE);
-  __ membar(__ AnyAny);
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::xword, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
+  __ cmpxchg_barrier(addr, cmpval, newval, Assembler::xword, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
   __ cset(rscratch1, Assembler::NE);
-  __ membar(__ AnyAny);
 }
 
 
@@ -2993,27 +2992,27 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
 
   switch(type) {
   case T_INT:
-    xchg = &MacroAssembler::atomic_xchgalw;
-    add = &MacroAssembler::atomic_addalw;
+    xchg = &MacroAssembler::atomic_xchgalw_barrier;
+    add = &MacroAssembler::atomic_addalw_barrier;
     break;
   case T_LONG:
-    xchg = &MacroAssembler::atomic_xchgal;
-    add = &MacroAssembler::atomic_addal;
+    xchg = &MacroAssembler::atomic_xchgal_barrier;
+    add = &MacroAssembler::atomic_addal_barrier;
     break;
   case T_OBJECT:
   case T_ARRAY:
     if (UseCompressedOops) {
-      xchg = &MacroAssembler::atomic_xchgalw;
-      add = &MacroAssembler::atomic_addalw;
+      xchg = &MacroAssembler::atomic_xchgalw_barrier;
+      add = &MacroAssembler::atomic_addalw_barrier;
     } else {
-      xchg = &MacroAssembler::atomic_xchgal;
-      add = &MacroAssembler::atomic_addal;
+      xchg = &MacroAssembler::atomic_xchgal_barrier;
+      add = &MacroAssembler::atomic_addal_barrier;
     }
     break;
   default:
     ShouldNotReachHere();
-    xchg = &MacroAssembler::atomic_xchgal;
-    add = &MacroAssembler::atomic_addal; // unreachable
+    xchg = &MacroAssembler::atomic_xchgal_barrier;
+    add = &MacroAssembler::atomic_addal_barrier; // unreachable
   }
 
   switch (code) {
@@ -3055,9 +3054,6 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     break;
   default:
     ShouldNotReachHere();
-  }
-  if(!UseLSE) {
-    __ membar(__ AnyAny);
   }
 }
 

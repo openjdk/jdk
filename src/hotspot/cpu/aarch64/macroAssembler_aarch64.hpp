@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1214,6 +1215,12 @@ public:
   void atomic_xchgal(Register prev, Register newv, Register addr);
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 
+  void atomic_addal_barrier(Register prev, RegisterOrConstant incr, Register addr);
+  void atomic_addalw_barrier(Register prev, RegisterOrConstant incr, Register addr);
+
+  void atomic_xchgal_barrier(Register prev, Register newv, Register addr);
+  void atomic_xchgalw_barrier(Register prev, Register newv, Register addr);
+
   void orptr(Address adr, RegisterOrConstant src) {
     ldr(rscratch1, adr);
     if (src.is_register())
@@ -1228,7 +1235,16 @@ public:
   void cmpxchg(Register addr, Register expected, Register new_val,
                enum operand_size size,
                bool acquire, bool release, bool weak,
+               Register result, bool with_barrier);
+
+  void cmpxchg(Register addr, Register expected, Register new_val,
+               enum operand_size size,
+               bool acquire, bool release, bool weak,
                Register result);
+  void cmpxchg_barrier(Register addr, Register expected,
+                       Register new_val, enum operand_size size,
+                       bool acquire, bool release, bool weak,
+                       Register result);
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
