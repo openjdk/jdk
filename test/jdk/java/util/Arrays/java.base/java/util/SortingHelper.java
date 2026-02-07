@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,327 +24,168 @@
 package java.util;
 
 /**
- * This class provides access to package-private
- * methods of DualPivotQuicksort class.
+ * This class provides access to package-private methods of DualPivotQuicksort class.
  *
  * @author Vladimir Yaroslavskiy
  *
- * @version 2019.09.19
+ * @version 2024.06.14
  *
- * @since 14
+ * @since 14 * 20 ^ 26
  */
 public enum SortingHelper {
 
-    DUAL_PIVOT_QUICKSORT("Dual-Pivot Quicksort") {
-
-        @Override
-        public void sort(Object a) {
-            if (a instanceof int[]) {
-                DualPivotQuicksort.sort((int[]) a, SEQUENTIAL, 0, ((int[]) a).length);
-            } else if (a instanceof long[]) {
-                DualPivotQuicksort.sort((long[]) a, SEQUENTIAL, 0, ((long[]) a).length);
-            } else if (a instanceof byte[]) {
-                DualPivotQuicksort.sort((byte[]) a, 0, ((byte[]) a).length);
-            } else if (a instanceof char[]) {
-                DualPivotQuicksort.sort((char[]) a, SEQUENTIAL, 0, ((char[]) a).length);
-            } else if (a instanceof short[]) {
-                DualPivotQuicksort.sort((short[]) a, SEQUENTIAL, 0, ((short[]) a).length);
-            } else if (a instanceof float[]) {
-                DualPivotQuicksort.sort((float[]) a, SEQUENTIAL, 0, ((float[]) a).length);
-            } else if (a instanceof double[]) {
-                DualPivotQuicksort.sort((double[]) a, SEQUENTIAL, 0, ((double[]) a).length);
-            } else {
-                fail(a);
-            }
-        }
-
+    INSERTION_SORT("Insertion sort") {
         @Override
         public void sort(Object a, int low, int high) {
-            if (a instanceof int[]) {
-                DualPivotQuicksort.sort((int[]) a, SEQUENTIAL, low, high);
-            } else if (a instanceof long[]) {
-                DualPivotQuicksort.sort((long[]) a, SEQUENTIAL, low, high);
-            } else if (a instanceof byte[]) {
-                DualPivotQuicksort.sort((byte[]) a, low, high);
-            } else if (a instanceof char[]) {
-                DualPivotQuicksort.sort((char[]) a, SEQUENTIAL, low, high);
-            } else if (a instanceof short[]) {
-                DualPivotQuicksort.sort((short[]) a, SEQUENTIAL, low, high);
-            } else if (a instanceof float[]) {
-                DualPivotQuicksort.sort((float[]) a, SEQUENTIAL, low, high);
-            } else if (a instanceof double[]) {
-                DualPivotQuicksort.sort((double[]) a, SEQUENTIAL, low, high);
-            } else {
-                fail(a);
+            switch(a) {
+                case int[] ai -> DualPivotQuicksort.insertionSort(ai, low, high);
+                case long[] al -> DualPivotQuicksort.insertionSort(al, low, high);
+                case byte[] ab -> DualPivotQuicksort.insertionSort(ab, low, high);
+                case char[] ac -> DualPivotQuicksort.insertionSort(ac, low, high);
+                case short[] as -> DualPivotQuicksort.insertionSort(as, low, high);
+                case float[] af -> DualPivotQuicksort.insertionSort(af, low, high);
+                case double[] ad -> DualPivotQuicksort.insertionSort(ad, low, high);
+                default -> fail(a);
             }
-        }
-
-        @Override
-        public void sort(Object[] a) {
-            fail(a);
-        }
-
-        @Override
-        public void sort(Object[] a, Comparator comparator) {
-            fail(a);
         }
     },
 
-    PARALLEL_SORT("Parallel sort") {
-
-        @Override
-        public void sort(Object a) {
-            if (a instanceof int[]) {
-                DualPivotQuicksort.sort((int[]) a, PARALLEL, 0, ((int[]) a).length);
-            } else if (a instanceof long[]) {
-                DualPivotQuicksort.sort((long[]) a, PARALLEL, 0, ((long[]) a).length);
-            } else if (a instanceof byte[]) {
-                DualPivotQuicksort.sort((byte[]) a, 0, ((byte[]) a).length);
-            } else if (a instanceof char[]) {
-                DualPivotQuicksort.sort((char[]) a, PARALLEL, 0, ((char[]) a).length);
-            } else if (a instanceof short[]) {
-                DualPivotQuicksort.sort((short[]) a, PARALLEL, 0, ((short[]) a).length);
-            } else if (a instanceof float[]) {
-                DualPivotQuicksort.sort((float[]) a, PARALLEL, 0, ((float[]) a).length);
-            } else if (a instanceof double[]) {
-                DualPivotQuicksort.sort((double[]) a, PARALLEL, 0, ((double[]) a).length);
-            } else {
-                fail(a);
-            }
-        }
-
+    MIXED_INSERTION_SORT("Mixed insertion sort") {
         @Override
         public void sort(Object a, int low, int high) {
-            if (a instanceof int[]) {
-                DualPivotQuicksort.sort((int[]) a, PARALLEL, low, high);
-            } else if (a instanceof long[]) {
-                DualPivotQuicksort.sort((long[]) a, PARALLEL, low, high);
-            } else if (a instanceof byte[]) {
-                DualPivotQuicksort.sort((byte[]) a, low, high);
-            } else if (a instanceof char[]) {
-                DualPivotQuicksort.sort((char[]) a, PARALLEL, low, high);
-            } else if (a instanceof short[]) {
-                DualPivotQuicksort.sort((short[]) a, PARALLEL, low, high);
-            } else if (a instanceof float[]) {
-                DualPivotQuicksort.sort((float[]) a, PARALLEL, low, high);
-            } else if (a instanceof double[]) {
-                DualPivotQuicksort.sort((double[]) a, PARALLEL, low, high);
-            } else {
-                fail(a);
+            switch(a) {
+                case int[] ai -> DualPivotQuicksort.mixedInsertionSort(ai, low, high);
+                case long[] al -> DualPivotQuicksort.mixedInsertionSort(al, low, high);
+                case float[] af -> DualPivotQuicksort.mixedInsertionSort(af, low, high);
+                case double[] ad -> DualPivotQuicksort.mixedInsertionSort(ad, low, high);
+                default -> fail(a);
             }
         }
+    },
 
+    MERGING_SORT("Merging sort") {
         @Override
-        public void sort(Object[] a) {
-            fail(a);
+        public void sort(Object a, int low, int high) {
+            switch(a) {
+                case int[] ai -> checkMerging(DualPivotQuicksort.tryMergingSort(null, ai, low, high - low));
+                case long[] al -> checkMerging(DualPivotQuicksort.tryMergingSort(null, al, low, high - low));
+                case float[] af -> checkMerging(DualPivotQuicksort.tryMergingSort(null, af, low, high - low));
+                case double[] ad -> checkMerging(DualPivotQuicksort.tryMergingSort(null, ad, low, high - low));
+                default -> fail(a);
+            }
         }
+    },
 
+    COUNTING_SORT("Counting sort") {
         @Override
-        public void sort(Object[] a, Comparator comparator) {
-            fail(a);
+        public void sort(Object a, int low, int high) {
+            switch(a) {
+                case byte[] ab -> DualPivotQuicksort.countingSort(ab, low, high);
+                case char[] ac -> DualPivotQuicksort.countingSort(ac, low, high);
+                case short[] as -> DualPivotQuicksort.countingSort(as, low, high);
+                default -> fail(a);
+            }
         }
     },
 
     HEAP_SORT("Heap sort") {
-
-        @Override
-        public void sort(Object a) {
-            if (a instanceof int[]) {
-                DualPivotQuicksort.sort(null, (int[]) a, BIG_DEPTH, 0, ((int[]) a).length);
-            } else if (a instanceof long[]) {
-                DualPivotQuicksort.sort(null, (long[]) a, BIG_DEPTH, 0, ((long[]) a).length);
-            } else if (a instanceof byte[]) {
-                DualPivotQuicksort.sort((byte[]) a, 0, ((byte[]) a).length);
-            } else if (a instanceof char[]) {
-                DualPivotQuicksort.sort((char[]) a, BIG_DEPTH, 0, ((char[]) a).length);
-            } else if (a instanceof short[]) {
-                DualPivotQuicksort.sort((short[]) a, BIG_DEPTH, 0, ((short[]) a).length);
-            } else if (a instanceof float[]) {
-                DualPivotQuicksort.sort(null, (float[]) a, BIG_DEPTH, 0, ((float[]) a).length);
-            } else if (a instanceof double[]) {
-                DualPivotQuicksort.sort(null, (double[]) a, BIG_DEPTH, 0, ((double[]) a).length);
-            } else {
-                fail(a);
-            }
-        }
-
         @Override
         public void sort(Object a, int low, int high) {
-            if (a instanceof int[]) {
-                DualPivotQuicksort.sort(null, (int[]) a, BIG_DEPTH, low, high);
-            } else if (a instanceof long[]) {
-                DualPivotQuicksort.sort(null, (long[]) a, BIG_DEPTH, low, high);
-            } else if (a instanceof byte[]) {
-                DualPivotQuicksort.sort((byte[]) a, low, high);
-            } else if (a instanceof char[]) {
-                DualPivotQuicksort.sort((char[]) a, BIG_DEPTH, low, high);
-            } else if (a instanceof short[]) {
-                DualPivotQuicksort.sort((short[]) a, BIG_DEPTH, low, high);
-            } else if (a instanceof float[]) {
-                DualPivotQuicksort.sort(null, (float[]) a, BIG_DEPTH, low, high);
-            } else if (a instanceof double[]) {
-                DualPivotQuicksort.sort(null, (double[]) a, BIG_DEPTH, low, high);
-            } else {
-                fail(a);
+            switch(a) {
+                case int[] ai -> DualPivotQuicksort.heapSort(ai, low, high);
+                case long[] al -> DualPivotQuicksort.heapSort(al, low, high);
+                case float[] af -> DualPivotQuicksort.heapSort(af, low, high);
+                case double[] ad -> DualPivotQuicksort.heapSort(ad, low, high);
+                default -> fail(a);
             }
         }
+    },
 
+    DUAL_PIVOT_QUICKSORT("Dual-Pivot Quicksort") {
         @Override
-        public void sort(Object[] a) {
-            fail(a);
+        public void sort(Object a, int low, int high) {
+            switch(a) {
+                case int[] ai -> DualPivotQuicksort.sort(ai, 0, low, high);
+                case long[] al -> DualPivotQuicksort.sort(al, 0, low, high);
+                case byte[] ab -> DualPivotQuicksort.sort(ab, low, high);
+                case char[] ac -> DualPivotQuicksort.sort(ac, low, high);
+                case short[] as -> DualPivotQuicksort.sort(as, low, high);
+                case float[] af -> DualPivotQuicksort.sort(af, 0, low, high);
+                case double[] ad -> DualPivotQuicksort.sort(ad, 0, low, high);
+                default -> fail(a);
+            }
         }
+    },
 
+    PARALLEL_QUICKSORT("Parallel Quicksort") {
         @Override
-        public void sort(Object[] a, Comparator comparator) {
-            fail(a);
+        public void sort(Object a, int low, int high) {
+            switch(a) {
+                case int[] ai -> DualPivotQuicksort.sort(ai, 4, low, high);
+                case long[] al -> DualPivotQuicksort.sort(al, 4, low, high);
+                case float[] af -> DualPivotQuicksort.sort(af, 4, low, high);
+                case double[] ad -> DualPivotQuicksort.sort(ad, 4, low, high);
+                default -> fail(a);
+            }
         }
     },
 
     ARRAYS_SORT("Arrays.sort") {
-
-        @Override
-        public void sort(Object a) {
-            if (a instanceof int[]) {
-                Arrays.sort((int[]) a);
-            } else if (a instanceof long[]) {
-                Arrays.sort((long[]) a);
-            } else if (a instanceof byte[]) {
-                Arrays.sort((byte[]) a);
-            } else if (a instanceof char[]) {
-                Arrays.sort((char[]) a);
-            } else if (a instanceof short[]) {
-                Arrays.sort((short[]) a);
-            } else if (a instanceof float[]) {
-                Arrays.sort((float[]) a);
-            } else if (a instanceof double[]) {
-                Arrays.sort((double[]) a);
-            } else {
-                fail(a);
-            }
-        }
-
         @Override
         public void sort(Object a, int low, int high) {
-            if (a instanceof int[]) {
-                Arrays.sort((int[]) a, low, high);
-            } else if (a instanceof long[]) {
-                Arrays.sort((long[]) a, low, high);
-            } else if (a instanceof byte[]) {
-                Arrays.sort((byte[]) a, low, high);
-            } else if (a instanceof char[]) {
-                Arrays.sort((char[]) a, low, high);
-            } else if (a instanceof short[]) {
-                Arrays.sort((short[]) a, low, high);
-            } else if (a instanceof float[]) {
-                Arrays.sort((float[]) a, low, high);
-            } else if (a instanceof double[]) {
-                Arrays.sort((double[]) a, low, high);
-            } else {
-                fail(a);
+            switch(a) {
+                case int[] ai -> Arrays.sort(ai, low, high);
+                case long[] al -> Arrays.sort(al, low, high);
+                case byte[] ab -> Arrays.sort(ab, low, high);
+                case char[] ac -> Arrays.sort(ac, low, high);
+                case short[] as -> Arrays.sort(as, low, high);
+                case float[] af -> Arrays.sort(af, low, high);
+                case double[] ad -> Arrays.sort(ad, low, high);
+                default -> fail(a);
             }
-        }
-
-        @Override
-        public void sort(Object[] a) {
-            Arrays.sort(a);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void sort(Object[] a, Comparator comparator) {
-            Arrays.sort(a, comparator);
         }
     },
 
     ARRAYS_PARALLEL_SORT("Arrays.parallelSort") {
-
-        @Override
-        public void sort(Object a) {
-            if (a instanceof int[]) {
-                Arrays.parallelSort((int[]) a);
-            } else if (a instanceof long[]) {
-                Arrays.parallelSort((long[]) a);
-            } else if (a instanceof byte[]) {
-                Arrays.parallelSort((byte[]) a);
-            } else if (a instanceof char[]) {
-                Arrays.parallelSort((char[]) a);
-            } else if (a instanceof short[]) {
-                Arrays.parallelSort((short[]) a);
-            } else if (a instanceof float[]) {
-                Arrays.parallelSort((float[]) a);
-            } else if (a instanceof double[]) {
-                Arrays.parallelSort((double[]) a);
-            } else {
-                fail(a);
-            }
-        }
-
         @Override
         public void sort(Object a, int low, int high) {
-            if (a instanceof int[]) {
-                Arrays.parallelSort((int[]) a, low, high);
-            } else if (a instanceof long[]) {
-                Arrays.parallelSort((long[]) a, low, high);
-            } else if (a instanceof byte[]) {
-                Arrays.parallelSort((byte[]) a, low, high);
-            } else if (a instanceof char[]) {
-                Arrays.parallelSort((char[]) a, low, high);
-            } else if (a instanceof short[]) {
-                Arrays.parallelSort((short[]) a, low, high);
-            } else if (a instanceof float[]) {
-                Arrays.parallelSort((float[]) a, low, high);
-            } else if (a instanceof double[]) {
-                Arrays.parallelSort((double[]) a, low, high);
-            } else {
-                fail(a);
+            switch(a) {
+                case int[] ai -> Arrays.parallelSort(ai, low, high);
+                case long[] al -> Arrays.parallelSort(al, low, high);
+                case byte[] ab -> Arrays.parallelSort(ab, low, high);
+                case char[] ac -> Arrays.parallelSort(ac, low, high);
+                case short[] as -> Arrays.parallelSort(as, low, high);
+                case float[] af -> Arrays.parallelSort(af, low, high);
+                case double[] ad -> Arrays.parallelSort(ad, low, high);
+                default -> fail(a);
             }
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void sort(Object[] a) {
-            Arrays.parallelSort((Comparable[]) a);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void sort(Object[] a, Comparator comparator) {
-            Arrays.parallelSort(a, comparator);
         }
     };
 
-    abstract public void sort(Object a);
-
-    abstract public void sort(Object a, int low, int high);
-
-    abstract public void sort(Object[] a);
-
-    abstract public void sort(Object[] a, Comparator comparator);
-
-    private SortingHelper(String name) {
+    SortingHelper(String name) {
         this.name = name;
     }
+
+    public abstract void sort(Object a, int low, int high);
 
     @Override
     public String toString() {
         return name;
     }
 
-    private static void fail(Object a) {
-        throw new RuntimeException("Unexpected type of array: " + a.getClass().getName());
+    private static void checkMerging(boolean result) {
+        if (!result) {
+            fail("Merging sort must return true");
+        }
     }
 
-    private String name;
+    private static void fail(Object a) {
+        fail("Unknown array: " + a.getClass().getName());
+    }
 
-    /**
-     * Parallelism level for sequential and parallel sorting.
-     */
-    private static final int SEQUENTIAL = 0;
-    private static final int PARALLEL = 87;
+    private static void fail(String message) {
+        throw new RuntimeException(message);
+    }
 
-    /**
-     * Heap sort will be invoked, if recursion depth is too big.
-     * Value is taken from DualPivotQuicksort.MAX_RECURSION_DEPTH.
-     */
-    private static final int BIG_DEPTH = 64 * (3 << 1);
+    private final String name;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,112 +23,150 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 package java.util;
 
 import java.util.concurrent.CountedCompleter;
-import java.util.concurrent.RecursiveTask;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class implements powerful and fully optimized versions, both
  * sequential and parallel, of the Dual-Pivot Quicksort algorithm by
  * Vladimir Yaroslavskiy, Jon Bentley and Josh Bloch. This algorithm
  * offers O(n log(n)) performance on all data sets, and is typically
- * faster than traditional (one-pivot) Quicksort implementations.
+ * faster than traditional (one-pivot) Quicksort implementations.<p>
  *
  * There are also additional algorithms, invoked from the Dual-Pivot
- * Quicksort, such as mixed insertion sort, merging of runs and heap
- * sort, counting sort and parallel merge sort.
+ * Quicksort such as merging sort, sorting network, heap sort, mixed
+ * insertion sort, counting sort and parallel merge sort. The actual
+ * sorting algorithm depends on the data type and array size.
  *
  * @author Vladimir Yaroslavskiy
  * @author Jon Bentley
  * @author Josh Bloch
  * @author Doug Lea
  *
- * @version 2018.08.18
+ * @version 2024.06.14
  *
- * @since 1.7 * 14
+ * @since 1.7 * 14 ^ 26
  */
 final class DualPivotQuicksort {
 
     /**
-     * Prevents instantiation.
+     * <b>High-level description of sorting logic.</b><p>
+     *
+     * <b>Type: int/long/float/double</b><p>
+     *
+     * If the array size is small, invoke mixed insertion sort on
+     * non-leftmost parts or insertion sort on leftmost part.<p>
+     *
+     * Then try merging sort which is the best on almost
+     * sorted arrays.<p>
+     *
+     * Then check the recursion depth to avoid quadratic time
+     * with heap sort.<p>
+     *
+     * Then apply Quicksort with two pivots on random data,
+     * otherwise run one-pivot Quicksort.<p>
+     *
+     * <b>Type: float/double</b><p>
+     *
+     * Floating-point values require additional steps to process
+     * negative zeros -0.0 and NaNs (Not-a-Number) and re-arrange
+     * negative zeros at the end.<p>
+     *
+     * <b>Type: byte</b><p>
+     *
+     * Invoke insertion sort, if the array size is small,
+     * otherwise switch to counting sort.<p>
+     *
+     * <b>Type: char/short</b><p>
+     *
+     * Invoke counting sort on large array, otherwise run
+     * insertion sort on small array.<p>
+     *
+     * Then check the recursion depth to avoid quadratic time
+     * with counting sort.<p>
+     *
+     * Then apply Quicksort with two pivots on random data,
+     * otherwise run one-pivot Quicksort.<p>
+     *
+     * <b>Parallel sorting (int/long/float/double)</b><p>
+     *
+     * If the array size is small, sequential sort is run.
+     * Otherwise invoke parallel merge sort (the recursion depth
+     * depends on parallelism level), then run parallel Quicksort.
      */
     private DualPivotQuicksort() {}
 
-    /**
-     * Max array size to use mixed insertion sort.
-     */
-    private static final int MAX_MIXED_INSERTION_SORT_SIZE = 65;
+    /* ----------------------- Insertion sort ----------------------- */
 
     /**
-     * Max array size to use insertion sort.
+     * Max size of array to use insertion sort (the best on shuffle data).
      */
-    private static final int MAX_INSERTION_SORT_SIZE = 44;
+    private static final int MAX_INSERTION_SORT_SIZE = 37;
+
+    /* ------------------------ Merging sort ------------------------ */
 
     /**
-     * Min array size to perform sorting in parallel.
+     * Min size of array to use merging sort (the best on stagger data).
      */
-    private static final int MIN_PARALLEL_SORT_SIZE = 4 << 10;
+    private static final int MIN_MERGING_SORT_SIZE = 512;
 
     /**
-     * Min array size to try merging of runs.
+     * Min size of run to continue scanning (the best on stagger data).
      */
-    private static final int MIN_TRY_MERGE_SIZE = 4 << 10;
+    private static final int MIN_RUN_SIZE = 64;
 
     /**
-     * Min size of the first run to continue with scanning.
+     * Max capacity of the index array to track the runs.
      */
-    private static final int MIN_FIRST_RUN_SIZE = 16;
+    private static final int MAX_RUN_CAPACITY = 10 << 10;
+
+    /* ------------------------ Digital sort ------------------------ */
 
     /**
-     * Min factor for the first runs to continue scanning.
+     * Min size of array to use counting sort (the best on random data).
      */
-    private static final int MIN_FIRST_RUNS_FACTOR = 7;
+    private static final int MIN_COUNTING_SORT_SIZE = 640;
 
     /**
-     * Max capacity of the index array for tracking runs.
+     * Min size of array to use numerical sort (the best on repeated data).
      */
-    private static final int MAX_RUN_CAPACITY = 5 << 10;
+    private static final int MIN_NUMERICAL_SORT_SIZE = 9 << 10;
+
+    /* ----------------------- Parallel sort ------------------------ */
 
     /**
-     * Min number of runs, required by parallel merging.
+     * Min size of array to perform sorting in parallel (the best on stagger data).
      */
-    private static final int MIN_RUN_COUNT = 4;
+    private static final int MIN_PARALLEL_SORT_SIZE = 3 << 10;
+
+    /* ----------------------- Infrastructure ----------------------- */
 
     /**
-     * Min array size to use parallel merging of parts.
+     * Max recursive depth before switching to heap sort.
      */
-    private static final int MIN_PARALLEL_MERGE_PARTS_SIZE = 4 << 10;
+    private static final int MAX_RECURSION_DEPTH = 64 << 1;
 
     /**
-     * Min size of a byte array to use counting sort.
+     * Max size of additional buffer in bytes,
+     *      limited by max_heap / 16 or 2 GB max.
      */
-    private static final int MIN_BYTE_COUNTING_SORT_SIZE = 64;
+    private static final int MAX_BUFFER_SIZE =
+        Math.clamp(Runtime.getRuntime().maxMemory() >>> 4, 0, Integer.MAX_VALUE);
 
     /**
-     * Min size of a short or char array to use counting sort.
-     */
-    private static final int MIN_SHORT_OR_CHAR_COUNTING_SORT_SIZE = 1750;
-
-    /**
-     * Threshold of mixed insertion sort is incremented by this value.
-     */
-    private static final int DELTA = 3 << 1;
-
-    /**
-     * Max recursive partitioning depth before using heap sort.
-     */
-    private static final int MAX_RECURSION_DEPTH = 64 * DELTA;
-
-    /**
-     * Represents a function that accepts the array and sorts the specified range
-     * of the array into ascending order.
+     * Represents a function that accepts the array and sorts
+     * the specified range of the array into ascending order.
+     *
+     * @param <T> the class of array
      */
     @FunctionalInterface
-    private static interface SortOperation<A> {
+    private interface SortOperation<T> {
         /**
          * Sorts the specified range of the array.
          *
@@ -136,85 +174,86 @@ final class DualPivotQuicksort {
          * @param low the index of the first element, inclusive, to be sorted
          * @param high the index of the last element, exclusive, to be sorted
          */
-        void sort(A a, int low, int high);
+        void sort(T a, int low, int high);
     }
 
     /**
      * Sorts the specified range of the array into ascending numerical order.
+     * The signature of this method is in sync with native implementation
+     * based on AVX512 instructions from linux/native/libsimdsort package,
+     * don't change the signature.
      *
+     * @param <T> the class of array
      * @param elemType the class of the elements of the array to be sorted
-     * @param array the array to be sorted
-     * @param offset the relative offset, in bytes, from the base address of
-     * the array to sort, otherwise if the array is {@code null},an absolute
-     * address pointing to the first element to sort from.
+     * @param a the array to be sorted
+     * @param offset the relative offset, in bytes, from the base
+     *        address of the array to partition, otherwise if the
+     *        array is {@code null}, an absolute address pointing
+     *        to the first element to partition from
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      * @param so the method reference for the fallback implementation
      */
-    @IntrinsicCandidate
     @ForceInline
-    private static <A> void sort(Class<?> elemType, A array, long offset, int low, int high, SortOperation<A> so) {
-        so.sort(array, low, high);
+    @IntrinsicCandidate
+    private static <T> void sort(Class<?> elemType, T a, long offset,
+            int low, int high, SortOperation<T> so) {
+        so.sort(a, low, high);
     }
 
     /**
-     * Represents a function that accepts the array and partitions the specified range
-     * of the array using the pivots provided.
+     * Represents a function that accepts the array and partitions
+     * the specified range of the array using the given pivots.
+     *
+     * @param <T> the class of array
      */
     @FunctionalInterface
-    interface PartitionOperation<A> {
+    private interface PartitionOperation<T> {
         /**
          * Partitions the specified range of the array using the given pivots.
          *
-         * @param a the array to be partitioned
-         * @param low the index of the first element, inclusive, to be partitioned
-         * @param high the index of the last element, exclusive, to be partitioned
+         * @param a the array for partitioning
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
          * @param pivotIndex1 the index of pivot1, the first pivot
          * @param pivotIndex2 the index of pivot2, the second pivot
+         * @return indices of parts after partitioning
          */
-        int[] partition(A a, int low, int high, int pivotIndex1, int pivotIndex2);
+        int[] partition(T a, int low, int high, int pivotIndex1, int pivotIndex2);
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of the array using the given pivots.
+     * The signature of this method is in sync with native implementation
+     * based on AVX512 instructions from linux/native/libsimdsort package,
+     * don't change the signature.
      *
-     * @param elemType the class of the array to be partitioned
-     * @param array the array to be partitioned
-     * @param offset the relative offset, in bytes, from the base address of
-     * the array to partition, otherwise if the array is {@code null},an absolute
-     * address pointing to the first element to partition from.
-     * @param low the index of the first element, inclusive, to be partitioned
-     * @param high the index of the last element, exclusive, to be partitioned
+     * @param <T> the class of array
+     * @param elemType the class of the array for partitioning
+     * @param a the array for partitioning
+     * @param offset the relative offset, in bytes, from the base
+     *        address of the array to partition, otherwise if the
+     *        array is {@code null}, an absolute address pointing
+     *        to the first element to partition from
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
      * @param po the method reference for the fallback implementation
+     * @return indices of parts after partitioning
      */
-    @IntrinsicCandidate
     @ForceInline
-    private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<A> po) {
-        return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+    @IntrinsicCandidate
+    private static <T> int[] partition(Class<?> elemType, T a, long offset,
+            int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<T> po) {
+        return po.partition(a, low, high, pivotIndex1, pivotIndex2);
     }
 
-    /**
-     * Calculates the double depth of parallel merging.
-     * Depth is negative, if tasks split before sorting.
-     *
-     * @param parallelism the parallelism level
-     * @param size the target size
-     * @return the depth of parallel merging
-     */
-    private static int getDepth(int parallelism, int size) {
-        int depth = 0;
-
-        while ((parallelism >>= 3) > 0 && (size >>= 2) > 0) {
-            depth -= 2;
-        }
-        return depth;
-    }
+// #[int]
 
     /**
      * Sorts the specified range of the array using parallel merge
-     * sort and/or Dual-Pivot Quicksort.
+     * sort and/or Dual-Pivot Quicksort.<p>
      *
      * To balance the faster splitting and parallelism of merge sort
      * with the faster element partitioning of Quicksort, ranges are
@@ -228,70 +267,59 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(int[] a, int parallelism, int low, int high) {
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            int[] b = depth == 0 ? null : new int[size];
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter<>(a, parallelism, low, high - low).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
     }
 
     /**
-     * Sorts the specified array using the Dual-Pivot Quicksort and/or
-     * other sorts in special-cases, possibly with parallel partitions.
+     * Sorts the specified range of the array using Dual-Pivot Quicksort.
      *
-     * @param sorter parallel context
+     * @param sorter the parallel context
      * @param a the array to be sorted
      * @param bits the combination of recursion depth and bit flag, where
-     *        the right bit "0" indicates that array is the leftmost part
+     *        the right bit "0" indicates that range is the leftmost part
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, int[] a, int bits, int low, int high) {
+    static void sort(Sorter<int[]> sorter, int[] a, int bits, int low, int high) {
         while (true) {
-            int end = high - 1, size = high - low;
+            int size = high - low;
+
             /*
-             * Run mixed insertion sort on small non-leftmost parts.
+             * Run adaptive mixed insertion sort on small non-leftmost parts.
              */
-            if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
+                sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
+                sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
             /*
-             * Check if the whole array or large non-leftmost
-             * parts are nearly sorted and then merge runs.
+             * Try merging sort on large part.
              */
-            if ((bits == 0 || size > MIN_TRY_MERGE_SIZE && (bits & 1) > 0)
-                    && tryMergeRuns(sorter, a, low, size)) {
+            if (size > MIN_MERGING_SORT_SIZE * bits
+                    && tryMergingSort(sorter, a, low, high)) {
                 return;
             }
 
             /*
-             * Switch to heap sort if execution
-             * time is becoming quadratic.
+             * Divide the given array into the golden ratio using
+             * an inexpensive approximation to select five sample
+             * elements and determine pivots.
              */
-            if ((bits += DELTA) > MAX_RECURSION_DEPTH) {
-                heapSort(a, low, high);
-                return;
-            }
-
-            /*
-             * Use an inexpensive approximation of the golden ratio
-             * to select five sample elements and determine pivots.
-             */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 7);
 
             /*
              * Five elements around (and including) the central element
@@ -300,119 +328,127 @@ final class DualPivotQuicksort {
              * determined to work well on a wide variety of inputs.
              */
             int e1 = low + step;
-            int e5 = end - step;
+            int e5 = high - step;
             int e3 = (e1 + e5) >>> 1;
             int e2 = (e1 + e3) >>> 1;
             int e4 = (e3 + e5) >>> 1;
-            int a3 = a[e3];
 
             /*
-             * Sort these elements in place by the combination
+             * Sort these elements in-place by the combination
              * of 4-element sorting network and insertion sort.
              *
-             *    5 ------o-----------o------------
-             *            |           |
-             *    4 ------|-----o-----o-----o------
-             *            |     |           |
-             *    2 ------o-----|-----o-----o------
-             *                  |     |
-             *    1 ------------o-----o------------
+             *   1 ---------o---------------o-----------------
+             *              |               |
+             *   2 ---------|-------o-------o-------o---------
+             *              |       |               |
+             *   3 ---------|-------|---------------|---------
+             *              |       |               |
+             *   4 ---------o-------|-------o-------o---------
+             *                      |       |
+             *   5 -----------------o-------o-----------------
              */
-            if (a[e5] < a[e2]) { int t = a[e5]; a[e5] = a[e2]; a[e2] = t; }
-            if (a[e4] < a[e1]) { int t = a[e4]; a[e4] = a[e1]; a[e1] = t; }
-            if (a[e5] < a[e4]) { int t = a[e5]; a[e5] = a[e4]; a[e4] = t; }
-            if (a[e2] < a[e1]) { int t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
-            if (a[e4] < a[e2]) { int t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
+            if (a[e1] > a[e4]) { int t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
+            if (a[e2] > a[e5]) { int t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
+            if (a[e4] > a[e5]) { int t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+            if (a[e1] > a[e2]) { int t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+            if (a[e2] > a[e4]) { int t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
 
-            if (a3 < a[e2]) {
-                if (a3 < a[e1]) {
-                    a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
+            /*
+             * Insert the third element.
+             */
+            if (a[e3] < a[e2]) {
+                if (a[e3] < a[e1]) {
+                    int t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
                 } else {
-                    a[e3] = a[e2]; a[e2] = a3;
+                    int t = a[e3]; a[e3] = a[e2]; a[e2] = t;
                 }
-            } else if (a3 > a[e4]) {
-                if (a3 > a[e5]) {
-                    a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = a3;
+            } else if (a[e3] > a[e4]) {
+                if (a[e3] > a[e5]) {
+                    int t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
                 } else {
-                    a[e3] = a[e4]; a[e4] = a3;
+                    int t = a[e3]; a[e3] = a[e4]; a[e4] = t;
                 }
             }
 
-            // Pointers
-            int lower; // The index of the last element of the left part
-            int upper; // The index of the first element of the right part
+            /*
+             * Switch to heap sort to avoid quadratic time.
+             */
+            if ((bits += 2) > MAX_RECURSION_DEPTH) {
+                heapSort(a, low, high);
+                return;
+            }
 
             /*
-             * Partitioning with 2 pivots in case of different elements.
+             * indices[0] - the index of the last element of the left part
+             * indices[1] - the index of the first element of the right part
+             */
+            int[] indices;
+
+            /*
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-                /*
-                 * Use the first and fifth of the five sorted elements as
-                 * the pivots. These values are inexpensive approximation
-                 * of tertiles. Note, that pivot1 < pivot2.
-                 */
-                int[] pivotIndices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
 
-
+                indices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET,
+                    low, high, e1, e5, DualPivotQuicksort::partitionWithTwoPivots);
 
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, lower + 1, upper);
-                    sorter.forkSorter(bits | 1, upper + 1, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
-                    sort(sorter, a, bits | 1, lower + 1, upper);
-                    sort(sorter, a, bits | 1, upper + 1, high);
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
-            } else { // Use single pivot in case of many equal elements
+            } else { // Partitioning with one pivot
 
-                /*
-                 * Use the third of the five sorted elements as the pivot.
-                 * This value is inexpensive approximation of the median.
-                 */
-                int[] pivotIndices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
+                indices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET,
+                    low, high, e3, e3, DualPivotQuicksort::partitionWithOnePivot);
+
                 /*
                  * Sort the right part (possibly in parallel), excluding
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, upper, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
-                    sort(sorter, a, bits | 1, upper, high);
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
-            high = lower; // Iterate along the left part
+            high = indices[0]; // Iterate along the left part
         }
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of the array using two given pivots.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionDualPivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
+    private static int[] partitionWithTwoPivots(
+            int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = --high;
         int lower = low;
-        int upper = end;
 
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        int pivot1 = a[e1];
-        int pivot2 = a[e5];
+        /*
+         * Use the first and fifth of the five sorted elements as
+         * the pivots. These values are inexpensive approximation
+         * of tertiles. Note, that pivot1 < pivot2.
+         */
+        int pivot1 = a[pivotIndex1];
+        int pivot2 = a[pivotIndex2];
 
         /*
          * The first and the last elements to be sorted are moved
@@ -421,8 +457,8 @@ final class DualPivotQuicksort {
          * into their final positions, and excluded from the next
          * subsequent sorting.
          */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
+        a[pivotIndex1] = a[lower];
+        a[pivotIndex2] = a[upper];
 
         /*
          * Skip elements, which are less or greater than the pivots.
@@ -433,39 +469,36 @@ final class DualPivotQuicksort {
         /*
          * Backward 3-interval partitioning
          *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
+         *     left part                     central part          right part
+         * +--------------+----------+--------------------------+--------------+
+         * |   < pivot1   |    ?     |  pivot1 <= .. <= pivot2  |   > pivot2   |
+         * +--------------+----------+--------------------------+--------------+
+         *               ^          ^                            ^
+         *               |          |                            |
+         *             lower        k                          upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             int ak = a[k];
 
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
+            if (ak < pivot1) { // Move a[k] to the left part
+                while (a[++lower] < pivot1);
+
+                if (lower > k) {
+                    lower = k;
+                    break;
                 }
-            } else if (ak > pivot2) { // Move a[k] to the right side
+                if (a[lower] > pivot2) {
+                    a[k] = a[--upper];
+                    a[upper] = a[lower];
+                } else {
+                    a[k] = a[lower];
+                }
+                a[lower] = ak;
+            } else if (ak > pivot2) { // Move a[k] to the right part
                 a[k] = a[--upper];
                 a[upper] = ak;
             }
@@ -474,30 +507,35 @@ final class DualPivotQuicksort {
         /*
          * Swap the pivots into their final positions.
          */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
+        a[low]  = a[lower]; a[lower] = pivot1;
+        a[high] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        return new int[] { lower, upper };
     }
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of the array using one given pivot.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionSinglePivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-
-        int end = high - 1;
+    private static int[] partitionWithOnePivot(
+            int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = high;
         int lower = low;
-        int upper = end;
-        int e3 = pivotIndex1;
-        int pivot = a[e3];
+
+        /*
+         * Use the third of the five sorted elements as the pivot.
+         * This value is inexpensive approximation of the median.
+         */
+        int pivot = a[pivotIndex1];
 
         /*
          * The first element to be sorted is moved to the
@@ -506,43 +544,40 @@ final class DualPivotQuicksort {
          * back into its final position, and excluded from
          * the next subsequent sorting.
          */
-        a[e3] = a[lower];
+        a[pivotIndex1] = a[lower];
 
         /*
-         * Traditional 3-way (Dutch National Flag) partitioning
+         * Dutch National Flag partitioning
          *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
+         *     left part               central part    right part
+         * +--------------+----------+--------------+-------------+
+         * |   < pivot    |    ?     |   == pivot   |   > pivot   |
+         * +--------------+----------+--------------+-------------+
+         *               ^          ^                ^
+         *               |          |                |
+         *             lower        k              upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
-        for (int k = ++upper; --k > lower; ) {
+        for (int k = upper; --k > lower; ) {
             int ak = a[k];
 
-            if (ak != pivot) {
-                a[k] = pivot;
+            if (ak == pivot) {
+                continue;
+            }
+            a[k] = pivot;
 
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
+            if (ak < pivot) { // Move a[k] to the left part
+                while (a[++lower] < pivot);
 
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
+                if (a[lower] > pivot) {
+                    a[--upper] = a[lower];
                 }
+                a[lower] = ak;
+            } else { // ak > pivot - Move a[k] to the right part
+                a[--upper] = ak;
             }
         }
 
@@ -550,14 +585,15 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        return new int[] { lower, upper };
     }
 
     /**
-     * Sorts the specified range of the array using mixed insertion sort.
+     * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -569,110 +605,69 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void mixedInsertionSort(int[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
+    static void mixedInsertionSort(int[] a, int low, int high) {
+        /*
+         * Split the array for pin and pair insertion sorts.
+         */
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
+
+        /*
+         * Start with pin insertion sort.
+         */
+        for (int i, p = high; ++low < end; ) {
+            int ai = a[i = low], pin = a[--p];
 
             /*
-             * Invoke simple insertion sort on tiny array.
+             * Swap larger element with pin.
              */
-            for (int i; ++low < end; ) {
-                int ai = a[i = low];
+            if (ai > pin) {
+                ai = pin;
+                a[p] = a[i];
+            }
 
-                while (ai < a[--i]) {
+            /*
+             * Insert element into sorted part.
+             */
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
+            }
+            a[i] = ai;
+        }
+
+        /*
+         * Finish with pair insertion sort.
+         */
+        for (int i; low < high; ++low) {
+            int a1 = a[i = low], a2 = a[++low];
+
+            /*
+             * Insert two elements per iteration: at first, insert the
+             * larger element and then insert the smaller element, but
+             * from the position where the larger element was inserted.
+             */
+            if (a1 > a2) {
+
+                while (a1 < a[--i]) {
+                    a[i + 2] = a[i];
+                }
+                a[++i + 1] = a1;
+
+                while (a2 < a[--i]) {
                     a[i + 1] = a[i];
                 }
-                a[i + 1] = ai;
-            }
-        } else {
+                a[i + 1] = a2;
 
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            int pin = a[end];
+            } else if (a1 < a[i - 1]) {
 
-            for (int i, p = high; ++low < end; ) {
-                int ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
+                while (a2 < a[--i]) {
+                    a[i + 2] = a[i];
                 }
-            }
+                a[++i + 1] = a2;
 
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                int a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
+                while (a1 < a[--i]) {
+                    a[i + 1] = a[i];
                 }
+                a[i + 1] = a1;
             }
         }
     }
@@ -684,17 +679,332 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void insertionSort(int[] a, int low, int high) {
+    static void insertionSort(int[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             int ai = a[i = k];
 
             if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
+                do {
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
+
+                a[i] = ai;
             }
         }
+    }
+
+    /**
+     * Tries to sort the specified range of the array using merging sort.
+     *
+     * @param sorter the parallel context
+     * @param a the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
+     */
+    static boolean tryMergingSort(Sorter<int[]> sorter, int[] a, int low, int high) {
+        /*
+         * The element run[i] holds the start index
+         * of i-th sequence in non-descending order.
+         */
+        int count = 1;
+        int[] run = null;
+
+        /*
+         * Identify all possible runs.
+         */
+        for (int k = low + 1, last = low; k < high; ) {
+            /*
+             * Find the next run.
+             */
+            if (a[k - 1] < a[k]) {
+
+                // Identify ascending sequence
+                while (++k < high && a[k - 1] <= a[k]);
+
+            } else if (a[k - 1] > a[k]) {
+
+                // Identify descending sequence
+                while (++k < high && a[k - 1] >= a[k]);
+
+                // Reverse into ascending order
+                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
+                    int ai = a[i]; a[i] = a[j]; a[j] = ai;
+                }
+
+                // Check the next sequence
+                if (k < high && a[k - 1] < a[k]) {
+                    continue;
+                }
+
+            } else { // Identify constant sequence
+                for (int ak = a[k]; ++k < high && ak == a[k]; );
+
+                // Check the next sequence
+                if (k < high) {
+                    continue;
+                }
+            }
+
+            /*
+             * Process the current run.
+             */
+            if (run == null) {
+
+                if (k == high) {
+                    /*
+                     * Array is monotonous sequence
+                     * and therefore already sorted.
+                     */
+                    return true;
+                }
+                run = new int[Math.min((high - low) >> 6, MAX_RUN_CAPACITY) | 8];
+                run[0] = low;
+
+            } else if (a[last - 1] > a[last]) { // Start the new run
+
+                if (k - low < count * MIN_RUN_SIZE) {
+                    /*
+                     * Terminate the scanning,
+                     * if the runs are too small.
+                     */
+                    return false;
+                }
+
+                if (++count == run.length) {
+                    /*
+                     * Array is not highly structured.
+                     */
+                    return false;
+                }
+            }
+
+            /*
+             * Save the current run.
+             */
+            run[count] = (last = k);
+
+            /*
+             * Check single-element run at the end.
+             */
+            if (++k == high) {
+                --k;
+            }
+        }
+
+        /*
+         * Merge all runs.
+         */
+        if (count > 1) {
+            int[] b; int offset = low;
+
+            if (sorter != null && (b = sorter.b) != null) {
+                offset = sorter.offset;
+            } else if ((b = tryAllocate(int[].class, high - low)) == null) {
+                return false;
+            }
+            mergeRuns(sorter, a, b, offset, true, run, 0, count);
+        }
+        return true;
+    }
+
+    /**
+     * Merges the specified runs.
+     *
+     * @param sorter the parallel context
+     * @param a the source array
+     * @param b the buffer for merging
+     * @param offset the start index in the source, inclusive
+     * @param aim whether the original array is used for merging
+     * @param run the start indexes of the runs, inclusive
+     * @param lo the start index of the first run, inclusive
+     * @param hi the start index of the last run, inclusive
+     */
+    private static void mergeRuns(Sorter<int[]> sorter, int[] a, int[] b, int offset,
+            boolean aim, int[] run, int lo, int hi) {
+
+        if (hi - lo == 1) {
+            if (!aim) {
+                System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
+            }
+            return;
+        }
+
+        /*
+         * Split the array into two approximately equal parts.
+         */
+        int mi = lo, key = (run[lo] + run[hi]) >>> 1;
+        while (run[++mi + 1] <= key);
+
+        /*
+         * Merge the runs of all parts.
+         */
+        mergeRuns(sorter, a, b, offset, !aim, run, lo, mi);
+        mergeRuns(sorter, a, b, offset, !aim, run, mi, hi);
+
+        int[] dst = aim ? a : b;
+        int[] src = aim ? b : a;
+
+        int k  = !aim ? run[lo] - offset : run[lo];
+        int lo1 = aim ? run[lo] - offset : run[lo];
+        int hi1 = aim ? run[mi] - offset : run[mi];
+        int lo2 = aim ? run[mi] - offset : run[mi];
+        int hi2 = aim ? run[hi] - offset : run[hi];
+
+        /*
+         * Merge the left and right parts.
+         */
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+            new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
+        } else {
+            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+        }
+    }
+
+    /**
+     * Merges the sorted parts in parallel.
+     *
+     * @param merger the parallel context
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(Merger<int[]> merger, int[] dst, int k,
+            int[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
+            /*
+             * The first part must be larger.
+             */
+            if (hi1 - lo1 < hi2 - lo2) {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                int key = src[mi2];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                int key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
+                }
+            }
+
+            /*
+             * Merge the first parts in parallel.
+             */
+            merger.fork(k, lo1, mi1, lo2, mi2);
+
+            /*
+             * Skip the first parts.
+             */
+            k += mi2 - lo2 + mi1 - lo1;
+
+            /*
+             * Iterate along the second parts.
+             */
+            lo1 = mi1;
+            lo2 = mi2;
+        }
+
+        /*
+         * Merge the small parts sequentially.
+         */
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+    }
+
+    /**
+     * Merges the sorted parts sequentially.
+     *
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(int[] dst, int k,
+            int[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    int next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    int next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    int next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            }
+        }
+
+        /*
+         * Copy the tail of the left and right parts.
+         */
+        System.arraycopy(src, lo1, dst, k, hi1 - lo1);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -704,7 +1014,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void heapSort(int[] a, int low, int high) {
+    static void heapSort(int[] a, int low, int high) {
         for (int k = (low + high) >>> 1; k > low; ) {
             pushDown(a, --k, a[k], low, high);
         }
@@ -741,282 +1051,11 @@ final class DualPivotQuicksort {
         a[p] = value;
     }
 
-    /**
-     * Tries to sort the specified range of the array.
-     *
-     * @param sorter parallel context
-     * @param a the array to be sorted
-     * @param low the index of the first element to be sorted
-     * @param size the array size
-     * @return true if finally sorted, false otherwise
-     */
-    private static boolean tryMergeRuns(Sorter sorter, int[] a, int low, int size) {
-
-        /*
-         * The run array is constructed only if initial runs are
-         * long enough to continue, run[i] then holds start index
-         * of the i-th sequence of elements in non-descending order.
-         */
-        int[] run = null;
-        int high = low + size;
-        int count = 1, last = low;
-
-        /*
-         * Identify all possible runs.
-         */
-        for (int k = low + 1; k < high; ) {
-
-            /*
-             * Find the end index of the current run.
-             */
-            if (a[k - 1] < a[k]) {
-
-                // Identify ascending sequence
-                while (++k < high && a[k - 1] <= a[k]);
-
-            } else if (a[k - 1] > a[k]) {
-
-                // Identify descending sequence
-                while (++k < high && a[k - 1] >= a[k]);
-
-                // Reverse into ascending order
-                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
-                    int ai = a[i]; a[i] = a[j]; a[j] = ai;
-                }
-            } else { // Identify constant sequence
-                for (int ak = a[k]; ++k < high && ak == a[k]; );
-
-                if (k < high) {
-                    continue;
-                }
-            }
-
-            /*
-             * Check special cases.
-             */
-            if (run == null) {
-                if (k == high) {
-
-                    /*
-                     * The array is monotonous sequence,
-                     * and therefore already sorted.
-                     */
-                    return true;
-                }
-
-                if (k - low < MIN_FIRST_RUN_SIZE) {
-
-                    /*
-                     * The first run is too small
-                     * to proceed with scanning.
-                     */
-                    return false;
-                }
-
-                run = new int[((size >> 10) | 0x7F) & 0x3FF];
-                run[0] = low;
-
-            } else if (a[last - 1] > a[last]) {
-
-                if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
-                    /*
-                     * The first runs are not long
-                     * enough to continue scanning.
-                     */
-                    return false;
-                }
-
-                if (++count == MAX_RUN_CAPACITY) {
-
-                    /*
-                     * Array is not highly structured.
-                     */
-                    return false;
-                }
-
-                if (count == run.length) {
-
-                    /*
-                     * Increase capacity of index array.
-                     */
-                    run = Arrays.copyOf(run, count << 1);
-                }
-            }
-            run[count] = (last = k);
-        }
-
-        /*
-         * Merge runs of highly structured array.
-         */
-        if (count > 1) {
-            int[] b; int offset = low;
-
-            if (sorter == null || (b = (int[]) sorter.b) == null) {
-                b = new int[size];
-            } else {
-                offset = sorter.offset;
-            }
-            mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
-        }
-        return true;
-    }
-
-    /**
-     * Merges the specified runs.
-     *
-     * @param a the source array
-     * @param b the temporary buffer used in merging
-     * @param offset the start index in the source, inclusive
-     * @param aim specifies merging: to source ( > 0), buffer ( < 0) or any ( == 0)
-     * @param parallel indicates whether merging is performed in parallel
-     * @param run the start indexes of the runs, inclusive
-     * @param lo the start index of the first run, inclusive
-     * @param hi the start index of the last run, inclusive
-     * @return the destination where runs are merged
-     */
-    private static int[] mergeRuns(int[] a, int[] b, int offset,
-            int aim, boolean parallel, int[] run, int lo, int hi) {
-
-        if (hi - lo == 1) {
-            if (aim >= 0) {
-                return a;
-            }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
-            return b;
-        }
-
-        /*
-         * Split into approximately equal parts.
-         */
-        int mi = lo, rmi = (run[lo] + run[hi]) >>> 1;
-        while (run[++mi + 1] <= rmi);
-
-        /*
-         * Merge the left and right parts.
-         */
-        int[] a1, a2;
-
-        if (parallel && hi - lo > MIN_RUN_COUNT) {
-            RunMerger merger = new RunMerger(a, b, offset, 0, run, mi, hi).forkMe();
-            a1 = mergeRuns(a, b, offset, -aim, true, run, lo, mi);
-            a2 = (int[]) merger.getDestination();
-        } else {
-            a1 = mergeRuns(a, b, offset, -aim, false, run, lo, mi);
-            a2 = mergeRuns(a, b, offset,    0, false, run, mi, hi);
-        }
-
-        int[] dst = a1 == a ? b : a;
-
-        int k   = a1 == a ? run[lo] - offset : run[lo];
-        int lo1 = a1 == b ? run[lo] - offset : run[lo];
-        int hi1 = a1 == b ? run[mi] - offset : run[mi];
-        int lo2 = a2 == b ? run[mi] - offset : run[mi];
-        int hi2 = a2 == b ? run[hi] - offset : run[hi];
-
-        if (parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
-        } else {
-            mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
-        }
-        return dst;
-    }
-
-    /**
-     * Merges the sorted parts.
-     *
-     * @param merger parallel context
-     * @param dst the destination where parts are merged
-     * @param k the start index of the destination, inclusive
-     * @param a1 the first part
-     * @param lo1 the start index of the first part, inclusive
-     * @param hi1 the end index of the first part, exclusive
-     * @param a2 the second part
-     * @param lo2 the start index of the second part, inclusive
-     * @param hi2 the end index of the second part, exclusive
-     */
-    private static void mergeParts(Merger merger, int[] dst, int k,
-            int[] a1, int lo1, int hi1, int[] a2, int lo2, int hi2) {
-
-        if (merger != null && a1 == a2) {
-
-            while (true) {
-
-                /*
-                 * The first part must be larger.
-                 */
-                if (hi1 - lo1 < hi2 - lo2) {
-                    int lo = lo1; lo1 = lo2; lo2 = lo;
-                    int hi = hi1; hi1 = hi2; hi2 = hi;
-                }
-
-                /*
-                 * Small parts will be merged sequentially.
-                 */
-                if (hi1 - lo1 < MIN_PARALLEL_MERGE_PARTS_SIZE) {
-                    break;
-                }
-
-                /*
-                 * Find the median of the larger part.
-                 */
-                int mi1 = (lo1 + hi1) >>> 1;
-                int key = a1[mi1];
-                int mi2 = hi2;
-
-                /*
-                 * Partition the smaller part.
-                 */
-                for (int loo = lo2; loo < mi2; ) {
-                    int t = (loo + mi2) >>> 1;
-
-                    if (key > a2[t]) {
-                        loo = t + 1;
-                    } else {
-                        mi2 = t;
-                    }
-                }
-
-                int d = mi2 - lo2 + mi1 - lo1;
-
-                /*
-                 * Merge the right sub-parts in parallel.
-                 */
-                merger.forkMerger(dst, k + d, a1, mi1, hi1, a2, mi2, hi2);
-
-                /*
-                 * Process the sub-left parts.
-                 */
-                hi1 = mi1;
-                hi2 = mi2;
-            }
-        }
-
-        /*
-         * Merge small parts sequentially.
-         */
-        while (lo1 < hi1 && lo2 < hi2) {
-            dst[k++] = a1[lo1] < a2[lo2] ? a1[lo1++] : a2[lo2++];
-        }
-        if (dst != a1 || k < lo1) {
-            while (lo1 < hi1) {
-                dst[k++] = a1[lo1++];
-            }
-        }
-        if (dst != a2 || k < lo2) {
-            while (lo2 < hi2) {
-                dst[k++] = a2[lo2++];
-            }
-        }
-    }
-
-// [long]
+// #[long]
 
     /**
      * Sorts the specified range of the array using parallel merge
-     * sort and/or Dual-Pivot Quicksort.
+     * sort and/or Dual-Pivot Quicksort.<p>
      *
      * To balance the faster splitting and parallelism of merge sort
      * with the faster element partitioning of Quicksort, ranges are
@@ -1030,71 +1069,59 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(long[] a, int parallelism, int low, int high) {
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            long[] b = depth == 0 ? null : new long[size];
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter<>(a, parallelism, low, high - low).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
     }
 
     /**
-     * Sorts the specified array using the Dual-Pivot Quicksort and/or
-     * other sorts in special-cases, possibly with parallel partitions.
+     * Sorts the specified range of the array using Dual-Pivot Quicksort.
      *
-     * @param sorter parallel context
+     * @param sorter the parallel context
      * @param a the array to be sorted
      * @param bits the combination of recursion depth and bit flag, where
-     *        the right bit "0" indicates that array is the leftmost part
+     *        the right bit "0" indicates that range is the leftmost part
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, long[] a, int bits, int low, int high) {
+    static void sort(Sorter<long[]> sorter, long[] a, int bits, int low, int high) {
         while (true) {
-            int end = high - 1, size = high - low;
+            int size = high - low;
 
             /*
-             * Run mixed insertion sort on small non-leftmost parts.
+             * Run adaptive mixed insertion sort on small non-leftmost parts.
              */
-            if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
+                sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
+                sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
             /*
-             * Check if the whole array or large non-leftmost
-             * parts are nearly sorted and then merge runs.
+             * Try merging sort on large part.
              */
-            if ((bits == 0 || size > MIN_TRY_MERGE_SIZE && (bits & 1) > 0)
-                    && tryMergeRuns(sorter, a, low, size)) {
+            if (size > MIN_MERGING_SORT_SIZE * bits
+                    && tryMergingSort(sorter, a, low, high)) {
                 return;
             }
 
             /*
-             * Switch to heap sort if execution
-             * time is becoming quadratic.
+             * Divide the given array into the golden ratio using
+             * an inexpensive approximation to select five sample
+             * elements and determine pivots.
              */
-            if ((bits += DELTA) > MAX_RECURSION_DEPTH) {
-                heapSort(a, low, high);
-                return;
-            }
-
-            /*
-             * Use an inexpensive approximation of the golden ratio
-             * to select five sample elements and determine pivots.
-             */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 7);
 
             /*
              * Five elements around (and including) the central element
@@ -1103,117 +1130,127 @@ final class DualPivotQuicksort {
              * determined to work well on a wide variety of inputs.
              */
             int e1 = low + step;
-            int e5 = end - step;
+            int e5 = high - step;
             int e3 = (e1 + e5) >>> 1;
             int e2 = (e1 + e3) >>> 1;
             int e4 = (e3 + e5) >>> 1;
-            long a3 = a[e3];
 
             /*
-             * Sort these elements in place by the combination
+             * Sort these elements in-place by the combination
              * of 4-element sorting network and insertion sort.
              *
-             *    5 ------o-----------o------------
-             *            |           |
-             *    4 ------|-----o-----o-----o------
-             *            |     |           |
-             *    2 ------o-----|-----o-----o------
-             *                  |     |
-             *    1 ------------o-----o------------
+             *   1 ---------o---------------o-----------------
+             *              |               |
+             *   2 ---------|-------o-------o-------o---------
+             *              |       |               |
+             *   3 ---------|-------|---------------|---------
+             *              |       |               |
+             *   4 ---------o-------|-------o-------o---------
+             *                      |       |
+             *   5 -----------------o-------o-----------------
              */
-            if (a[e5] < a[e2]) { long t = a[e5]; a[e5] = a[e2]; a[e2] = t; }
-            if (a[e4] < a[e1]) { long t = a[e4]; a[e4] = a[e1]; a[e1] = t; }
-            if (a[e5] < a[e4]) { long t = a[e5]; a[e5] = a[e4]; a[e4] = t; }
-            if (a[e2] < a[e1]) { long t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
-            if (a[e4] < a[e2]) { long t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
+            if (a[e1] > a[e4]) { long t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
+            if (a[e2] > a[e5]) { long t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
+            if (a[e4] > a[e5]) { long t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+            if (a[e1] > a[e2]) { long t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+            if (a[e2] > a[e4]) { long t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
 
-            if (a3 < a[e2]) {
-                if (a3 < a[e1]) {
-                    a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
+            /*
+             * Insert the third element.
+             */
+            if (a[e3] < a[e2]) {
+                if (a[e3] < a[e1]) {
+                    long t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
                 } else {
-                    a[e3] = a[e2]; a[e2] = a3;
+                    long t = a[e3]; a[e3] = a[e2]; a[e2] = t;
                 }
-            } else if (a3 > a[e4]) {
-                if (a3 > a[e5]) {
-                    a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = a3;
+            } else if (a[e3] > a[e4]) {
+                if (a[e3] > a[e5]) {
+                    long t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
                 } else {
-                    a[e3] = a[e4]; a[e4] = a3;
+                    long t = a[e3]; a[e3] = a[e4]; a[e4] = t;
                 }
             }
 
-            // Pointers
-            int lower; // The index of the last element of the left part
-            int upper; // The index of the first element of the right part
+            /*
+             * Switch to heap sort to avoid quadratic time.
+             */
+            if ((bits += 2) > MAX_RECURSION_DEPTH) {
+                heapSort(a, low, high);
+                return;
+            }
 
             /*
-             * Partitioning with 2 pivots in case of different elements.
+             * indices[0] - the index of the last element of the left part
+             * indices[1] - the index of the first element of the right part
+             */
+            int[] indices;
+
+            /*
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
-                /*
-                 * Use the first and fifth of the five sorted elements as
-                 * the pivots. These values are inexpensive approximation
-                 * of tertiles. Note, that pivot1 < pivot2.
-                 */
-                int[] pivotIndices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
+                indices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                    low, high, e1, e5, DualPivotQuicksort::partitionWithTwoPivots);
+
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, lower + 1, upper);
-                    sorter.forkSorter(bits | 1, upper + 1, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
-                    sort(sorter, a, bits | 1, lower + 1, upper);
-                    sort(sorter, a, bits | 1, upper + 1, high);
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
-            } else { // Use single pivot in case of many equal elements
+            } else { // Partitioning with one pivot
 
-                /*
-                 * Use the third of the five sorted elements as the pivot.
-                 * This value is inexpensive approximation of the median.
-                 */
-                int[] pivotIndices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
+                indices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                    low, high, e3, e3, DualPivotQuicksort::partitionWithOnePivot);
+
                 /*
                  * Sort the right part (possibly in parallel), excluding
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, upper, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
-                    sort(sorter, a, bits | 1, upper, high);
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
-            high = lower; // Iterate along the left part
+            high = indices[0]; // Iterate along the left part
         }
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of the array using two given pivots.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionDualPivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
+    private static int[] partitionWithTwoPivots(
+            long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = --high;
         int lower = low;
-        int upper = end;
 
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        long pivot1 = a[e1];
-        long pivot2 = a[e5];
+        /*
+         * Use the first and fifth of the five sorted elements as
+         * the pivots. These values are inexpensive approximation
+         * of tertiles. Note, that pivot1 < pivot2.
+         */
+        long pivot1 = a[pivotIndex1];
+        long pivot2 = a[pivotIndex2];
 
         /*
          * The first and the last elements to be sorted are moved
@@ -1222,8 +1259,8 @@ final class DualPivotQuicksort {
          * into their final positions, and excluded from the next
          * subsequent sorting.
          */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
+        a[pivotIndex1] = a[lower];
+        a[pivotIndex2] = a[upper];
 
         /*
          * Skip elements, which are less or greater than the pivots.
@@ -1234,39 +1271,36 @@ final class DualPivotQuicksort {
         /*
          * Backward 3-interval partitioning
          *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
+         *     left part                     central part          right part
+         * +--------------+----------+--------------------------+--------------+
+         * |   < pivot1   |    ?     |  pivot1 <= .. <= pivot2  |   > pivot2   |
+         * +--------------+----------+--------------------------+--------------+
+         *               ^          ^                            ^
+         *               |          |                            |
+         *             lower        k                          upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             long ak = a[k];
 
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
+            if (ak < pivot1) { // Move a[k] to the left part
+                while (a[++lower] < pivot1);
+
+                if (lower > k) {
+                    lower = k;
+                    break;
                 }
-            } else if (ak > pivot2) { // Move a[k] to the right side
+                if (a[lower] > pivot2) {
+                    a[k] = a[--upper];
+                    a[upper] = a[lower];
+                } else {
+                    a[k] = a[lower];
+                }
+                a[lower] = ak;
+            } else if (ak > pivot2) { // Move a[k] to the right part
                 a[k] = a[--upper];
                 a[upper] = ak;
             }
@@ -1275,31 +1309,35 @@ final class DualPivotQuicksort {
         /*
          * Swap the pivots into their final positions.
          */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
+        a[low]  = a[lower]; a[lower] = pivot1;
+        a[high] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        return new int[] { lower, upper };
     }
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of the array using one given pivot.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionSinglePivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-
-        int end = high - 1;
+    private static int[] partitionWithOnePivot(
+            long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = high;
         int lower = low;
-        int upper = end;
 
-        int e3 = pivotIndex1;
-        long pivot = a[e3];
+        /*
+         * Use the third of the five sorted elements as the pivot.
+         * This value is inexpensive approximation of the median.
+         */
+        long pivot = a[pivotIndex1];
 
         /*
          * The first element to be sorted is moved to the
@@ -1308,43 +1346,40 @@ final class DualPivotQuicksort {
          * back into its final position, and excluded from
          * the next subsequent sorting.
          */
-        a[e3] = a[lower];
+        a[pivotIndex1] = a[lower];
 
         /*
-         * Traditional 3-way (Dutch National Flag) partitioning
+         * Dutch National Flag partitioning
          *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
+         *     left part               central part    right part
+         * +--------------+----------+--------------+-------------+
+         * |   < pivot    |    ?     |   == pivot   |   > pivot   |
+         * +--------------+----------+--------------+-------------+
+         *               ^          ^                ^
+         *               |          |                |
+         *             lower        k              upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
-        for (int k = ++upper; --k > lower; ) {
+        for (int k = upper; --k > lower; ) {
             long ak = a[k];
 
-            if (ak != pivot) {
-                a[k] = pivot;
+            if (ak == pivot) {
+                continue;
+            }
+            a[k] = pivot;
 
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
+            if (ak < pivot) { // Move a[k] to the left part
+                while (a[++lower] < pivot);
 
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
+                if (a[lower] > pivot) {
+                    a[--upper] = a[lower];
                 }
+                a[lower] = ak;
+            } else { // ak > pivot - Move a[k] to the right part
+                a[--upper] = ak;
             }
         }
 
@@ -1352,14 +1387,15 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        return new int[] { lower, upper };
     }
 
     /**
-     * Sorts the specified range of the array using mixed insertion sort.
+     * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -1371,110 +1407,69 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void mixedInsertionSort(long[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
+    static void mixedInsertionSort(long[] a, int low, int high) {
+        /*
+         * Split the array for pin and pair insertion sorts.
+         */
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
+
+        /*
+         * Start with pin insertion sort.
+         */
+        for (int i, p = high; ++low < end; ) {
+            long ai = a[i = low], pin = a[--p];
 
             /*
-             * Invoke simple insertion sort on tiny array.
+             * Swap larger element with pin.
              */
-            for (int i; ++low < end; ) {
-                long ai = a[i = low];
+            if (ai > pin) {
+                ai = pin;
+                a[p] = a[i];
+            }
 
-                while (ai < a[--i]) {
+            /*
+             * Insert element into sorted part.
+             */
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
+            }
+            a[i] = ai;
+        }
+
+        /*
+         * Finish with pair insertion sort.
+         */
+        for (int i; low < high; ++low) {
+            long a1 = a[i = low], a2 = a[++low];
+
+            /*
+             * Insert two elements per iteration: at first, insert the
+             * larger element and then insert the smaller element, but
+             * from the position where the larger element was inserted.
+             */
+            if (a1 > a2) {
+
+                while (a1 < a[--i]) {
+                    a[i + 2] = a[i];
+                }
+                a[++i + 1] = a1;
+
+                while (a2 < a[--i]) {
                     a[i + 1] = a[i];
                 }
-                a[i + 1] = ai;
-            }
-        } else {
+                a[i + 1] = a2;
 
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            long pin = a[end];
+            } else if (a1 < a[i - 1]) {
 
-            for (int i, p = high; ++low < end; ) {
-                long ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
+                while (a2 < a[--i]) {
+                    a[i + 2] = a[i];
                 }
-            }
+                a[++i + 1] = a2;
 
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                long a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
+                while (a1 < a[--i]) {
+                    a[i + 1] = a[i];
                 }
+                a[i + 1] = a1;
             }
         }
     }
@@ -1486,17 +1481,332 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void insertionSort(long[] a, int low, int high) {
+    static void insertionSort(long[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             long ai = a[i = k];
 
             if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
+                do {
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
+
+                a[i] = ai;
             }
         }
+    }
+
+    /**
+     * Tries to sort the specified range of the array using merging sort.
+     *
+     * @param sorter the parallel context
+     * @param a the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
+     */
+    static boolean tryMergingSort(Sorter<long[]> sorter, long[] a, int low, int high) {
+        /*
+         * The element run[i] holds the start index
+         * of i-th sequence in non-descending order.
+         */
+        int count = 1;
+        int[] run = null;
+
+        /*
+         * Identify all possible runs.
+         */
+        for (int k = low + 1, last = low; k < high; ) {
+            /*
+             * Find the next run.
+             */
+            if (a[k - 1] < a[k]) {
+
+                // Identify ascending sequence
+                while (++k < high && a[k - 1] <= a[k]);
+
+            } else if (a[k - 1] > a[k]) {
+
+                // Identify descending sequence
+                while (++k < high && a[k - 1] >= a[k]);
+
+                // Reverse into ascending order
+                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
+                    long ai = a[i]; a[i] = a[j]; a[j] = ai;
+                }
+
+                // Check the next sequence
+                if (k < high && a[k - 1] < a[k]) {
+                    continue;
+                }
+
+            } else { // Identify constant sequence
+                for (long ak = a[k]; ++k < high && ak == a[k]; );
+
+                // Check the next sequence
+                if (k < high) {
+                    continue;
+                }
+            }
+
+            /*
+             * Process the current run.
+             */
+            if (run == null) {
+
+                if (k == high) {
+                    /*
+                     * Array is monotonous sequence
+                     * and therefore already sorted.
+                     */
+                    return true;
+                }
+                run = new int[Math.min((high - low) >> 6, MAX_RUN_CAPACITY) | 8];
+                run[0] = low;
+
+            } else if (a[last - 1] > a[last]) { // Start the new run
+
+                if (k - low < count * MIN_RUN_SIZE) {
+                    /*
+                     * Terminate the scanning,
+                     * if the runs are too small.
+                     */
+                    return false;
+                }
+
+                if (++count == run.length) {
+                    /*
+                     * Array is not highly structured.
+                     */
+                    return false;
+                }
+            }
+
+            /*
+             * Save the current run.
+             */
+            run[count] = (last = k);
+
+            /*
+             * Check single-element run at the end.
+             */
+            if (++k == high) {
+                --k;
+            }
+        }
+
+        /*
+         * Merge all runs.
+         */
+        if (count > 1) {
+            long[] b; int offset = low;
+
+            if (sorter != null && (b = sorter.b) != null) {
+                offset = sorter.offset;
+            } else if ((b = tryAllocate(long[].class, high - low)) == null) {
+                return false;
+            }
+            mergeRuns(sorter, a, b, offset, true, run, 0, count);
+        }
+        return true;
+    }
+
+    /**
+     * Merges the specified runs.
+     *
+     * @param sorter the parallel context
+     * @param a the source array
+     * @param b the buffer for merging
+     * @param offset the start index in the source, inclusive
+     * @param aim whether the original array is used for merging
+     * @param run the start indexes of the runs, inclusive
+     * @param lo the start index of the first run, inclusive
+     * @param hi the start index of the last run, inclusive
+     */
+    private static void mergeRuns(Sorter<long[]> sorter, long[] a, long[] b, int offset,
+            boolean aim, int[] run, int lo, int hi) {
+
+        if (hi - lo == 1) {
+            if (!aim) {
+                System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
+            }
+            return;
+        }
+
+        /*
+         * Split the array into two approximately equal parts.
+         */
+        int mi = lo, key = (run[lo] + run[hi]) >>> 1;
+        while (run[++mi + 1] <= key);
+
+        /*
+         * Merge the runs of all parts.
+         */
+        mergeRuns(sorter, a, b, offset, !aim, run, lo, mi);
+        mergeRuns(sorter, a, b, offset, !aim, run, mi, hi);
+
+        long[] dst = aim ? a : b;
+        long[] src = aim ? b : a;
+
+        int k  = !aim ? run[lo] - offset : run[lo];
+        int lo1 = aim ? run[lo] - offset : run[lo];
+        int hi1 = aim ? run[mi] - offset : run[mi];
+        int lo2 = aim ? run[mi] - offset : run[mi];
+        int hi2 = aim ? run[hi] - offset : run[hi];
+
+        /*
+         * Merge the left and right parts.
+         */
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+            new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
+        } else {
+            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+        }
+    }
+
+    /**
+     * Merges the sorted parts in parallel.
+     *
+     * @param merger the parallel context
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(Merger<long[]> merger, long[] dst, int k,
+            long[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
+            /*
+             * The first part must be larger.
+             */
+            if (hi1 - lo1 < hi2 - lo2) {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                long key = src[mi2];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                long key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
+                }
+            }
+
+            /*
+             * Merge the first parts in parallel.
+             */
+            merger.fork(k, lo1, mi1, lo2, mi2);
+
+            /*
+             * Skip the first parts.
+             */
+            k += mi2 - lo2 + mi1 - lo1;
+
+            /*
+             * Iterate along the second parts.
+             */
+            lo1 = mi1;
+            lo2 = mi2;
+        }
+
+        /*
+         * Merge the small parts sequentially.
+         */
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+    }
+
+    /**
+     * Merges the sorted parts sequentially.
+     *
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(long[] dst, int k,
+            long[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    long next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    long next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    long next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            }
+        }
+
+        /*
+         * Copy the tail of the left and right parts.
+         */
+        System.arraycopy(src, lo1, dst, k, hi1 - lo1);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -1506,7 +1816,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void heapSort(long[] a, int low, int high) {
+    static void heapSort(long[] a, int low, int high) {
         for (int k = (low + high) >>> 1; k > low; ) {
             pushDown(a, --k, a[k], low, high);
         }
@@ -1543,292 +1853,20 @@ final class DualPivotQuicksort {
         a[p] = value;
     }
 
-    /**
-     * Tries to sort the specified range of the array.
-     *
-     * @param sorter parallel context
-     * @param a the array to be sorted
-     * @param low the index of the first element to be sorted
-     * @param size the array size
-     * @return true if finally sorted, false otherwise
-     */
-    private static boolean tryMergeRuns(Sorter sorter, long[] a, int low, int size) {
-
-        /*
-         * The run array is constructed only if initial runs are
-         * long enough to continue, run[i] then holds start index
-         * of the i-th sequence of elements in non-descending order.
-         */
-        int[] run = null;
-        int high = low + size;
-        int count = 1, last = low;
-
-        /*
-         * Identify all possible runs.
-         */
-        for (int k = low + 1; k < high; ) {
-
-            /*
-             * Find the end index of the current run.
-             */
-            if (a[k - 1] < a[k]) {
-
-                // Identify ascending sequence
-                while (++k < high && a[k - 1] <= a[k]);
-
-            } else if (a[k - 1] > a[k]) {
-
-                // Identify descending sequence
-                while (++k < high && a[k - 1] >= a[k]);
-
-                // Reverse into ascending order
-                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
-                    long ai = a[i]; a[i] = a[j]; a[j] = ai;
-                }
-            } else { // Identify constant sequence
-                for (long ak = a[k]; ++k < high && ak == a[k]; );
-
-                if (k < high) {
-                    continue;
-                }
-            }
-
-            /*
-             * Check special cases.
-             */
-            if (run == null) {
-                if (k == high) {
-
-                    /*
-                     * The array is monotonous sequence,
-                     * and therefore already sorted.
-                     */
-                    return true;
-                }
-
-                if (k - low < MIN_FIRST_RUN_SIZE) {
-
-                    /*
-                     * The first run is too small
-                     * to proceed with scanning.
-                     */
-                    return false;
-                }
-
-                run = new int[((size >> 10) | 0x7F) & 0x3FF];
-                run[0] = low;
-
-            } else if (a[last - 1] > a[last]) {
-
-                if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
-                    /*
-                     * The first runs are not long
-                     * enough to continue scanning.
-                     */
-                    return false;
-                }
-
-                if (++count == MAX_RUN_CAPACITY) {
-
-                    /*
-                     * Array is not highly structured.
-                     */
-                    return false;
-                }
-
-                if (count == run.length) {
-
-                    /*
-                     * Increase capacity of index array.
-                     */
-                    run = Arrays.copyOf(run, count << 1);
-                }
-            }
-            run[count] = (last = k);
-        }
-
-        /*
-         * Merge runs of highly structured array.
-         */
-        if (count > 1) {
-            long[] b; int offset = low;
-
-            if (sorter == null || (b = (long[]) sorter.b) == null) {
-                b = new long[size];
-            } else {
-                offset = sorter.offset;
-            }
-            mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
-        }
-        return true;
-    }
+// #[byte]
 
     /**
-     * Merges the specified runs.
-     *
-     * @param a the source array
-     * @param b the temporary buffer used in merging
-     * @param offset the start index in the source, inclusive
-     * @param aim specifies merging: to source ( > 0), buffer ( < 0) or any ( == 0)
-     * @param parallel indicates whether merging is performed in parallel
-     * @param run the start indexes of the runs, inclusive
-     * @param lo the start index of the first run, inclusive
-     * @param hi the start index of the last run, inclusive
-     * @return the destination where runs are merged
-     */
-    private static long[] mergeRuns(long[] a, long[] b, int offset,
-            int aim, boolean parallel, int[] run, int lo, int hi) {
-
-        if (hi - lo == 1) {
-            if (aim >= 0) {
-                return a;
-            }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
-            return b;
-        }
-
-        /*
-         * Split into approximately equal parts.
-         */
-        int mi = lo, rmi = (run[lo] + run[hi]) >>> 1;
-        while (run[++mi + 1] <= rmi);
-
-        /*
-         * Merge the left and right parts.
-         */
-        long[] a1, a2;
-
-        if (parallel && hi - lo > MIN_RUN_COUNT) {
-            RunMerger merger = new RunMerger(a, b, offset, 0, run, mi, hi).forkMe();
-            a1 = mergeRuns(a, b, offset, -aim, true, run, lo, mi);
-            a2 = (long[]) merger.getDestination();
-        } else {
-            a1 = mergeRuns(a, b, offset, -aim, false, run, lo, mi);
-            a2 = mergeRuns(a, b, offset,    0, false, run, mi, hi);
-        }
-
-        long[] dst = a1 == a ? b : a;
-
-        int k   = a1 == a ? run[lo] - offset : run[lo];
-        int lo1 = a1 == b ? run[lo] - offset : run[lo];
-        int hi1 = a1 == b ? run[mi] - offset : run[mi];
-        int lo2 = a2 == b ? run[mi] - offset : run[mi];
-        int hi2 = a2 == b ? run[hi] - offset : run[hi];
-
-        if (parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
-        } else {
-            mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
-        }
-        return dst;
-    }
-
-    /**
-     * Merges the sorted parts.
-     *
-     * @param merger parallel context
-     * @param dst the destination where parts are merged
-     * @param k the start index of the destination, inclusive
-     * @param a1 the first part
-     * @param lo1 the start index of the first part, inclusive
-     * @param hi1 the end index of the first part, exclusive
-     * @param a2 the second part
-     * @param lo2 the start index of the second part, inclusive
-     * @param hi2 the end index of the second part, exclusive
-     */
-    private static void mergeParts(Merger merger, long[] dst, int k,
-            long[] a1, int lo1, int hi1, long[] a2, int lo2, int hi2) {
-
-        if (merger != null && a1 == a2) {
-
-            while (true) {
-
-                /*
-                 * The first part must be larger.
-                 */
-                if (hi1 - lo1 < hi2 - lo2) {
-                    int lo = lo1; lo1 = lo2; lo2 = lo;
-                    int hi = hi1; hi1 = hi2; hi2 = hi;
-                }
-
-                /*
-                 * Small parts will be merged sequentially.
-                 */
-                if (hi1 - lo1 < MIN_PARALLEL_MERGE_PARTS_SIZE) {
-                    break;
-                }
-
-                /*
-                 * Find the median of the larger part.
-                 */
-                int mi1 = (lo1 + hi1) >>> 1;
-                long key = a1[mi1];
-                int mi2 = hi2;
-
-                /*
-                 * Partition the smaller part.
-                 */
-                for (int loo = lo2; loo < mi2; ) {
-                    int t = (loo + mi2) >>> 1;
-
-                    if (key > a2[t]) {
-                        loo = t + 1;
-                    } else {
-                        mi2 = t;
-                    }
-                }
-
-                int d = mi2 - lo2 + mi1 - lo1;
-
-                /*
-                 * Merge the right sub-parts in parallel.
-                 */
-                merger.forkMerger(dst, k + d, a1, mi1, hi1, a2, mi2, hi2);
-
-                /*
-                 * Process the sub-left parts.
-                 */
-                hi1 = mi1;
-                hi2 = mi2;
-            }
-        }
-
-        /*
-         * Merge small parts sequentially.
-         */
-        while (lo1 < hi1 && lo2 < hi2) {
-            dst[k++] = a1[lo1] < a2[lo2] ? a1[lo1++] : a2[lo2++];
-        }
-        if (dst != a1 || k < lo1) {
-            while (lo1 < hi1) {
-                dst[k++] = a1[lo1++];
-            }
-        }
-        if (dst != a2 || k < lo2) {
-            while (lo2 < hi2) {
-                dst[k++] = a2[lo2++];
-            }
-        }
-    }
-
-// [byte]
-
-    /**
-     * Sorts the specified range of the array using
-     * counting sort or insertion sort.
+     * Sorts the specified range of the array using insertion sort or counting sort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(byte[] a, int low, int high) {
-        if (high - low > MIN_BYTE_COUNTING_SORT_SIZE) {
-            countingSort(a, low, high);
-        } else {
+        if (high - low < MAX_INSERTION_SORT_SIZE) {
             insertionSort(a, low, high);
+        } else {
+            countingSort(a, low, high);
         }
     }
 
@@ -1839,28 +1877,19 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void insertionSort(byte[] a, int low, int high) {
+    static void insertionSort(byte[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             byte ai = a[i = k];
 
             if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
+                do {
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
+
+                a[i] = ai;
             }
         }
     }
-
-    /**
-     * The number of distinct byte values.
-     */
-    private static final int NUM_BYTE_VALUES = 1 << 8;
-
-    /**
-     * Max index of byte counter.
-     */
-    private static final int MAX_BYTE_INDEX = Byte.MAX_VALUE + NUM_BYTE_VALUES + 1;
 
     /**
      * Sorts the specified range of the array using counting sort.
@@ -1869,51 +1898,42 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void countingSort(byte[] a, int low, int high) {
-        int[] count = new int[NUM_BYTE_VALUES];
+    static void countingSort(byte[] a, int low, int high) {
+        /*
+         * Count the number of all values.
+         */
+        int[] count = new int[1 << 8];
 
         /*
-         * Compute a histogram with the number of each values.
+         * Compute the histogram.
          */
         for (int i = high; i > low; ++count[a[--i] & 0xFF]);
 
         /*
          * Place values on their final positions.
          */
-        if (high - low > NUM_BYTE_VALUES) {
-            for (int i = MAX_BYTE_INDEX; --i > Byte.MAX_VALUE; ) {
-                int value = i & 0xFF;
+        for (int value = Byte.MIN_VALUE; high > low; ) {
+            while (count[--value & 0xFF] == 0);
+            int num = count[value & 0xFF];
 
-                for (low = high - count[value]; high > low;
-                    a[--high] = (byte) value
-                );
-            }
-        } else {
-            for (int i = MAX_BYTE_INDEX; high > low; ) {
-                while (count[--i & 0xFF] == 0);
-
-                int value = i & 0xFF;
-                int c = count[value];
-
-                do {
-                    a[--high] = (byte) value;
-                } while (--c > 0);
-            }
+            do {
+                a[--high] = (byte) value;
+            } while (--num > 0);
         }
     }
 
-// [char]
+// #[char]
 
     /**
-     * Sorts the specified range of the array using
-     * counting sort or Dual-Pivot Quicksort.
+     * Sorts the specified range of the array using counting sort
+     * Dual-Pivot Quicksort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(char[] a, int low, int high) {
-        if (high - low > MIN_SHORT_OR_CHAR_COUNTING_SORT_SIZE) {
+        if (high - low > MIN_COUNTING_SORT_SIZE) {
             countingSort(a, low, high);
         } else {
             sort(a, 0, low, high);
@@ -1921,21 +1941,20 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified array using the Dual-Pivot Quicksort and/or
-     * other sorts in special-cases, possibly with parallel partitions.
+     * Sorts the specified range of the array using Dual-Pivot Quicksort.
      *
      * @param a the array to be sorted
      * @param bits the combination of recursion depth and bit flag, where
-     *        the right bit "0" indicates that array is the leftmost part
+     *        the right bit "0" indicates that range is the leftmost part
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(char[] a, int bits, int low, int high) {
         while (true) {
-            int end = high - 1, size = high - low;
+            int size = high - low;
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke insertion sort on small part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
                 insertionSort(a, low, high);
@@ -1943,19 +1962,11 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Switch to counting sort if execution
-             * time is becoming quadratic.
+             * Divide the given array into the golden ratio using
+             * an inexpensive approximation to select five sample
+             * elements and determine pivots.
              */
-            if ((bits += DELTA) > MAX_RECURSION_DEPTH) {
-                countingSort(a, low, high);
-                return;
-            }
-
-            /*
-             * Use an inexpensive approximation of the golden ratio
-             * to select five sample elements and determine pivots.
-             */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 7);
 
             /*
              * Five elements around (and including) the central element
@@ -1964,200 +1975,254 @@ final class DualPivotQuicksort {
              * determined to work well on a wide variety of inputs.
              */
             int e1 = low + step;
-            int e5 = end - step;
+            int e5 = high - step;
             int e3 = (e1 + e5) >>> 1;
             int e2 = (e1 + e3) >>> 1;
             int e4 = (e3 + e5) >>> 1;
-            char a3 = a[e3];
 
             /*
-             * Sort these elements in place by the combination
+             * Sort these elements in-place by the combination
              * of 4-element sorting network and insertion sort.
              *
-             *    5 ------o-----------o------------
-             *            |           |
-             *    4 ------|-----o-----o-----o------
-             *            |     |           |
-             *    2 ------o-----|-----o-----o------
-             *                  |     |
-             *    1 ------------o-----o------------
+             *   1 ---------o---------------o-----------------
+             *              |               |
+             *   2 ---------|-------o-------o-------o---------
+             *              |       |               |
+             *   3 ---------|-------|---------------|---------
+             *              |       |               |
+             *   4 ---------o-------|-------o-------o---------
+             *                      |       |
+             *   5 -----------------o-------o-----------------
              */
-            if (a[e5] < a[e2]) { char t = a[e5]; a[e5] = a[e2]; a[e2] = t; }
-            if (a[e4] < a[e1]) { char t = a[e4]; a[e4] = a[e1]; a[e1] = t; }
-            if (a[e5] < a[e4]) { char t = a[e5]; a[e5] = a[e4]; a[e4] = t; }
-            if (a[e2] < a[e1]) { char t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
-            if (a[e4] < a[e2]) { char t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
+            if (a[e1] > a[e4]) { char t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
+            if (a[e2] > a[e5]) { char t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
+            if (a[e4] > a[e5]) { char t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+            if (a[e1] > a[e2]) { char t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+            if (a[e2] > a[e4]) { char t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
 
-            if (a3 < a[e2]) {
-                if (a3 < a[e1]) {
-                    a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
+            /*
+             * Insert the third element.
+             */
+            if (a[e3] < a[e2]) {
+                if (a[e3] < a[e1]) {
+                    char t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
                 } else {
-                    a[e3] = a[e2]; a[e2] = a3;
+                    char t = a[e3]; a[e3] = a[e2]; a[e2] = t;
                 }
-            } else if (a3 > a[e4]) {
-                if (a3 > a[e5]) {
-                    a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = a3;
+            } else if (a[e3] > a[e4]) {
+                if (a[e3] > a[e5]) {
+                    char t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
                 } else {
-                    a[e3] = a[e4]; a[e4] = a3;
+                    char t = a[e3]; a[e3] = a[e4]; a[e4] = t;
                 }
             }
 
-            // Pointers
-            int lower = low; // The index of the last element of the left part
-            int upper = end; // The index of the first element of the right part
+            /*
+             * Switch to counting sort to avoid quadratic time.
+             */
+            if ((bits += 2) > MAX_RECURSION_DEPTH) {
+                countingSort(a, low, high);
+                return;
+            }
 
             /*
-             * Partitioning with 2 pivots in case of different elements.
+             * indices[0] - the index of the last element of the left part
+             * indices[1] - the index of the first element of the right part
+             */
+            int[] indices;
+
+            /*
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
-                /*
-                 * Use the first and fifth of the five sorted elements as
-                 * the pivots. These values are inexpensive approximation
-                 * of tertiles. Note, that pivot1 < pivot2.
-                 */
-                char pivot1 = a[e1];
-                char pivot2 = a[e5];
+                indices = partitionWithTwoPivots(a, low, high, e1, e5);
 
                 /*
-                 * The first and the last elements to be sorted are moved
-                 * to the locations formerly occupied by the pivots. When
-                 * partitioning is completed, the pivots are swapped back
-                 * into their final positions, and excluded from the next
-                 * subsequent sorting.
-                 */
-                a[e1] = a[lower];
-                a[e5] = a[upper];
-
-                /*
-                 * Skip elements, which are less or greater than the pivots.
-                 */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
-
-                /*
-                 * Backward 3-interval partitioning
-                 *
-                 *   left part                 central part          right part
-                 * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-                 * +------------------------------------------------------------+
-                 *             ^       ^                            ^
-                 *             |       |                            |
-                 *           lower     k                          upper
-                 *
-                 * Invariants:
-                 *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int unused = --lower, k = ++upper; --k > lower; ) {
-                    char ak = a[k];
-
-                    if (ak < pivot1) { // Move a[k] to the left side
-                        while (lower < k) {
-                            if (a[++lower] >= pivot1) {
-                                if (a[lower] > pivot2) {
-                                    a[k] = a[--upper];
-                                    a[upper] = a[lower];
-                                } else {
-                                    a[k] = a[lower];
-                                }
-                                a[lower] = ak;
-                                break;
-                            }
-                        }
-                    } else if (ak > pivot2) { // Move a[k] to the right side
-                        a[k] = a[--upper];
-                        a[upper] = ak;
-                    }
-                }
-
-                /*
-                 * Swap the pivots into their final positions.
-                 */
-                a[low] = a[lower]; a[lower] = pivot1;
-                a[end] = a[upper]; a[upper] = pivot2;
-
-                /*
-                 * Sort non-left parts recursively,
+                 * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                sort(a, bits | 1, lower + 1, upper);
-                sort(a, bits | 1, upper + 1, high);
+                sort(a, bits | 1, indices[0] + 1, indices[1]);
+                sort(a, bits | 1, indices[1] + 1, high);
 
-            } else { // Use single pivot in case of many equal elements
+            } else { // Partitioning with one pivot
 
-                /*
-                 * Use the third of the five sorted elements as the pivot.
-                 * This value is inexpensive approximation of the median.
-                 */
-                char pivot = a[e3];
+                indices = partitionWithOnePivot(a, low, high, e3, e3);
 
                 /*
-                 * The first element to be sorted is moved to the
-                 * location formerly occupied by the pivot. After
-                 * completion of partitioning the pivot is swapped
-                 * back into its final position, and excluded from
-                 * the next subsequent sorting.
-                 */
-                a[e3] = a[lower];
-
-                /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
-                 *
-                 *   left part                 central part    right part
-                 * +------------------------------------------------------+
-                 * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-                 * +------------------------------------------------------+
-                 *              ^           ^                ^
-                 *              |           |                |
-                 *            lower         k              upper
-                 *
-                 * Invariants:
-                 *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int k = ++upper; --k > lower; ) {
-                    char ak = a[k];
-
-                    if (ak != pivot) {
-                        a[k] = pivot;
-
-                        if (ak < pivot) { // Move a[k] to the left side
-                            while (a[++lower] < pivot);
-
-                            if (a[lower] > pivot) {
-                                a[--upper] = a[lower];
-                            }
-                            a[lower] = ak;
-                        } else { // ak > pivot - Move a[k] to the right side
-                            a[--upper] = ak;
-                        }
-                    }
-                }
-
-                /*
-                 * Swap the pivot into its final position.
-                 */
-                a[low] = a[lower]; a[lower] = pivot;
-
-                /*
-                 * Sort the right part, excluding known pivot.
-                 * All elements from the central part are
+                 * Sort the right part (possibly in parallel), excluding
+                 * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                sort(a, bits | 1, upper, high);
+                sort(a, bits | 1, indices[1], high);
             }
-            high = lower; // Iterate along the left part
+            high = indices[0]; // Iterate along the left part
         }
+    }
+
+    /**
+     * Partitions the specified range of the array using two given pivots.
+     *
+     * @param a the array for partitioning
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
+     * @return indices of parts after partitioning
+     */
+    private static int[] partitionWithTwoPivots(
+            char[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = --high;
+        int lower = low;
+
+        /*
+         * Use the first and fifth of the five sorted elements as
+         * the pivots. These values are inexpensive approximation
+         * of tertiles. Note, that pivot1 < pivot2.
+         */
+        char pivot1 = a[pivotIndex1];
+        char pivot2 = a[pivotIndex2];
+
+        /*
+         * The first and the last elements to be sorted are moved
+         * to the locations formerly occupied by the pivots. When
+         * partitioning is completed, the pivots are swapped back
+         * into their final positions, and excluded from the next
+         * subsequent sorting.
+         */
+        a[pivotIndex1] = a[lower];
+        a[pivotIndex2] = a[upper];
+
+        /*
+         * Skip elements, which are less or greater than the pivots.
+         */
+        while (a[++lower] < pivot1);
+        while (a[--upper] > pivot2);
+
+        /*
+         * Backward 3-interval partitioning
+         *
+         *     left part                     central part          right part
+         * +--------------+----------+--------------------------+--------------+
+         * |   < pivot1   |    ?     |  pivot1 <= .. <= pivot2  |   > pivot2   |
+         * +--------------+----------+--------------------------+--------------+
+         *               ^          ^                            ^
+         *               |          |                            |
+         *             lower        k                          upper
+         *
+         * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
+         */
+        for (int unused = --lower, k = ++upper; --k > lower; ) {
+            char ak = a[k];
+
+            if (ak < pivot1) { // Move a[k] to the left part
+                while (a[++lower] < pivot1);
+
+                if (lower > k) {
+                    lower = k;
+                    break;
+                }
+                if (a[lower] > pivot2) {
+                    a[k] = a[--upper];
+                    a[upper] = a[lower];
+                } else {
+                    a[k] = a[lower];
+                }
+                a[lower] = ak;
+            } else if (ak > pivot2) { // Move a[k] to the right part
+                a[k] = a[--upper];
+                a[upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivots into their final positions.
+         */
+        a[low]  = a[lower]; a[lower] = pivot1;
+        a[high] = a[upper]; a[upper] = pivot2;
+
+        return new int[] { lower, upper };
+    }
+
+    /**
+     * Partitions the specified range of the array using one given pivot.
+     *
+     * @param a the array for partitioning
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
+     * @return indices of parts after partitioning
+     */
+    private static int[] partitionWithOnePivot(
+            char[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = high;
+        int lower = low;
+
+        /*
+         * Use the third of the five sorted elements as the pivot.
+         * This value is inexpensive approximation of the median.
+         */
+        char pivot = a[pivotIndex1];
+
+        /*
+         * The first element to be sorted is moved to the
+         * location formerly occupied by the pivot. After
+         * completion of partitioning the pivot is swapped
+         * back into its final position, and excluded from
+         * the next subsequent sorting.
+         */
+        a[pivotIndex1] = a[lower];
+
+        /*
+         * Dutch National Flag partitioning
+         *
+         *     left part               central part    right part
+         * +--------------+----------+--------------+-------------+
+         * |   < pivot    |    ?     |   == pivot   |   > pivot   |
+         * +--------------+----------+--------------+-------------+
+         *               ^          ^                ^
+         *               |          |                |
+         *             lower        k              upper
+         *
+         * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
+         */
+        for (int k = upper; --k > lower; ) {
+            char ak = a[k];
+
+            if (ak == pivot) {
+                continue;
+            }
+            a[k] = pivot;
+
+            if (ak < pivot) { // Move a[k] to the left part
+                while (a[++lower] < pivot);
+
+                if (a[lower] > pivot) {
+                    a[--upper] = a[lower];
+                }
+                a[lower] = ak;
+            } else { // ak > pivot - Move a[k] to the right part
+                a[--upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivot into its final position.
+         */
+        a[low] = a[lower]; a[lower] = pivot;
+
+        return new int[] { lower, upper };
     }
 
     /**
@@ -2167,23 +2232,19 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void insertionSort(char[] a, int low, int high) {
+    static void insertionSort(char[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             char ai = a[i = k];
 
             if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
+                do {
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
+
+                a[i] = ai;
             }
         }
     }
-
-    /**
-     * The number of distinct char values.
-     */
-    private static final int NUM_CHAR_VALUES = 1 << 16;
 
     /**
      * Sorts the specified range of the array using counting sort.
@@ -2192,47 +2253,101 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void countingSort(char[] a, int low, int high) {
-        int[] count = new int[NUM_CHAR_VALUES];
+    static void countingSort(char[] a, int low, int high) {
+        int size = high - low;
 
-        /*
-         * Compute a histogram with the number of each values.
-         */
-        for (int i = high; i > low; ++count[a[--i]]);
+        if (size > MIN_NUMERICAL_SORT_SIZE) {
+            /*
+             * Count the number of all values.
+             */
+            int[] count = new int[1 << 16];
 
-        /*
-         * Place values on their final positions.
-         */
-        if (high - low > NUM_CHAR_VALUES) {
-            for (int i = NUM_CHAR_VALUES; i > 0; ) {
-                for (low = high - count[--i]; high > low;
-                    a[--high] = (char) i
-                );
-            }
-        } else {
-            for (int i = NUM_CHAR_VALUES; high > low; ) {
-                while (count[--i] == 0);
-                int c = count[i];
+            /*
+             * Compute the histogram.
+             */
+            for (int i = high; i > low; ++count[a[--i]]);
+
+            /*
+             * Place values on their final positions.
+             */
+            for (int value = count.length; high > low; ) {
+                while (count[--value] == 0);
+                int num = count[value];
 
                 do {
-                    a[--high] = (char) i;
-                } while (--c > 0);
+                    a[--high] = (char) value;
+                } while (--num > 0);
+            }
+
+        } else {
+
+            /*
+             * Allocate additional buffer.
+             */
+            char[] b = new char[size];
+
+            /*
+             * Count the number of all digits.
+             */
+            int[] count1 = new int[1 << 8];
+            int[] count2 = new int[1 << 8];
+
+            for (int i = low; i < high; ++i) {
+                ++count1[  a[i]        & 0xFF];
+                ++count2[((a[i] >>> 8) & 0xFF)];
+            }
+
+            /*
+             * Check digits to be processed.
+             */
+            boolean processDigit1 = processDigit(count1, size, low);
+            boolean processDigit2 = processDigit(count2, size, low);
+
+            /*
+             * Process the 1-st digit.
+             */
+            if (processDigit1) {
+                for (int i = high; i > low; ) {
+                    b[--count1[a[--i] & 0xFF] - low] = a[i];
+                }
+            }
+
+            /*
+             * Process the 2-nd digit.
+             */
+            if (processDigit2) {
+                if (processDigit1) {
+                    for (int i = size; i > 0; ) {
+                        a[--count2[((b[--i] >>> 8) & 0xFF)]] = b[i];
+                    }
+                } else {
+                    for (int i = high; i > low; ) {
+                        b[--count2[((a[--i] >>> 8) & 0xFF)] - low] = a[i];
+                    }
+                }
+            }
+
+            /*
+             * Copy the buffer to original array, if we process ood number of digits.
+             */
+            if (processDigit1 ^ processDigit2) {
+                System.arraycopy(b, 0, a, low, size);
             }
         }
     }
 
-// [short]
+// #[short]
 
     /**
-     * Sorts the specified range of the array using
-     * counting sort or Dual-Pivot Quicksort.
+     * Sorts the specified range of the array using counting sort
+     * Dual-Pivot Quicksort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(short[] a, int low, int high) {
-        if (high - low > MIN_SHORT_OR_CHAR_COUNTING_SORT_SIZE) {
+        if (high - low > MIN_COUNTING_SORT_SIZE) {
             countingSort(a, low, high);
         } else {
             sort(a, 0, low, high);
@@ -2240,21 +2355,20 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified array using the Dual-Pivot Quicksort and/or
-     * other sorts in special-cases, possibly with parallel partitions.
+     * Sorts the specified range of the array using Dual-Pivot Quicksort.
      *
      * @param a the array to be sorted
      * @param bits the combination of recursion depth and bit flag, where
-     *        the right bit "0" indicates that array is the leftmost part
+     *        the right bit "0" indicates that range is the leftmost part
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(short[] a, int bits, int low, int high) {
         while (true) {
-            int end = high - 1, size = high - low;
+            int size = high - low;
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke insertion sort on small part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
                 insertionSort(a, low, high);
@@ -2262,19 +2376,11 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Switch to counting sort if execution
-             * time is becoming quadratic.
+             * Divide the given array into the golden ratio using
+             * an inexpensive approximation to select five sample
+             * elements and determine pivots.
              */
-            if ((bits += DELTA) > MAX_RECURSION_DEPTH) {
-                countingSort(a, low, high);
-                return;
-            }
-
-            /*
-             * Use an inexpensive approximation of the golden ratio
-             * to select five sample elements and determine pivots.
-             */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 7);
 
             /*
              * Five elements around (and including) the central element
@@ -2283,200 +2389,254 @@ final class DualPivotQuicksort {
              * determined to work well on a wide variety of inputs.
              */
             int e1 = low + step;
-            int e5 = end - step;
+            int e5 = high - step;
             int e3 = (e1 + e5) >>> 1;
             int e2 = (e1 + e3) >>> 1;
             int e4 = (e3 + e5) >>> 1;
-            short a3 = a[e3];
 
             /*
-             * Sort these elements in place by the combination
+             * Sort these elements in-place by the combination
              * of 4-element sorting network and insertion sort.
              *
-             *    5 ------o-----------o------------
-             *            |           |
-             *    4 ------|-----o-----o-----o------
-             *            |     |           |
-             *    2 ------o-----|-----o-----o------
-             *                  |     |
-             *    1 ------------o-----o------------
+             *   1 ---------o---------------o-----------------
+             *              |               |
+             *   2 ---------|-------o-------o-------o---------
+             *              |       |               |
+             *   3 ---------|-------|---------------|---------
+             *              |       |               |
+             *   4 ---------o-------|-------o-------o---------
+             *                      |       |
+             *   5 -----------------o-------o-----------------
              */
-            if (a[e5] < a[e2]) { short t = a[e5]; a[e5] = a[e2]; a[e2] = t; }
-            if (a[e4] < a[e1]) { short t = a[e4]; a[e4] = a[e1]; a[e1] = t; }
-            if (a[e5] < a[e4]) { short t = a[e5]; a[e5] = a[e4]; a[e4] = t; }
-            if (a[e2] < a[e1]) { short t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
-            if (a[e4] < a[e2]) { short t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
+            if (a[e1] > a[e4]) { short t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
+            if (a[e2] > a[e5]) { short t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
+            if (a[e4] > a[e5]) { short t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+            if (a[e1] > a[e2]) { short t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+            if (a[e2] > a[e4]) { short t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
 
-            if (a3 < a[e2]) {
-                if (a3 < a[e1]) {
-                    a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
+            /*
+             * Insert the third element.
+             */
+            if (a[e3] < a[e2]) {
+                if (a[e3] < a[e1]) {
+                    short t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
                 } else {
-                    a[e3] = a[e2]; a[e2] = a3;
+                    short t = a[e3]; a[e3] = a[e2]; a[e2] = t;
                 }
-            } else if (a3 > a[e4]) {
-                if (a3 > a[e5]) {
-                    a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = a3;
+            } else if (a[e3] > a[e4]) {
+                if (a[e3] > a[e5]) {
+                    short t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
                 } else {
-                    a[e3] = a[e4]; a[e4] = a3;
+                    short t = a[e3]; a[e3] = a[e4]; a[e4] = t;
                 }
             }
 
-            // Pointers
-            int lower = low; // The index of the last element of the left part
-            int upper = end; // The index of the first element of the right part
+            /*
+             * Switch to counting sort to avoid quadratic time.
+             */
+            if ((bits += 2) > MAX_RECURSION_DEPTH) {
+                countingSort(a, low, high);
+                return;
+            }
 
             /*
-             * Partitioning with 2 pivots in case of different elements.
+             * indices[0] - the index of the last element of the left part
+             * indices[1] - the index of the first element of the right part
+             */
+            int[] indices;
+
+            /*
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
-                /*
-                 * Use the first and fifth of the five sorted elements as
-                 * the pivots. These values are inexpensive approximation
-                 * of tertiles. Note, that pivot1 < pivot2.
-                 */
-                short pivot1 = a[e1];
-                short pivot2 = a[e5];
+                indices = partitionWithTwoPivots(a, low, high, e1, e5);
 
                 /*
-                 * The first and the last elements to be sorted are moved
-                 * to the locations formerly occupied by the pivots. When
-                 * partitioning is completed, the pivots are swapped back
-                 * into their final positions, and excluded from the next
-                 * subsequent sorting.
-                 */
-                a[e1] = a[lower];
-                a[e5] = a[upper];
-
-                /*
-                 * Skip elements, which are less or greater than the pivots.
-                 */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
-
-                /*
-                 * Backward 3-interval partitioning
-                 *
-                 *   left part                 central part          right part
-                 * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-                 * +------------------------------------------------------------+
-                 *             ^       ^                            ^
-                 *             |       |                            |
-                 *           lower     k                          upper
-                 *
-                 * Invariants:
-                 *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int unused = --lower, k = ++upper; --k > lower; ) {
-                    short ak = a[k];
-
-                    if (ak < pivot1) { // Move a[k] to the left side
-                        while (lower < k) {
-                            if (a[++lower] >= pivot1) {
-                                if (a[lower] > pivot2) {
-                                    a[k] = a[--upper];
-                                    a[upper] = a[lower];
-                                } else {
-                                    a[k] = a[lower];
-                                }
-                                a[lower] = ak;
-                                break;
-                            }
-                        }
-                    } else if (ak > pivot2) { // Move a[k] to the right side
-                        a[k] = a[--upper];
-                        a[upper] = ak;
-                    }
-                }
-
-                /*
-                 * Swap the pivots into their final positions.
-                 */
-                a[low] = a[lower]; a[lower] = pivot1;
-                a[end] = a[upper]; a[upper] = pivot2;
-
-                /*
-                 * Sort non-left parts recursively,
+                 * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                sort(a, bits | 1, lower + 1, upper);
-                sort(a, bits | 1, upper + 1, high);
+                sort(a, bits | 1, indices[0] + 1, indices[1]);
+                sort(a, bits | 1, indices[1] + 1, high);
 
-            } else { // Use single pivot in case of many equal elements
+            } else { // Partitioning with one pivot
 
-                /*
-                 * Use the third of the five sorted elements as the pivot.
-                 * This value is inexpensive approximation of the median.
-                 */
-                short pivot = a[e3];
+                indices = partitionWithOnePivot(a, low, high, e3, e3);
 
                 /*
-                 * The first element to be sorted is moved to the
-                 * location formerly occupied by the pivot. After
-                 * completion of partitioning the pivot is swapped
-                 * back into its final position, and excluded from
-                 * the next subsequent sorting.
-                 */
-                a[e3] = a[lower];
-
-                /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
-                 *
-                 *   left part                 central part    right part
-                 * +------------------------------------------------------+
-                 * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-                 * +------------------------------------------------------+
-                 *              ^           ^                ^
-                 *              |           |                |
-                 *            lower         k              upper
-                 *
-                 * Invariants:
-                 *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int k = ++upper; --k > lower; ) {
-                    short ak = a[k];
-
-                    if (ak != pivot) {
-                        a[k] = pivot;
-
-                        if (ak < pivot) { // Move a[k] to the left side
-                            while (a[++lower] < pivot);
-
-                            if (a[lower] > pivot) {
-                                a[--upper] = a[lower];
-                            }
-                            a[lower] = ak;
-                        } else { // ak > pivot - Move a[k] to the right side
-                            a[--upper] = ak;
-                        }
-                    }
-                }
-
-                /*
-                 * Swap the pivot into its final position.
-                 */
-                a[low] = a[lower]; a[lower] = pivot;
-
-                /*
-                 * Sort the right part, excluding known pivot.
-                 * All elements from the central part are
+                 * Sort the right part (possibly in parallel), excluding
+                 * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                sort(a, bits | 1, upper, high);
+                sort(a, bits | 1, indices[1], high);
             }
-            high = lower; // Iterate along the left part
+            high = indices[0]; // Iterate along the left part
         }
+    }
+
+    /**
+     * Partitions the specified range of the array using two given pivots.
+     *
+     * @param a the array for partitioning
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndex1 the index of pivot1, the first pivot
+     * @param pivotIndex2 the index of pivot2, the second pivot
+     * @return indices of parts after partitioning
+     */
+    private static int[] partitionWithTwoPivots(
+            short[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = --high;
+        int lower = low;
+
+        /*
+         * Use the first and fifth of the five sorted elements as
+         * the pivots. These values are inexpensive approximation
+         * of tertiles. Note, that pivot1 < pivot2.
+         */
+        short pivot1 = a[pivotIndex1];
+        short pivot2 = a[pivotIndex2];
+
+        /*
+         * The first and the last elements to be sorted are moved
+         * to the locations formerly occupied by the pivots. When
+         * partitioning is completed, the pivots are swapped back
+         * into their final positions, and excluded from the next
+         * subsequent sorting.
+         */
+        a[pivotIndex1] = a[lower];
+        a[pivotIndex2] = a[upper];
+
+        /*
+         * Skip elements, which are less or greater than the pivots.
+         */
+        while (a[++lower] < pivot1);
+        while (a[--upper] > pivot2);
+
+        /*
+         * Backward 3-interval partitioning
+         *
+         *     left part                     central part          right part
+         * +--------------+----------+--------------------------+--------------+
+         * |   < pivot1   |    ?     |  pivot1 <= .. <= pivot2  |   > pivot2   |
+         * +--------------+----------+--------------------------+--------------+
+         *               ^          ^                            ^
+         *               |          |                            |
+         *             lower        k                          upper
+         *
+         * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
+         */
+        for (int unused = --lower, k = ++upper; --k > lower; ) {
+            short ak = a[k];
+
+            if (ak < pivot1) { // Move a[k] to the left part
+                while (a[++lower] < pivot1);
+
+                if (lower > k) {
+                    lower = k;
+                    break;
+                }
+                if (a[lower] > pivot2) {
+                    a[k] = a[--upper];
+                    a[upper] = a[lower];
+                } else {
+                    a[k] = a[lower];
+                }
+                a[lower] = ak;
+            } else if (ak > pivot2) { // Move a[k] to the right part
+                a[k] = a[--upper];
+                a[upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivots into their final positions.
+         */
+        a[low]  = a[lower]; a[lower] = pivot1;
+        a[high] = a[upper]; a[upper] = pivot2;
+
+        return new int[] { lower, upper };
+    }
+
+    /**
+     * Partitions the specified range of the array using one given pivot.
+     *
+     * @param a the array for partitioning
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
+     * @return indices of parts after partitioning
+     */
+    private static int[] partitionWithOnePivot(
+            short[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = high;
+        int lower = low;
+
+        /*
+         * Use the third of the five sorted elements as the pivot.
+         * This value is inexpensive approximation of the median.
+         */
+        short pivot = a[pivotIndex1];
+
+        /*
+         * The first element to be sorted is moved to the
+         * location formerly occupied by the pivot. After
+         * completion of partitioning the pivot is swapped
+         * back into its final position, and excluded from
+         * the next subsequent sorting.
+         */
+        a[pivotIndex1] = a[lower];
+
+        /*
+         * Dutch National Flag partitioning
+         *
+         *     left part               central part    right part
+         * +--------------+----------+--------------+-------------+
+         * |   < pivot    |    ?     |   == pivot   |   > pivot   |
+         * +--------------+----------+--------------+-------------+
+         *               ^          ^                ^
+         *               |          |                |
+         *             lower        k              upper
+         *
+         * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
+         */
+        for (int k = upper; --k > lower; ) {
+            short ak = a[k];
+
+            if (ak == pivot) {
+                continue;
+            }
+            a[k] = pivot;
+
+            if (ak < pivot) { // Move a[k] to the left part
+                while (a[++lower] < pivot);
+
+                if (a[lower] > pivot) {
+                    a[--upper] = a[lower];
+                }
+                a[lower] = ak;
+            } else { // ak > pivot - Move a[k] to the right part
+                a[--upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivot into its final position.
+         */
+        a[low] = a[lower]; a[lower] = pivot;
+
+        return new int[] { lower, upper };
     }
 
     /**
@@ -2486,28 +2646,19 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void insertionSort(short[] a, int low, int high) {
+    static void insertionSort(short[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             short ai = a[i = k];
 
             if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
+                do {
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
+
+                a[i] = ai;
             }
         }
     }
-
-    /**
-     * The number of distinct short values.
-     */
-    private static final int NUM_SHORT_VALUES = 1 << 16;
-
-    /**
-     * Max index of short counter.
-     */
-    private static final int MAX_SHORT_INDEX = Short.MAX_VALUE + NUM_SHORT_VALUES + 1;
 
     /**
      * Sorts the specified range of the array using counting sort.
@@ -2516,44 +2667,99 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void countingSort(short[] a, int low, int high) {
-        int[] count = new int[NUM_SHORT_VALUES];
+    static void countingSort(short[] a, int low, int high) {
+        int size = high - low;
 
-        /*
-         * Compute a histogram with the number of each values.
-         */
-        for (int i = high; i > low; ++count[a[--i] & 0xFFFF]);
+        if (size > MIN_NUMERICAL_SORT_SIZE) {
+            /*
+             * Count the number of all values.
+             */
+            int[] count = new int[1 << 16];
 
-        /*
-         * Place values on their final positions.
-         */
-        if (high - low > NUM_SHORT_VALUES) {
-            for (int i = MAX_SHORT_INDEX; --i > Short.MAX_VALUE; ) {
-                int value = i & 0xFFFF;
+            /*
+             * Compute the histogram.
+             */
+            for (int i = high; i > low; ++count[a[--i] & 0xFFFF]);
 
-                for (low = high - count[value]; high > low;
-                    a[--high] = (short) value
-                );
-            }
-        } else {
-            for (int i = MAX_SHORT_INDEX; high > low; ) {
-                while (count[--i & 0xFFFF] == 0);
-
-                int value = i & 0xFFFF;
-                int c = count[value];
+            /*
+             * Place values on their final positions.
+             */
+            for (int value = Short.MIN_VALUE; high > low; ) {
+                while (count[--value & 0xFFFF] == 0);
+                int num = count[value & 0xFFFF];
 
                 do {
                     a[--high] = (short) value;
-                } while (--c > 0);
+                } while (--num > 0);
+            }
+
+        } else {
+
+            /*
+             * Allocate additional buffer.
+             */
+            short[] b = new short[size];
+
+            /*
+             * Count the number of all digits.
+             */
+            int[] count1 = new int[1 << 8];
+            int[] count2 = new int[1 << 8];
+
+            for (int i = low; i < high; ++i) {
+                ++count1[  a[i]        & 0xFF];
+                ++count2[((a[i] >>> 8) & 0xFF) ^ 0x80]; // Flip the sign bit
+            }
+
+            /*
+             * Check digits to be processed.
+             */
+            boolean processDigit1 = processDigit(count1, size, low);
+            boolean processDigit2 = processDigit(count2, size, low);
+
+            /*
+             * Process the 1-st digit.
+             */
+            if (processDigit1) {
+                for (int i = high; i > low; ) {
+                    b[--count1[a[--i] & 0xFF] - low] = a[i];
+                }
+            }
+
+            /*
+             * Process the 2-nd digit.
+             */
+            if (processDigit2) {
+                if (processDigit1) {
+                    for (int i = size; i > 0; ) {
+                        a[--count2[((b[--i] >>> 8) & 0xFF) ^ 0x80]] = b[i];
+                    }
+                } else {
+                    for (int i = high; i > low; ) {
+                        b[--count2[((a[--i] >>> 8) & 0xFF) ^ 0x80] - low] = a[i];
+                    }
+                }
+            }
+
+            /*
+             * Copy the buffer to original array, if we process ood number of digits.
+             */
+            if (processDigit1 ^ processDigit2) {
+                System.arraycopy(b, 0, a, low, size);
             }
         }
     }
 
-// [float]
+// #[float]
+
+    /**
+     * The binary representation of float negative zero.
+     */
+    private static final int FLOAT_NEGATIVE_ZERO = Float.floatToRawIntBits(-0.0f);
 
     /**
      * Sorts the specified range of the array using parallel merge
-     * sort and/or Dual-Pivot Quicksort.
+     * sort and/or Dual-Pivot Quicksort.<p>
      *
      * To balance the faster splitting and parallelism of merge sort
      * with the faster element partitioning of Quicksort, ranges are
@@ -2568,19 +2774,19 @@ final class DualPivotQuicksort {
      */
     static void sort(float[] a, int parallelism, int low, int high) {
         /*
-         * Phase 1. Count the number of negative zero -0.0f,
+         * Phase 1. Count the number of negative zero -0.0,
          * turn them into positive zero, and move all NaNs
          * to the end of the array.
          */
-        int numNegativeZero = 0;
+        int negativeZeroCount = 0;
 
         for (int k = high; k > low; ) {
             float ak = a[--k];
 
-            if (ak == 0.0f && Float.floatToRawIntBits(ak) < 0) { // ak is -0.0f
-                numNegativeZero += 1;
+            if (Float.floatToRawIntBits(ak) == FLOAT_NEGATIVE_ZERO) { // ak is -0.0
+                negativeZeroCount++;
                 a[k] = 0.0f;
-            } else if (ak != ak) { // ak is NaN
+            } else if (ak != ak) { // ak is Not-a-Number (NaN)
                 a[k] = a[--high];
                 a[high] = ak;
             }
@@ -2590,21 +2796,17 @@ final class DualPivotQuicksort {
          * Phase 2. Sort everything except NaNs,
          * which are already in place.
          */
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            float[] b = depth == 0 ? null : new float[size];
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter<>(a, parallelism, low, high - low).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
 
         /*
-         * Phase 3. Turn positive zero 0.0f
-         * back into negative zero -0.0f.
+         * Phase 3. Turn the required number of positive
+         * zeros 0.0 back into negative zeros -0.0.
          */
-        if (++numNegativeZero == 1) {
+        if (++negativeZeroCount == 1) {
             return;
         }
 
@@ -2613,77 +2815,69 @@ final class DualPivotQuicksort {
          * the index of the first zero.
          */
         while (low <= high) {
-            int middle = (low + high) >>> 1;
+            int mid = (low + high) >>> 1;
 
-            if (a[middle] < 0) {
-                low = middle + 1;
+            if (a[mid] < 0.0f) {
+                low = mid + 1;
             } else {
-                high = middle - 1;
+                high = mid - 1;
             }
         }
 
         /*
-         * Replace the required number of 0.0f by -0.0f.
+         * Replace 0.0 by negative zeros -0.0.
          */
-        while (--numNegativeZero > 0) {
+        while (--negativeZeroCount > 0) {
             a[++high] = -0.0f;
         }
     }
 
     /**
-     * Sorts the specified array using the Dual-Pivot Quicksort and/or
-     * other sorts in special-cases, possibly with parallel partitions.
+     * Sorts the specified range of the array using Dual-Pivot Quicksort.
      *
-     * @param sorter parallel context
+     * @param sorter the parallel context
      * @param a the array to be sorted
      * @param bits the combination of recursion depth and bit flag, where
-     *        the right bit "0" indicates that array is the leftmost part
+     *        the right bit "0" indicates that range is the leftmost part
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, float[] a, int bits, int low, int high) {
+    static void sort(Sorter<float[]> sorter, float[] a, int bits, int low, int high) {
         while (true) {
-            int end = high - 1, size = high - low;
+            int size = high - low;
 
             /*
-             * Run mixed insertion sort on small non-leftmost parts.
+             * Run adaptive mixed insertion sort on small non-leftmost parts.
              */
-            if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
+                sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
+                sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
             /*
-             * Check if the whole array or large non-leftmost
-             * parts are nearly sorted and then merge runs.
+             * Try merging sort on large part.
              */
-            if ((bits == 0 || size > MIN_TRY_MERGE_SIZE && (bits & 1) > 0)
-                    && tryMergeRuns(sorter, a, low, size)) {
+            if (size > MIN_MERGING_SORT_SIZE * bits
+                    && tryMergingSort(sorter, a, low, high)) {
                 return;
             }
 
             /*
-             * Switch to heap sort if execution
-             * time is becoming quadratic.
+             * Divide the given array into the golden ratio using
+             * an inexpensive approximation to select five sample
+             * elements and determine pivots.
              */
-            if ((bits += DELTA) > MAX_RECURSION_DEPTH) {
-                heapSort(a, low, high);
-                return;
-            }
-
-            /*
-             * Use an inexpensive approximation of the golden ratio
-             * to select five sample elements and determine pivots.
-             */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 7);
 
             /*
              * Five elements around (and including) the central element
@@ -2692,117 +2886,127 @@ final class DualPivotQuicksort {
              * determined to work well on a wide variety of inputs.
              */
             int e1 = low + step;
-            int e5 = end - step;
+            int e5 = high - step;
             int e3 = (e1 + e5) >>> 1;
             int e2 = (e1 + e3) >>> 1;
             int e4 = (e3 + e5) >>> 1;
-            float a3 = a[e3];
 
             /*
-             * Sort these elements in place by the combination
+             * Sort these elements in-place by the combination
              * of 4-element sorting network and insertion sort.
              *
-             *    5 ------o-----------o------------
-             *            |           |
-             *    4 ------|-----o-----o-----o------
-             *            |     |           |
-             *    2 ------o-----|-----o-----o------
-             *                  |     |
-             *    1 ------------o-----o------------
+             *   1 ---------o---------------o-----------------
+             *              |               |
+             *   2 ---------|-------o-------o-------o---------
+             *              |       |               |
+             *   3 ---------|-------|---------------|---------
+             *              |       |               |
+             *   4 ---------o-------|-------o-------o---------
+             *                      |       |
+             *   5 -----------------o-------o-----------------
              */
-            if (a[e5] < a[e2]) { float t = a[e5]; a[e5] = a[e2]; a[e2] = t; }
-            if (a[e4] < a[e1]) { float t = a[e4]; a[e4] = a[e1]; a[e1] = t; }
-            if (a[e5] < a[e4]) { float t = a[e5]; a[e5] = a[e4]; a[e4] = t; }
-            if (a[e2] < a[e1]) { float t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
-            if (a[e4] < a[e2]) { float t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
+            if (a[e1] > a[e4]) { float t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
+            if (a[e2] > a[e5]) { float t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
+            if (a[e4] > a[e5]) { float t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+            if (a[e1] > a[e2]) { float t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+            if (a[e2] > a[e4]) { float t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
 
-            if (a3 < a[e2]) {
-                if (a3 < a[e1]) {
-                    a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
+            /*
+             * Insert the third element.
+             */
+            if (a[e3] < a[e2]) {
+                if (a[e3] < a[e1]) {
+                    float t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
                 } else {
-                    a[e3] = a[e2]; a[e2] = a3;
+                    float t = a[e3]; a[e3] = a[e2]; a[e2] = t;
                 }
-            } else if (a3 > a[e4]) {
-                if (a3 > a[e5]) {
-                    a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = a3;
+            } else if (a[e3] > a[e4]) {
+                if (a[e3] > a[e5]) {
+                    float t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
                 } else {
-                    a[e3] = a[e4]; a[e4] = a3;
+                    float t = a[e3]; a[e3] = a[e4]; a[e4] = t;
                 }
             }
 
-            // Pointers
-            int lower; // The index of the last element of the left part
-            int upper; // The index of the first element of the right part
+            /*
+             * Switch to heap sort to avoid quadratic time.
+             */
+            if ((bits += 2) > MAX_RECURSION_DEPTH) {
+                heapSort(a, low, high);
+                return;
+            }
 
             /*
-             * Partitioning with 2 pivots in case of different elements.
+             * indices[0] - the index of the last element of the left part
+             * indices[1] - the index of the first element of the right part
+             */
+            int[] indices;
+
+            /*
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
-                /*
-                 * Use the first and fifth of the five sorted elements as
-                 * the pivots. These values are inexpensive approximation
-                 * of tertiles. Note, that pivot1 < pivot2.
-                 */
-                int[] pivotIndices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
+                indices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET,
+                    low, high, e1, e5, DualPivotQuicksort::partitionWithTwoPivots);
+
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, lower + 1, upper);
-                    sorter.forkSorter(bits | 1, upper + 1, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
-                    sort(sorter, a, bits | 1, lower + 1, upper);
-                    sort(sorter, a, bits | 1, upper + 1, high);
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
-            } else { // Use single pivot in case of many equal elements
+            } else { // Partitioning with one pivot
 
-                /*
-                 * Use the third of the five sorted elements as the pivot.
-                 * This value is inexpensive approximation of the median.
-                 */
-                int[] pivotIndices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
+                indices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET,
+                    low, high, e3, e3, DualPivotQuicksort::partitionWithOnePivot);
+
                 /*
                  * Sort the right part (possibly in parallel), excluding
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, upper, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
-                    sort(sorter, a, bits | 1, upper, high);
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
-            high = lower; // Iterate along the left part
+            high = indices[0]; // Iterate along the left part
         }
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of the array using two given pivots.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionDualPivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
+    private static int[] partitionWithTwoPivots(
+            float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = --high;
         int lower = low;
-        int upper = end;
 
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        float pivot1 = a[e1];
-        float pivot2 = a[e5];
+        /*
+         * Use the first and fifth of the five sorted elements as
+         * the pivots. These values are inexpensive approximation
+         * of tertiles. Note, that pivot1 < pivot2.
+         */
+        float pivot1 = a[pivotIndex1];
+        float pivot2 = a[pivotIndex2];
 
         /*
          * The first and the last elements to be sorted are moved
@@ -2811,8 +3015,8 @@ final class DualPivotQuicksort {
          * into their final positions, and excluded from the next
          * subsequent sorting.
          */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
+        a[pivotIndex1] = a[lower];
+        a[pivotIndex2] = a[upper];
 
         /*
          * Skip elements, which are less or greater than the pivots.
@@ -2823,39 +3027,36 @@ final class DualPivotQuicksort {
         /*
          * Backward 3-interval partitioning
          *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
+         *     left part                     central part          right part
+         * +--------------+----------+--------------------------+--------------+
+         * |   < pivot1   |    ?     |  pivot1 <= .. <= pivot2  |   > pivot2   |
+         * +--------------+----------+--------------------------+--------------+
+         *               ^          ^                            ^
+         *               |          |                            |
+         *             lower        k                          upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             float ak = a[k];
 
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
+            if (ak < pivot1) { // Move a[k] to the left part
+                while (a[++lower] < pivot1);
+
+                if (lower > k) {
+                    lower = k;
+                    break;
                 }
-            } else if (ak > pivot2) { // Move a[k] to the right side
+                if (a[lower] > pivot2) {
+                    a[k] = a[--upper];
+                    a[upper] = a[lower];
+                } else {
+                    a[k] = a[lower];
+                }
+                a[lower] = ak;
+            } else if (ak > pivot2) { // Move a[k] to the right part
                 a[k] = a[--upper];
                 a[upper] = ak;
             }
@@ -2864,30 +3065,35 @@ final class DualPivotQuicksort {
         /*
          * Swap the pivots into their final positions.
          */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
+        a[low]  = a[lower]; a[lower] = pivot1;
+        a[high] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        return new int[] { lower, upper };
     }
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of the array using one given pivot.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionSinglePivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
+    private static int[] partitionWithOnePivot(
+            float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = high;
         int lower = low;
-        int upper = end;
 
-        int e3 = pivotIndex1;
-        float pivot = a[e3];
+        /*
+         * Use the third of the five sorted elements as the pivot.
+         * This value is inexpensive approximation of the median.
+         */
+        float pivot = a[pivotIndex1];
 
         /*
          * The first element to be sorted is moved to the
@@ -2896,43 +3102,40 @@ final class DualPivotQuicksort {
          * back into its final position, and excluded from
          * the next subsequent sorting.
          */
-        a[e3] = a[lower];
+        a[pivotIndex1] = a[lower];
 
         /*
-         * Traditional 3-way (Dutch National Flag) partitioning
+         * Dutch National Flag partitioning
          *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
+         *     left part               central part    right part
+         * +--------------+----------+--------------+-------------+
+         * |   < pivot    |    ?     |   == pivot   |   > pivot   |
+         * +--------------+----------+--------------+-------------+
+         *               ^          ^                ^
+         *               |          |                |
+         *             lower        k              upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
-        for (int k = ++upper; --k > lower; ) {
+        for (int k = upper; --k > lower; ) {
             float ak = a[k];
 
-            if (ak != pivot) {
-                a[k] = pivot;
+            if (ak == pivot) {
+                continue;
+            }
+            a[k] = pivot;
 
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
+            if (ak < pivot) { // Move a[k] to the left part
+                while (a[++lower] < pivot);
 
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
+                if (a[lower] > pivot) {
+                    a[--upper] = a[lower];
                 }
+                a[lower] = ak;
+            } else { // ak > pivot - Move a[k] to the right part
+                a[--upper] = ak;
             }
         }
 
@@ -2940,14 +3143,15 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        return new int[] { lower, upper };
     }
 
     /**
-     * Sorts the specified range of the array using mixed insertion sort.
+     * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -2959,110 +3163,69 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void mixedInsertionSort(float[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
+    static void mixedInsertionSort(float[] a, int low, int high) {
+        /*
+         * Split the array for pin and pair insertion sorts.
+         */
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
+
+        /*
+         * Start with pin insertion sort.
+         */
+        for (int i, p = high; ++low < end; ) {
+            float ai = a[i = low], pin = a[--p];
 
             /*
-             * Invoke simple insertion sort on tiny array.
+             * Swap larger element with pin.
              */
-            for (int i; ++low < end; ) {
-                float ai = a[i = low];
+            if (ai > pin) {
+                ai = pin;
+                a[p] = a[i];
+            }
 
-                while (ai < a[--i]) {
+            /*
+             * Insert element into sorted part.
+             */
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
+            }
+            a[i] = ai;
+        }
+
+        /*
+         * Finish with pair insertion sort.
+         */
+        for (int i; low < high; ++low) {
+            float a1 = a[i = low], a2 = a[++low];
+
+            /*
+             * Insert two elements per iteration: at first, insert the
+             * larger element and then insert the smaller element, but
+             * from the position where the larger element was inserted.
+             */
+            if (a1 > a2) {
+
+                while (a1 < a[--i]) {
+                    a[i + 2] = a[i];
+                }
+                a[++i + 1] = a1;
+
+                while (a2 < a[--i]) {
                     a[i + 1] = a[i];
                 }
-                a[i + 1] = ai;
-            }
-        } else {
+                a[i + 1] = a2;
 
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            float pin = a[end];
+            } else if (a1 < a[i - 1]) {
 
-            for (int i, p = high; ++low < end; ) {
-                float ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
+                while (a2 < a[--i]) {
+                    a[i + 2] = a[i];
                 }
-            }
+                a[++i + 1] = a2;
 
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                float a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
+                while (a1 < a[--i]) {
+                    a[i + 1] = a[i];
                 }
+                a[i + 1] = a1;
             }
         }
     }
@@ -3074,17 +3237,332 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void insertionSort(float[] a, int low, int high) {
+    static void insertionSort(float[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             float ai = a[i = k];
 
             if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
+                do {
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
+
+                a[i] = ai;
             }
         }
+    }
+
+    /**
+     * Tries to sort the specified range of the array using merging sort.
+     *
+     * @param sorter the parallel context
+     * @param a the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
+     */
+    static boolean tryMergingSort(Sorter<float[]> sorter, float[] a, int low, int high) {
+        /*
+         * The element run[i] holds the start index
+         * of i-th sequence in non-descending order.
+         */
+        int count = 1;
+        int[] run = null;
+
+        /*
+         * Identify all possible runs.
+         */
+        for (int k = low + 1, last = low; k < high; ) {
+            /*
+             * Find the next run.
+             */
+            if (a[k - 1] < a[k]) {
+
+                // Identify ascending sequence
+                while (++k < high && a[k - 1] <= a[k]);
+
+            } else if (a[k - 1] > a[k]) {
+
+                // Identify descending sequence
+                while (++k < high && a[k - 1] >= a[k]);
+
+                // Reverse into ascending order
+                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
+                    float ai = a[i]; a[i] = a[j]; a[j] = ai;
+                }
+
+                // Check the next sequence
+                if (k < high && a[k - 1] < a[k]) {
+                    continue;
+                }
+
+            } else { // Identify constant sequence
+                for (float ak = a[k]; ++k < high && ak == a[k]; );
+
+                // Check the next sequence
+                if (k < high) {
+                    continue;
+                }
+            }
+
+            /*
+             * Process the current run.
+             */
+            if (run == null) {
+
+                if (k == high) {
+                    /*
+                     * Array is monotonous sequence
+                     * and therefore already sorted.
+                     */
+                    return true;
+                }
+                run = new int[Math.min((high - low) >> 6, MAX_RUN_CAPACITY) | 8];
+                run[0] = low;
+
+            } else if (a[last - 1] > a[last]) { // Start the new run
+
+                if (k - low < count * MIN_RUN_SIZE) {
+                    /*
+                     * Terminate the scanning,
+                     * if the runs are too small.
+                     */
+                    return false;
+                }
+
+                if (++count == run.length) {
+                    /*
+                     * Array is not highly structured.
+                     */
+                    return false;
+                }
+            }
+
+            /*
+             * Save the current run.
+             */
+            run[count] = (last = k);
+
+            /*
+             * Check single-element run at the end.
+             */
+            if (++k == high) {
+                --k;
+            }
+        }
+
+        /*
+         * Merge all runs.
+         */
+        if (count > 1) {
+            float[] b; int offset = low;
+
+            if (sorter != null && (b = sorter.b) != null) {
+                offset = sorter.offset;
+            } else if ((b = tryAllocate(float[].class, high - low)) == null) {
+                return false;
+            }
+            mergeRuns(sorter, a, b, offset, true, run, 0, count);
+        }
+        return true;
+    }
+
+    /**
+     * Merges the specified runs.
+     *
+     * @param sorter the parallel context
+     * @param a the source array
+     * @param b the buffer for merging
+     * @param offset the start index in the source, inclusive
+     * @param aim whether the original array is used for merging
+     * @param run the start indexes of the runs, inclusive
+     * @param lo the start index of the first run, inclusive
+     * @param hi the start index of the last run, inclusive
+     */
+    private static void mergeRuns(Sorter<float[]> sorter, float[] a, float[] b, int offset,
+            boolean aim, int[] run, int lo, int hi) {
+
+        if (hi - lo == 1) {
+            if (!aim) {
+                System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
+            }
+            return;
+        }
+
+        /*
+         * Split the array into two approximately equal parts.
+         */
+        int mi = lo, key = (run[lo] + run[hi]) >>> 1;
+        while (run[++mi + 1] <= key);
+
+        /*
+         * Merge the runs of all parts.
+         */
+        mergeRuns(sorter, a, b, offset, !aim, run, lo, mi);
+        mergeRuns(sorter, a, b, offset, !aim, run, mi, hi);
+
+        float[] dst = aim ? a : b;
+        float[] src = aim ? b : a;
+
+        int k  = !aim ? run[lo] - offset : run[lo];
+        int lo1 = aim ? run[lo] - offset : run[lo];
+        int hi1 = aim ? run[mi] - offset : run[mi];
+        int lo2 = aim ? run[mi] - offset : run[mi];
+        int hi2 = aim ? run[hi] - offset : run[hi];
+
+        /*
+         * Merge the left and right parts.
+         */
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+            new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
+        } else {
+            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+        }
+    }
+
+    /**
+     * Merges the sorted parts in parallel.
+     *
+     * @param merger the parallel context
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(Merger<float[]> merger, float[] dst, int k,
+            float[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
+            /*
+             * The first part must be larger.
+             */
+            if (hi1 - lo1 < hi2 - lo2) {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                float key = src[mi2];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                float key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
+                }
+            }
+
+            /*
+             * Merge the first parts in parallel.
+             */
+            merger.fork(k, lo1, mi1, lo2, mi2);
+
+            /*
+             * Skip the first parts.
+             */
+            k += mi2 - lo2 + mi1 - lo1;
+
+            /*
+             * Iterate along the second parts.
+             */
+            lo1 = mi1;
+            lo2 = mi2;
+        }
+
+        /*
+         * Merge the small parts sequentially.
+         */
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+    }
+
+    /**
+     * Merges the sorted parts sequentially.
+     *
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(float[] dst, int k,
+            float[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    float next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    float next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    float next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            }
+        }
+
+        /*
+         * Copy the tail of the left and right parts.
+         */
+        System.arraycopy(src, lo1, dst, k, hi1 - lo1);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -3094,7 +3572,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void heapSort(float[] a, int low, int high) {
+    static void heapSort(float[] a, int low, int high) {
         for (int k = (low + high) >>> 1; k > low; ) {
             pushDown(a, --k, a[k], low, high);
         }
@@ -3131,282 +3609,16 @@ final class DualPivotQuicksort {
         a[p] = value;
     }
 
-    /**
-     * Tries to sort the specified range of the array.
-     *
-     * @param sorter parallel context
-     * @param a the array to be sorted
-     * @param low the index of the first element to be sorted
-     * @param size the array size
-     * @return true if finally sorted, false otherwise
-     */
-    private static boolean tryMergeRuns(Sorter sorter, float[] a, int low, int size) {
-
-        /*
-         * The run array is constructed only if initial runs are
-         * long enough to continue, run[i] then holds start index
-         * of the i-th sequence of elements in non-descending order.
-         */
-        int[] run = null;
-        int high = low + size;
-        int count = 1, last = low;
-
-        /*
-         * Identify all possible runs.
-         */
-        for (int k = low + 1; k < high; ) {
-
-            /*
-             * Find the end index of the current run.
-             */
-            if (a[k - 1] < a[k]) {
-
-                // Identify ascending sequence
-                while (++k < high && a[k - 1] <= a[k]);
-
-            } else if (a[k - 1] > a[k]) {
-
-                // Identify descending sequence
-                while (++k < high && a[k - 1] >= a[k]);
-
-                // Reverse into ascending order
-                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
-                    float ai = a[i]; a[i] = a[j]; a[j] = ai;
-                }
-            } else { // Identify constant sequence
-                for (float ak = a[k]; ++k < high && ak == a[k]; );
-
-                if (k < high) {
-                    continue;
-                }
-            }
-
-            /*
-             * Check special cases.
-             */
-            if (run == null) {
-                if (k == high) {
-
-                    /*
-                     * The array is monotonous sequence,
-                     * and therefore already sorted.
-                     */
-                    return true;
-                }
-
-                if (k - low < MIN_FIRST_RUN_SIZE) {
-
-                    /*
-                     * The first run is too small
-                     * to proceed with scanning.
-                     */
-                    return false;
-                }
-
-                run = new int[((size >> 10) | 0x7F) & 0x3FF];
-                run[0] = low;
-
-            } else if (a[last - 1] > a[last]) {
-
-                if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
-                    /*
-                     * The first runs are not long
-                     * enough to continue scanning.
-                     */
-                    return false;
-                }
-
-                if (++count == MAX_RUN_CAPACITY) {
-
-                    /*
-                     * Array is not highly structured.
-                     */
-                    return false;
-                }
-
-                if (count == run.length) {
-
-                    /*
-                     * Increase capacity of index array.
-                     */
-                    run = Arrays.copyOf(run, count << 1);
-                }
-            }
-            run[count] = (last = k);
-        }
-
-        /*
-         * Merge runs of highly structured array.
-         */
-        if (count > 1) {
-            float[] b; int offset = low;
-
-            if (sorter == null || (b = (float[]) sorter.b) == null) {
-                b = new float[size];
-            } else {
-                offset = sorter.offset;
-            }
-            mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
-        }
-        return true;
-    }
+// #[double]
 
     /**
-     * Merges the specified runs.
-     *
-     * @param a the source array
-     * @param b the temporary buffer used in merging
-     * @param offset the start index in the source, inclusive
-     * @param aim specifies merging: to source ( > 0), buffer ( < 0) or any ( == 0)
-     * @param parallel indicates whether merging is performed in parallel
-     * @param run the start indexes of the runs, inclusive
-     * @param lo the start index of the first run, inclusive
-     * @param hi the start index of the last run, inclusive
-     * @return the destination where runs are merged
+     * The binary representation of double negative zero.
      */
-    private static float[] mergeRuns(float[] a, float[] b, int offset,
-            int aim, boolean parallel, int[] run, int lo, int hi) {
-
-        if (hi - lo == 1) {
-            if (aim >= 0) {
-                return a;
-            }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
-            return b;
-        }
-
-        /*
-         * Split into approximately equal parts.
-         */
-        int mi = lo, rmi = (run[lo] + run[hi]) >>> 1;
-        while (run[++mi + 1] <= rmi);
-
-        /*
-         * Merge the left and right parts.
-         */
-        float[] a1, a2;
-
-        if (parallel && hi - lo > MIN_RUN_COUNT) {
-            RunMerger merger = new RunMerger(a, b, offset, 0, run, mi, hi).forkMe();
-            a1 = mergeRuns(a, b, offset, -aim, true, run, lo, mi);
-            a2 = (float[]) merger.getDestination();
-        } else {
-            a1 = mergeRuns(a, b, offset, -aim, false, run, lo, mi);
-            a2 = mergeRuns(a, b, offset,    0, false, run, mi, hi);
-        }
-
-        float[] dst = a1 == a ? b : a;
-
-        int k   = a1 == a ? run[lo] - offset : run[lo];
-        int lo1 = a1 == b ? run[lo] - offset : run[lo];
-        int hi1 = a1 == b ? run[mi] - offset : run[mi];
-        int lo2 = a2 == b ? run[mi] - offset : run[mi];
-        int hi2 = a2 == b ? run[hi] - offset : run[hi];
-
-        if (parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
-        } else {
-            mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
-        }
-        return dst;
-    }
-
-    /**
-     * Merges the sorted parts.
-     *
-     * @param merger parallel context
-     * @param dst the destination where parts are merged
-     * @param k the start index of the destination, inclusive
-     * @param a1 the first part
-     * @param lo1 the start index of the first part, inclusive
-     * @param hi1 the end index of the first part, exclusive
-     * @param a2 the second part
-     * @param lo2 the start index of the second part, inclusive
-     * @param hi2 the end index of the second part, exclusive
-     */
-    private static void mergeParts(Merger merger, float[] dst, int k,
-            float[] a1, int lo1, int hi1, float[] a2, int lo2, int hi2) {
-
-        if (merger != null && a1 == a2) {
-
-            while (true) {
-
-                /*
-                 * The first part must be larger.
-                 */
-                if (hi1 - lo1 < hi2 - lo2) {
-                    int lo = lo1; lo1 = lo2; lo2 = lo;
-                    int hi = hi1; hi1 = hi2; hi2 = hi;
-                }
-
-                /*
-                 * Small parts will be merged sequentially.
-                 */
-                if (hi1 - lo1 < MIN_PARALLEL_MERGE_PARTS_SIZE) {
-                    break;
-                }
-
-                /*
-                 * Find the median of the larger part.
-                 */
-                int mi1 = (lo1 + hi1) >>> 1;
-                float key = a1[mi1];
-                int mi2 = hi2;
-
-                /*
-                 * Partition the smaller part.
-                 */
-                for (int loo = lo2; loo < mi2; ) {
-                    int t = (loo + mi2) >>> 1;
-
-                    if (key > a2[t]) {
-                        loo = t + 1;
-                    } else {
-                        mi2 = t;
-                    }
-                }
-
-                int d = mi2 - lo2 + mi1 - lo1;
-
-                /*
-                 * Merge the right sub-parts in parallel.
-                 */
-                merger.forkMerger(dst, k + d, a1, mi1, hi1, a2, mi2, hi2);
-
-                /*
-                 * Process the sub-left parts.
-                 */
-                hi1 = mi1;
-                hi2 = mi2;
-            }
-        }
-
-        /*
-         * Merge small parts sequentially.
-         */
-        while (lo1 < hi1 && lo2 < hi2) {
-            dst[k++] = a1[lo1] < a2[lo2] ? a1[lo1++] : a2[lo2++];
-        }
-        if (dst != a1 || k < lo1) {
-            while (lo1 < hi1) {
-                dst[k++] = a1[lo1++];
-            }
-        }
-        if (dst != a2 || k < lo2) {
-            while (lo2 < hi2) {
-                dst[k++] = a2[lo2++];
-            }
-        }
-    }
-
-// [double]
+    private static final long DOUBLE_NEGATIVE_ZERO = Double.doubleToRawLongBits(-0.0d);
 
     /**
      * Sorts the specified range of the array using parallel merge
-     * sort and/or Dual-Pivot Quicksort.
+     * sort and/or Dual-Pivot Quicksort.<p>
      *
      * To balance the faster splitting and parallelism of merge sort
      * with the faster element partitioning of Quicksort, ranges are
@@ -3421,19 +3633,19 @@ final class DualPivotQuicksort {
      */
     static void sort(double[] a, int parallelism, int low, int high) {
         /*
-         * Phase 1. Count the number of negative zero -0.0d,
+         * Phase 1. Count the number of negative zero -0.0,
          * turn them into positive zero, and move all NaNs
          * to the end of the array.
          */
-        int numNegativeZero = 0;
+        int negativeZeroCount = 0;
 
         for (int k = high; k > low; ) {
             double ak = a[--k];
 
-            if (ak == 0.0d && Double.doubleToRawLongBits(ak) < 0) { // ak is -0.0d
-                numNegativeZero += 1;
+            if (Double.doubleToRawLongBits(ak) == DOUBLE_NEGATIVE_ZERO) { // ak is -0.0
+                negativeZeroCount++;
                 a[k] = 0.0d;
-            } else if (ak != ak) { // ak is NaN
+            } else if (ak != ak) { // ak is Not-a-Number (NaN)
                 a[k] = a[--high];
                 a[high] = ak;
             }
@@ -3443,21 +3655,17 @@ final class DualPivotQuicksort {
          * Phase 2. Sort everything except NaNs,
          * which are already in place.
          */
-        int size = high - low;
-
-        if (parallelism > 1 && size > MIN_PARALLEL_SORT_SIZE) {
-            int depth = getDepth(parallelism, size >> 12);
-            double[] b = depth == 0 ? null : new double[size];
-            new Sorter(null, a, b, low, size, low, depth).invoke();
+        if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
+            new Sorter<>(a, parallelism, low, high - low).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
 
         /*
-         * Phase 3. Turn positive zero 0.0d
-         * back into negative zero -0.0d.
+         * Phase 3. Turn the required number of positive
+         * zeros 0.0 back into negative zeros -0.0.
          */
-        if (++numNegativeZero == 1) {
+        if (++negativeZeroCount == 1) {
             return;
         }
 
@@ -3466,76 +3674,69 @@ final class DualPivotQuicksort {
          * the index of the first zero.
          */
         while (low <= high) {
-            int middle = (low + high) >>> 1;
+            int mid = (low + high) >>> 1;
 
-            if (a[middle] < 0) {
-                low = middle + 1;
+            if (a[mid] < 0.0d) {
+                low = mid + 1;
             } else {
-                high = middle - 1;
+                high = mid - 1;
             }
         }
 
         /*
-         * Replace the required number of 0.0d by -0.0d.
+         * Replace 0.0 by negative zeros -0.0.
          */
-        while (--numNegativeZero > 0) {
+        while (--negativeZeroCount > 0) {
             a[++high] = -0.0d;
         }
     }
 
     /**
-     * Sorts the specified array using the Dual-Pivot Quicksort and/or
-     * other sorts in special-cases, possibly with parallel partitions.
+     * Sorts the specified range of the array using Dual-Pivot Quicksort.
      *
-     * @param sorter parallel context
+     * @param sorter the parallel context
      * @param a the array to be sorted
      * @param bits the combination of recursion depth and bit flag, where
-     *        the right bit "0" indicates that array is the leftmost part
+     *        the right bit "0" indicates that range is the leftmost part
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, double[] a, int bits, int low, int high) {
+    static void sort(Sorter<double[]> sorter, double[] a, int bits, int low, int high) {
         while (true) {
-            int end = high - 1, size = high - low;
+            int size = high - low;
+
             /*
-             * Run mixed insertion sort on small non-leftmost parts.
+             * Run adaptive mixed insertion sort on small non-leftmost parts.
              */
-            if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
+                sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
             /*
-             * Invoke insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
+                sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
+                    low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
             /*
-             * Check if the whole array or large non-leftmost
-             * parts are nearly sorted and then merge runs.
+             * Try merging sort on large part.
              */
-            if ((bits == 0 || size > MIN_TRY_MERGE_SIZE && (bits & 1) > 0)
-                    && tryMergeRuns(sorter, a, low, size)) {
+            if (size > MIN_MERGING_SORT_SIZE * bits
+                    && tryMergingSort(sorter, a, low, high)) {
                 return;
             }
 
             /*
-             * Switch to heap sort if execution
-             * time is becoming quadratic.
+             * Divide the given array into the golden ratio using
+             * an inexpensive approximation to select five sample
+             * elements and determine pivots.
              */
-            if ((bits += DELTA) > MAX_RECURSION_DEPTH) {
-                heapSort(a, low, high);
-                return;
-            }
-
-            /*
-             * Use an inexpensive approximation of the golden ratio
-             * to select five sample elements and determine pivots.
-             */
-            int step = (size >> 3) * 3 + 3;
+            int step = (size >> 2) + (size >> 3) + (size >> 7);
 
             /*
              * Five elements around (and including) the central element
@@ -3544,171 +3745,177 @@ final class DualPivotQuicksort {
              * determined to work well on a wide variety of inputs.
              */
             int e1 = low + step;
-            int e5 = end - step;
+            int e5 = high - step;
             int e3 = (e1 + e5) >>> 1;
             int e2 = (e1 + e3) >>> 1;
             int e4 = (e3 + e5) >>> 1;
-            double a3 = a[e3];
 
             /*
-             * Sort these elements in place by the combination
+             * Sort these elements in-place by the combination
              * of 4-element sorting network and insertion sort.
              *
-             *    5 ------o-----------o------------
-             *            |           |
-             *    4 ------|-----o-----o-----o------
-             *            |     |           |
-             *    2 ------o-----|-----o-----o------
-             *                  |     |
-             *    1 ------------o-----o------------
+             *   1 ---------o---------------o-----------------
+             *              |               |
+             *   2 ---------|-------o-------o-------o---------
+             *              |       |               |
+             *   3 ---------|-------|---------------|---------
+             *              |       |               |
+             *   4 ---------o-------|-------o-------o---------
+             *                      |       |
+             *   5 -----------------o-------o-----------------
              */
-            if (a[e5] < a[e2]) { double t = a[e5]; a[e5] = a[e2]; a[e2] = t; }
-            if (a[e4] < a[e1]) { double t = a[e4]; a[e4] = a[e1]; a[e1] = t; }
-            if (a[e5] < a[e4]) { double t = a[e5]; a[e5] = a[e4]; a[e4] = t; }
-            if (a[e2] < a[e1]) { double t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
-            if (a[e4] < a[e2]) { double t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
+            if (a[e1] > a[e4]) { double t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
+            if (a[e2] > a[e5]) { double t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
+            if (a[e4] > a[e5]) { double t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+            if (a[e1] > a[e2]) { double t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+            if (a[e2] > a[e4]) { double t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
 
-            if (a3 < a[e2]) {
-                if (a3 < a[e1]) {
-                    a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
+            /*
+             * Insert the third element.
+             */
+            if (a[e3] < a[e2]) {
+                if (a[e3] < a[e1]) {
+                    double t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
                 } else {
-                    a[e3] = a[e2]; a[e2] = a3;
+                    double t = a[e3]; a[e3] = a[e2]; a[e2] = t;
                 }
-            } else if (a3 > a[e4]) {
-                if (a3 > a[e5]) {
-                    a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = a3;
+            } else if (a[e3] > a[e4]) {
+                if (a[e3] > a[e5]) {
+                    double t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
                 } else {
-                    a[e3] = a[e4]; a[e4] = a3;
+                    double t = a[e3]; a[e3] = a[e4]; a[e4] = t;
                 }
             }
 
-            // Pointers
-            int lower; // The index of the last element of the left part
-            int upper; // The index of the first element of the right part
+            /*
+             * Switch to heap sort to avoid quadratic time.
+             */
+            if ((bits += 2) > MAX_RECURSION_DEPTH) {
+                heapSort(a, low, high);
+                return;
+            }
 
             /*
-             * Partitioning with 2 pivots in case of different elements.
+             * indices[0] - the index of the last element of the left part
+             * indices[1] - the index of the first element of the right part
+             */
+            int[] indices;
+
+            /*
+             * Partitioning with two pivots on array of fully random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
-                /*
-                * Use the first and fifth of the five sorted elements as
-                * the pivots. These values are inexpensive approximation
-                * of tertiles. Note, that pivot1 < pivot2.
-                */
-                int[] pivotIndices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
+                indices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
+                    low, high, e1, e5, DualPivotQuicksort::partitionWithTwoPivots);
+
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, lower + 1, upper);
-                    sorter.forkSorter(bits | 1, upper + 1, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[0] + 1, indices[1]);
+                    sort(null, a, bits | 1, indices[1] + 1, high);
                 } else {
-                    sort(sorter, a, bits | 1, lower + 1, upper);
-                    sort(sorter, a, bits | 1, upper + 1, high);
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
-            } else { // Use single pivot in case of many equal elements
+            } else { // Partitioning with one pivot
 
-                /*
-                 * Use the third of the five sorted elements as the pivot.
-                 * This value is inexpensive approximation of the median.
-                 */
-                int[] pivotIndices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
-                lower = pivotIndices[0];
-                upper = pivotIndices[1];
+                indices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
+                    low, high, e3, e3, DualPivotQuicksort::partitionWithOnePivot);
 
                 /*
                  * Sort the right part (possibly in parallel), excluding
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.forkSorter(bits | 1, upper, high);
+                if (sorter == null) {
+                    sort(null, a, bits | 1, indices[1], high);
                 } else {
-                    sort(sorter, a, bits | 1, upper, high);
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
-            high = lower; // Iterate along the left part
+            high = indices[0]; // Iterate along the left part
         }
     }
 
     /**
-     * Partitions the specified range of the array using the two pivots provided.
+     * Partitions the specified range of the array using two given pivots.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
      * @param pivotIndex2 the index of pivot2, the second pivot
-     *
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionDualPivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
+    private static int[] partitionWithTwoPivots(
+            double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = --high;
         int lower = low;
-        int upper = end;
-
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        double pivot1 = a[e1];
-        double pivot2 = a[e5];
 
         /*
-        * The first and the last elements to be sorted are moved
-        * to the locations formerly occupied by the pivots. When
-        * partitioning is completed, the pivots are swapped back
-        * into their final positions, and excluded from the next
-        * subsequent sorting.
-        */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
+         * Use the first and fifth of the five sorted elements as
+         * the pivots. These values are inexpensive approximation
+         * of tertiles. Note, that pivot1 < pivot2.
+         */
+        double pivot1 = a[pivotIndex1];
+        double pivot2 = a[pivotIndex2];
 
         /*
-        * Skip elements, which are less or greater than the pivots.
-        */
+         * The first and the last elements to be sorted are moved
+         * to the locations formerly occupied by the pivots. When
+         * partitioning is completed, the pivots are swapped back
+         * into their final positions, and excluded from the next
+         * subsequent sorting.
+         */
+        a[pivotIndex1] = a[lower];
+        a[pivotIndex2] = a[upper];
+
+        /*
+         * Skip elements, which are less or greater than the pivots.
+         */
         while (a[++lower] < pivot1);
         while (a[--upper] > pivot2);
 
         /*
          * Backward 3-interval partitioning
          *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
+         *     left part                     central part          right part
+         * +--------------+----------+--------------------------+--------------+
+         * |   < pivot1   |    ?     |  pivot1 <= .. <= pivot2  |   > pivot2   |
+         * +--------------+----------+--------------------------+--------------+
+         *               ^          ^                            ^
+         *               |          |                            |
+         *             lower        k                          upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             double ak = a[k];
 
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
+            if (ak < pivot1) { // Move a[k] to the left part
+                while (a[++lower] < pivot1);
+
+                if (lower > k) {
+                    lower = k;
+                    break;
                 }
-            } else if (ak > pivot2) { // Move a[k] to the right side
+                if (a[lower] > pivot2) {
+                    a[k] = a[--upper];
+                    a[upper] = a[lower];
+                } else {
+                    a[k] = a[lower];
+                }
+                a[lower] = ak;
+            } else if (ak > pivot2) { // Move a[k] to the right part
                 a[k] = a[--upper];
                 a[upper] = ak;
             }
@@ -3717,75 +3924,77 @@ final class DualPivotQuicksort {
         /*
          * Swap the pivots into their final positions.
          */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
+        a[low]  = a[lower]; a[lower] = pivot1;
+        a[high] = a[upper]; a[upper] = pivot2;
 
-        return new int[] {lower, upper};
+        return new int[] { lower, upper };
     }
 
     /**
-     * Partitions the specified range of the array using a single pivot provided.
+     * Partitions the specified range of the array using one given pivot.
      *
-     * @param array the array to be partitioned
+     * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of single pivot
+     * @param pivotIndex2 the index of single pivot
+     * @return indices of parts after partitioning
      */
-    @ForceInline
-    private static int[] partitionSinglePivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-
-        int end = high - 1;
+    private static int[] partitionWithOnePivot(
+            double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        /*
+         * Pointers to the right and left parts.
+         */
+        int upper = high;
         int lower = low;
-        int upper = end;
-
-        int e3 = pivotIndex1;
-        double pivot = a[e3];
 
         /*
-        * The first element to be sorted is moved to the
-        * location formerly occupied by the pivot. After
-        * completion of partitioning the pivot is swapped
-        * back into its final position, and excluded from
-        * the next subsequent sorting.
-        */
-        a[e3] = a[lower];
+         * Use the third of the five sorted elements as the pivot.
+         * This value is inexpensive approximation of the median.
+         */
+        double pivot = a[pivotIndex1];
 
         /*
-         * Traditional 3-way (Dutch National Flag) partitioning
+         * The first element to be sorted is moved to the
+         * location formerly occupied by the pivot. After
+         * completion of partitioning the pivot is swapped
+         * back into its final position, and excluded from
+         * the next subsequent sorting.
+         */
+        a[pivotIndex1] = a[lower];
+
+        /*
+         * Dutch National Flag partitioning
          *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
+         *     left part               central part    right part
+         * +--------------+----------+--------------+-------------+
+         * |   < pivot    |    ?     |   == pivot   |   > pivot   |
+         * +--------------+----------+--------------+-------------+
+         *               ^          ^                ^
+         *               |          |                |
+         *             lower        k              upper
          *
          * Pointer k is the last index of ?-part
+         * Pointer lower is the last index of left part
+         * Pointer upper is the first index of right part
          */
-        for (int k = ++upper; --k > lower; ) {
+        for (int k = upper; --k > lower; ) {
             double ak = a[k];
 
-            if (ak != pivot) {
-                a[k] = pivot;
+            if (ak == pivot) {
+                continue;
+            }
+            a[k] = pivot;
 
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
+            if (ak < pivot) { // Move a[k] to the left part
+                while (a[++lower] < pivot);
 
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
+                if (a[lower] > pivot) {
+                    a[--upper] = a[lower];
                 }
+                a[lower] = ak;
+            } else { // ak > pivot - Move a[k] to the right part
+                a[--upper] = ak;
             }
         }
 
@@ -3793,14 +4002,15 @@ final class DualPivotQuicksort {
          * Swap the pivot into its final position.
          */
         a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
+
+        return new int[] { lower, upper };
     }
 
     /**
-     * Sorts the specified range of the array using mixed insertion sort.
+     * Sorts the specified range of the array using mixed insertion sort.<p>
      *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
+     * Mixed insertion sort is combination of pin insertion sort
+     * and pair insertion sort.<p>
      *
      * In the context of Dual-Pivot Quicksort, the pivot element
      * from the left part plays the role of sentinel, because it
@@ -3812,110 +4022,69 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void mixedInsertionSort(double[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
+    static void mixedInsertionSort(double[] a, int low, int high) {
+        /*
+         * Split the array for pin and pair insertion sorts.
+         */
+        int end = high - ((3 * ((high - low) >> 2)) & ~1);
+
+        /*
+         * Start with pin insertion sort.
+         */
+        for (int i, p = high; ++low < end; ) {
+            double ai = a[i = low], pin = a[--p];
 
             /*
-             * Invoke simple insertion sort on tiny array.
+             * Swap larger element with pin.
              */
-            for (int i; ++low < end; ) {
-                double ai = a[i = low];
+            if (ai > pin) {
+                ai = pin;
+                a[p] = a[i];
+            }
 
-                while (ai < a[--i]) {
+            /*
+             * Insert element into sorted part.
+             */
+            while (ai < a[i - 1]) {
+                a[i] = a[--i];
+            }
+            a[i] = ai;
+        }
+
+        /*
+         * Finish with pair insertion sort.
+         */
+        for (int i; low < high; ++low) {
+            double a1 = a[i = low], a2 = a[++low];
+
+            /*
+             * Insert two elements per iteration: at first, insert the
+             * larger element and then insert the smaller element, but
+             * from the position where the larger element was inserted.
+             */
+            if (a1 > a2) {
+
+                while (a1 < a[--i]) {
+                    a[i + 2] = a[i];
+                }
+                a[++i + 1] = a1;
+
+                while (a2 < a[--i]) {
                     a[i + 1] = a[i];
                 }
-                a[i + 1] = ai;
-            }
-        } else {
+                a[i + 1] = a2;
 
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            double pin = a[end];
+            } else if (a1 < a[i - 1]) {
 
-            for (int i, p = high; ++low < end; ) {
-                double ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
+                while (a2 < a[--i]) {
+                    a[i + 2] = a[i];
                 }
-            }
+                a[++i + 1] = a2;
 
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                double a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
+                while (a1 < a[--i]) {
+                    a[i + 1] = a[i];
                 }
+                a[i + 1] = a1;
             }
         }
     }
@@ -3927,17 +4096,332 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void insertionSort(double[] a, int low, int high) {
+    static void insertionSort(double[] a, int low, int high) {
         for (int i, k = low; ++k < high; ) {
             double ai = a[i = k];
 
             if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
+                do {
+                    a[i] = a[--i];
+                } while (i > low && ai < a[i - 1]);
+
+                a[i] = ai;
             }
         }
+    }
+
+    /**
+     * Tries to sort the specified range of the array using merging sort.
+     *
+     * @param sorter the parallel context
+     * @param a the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
+     */
+    static boolean tryMergingSort(Sorter<double[]> sorter, double[] a, int low, int high) {
+        /*
+         * The element run[i] holds the start index
+         * of i-th sequence in non-descending order.
+         */
+        int count = 1;
+        int[] run = null;
+
+        /*
+         * Identify all possible runs.
+         */
+        for (int k = low + 1, last = low; k < high; ) {
+            /*
+             * Find the next run.
+             */
+            if (a[k - 1] < a[k]) {
+
+                // Identify ascending sequence
+                while (++k < high && a[k - 1] <= a[k]);
+
+            } else if (a[k - 1] > a[k]) {
+
+                // Identify descending sequence
+                while (++k < high && a[k - 1] >= a[k]);
+
+                // Reverse into ascending order
+                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
+                    double ai = a[i]; a[i] = a[j]; a[j] = ai;
+                }
+
+                // Check the next sequence
+                if (k < high && a[k - 1] < a[k]) {
+                    continue;
+                }
+
+            } else { // Identify constant sequence
+                for (double ak = a[k]; ++k < high && ak == a[k]; );
+
+                // Check the next sequence
+                if (k < high) {
+                    continue;
+                }
+            }
+
+            /*
+             * Process the current run.
+             */
+            if (run == null) {
+
+                if (k == high) {
+                    /*
+                     * Array is monotonous sequence
+                     * and therefore already sorted.
+                     */
+                    return true;
+                }
+                run = new int[Math.min((high - low) >> 6, MAX_RUN_CAPACITY) | 8];
+                run[0] = low;
+
+            } else if (a[last - 1] > a[last]) { // Start the new run
+
+                if (k - low < count * MIN_RUN_SIZE) {
+                    /*
+                     * Terminate the scanning,
+                     * if the runs are too small.
+                     */
+                    return false;
+                }
+
+                if (++count == run.length) {
+                    /*
+                     * Array is not highly structured.
+                     */
+                    return false;
+                }
+            }
+
+            /*
+             * Save the current run.
+             */
+            run[count] = (last = k);
+
+            /*
+             * Check single-element run at the end.
+             */
+            if (++k == high) {
+                --k;
+            }
+        }
+
+        /*
+         * Merge all runs.
+         */
+        if (count > 1) {
+            double[] b; int offset = low;
+
+            if (sorter != null && (b = sorter.b) != null) {
+                offset = sorter.offset;
+            } else if ((b = tryAllocate(double[].class, high - low)) == null) {
+                return false;
+            }
+            mergeRuns(sorter, a, b, offset, true, run, 0, count);
+        }
+        return true;
+    }
+
+    /**
+     * Merges the specified runs.
+     *
+     * @param sorter the parallel context
+     * @param a the source array
+     * @param b the buffer for merging
+     * @param offset the start index in the source, inclusive
+     * @param aim whether the original array is used for merging
+     * @param run the start indexes of the runs, inclusive
+     * @param lo the start index of the first run, inclusive
+     * @param hi the start index of the last run, inclusive
+     */
+    private static void mergeRuns(Sorter<double[]> sorter, double[] a, double[] b, int offset,
+            boolean aim, int[] run, int lo, int hi) {
+
+        if (hi - lo == 1) {
+            if (!aim) {
+                System.arraycopy(a, run[lo], b, run[lo] - offset, run[hi] - run[lo]);
+            }
+            return;
+        }
+
+        /*
+         * Split the array into two approximately equal parts.
+         */
+        int mi = lo, key = (run[lo] + run[hi]) >>> 1;
+        while (run[++mi + 1] <= key);
+
+        /*
+         * Merge the runs of all parts.
+         */
+        mergeRuns(sorter, a, b, offset, !aim, run, lo, mi);
+        mergeRuns(sorter, a, b, offset, !aim, run, mi, hi);
+
+        double[] dst = aim ? a : b;
+        double[] src = aim ? b : a;
+
+        int k  = !aim ? run[lo] - offset : run[lo];
+        int lo1 = aim ? run[lo] - offset : run[lo];
+        int hi1 = aim ? run[mi] - offset : run[mi];
+        int lo2 = aim ? run[mi] - offset : run[mi];
+        int hi2 = aim ? run[hi] - offset : run[hi];
+
+        /*
+         * Merge the left and right parts.
+         */
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+            new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
+        } else {
+            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+        }
+    }
+
+    /**
+     * Merges the sorted parts in parallel.
+     *
+     * @param merger the parallel context
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(Merger<double[]> merger, double[] dst, int k,
+            double[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
+            /*
+             * The first part must be larger.
+             */
+            if (hi1 - lo1 < hi2 - lo2) {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                double key = src[mi2];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
+
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                double key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
+                }
+            }
+
+            /*
+             * Merge the first parts in parallel.
+             */
+            merger.fork(k, lo1, mi1, lo2, mi2);
+
+            /*
+             * Skip the first parts.
+             */
+            k += mi2 - lo2 + mi1 - lo1;
+
+            /*
+             * Iterate along the second parts.
+             */
+            lo1 = mi1;
+            lo2 = mi2;
+        }
+
+        /*
+         * Merge the small parts sequentially.
+         */
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
+    }
+
+    /**
+     * Merges the sorted parts sequentially.
+     *
+     * @param dst the destination where parts are merged
+     * @param k the start index of the destination, inclusive
+     * @param src the source array
+     * @param lo1 the start index of the first part, inclusive
+     * @param hi1 the end index of the first part, exclusive
+     * @param lo2 the start index of the second part, inclusive
+     * @param hi2 the end index of the second part, exclusive
+     */
+    private static void mergeParts(double[] dst, int k,
+            double[] src, int lo1, int hi1, int lo2, int hi2) {
+
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    double next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    double next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    double next = src[lo1];
+
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
+                }
+            }
+        }
+
+        /*
+         * Copy the tail of the left and right parts.
+         */
+        System.arraycopy(src, lo1, dst, k, hi1 - lo1);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -3947,7 +4431,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void heapSort(double[] a, int low, int high) {
+    static void heapSort(double[] a, int low, int high) {
         for (int k = (low + high) >>> 1; k > low; ) {
             pushDown(a, --k, a[k], low, high);
         }
@@ -3985,289 +4469,66 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Tries to sort the specified range of the array.
+     * Checks the count array and then computes the histogram.
      *
-     * @param sorter parallel context
-     * @param a the array to be sorted
-     * @param low the index of the first element to be sorted
-     * @param size the array size
-     * @return true if finally sorted, false otherwise
+     * @param count the count array
+     * @param total the total number of elements
+     * @param low the index of the first element, inclusive
+     * @return {@code true} if the digit must be processed, otherwise {@code false}
      */
-    private static boolean tryMergeRuns(Sorter sorter, double[] a, int low, int size) {
-
+    private static boolean processDigit(int[] count, int total, int low) {
         /*
-         * The run array is constructed only if initial runs are
-         * long enough to continue, run[i] then holds start index
-         * of the i-th sequence of elements in non-descending order.
+         * Check if we can skip the given digit.
          */
-        int[] run = null;
-        int high = low + size;
-        int count = 1, last = low;
-
-        /*
-         * Identify all possible runs.
-         */
-        for (int k = low + 1; k < high; ) {
-
-            /*
-             * Find the end index of the current run.
-             */
-            if (a[k - 1] < a[k]) {
-
-                // Identify ascending sequence
-                while (++k < high && a[k - 1] <= a[k]);
-
-            } else if (a[k - 1] > a[k]) {
-
-                // Identify descending sequence
-                while (++k < high && a[k - 1] >= a[k]);
-
-                // Reverse into ascending order
-                for (int i = last - 1, j = k; ++i < --j && a[i] > a[j]; ) {
-                    double ai = a[i]; a[i] = a[j]; a[j] = ai;
-                }
-            } else { // Identify constant sequence
-                for (double ak = a[k]; ++k < high && ak == a[k]; );
-
-                if (k < high) {
-                    continue;
-                }
+        for (int c : count) {
+            if (c == 0) {
+                continue;
             }
-
-            /*
-             * Check special cases.
-             */
-            if (run == null) {
-                if (k == high) {
-
-                    /*
-                     * The array is monotonous sequence,
-                     * and therefore already sorted.
-                     */
-                    return true;
-                }
-
-                if (k - low < MIN_FIRST_RUN_SIZE) {
-
-                    /*
-                     * The first run is too small
-                     * to proceed with scanning.
-                     */
-                    return false;
-                }
-
-                run = new int[((size >> 10) | 0x7F) & 0x3FF];
-                run[0] = low;
-
-            } else if (a[last - 1] > a[last]) {
-
-                if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
-                    /*
-                     * The first runs are not long
-                     * enough to continue scanning.
-                     */
-                    return false;
-                }
-
-                if (++count == MAX_RUN_CAPACITY) {
-
-                    /*
-                     * Array is not highly structured.
-                     */
-                    return false;
-                }
-
-                if (count == run.length) {
-
-                    /*
-                     * Increase capacity of index array.
-                     */
-                    run = Arrays.copyOf(run, count << 1);
-                }
+            if (c == total) {
+                return false;
             }
-            run[count] = (last = k);
+            break;
         }
 
         /*
-         * Merge runs of highly structured array.
+         * Compute the histogram.
          */
-        if (count > 1) {
-            double[] b; int offset = low;
+        count[0] += low;
 
-            if (sorter == null || (b = (double[]) sorter.b) == null) {
-                b = new double[size];
-            } else {
-                offset = sorter.offset;
-            }
-            mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
+        for (int i = 0; ++i < count.length; ) {
+            count[i] += count[i - 1];
         }
         return true;
     }
 
+// #[class]
+
     /**
-     * Merges the specified runs.
+     * Implementation of parallel sorting.
      *
-     * @param a the source array
-     * @param b the temporary buffer used in merging
-     * @param offset the start index in the source, inclusive
-     * @param aim specifies merging: to source ( > 0), buffer ( < 0) or any ( == 0)
-     * @param parallel indicates whether merging is performed in parallel
-     * @param run the start indexes of the runs, inclusive
-     * @param lo the start index of the first run, inclusive
-     * @param hi the start index of the last run, inclusive
-     * @return the destination where runs are merged
+     * @param <T> the class of array
      */
-    private static double[] mergeRuns(double[] a, double[] b, int offset,
-            int aim, boolean parallel, int[] run, int lo, int hi) {
+    private static final class Sorter<T> extends CountedCompleter<Void> {
 
-        if (hi - lo == 1) {
-            if (aim >= 0) {
-                return a;
-            }
-            for (int i = run[hi], j = i - offset, low = run[lo]; i > low;
-                b[--j] = a[--i]
-            );
-            return b;
-        }
+        @java.io.Serial
+        private static final long serialVersionUID = 123456789L;
 
-        /*
-         * Split into approximately equal parts.
-         */
-        int mi = lo, rmi = (run[lo] + run[hi]) >>> 1;
-        while (run[++mi + 1] <= rmi);
-
-        /*
-         * Merge the left and right parts.
-         */
-        double[] a1, a2;
-
-        if (parallel && hi - lo > MIN_RUN_COUNT) {
-            RunMerger merger = new RunMerger(a, b, offset, 0, run, mi, hi).forkMe();
-            a1 = mergeRuns(a, b, offset, -aim, true, run, lo, mi);
-            a2 = (double[]) merger.getDestination();
-        } else {
-            a1 = mergeRuns(a, b, offset, -aim, false, run, lo, mi);
-            a2 = mergeRuns(a, b, offset,    0, false, run, mi, hi);
-        }
-
-        double[] dst = a1 == a ? b : a;
-
-        int k   = a1 == a ? run[lo] - offset : run[lo];
-        int lo1 = a1 == b ? run[lo] - offset : run[lo];
-        int hi1 = a1 == b ? run[mi] - offset : run[mi];
-        int lo2 = a2 == b ? run[mi] - offset : run[mi];
-        int hi2 = a2 == b ? run[hi] - offset : run[hi];
-
-        if (parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
-        } else {
-            mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
-        }
-        return dst;
-    }
-
-    /**
-     * Merges the sorted parts.
-     *
-     * @param merger parallel context
-     * @param dst the destination where parts are merged
-     * @param k the start index of the destination, inclusive
-     * @param a1 the first part
-     * @param lo1 the start index of the first part, inclusive
-     * @param hi1 the end index of the first part, exclusive
-     * @param a2 the second part
-     * @param lo2 the start index of the second part, inclusive
-     * @param hi2 the end index of the second part, exclusive
-     */
-    private static void mergeParts(Merger merger, double[] dst, int k,
-            double[] a1, int lo1, int hi1, double[] a2, int lo2, int hi2) {
-
-        if (merger != null && a1 == a2) {
-
-            while (true) {
-
-                /*
-                 * The first part must be larger.
-                 */
-                if (hi1 - lo1 < hi2 - lo2) {
-                    int lo = lo1; lo1 = lo2; lo2 = lo;
-                    int hi = hi1; hi1 = hi2; hi2 = hi;
-                }
-
-                /*
-                 * Small parts will be merged sequentially.
-                 */
-                if (hi1 - lo1 < MIN_PARALLEL_MERGE_PARTS_SIZE) {
-                    break;
-                }
-
-                /*
-                 * Find the median of the larger part.
-                 */
-                int mi1 = (lo1 + hi1) >>> 1;
-                double key = a1[mi1];
-                int mi2 = hi2;
-
-                /*
-                 * Partition the smaller part.
-                 */
-                for (int loo = lo2; loo < mi2; ) {
-                    int t = (loo + mi2) >>> 1;
-
-                    if (key > a2[t]) {
-                        loo = t + 1;
-                    } else {
-                        mi2 = t;
-                    }
-                }
-
-                int d = mi2 - lo2 + mi1 - lo1;
-
-                /*
-                 * Merge the right sub-parts in parallel.
-                 */
-                merger.forkMerger(dst, k + d, a1, mi1, hi1, a2, mi2, hi2);
-
-                /*
-                 * Process the sub-left parts.
-                 */
-                hi1 = mi1;
-                hi2 = mi2;
-            }
-        }
-
-        /*
-         * Merge small parts sequentially.
-         */
-        while (lo1 < hi1 && lo2 < hi2) {
-            dst[k++] = a1[lo1] < a2[lo2] ? a1[lo1++] : a2[lo2++];
-        }
-        if (dst != a1 || k < lo1) {
-            while (lo1 < hi1) {
-                dst[k++] = a1[lo1++];
-            }
-        }
-        if (dst != a2 || k < lo2) {
-            while (lo2 < hi2) {
-                dst[k++] = a2[lo2++];
-            }
-        }
-    }
-
-// [class]
-
-    /**
-     * This class implements parallel sorting.
-     */
-    private static final class Sorter extends CountedCompleter<Void> {
-        private static final long serialVersionUID = 20180818L;
         @SuppressWarnings("serial")
-        private final Object a, b;
+        private final T a, b;
         private final int low, size, offset, depth;
 
+        @SuppressWarnings("unchecked")
+        private Sorter(T a, int parallelism, int low, int size) {
+            this.a = a;
+            this.low = low;
+            this.size = size;
+            this.offset = low;
+            this.b = (T) tryAllocate(a.getClass(), size);
+            this.depth = b == null ? 0 : ((parallelism >> 7) + 2) * (-2);
+        }
+
         private Sorter(CountedCompleter<?> parent,
-                Object a, Object b, int low, int size, int offset, int depth) {
+                T a, T b, int low, int size, int offset, int depth) {
             super(parent);
             this.a = a;
             this.b = b;
@@ -4278,152 +4539,124 @@ final class DualPivotQuicksort {
         }
 
         @Override
-        public final void compute() {
+        @SuppressWarnings("unchecked")
+        public void compute() {
             if (depth < 0) {
                 setPendingCount(2);
                 int half = size >> 1;
-                new Sorter(this, b, a, low, half, offset, depth + 1).fork();
-                new Sorter(this, b, a, low + half, size - half, offset, depth + 1).compute();
+                new Sorter<>(this, b, a, low, half, offset, depth + 1).fork();
+                new Sorter<>(this, b, a, low + half, size - half, offset, depth + 1).compute();
             } else {
-                if (a instanceof int[]) {
-                    sort(this, (int[]) a, depth, low, low + size);
-                } else if (a instanceof long[]) {
-                    sort(this, (long[]) a, depth, low, low + size);
-                } else if (a instanceof float[]) {
-                    sort(this, (float[]) a, depth, low, low + size);
-                } else if (a instanceof double[]) {
-                    sort(this, (double[]) a, depth, low, low + size);
-                } else {
-                    throw new IllegalArgumentException(
-                        "Unknown type of array: " + a.getClass().getName());
+                switch(a) {
+                    case int[] ai -> sort((Sorter<int[]>) this, ai, depth, low, low + size);
+                    case long[] al -> sort((Sorter<long[]>) this, al, depth, low, low + size);
+                    case float[] af -> sort((Sorter<float[]>) this, af, depth, low, low + size);
+                    case double[] ad -> sort((Sorter<double[]>) this, ad, depth, low, low + size);
+                    default -> throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
                 }
             }
             tryComplete();
         }
 
         @Override
-        public final void onCompletion(CountedCompleter<?> caller) {
+        public void onCompletion(CountedCompleter<?> caller) {
             if (depth < 0) {
                 int mi = low + (size >> 1);
                 boolean src = (depth & 1) == 0;
 
-                new Merger(null,
+                new Merger<>(null,
                     a,
                     src ? low : low - offset,
                     b,
                     src ? low - offset : low,
                     src ? mi - offset : mi,
-                    b,
                     src ? mi - offset : mi,
                     src ? low + size - offset : low + size
                 ).invoke();
             }
         }
 
-        private void forkSorter(int depth, int low, int high) {
-            addToPendingCount(1);
-            Object a = this.a; // Use local variable for performance
-            new Sorter(this, a, b, low, high - low, offset, depth).fork();
+        private void fork(int depth, int low, int high) {
+            if (high - low < MIN_PARALLEL_SORT_SIZE) {
+                switch(a) {
+                    case int[] ai -> sort(null, ai, depth, low, high);
+                    case long[] al -> sort(null, al, depth, low, high);
+                    case float[] af -> sort(null, af, depth, low, high);
+                    case double[] ad -> sort(null, ad, depth, low, high);
+                    default -> throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
+                }
+            } else {
+                addToPendingCount(1);
+                new Sorter<>(this, a, b, low, high - low, offset, depth).fork();
+            }
         }
     }
 
     /**
-     * This class implements parallel merging.
+     * Implementation of parallel merging.
+     *
+     * @param <T> the class of array
      */
-    private static final class Merger extends CountedCompleter<Void> {
-        private static final long serialVersionUID = 20180818L;
+    private static final class Merger<T> extends CountedCompleter<Void> {
+
+        @java.io.Serial
+        private static final long serialVersionUID = 123456789L;
+
         @SuppressWarnings("serial")
-        private final Object dst, a1, a2;
+        private final T dst, src;
         private final int k, lo1, hi1, lo2, hi2;
 
-        private Merger(CountedCompleter<?> parent, Object dst, int k,
-                Object a1, int lo1, int hi1, Object a2, int lo2, int hi2) {
+        private Merger(CountedCompleter<?> parent, T dst, int k,
+                T src, int lo1, int hi1, int lo2, int hi2) {
             super(parent);
             this.dst = dst;
             this.k = k;
-            this.a1 = a1;
+            this.src = src;
             this.lo1 = lo1;
             this.hi1 = hi1;
-            this.a2 = a2;
             this.lo2 = lo2;
             this.hi2 = hi2;
         }
 
         @Override
-        public final void compute() {
-            if (dst instanceof int[]) {
-                mergeParts(this, (int[]) dst, k,
-                    (int[]) a1, lo1, hi1, (int[]) a2, lo2, hi2);
-            } else if (dst instanceof long[]) {
-                mergeParts(this, (long[]) dst, k,
-                    (long[]) a1, lo1, hi1, (long[]) a2, lo2, hi2);
-            } else if (dst instanceof float[]) {
-                mergeParts(this, (float[]) dst, k,
-                    (float[]) a1, lo1, hi1, (float[]) a2, lo2, hi2);
-            } else if (dst instanceof double[]) {
-                mergeParts(this, (double[]) dst, k,
-                    (double[]) a1, lo1, hi1, (double[]) a2, lo2, hi2);
-            } else {
-                throw new IllegalArgumentException(
-                    "Unknown type of array: " + dst.getClass().getName());
+        @SuppressWarnings("unchecked")
+        public void compute() {
+            switch(dst) {
+                case int[] di -> mergeParts((Merger<int[]>) this, di, k, (int[]) src, lo1, hi1, lo2, hi2);
+                case long[] dl -> mergeParts((Merger<long[]>) this, dl, k, (long[]) src, lo1, hi1, lo2, hi2);
+                case float[] df -> mergeParts((Merger<float[]>) this, df, k, (float[]) src, lo1, hi1, lo2, hi2);
+                case double[] dd -> mergeParts((Merger<double[]>) this, dd, k, (double[]) src, lo1, hi1, lo2, hi2);
+                default -> throw new IllegalArgumentException("Unknown array: " + dst.getClass().getName());
             }
             propagateCompletion();
         }
 
-        private void forkMerger(Object dst, int k,
-                Object a1, int lo1, int hi1, Object a2, int lo2, int hi2) {
+        private void fork(int k, int lo1, int hi1, int lo2, int hi2) {
             addToPendingCount(1);
-            new Merger(this, dst, k, a1, lo1, hi1, a2, lo2, hi2).fork();
+            new Merger<>(this, dst, k, src, lo1, hi1, lo2, hi2).fork();
         }
     }
 
     /**
-     * This class implements parallel merging of runs.
+     * Tries to allocate additional buffer.
+     *
+     * @param <T> the class of array
+     * @param clazz the given array class
+     * @param length the length of additional buffer
+     * @return {@code null} if requested buffer is too big or there is no enough memory,
+     *         otherwise created buffer
      */
-    private static final class RunMerger extends RecursiveTask<Object> {
-        private static final long serialVersionUID = 20180818L;
-        @SuppressWarnings("serial")
-        private final Object a, b;
-        private final int[] run;
-        private final int offset, aim, lo, hi;
-
-        private RunMerger(Object a, Object b, int offset,
-                int aim, int[] run, int lo, int hi) {
-            this.a = a;
-            this.b = b;
-            this.offset = offset;
-            this.aim = aim;
-            this.run = run;
-            this.lo = lo;
-            this.hi = hi;
-        }
-
-        @Override
-        protected final Object compute() {
-            if (a instanceof int[]) {
-                return mergeRuns((int[]) a, (int[]) b, offset, aim, true, run, lo, hi);
-            }
-            if (a instanceof long[]) {
-                return mergeRuns((long[]) a, (long[]) b, offset, aim, true, run, lo, hi);
-            }
-            if (a instanceof float[]) {
-                return mergeRuns((float[]) a, (float[]) b, offset, aim, true, run, lo, hi);
-            }
-            if (a instanceof double[]) {
-                return mergeRuns((double[]) a, (double[]) b, offset, aim, true, run, lo, hi);
-            }
-            throw new IllegalArgumentException(
-                "Unknown type of array: " + a.getClass().getName());
-        }
-
-        private RunMerger forkMe() {
-            fork();
-            return this;
-        }
-
-        private Object getDestination() {
-            join();
-            return getRawResult();
+    @SuppressWarnings("unchecked")
+    private static <T> T tryAllocate(Class<T> clazz, int length) {
+        try {
+            int maxLength = MAX_BUFFER_SIZE >>
+                (clazz == int[].class || clazz == float[].class ? 2 : 3);
+            return length > maxLength ? null :
+                (T) U.allocateUninitializedArray(clazz.componentType(), length);
+        } catch (OutOfMemoryError e) {
+            return null;
         }
     }
+
+    private static final Unsafe U = Unsafe.getUnsafe();
 }
