@@ -93,6 +93,11 @@ public class SigningAppImageTwoStepsTest {
                 return new TestSpec(Optional.ofNullable(signAppImage), sign);
             }
 
+            Builder keychain(SigningBase.StandardKeychain v) {
+                keychain = Objects.requireNonNull(v);
+                return this;
+            }
+
             Builder certRequest(SigningBase.StandardCertificateRequest v) {
                 certRequest = Objects.requireNonNull(v);
                 return this;
@@ -117,9 +122,10 @@ public class SigningAppImageTwoStepsTest {
                 return new SignKeyOptionWithKeychain(
                         signIdentityType,
                         certRequest,
-                        SigningBase.StandardKeychain.MAIN.keychain());
+                        keychain.keychain());
             }
 
+            private SigningBase.StandardKeychain keychain = SigningBase.StandardKeychain.MAIN;
             private SigningBase.StandardCertificateRequest certRequest = SigningBase.StandardCertificateRequest.CODESIGN;
             private SignKeyOption.Type signIdentityType = SignKeyOption.Type.SIGN_KEY_IDENTITY;
 
@@ -144,17 +150,25 @@ public class SigningAppImageTwoStepsTest {
                 }, signOption.keychain());
             }, appImageCmd::execute);
 
-            var cmd = new JPackageCommand()
-                    .setPackageType(PackageType.IMAGE)
-                    .addArguments("--app-image", appImageCmd.outputBundle())
-                    .mutate(sign::addTo);
+            MacSign.withKeychain(keychain -> {
+                var cmd = new JPackageCommand()
+                        .setPackageType(PackageType.IMAGE)
+                        .addArguments("--app-image", appImageCmd.outputBundle())
+                        .mutate(sign::addTo);
 
-            cmd.executeAndAssertHelloAppImageCreated();
-            MacSignVerify.verifyAppImageSigned(cmd, sign.certRequest());
+                cmd.executeAndAssertHelloAppImageCreated();
+                MacSignVerify.verifyAppImageSigned(cmd, sign.certRequest());
+            }, sign.keychain());
         }
     }
 
     public static Collection<Object[]> test() {
+
+        var signIdentityTypes = List.of(
+                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE,
+                SignKeyOption.Type.SIGN_KEY_IMPLICIT
+        );
 
         List<TestSpec> data = new ArrayList<>();
 
@@ -167,9 +181,12 @@ public class SigningAppImageTwoStepsTest {
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD)
                         .signAppImage();
             });
-            for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
+            for (var signIdentityType : signIdentityTypes) {
                 builder.signIdentityType(signIdentityType)
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN);
+                if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
+                    builder.keychain(SigningBase.StandardKeychain.SINGLE);
+                }
                 data.add(builder.sign().create());
             }
         }

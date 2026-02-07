@@ -37,6 +37,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -239,17 +240,21 @@ public final class Main {
         }
 
         void reportError(Throwable t) {
-            if (t instanceof ConfigException cfgEx) {
-                printError(cfgEx, Optional.ofNullable(cfgEx.getAdvice()));
-            } else if (t instanceof ExceptionBox ex) {
-                reportError(ex.getCause());
-            } else if (t instanceof UncheckedIOException ex) {
-                reportError(ex.getCause());
-            } else if (t instanceof UnexpectedResultException ex) {
-                printExternalCommandError(ex);
-            } else {
-                printError(t, Optional.empty());
-            }
+
+            var unfoldedExceptions = new ArrayList<Exception>();
+            ExceptionBox.visitUnboxedExceptionsRecursively(t, unfoldedExceptions::add);
+
+            unfoldedExceptions.forEach(ex -> {
+                if (ex instanceof ConfigException cfgEx) {
+                    printError(cfgEx, Optional.ofNullable(cfgEx.getAdvice()));
+                } else if (ex instanceof UncheckedIOException) {
+                    printError(ex.getCause(), Optional.empty());
+                } else if (ex instanceof UnexpectedResultException urex) {
+                    printExternalCommandError(urex);
+                } else {
+                    printError(ex, Optional.empty());
+                }
+            });
         }
 
         private void printExternalCommandError(UnexpectedResultException ex) {

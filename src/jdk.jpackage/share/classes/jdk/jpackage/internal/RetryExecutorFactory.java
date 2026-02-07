@@ -27,9 +27,9 @@ package jdk.jpackage.internal;
 import jdk.jpackage.internal.util.RetryExecutor;
 
 @FunctionalInterface
-interface RetryExecutorFactory {
+public interface RetryExecutorFactory {
 
     <T, E extends Exception> RetryExecutor<T, E> retryExecutor(Class<? extends E> exceptionType);
 
-    static final RetryExecutorFactory DEFAULT = RetryExecutor::new;
+    public static final RetryExecutorFactory DEFAULT = RetryExecutor::new;
 }

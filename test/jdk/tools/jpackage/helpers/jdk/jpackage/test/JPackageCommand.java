@@ -98,7 +98,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         verifyActions = new Actions(cmd.verifyActions);
         standardAsserts = cmd.standardAsserts;
         readOnlyPathAsserts = cmd.readOnlyPathAsserts;
-        outputValidators = cmd.outputValidators;
+        outValidators = cmd.outValidators;
+        errValidators = cmd.errValidators;
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
         unpackedPackageDirectory = cmd.unpackedPackageDirectory;
@@ -895,19 +896,38 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return removeOldOutputBundle;
     }
 
-    public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
-        return validateOutput(validator::apply);
-    }
-
-    public JPackageCommand validateOutput(Consumer<Iterator<String>> validator) {
-        Objects.requireNonNull(validator);
-        saveConsoleOutput(true);
-        outputValidators.add(validator);
+    public JPackageCommand validateOut(TKit.TextStreamVerifier validator) {
+        new JPackageOutputValidator().validator(validator).applyTo(this);
         return this;
     }
 
-    public JPackageCommand validateOutput(TKit.TextStreamVerifier.Group group) {
-        group.tryCreate().ifPresent(this::validateOutput);
+    public JPackageCommand validateOut(Consumer<Iterator<String>> validator) {
+        return validateOutput(validator, outValidators);
+    }
+
+    public JPackageCommand validateOut(TKit.TextStreamVerifier.Group group) {
+        new JPackageOutputValidator().validator(group).applyTo(this);
+        return this;
+    }
+
+    public JPackageCommand validateErr(TKit.TextStreamVerifier validator) {
+        new JPackageOutputValidator().stderr().validator(validator).applyTo(this);
+        return this;
+    }
+
+    public JPackageCommand validateErr(Consumer<Iterator<String>> validator) {
+        return validateOutput(validator, errValidators);
+    }
+
+    public JPackageCommand validateErr(TKit.TextStreamVerifier.Group group) {
+        new JPackageOutputValidator().stderr().validator(group).applyTo(this);
+        return this;
+    }
+
+    private JPackageCommand validateOutput(Consumer<Iterator<String>> validator, List<Consumer<Iterator<String>>> validators) {
+        Objects.requireNonNull(validator);
+        saveConsoleOutput(true);
+        validators.add(validator);
         return this;
     }
 
@@ -916,7 +936,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         public String value(JPackageCommand cmd);
     }
 
-    public static Object cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
+    public static CannedArgument cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(label);
         return new CannedArgument() {
@@ -936,8 +956,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return v.addPrefix("message.error-header");
     }
 
+    public static CannedFormattedString makeError(String key, Object ... args) {
+        return makeError(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+    }
+
     public static CannedFormattedString makeAdvice(CannedFormattedString v) {
         return v.addPrefix("message.advice-header");
+    }
+
+    public static CannedFormattedString makeAdvice(String key, Object ... args) {
+        return makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
     }
 
     public String getValue(CannedFormattedString str) {
@@ -950,13 +978,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }).toArray()).getValue();
     }
 
-    public JPackageCommand validateOutput(CannedFormattedString... str) {
-        // Will look up the given errors in the order they are specified.
-        validateOutput(Stream.of(str).map(this::getValue)
-                .map(TKit::assertTextStream)
-                .reduce(TKit.TextStreamVerifier.group(),
-                        TKit.TextStreamVerifier.Group::add,
-                        TKit.TextStreamVerifier.Group::add));
+    public JPackageCommand validateOut(CannedFormattedString... strings) {
+        new JPackageOutputValidator().expectMatchingStrings(strings).applyTo(this);
+        return this;
+    }
+
+    public JPackageCommand validateErr(CannedFormattedString... strings) {
+        new JPackageOutputValidator().stderr().expectMatchingStrings(strings).applyTo(this);
         return this;
     }
 
@@ -1055,8 +1083,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
-        for (final var outputValidator: outputValidators) {
-            outputValidator.accept(result.getOutput().iterator());
+        for (final var validator: outValidators) {
+            validator.accept(result.findStdout().orElseThrow().iterator());
+        }
+
+        for (final var validator: errValidators) {
+            validator.accept(result.findStderr().orElseThrow().iterator());
         }
 
         if (result.getExitCode() == 0 && expectedExitCode.isPresent()) {
@@ -1284,7 +1316,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }),
         MAC_BUNDLE_UNSIGNED_SIGNATURE(cmd -> {
-            if (TKit.isOSX() && !MacHelper.appImageSigned(cmd)) {
+            if (TKit.isOSX()) {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),
@@ -1308,7 +1340,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
-                return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+                if (!TKit.isOSX() || !cmd.hasArgument("--mac-sign")) {
+                    return true;
+                } else {
+                    var signAppImage = MacHelper.signPredefinedAppImage(cmd)
+                            || MacHelper.hasAppImageSignIdentity(cmd)
+                            || MacHelper.isSignWithoutSignIdentity(cmd);
+                    return !signAppImage;
+                }
             }).filter(_ -> {
                 // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
                 return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
@@ -1656,10 +1695,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }).collect(Collectors.joining(" "));
     }
 
-    public static Stream<String> stripTimestamps(Stream<String> stream) {
-        return stream.map(JPackageCommand::stripTimestamp);
-    }
-
     public static String stripTimestamp(String str) {
         final var m = TIMESTAMP_REGEXP.matcher(str);
         if (m.find()) {
@@ -1836,7 +1871,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path unpackedPackageDirectory;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<StandardAssert> standardAsserts = Set.of(StandardAssert.values());
-    private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
+    private List<Consumer<Iterator<String>>> outValidators = new ArrayList<>();
+    private List<Consumer<Iterator<String>>> errValidators = new ArrayList<>();
 
     private enum DefaultToolProviderKey {
         VALUE

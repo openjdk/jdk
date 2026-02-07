@@ -712,7 +712,7 @@ public final class MacSign {
     }
 
     public enum StandardCertificateNamePrefix {
-        CODE_SIGND("Developer ID Application: "),
+        CODE_SIGN("Developer ID Application: "),
         INSTALLER("Developer ID Installer: ");
 
         StandardCertificateNamePrefix(String value) {
@@ -825,7 +825,7 @@ public final class MacSign {
                 return Optional.ofNullable(subjectCommonName).orElseGet(() -> {
                     switch (type) {
                         case CODE_SIGN -> {
-                            return StandardCertificateNamePrefix.CODE_SIGND.value() + validatedUserName();
+                            return StandardCertificateNamePrefix.CODE_SIGN.value() + validatedUserName();
                         }
                         case INSTALLER -> {
                             return StandardCertificateNamePrefix.INSTALLER.value() + validatedUserName();
@@ -1066,6 +1066,15 @@ public final class MacSign {
         });
 
         return !missingKeychain && !missingCertificates && !invalidCertificates;
+    }
+
+    /**
+     * Creates an empty keychain with unique name in the work directory of the current test.
+     */
+    public static Keychain createEmptyKeychain() {
+        return new Keychain.Builder()
+                .name(TKit.createUniquePath(TKit.workDir().resolve("empty.keychain")).toAbsolutePath().toString())
+                .create().create();
     }
 
     public static Keychain.UsageBuilder withKeychains(KeychainWithCertsSpec... keychains) {

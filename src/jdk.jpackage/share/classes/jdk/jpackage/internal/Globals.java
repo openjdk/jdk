@@ -33,17 +33,17 @@ public final class Globals {
     private Globals() {
     }
 
-    Globals objectFactory(ObjectFactory v) {
+    public Globals objectFactory(ObjectFactory v) {
         checkMutable();
         objectFactory = Optional.ofNullable(v).orElse(ObjectFactory.DEFAULT);
         return this;
     }
 
-    ObjectFactory objectFactory() {
+    public ObjectFactory objectFactory() {
         return objectFactory;
     }
 
-    Globals executorFactory(ExecutorFactory v) {
+    public Globals executorFactory(ExecutorFactory v) {
         return objectFactory(ObjectFactory.build(objectFactory).executorFactory(v).create());
     }
 

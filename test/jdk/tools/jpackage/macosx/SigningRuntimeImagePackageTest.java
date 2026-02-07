@@ -125,7 +125,7 @@ public class SigningRuntimeImagePackageTest {
                 runtimeSignOption = Optional.empty();
             }
 
-            for (var signPackage : SigningPackageTest.TestSpec.testCases(false)) {
+            for (var signPackage : SigningPackageTest.TestSpec.minimalTestCases()) {
                 data.add(new RuntimeTestSpec(runtimeSignOption, runtimeType, signPackage));
             }
         }
