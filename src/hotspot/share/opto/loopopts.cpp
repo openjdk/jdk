@@ -2854,23 +2854,23 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     Node* phi = cmp1;
     for (uint i = 1; i < phi->req(); i++) {
       Node* in = phi->in(i);
-      Node* add = CountedLoopNode::match_incr_with_optional_truncation(in,
-                                &trunc1, &trunc2, &ttype, T_INT);
-      if (add && add->in(1) == phi) {
-        add2 = add->in(2);
+      CountedLoopConverter::TruncatedIncrement add(T_INT);
+      add.build(in);
+      if (add.is_valid() && add.incr()->in(1) == phi) {
+        add2 = add.incr()->in(2);
         break;
       }
     }
   } else {
     // (If (Bool (CmpX addtrunc:(Optional-trunc((AddI (Phi ...addtrunc...) add2)) )))
     Node* addtrunc = cmp1;
-    Node* add = CountedLoopNode::match_incr_with_optional_truncation(addtrunc,
-                                &trunc1, &trunc2, &ttype, T_INT);
-    if (add && add->in(1)->is_Phi()) {
-      Node* phi = add->in(1);
+    CountedLoopConverter::TruncatedIncrement add(T_INT);
+    add.build(addtrunc);
+    if (add.is_valid() && add.incr()->in(1)->is_Phi()) {
+      Node* phi = add.incr()->in(1);
       for (uint i = 1; i < phi->req(); i++) {
         if (phi->in(i) == addtrunc) {
-          add2 = add->in(2);
+          add2 = add.incr()->in(2);
           break;
         }
       }
@@ -4304,49 +4304,45 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       return false;
     }
 
-    BoolTest::mask bt = BoolTest::illegal;
-    float cl_prob = 0;
-    Node* incr = nullptr;
-    Node* limit = nullptr;
-    Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
-    if (cmp == nullptr || cmp->Opcode() != Op_CmpI) {
+    LoopExitTest loop_exit(back_control, loop, this);
+    loop_exit.build();
+    if (!loop_exit.is_valid_with_bt(T_INT)) {
       return false;
     }
 
+    const Node* loop_incr = loop_exit.incr();
+
     // With an extra phi for the candidate iv?
     // Or the region node is the loop head
-    if (!incr->is_Phi() || incr->in(0) == head) {
+    if (!loop_incr->is_Phi() || loop_incr->in(0) == head) {
       return false;
     }
 
     PathFrequency pf(head, this);
-    region = incr->in(0);
+    region = loop_incr->in(0);
 
     // Go over all paths for the extra phi's region and see if that
     // path is frequent enough and would match the expected iv shape
     // if the extra phi is removed
     inner = 0;
-    for (uint i = 1; i < incr->req(); ++i) {
-      Node* in = incr->in(i);
-      Node* trunc1 = nullptr;
-      Node* trunc2 = nullptr;
-      const TypeInteger* iv_trunc_t = nullptr;
-      Node* orig_in = in;
-      if (!(in = CountedLoopNode::match_incr_with_optional_truncation(in, &trunc1, &trunc2, &iv_trunc_t, T_INT))) {
+    for (uint i = 1; i < loop_incr->req(); ++i) {
+      CountedLoopConverter::TruncatedIncrement increment(T_INT);
+      increment.build(loop_incr->in(i));
+      if (!increment.is_valid()) {
         continue;
       }
-      assert(in->Opcode() == Op_AddI, "wrong increment code");
-      Node* xphi = nullptr;
-      Node* stride = loop_iv_stride(in, xphi);
+      assert(increment.incr()->Opcode() == Op_AddI, "wrong increment code");
 
-      if (stride == nullptr) {
+      LoopIVStride stride = LoopIVStride(T_INT);
+      stride.build(increment.incr());
+      if (!stride.is_valid()) {
         continue;
       }
 
-      PhiNode* phi = loop_iv_phi(xphi, nullptr, head);
+      PhiNode* phi = loop_iv_phi(stride.xphi(), nullptr, head);
       if (phi == nullptr ||
-          (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
-          (trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != trunc1)) {
+          (increment.outer_trunc() == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr()) ||
+          (increment.outer_trunc() != nullptr && phi->in(LoopNode::LoopBackControl) != increment.outer_trunc())) {
         return false;
       }
 
