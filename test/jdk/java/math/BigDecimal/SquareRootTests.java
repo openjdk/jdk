@@ -31,7 +31,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.List;
+import java.util.*;
+import java.util.stream.IntStream;
 
 import static java.math.BigDecimal.ONE;
 import static java.math.BigDecimal.TWO;
@@ -48,13 +49,14 @@ public class SquareRootTests {
     public static void main(String... args) {
         int failures = 0;
 
-        failures += negativeTests();
+        failures += zerothRootTests();
+        failures += negativeWithEvenDegreeTests();
         failures += zeroTests();
         failures += oneDigitTests();
         failures += twoDigitTests();
         failures += evenPowersOfTenTests();
-        failures += squareRootTwoTests();
-        failures += lowPrecisionPerfectSquares();
+        failures += rootTwoTests();
+        failures += lowPrecisionPerfectPowers();
         failures += almostFourRoundingDown();
         failures += almostFourRoundingUp();
         failures += nearTen();
@@ -69,19 +71,41 @@ public class SquareRootTests {
         }
     }
 
-    private static int negativeTests() {
+    private static int zerothRootTests() {
+        int failures = 0;
+
+        for (long i = -5; i < 5; i++) {
+            for (int j = -5; j < 5; j++) {
+                try {
+                    BigDecimal input = BigDecimal.valueOf(i, j);
+                    BigDecimal result = input.rootn(0, MathContext.DECIMAL64);
+                    System.err.println("Unexpected 0th root: (" +
+                                       input + ").rootn(0)  = " + result );
+                    failures += 1;
+                } catch (ArithmeticException e) {
+                    ; // Expected
+                }
+            }
+        }
+
+        return failures;
+    }
+
+    private static int negativeWithEvenDegreeTests() {
         int failures = 0;
 
         for (long i = -10; i < 0; i++) {
             for (int j = -5; j < 5; j++) {
-                try {
-                    BigDecimal input = BigDecimal.valueOf(i, j);
-                    BigDecimal result = input.sqrt(MathContext.DECIMAL64);
-                    System.err.println("Unexpected sqrt of negative: (" +
-                                       input + ").sqrt()  = " + result );
-                    failures += 1;
-                } catch (ArithmeticException e) {
-                    ; // Expected
+                BigDecimal input = BigDecimal.valueOf(i, j);
+                for (int n = -4; n <= 4; n += 2) {
+                    try {
+                        BigDecimal result = input.sqrt(MathContext.DECIMAL64);
+                        System.err.println("Unexpected nth root of negative: (" +
+                                           input + ").rootn(" + n + ")  = " + result );
+                        failures += 1;
+                    } catch (ArithmeticException e) {
+                        ; // Expected
+                    }
                 }
             }
         }
@@ -93,43 +117,72 @@ public class SquareRootTests {
         int failures = 0;
 
         for (int i = -100; i < 100; i++) {
-            BigDecimal expected = BigDecimal.valueOf(0L, i/2);
-            // These results are independent of rounding mode
-            failures += compare(BigDecimal.valueOf(0L, i).sqrt(MathContext.UNLIMITED),
-                                expected, true, "zeros");
+            BigDecimal input = BigDecimal.valueOf(0L, i);
+            for (int n = -10; n <= 0; n++) {
+                try {
+                    BigDecimal result = input.rootn(n, MathContext.DECIMAL64);
+                    System.err.println("Unexpected nth root of zero: (" +
+                                       input + ").rootn(" + n + ")  = " + result );
+                    failures += 1;
+                } catch (ArithmeticException e) {
+                    ; // Expected
+                }
+            }
 
-            failures += compare(BigDecimal.valueOf(0L, i).sqrt(MathContext.DECIMAL64),
-                                expected, true, "zeros");
+            for (int n = 1; n < 10; n++) {
+                BigDecimal expected = BigDecimal.valueOf(0L, Math.ceilDiv(i, n));
+                // These results are independent of rounding mode
+                failures += compare(input.rootn(n, MathContext.UNLIMITED),
+                                    expected, true, "zeros");
+
+                failures += compare(input.rootn(n, MathContext.DECIMAL64),
+                                    expected, true, "zeros");
+            }
         }
 
         return failures;
     }
 
+    private static RoundingMode positiveRoundingMode(RoundingMode rm) {
+        return rm == RoundingMode.FLOOR   ? RoundingMode.UP :
+               rm == RoundingMode.CEILING ? RoundingMode.DOWN : rm;
+    }
+
+    private static List<RoundingMode> roundingModes() {
+        List<RoundingMode> modes = new ArrayList<>(Arrays.asList(RoundingMode.values()));
+        modes.remove(RoundingMode.UNNECESSARY);
+        return modes;
+    }
+
     /**
-     * Probe inputs with one digit of precision, 1 ... 9 and those
-     * values scaled by 10^-1, 0.1, ... 0.9.
+     * Probe inputs with one digit of precision, ±1 ... ±9 and those
+     * values scaled by 10^-1, ±0.1 ... ±0.9.
      */
     private static int oneDigitTests() {
         int failures = 0;
 
-        List<BigDecimal> oneToNine =
-            List.of(ONE,        TWO,        valueOf(3),
-                    valueOf(4), valueOf(5), valueOf(6),
-                    valueOf(7), valueOf(8), valueOf(9));
-
-        List<RoundingMode> modes =
-            List.of(RoundingMode.UP,      RoundingMode.DOWN,
-                    RoundingMode.CEILING, RoundingMode.FLOOR,
-                    RoundingMode.HALF_UP, RoundingMode.HALF_DOWN, RoundingMode.HALF_EVEN);
+        List<BigDecimal> oneToNine = IntStream.rangeClosed(1, 9).mapToObj(BigDecimal::valueOf).toList();
+        List<RoundingMode> modes = roundingModes();
 
         for (int i = 1; i < 20; i++) {
             for (RoundingMode rm : modes) {
+                MathContext mc = new MathContext(i, rm);
+                MathContext positiveMC = new MathContext(i, positiveRoundingMode(rm));
                 for (BigDecimal bd  : oneToNine) {
-                    MathContext mc = new MathContext(i, rm);
+                    failures += compareSqrtImplementations(bd, mc);
+                    BigDecimal minus_bd = bd.negate();
+                    for (int n = 1; n < 11; n += 2) {
+                        failures += compare(minus_bd.rootn( n, mc), bd.rootn( n, positiveMC).negate(), true, "one digit");
+                        failures += compare(minus_bd.rootn(-n, mc), bd.rootn(-n, positiveMC).negate(), true, "one digit");
+                    }
 
+                    bd = bd.scaleByPowerOfTen(-1);
                     failures += compareSqrtImplementations(bd, mc);
-                    bd = bd.multiply(ONE_TENTH);
-                    failures += compareSqrtImplementations(bd, mc);
+                    minus_bd = bd.negate();
+                    for (int n = 1; n < 11; n += 2) {
+                        failures += compare(minus_bd.rootn( n, mc), bd.rootn( n, positiveMC).negate(), true, "one digit");
+                        failures += compare(minus_bd.rootn(-n, mc), bd.rootn(-n, positiveMC).negate(), true, "one digit");
+                    }
                 }
             }
         }
@@ -138,28 +191,32 @@ public class SquareRootTests {
     }
 
     /**
-     * Probe inputs with two digits of precision, (10 ... 99) and
-     * those values scaled by 10^-1 (1, ... 9.9) and scaled by 10^-2
-     * (0.1 ... 0.99).
+     * Probe inputs with two digits of precision, (±10 ... ±99) and
+     * those values scaled by 10^-1 (±1 ... ±9.9) and scaled by 10^-2
+     * (±0.1 ... ±0.99).
      */
     private static int twoDigitTests() {
         int failures = 0;
 
-        List<RoundingMode> modes =
-            List.of(RoundingMode.UP,      RoundingMode.DOWN,
-                    RoundingMode.CEILING, RoundingMode.FLOOR,
-                    RoundingMode.HALF_UP, RoundingMode.HALF_DOWN, RoundingMode.HALF_EVEN);
+        List<RoundingMode> modes = roundingModes();
 
         for (int i = 10; i < 100; i++) {
             BigDecimal bd0 = BigDecimal.valueOf(i);
-            BigDecimal bd1 = bd0.multiply(ONE_TENTH);
-            BigDecimal bd2 = bd1.multiply(ONE_TENTH);
+            BigDecimal bd1 = bd0.scaleByPowerOfTen(-1);
+            BigDecimal bd2 = bd1.scaleByPowerOfTen(-1);
 
             for (BigDecimal bd : List.of(bd0, bd1, bd2)) {
-                for (int precision = 1; i < 20; i++) {
+                for (int prec = 1; prec < 20; prec++) {
                     for (RoundingMode rm : modes) {
-                        MathContext mc = new MathContext(precision, rm);
+                        MathContext mc = new MathContext(prec, rm);
+                        MathContext positiveMC = new MathContext(prec, positiveRoundingMode(rm));
                         failures += compareSqrtImplementations(bd, mc);
+
+                        BigDecimal minus_bd = bd.negate();
+                        for (int n = 1; n < 11; n += 2) {
+                            failures += compare(minus_bd.rootn( n, mc), bd.rootn( n, positiveMC).negate(), true, "two digits");
+                            failures += compare(minus_bd.rootn(-n, mc), bd.rootn(-n, positiveMC).negate(), true, "two digits");
+                        }
                     }
                 }
             }
@@ -178,19 +235,24 @@ public class SquareRootTests {
         MathContext unnecessary = new MathContext(1, RoundingMode.UNNECESSARY);
         MathContext arbitrary = new MathContext(0, RoundingMode.CEILING);
 
-        BigDecimal[] errCases = {
-                // (strippedScale & 1) != 0
-                BigDecimal.TEN,
-                // (strippedScale & 1) == 0 && !stripped.isPowerOfTen() && sqrtRem[1].signum != 0
-                BigDecimal.TWO,
+        Object[][] errCases = {
+                // strippedScale % n != 0
+                { BigDecimal.TEN, 2 },
+                // strippedScale % n == 0 && sqrtRem[1].signum != 0
+                { BigDecimal.TWO, 2 },
+                // sqrtRem[1].signum == 0 && n < 0
+                { BigDecimal.valueOf(9L), -2 },
         };
 
-        for (BigDecimal input : errCases) {
+        for (Object[] errCase : errCases) {
+            BigDecimal input = (BigDecimal) errCase[0];
+            int n = (int) errCase[1];
             BigDecimal result;
             // mc.roundingMode == RoundingMode.UNNECESSARY
             try {
-                result = input.sqrt(unnecessary);
-                System.err.println("Unexpected sqrt with UNNECESSARY RoundingMode: (" + input + ").sqrt() = " + result);
+                result = input.rootn(n, unnecessary);
+                System.err.println("Unexpected nth root with UNNECESSARY RoundingMode: ("
+                + input + ").rootn(" + n + ") = " + result);
                 failures += 1;
             } catch (ArithmeticException e) {
                 // Expected
@@ -198,17 +260,18 @@ public class SquareRootTests {
 
             // mc.roundingMode != RoundingMode.UNNECESSARY && mc.precision == 0
             try {
-                result = input.sqrt(arbitrary);
-                System.err.println("Unexpected sqrt with mc.precision == 0: (" + input + ").sqrt() = " + result);
+                result = input.rootn(n, arbitrary);
+                System.err.println("Unexpected nth root with mc.precision == 0: ("
+                + input + ").rootn(" + n + ") = " + result);
                 failures += 1;
             } catch (ArithmeticException e) {
                 // Expected
             }
         }
 
-        // (strippedScale & 1) == 0
+        // strippedScale % n == 0
 
-        // !stripped.isPowerOfTen() && sqrtRem[1].signum == 0 && (mc.precision != 0 && result.precision() > mc.precision)
+        // sqrtRem[1].signum == 0 && n > 0 && (mc.precision != 0 && result.precision() > mc.precision)
         try {
             BigDecimal input = BigDecimal.valueOf(121);
             BigDecimal result = input.sqrt(unnecessary);
@@ -219,26 +282,27 @@ public class SquareRootTests {
             // Expected
         }
 
-        BigDecimal four = BigDecimal.valueOf(4);
+        BigDecimal four = BigDecimal.valueOf(4), oneHalf = BigDecimal.valueOf(5, 1);
         Object[][] cases = {
-                // stripped.isPowerOfTen() && mc.roundingMode == RoundingMode.UNNECESSARY
-                { BigDecimal.ONE, unnecessary, BigDecimal.ONE },
-                // stripped.isPowerOfTen() && mc.roundingMode != RoundingMode.UNNECESSARY && mc.precision == 0
-                { BigDecimal.ONE, arbitrary, BigDecimal.ONE },
-                // !stripped.isPowerOfTen() && mc.roundingMode == RoundingMode.UNNECESSARY
-                // && sqrtRem[1].signum == 0 && mc.precision == 0
-                { four, new MathContext(0, RoundingMode.UNNECESSARY), BigDecimal.TWO },
-                // !stripped.isPowerOfTen() && mc.roundingMode != RoundingMode.UNNECESSARY
-                // && sqrtRem[1].signum == 0 && mc.precision == 0
-                { four, arbitrary, BigDecimal.TWO },
-                // !stripped.isPowerOfTen() && sqrtRem[1].signum == 0
+                // mc.roundingMode == RoundingMode.UNNECESSARY && sqrtRem[1].signum == 0 && n > 0
+                // && mc.precision == 0
+                { four, 2, new MathContext(0, RoundingMode.UNNECESSARY), BigDecimal.TWO },
+                // mc.roundingMode != RoundingMode.UNNECESSARY && sqrtRem[1].signum == 0 && n > 0
+                // && mc.precision == 0
+                { four, 2, arbitrary, BigDecimal.TWO },
+                // sqrtRem[1].signum == 0 && n > 0
                 // && (mc.precision != 0 && result.precision() <= mc.precision)
-                { four, unnecessary, BigDecimal.TWO },
+                { four, 2, unnecessary, BigDecimal.TWO },
+                // mc.roundingMode == RoundingMode.UNNECESSARY && sqrtRem[1].signum == 0 && n < 0
+                { four, -2, unnecessary, oneHalf },
+                // mc.roundingMode != RoundingMode.UNNECESSARY && sqrtRem[1].signum == 0 && n < 0
+                // && mc.precision == 0
+                { four, -2, arbitrary, oneHalf },
         };
 
         for (Object[] testCase : cases) {
-            BigDecimal expected = (BigDecimal) testCase[2];
-            BigDecimal result = ((BigDecimal) testCase[0]).sqrt((MathContext) testCase[1]);
+            BigDecimal expected = (BigDecimal) testCase[3];
+            BigDecimal result = ((BigDecimal) testCase[0]).rootn((int) testCase[1], (MathContext) testCase[2]);
             failures += compare(expected, result, true, "Exact results");
         }
 
@@ -294,74 +358,69 @@ public class SquareRootTests {
         return failures;
     }
 
-    private static int squareRootTwoTests() {
+    private static int rootTwoTests() {
         int failures = 0;
 
         // Square root of 2 truncated to 65 digits
-        BigDecimal highPrecisionRoot2 =
+        BigDecimal highPrecisionSqrt2 =
             new BigDecimal("1.41421356237309504880168872420969807856967187537694807317667973799");
+        // Cube root of 2 truncated to 65 digits
+        BigDecimal highPrecisionCbrt2 =
+            new BigDecimal("1.25992104989487316476721060727822835057025146470150798008197511215");
 
-        RoundingMode[] modes = {
-            RoundingMode.UP,       RoundingMode.DOWN,
-            RoundingMode.CEILING, RoundingMode.FLOOR,
-            RoundingMode.HALF_UP, RoundingMode.HALF_DOWN, RoundingMode.HALF_EVEN
-        };
+        List<RoundingMode> modes = roundingModes();
 
 
         // For each interesting rounding mode, for precisions 1 to, say,
         // 63 numerically compare TWO.sqrt(mc) to
-        // highPrecisionRoot2.round(mc) and the alternative internal high-precision
-        // implementation of square root.
+        // highPrecisionSqrt2.round(mc) and the alternative internal high-precision
+        // implementation of square root, and compare TWO.rootn(3, mc) to
+        // highPrecisionCbrt2.round(mc).
         for (RoundingMode mode : modes) {
             for (int precision = 1; precision < 63; precision++) {
                 MathContext mc = new MathContext(precision, mode);
-                BigDecimal expected = highPrecisionRoot2.round(mc);
-                BigDecimal computed = TWO.sqrt(mc);
-                BigDecimal altComputed = BigSquareRoot.sqrt(TWO, mc);
+                BigDecimal expectedSqrt = highPrecisionSqrt2.round(mc);
+                BigDecimal computedSqrt = TWO.sqrt(mc);
+                BigDecimal altComputedSqrt = BigSquareRoot.sqrt(TWO, mc);
 
-                failures += equalNumerically(expected, computed, "sqrt(2)");
-                failures += equalNumerically(computed, altComputed, "computed & altComputed");
+                failures += equalNumerically(expectedSqrt, computedSqrt, "sqrt(2)");
+                failures += equalNumerically(computedSqrt, altComputedSqrt, "computed & altComputed");
+
+                BigDecimal expectedCbrt = highPrecisionCbrt2.round(mc);
+                BigDecimal computedCbrt = TWO.rootn(3, mc);
+
+                failures += equalNumerically(expectedCbrt, computedCbrt, "rootn(2, 3)");
             }
         }
 
         return failures;
     }
 
-    private static int lowPrecisionPerfectSquares() {
+    private static int lowPrecisionPerfectPowers() {
         int failures = 0;
 
-        // For 5^2 through 9^2, if the input is rounded to one digit
-        // first before the root is computed, the wrong answer will
-        // result. Verify results and scale for different rounding
-        // modes and precisions.
-        long[][] squaresWithOneDigitRoot = {{ 4, 2},
-                                            { 9, 3},
-                                            {25, 5},
-                                            {36, 6},
-                                            {49, 7},
-                                            {64, 8},
-                                            {81, 9}};
+        for (int i = -9; i <= 9; i++) {
+            for (int n = 1; n < 10; n++) {
+                BigDecimal expected = BigDecimal.valueOf(n % 2 != 0 ? i : Math.abs(i));
+                BigDecimal pow = BigDecimal.valueOf(Math.powExact(i, n));
 
-        for (long[] squareAndRoot : squaresWithOneDigitRoot) {
-            BigDecimal square     = new BigDecimal(squareAndRoot[0]);
-            BigDecimal expected   = new BigDecimal(squareAndRoot[1]);
-
-            for (int scale = 0; scale <= 4; scale++) {
-                BigDecimal scaledSquare = square.setScale(scale, RoundingMode.UNNECESSARY);
-                int expectedScale = Math.ceilDiv(scale, 2);
-                for (int precision = 0; precision <= 5; precision++) {
-                    for (RoundingMode rm : RoundingMode.values()) {
-                        MathContext mc = new MathContext(precision, rm);
-                        BigDecimal computedRoot = scaledSquare.sqrt(mc);
-                        failures += equalNumerically(expected, computedRoot, "simple squares");
-                        int computedScale = computedRoot.scale();
-                        if (precision >=  expectedScale + 1 &&
-                            computedScale != expectedScale) {
-                            System.err.printf("%s\tprecision=%d\trm=%s%n",
-                                              computedRoot.toString(), precision, rm);
-                            failures++;
-                            System.err.printf("\t%s does not have expected scale of %d%n.",
-                                              computedRoot, expectedScale);
+                for (int scale = 0; scale <= 4; scale++) {
+                    BigDecimal scaledPow = pow.setScale(scale);
+                    int expectedScale = Math.ceilDiv(scale, n);
+                    for (int precision = 0; precision <= 5; precision++) {
+                        for (RoundingMode rm : RoundingMode.values()) {
+                            MathContext mc = new MathContext(precision, rm);
+                            BigDecimal computedRoot = scaledPow.rootn(n, mc);
+                            failures += equalNumerically(expected, computedRoot, "simple powers");
+                            int computedScale = computedRoot.scale();
+                            if (precision >=  expectedScale + 1 &&
+                                computedScale != expectedScale) {
+                                System.err.printf("%s\tprecision=%d\trm=%s%n",
+                                                  computedRoot.toString(), precision, rm);
+                                failures++;
+                                System.err.printf("\t%s does not have expected scale of %d%n.",
+                                                  computedRoot, expectedScale);
+                            }
                         }
                     }
                 }
@@ -372,7 +431,7 @@ public class SquareRootTests {
     }
 
     /**
-     * Test around 3.9999 that the sqrt doesn't improperly round-up to
+     * Test around 2^n-0.000...1 that the root doesn't improperly round-up to
      * a numerical value of 2.
      */
     private static int almostFourRoundingDown() {
@@ -380,20 +439,30 @@ public class SquareRootTests {
         BigDecimal nearFour = new BigDecimal("3.999999999999999999999999999999");
 
         // Sqrt is 1.9999...
-
         for (int i = 1; i < 64; i++) {
             MathContext mc = new MathContext(i, RoundingMode.FLOOR);
             BigDecimal result = nearFour.sqrt(mc);
             BigDecimal expected = BigSquareRoot.sqrt(nearFour, mc);
             failures += equalNumerically(expected, result, "near four rounding down");
-            failures += (result.compareTo(TWO) < 0) ? 0  : 1 ;
+            failures += (result.compareTo(TWO) < 0) ? 0 : 1;
+        }
+
+        BigDecimal ulp = nearFour.ulp();
+        for (int n = 1; n < 10; n++) {
+            BigDecimal near2ToN = BigDecimal.valueOf(Math.powExact(2, n)).subtract(ulp);
+            // Root is 1.9999...
+            for (int i = 1; i < 64; i++) {
+                MathContext mc = new MathContext(i, RoundingMode.FLOOR);
+                BigDecimal result = near2ToN.rootn(n, mc);
+                failures += (result.compareTo(TWO) < 0) ? 0 : 1;
+            }
         }
 
         return failures;
     }
 
     /**
-     * Test around 4.000...1 that the sqrt doesn't improperly
+     * Test around 2^n+0.000...1 that the root doesn't improperly
      * round-down to a numerical value of 2.
      */
     private static int almostFourRoundingUp() {
@@ -401,13 +470,23 @@ public class SquareRootTests {
         BigDecimal nearFour = new BigDecimal("4.000000000000000000000000000001");
 
         // Sqrt is 2.0000....<non-zero digits>
-
         for (int i = 1; i < 64; i++) {
             MathContext mc = new MathContext(i, RoundingMode.CEILING);
             BigDecimal result = nearFour.sqrt(mc);
             BigDecimal expected = BigSquareRoot.sqrt(nearFour, mc);
             failures += equalNumerically(expected, result, "near four rounding up");
-            failures += (result.compareTo(TWO) > 0) ? 0  : 1 ;
+            failures += (result.compareTo(TWO) > 0) ? 0 : 1;
+        }
+
+        BigDecimal ulp = nearFour.ulp();
+        for (int n = 1; n < 10; n++) {
+            BigDecimal near2ToN = BigDecimal.valueOf(Math.powExact(2, n)).add(ulp);
+            // Root is 2.0000....<non-zero digits>
+            for (int i = 1; i < 64; i++) {
+                MathContext mc = new MathContext(i, RoundingMode.CEILING);
+                BigDecimal result = near2ToN.rootn(n, mc);
+                failures += (result.compareTo(TWO) > 0) ? 0 : 1;
+            }
         }
 
         return failures;
@@ -416,11 +495,11 @@ public class SquareRootTests {
     private static int nearTen() {
         int failures = 0;
 
-         BigDecimal near10 = new BigDecimal("9.99999999999999999999");
+        BigDecimal near10 = new BigDecimal("9.99999999999999999999");
 
-         BigDecimal near10sq = near10.multiply(near10);
+        BigDecimal near10sq = near10.multiply(near10);
 
-         BigDecimal near10sq_ulp = near10sq.add(near10sq.ulp());
+        BigDecimal near10sq_ulp = near10sq.add(near10sq.ulp());
 
         for (int i = 10; i < 23; i++) {
             MathContext mc = new MathContext(i, RoundingMode.HALF_EVEN);
@@ -493,6 +572,27 @@ public class SquareRootTests {
                                              BigSquareRoot.sqrt(square, mc),
                                              halfWayCase.round(mc),
                                              "Rounding halway " + rm);
+            }
+        }
+
+        for (int n = 1; n < 10; n++) {
+            for (BigDecimal halfWayCase : halfWayCases) {
+                // Round result to next-to-last place
+                int precision = halfWayCase.precision() - 1;
+                BigDecimal pow = halfWayCase.pow(n);
+
+                for (RoundingMode rm : List.of(RoundingMode.HALF_EVEN,
+                                               RoundingMode.HALF_UP,
+                                               RoundingMode.HALF_DOWN)) {
+                    MathContext mc = new MathContext(precision, rm);
+
+                    System.out.println("\nRounding mode " + rm);
+                    System.out.println("\t" + halfWayCase.round(mc) + "\t" + halfWayCase);
+
+                    failures += equalNumerically(pow.rootn(n, mc),
+                                                 halfWayCase.round(mc),
+                                                 "Rounding halway " + rm);
+                }
             }
         }
 
