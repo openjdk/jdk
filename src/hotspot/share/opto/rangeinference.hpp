@@ -144,7 +144,10 @@ public:
   }
 
   template <class CT>
-  static const Type* int_type_xmeet(const CT* i1, const Type* t2);
+  static const Type* int_type_xmeet(const CT* i1, const CT* t2);
+
+  template <class CT>
+  static const Type* int_type_xjoin(const CT* i1, const CT* t2);
 
   template <class CTP>
   static auto int_type_union(CTP t1, CTP t2) {

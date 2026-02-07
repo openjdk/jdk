@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2013,6 +2013,10 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   int off = tp->offset();
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
+
+  if (is_mismatched_access()) {
+    return _type;
+  }
 
   // If load can see a previous constant store, use that.
   Node* value = can_see_stored_value(mem, phase);
