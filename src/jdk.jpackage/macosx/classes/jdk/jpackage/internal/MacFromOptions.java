@@ -26,10 +26,12 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
+import static jdk.jpackage.internal.OptionUtils.isRuntimeInstaller;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
+import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
@@ -51,17 +53,22 @@ import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
+import java.math.BigInteger;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
 import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
 import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.FileAssociation;
@@ -219,7 +226,16 @@ final class MacFromOptions {
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
         }
 
-        final var app = superAppBuilder.create();
+        var app = superAppBuilder.create();
+
+        if (!APP_VERSION.containsIn(options)) {
+            // User didn't explicitly specify the version on the command line. jpackage derived it from the input.
+            // In this case it should ensure the derived value is valid MacOS version.
+            UnaryOperator<String> versionNormalizer = version -> {
+                return normalizeVersion(version);
+            };
+            app = ApplicationBuilder.normalizeVersion(app, app.version(), versionNormalizer);
+        }
 
         final var appBuilder = new MacApplicationBuilder(app);
 
@@ -335,5 +351,18 @@ final class MacFromOptions {
         StandardFaOption.MAC_UTTYPECONFORMSTO.ifPresentIn(options, builder::utTypeConformsTo);
 
         return builder.create(fa);
+    }
+
+    static String normalizeVersion(String version) {
+        // macOS requires 1, 2 or 3 components version string.
+        // When reading from release file it can be 1 or 3 or maybe more.
+        // We will always normalize to 3 components if needed.
+        DottedVersion ver = DottedVersion.lazy(version);
+        if (ver.getComponentsCount() > 3) {
+            return ver.trim(3).pad(3).toComponentsString();
+        } else {
+            // We should drop any characters. For example: "-ea".
+            return ver.toComponentsString();
+        }
     }
 }

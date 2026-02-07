@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
+import static jdk.jpackage.internal.OptionUtils.isRuntimeInstaller;
 import static jdk.jpackage.internal.WinPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.RESOURCE_DIR;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_CONSOLE_HINT;
@@ -41,7 +43,13 @@ import static jdk.jpackage.internal.cli.StandardOption.WIN_UPDATE_URL;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_UPGRADE_UUID;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.function.UnaryOperator;
+
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinExePackage;
@@ -73,7 +81,18 @@ final class WinFromOptions {
 
         appBuilder.launchers().map(WinPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
 
-        return WinApplication.create(appBuilder.create());
+        var app = appBuilder.create();
+
+        if (!APP_VERSION.containsIn(options)) {
+            // User didn't explicitly specify the version on the command line. jpackage derived it from the input.
+            // In this case it should ensure the derived value is valid Windows version.
+            UnaryOperator<String> versionNormalizer = version -> {
+                return normalizeVersion(version);
+            };
+            app = ApplicationBuilder.normalizeVersion(app, app.version(), versionNormalizer);
+        }
+
+        return WinApplication.create(app);
     }
 
     static WinMsiPackage createWinMsiPackage(Options options) {
@@ -111,5 +130,18 @@ final class WinFromOptions {
         ICON.ifPresentIn(options, pkgBuilder::icon);
 
         return pkgBuilder.create();
+    }
+
+    static String normalizeVersion(String version) {
+        // Windows requires 2 or 4 components version string.
+        // When reading from release file it can be 1 or 3 or maybe more.
+        // We will always normalize to 4 components if needed.
+        DottedVersion ver = DottedVersion.lazy(version);
+        if (ver.getComponentsCount() != 2 || ver.getComponentsCount() != 4) {
+            return ver.trim(4).pad(4).toComponentsString();
+        } else {
+            // We should drop any characters. For example: "-ea".
+            return ver.toComponentsString();
+        }
     }
 }

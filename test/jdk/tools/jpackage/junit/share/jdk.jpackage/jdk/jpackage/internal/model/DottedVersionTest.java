@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,26 +41,34 @@ public class DottedVersionTest {
 
     public record TestConfig(String input,
             Function<String, DottedVersion> createVersion, String expectedSuffix,
-            int expectedComponentCount, String expectedToComponent) {
+            int expectedComponentCount, String expectedToComponent, int numberOfComponents) {
 
         TestConfig(String input, Type type, int expectedComponentCount, String expectedToComponent) {
-            this(input, type.createVersion, "", expectedComponentCount, expectedToComponent);
+            this(input, type.createVersion, "", expectedComponentCount, expectedToComponent, -1);
         }
 
         TestConfig(String input, Type type, int expectedComponentCount) {
-            this(input, type.createVersion, "", expectedComponentCount, input);
+            this(input, type.createVersion, "", expectedComponentCount, input, -1);
+        }
+
+        TestConfig(String input, Type type, String expectedToComponent, int numberOfComponents) {
+            this(input, type.createVersion, "", -1, expectedToComponent, numberOfComponents);
         }
 
         static TestConfig greedy(String input, int expectedComponentCount, String expectedToComponent) {
-            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, expectedToComponent);
+            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, expectedToComponent, -1);
         }
 
         static TestConfig greedy(String input, int expectedComponentCount) {
-            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, input);
+            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, input, -1);
         }
 
         static TestConfig lazy(String input, String expectedSuffix, int expectedComponentCount, String expectedToComponent) {
-            return new TestConfig(input, Type.LAZY.createVersion, expectedSuffix, expectedComponentCount, expectedToComponent);
+            return new TestConfig(input, Type.LAZY.createVersion, expectedSuffix, expectedComponentCount, expectedToComponent, -1);
+        }
+
+        static TestConfig lazy(String input, String expectedToComponent, int numberOfComponents) {
+            return new TestConfig(input, Type.LAZY.createVersion, "", -1, expectedToComponent, numberOfComponents);
         }
     }
 
@@ -111,6 +119,46 @@ public class DottedVersionTest {
                 TestConfig.lazy("+0", "+0", 0, "")
         ));
 
+        return data;
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testTrim(TestConfig cfg) {
+        var dv = cfg.createVersion.apply(cfg.input());
+        assertEquals(cfg.expectedToComponent(),
+                dv.trim(cfg.numberOfComponents()).toComponentsString());
+    }
+
+    private static List<TestConfig> testTrim() {
+        List<TestConfig> data = new ArrayList<>();
+        data.addAll(List.of(
+                TestConfig.lazy("", "", 0),
+                TestConfig.lazy("1", "", 0),
+                TestConfig.lazy("1.2.3", "1", 1),
+                TestConfig.lazy("1.2.3", "1.2", 2),
+                TestConfig.lazy("1.2.3", "1.2.3", 3),
+                TestConfig.lazy("1.2.3", "1.2.3", 4)
+        ));
+        return data;
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testPad(TestConfig cfg) {
+        var dv = cfg.createVersion.apply(cfg.input());
+        assertEquals(cfg.expectedToComponent(),
+                dv.pad(cfg.numberOfComponents()).toComponentsString());
+    }
+
+    private static List<TestConfig> testPad() {
+        List<TestConfig> data = new ArrayList<>();
+        data.addAll(List.of(
+                TestConfig.lazy("", "0", 1),
+                TestConfig.lazy("1", "1", 1),
+                TestConfig.lazy("1", "1.0", 2),
+                TestConfig.lazy("1.2.3", "1.2.3.0.0", 5)
+        ));
         return data;
     }
 

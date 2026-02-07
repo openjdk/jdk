@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,11 +224,43 @@ public final class DottedVersion {
         return Stream.of(components).map(BigInteger::toString).collect(Collectors.joining("."));
     }
 
+    public DottedVersion trim(int componentLimit) {
+        if (componentLimit < 0) {
+            throw new IllegalArgumentException();
+        }
+
+        if (components.length > componentLimit) {
+            components = Arrays.stream(components).limit(componentLimit)
+                    .toArray(BigInteger[]::new);
+        }
+
+        return this;
+    }
+
+    public DottedVersion pad(int componentLimit) {
+        if (componentLimit <= 0) {
+            throw new IllegalArgumentException();
+        }
+
+        if (components.length < componentLimit) {
+            final int origLength = components.length;
+            components = Arrays.copyOf(components, componentLimit);
+            Arrays.fill(components, origLength, components.length,
+                    new BigInteger("0"));
+        }
+
+        return this;
+    }
+
+    public int getComponentsCount() {
+        return components.length;
+    }
+
     public BigInteger[] getComponents() {
         return components;
     }
 
-    private final BigInteger[] components;
+    private BigInteger[] components;
     private final String value;
     private final String suffix;
 }

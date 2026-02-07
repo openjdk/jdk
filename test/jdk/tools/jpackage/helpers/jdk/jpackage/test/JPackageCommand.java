@@ -34,6 +34,7 @@ import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -61,6 +63,8 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.util.RuntimeImageUtils;
+import jdk.jpackage.internal.util.RuntimeVersionReader;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -245,7 +249,24 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
-        return getArgumentValue("--app-version", () -> "1.0");
+        return Optional.ofNullable(getArgumentValue("--app-version")).or(() -> {
+            if (isRuntime()) {
+                final var runtimeHome = RuntimeImageUtils.getRuntimeHomeForRuntimeRoot(
+                        Path.of(getArgumentValue("--runtime-image")));
+                final var releaseFile = RuntimeImageUtils.getReleaseFilePath(runtimeHome);
+                return RuntimeVersionReader.readVersion(releaseFile).map(releaseVersion -> {
+                    if (TKit.isWindows()) {
+                        return WindowsHelper.getNormalizedVersion(releaseVersion.toString());
+                    } else if (TKit.isOSX()) {
+                        return MacHelper.getNormalizedVersion(releaseVersion.toString());
+                    } else {
+                        return releaseVersion.toString();
+                    }
+                });
+            } else {
+                return Optional.empty();
+            }
+        }).orElse("1.0");
     }
 
     public String name() {

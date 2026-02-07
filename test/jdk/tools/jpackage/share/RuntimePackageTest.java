@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,22 @@
 
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.test.TKit.assertFalse;
 import static jdk.jpackage.test.TKit.assertTrue;
-
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
@@ -108,6 +113,73 @@ public class RuntimePackageTest {
         // command line jpackage will create a package named 'sed' that will conflict
         // with the default 'sed' package.
         .run(Action.CREATE_AND_UNPACK);
+    }
+
+    @Test
+    // 27
+    @Parameter(value = {"27"}, ifOS = {LINUX, MACOS})
+    // 27.1
+    @Parameter(value = {"27.1"})
+    // 27.1.2
+    @Parameter(value = {"27.1.2"}, ifOS = {LINUX, MACOS})
+    // 27.1.2.3
+    @Parameter(value = {"27.1.2.3"}, ifOS = {LINUX, WINDOWS})
+    // 27.1.2.3.4
+    @Parameter(value = {"27.1.2.3.4"}, ifOS = LINUX)
+    // 17.21.3-ea
+    @Parameter(value = {"17.21.3-ea"}, ifOS = LINUX)
+    public static void testReleaseFileVersion(String version) {
+        testReleaseFileVersion(version, version);
+    }
+
+    @Test
+    // 27
+    @Parameter(value = {"27", "27.0.0.0"}, ifOS = WINDOWS)
+    // 27.1.2
+    @Parameter(value = {"27.1.2", "27.1.2.0"}, ifOS = WINDOWS)
+    // 27.1.2.3
+    @Parameter(value = {"27.1.2.3", "27.1.2"}, ifOS = MACOS)
+    // 27.1.2.3.4
+    @Parameter(value = {"27.1.2.3.4", "27.1.2"}, ifOS = MACOS)
+    @Parameter(value = {"27.1.2.3.4", "27.1.2.3"}, ifOS = WINDOWS)
+    // 17.21.3-ea
+    @Parameter(value = {"17.21.3-ea", "17.21.3"}, ifOS = MACOS)
+    @Parameter(value = {"17.21.3-ea", "17.21.3.0"}, ifOS = WINDOWS)
+    public static void testReleaseFileVersion(String version, String normalizedVersion) {
+        new PackageTest()
+        .addInitializer(cmd -> {
+            // Remove --input parameter from jpackage command line as we don't
+            // create input directory in the test and jpackage fails
+            // if --input references non existant directory.
+            cmd.removeArgumentWithValue("--input");
+
+            cmd.setFakeRuntime();
+
+            // Execute prerequisite actions, so fake runtime gets created
+            cmd.executePrerequisiteActions();
+
+            // Create release file with version in fake runtime
+            Path runtimeImage = Path.of(cmd.getArgumentValue("--runtime-image"));
+            Path releaseFile = runtimeImage.resolve("release");
+            Properties props = new Properties();
+            props.setProperty("JAVA_VERSION", "\"" + version + "\"");
+            try (Writer writer = Files.newBufferedWriter(releaseFile)) {
+                props.store(writer, null);
+            }
+
+            // Validate output
+            cmd.validateOutput(JPackageStringBundle.MAIN
+                    .cannedFormattedString("message.release-version",
+                    version, runtimeImage.toString()));
+            // Normalization message is only printed if we did normalization.
+            if (!version.equals(normalizedVersion)) {
+                cmd.validateOutput(JPackageStringBundle.MAIN
+                    .cannedFormattedString("message.version-normalized",
+                    normalizedVersion, version));
+            }
+        })
+        // Just create package. It is enough to verify version in bundle name.
+        .run(Action.CREATE);
     }
 
     private static PackageTest init() {

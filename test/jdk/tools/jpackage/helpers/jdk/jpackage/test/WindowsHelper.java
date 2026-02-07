@@ -29,9 +29,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
@@ -52,6 +55,17 @@ public class WindowsHelper {
         cmd.verifyIsOfType(PackageType.WINDOWS);
         return String.format("%s-%s%s", cmd.installerName(), cmd.version(),
                 cmd.packageType().getSuffix());
+    }
+
+    static String getNormalizedVersion(String version) {
+        // Windows requires 2 or 4 components version string.
+        // We will always normalize to 4 components if needed.
+        DottedVersion ver = DottedVersion.lazy(version);
+        if (ver.getComponentsCount() != 2 || ver.getComponentsCount() != 4) {
+            return ver.trim(4).pad(4).toComponentsString();
+        } else {
+            return ver.toComponentsString();
+        }
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {
