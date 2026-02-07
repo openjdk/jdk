@@ -28,6 +28,8 @@ package sun.tools.jcmd;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.time.format.DateTimeFormatter;
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Comparator;
 import java.net.URISyntaxException;
@@ -90,6 +92,13 @@ public class JCmd {
         boolean success = true;
         for (String pid : pids) {
             System.out.println(pid + ":");
+
+            if (arg.shouldTimestamp()) {
+                final String timePattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+                final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(timePattern);
+                System.out.println(ZonedDateTime.now().format(formatter));
+            }
+
             if (arg.isListCounters()) {
                 listCounters(pid);
             } else {
