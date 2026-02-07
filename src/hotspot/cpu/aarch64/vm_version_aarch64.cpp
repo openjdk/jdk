@@ -449,6 +449,10 @@ void VM_Version::initialize() {
     warning("DC ZVA is not available on this CPU");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
+  if (!UseBlockZeroing && !FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
+    warning("BlockZeroingLowLimit has been ignored because UseBlockZeroing is disabled");
+    FLAG_SET_DEFAULT(BlockZeroingLowLimit, is_zva_enabled() ? (4 * VM_Version::zva_length()) : 256);
+  }
 
   if (VM_Version::supports_sve2()) {
     if (FLAG_IS_DEFAULT(UseSVE)) {

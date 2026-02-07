@@ -6206,8 +6206,6 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 
   BLOCK_COMMENT("zero_words {");
   assert(ptr == r10 && cnt == r11, "mismatch in register usage");
-  RuntimeAddress zero_blocks = RuntimeAddress(StubRoutines::aarch64::zero_blocks());
-  assert(zero_blocks.target() != nullptr, "zero_blocks stub has not been generated");
 
   subs(rscratch1, cnt, zero_words_block_size);
   Label around;
@@ -6235,8 +6233,8 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
   }
   bind(around);
 
-  // We have a few words left to do. zero_blocks has adjusted r10 and r11
-  // for us.
+  // A few words remain. zero_blocks() has adjusted r10 so that it
+  // points to the remaining words and adjusted the count in r11.
   for (int i = zero_words_block_size >> 1; i > 1; i >>= 1) {
     Label l;
     tbz(cnt, exact_log2(i), l);
@@ -6262,10 +6260,15 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 // r10, r11, rscratch1, and rscratch2 are clobbered.
 address MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
-  assert(wordSize <= BlockZeroingLowLimit,
-            "increase BlockZeroingLowLimit");
+  assert(wordSize <= BlockZeroingLowLimit, "increase BlockZeroingLowLimit");
   address result = nullptr;
-  if (cnt <= (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
+  // There is no need to check UseBlockZeroing here because that is
+  // delegated to the zero_blocks stub. The code here is inlined, so
+  // it is important to keep it small.
+  if (cnt > (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
+    mov(r10, base); mov(r11, cnt);
+    result = zero_words(r10, r11);
+  } else {
 #ifndef PRODUCT
     {
       char buf[64];
@@ -6273,25 +6276,27 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
       BLOCK_COMMENT(buf);
     }
 #endif
-    if (cnt >= 16) {
-      uint64_t loops = cnt/16;
+    // Use 16 words (128 bytes) as the block size to unroll.
+    const int two_blocks = 2 * MacroAssembler::zero_words_block_size;
+    if (cnt >= two_blocks) {
+      uint64_t loops = cnt/two_blocks ;
       if (loops > 1) {
         mov(rscratch2, loops - 1);
       }
       {
         Label loop;
         bind(loop);
-        for (int i = 0; i < 16; i += 2) {
+        for (int i = 0; i < two_blocks; i += 2) {
           stp(zr, zr, Address(base, i * BytesPerWord));
         }
-        add(base, base, 16 * BytesPerWord);
+        add(base, base, two_blocks * BytesPerWord);
         if (loops > 1) {
           subs(rscratch2, rscratch2, 1);
           br(GE, loop);
         }
       }
     }
-    cnt %= 16;
+    cnt %= two_blocks;
     int i = cnt & 1;  // store any odd word to start
     if (i) str(zr, Address(base));
     for (; i < (int)cnt; i += 2) {
@@ -6299,10 +6304,8 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
     }
     BLOCK_COMMENT("} zero_words");
     result = pc();
-  } else {
-    mov(r10, base); mov(r11, cnt);
-    result = zero_words(r10, r11);
   }
+
   return result;
 }
 
