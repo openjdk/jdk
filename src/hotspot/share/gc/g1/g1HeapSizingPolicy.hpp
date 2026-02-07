@@ -25,9 +25,15 @@
 #ifndef SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
 #define SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
 
+#include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1Analytics.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CollectedHeap;
 
@@ -93,8 +99,8 @@ class G1HeapSizingPolicy: public CHeapObj<mtGC> {
   size_t young_collection_shrink_amount(double cpu_usage_delta, size_t allocation_word_size) const;
 
   G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analytics* analytics);
-public:
 
+public:
   static constexpr uint long_term_count_limit() {
     return G1Analytics::max_num_of_recorded_pause_times();
   }
@@ -106,6 +112,17 @@ public:
   // Returns the amount of bytes to resize the heap; if expand is set, the heap
   // should by expanded by that amount, shrunk otherwise.
   size_t full_collection_resize_amount(bool& expand, size_t allocation_word_size);
+
+  // Time-based sizing methods
+  size_t evaluate_heap_resize_for_uncommit();
+
+  // Methods for time-based sizing analysis
+  uint count_uncommit_candidates();
+  void find_uncommit_candidates_by_time(GrowableArray<G1HeapRegion*>* candidates, uint max_candidates);
+  bool should_uncommit_region(G1HeapRegion* hr) const;
+
+  // Mark specific time-based candidates as idle for uncommitting
+  size_t calculate_time_based_shrink_amount(uint max_regions_to_shrink);
 
   static G1HeapSizingPolicy* create(const G1CollectedHeap* g1h, const G1Analytics* analytics);
 };

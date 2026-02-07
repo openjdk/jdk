@@ -22,8 +22,10 @@
  *
  */
 
+#include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1VMOperations.hpp"
@@ -173,4 +175,42 @@ void VM_G1PauseRemark::work() {
 void VM_G1PauseCleanup::work() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   g1h->concurrent_mark()->cleanup();
+}
+
+void VM_G1ShrinkHeap::doit() {
+  // Re-evaluate candidates at safepoint since heap state may have changed
+  log_debug(gc, ergo, heap)("VM_G1ShrinkHeap: re-evaluating heap state at safepoint");
+
+  // Max regions based on original request
+  uint max_regions_to_shrink = (uint)(_bytes / G1HeapRegion::GrainBytes);
+
+  GrowableArray<G1HeapRegion*> candidates(max_regions_to_shrink);
+  _g1h->heap_sizing_policy()->find_uncommit_candidates_by_time(&candidates, max_regions_to_shrink);
+
+  if (candidates.length() == 0) {
+    log_debug(gc, ergo, heap)("VM_G1ShrinkHeap: no valid candidates at safepoint, skipping shrink");
+    return;
+  }
+
+  // Validate candidates are still free at safepoint
+  uint valid_count = 0;
+  for (int i = 0; i < candidates.length(); i++) {
+    G1HeapRegion* hr = candidates.at(i);
+    if (hr->is_free()) {
+      valid_count++;
+    } else {
+      log_debug(gc, ergo, heap)("VM_G1ShrinkHeap: skipping region %u - no longer free", hr->hrm_index());
+    }
+  }
+
+  if (valid_count == 0) {
+    log_debug(gc, ergo, heap)("VM_G1ShrinkHeap: no regions still valid at safepoint");
+    return;
+  }
+
+  size_t shrink_bytes = (size_t)valid_count * G1HeapRegion::GrainBytes;
+  log_info(gc, ergo, heap)("VM_G1ShrinkHeap: executing shrink with %u regions (%zuMB) after re-evaluation",
+                           valid_count, shrink_bytes / M);
+
+  _g1h->shrink_with_time_based_selection(shrink_bytes);
 }

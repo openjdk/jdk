@@ -35,7 +35,10 @@
 #include "gc/shared/verifyOption.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 class G1CardSet;
 class G1CardSetConfiguration;
@@ -71,6 +74,8 @@ class nmethod;
 class G1HeapRegion : public CHeapObj<mtGC> {
   friend class VMStructs;
 
+
+private:
   HeapWord* const _bottom;
   HeapWord* const _end;
 
@@ -248,6 +253,9 @@ private:
 
   // NUMA node.
   uint _node_index;
+
+  // Time-based heap sizing: tracks last allocation/access time
+  Ticks _last_access_timestamp;
 
   // Number of objects in this region that are currently pinned.
   Atomic<size_t> _pinned_object_count;
@@ -551,6 +559,15 @@ public:
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
+
+  // Time-based heap sizing methods
+  Ticks last_access_time() const {
+    return _last_access_timestamp;
+  }
+
+  void update_last_access_timestamp() {
+    _last_access_timestamp = Ticks::now();
+  }
 
   // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
