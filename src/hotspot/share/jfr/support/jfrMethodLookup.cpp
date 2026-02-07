@@ -30,11 +30,11 @@
 #include "oops/method.inline.hpp"
 
 // The InstanceKlass is assumed to be the method holder for the method to be looked up.
-static const Method* lookup_method(InstanceKlass* ik, int orig_method_id_num) {
+static Method* lookup_method(InstanceKlass* ik, int orig_method_id_num) {
   assert(ik != nullptr, "invariant");
   assert(orig_method_id_num >= 0, "invariant");
   assert(orig_method_id_num < ik->methods()->length(), "invariant");
-  const Method* const m = ik->method_with_orig_idnum(orig_method_id_num);
+  Method* const m = ik->method_with_orig_idnum(orig_method_id_num);
   assert(m != nullptr, "invariant");
   assert(m->orig_method_idnum() == orig_method_id_num, "invariant");
   assert(!m->is_obsolete(), "invariant");
@@ -42,7 +42,7 @@ static const Method* lookup_method(InstanceKlass* ik, int orig_method_id_num) {
   return m;
 }
 
-const Method* JfrMethodLookup::lookup(const InstanceKlass* ik, traceid method_id) {
+Method* JfrMethodLookup::lookup(const InstanceKlass* ik, traceid method_id) {
   assert(ik != nullptr, "invariant");
   return lookup_method(const_cast<InstanceKlass*>(ik), method_id_num(method_id));
 }

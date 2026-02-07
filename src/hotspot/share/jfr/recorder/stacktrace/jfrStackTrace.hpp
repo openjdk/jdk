@@ -37,6 +37,7 @@ class JfrChunkWriter;
 struct JfrSampleRequest;
 
 class JfrStackTrace : public JfrCHeapObj {
+ friend class JfrCPUTimeThreadSampling;
   friend class JfrNativeSamplerCallback;
   friend class JfrStackTraceRepository;
   friend class LeakProfilerStackTraceWriter;

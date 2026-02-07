@@ -83,6 +83,7 @@ class JfrThreadLocal {
   bool _notified;
   bool _dead;
   bool _sampling_critical_section;
+  bool _processing_sample_request;
 
 #ifdef LINUX
   timer_t* _cpu_timer;
@@ -347,6 +348,14 @@ class JfrThreadLocal {
 
   bool in_sampling_critical_section() const {
     return _sampling_critical_section;
+  }
+
+  bool is_processing_sample_request() const {
+    return _processing_sample_request;
+  };
+
+  void set_processing_sample_request(bool is_processing_sample_request) {
+    _processing_sample_request = is_processing_sample_request;
   }
 
   // Serialization state.
