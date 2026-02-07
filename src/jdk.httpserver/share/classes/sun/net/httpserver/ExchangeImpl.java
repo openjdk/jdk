@@ -59,6 +59,8 @@ class ExchangeImpl {
     boolean close;
     boolean closed;
     boolean http10 = false;
+    boolean upgrade;
+    boolean upgraded;
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
@@ -72,6 +74,7 @@ class ExchangeImpl {
     }
 
     private static final String HEAD = "HEAD";
+    private static final String GET = "GET";
 
     /* streams which take care of the HTTP protocol framing
      * and are passed up to higher layers
@@ -97,6 +100,7 @@ class ExchangeImpl {
         this.uri = u;
         this.connection = connection;
         this.reqContentLen = len;
+        this.upgrade = isUpgradeRequest(reqHdrs);
         this.attributes = perExchangeAttributes
             ? new ConcurrentHashMap<>()
             : getHttpContext().getAttributes();
@@ -129,6 +133,15 @@ class ExchangeImpl {
 
     private boolean isHeadRequest() {
         return HEAD.equals(getRequestMethod());
+    }
+
+    // check if Upgrade connection
+    private boolean isUpgradeRequest(Headers headers) {
+        var values = headers.get("Connection");
+        return values != null
+            && headers.get("Upgrade") != null
+            && GET.equals(getRequestMethod())
+            && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
     }
 
     public void close() {
@@ -164,13 +177,14 @@ class ExchangeImpl {
         if (uis != null) {
             return uis;
         }
-        if (reqContentLen == -1L) {
+        if (upgrade) {
+            uis_orig = new UpgradeInputStream(this, ris);
+        } else if (reqContentLen == -1L) {
             uis_orig = new ChunkedInputStream(this, ris);
-            uis = uis_orig;
         } else {
-            uis_orig = new FixedLengthInputStream(this, ris, reqContentLen);
-            uis = uis_orig;
+            uis_orig = new FixedLengthInputStream (this, ris, reqContentLen);
         }
+        uis = uis_orig;
         return uis;
     }
 
@@ -226,11 +240,19 @@ class ExchangeImpl {
         boolean noContentLengthHeader = false; // must not send Content-length is set
         rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
-        /* check for response type that is not allowed to send a body */
+        /* check for connection upgrade */
+        if (rCode == 101) {
 
-        if ((rCode >= 100 && rCode < 200) /* informational */
-            ||(rCode == 204)           /* no content */
-            ||(rCode == 304))          /* not modified */
+            if (contentLen != 0) {
+                logger.log(
+                    Level.WARNING,
+                    () -> "sendResponseHeaders: rCode = " + rCode + ": forcing contentLen = 0");
+            }
+            contentLen = 0;
+        /* check for response type that is not allowed to send a body */
+        } else if (rCode >= 100 && rCode < 200 /* informational */
+            || rCode == 204           /* no content */
+            || rCode == 304)          /* not modified */
         {
             if (contentLen != RSPBODY_EMPTY) {
                 String msg = "sendResponseHeaders: rCode = " + rCode
@@ -257,6 +279,9 @@ class ExchangeImpl {
             if (contentLen == RSPBODY_CHUNKED) {
                 if (http10) {
                     o.setWrappedStream(new UndefLengthOutputStream(this, ros));
+                    close = true;
+                } else if (upgrade && rCode == 101) {
+                    o.setWrappedStream (new UpgradeOutputStream (this, ros));
                     close = true;
                 } else {
                     rspHdrs.set("Transfer-encoding", "chunked");
@@ -296,6 +321,9 @@ class ExchangeImpl {
         if (noContentToSend) {
             ros.flush();
             close();
+        } else if (upgrade && rCode == 101) {
+            upgraded = true;
+            ros.flush();
         }
         server.logReply(rCode, req.requestLine(), null);
     }
