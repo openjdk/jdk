@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @key randomness
- * @bug 8208091
- * @requires (os.family == "linux") & (vm.hasSA)
+ * @bug 8208091 8374469
+ * @requires (os.family == "linux" | os.family == "windows") & (vm.hasSA)
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixed
@@ -50,8 +50,11 @@ public class TestJhsdbJstackMixed {
     private static final Pattern LINE_PATTERN = Pattern
             .compile(LINE_MATCHER_STR);
     private static final String HEX_STR_PATTERN = "0x([a-fA-F0-9]+)";
-    private static final String FIB_SPLIT_PATTERN = NATIVE_FUNCTION_NAME
+
+    // On windows the native symbol will be prefixed with "NoFramePointer!"
+    private static final String FIB_SPLIT_PATTERN = "(NoFramePointer!)?" + NATIVE_FUNCTION_NAME
             + "\\s+\\+";
+
     private static final Pattern HEX_PATTERN = Pattern.compile(HEX_STR_PATTERN);
     private static final int ADDRESS_ALIGNMENT_X86 = 4;
 
