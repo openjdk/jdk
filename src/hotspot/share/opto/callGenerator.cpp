@@ -507,8 +507,8 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
 
   // Implicit receiver null checks introduce problems when exception states are combined.
   Node* receiver = jvms->map()->argument(jvms, 0);
-  const Type* recv_type = C->initial_gvn()->type(receiver);
-  if (recv_type->maybe_null()) {
+  const TypeOopPtr* recv_type = C->initial_gvn()->type(receiver)->isa_oopptr();
+  if (recv_type == nullptr || recv_type->maybe_null()) {
     C->inline_printer()->record(method(), call_node()->jvms(), InliningResult::FAILURE,
                                 "late call devirtualization failed (receiver may be null)");
     return false;
@@ -527,6 +527,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
                                         jvms,
                                         allow_inline,
                                         _prof_factor,
+                                        recv_type /*receiver_type*/,
                                         nullptr /*speculative_receiver_type*/,
                                         true /*allow_intrinsics*/);
 
@@ -1104,11 +1105,12 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         int  vtable_index       = Method::invalid_vtable_index;
         bool call_does_dispatch = false;
 
+        const TypeOopPtr* receiver_type = nullptr;
         ciKlass* speculative_receiver_type = nullptr;
         if (is_virtual_or_interface) {
           ciInstanceKlass* klass = target->holder();
-          Node*             receiver_node = kit.argument(0);
-          const TypeOopPtr* receiver_type = gvn.type(receiver_node)->isa_oopptr();
+          Node* receiver_node = kit.argument(0);
+          receiver_type = gvn.type(receiver_node)->isa_oopptr();
           // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
           // optimize_virtual_call() takes 2 different holder
           // arguments for a corner case that doesn't apply here (see
@@ -1124,6 +1126,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms,
                                               allow_inline,
                                               PROB_ALWAYS,
+                                              receiver_type,
                                               speculative_receiver_type);
         return cg;
       } else {

@@ -87,8 +87,9 @@ static void trace_type_profile(Compile* C, ciMethod* method, JVMState* jvms,
 }
 
 CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool call_does_dispatch,
-                                       JVMState* jvms, bool allow_inline,
-                                       float prof_factor, ciKlass* speculative_receiver_type,
+                                       JVMState* jvms, bool allow_inline, float prof_factor,
+                                       const TypeOopPtr* receiver_type,
+                                       ciKlass* speculative_receiver_type,
                                        bool allow_intrinsics) {
   assert(callee != nullptr, "failed method resolution");
 
@@ -151,8 +152,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     if (cg != nullptr) {
       if (cg->is_predicated()) {
         // Code without intrinsic but, hopefully, inlined.
-        CallGenerator* inline_cg = this->call_generator(callee,
-              vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
+        CallGenerator* inline_cg = this->call_generator(callee, vtable_index, call_does_dispatch, jvms, allow_inline,
+                                                        prof_factor, receiver_type, speculative_receiver_type, false);
         if (inline_cg != nullptr) {
           cg = CallGenerator::for_predicated_intrinsic(cg, inline_cg);
         }
@@ -325,56 +326,64 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     }
 
     // If there is only one implementor of this interface then we
-    // may be able to bind this invoke directly to the implementing
-    // klass but we need both a dependence on the single interface
-    // and on the method we bind to. Additionally since all we know
+    // may be able to bind this invoke directly to the implementing klass,
+    // but we need both a dependence on the single interface and
+    // on the method we bind to. Additionally, since all we know
     // about the receiver type is that it's supposed to implement the
     // interface we have to insert a check that it's the class we
     // expect.  Interface types are not checked by the verifier so
-    // they are roughly equivalent to Object.
-    // The number of implementors for declared_interface is less or
-    // equal to the number of implementors for target->holder() so
-    // if number of implementors of target->holder() == 1 then
-    // number of implementors for decl_interface is 0 or 1. If
-    // it's 0 then no class implements decl_interface and there's
-    // no point in inlining.
+    // they are roughly equivalent to Object, but receiver type can be used
+    // to narrow context type beyond declared_interface, so a more specific
+    // interface with a unique implementor can be used instead.
     if (call_does_dispatch && is_interface) {
-      ciInstanceKlass* declared_interface = nullptr;
+      ciInstanceKlass* context_intf = nullptr;
+      // Use declared interface class as a starting point.
       if (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface) {
         // MemberName doesn't keep information about resolved interface class (REFC) once
         // resolution is over, but resolved method holder (DECC) can be used as a
         // conservative approximation.
-        declared_interface = callee->holder();
+        context_intf = callee->holder();
       } else {
         assert(!orig_callee->is_method_handle_intrinsic(), "not allowed");
-        declared_interface = caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
+        context_intf = caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
       }
-      assert(declared_interface->is_interface(), "required");
-      ciInstanceKlass* singleton = declared_interface->unique_implementor();
+      assert(context_intf->is_interface(), "required");
 
+      // Based on receiver info, narrow context to one of most specific superinterfaces with a unique implementor.
+      if (receiver_type != nullptr && receiver_type->isa_instptr()) {
+        ciInstanceKlass* intf = receiver_type->is_instptr()->has_unique_implementor(context_intf);
+        if (intf != nullptr && intf != context_intf) {
+          assert(intf->is_subtype_of(context_intf), "not related");
+          assert(intf->unique_implementor() != nullptr, "no unique implementor");
+          context_intf = intf;
+        }
+      }
+
+      ciInstanceKlass* singleton = context_intf->unique_implementor();
       if (singleton != nullptr) {
-        assert(singleton != declared_interface, "not a unique implementor");
+        assert(singleton != context_intf, "not a unique implementor");
 
         ciMethod* cha_monomorphic_target =
-            callee->find_monomorphic_target(caller->holder(), declared_interface, singleton, check_access);
+            callee->find_monomorphic_target(caller->holder(), context_intf, singleton, check_access);
 
         if (cha_monomorphic_target != nullptr &&
             cha_monomorphic_target->holder() != env()->Object_klass()) { // subtype check against Object is useless
           ciKlass* holder = cha_monomorphic_target->holder();
 
           // Try to inline the method found by CHA. Inlined method is guarded by the type check.
-          CallGenerator* hit_cg = call_generator(cha_monomorphic_target,
-              vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
+          CallGenerator* hit_cg = call_generator(cha_monomorphic_target, vtable_index, !call_does_dispatch, jvms,
+                                                 allow_inline, prof_factor);
 
           // Deoptimize on type check fail. The interpreter will throw ICCE for us.
           CallGenerator* miss_cg = CallGenerator::for_uncommon_trap(callee,
-              Deoptimization::Reason_class_check, Deoptimization::Action_none);
+                                                                    Deoptimization::Reason_class_check,
+                                                                    Deoptimization::Action_none);
 
           ciKlass* constraint = (holder->is_subclass_of(singleton) ? holder : singleton); // avoid upcasts
           CallGenerator* cg = CallGenerator::for_guarded_call(constraint, miss_cg, hit_cg);
           if (hit_cg != nullptr && cg != nullptr) {
-            dependencies()->assert_unique_implementor(declared_interface, singleton);
-            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target, declared_interface, callee);
+            dependencies()->assert_unique_implementor(context_intf, singleton);
+            dependencies()->assert_unique_concrete_method(context_intf, cha_monomorphic_target, context_intf, callee);
             return cg;
           }
         }
@@ -595,10 +604,11 @@ void Parse::do_call() {
   bool      call_does_dispatch = false;
 
   // Speculative type of the receiver if any
+  const TypeOopPtr* receiver_type = nullptr;
   ciKlass* speculative_receiver_type = nullptr;
   if (is_virtual_or_interface) {
-    Node* receiver_node             = stack(sp() - nargs);
-    const TypeOopPtr* receiver_type = _gvn.type(receiver_node)->isa_oopptr();
+    Node* receiver_node = stack(sp() - nargs);
+    receiver_type = _gvn.type(receiver_node)->isa_oopptr();
     // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
     // For arrays, klass below is Object. When vtable calls are used,
     // resolving the call with Object would allow an illegal call to
@@ -609,7 +619,7 @@ void Parse::do_call() {
     callee = C->optimize_virtual_call(method(), klass, holder, orig_callee,
                                       receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
-    speculative_receiver_type = receiver_type != nullptr ? receiver_type->speculative_type() : nullptr;
+    speculative_receiver_type = (receiver_type != nullptr ? receiver_type->speculative_type() : nullptr);
   }
 
   // Additional receiver subtype checks for interface calls via invokespecial or invokeinterface.
@@ -655,7 +665,8 @@ void Parse::do_call() {
   // Decide call tactic.
   // This call checks with CHA, the interpreter profile, intrinsics table, etc.
   // It decides whether inlining is desirable or not.
-  CallGenerator* cg = C->call_generator(callee, vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type);
+  CallGenerator* cg = C->call_generator(callee, vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(),
+                                        receiver_type, speculative_receiver_type);
 
   // NOTE:  Don't use orig_callee and callee after this point!  Use cg->method() instead.
   orig_callee = callee = nullptr;
@@ -700,7 +711,9 @@ void Parse::do_call() {
     // the call site, perhaps because it did not match a pattern the
     // intrinsic was expecting to optimize. Should always be possible to
     // get a normal java call that may inline in that case
-    cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type, /* allow_intrinsics= */ false);
+    cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(),
+                           receiver_type, speculative_receiver_type,
+                           false /*allow_intrinsics*/);
     new_jvms = cg->generate(jvms);
     if (new_jvms == nullptr) {
       guarantee(failing(), "call failed to generate:  calls should work");

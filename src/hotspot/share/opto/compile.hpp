@@ -983,7 +983,9 @@ public:
   // Decide how to build a call.
   // The profile factor is a discount to apply to this site's interp. profile.
   CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_does_dispatch,
-                                   JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = nullptr,
+                                   JVMState* jvms, bool allow_inline, float profile_factor,
+                                   const TypeOopPtr* receiver_type = nullptr,
+                                   ciKlass* speculative_receiver_type = nullptr,
                                    bool allow_intrinsics = true);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
     return C->directive()->should_delay_inline(call_method) ||

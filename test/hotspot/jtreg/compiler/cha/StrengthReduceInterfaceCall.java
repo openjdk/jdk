@@ -23,9 +23,7 @@
 
 /*
  * @test
- * @requires !vm.graal.enabled
- * @requires vm.opt.StressMethodHandleLinkerInlining == null | !vm.opt.StressMethodHandleLinkerInlining
- * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
  * @library /testlibrary/asm
@@ -58,8 +56,10 @@ import jdk.internal.vm.annotation.DontInline;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.Callable;
 
 import static compiler.cha.Utils.*;
+import static jdk.test.lib.Asserts.assertTrue;
 
 public class StrengthReduceInterfaceCall {
     public static void main(String[] args) {
@@ -82,6 +82,11 @@ public class StrengthReduceInterfaceCall {
             run(ThreeLevelDefaultHierarchy1.TestMH.class, ThreeLevelDefaultHierarchy1.class);
         }
 
+        // Receiver type information is only available in C2.
+        if (!jdk.test.whitebox.code.Compiler.isC1Enabled()) {
+            run(MultipleInterfacesOnReceiver.class);
+            run(MultipleInterfacesOnReceiver.TestMH.class, MultipleInterfacesOnReceiver.class);
+        }
         System.out.println("TEST PASSED");
     }
 
@@ -462,16 +467,10 @@ public class StrengthReduceInterfaceCall {
             assertCompiled(); // No deopt on not-yet-seen receiver
 
             // 2. No dependency invalidation: different context
-            if (contextClass() == I.class) {
-                initialize(DJ.class,  //      DJ.m                    <: intf J.m ABSTRACT
-                           K1.class,  // intf K1            <: intf I <: intf J.m ABSTRACT
-                           K2.class); // intf K2.m ABSTRACT <: intf I <: intf J.m ABSTRACT
-                assertCompiled();
-            } else if (contextClass() == J.class) {
-                // no classes to initialize w/o breaking a dependency
-            } else {
-                throw new InternalError("unsupported context: " + contextClass());
-            }
+            initialize(DJ.class,  //      DJ.m                    <: intf J.m ABSTRACT
+                       K1.class,  // intf K1            <: intf I <: intf J.m ABSTRACT
+                       K2.class); // intf K2.m ABSTRACT <: intf I <: intf J.m ABSTRACT
+            assertCompiled();
 
             // 3. Dependency invalidation: DI.m <: I
             initialize(DI.class); //      DI.m          <: intf I <: intf J.m ABSTRACT
@@ -556,21 +555,12 @@ public class StrengthReduceInterfaceCall {
             assertCompiled();
         }
 
-        Class<?> contextClass() {
-            return I.class;
-        }
-
         public static class TestMH extends ThreeLevelHierarchyLinear {
             static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
 
             @Override
             public void checkInvalidReceiver() {
                 // receiver type check failures trigger nmethod invalidation
-            }
-
-            @Override
-            Class<?> contextClass() {
-                return J.class;
             }
 
             @Override
@@ -738,17 +728,11 @@ public class StrengthReduceInterfaceCall {
             assertCompiled();
 
             // 2. No dependency invalidation
-            if (contextClass() == I.class) {
-                initialize(DJ.class,   //       DJ.m                               <: intf J.m ABSTRACT
-                           K1.class,   // intf  K1            <: intf I            <: intf J.m ABSTRACT
-                           K2.class,   // intf  K2.m ABSTRACT <: intf I            <: intf J.m ABSTRACT
-                           DK3.class); //      DK3.m          <: intf K3.m DEFAULT <: intf J.m ABSTRACT
-                assertCompiled();
-            } else if (contextClass() == J.class) {
-                // no classes to initialize w/o breaking a dependency
-            } else {
-                throw new InternalError("unsupported context: " + contextClass());
-            }
+            initialize(DJ.class,   //       DJ.m                               <: intf J.m ABSTRACT
+                       K1.class,   // intf  K1            <: intf I            <: intf J.m ABSTRACT
+                       K2.class,   // intf  K2.m ABSTRACT <: intf I            <: intf J.m ABSTRACT
+                       DK3.class); //      DK3.m          <: intf K3.m DEFAULT <: intf J.m ABSTRACT
+            assertCompiled();
 
             // 3. Dependency invalidation
             initialize(DI.class); // DI.m <: intf I <: intf J.m ABSTRACT
@@ -775,21 +759,12 @@ public class StrengthReduceInterfaceCall {
             assertCompiled();
         }
 
-        Class<?> contextClass() {
-            return I.class;
-        }
-
         public static class TestMH extends ThreeLevelDefaultHierarchy {
             static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
 
             @Override
             public void checkInvalidReceiver() {
                 // receiver type check failures trigger nmethod invalidation
-            }
-
-            @Override
-            Class<?> contextClass() {
-                return J.class;
             }
 
             @Override
@@ -836,20 +811,11 @@ public class StrengthReduceInterfaceCall {
             assertCompiled();
 
             // 2. No dependency invalidation
-            if (contextClass() == I.class) {
-                initialize(DJ1.class, //      DJ1.m                               <: intf J1
-                           DJ2.class, //      DJ2.m                               <:          intf J2.m ABSTRACT
-                           K1.class,  // intf  K1            <: intf I            <: intf J1, intf J2.m ABSTRACT
-                           K2.class,  // intf  K2.m ABSTRACT <: intf I            <: intf J1, intf J2.m ABSTRACT
-                           K3.class); // intf  K3.m DEFAULT  <: intf I            <: intf J1, intf J2.m ABSTRACT
-            } else if (contextClass() == J2.class) {
-                initialize(DJ1.class, //      DJ1.m                               <: intf J1
-                           K1.class,  // intf  K1            <: intf I            <: intf J1, intf J2.m ABSTRACT
-                           K2.class,  // intf  K2.m ABSTRACT <: intf I            <: intf J1, intf J2.m ABSTRACT
-                           K3.class); // intf  K3.m DEFAULT  <: intf I            <: intf J1, intf J2.m ABSTRACT
-            } else {
-                throw new InternalError("unsupported context: " + contextClass());
-            }
+            initialize(DJ1.class, //      DJ1.m                               <: intf J1
+                       DJ2.class, //      DJ2.m                               <:          intf J2.m ABSTRACT
+                       K1.class,  // intf  K1            <: intf I            <: intf J1, intf J2.m ABSTRACT
+                       K2.class,  // intf  K2.m ABSTRACT <: intf I            <: intf J1, intf J2.m ABSTRACT
+                       K3.class); // intf  K3.m DEFAULT  <: intf I            <: intf J1, intf J2.m ABSTRACT
             assertCompiled();
 
             // 3. Dependency invalidation
@@ -883,10 +849,6 @@ public class StrengthReduceInterfaceCall {
             assertCompiled();
         }
 
-        Class<?> contextClass() {
-            return I.class;
-        }
-
         public static class TestMH extends ThreeLevelDefaultHierarchy1 {
             static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
 
@@ -896,13 +858,98 @@ public class StrengthReduceInterfaceCall {
             }
 
             @Override
-            Class<?> contextClass() {
-                return J2.class;
-            }
-
-            @Override
             public Object test(I obj) throws Throwable {
                 return TEST_MH.invokeExact(obj); // invokeinterface I.m()
+            }
+        }
+    }
+
+    public static class MultipleInterfacesOnReceiver extends ATest<MultipleInterfacesOnReceiver.I> {
+        public MultipleInterfacesOnReceiver() { super(I.class, D.class); }
+
+        interface L1 {}
+        interface L2 {}
+
+        interface J           { Object m(); }
+        interface I extends J {}
+
+        interface I1 extends I {}
+        interface I2 extends I {}
+        interface I3 extends I {}
+        interface I4 extends I {}
+
+        interface K1 extends I1 {}
+        interface K2 extends I2 {}
+        interface K3 extends I3 {}
+        interface K4 extends I4 {}
+
+        static class C implements I { public Object m() { return WRONG; }}
+
+        static class D implements K1, K2, K3, K4, L1, L2 { public Object m() { return CORRECT; }}
+
+        static class F1 implements K1 { public Object m() { return WRONG; }}
+        static class F2 implements K2 { public Object m() { return WRONG; }}
+        static class F3 implements K3 { public Object m() { return WRONG; }}
+        static class F4 implements K4 { public Object m() { return WRONG; }}
+
+        @DontInline
+        public Object test(I i) throws Throwable {
+            // K1, K2, K3, and K4 are interfaces with unique implementor D until F1, ..., F4 are loaded.
+            if (i instanceof K1 && i instanceof K2 && i instanceof K3 && i instanceof K4 &&
+                i instanceof L1 && i instanceof L2) {
+                return i.m(); // I <: J.m ABSTRACT; i <: (K1 & K2 & K3 & K4 & L1 & L2)
+            } else {
+                return WRONG;
+            }
+        }
+
+        @TestCase
+        public void testMega() throws Exception {
+            assertTrue(!jdk.test.whitebox.code.Compiler.isC1Enabled(), "C2 only");
+
+            initialize(C.class); // exclude I
+
+            // NB! Avoid accessing context classes directly to delay their loading until context invalidation.
+            for (Callable<?> context : new Callable[] { () -> F1.class, () -> F2.class,
+                                                        () -> F3.class, () -> F4.class }) {
+                // Trigger compilation of a megamorphic call site
+                resetCompiledState();
+                compile(megamorphic());
+                assertCompiled();
+
+                // Dependency: type = unique_concrete_method, context = F1...F4, method = D.m
+
+                initialize((Class<?>)context.call()); // context class doesn't have a unique implementor anymore,
+                                                      // but we can't say which one is chosen as a context by the JVM
+            }
+            assertNotCompiled();
+
+            compile(megamorphic());
+            assertCompiled();
+
+            initialize(L1.class, L2.class); // unrelated interfaces
+            assertCompiled();
+
+            repeat(100, () -> call(new D() {})); // new implementor
+            assertCompiled();
+        }
+
+        @Override
+        public void checkInvalidReceiver() {
+            // nothing to check; test has instanceof guards
+        }
+
+        public static class TestMH extends MultipleInterfacesOnReceiver {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public Object test(I i) throws Throwable {
+                if (i instanceof K1 && i instanceof K2 && i instanceof K3 && i instanceof K4 &&
+                    i instanceof L1 && i instanceof L2) {
+                    return TEST_MH.invokeExact(i); // invokeinterface I.m(); i <: (K1 & K2 & K3 & K4 & L1 & L2)
+                } else {
+                    return WRONG;
+                }
             }
         }
     }
