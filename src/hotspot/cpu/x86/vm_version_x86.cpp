@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24, std_cpuid29;
     Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
-    Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning;
+    Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning, apx_xstate;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
 
     StubCodeMark mark(this, "VM_Version", "get_cpu_info_stub");
@@ -467,6 +467,20 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
     __ movq(Address(rsi, 0), r16);
     __ movq(Address(rsi, 8), r31);
+
+    //
+    // Query CPUID 0xD.19 for APX XSAVE offset
+    // Extended State Enumeration Sub-leaf 19 (APX)
+    // EAX = size of APX state (should be 128)
+    // EBX = offset in standard XSAVE format
+    //
+    __ movl(rax, 0xD);
+    __ movl(rcx, 19);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_xstate_size_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
 
     UseAPX = save_apx;
     __ bind(vector_save_restore);
@@ -921,8 +935,9 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
-    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF ||
-      _model == 0xCC || _model == 0xDD)) {
+    (supports_hybrid() ||
+     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ ||
+     _model == 0xDD /* Xeon 6+ E-cores (Clearwater Forest) */ )) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
@@ -1137,6 +1152,10 @@ void VM_Version::get_processor_features() {
         warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     } else {
       if (UseSSE > 2) {
         if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
@@ -1155,8 +1174,8 @@ void VM_Version::get_processor_features() {
       if (!UseAESIntrinsics) {
         if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
           warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
-          FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
         }
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
       } else {
         if (supports_sse4_1()) {
           if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
@@ -1176,16 +1195,16 @@ void VM_Version::get_processor_features() {
   } else if (UseAES || UseAESIntrinsics || UseAESCTRIntrinsics) {
     if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
       warning("AES instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAES, false);
     }
+    FLAG_SET_DEFAULT(UseAES, false);
     if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
       warning("AES intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
       warning("AES-CTR intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
   // Use CLMUL instructions if available.

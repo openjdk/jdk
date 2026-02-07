@@ -355,6 +355,7 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
+  bool                  _print_phase_loop_opts; // True if we should print before and after loop opts phase
 #ifndef PRODUCT
   uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers
@@ -794,6 +795,7 @@ public:
   void remove_from_merge_stores_igvn(Node* n);
   void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
 
+  void shuffle_late_inlines();
   void shuffle_macro_nodes();
   void sort_macro_nodes();
 
@@ -1058,6 +1060,13 @@ public:
   // Record this CallGenerator for inlining at the end of parsing.
   void              add_late_inline(CallGenerator* cg)        {
     _late_inlines.insert_before(_late_inlines_pos, cg);
+    if (StressIncrementalInlining) {
+      assert(_late_inlines_pos < _late_inlines.length(), "unthinkable!");
+      if (_late_inlines.length() - _late_inlines_pos >= 2) {
+        int j = (C->random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
+        swap(_late_inlines.at(_late_inlines_pos), _late_inlines.at(j));
+      }
+    }
     _late_inlines_pos++;
   }
 

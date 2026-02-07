@@ -353,7 +353,7 @@ private:
 
 public:
   // This returns the raw value of the singular, global gc state.
-  char gc_state() const;
+  inline char gc_state() const;
 
   // Compares the given state against either the global gc state, or the thread local state.
   // The global gc state may change on a safepoint and is the correct value to use until
@@ -361,7 +361,7 @@ public:
   // compare against the thread local state). The thread local gc state may also be changed
   // by a handshake operation, in which case, this function continues using the updated thread
   // local value.
-  bool is_gc_state(GCState state) const;
+  inline bool is_gc_state(GCState state) const;
 
   // This copies the global gc state into a thread local variable for all threads.
   // The thread local gc state is primarily intended to support quick access at barriers.

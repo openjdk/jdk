@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,6 +286,9 @@ public class Thread implements Runnable {
         volatile boolean daemon;
         volatile int threadStatus;
 
+        // Used by NativeThread for signalling
+        @Stable long nativeThreadID;
+
         // This map is maintained by the ThreadLocal class
         ThreadLocal.ThreadLocalMap terminatingThreadLocals;
 
@@ -310,6 +313,14 @@ public class Thread implements Runnable {
 
     void setTerminatingThreadLocals(ThreadLocal.ThreadLocalMap map) {
         holder.terminatingThreadLocals = map;
+    }
+
+    long nativeThreadID() {
+        return holder.nativeThreadID;
+    }
+
+    void setNativeThreadID(long id) {
+        holder.nativeThreadID = id;
     }
 
     /*
@@ -2208,40 +2219,23 @@ public class Thread implements Runnable {
      * @since 1.5
      */
     public StackTraceElement[] getStackTrace() {
-        if (this != Thread.currentThread()) {
+        if (Thread.currentThread() != this) {
             // optimization so we do not call into the vm for threads that
             // have not yet started or have terminated
             if (!isAlive()) {
                 return EMPTY_STACK_TRACE;
             }
-            StackTraceElement[] stackTrace = asyncGetStackTrace();
-            return (stackTrace != null) ? stackTrace : EMPTY_STACK_TRACE;
+            StackTraceElement[] stackTrace = getStackTrace0();
+            if (stackTrace != null) {
+                return StackTraceElement.finishInit(stackTrace);
+            }
+            return EMPTY_STACK_TRACE;
         } else {
             return (new Exception()).getStackTrace();
         }
     }
 
-    /**
-     * Returns an array of stack trace elements representing the stack dump of
-     * this thread. Returns null if the stack trace cannot be obtained. In
-     * the default implementation, null is returned if the thread is a virtual
-     * thread that is not mounted or the thread is a platform thread that has
-     * terminated.
-     */
-    StackTraceElement[] asyncGetStackTrace() {
-        Object stackTrace = getStackTrace0();
-        if (stackTrace == null) {
-            return null;
-        }
-        StackTraceElement[] stes = (StackTraceElement[]) stackTrace;
-        if (stes.length == 0) {
-            return null;
-        } else {
-            return StackTraceElement.of(stes);
-        }
-    }
-
-    private native Object getStackTrace0();
+    private native StackTraceElement[] getStackTrace0();
 
     /**
      * Returns a map of stack traces for all live platform threads. The map

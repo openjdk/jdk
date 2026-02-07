@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2025, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -201,6 +201,8 @@ source %{
       case Op_XorReductionV:
       case Op_MinReductionV:
       case Op_MaxReductionV:
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
         // Reductions with less than 8 bytes vector length are
         // not supported.
         if (length_in_bytes < 8) {
@@ -383,6 +385,8 @@ source %{
         return !VM_Version::use_neon_for_vector(length_in_bytes);
       case Op_MinReductionV:
       case Op_MaxReductionV:
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
         // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we prefer using NEON
         // instructions rather than SVE predicated instructions for
         // better performance.
@@ -4214,6 +4218,224 @@ instruct reduce_minD_masked(vRegD dst, vRegD dsrc, vReg vsrc, pRegGov pg) %{
   ins_encode %{
     __ sve_fminv($dst$$FloatRegister, __ D, $pg$$PRegister, $vsrc$$FloatRegister);
     __ fmind($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// -------------------- Vector reduction unsigned min/max ----------------------
+
+// reduction uminI
+
+instruct reduce_uminI_neon(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                          vReg tmp, rFlagsReg cr) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) &&
+            (Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_INT));
+  match(Set dst (UMinReductionV isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_uminI_neon $dst, $isrc, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ neon_reduce_minmax_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                                   $isrc$$Register, $vsrc$$FloatRegister,
+                                   length_in_bytes, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_uminI_sve(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                         vRegD tmp, rFlagsReg cr) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) &&
+            (Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_INT));
+  match(Set dst (UMinReductionV isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_uminI_sve $dst, $isrc, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           ptrue, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// reduction uminL
+
+instruct reduce_uminL_neon(iRegLNoSp dst, iRegL isrc, vReg vsrc, rFlagsReg cr) %{
+  predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
+  match(Set dst (UMinReductionV isrc vsrc));
+  effect(TEMP_DEF dst, KILL cr);
+  format %{ "reduce_uminL_neon $dst, $isrc, $vsrc\t# 2L. KILL cr" %}
+  ins_encode %{
+    __ neon_reduce_minmax_integral(this->ideal_Opcode(), $dst$$Register, T_LONG,
+                                   $isrc$$Register, $vsrc$$FloatRegister,
+                                   /* vector_length_in_bytes */ 16, fnoreg);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_uminL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc,
+                         vRegD tmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
+  match(Set dst (UMinReductionV isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_uminL_sve $dst, $isrc, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, T_LONG,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           ptrue, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// reduction umin - predicated
+
+instruct reduce_uminI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg,
+                            vRegD tmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 &&
+            (Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_BYTE ||
+             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_SHORT ||
+             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_INT));
+  match(Set dst (UMinReductionV (Binary isrc vsrc) pg));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_uminI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           $pg$$PRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_uminL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
+                            vRegD tmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
+  match(Set dst (UMinReductionV (Binary isrc vsrc) pg));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_uminL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           $pg$$PRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// reduction umaxI
+
+instruct reduce_umaxI_neon(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                          vReg tmp, rFlagsReg cr) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) &&
+            (Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_INT));
+  match(Set dst (UMaxReductionV isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_umaxI_neon $dst, $isrc, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ neon_reduce_minmax_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                                   $isrc$$Register, $vsrc$$FloatRegister,
+                                   length_in_bytes, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_umaxI_sve(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                         vRegD tmp, rFlagsReg cr) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) &&
+            (Matcher::vector_element_basic_type(n->in(2)) == T_BYTE ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_SHORT ||
+             Matcher::vector_element_basic_type(n->in(2)) == T_INT));
+  match(Set dst (UMaxReductionV isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_umaxI_sve $dst, $isrc, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           ptrue, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// reduction umaxL
+
+instruct reduce_umaxL_neon(iRegLNoSp dst, iRegL isrc, vReg vsrc, rFlagsReg cr) %{
+  predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
+  match(Set dst (UMaxReductionV isrc vsrc));
+  effect(TEMP_DEF dst, KILL cr);
+  format %{ "reduce_umaxL_neon $dst, $isrc, $vsrc\t# 2L. KILL cr" %}
+  ins_encode %{
+    __ neon_reduce_minmax_integral(this->ideal_Opcode(), $dst$$Register, T_LONG,
+                                   $isrc$$Register, $vsrc$$FloatRegister,
+                                   /* vector_length_in_bytes */ 16, fnoreg);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_umaxL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc,
+                         vRegD tmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
+  match(Set dst (UMaxReductionV isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_umaxL_sve $dst, $isrc, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, T_LONG,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           ptrue, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// reduction umax - predicated
+
+instruct reduce_umaxI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg,
+                            vRegD tmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 &&
+            (Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_BYTE ||
+             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_SHORT ||
+             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_INT));
+  match(Set dst (UMaxReductionV (Binary isrc vsrc) pg));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_umaxI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           $pg$$PRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_umaxL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
+                            vRegD tmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
+  match(Set dst (UMaxReductionV (Binary isrc vsrc) pg));
+  effect(TEMP_DEF dst, TEMP tmp, KILL cr);
+  format %{ "reduce_umaxL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                           $isrc$$Register, $vsrc$$FloatRegister,
+                           $pg$$PRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
