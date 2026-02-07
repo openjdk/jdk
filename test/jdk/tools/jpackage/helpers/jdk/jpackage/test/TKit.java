@@ -1091,6 +1091,10 @@ public final class TKit {
             value = other.value;
         }
 
+        public TextStreamVerifier copy() {
+            return new TextStreamVerifier(this);
+        }
+
         public TextStreamVerifier label(String v) {
             label = v;
             return this;
@@ -1116,7 +1120,12 @@ public final class TKit {
             return this;
         }
 
-        private String findMatch(Iterator<String> lineIt) {
+        public TextStreamVerifier mutate(Consumer<TextStreamVerifier> mutator) {
+            mutator.accept(this);
+            return this;
+        }
+
+        private String find(Iterator<String> lineIt) {
             while (lineIt.hasNext()) {
                 final var line = lineIt.next();
                 if (predicate.test(line, value)) {
@@ -1131,7 +1140,7 @@ public final class TKit {
         }
 
         public void apply(Iterator<String> lineIt) {
-            final String matchedStr = findMatch(lineIt);
+            final String matchedStr = find(lineIt);
             final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
@@ -1167,6 +1176,20 @@ public final class TKit {
         }
 
         public static final class Group {
+
+            public Group() {
+            }
+
+            public Group(Group other) {
+                Objects.requireNonNull(other);
+                this.label = other.label;
+                this.verifiers.addAll(other.verifiers);
+            }
+
+            public Group copy() {
+                return new Group(this);
+            }
+
             public Group add(TextStreamVerifier verifier) {
                 if (verifier.anotherVerifier != null) {
                     throw new IllegalArgumentException();
@@ -1177,6 +1200,16 @@ public final class TKit {
 
             public Group add(Group other) {
                 verifiers.addAll(other.verifiers);
+                return this;
+            }
+
+            public Group label(String v) {
+                label = v;
+                return this;
+            }
+
+            public Group mutate(Consumer<Group> mutator) {
+                mutator.accept(this);
                 return this;
             }
 
@@ -1197,20 +1230,24 @@ public final class TKit {
                     throw new IllegalStateException();
                 }
 
-                if (verifiers.size() == 1) {
-                    return verifiers.getFirst()::apply;
-                }
+                final var theLabel = Optional.ofNullable(label);
 
-                final var head = new TextStreamVerifier(verifiers.getFirst());
-                var prev = head;
-                for (var verifier : verifiers.subList(1, verifiers.size())) {
-                    verifier = new TextStreamVerifier(verifier);
-                    prev.anotherVerifier = verifier::apply;
+                TextStreamVerifier head = null;
+                TextStreamVerifier prev = null;
+                for (var verifier : verifiers) {
+                    verifier = verifier.copy();
+                    theLabel.ifPresent(verifier::label);
+                    if (prev != null) {
+                        prev.anotherVerifier = verifier::apply;
+                    } else {
+                        head = verifier;
+                    }
                     prev = verifier;
                 }
                 return head::apply;
             }
 
+            private String label;
             private final List<TextStreamVerifier> verifiers = new ArrayList<>();
         }
 
@@ -1224,6 +1261,14 @@ public final class TKit {
 
     public static TextStreamVerifier assertTextStream(String what) {
         return new TextStreamVerifier(what);
+    }
+
+    public static Consumer<Iterator<String>> assertEndOfTextStream() {
+        return it -> {
+            var tail = new ArrayList<String>();
+            it.forEachRemaining(tail::add);
+            assertStringListEquals(List.of(), tail, "Check the end of the output");
+        };
     }
 
     public record PathSnapshot(List<String> contentHashes) {

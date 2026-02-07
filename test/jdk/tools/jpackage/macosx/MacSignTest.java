@@ -97,13 +97,13 @@ public class MacSignTest {
             // To make jpackage fail, specify bad additional content.
             JPackageCommand.helloAppImage()
                     .ignoreDefaultVerbose(true)
-                    .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
+                    .validateErr(expectedStrings.toArray(CannedFormattedString[]::new))
                     .addArguments("--app-content", appContent)
                     .mutate(signingKeyOption::addTo)
                     .mutate(cmd -> {
                         if (MacHelper.isXcodeDevToolsInstalled()) {
                             // Check there is no warning about missing xcode command line developer tools.
-                            cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
+                            cmd.validateErr(TKit.assertTextStream(xcodeWarning.getValue()).negate());
                         }
                     }).execute(1);
 
@@ -125,7 +125,7 @@ public class MacSignTest {
         Files.createFile(appContent.resolve("file"));
 
         final List<CannedFormattedString> expectedStrings = new ArrayList<>();
-        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("error.tool.failed.with.output", "codesign"));
+        expectedStrings.add(JPackageCommand.makeError("error.tool.failed.with.output", "codesign"));
 
         MacSign.withKeychain(keychain -> {
 
@@ -136,7 +136,7 @@ public class MacSignTest {
 
             new JPackageCommand().setPackageType(PackageType.IMAGE)
                     .ignoreDefaultVerbose(true)
-                    .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
+                    .validateErr(expectedStrings.toArray(CannedFormattedString[]::new))
                     .addArguments("--app-image", appImageCmd.outputBundle())
                     .mutate(signingKeyOption::addTo)
                     .execute(1);
@@ -168,7 +168,7 @@ public class MacSignTest {
                     .setPackageType(type);
 
             SignOption.configureOutputValidation(cmd, Stream.of(options).filter(SignOption::expired).toList(), opt -> {
-                return JPackageStringBundle.MAIN.cannedFormattedString("error.certificate.expired", opt.identityName());
+                return JPackageCommand.makeError("error.certificate.expired", opt.identityName());
             }).execute(1);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.EXPIRED.keychain());
     }
@@ -199,7 +199,7 @@ public class MacSignTest {
             };
 
             SignOption.configureOutputValidation(cmd, Stream.of(options).filter(filter).toList(), opt -> {
-                return JPackageStringBundle.MAIN.cannedFormattedString("error.multiple.certs.found", opt.identityName(), keychain.name());
+                return JPackageCommand.makeError("error.multiple.certs.found", opt.identityName(), keychain.name());
             }).execute(1);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.DUPLICATE.keychain());
     }
@@ -288,13 +288,13 @@ public class MacSignTest {
                     .map(CannedFormattedString::getValue)
                     .map(TKit::assertTextStream)
                     .map(TKit.TextStreamVerifier::negate)
-                    .forEach(cmd::validateOutput);
+                    .forEach(cmd::validateErr);
 
             options.stream().filter(Predicate.not(SignOption::passThrough))
                     .map(conv)
                     .map(CannedFormattedString::getValue)
                     .map(TKit::assertTextStream)
-                    .forEach(cmd::validateOutput);
+                    .forEach(cmd::validateErr);
 
             return cmd;
         }

@@ -172,19 +172,19 @@ final class AppImageSigner {
         // "--app-content" can fail "codesign".
 
         if (!app.contentDirSources().isEmpty()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
+            Log.fatalError(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 
         // Signing might not work without Xcode with command line
         // developer tools. Show user if Xcode is missing as possible
         // reason.
         if (!isXcodeDevToolsInstalled()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
+            Log.fatalError(I18N.getString("message.codesign.failed.reason.xcode.tools"));
         }
 
         // Log "codesign" output
-        Log.info(I18N.format("error.tool.failed.with.output", "codesign"));
-        Log.info(Stream.of(ex.getOutput()).collect(joining("\n")).strip());
+        Log.fatalError(I18N.format("error.tool.failed.with.output", "codesign"));
+        Log.fatalError(Stream.of(ex.getOutput()).collect(joining("\n")).strip());
 
         return ex;
     }
