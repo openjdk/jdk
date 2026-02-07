@@ -149,7 +149,7 @@ public:
     }
   }
 
-  bool do_allocation_site(const ReservedMemoryRegion* rgn) override {
+  bool do_allocation_site(const VirtualMemoryRegion* rgn) override {
     // Cancel iteration if we run out of memory (add returns false);
     return add(rgn->base(), rgn->end(), rgn->mem_tag());
   }
