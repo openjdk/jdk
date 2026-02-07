@@ -79,6 +79,8 @@
 
 // put OS-includes here (sorted alphabetically)
 #include <alloca.h>
+#include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -2746,3 +2748,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
+
+void os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not implemented on AIX
+}

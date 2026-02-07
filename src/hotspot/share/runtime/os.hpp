@@ -896,6 +896,9 @@ class os: AllStatic {
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
   static void print_elapsed_time(outputStream* st, double time);
 
+  // Prints the number of open file descriptors for the current process
+  static void print_open_file_descriptors(outputStream* st);
+
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
 
