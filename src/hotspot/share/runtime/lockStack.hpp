@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,14 +132,16 @@ class LockStack {
 class OMCache {
   friend class VMStructs;
  public:
-  static constexpr int CAPACITY = 8;
+  static constexpr int CAPACITY            = 128;  // Must be a power of two.
+  static constexpr int capacity_mask       = CAPACITY - 1;
+  static constexpr int log_ptrs_per_entry  = 1;
+  static constexpr int log_bytes_per_entry = LogBytesPerWord + log_ptrs_per_entry;
 
  private:
   struct OMCacheEntry {
     oop _oop = nullptr;
     ObjectMonitor* _monitor = nullptr;
   } _entries[CAPACITY];
-  const oop _null_sentinel = nullptr;
 
  public:
   static ByteSize entries_offset() { return byte_offset_of(OMCache, _entries); }
