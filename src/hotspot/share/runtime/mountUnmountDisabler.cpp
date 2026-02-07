@@ -112,8 +112,15 @@ class JVMTIEndTransition : public StackObj {
           JvmtiExport::post_vthread_start((jthread)_vthread.raw_value());
         }
       }
-      if (_is_mount && JvmtiExport::should_post_vthread_mount()) {
-        JvmtiExport::post_vthread_mount((jthread)_vthread.raw_value());
+      if (_is_mount) {
+        // FramePop optimization support
+        JvmtiThreadState* state = _current->jvmti_thread_state();
+        if (state != nullptr && state->is_virtual() && state->is_enabled(JVMTI_EVENT_FRAME_POP)) {
+          state->process_vthread_pending_deopts();
+        }
+        if (JvmtiExport::should_post_vthread_mount()) {
+          JvmtiExport::post_vthread_mount((jthread)_vthread.raw_value());
+        }
       }
     }
   }

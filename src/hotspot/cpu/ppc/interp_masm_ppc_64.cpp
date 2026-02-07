@@ -2359,17 +2359,11 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
   if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
-    Label jvmti_post_done;
-
-    lwz(R0, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
-    cmpwi(CR0, R0, 0);
-    beq(CR0, jvmti_post_done);
     if (!is_native_method) { push(state); } // Expose tos to GC.
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit), check_exceptions);
     if (!is_native_method) { pop(state); }
 
     align(32, 12);
-    bind(jvmti_post_done);
   }
 
   // Dtrace support not implemented.

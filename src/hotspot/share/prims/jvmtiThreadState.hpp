@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.hpp"
-#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -152,6 +152,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   InstanceKlass*        _class_being_redefined;
   JvmtiClassLoadKind    _class_load_kind;
   GrowableArray<Klass*>* _classes_being_redefined;
+  GrowableArray<int>*   _vthread_pending_deopts;
 
   // This is only valid when is_interp_only_mode() returns true
   int               _cur_stack_depth;
@@ -220,6 +221,27 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   }
   void enter_interp_only_mode();
   void leave_interp_only_mode();
+
+  int has_vthread_pending_deopts() {
+    return _vthread_pending_deopts != nullptr && _vthread_pending_deopts->length() > 0;
+  }
+
+  void clear_vthread_pending_deopts() {
+    if (_vthread_pending_deopts != nullptr) {
+      delete _vthread_pending_deopts;
+      _vthread_pending_deopts = nullptr;
+    }
+  }
+
+  GrowableArray<int>* vthread_pending_deopts() {
+    if (_vthread_pending_deopts == nullptr) {
+      _vthread_pending_deopts = new (mtServiceability) GrowableArray<int> (2, mtServiceability);
+      assert(_vthread_pending_deopts != nullptr, "sanity check");
+    }
+    return _vthread_pending_deopts;
+  }
+
+  void process_vthread_pending_deopts();
 
   static void unbind_from(JvmtiThreadState* state, JavaThread* thread);
   static void bind_to(JvmtiThreadState* state, JavaThread* thread);

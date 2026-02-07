@@ -253,7 +253,7 @@ void JvmtiEnvThreadState::clear_all_frame_pops() {
 bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
   assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
-  if (!jvmti_thread_state()->is_interp_only_mode() || _frame_pops == nullptr) {
+  if (_frame_pops == nullptr) {
     return false;
   }
   JvmtiFramePop fp(cur_frame_number);
