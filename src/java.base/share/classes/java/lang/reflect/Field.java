@@ -367,11 +367,24 @@ class Field extends AccessibleObject implements Member {
      * @jls 8.3.1 Field Modifiers
      */
     public String toString() {
-        int mod = getModifiers() & Modifier.fieldModifiers();
-        return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
+        return modifierPrefix()
             + getType().getTypeName() + " "
             + getDeclaringClass().getTypeName() + "."
-            + getName());
+            + getName();
+    }
+
+    private String modifierPrefix() {
+        StringBuilder sb = new StringBuilder();
+        Reflection.appendAccessControlModifiers(sb, modifiers);
+        if (Modifier.isStatic(modifiers))
+            sb.append("static ");
+        if (Modifier.isFinal(modifiers))
+            sb.append("final ");
+        if (Modifier.isTransient(modifiers))
+            sb.append("transient ");
+        if (Modifier.isVolatile(modifiers))
+            sb.append("volatile ");
+        return sb.toString();
     }
 
     @Override
@@ -400,12 +413,11 @@ class Field extends AccessibleObject implements Member {
      * @jls 8.3.1 Field Modifiers
      */
     public String toGenericString() {
-        int mod = getModifiers() & Modifier.fieldModifiers();
         Type fieldType = getGenericType();
-        return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
+        return modifierPrefix()
             + fieldType.getTypeName() + " "
             + getDeclaringClass().getTypeName() + "."
-            + getName());
+            + getName();
     }
 
     /**

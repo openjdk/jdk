@@ -23,7 +23,7 @@
 package jdk.vm.ci.meta;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.AccessFlag.Location;
 
 /**
  * Represents a reference to a resolved Java field. Fields, like methods and types, are resolved
@@ -34,7 +34,7 @@ public interface ResolvedJavaField extends JavaField, ModifiersProvider, Annotat
     /**
      * {@inheritDoc}
      * <p>
-     * Only the {@linkplain Modifier#fieldModifiers() field flags} specified in the JVM
+     * Only the {@linkplain Location#FIELD field flags} specified in the JVM
      * specification will be included in the returned mask.
      */
     @Override

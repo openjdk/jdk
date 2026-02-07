@@ -147,7 +147,7 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
 
         public ProfiledType(ResolvedJavaType type, double probability) {
             super(type, probability);
-            assert type.isArray() || type.isConcrete() : type + " " + Modifier.toString(type.getModifiers());
+            assert type.isArray() || type.isConcrete() : type + " %04x".formatted(type.getModifiers());
         }
 
         /**

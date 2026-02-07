@@ -354,10 +354,13 @@ public final class Constructor<T> extends Executable {
      * @jls 8.9.2 Enum Body Declarations
      */
     public String toString() {
-        return sharedToString(Modifier.constructorModifiers(),
-                              false,
-                              parameterTypes,
+        return sharedToString(parameterTypes,
                               exceptionTypes);
+    }
+
+    @Override
+    void appendModifiers(StringBuilder sb) {
+        Reflection.appendAccessControlModifiers(sb, getModifiers());
     }
 
     @Override
@@ -417,7 +420,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public String toGenericString() {
-        return sharedToGenericString(Modifier.constructorModifiers(), false);
+        return super.toGenericString();
     }
 
     @Override
