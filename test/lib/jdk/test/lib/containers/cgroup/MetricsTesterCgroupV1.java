@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,10 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
     public void testCpuSchedulingMetrics() {
         CgroupV1Metrics metrics = (CgroupV1Metrics)Metrics.systemMetrics();
         long oldVal = metrics.getCpuPeriod();
+        if (oldVal == CgroupSubsystem.LONG_RETVAL_UNLIMITED) {
+            System.out.println("Get cpu period fails, test skipped.");
+            return;
+        }
         long newVal = getLongValueFromFile(Controller.CPUACCT, "cpu.cfs_period_us");
         if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
             fail(Controller.CPUACCT, "cpu.cfs_period_us", oldVal, newVal);
@@ -410,7 +414,10 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
         CgroupV1Metrics metrics = (CgroupV1Metrics)Metrics.systemMetrics();
         Integer[] oldVal = CgroupMetricsTester.boxedArrayOrNull(metrics.getCpuSetCpus());
         oldVal = CgroupMetricsTester.sortAllowNull(oldVal);
-
+        if (oldVal == null) {
+            System.out.println("Get cpuset fails, test skipped.");
+            return;
+        }
         String cpusstr = getFileContents(Controller.CPUSET, "cpuset.cpus");
         // Parse range string in the format 1,2-6,7
         Integer[] newVal = CgroupMetricsTester.convertCpuSetsToArray(cpusstr);
