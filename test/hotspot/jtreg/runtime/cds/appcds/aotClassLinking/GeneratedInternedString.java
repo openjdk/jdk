@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,18 @@
 
 /*
  * @test storing a dynamically generated interned string in the AOT cache
- * @bug 8356125
+ * @bug 8356125 8374155
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build GeneratedInternedString
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar GeneratedInternedStringApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app-record.jar GeneratedInternedStringRecordApp
  * @run driver GeneratedInternedString
  */
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.test.lib.cds.SimpleCDSAppTester;
 
 public class GeneratedInternedString {
@@ -42,6 +44,12 @@ public class GeneratedInternedString {
             .addVmArgs("-XX:AOTInitTestClass=GeneratedInternedStringApp")
             .classpath("app.jar")
             .appCommandLine("GeneratedInternedStringApp")
+            .runAOTWorkflow();
+
+        SimpleCDSAppTester.of("GeneratedInternedString")
+            .addVmArgs("-XX:AOTInitTestClass=GeneratedInternedStringRecordApp")
+            .classpath("app-record.jar")
+            .appCommandLine("GeneratedInternedStringRecordApp")
             .runAOTWorkflow();
     }
 }
@@ -66,5 +74,31 @@ class GeneratedInternedStringApp {
     static String generate() {
         System.out.println("generate() is called");
         return ("GeneratedInternedStringApp_String" + n).intern();
+    }
+}
+
+// A variant using a bespoke record
+@AOTSafeClassInitializer
+record GeneratedInternedStringRecordApp(int value) {
+
+    static volatile int n = 0;
+    static final String generatedInternedString = generate();
+
+    public GeneratedInternedStringRecordApp() {
+        this(42);
+    }
+
+    static void main(String[] args) {
+        n = args.length;
+        String b = generate();
+        if (generatedInternedString != b) {
+            throw new RuntimeException("generatedInternedString: " + System.identityHashCode(generatedInternedString)
+                                       + " vs b:" + System.identityHashCode(b));
+        }
+    }
+
+    static String generate() {
+        System.out.println("generate() is called");
+        return ("GeneratedInternedStringRecordApp_String" + n).intern();
     }
 }
