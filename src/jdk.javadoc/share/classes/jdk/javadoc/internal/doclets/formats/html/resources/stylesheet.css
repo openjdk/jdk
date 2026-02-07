@@ -1228,7 +1228,7 @@ input::placeholder {
 input:focus::placeholder {
     color: transparent;
 }
-select#search-modules {
+select {
     margin: 0 10px 10px 2px;
     font-size: var(--nav-font-size);
     padding: 3px 5px;
