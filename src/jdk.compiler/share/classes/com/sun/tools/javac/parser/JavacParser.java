@@ -5406,6 +5406,14 @@ public class JavacParser implements Parser {
      */
     protected JCVariableDecl formalParameter(boolean lambdaParameter, boolean recordComponent) {
         JCModifiers mods = !recordComponent ? optFinal(Flags.PARAMETER) : modifiersOpt();
+        /* it could be that the user added a javadoc with the @deprecated tag, when analyzing this
+         * javadoc, javac will set the DEPRECATED flag. This is correct in most cases but not for
+         * record components and thus should be removed in that case. Any javadoc applied to
+         * record components is ignored
+         */
+        if (recordComponent) {
+            mods.flags &= ~Flags.DEPRECATED;
+        }
         if (recordComponent && mods.flags != 0) {
             log.error(mods.pos, Errors.RecordCantDeclareFieldModifiers);
         }
