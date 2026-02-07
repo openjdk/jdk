@@ -1618,7 +1618,8 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
     return false;
   }
   return seems_never_taken(prob) &&
-         !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+         // Skip optimization if recompile limit is exceeded to avoid deopts without recompilation.
+         !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 }
 
 void Parse::maybe_add_predicate_after_if(Block* path) {
