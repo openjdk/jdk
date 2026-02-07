@@ -196,9 +196,8 @@ public class BasicImageReader implements AutoCloseable {
 
         if (result.getMajorVersion() != ImageHeader.MAJOR_VERSION ||
             result.getMinorVersion() != ImageHeader.MINOR_VERSION) {
-            throw new IOException("The image file \"" + name + "\" is not " +
-                "the correct version. Major: " + result.getMajorVersion() +
-                ". Minor: " + result.getMinorVersion());
+            throw new IOException("The image file \"" + name + "\" is not the correct version.\n"
+                    + "Use '<JAVA_HOME>/bin/jimage' for the JDK associated with this jimage file.");
         }
 
         return result;
