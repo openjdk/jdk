@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,18 +34,23 @@ import jdk.internal.util.ArraysSupport;
 /**
  * This class implements an output stream in which the data is
  * written into a byte array. The buffer automatically grows as data
- * is written to it.
- * The data can be retrieved using {@code toByteArray()} and
- * {@code toString()}.
+ * is written to it. The data can be retrieved using {@code toByteArray()}
+ * and {@code toString()}.
+ *
  * <p>
  * Closing a {@code ByteArrayOutputStream} has no effect. The methods in
  * this class can be called after the stream has been closed without
  * generating an {@code IOException}.
  *
+ * <p>
+ * Subclasses of this class may override {@code ensureCapacity(int)} in
+ * order to customize the buffer growth behavior. Subclasses which add
+ * additional write methods should either manage buffer growth manually
+ * or invoke {@code ensureCapacity(int)} to grow the buffer.
+ *
  * @author  Arthur van Hoff
  * @since   1.0
  */
-
 public class ByteArrayOutputStream extends OutputStream {
 
     /**
@@ -82,17 +87,18 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Increases the capacity if necessary to ensure that it can hold
-     * at least the number of elements specified by the minimum
-     * capacity argument.
+     * Increases the capacity if necessary to ensure that this
+     * {@code ByteArrayOutputStream} can hold at least the number of
+     * elements specified by the {@code minCapacity} argument.
      *
      * @param  minCapacity the desired minimum capacity.
      * @throws OutOfMemoryError if {@code minCapacity < 0} and
      * {@code minCapacity - buf.length > 0}.  This is interpreted as a
-     * request for the unsatisfiably large capacity.
+     * request for the unsatisfiably large capacity
      * {@code (long) Integer.MAX_VALUE + (minCapacity - Integer.MAX_VALUE)}.
+     * @since 27
      */
-    private void ensureCapacity(int minCapacity) {
+    protected void ensureCapacity(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = buf.length;
         int minGrowth = minCapacity - oldCapacity;
