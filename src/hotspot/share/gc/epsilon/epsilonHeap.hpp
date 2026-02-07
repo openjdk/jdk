@@ -69,6 +69,7 @@ public:
 
   jint initialize() override;
   void initialize_serviceability() override;
+  void post_initialize() override;
 
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
