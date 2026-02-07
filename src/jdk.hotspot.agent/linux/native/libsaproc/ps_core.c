@@ -422,10 +422,18 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         if (target_vaddr > existing_map->vaddr) {
             lib_memsz += target_vaddr - existing_map->vaddr;
         }
+        uint64_t aligned_lib_memsz = ROUNDUP(lib_memsz, page_size);
+        size_t aligned_segment_sz = ROUNDUP(lib_php->p_memsz, page_size);
 
+        if (target_vaddr == ph->core->vdso_addr) {
+          // We can overwrite with entire vDSO because vDSO on memory is
+          // entire ELF binary.
+          aligned_lib_memsz = ROUNDUP(existing_map->memsz, page_size);
+          aligned_segment_sz = aligned_lib_memsz;
+        }
         if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
-            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_memsz, page_size))) {
+            (ROUNDUP(existing_map->memsz, page_size) != aligned_lib_memsz)) {
 
           print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);
@@ -434,11 +442,11 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
 
         /* replace PT_LOAD segment with library segment */
         print_debug("overwrote with new address mapping (memsz %ld -> %ld)\n",
-                     existing_map->memsz, ROUNDUP(lib_php->p_memsz, page_size));
+                     existing_map->memsz, aligned_segment_sz);
 
         existing_map->fd = lib_fd;
         existing_map->offset = lib_php->p_offset;
-        existing_map->memsz = ROUNDUP(lib_php->p_memsz, page_size);
+        existing_map->memsz = aligned_segment_sz;
       }
     }
 
