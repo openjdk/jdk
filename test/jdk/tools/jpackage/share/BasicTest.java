@@ -47,10 +47,12 @@ import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
@@ -196,17 +198,19 @@ public final class BasicTest {
             .useToolProvider(true)
             .saveConsoleOutput(true)
             .setFakeRuntime();
+
+            new JPackageOutputValidator().validateEndOfStream().applyTo(cmd);
+
+            var stderrValidator = new JPackageOutputValidator().stderr();
+            if (cmd.packageType() == PackageType.LINUX_DEB) {
+                stderrValidator.expectMatchingStrings(JPackageCommand.makeSummaryWarning("message.debs-like-licenses"));
+            }
+            stderrValidator.validateEndOfStream().applyTo(cmd);
         });
 
-        Consumer<Executor.Result> asserter = result -> {
-            TKit.assertStringListEquals(List.of(), result.getOutput(), "Check output is empty");
-        };
-
-        target.cmd().map(JPackageCommand::execute).ifPresent(asserter);
+        target.cmd().map(JPackageCommand::execute);
         target.test().ifPresent(test -> {
-            test.addBundleVerifier((_, result) -> {
-                asserter.accept(result);
-            }).run(CREATE);
+            test.run(CREATE);
         });
     }
 
@@ -214,6 +218,21 @@ public final class BasicTest {
     @Parameter("false")
     @Parameter("true")
     public void testVerbose(boolean appImage) {
+        testVerbose(appImage, cmd -> {
+            cmd.useToolProvider(true).addArgument("--verbose");
+        });
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testVerboseFromEnvVar(boolean appImage) {
+        testVerbose(appImage, cmd -> {
+            cmd.useToolProvider(false).setEnvVar("JPACKAGE_DEBUG", "true");
+        });
+    }
+
+    private static void testVerbose(boolean appImage, Consumer<JPackageCommand> mutator) {
 
         ConfigurationTarget target;
         if (appImage) {
@@ -225,10 +244,9 @@ public final class BasicTest {
         target.addInitializer(cmd -> {
             // Disable the default logic adding `--verbose` option to jpackage command line.
             cmd.ignoreDefaultVerbose(true)
-                    .useToolProvider(true)
-                    .addArgument("--verbose")
                     .saveConsoleOutput(true)
-                    .setFakeRuntime();
+                    .setFakeRuntime()
+                    .mutate(mutator);
 
             List<CannedFormattedString> verboseContent;
             if (appImage) {
@@ -241,7 +259,11 @@ public final class BasicTest {
                         JPackageStringBundle.MAIN.cannedFormattedString("message.package-created"));
             }
 
-            cmd.validateOutput(verboseContent.toArray(CannedFormattedString[]::new));
+            new JPackageOutputValidator()
+                    .expectMatchingStrings(verboseContent.toArray(CannedFormattedString[]::new))
+                    .matchTimestamps()
+                    .stripTimestamps()
+                    .applyTo(cmd);
         });
 
         target.cmd().ifPresent(JPackageCommand::execute);
@@ -264,12 +286,9 @@ public final class BasicTest {
             cmd.addArgument("--verbose");
         }
 
-        cmd.validateOutput(Stream.of(
-                List.of("error.no-main-class-with-main-jar", "hello.jar"),
-                List.of("error.no-main-class-with-main-jar.advice", "hello.jar")
-        ).map(args -> {
-            return JPackageStringBundle.MAIN.cannedFormattedString(args.getFirst(), args.subList(1, args.size()).toArray());
-        }).toArray(CannedFormattedString[]::new));
+        cmd.validateErr(
+                JPackageCommand.makeError("error.no-main-class-with-main-jar", "hello.jar"),
+                JPackageCommand.makeAdvice("error.no-main-class-with-main-jar.advice", "hello.jar"));
 
         cmd.execute(1);
     }
@@ -429,7 +448,7 @@ public final class BasicTest {
 
         if (TestTempType.TEMPDIR_NOT_EMPTY.equals(type)) {
             pkgTest.setExpectedExitCode(1).addInitializer(cmd -> {
-                cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                cmd.validateErr(JPackageCommand.makeError(
                         "error.parameter-not-empty-directory", cmd.getArgumentValue("--temp"), "--temp"));
             }).addBundleVerifier(cmd -> {
                 // Check jpackage didn't use the supplied directory.

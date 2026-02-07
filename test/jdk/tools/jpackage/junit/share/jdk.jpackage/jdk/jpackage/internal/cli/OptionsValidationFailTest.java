@@ -99,13 +99,13 @@ public class OptionsValidationFailTest {
 
                 var errorReporter = new Main.ErrorReporter(ex -> {
                     ex.printStackTrace(err);
-                }, out::append);
+                }, err::println);
 
                 return parse(args).peekErrors(errors -> {
                     final var firstErr = errors.stream().findFirst().orElseThrow();
                     errorReporter.reportError(firstErr);
                 }).map(builder -> {
-                    var result = new OptionsProcessor(builder, bundlingEnv).validate();
+                    var result = new OptionsProcessor(builder, OperatingSystem.current(), bundlingEnv).validate();
                     if (result.hasValue()) {
                         return 0;
                     } else {

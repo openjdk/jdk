@@ -46,7 +46,10 @@ record OptionsTransformer(Options mainOptions, Optional<ExternalApplication> ext
     }
 
     OptionsTransformer(Options mainOptions, ApplicationLayout appLayout) {
-        this(mainOptions, PREDEFINED_APP_IMAGE.findIn(mainOptions).map(appLayout::resolveAt).map(AppImageFile::load));
+        this(mainOptions, PREDEFINED_APP_IMAGE.findIn(mainOptions).map(appLayout::resolveAt).map(resolvedLayout -> {
+            var os = OptionUtils.bundlingOperation(mainOptions).os();
+            return AppImageFile.load(resolvedLayout, os);
+        }));
     }
 
     Options appOptions() {

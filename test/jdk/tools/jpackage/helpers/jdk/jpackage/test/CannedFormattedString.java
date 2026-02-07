@@ -22,41 +22,14 @@
  */
 package jdk.jpackage.test;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, Object[] args) implements CannedArgument {
-
-    public static CannedArgument cannedArgument(Supplier<Object> supplier, String label) {
-        Objects.requireNonNull(supplier);
-        Objects.requireNonNull(label);
-        return new CannedArgument() {
-
-            @Override
-            public String getValue() {
-                return supplier.get().toString();
-            }
-
-            @Override
-            public String toString( ) {
-                return label;
-            }
-        };
-    }
-
-    public static Object cannedAbsolutePath(Path v) {
-        return cannedArgument(() -> v.toAbsolutePath(), String.format("AbsolutePath(%s)", v));
-    }
-
-    public static Object cannedAbsolutePath(String v) {
-        return cannedAbsolutePath(Path.of(v));
-    }
 
     public CannedFormattedString mapArgs(UnaryOperator<Object> mapper) {
         return new CannedFormattedString(formatter, key, Stream.of(args).map(mapper).toArray());
@@ -69,6 +42,7 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
         List.of(args).forEach(Objects::requireNonNull);
     }
 
+    @Override
     public String getValue() {
         return formatter.apply(key, Stream.of(args).map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {

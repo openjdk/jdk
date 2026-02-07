@@ -44,6 +44,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.FileUtils;
@@ -52,8 +53,12 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.ConfigurationTarget;
+import jdk.jpackage.test.FailedCommandErrorVerifier;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -92,18 +97,85 @@ public class AppContentTest {
     }
 
     @Test(ifOS = MACOS)
-    @Parameter({"apps", "warning.non.standard.contents.sub.dir"})
-    @Parameter({"apps/dukeplug.png", "warning.app.content.is.not.dir"})
-    public void testWarnings(String testPath, String warningId) throws Exception {
-        final var appContentValue = TKit.TEST_SRC_ROOT.resolve(testPath);
-        final var expectedWarning = JPackageStringBundle.MAIN.cannedFormattedString(
-                warningId, appContentValue);
+    @Parameter("NOT_DIRECTORY")
+    @Parameter("NON_STANDARD_DIRECTOTY_NAME")
+    public void testWarnings(AppContentMultiLineWarning type) throws Exception {
 
-        JPackageCommand.helloAppImage()
-            .addArguments("--app-content", appContentValue)
-            .setFakeRuntime()
-            .validateOutput(expectedWarning)
-            .executeIgnoreExitCode();
+        var cmd = JPackageCommand.helloAppImage()
+                .setFakeRuntime()
+                .saveConsoleOutput(true)
+                .setEnabledMessageCategories(MessageCategory.WARNINGS, MessageCategory.ERRORS);
+        for (var appContent: type.initAppContent()) {
+            cmd.addArguments("--app-content", appContent);
+        }
+
+        var result = cmd.executeIgnoreExitCode();
+
+        var validator = new JPackageOutputValidator().stderr();
+
+        validator.expectMatchingStrings(JPackageCommand.makeSummaryMultiLineWarning("warning.non-standard-app-content"));
+        type.expectedWarnings().stream().map(str -> {
+            return TKit.assertTextStream("  " + str.getValue()).predicate(String::equals);
+        }).forEach(validator::validator);
+
+        // Signing is finicky when the bundle contains invalid content.
+        // It may pass or fail depending on the version of the codesign (macOS version?).
+        if (result.getExitCode() != 0) {
+            // Expect codesign error in the output.
+            var cmdlinePattern = String.format(
+                    "^/usr/bin/codesign -s - -vvvv --force %s",
+                    Pattern.quote(cmd.outputBundle().normalize().toAbsolutePath().toString()));
+
+            //
+            // Typical codesign error:
+            //
+            // foo/output/WarningsAppContentTest.app: replacing existing signature
+            // foo/output/WarningsAppContentTest.app: code object is not signed at all
+            // In subcomponent: foo/output/WarningsAppContentTest.app/Contents/dukeplug.png
+            //
+
+            var errorValidator = new FailedCommandErrorVerifier(Pattern.compile(cmdlinePattern))
+                    .exitCode(1)
+                    .outputVerifiers(
+                            TKit.assertTextStream(": replacing existing signature").predicate(String::endsWith),
+                            TKit.assertTextStream(": code object is not signed at all").predicate(String::endsWith),
+                            TKit.assertTextStream("In subcomponent: ").predicate(String::startsWith))
+                    .createGroup();
+            validator.validator(errorValidator);
+        }
+
+        validator.validateEndOfStream().applyTo(cmd, result);
+    }
+
+    public enum AppContentMultiLineWarning {
+        NOT_DIRECTORY("warning.non-standard-app-content.not-dir", Path.of("apps/dukeplug.png")),
+        NON_STANDARD_DIRECTOTY_NAME("warning.non-standard-app-content.non-standard-dir-name", Path.of("apps")),
+        ;
+
+        AppContentMultiLineWarning(String formatKey, Path appContent) {
+            this.formatKey = Objects.requireNonNull(formatKey);
+            this.appContent = TKit.TEST_SRC_ROOT.resolve(appContent);
+        }
+
+        List<Path> initAppContent() {
+            return List.of(appContent);
+        }
+
+        List<CannedFormattedString> expectedWarnings() {
+            switch (this) {
+                case NOT_DIRECTORY -> {
+                    return List.of(JPackageStringBundle.MAIN.cannedFormattedString(formatKey, appContent));
+                }
+                case NON_STANDARD_DIRECTOTY_NAME -> {
+                    return List.of(JPackageStringBundle.MAIN.cannedFormattedString(formatKey, appContent.getFileName(), appContent));
+                }
+            }
+
+            throw new UnsupportedOperationException();
+        }
+
+        private final String formatKey;
+        private Path appContent;
     }
 
     public static Collection<Object[]> test() {

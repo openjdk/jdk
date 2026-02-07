@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
                 return Optional.empty();
             }
         } catch (IOException|IllegalArgumentException ex) {
-            Log.verbose(ex);
+            Log.trace(ex, "Failed to read modules from [%s]", releaseFile);
             return Optional.empty();
         }
 

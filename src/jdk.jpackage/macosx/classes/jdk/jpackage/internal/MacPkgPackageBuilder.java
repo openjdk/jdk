@@ -29,6 +29,8 @@ import java.util.Optional;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.MacPkgPackageMixin;
 import jdk.jpackage.internal.model.PkgSigningConfig;
+import jdk.jpackage.internal.summary.StandardWarning;
+import jdk.jpackage.internal.summary.SummaryAccumulator;
 
 final class MacPkgPackageBuilder {
 
@@ -41,26 +43,38 @@ final class MacPkgPackageBuilder {
         return this;
     }
 
+    MacPkgPackageBuilder summary(SummaryAccumulator v) {
+        summary = v;
+        return this;
+    }
+
     MacPkgPackage create() {
         var pkg = MacPkgPackage.create(pkgBuilder.create(), new MacPkgPackageMixin.Stub(createSigningConfig()));
-        validatePredefinedAppImage(pkg);
+        summary().ifPresent(s -> {
+            validatePredefinedAppImage(s, pkg);
+        });
         return pkg;
     }
 
     private Optional<PkgSigningConfig> createSigningConfig() {
-        return Optional.ofNullable(signingBuilder).flatMap(SigningIdentityBuilder::create).map(cfg -> {
+        return Optional.ofNullable(signingBuilder).map(SigningIdentityBuilder::create).map(cfg -> {
             return new PkgSigningConfig.Stub(cfg.identity(), cfg.keychain().map(Keychain::name));
         });
     }
 
-    private static void validatePredefinedAppImage(MacPkgPackage pkg) {
+    private Optional<SummaryAccumulator> summary() {
+        return Optional.ofNullable(summary);
+    }
+
+    private static void validatePredefinedAppImage(SummaryAccumulator summary, MacPkgPackage pkg) {
         if (!pkg.predefinedAppImageSigned().orElse(false) && pkg.sign()) {
             pkg.predefinedAppImage().ifPresent(predefinedAppImage -> {
-                Log.info(I18N.format("warning.unsigned.app.image", "pkg"));
+                summary.put(StandardWarning.MAC_SIGNED_PKG_WITH_UNSIGNED_PREDEFINED_APP_IMAGE);
             });
         }
     }
 
     private final MacPackageBuilder pkgBuilder;
     private SigningIdentityBuilder signingBuilder;
+    private SummaryAccumulator summary;
 }

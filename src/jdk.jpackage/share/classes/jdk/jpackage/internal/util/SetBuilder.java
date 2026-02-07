@@ -31,8 +31,14 @@ import java.util.Set;
 
 public final class SetBuilder<T> {
 
-    public static <T> SetBuilder<T> build() {
-        return new SetBuilder<>();
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    public static <T> SetBuilder<T> build(T... v) {
+        return new SetBuilder<T>().add(v);
+    }
+
+    public static <T> SetBuilder<T> build(Collection<? extends T> v) {
+        return new SetBuilder<T>().add(v);
     }
 
     public SetBuilder<T> set(Collection<? extends T> v) {

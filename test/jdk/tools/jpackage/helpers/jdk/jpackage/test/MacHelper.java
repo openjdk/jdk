@@ -782,6 +782,10 @@ public final class MacHelper {
             return sign(cmd);
         }
 
+        public Optional<Name> optionName() {
+            return type.mapOptionName(certRequest.type());
+        }
+
         public List<String> asCmdlineArgs() {
             String[] args = new String[2];
             applyTo((optionName, optionValue) -> {
@@ -789,6 +793,10 @@ public final class MacHelper {
                 args[1] = optionValue;
             });
             return List.of(args);
+        }
+
+        public Optional<Boolean> passThrough() {
+            return optionName().map(Name::passThrough);
         }
 
         private void applyTo(BiConsumer<String, String> sink) {
@@ -884,6 +892,14 @@ public final class MacHelper {
 
         public ResolvableCertificateRequest certRequest() {
             return signKeyOption.certRequest();
+        }
+
+        public Optional<SignKeyOption.Name> optionName() {
+            return signKeyOption.optionName();
+        }
+
+        public Optional<Boolean> passThrough() {
+            return signKeyOption.passThrough();
         }
 
         public JPackageCommand addTo(JPackageCommand cmd) {

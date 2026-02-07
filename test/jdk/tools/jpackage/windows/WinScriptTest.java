@@ -28,6 +28,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageUserScript;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -55,6 +56,8 @@ public class WinScriptTest {
         .configureHelloApp()
         .addInitializer(cmd -> {
             cmd.setFakeRuntime().saveConsoleOutput(true);
+            // Stdout produced by custom scripts is available in jpackage's output only when tracing is enabled.
+            cmd.setEnabledMessageCategories(MessageCategory.TRACE).setDisabledMessageCategories();
         });
     }
 

@@ -20,6 +20,7 @@ ErrorTest.test(NATIVE; app-desc=Hello; args-add=[--mac-app-store, --runtime-imag
 ErrorTest.test(NATIVE; app-desc=Hello; args-add=[--runtime-image, @@EMPTY_DIR@@]; errors=[message.error-header+[error.invalid-runtime-image-missing-file, @@EMPTY_DIR@@, lib/**/libjli.dylib]])
 ErrorTest.test(NATIVE; app-desc=Hello; args-add=[--runtime-image, @@INVALID_MAC_RUNTIME_BUNDLE@@]; errors=[message.error-header+[error.invalid-runtime-image-missing-file, @@INVALID_MAC_RUNTIME_BUNDLE@@, Contents/Home/lib/**/libjli.dylib]])
 ErrorTest.test(NATIVE; app-desc=Hello; args-add=[--runtime-image, @@INVALID_MAC_RUNTIME_IMAGE@@]; errors=[message.error-header+[error.invalid-runtime-image-missing-file, @@INVALID_MAC_RUNTIME_IMAGE@@, lib/**/libjli.dylib]])
+ErrorTest.test(NATIVE; args-add=[--app-image, @@MAC_APP_IMAGE_INVALID_INFO_PLIST@@]; errors=[message.error-header+[error.invalid-app-image-plist-file, @@MAC_APP_IMAGE_INVALID_INFO_PLIST@@]])
 ErrorTest.test(NATIVE; args-add=[--runtime-image, @@EMPTY_DIR@@]; errors=[message.error-header+[error.invalid-runtime-image-missing-file, @@EMPTY_DIR@@, lib/**/libjli.dylib]])
 ErrorTest.test(NATIVE; args-add=[--runtime-image, @@INVALID_MAC_RUNTIME_BUNDLE@@]; errors=[message.error-header+[error.invalid-runtime-image-missing-file, @@INVALID_MAC_RUNTIME_BUNDLE@@, Contents/Home/lib/**/libjli.dylib]])
 ErrorTest.test(NATIVE; args-add=[--runtime-image, @@INVALID_MAC_RUNTIME_IMAGE@@]; errors=[message.error-header+[error.invalid-runtime-image-missing-file, @@INVALID_MAC_RUNTIME_IMAGE@@, lib/**/libjli.dylib]])

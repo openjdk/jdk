@@ -43,9 +43,11 @@ public enum StandardPackageType implements PackageType {
     }
 
     /**
-     * Gets file extension of this package type.
-     * E.g.: <code>.msi</code>, <code>.dmg</code>, <code>.deb</code>.
-     * @return file extension of this package type
+     * Gets file extension corresponding to the package type. E.g.:
+     * <code>.msi</code>, <code>.dmg</code>, <code>.deb</code>.
+     *
+     * @return file extension corresponding to the package type; the value starts
+     *         with the full stop (.) character.
      */
     public String suffix() {
         return suffix;

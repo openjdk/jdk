@@ -26,6 +26,11 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writePList;
+import static jdk.jpackage.internal.util.PListWriter.writeString;
+import static jdk.jpackage.internal.util.XmlUtils.createXml;
+import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.test.JPackageCommand.makeAdvice;
 import static jdk.jpackage.test.JPackageCommand.makeError;
@@ -44,6 +49,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
@@ -51,7 +57,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -87,12 +93,30 @@ public final class ErrorTest {
             final var appImageRoot = TKit.createTempDirectory("appimage");
 
             final var appImageCmd = JPackageCommand.helloAppImage()
+                    // Use the default jpackage tool provider to create an application image.
+                    // The ErrorTest is used from the OptionsValidationFailTest unit tests that override
+                    // the default jpackage tool provider with the implementation that doesn't do packaging
+                    // and can not create a valid application image.
+                    .useToolProvider(JavaTool.JPACKAGE.asToolProvider())
                     .setFakeRuntime().setArgumentValue("--dest", appImageRoot);
 
             appImageCmd.execute();
 
             return appImageCmd.outputBundle().toString();
         }),
+        MAC_APP_IMAGE_INVALID_INFO_PLIST(toFunction(cmd -> {
+            var appImageDir = Path.of((String)APP_IMAGE.expand(cmd).orElseThrow());
+            // Replace the default Info.plist file with an empty one.
+            var plistFile = new MacBundle(appImageDir).infoPlistFile();
+            TKit.trace(String.format("Create invalid plist file in [%s]", plistFile));
+            createXml(plistFile, xml -> {
+                writePList(xml, toXmlConsumer(() -> {
+                    writeDict(xml, toXmlConsumer(() -> {
+                    }));
+                }));
+            });
+            return appImageDir.toString();
+        })),
         INVALID_MAC_RUNTIME_BUNDLE(toFunction(cmd -> {
             // Has "Contents/MacOS/libjli.dylib", but missing "Contents/Home/lib/libjli.dylib".
             final Path root = TKit.createTempDirectory("mac-invalid-runtime-bundle");
@@ -287,11 +311,11 @@ public final class ErrorTest {
             }
 
             Builder error(String key, Object ... args) {
-                return messages(makeError(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
+                return messages(makeError(key, args));
             }
 
             Builder advice(String key, Object ... args) {
-                return messages(makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
+                return messages(makeAdvice(key, args));
             }
 
             Builder invalidTypeArg(String arg, String... otherArgs) {
@@ -648,7 +672,11 @@ public final class ErrorTest {
                 testSpec().noAppDesc().nativeType().addArgs("--app-image", Token.EMPTY_DIR.token())
                         .error("error.parameter-not-mac-bundle", JPackageCommand.cannedArgument(cmd -> {
                             return Path.of(cmd.getArgumentValue("--app-image"));
-                        }, Token.EMPTY_DIR.token()), "--app-image")
+                        }, Token.EMPTY_DIR.token()), "--app-image"),
+                testSpec().nativeType().noAppDesc().addArgs("--app-image", Token.MAC_APP_IMAGE_INVALID_INFO_PLIST.token())
+                        .error("error.invalid-app-image-plist-file", JPackageCommand.cannedArgument(cmd -> {
+                            return new MacBundle(Path.of(cmd.getArgumentValue("--app-image"))).infoPlistFile();
+                        }, Token.MAC_APP_IMAGE_INVALID_INFO_PLIST.token()))
         ).map(TestSpec.Builder::create).toList());
 
         macInvalidRuntime(testCases::add);
@@ -707,8 +735,7 @@ public final class ErrorTest {
         final var signingId = "foo";
 
         final List<CannedFormattedString> errorMessages = new ArrayList<>();
-        errorMessages.add(makeError(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.cert.not.found", "Developer ID Application: " + signingId, "")));
+        errorMessages.add(makeError("error.cert.not.found", "Developer ID Application: " + signingId, ""));
 
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
@@ -720,9 +747,9 @@ public final class ErrorTest {
             errorMessages.stream()
                     .map(CannedFormattedString::getValue)
                     .map(TKit::assertTextStream)
-                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateOutput);
+                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateErr);
         } else {
-            cmd.validateOutput(errorMessages.toArray(CannedFormattedString[]::new));
+            cmd.validateErr(errorMessages.toArray(CannedFormattedString[]::new));
         }
 
         cmd.execute(1);
@@ -750,12 +777,12 @@ public final class ErrorTest {
     }
 
     private static void macInvalidRuntime(Consumer<TestSpec> accumulator) {
-        var runtimeWithBinDirErr = makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+        var runtimeWithBinDirErr = makeError(
                 "error.invalid-runtime-image-bin-dir", JPackageCommand.cannedArgument(cmd -> {
                     return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.JAVA_HOME.token())));
-        var runtimeWithBinDirErrAdvice = makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store"));
+                }, Token.JAVA_HOME.token()));
+        var runtimeWithBinDirErrAdvice = makeAdvice(
+                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
 
         Stream.of(
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
@@ -795,10 +822,10 @@ public final class ErrorTest {
         }
 
         private CannedFormattedString expectedErrorMsg() {
-            return makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+            return makeError(
                     "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
                         return Path.of(cmd.getArgumentValue("--runtime-image"));
-                    }, runtimeDir.token()), missingFile));
+                    }, runtimeDir.token()), missingFile);
         }
     }
 
@@ -880,7 +907,7 @@ public final class ErrorTest {
         // with jpackage arguments in this test.
         cmd.ignoreDefaultRuntime(true);
 
-        cmd.validateOutput(expectedMessages.toArray(CannedFormattedString[]::new));
+        cmd.validateErr(expectedMessages.toArray(CannedFormattedString[]::new));
     }
 
     private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {

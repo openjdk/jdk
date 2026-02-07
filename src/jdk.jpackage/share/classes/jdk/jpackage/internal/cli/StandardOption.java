@@ -67,6 +67,7 @@ import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.SetBuilder;
+import jdk.jpackage.internal.log.LogEnvironment;
 
 /**
  * jpackage command line options
@@ -107,7 +108,15 @@ public final class StandardOption {
 
     static final OptionValue<Boolean> VERSION = auxilaryOption("version").create();
 
-    public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
+    static final OptionValue<LogEnvironment.Builder> VERBOSE = option("verbose", LogEnvironment.Builder.class)
+            .scope(StandardBundlingOperation.values())
+            .inScope(NOT_BUILDING_APP_IMAGE)
+            .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+            .converterExceptionFormatString("error.parameter-invalid-value")
+            .converter(LogConfigParser::valueOf)
+            .defaultOptionalValue(LogConfigParser.defaultVerbose())
+            .valuePattern("configuration")
+            .create();
 
     public static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
@@ -432,6 +441,12 @@ public final class StandardOption {
     public static final OptionValue<BundlingOperationDescriptor> BUNDLING_OPERATION_DESCRIPTOR = OptionValue.create();
 
     /**
+     * Debug option telling bundler to exit after the configuration phase is over,
+     * without running the packaging phase.
+     */
+    public static final OptionValue<Boolean> EXIT_AFTER_CONFIGURATION_PHASE = OptionValue.<Boolean>build().defaultValue(false).create();
+
+    /**
      * Returns options configuring a launcher.
      *
      * @return the options configuring a launcher
@@ -697,9 +712,8 @@ public final class StandardOption {
 
     private static UnaryOperator<Set<OptionScope>> nativeBundling() {
         return scope -> {
-            return new SetBuilder<OptionScope>()
-                    .set(scope)
-                    .remove(new SetBuilder<OptionScope>().set(StandardBundlingOperation.values()).remove(CREATE_NATIVE).create())
+            return SetBuilder.build(scope)
+                    .remove(SetBuilder.<OptionScope>build(StandardBundlingOperation.values()).remove(CREATE_NATIVE).create())
                     .create();
         };
     }

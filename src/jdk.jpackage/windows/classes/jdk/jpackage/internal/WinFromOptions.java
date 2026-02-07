@@ -48,6 +48,7 @@ import jdk.jpackage.internal.model.WinExePackage;
 import jdk.jpackage.internal.model.WinLauncher;
 import jdk.jpackage.internal.model.WinLauncherMixin;
 import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.summary.StandardProperty;
 
 final class WinFromOptions {
 
@@ -99,7 +100,13 @@ final class WinFromOptions {
 
         WIN_UPGRADE_UUID.ifPresentIn(options, pkgBuilder::upgradeCode);
 
-        return pkgBuilder.create();
+        var pkg = pkgBuilder.create();
+
+        var summary = OptionUtils.summary(options);
+        summary.put(StandardProperty.WIN_MSI_PRODUCT_CODE, pkg.productCode());
+        summary.put(StandardProperty.WIN_MSI_UPGRADE_CODE, pkg.upgradeCode());
+
+        return pkg;
     }
 
     static WinExePackage createWinExePackage(Options options) {

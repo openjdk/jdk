@@ -30,10 +30,14 @@ import static jdk.jpackage.internal.cli.StandardOption.MAIN_JAR;
 import static jdk.jpackage.internal.cli.StandardOption.MODULE;
 import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_RUNTIME_IMAGE;
+import static jdk.jpackage.internal.log.StandardLogger.SUMMARY_LOGGER;
 
 import java.nio.file.Path;
+import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
+import jdk.jpackage.internal.model.BundleSpec;
+import jdk.jpackage.internal.summary.Summary;
 
 final class OptionUtils {
 
@@ -51,4 +55,21 @@ final class OptionUtils {
     static StandardBundlingOperation bundlingOperation(Options options) {
         return StandardBundlingOperation.valueOf(BUNDLING_OPERATION_DESCRIPTOR.getFrom(options)).orElseThrow();
     }
+
+    static Options addSummary(Options options) {
+        return options.copyWithDefaultValue(SUMMARY, Summary::new);
+    }
+
+    static Summary summary(Options options) {
+        return SUMMARY.getFrom(options);
+    }
+
+    static void finalizeAndPrintSummary(Options options, BundleSpec bundle) {
+        var summary = summary(options);
+
+        summary.putStandardPropertiesIfAbsent(bundlingOperation(options), outputDir(options), bundle);
+        Globals.instance().logger(SUMMARY_LOGGER).summary(summary);
+    }
+
+    private static final OptionValue<Summary> SUMMARY = OptionValue.create();
 }

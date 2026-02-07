@@ -47,7 +47,7 @@ public class BuildEnvTest {
     public void testUnresolvedAppImageLayout(Path appImageDir) {
         final var rootDir = Path.of("");
 
-        final var env = BuildEnv.create(rootDir, Optional.empty(), true,
+        final var env = BuildEnv.create(rootDir, Optional.empty(),
                 BuildEnvTest.class, RuntimeLayout.DEFAULT.resolveAt(appImageDir).resetRootDirectory());
 
         assertEquals(env.appImageDir(), env.appImageLayout().rootDirectory());
@@ -57,7 +57,6 @@ public class BuildEnvTest {
         assertEquals(rootDir, env.buildRoot());
         assertEquals(rootDir.resolve("config"), env.configDir());
         assertEquals(Optional.empty(), env.resourceDir());
-        assertTrue(env.verbose());
     }
 
     @Test
@@ -66,7 +65,7 @@ public class BuildEnvTest {
         final var appImageDir = Path.of("/foo/bar");
 
         final var layout = RuntimeLayout.DEFAULT.resolveAt(appImageDir);
-        final var env = BuildEnv.create(rootDir, Optional.empty(), true, BuildEnvTest.class, layout);
+        final var env = BuildEnv.create(rootDir, Optional.empty(), BuildEnvTest.class, layout);
 
         assertSame(layout, env.appImageLayout());
         assertEquals(env.appImageDir(), env.appImageLayout().rootDirectory());
@@ -76,7 +75,6 @@ public class BuildEnvTest {
         assertEquals(rootDir, env.buildRoot());
         assertEquals(rootDir.resolve("config"), env.configDir());
         assertEquals(Optional.empty(), env.resourceDir());
-        assertTrue(env.verbose());
     }
 
     @ParameterizedTest
@@ -86,7 +84,7 @@ public class BuildEnvTest {
 
         final var layout = RuntimeLayout.DEFAULT;
         final var env = BuildEnv.withAppImageDir(BuildEnv.create(rootDir,
-                Optional.empty(), false, BuildEnvTest.class, layout), appImageDir);
+                Optional.empty(), BuildEnvTest.class, layout), appImageDir);
 
         assertNotSame(layout, env.appImageLayout());
         assertEquals(env.appImageDir(), env.appImageLayout().rootDirectory());
@@ -96,7 +94,6 @@ public class BuildEnvTest {
         assertEquals(rootDir, env.buildRoot());
         assertEquals(rootDir.resolve("config"), env.configDir());
         assertEquals(Optional.empty(), env.resourceDir());
-        assertFalse(env.verbose());
     }
 
     @ParameterizedTest
@@ -114,7 +111,7 @@ public class BuildEnvTest {
         }
 
         final var env = BuildEnv.withAppImageLayout(BuildEnv.create(rootDir,
-                Optional.empty(), false, BuildEnvTest.class, RuntimeLayout.DEFAULT), layout);
+                Optional.empty(), BuildEnvTest.class, RuntimeLayout.DEFAULT), layout);
 
         assertSame(layout, env.appImageLayout());
         assertEquals(env.appImageDir(), env.appImageLayout().rootDirectory());
@@ -123,18 +120,17 @@ public class BuildEnvTest {
         assertEquals(rootDir, env.buildRoot());
         assertEquals(rootDir.resolve("config"), env.configDir());
         assertEquals(Optional.empty(), env.resourceDir());
-        assertFalse(env.verbose());
     }
 
     @Test
     public void test_asApplicationLayout() {
         final var rootDir = Path.of("r");
 
-        assertTrue(BuildEnv.create(rootDir, Optional.empty(), false,
+        assertTrue(BuildEnv.create(rootDir, Optional.empty(),
                 BuildEnvTest.class, RuntimeLayout.DEFAULT).asApplicationLayout().isEmpty());
 
         var layout = ApplicationLayout.build().setAll("foo").create();
-        assertSame(layout, BuildEnv.create(rootDir, Optional.empty(), false,
+        assertSame(layout, BuildEnv.create(rootDir, Optional.empty(),
                 BuildEnvTest.class, layout).asApplicationLayout().orElseThrow());
     }
 }

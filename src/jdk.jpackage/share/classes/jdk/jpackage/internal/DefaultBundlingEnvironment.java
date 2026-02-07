@@ -25,6 +25,8 @@
 package jdk.jpackage.internal;
 
 import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.StandardOption.EXIT_AFTER_CONFIGURATION_PHASE;
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,7 +38,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -50,6 +51,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.util.MemoizingSupplier;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.Result;
 
@@ -66,7 +68,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
             return runOnce(e.getValue());
         }));
 
-        this.defaultOperationSupplier = Objects.requireNonNull(defaultOperationSupplier).map(DefaultBundlingEnvironment::runOnce);
+        this.defaultOperationSupplier = Objects.requireNonNull(defaultOperationSupplier).map(MemoizingSupplier::runOnce);
     }
 
 
@@ -110,10 +112,6 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         return new Builder();
     }
 
-    static <T> Supplier<T> runOnce(Supplier<T> supplier) {
-        return new CachingSupplier<>(supplier);
-    }
-
     static <T extends SystemEnvironment> Supplier<Result<Consumer<Options>>> createBundlerSupplier(
             Supplier<Result<T>> sysEnvResultSupplier, BiConsumer<Options, T> bundler) {
         Objects.requireNonNull(sysEnvResultSupplier);
@@ -132,9 +130,15 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(app);
         Objects.requireNonNull(pipelineBuilder);
 
+        OptionUtils.finalizeAndPrintSummary(options, app);
+
+        if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
+            return;
+        }
+
         final var outputDir = PathUtils.normalizedAbsolutePath(OptionUtils.outputDir(options).resolve(app.appImageDirName()));
 
-        Log.verbose(I18N.getString("message.create-app-image"));
+        Log.progress(I18N.format("message.create-app-image"));
 
         IOUtils.writableOutputDir(outputDir.getParent());
 
@@ -148,7 +152,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
         pipelineBuilder.create().execute(BuildEnv.withAppImageDir(env, outputDir), app);
 
-        Log.verbose(I18N.getString("message.app-image-created"));
+        Log.progress(I18N.format("message.app-image-created"));
     }
 
     static <T extends Package> void createNativePackage(Options options,
@@ -172,6 +176,12 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(createBuildEnv);
         Objects.requireNonNull(createPipelineBuilder);
         Objects.requireNonNull(pipelineBuilderMutatorFactory);
+
+        OptionUtils.finalizeAndPrintSummary(options, pkg);
+
+        if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
+            return;
+        }
 
         var pipelineBuilder = Objects.requireNonNull(createPipelineBuilder.apply(pkg));
 
@@ -197,6 +207,9 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     @Override
     public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
         final var bundler = getBundlerSupplier(op).get().orElseThrow();
+
+        cmdline = OptionUtils.addSummary(cmdline);
+
         Optional<Path> permanentWorkDirectory = Optional.empty();
         try (var tempDir = new TempDirectory(cmdline)) {
             if (!tempDir.deleteOnClose()) {
@@ -207,7 +220,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
             throw new UncheckedIOException(ex);
         } finally {
             permanentWorkDirectory.ifPresent(workDir -> {
-                Log.verbose(I18N.format("message.debug-working-directory", workDir.toAbsolutePath()));
+                Log.progress(I18N.format("message.debug-working-directory", workDir.toAbsolutePath()));
             });
         }
     }
@@ -222,25 +235,6 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
             throw new NoSuchElementException(String.format("Unsupported bundling operation: %s", op));
         });
     }
-
-
-    private static final class CachingSupplier<T> implements Supplier<T> {
-
-        CachingSupplier(Supplier<T> getter) {
-            this.getter = Objects.requireNonNull(getter);
-        }
-
-        @Override
-        public T get() {
-            return cachedValue.updateAndGet(v -> {
-                return Optional.ofNullable(v).orElseGet(getter);
-            });
-        }
-
-        private final Supplier<T> getter;
-        private final AtomicReference<T> cachedValue = new AtomicReference<>();
-    }
-
 
     private final Map<BundlingOperationDescriptor, Supplier<Result<Consumer<Options>>>> bundlers;
     private final Optional<Supplier<Optional<BundlingOperationDescriptor>>> defaultOperationSupplier;

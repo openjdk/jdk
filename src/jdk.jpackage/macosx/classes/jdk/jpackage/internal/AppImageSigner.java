@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -40,7 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -63,9 +61,10 @@ final class AppImageSigner {
                 throw handleCodesignException(app, ex);
             } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof CodesignException codesignEx) {
-                    handleCodesignException(app, codesignEx);
+                    throw handleCodesignException(app, codesignEx);
+                } else {
+                    throw ex;
                 }
-                throw ex;
             }
         });
     }
@@ -85,6 +84,14 @@ final class AppImageSigner {
 
         @Override
         public boolean test(Path path) {
+            var accepted = testInternal(path);
+            if (!accepted) {
+                Log.trace("Skip signing [%s]", path);
+            }
+            return accepted;
+        }
+
+        private boolean testInternal(Path path) {
             if (!Files.isRegularFile(path) || otherExcludePaths.contains(path)) {
                 return false;
             }
@@ -140,7 +147,7 @@ final class AppImageSigner {
         if (Files.isDirectory(frameworkPath)) {
             try (var content = Files.list(frameworkPath)) {
                 content.forEach(toConsumer(path -> {
-                    codesigners.codesignDir().accept(path);
+                    codesigners.codesignMacBundle().accept(path);
                 }));
             }
         }
@@ -165,40 +172,32 @@ final class AppImageSigner {
         }
     }
 
-    private static CodesignException handleCodesignException(MacApplication app, CodesignException ex) {
-        // Log output of "codesign" in case of error. It should help
-        // user to diagnose issues when using --mac-app-image-sign-identity.
-        // In addition add possible reason for failure. For example
-        // "--app-content" can fail "codesign".
-
+    private static IOException handleCodesignException(MacApplication app, CodesignException ex) {
         if (!app.contentDirSources().isEmpty()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
+            // Additional content may cause signing error.
+            Log.progressWarning(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 
         // Signing might not work without Xcode with command line
         // developer tools. Show user if Xcode is missing as possible
         // reason.
         if (!isXcodeDevToolsInstalled()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
+            Log.progressWarning(I18N.getString("message.codesign.failed.reason.xcode.tools"));
         }
 
-        // Log "codesign" output
-        Log.info(I18N.format("error.tool.failed.with.output", "codesign"));
-        Log.info(Stream.of(ex.getOutput()).collect(joining("\n")).strip());
-
-        return ex;
+        return ex.getCause();
     }
 
     private static boolean isXcodeDevToolsInstalled() {
         return Result.of(
-                Executor.of("/usr/bin/xcrun", "--help").setQuiet(true)::executeExpectSuccess,
+                Executor.of("/usr/bin/xcrun", "--help").quiet()::executeExpectSuccess,
                 IOException.class).hasValue();
     }
 
     private static void unsign(Path path) throws IOException {
         // run quietly
         Executor.of("/usr/bin/codesign", "--remove-signature", path.toString())
-                .setQuiet(true)
+                .quiet()
                 .executeExpectSuccess();
     }
 
@@ -210,23 +209,27 @@ final class AppImageSigner {
         this.codesigners = Objects.requireNonNull(codesigners);
     }
 
-    private record Codesigners(Consumer<Path> codesignFile, Consumer<Path> codesignExecutableFile, Consumer<Path> codesignDir) implements Consumer<Path> {
+    private record Codesigners(
+            Consumer<Path> codesignFile,
+            Consumer<Path> codesignExecutableFile,
+            Consumer<Path> codesignMacBundle) implements Consumer<Path> {
+
         Codesigners {
             Objects.requireNonNull(codesignFile);
             Objects.requireNonNull(codesignExecutableFile);
-            Objects.requireNonNull(codesignDir);
+            Objects.requireNonNull(codesignMacBundle);
         }
 
         @Override
         public void accept(Path path) {
             findCodesigner(path).orElseThrow(() -> {
-                return new IllegalArgumentException(String.format("No codesigner for %s path", PathUtils.normalizedAbsolutePathString(path)));
+                return new IllegalArgumentException(String.format("No codesigner for [%s]", PathUtils.normalizedAbsolutePathString(path)));
             }).accept(path);
         }
 
         private Optional<Consumer<Path>> findCodesigner(Path path) {
-            if (Files.isDirectory(path)) {
-                return Optional.of(codesignDir);
+            if (MacBundle.fromPath(path).isPresent()) {
+                return Optional.of(codesignMacBundle);
             } else if (Files.isRegularFile(path)) {
                 if (Files.isExecutable(path)) {
                     return Optional.of(codesignExecutableFile);
@@ -242,9 +245,9 @@ final class AppImageSigner {
 
             final var codesignExecutableFile = Codesign.build(signingCfg::toCodesignArgs).quiet(true).create().asConsumer();
             final var codesignFile = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).quiet(true).create().asConsumer();
-            final var codesignDir = Codesign.build(signingCfg::toCodesignArgs).force(true).create().asConsumer();
+            final var codesignMacBundle = Codesign.build(signingCfg::toCodesignArgs).force(true).create().asConsumer();
 
-            return new Codesigners(codesignFile, codesignExecutableFile, codesignDir);
+            return new Codesigners(codesignFile, codesignExecutableFile, codesignMacBundle);
         }
     }
 
