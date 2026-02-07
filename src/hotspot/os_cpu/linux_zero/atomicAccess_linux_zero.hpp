@@ -128,13 +128,6 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
   return value;
 }
 
-// Atomically copy 64 bits of data
-inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-  int64_t tmp;
-  __atomic_load(reinterpret_cast<const volatile int64_t*>(src), &tmp, __ATOMIC_RELAXED);
-  __atomic_store(reinterpret_cast<volatile int64_t*>(dst), &tmp, __ATOMIC_RELAXED);
-}
-
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformLoad<8>::operator()(T const volatile* src) const {
