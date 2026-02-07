@@ -93,7 +93,7 @@ final class ServerHelloDone {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             ServerHelloDoneMessage shdm = new ServerHelloDoneMessage(shc);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Produced ServerHelloDone handshake message", shdm);
             }
@@ -147,7 +147,7 @@ final class ServerHelloDone {
 
             ServerHelloDoneMessage shdm =
                     new ServerHelloDoneMessage(chc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming ServerHelloDone handshake message", shdm);
             }

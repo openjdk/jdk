@@ -481,7 +481,7 @@ final class DHServerKeyExchange {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             DHServerKeyExchangeMessage skem =
                     new DHServerKeyExchangeMessage(shc);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced DH ServerKeyExchange handshake message", skem);
             }
@@ -512,7 +512,7 @@ final class DHServerKeyExchange {
 
             DHServerKeyExchangeMessage skem =
                     new DHServerKeyExchangeMessage(chc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Consuming DH ServerKeyExchange handshake message", skem);
             }
