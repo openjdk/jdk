@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,8 +474,8 @@ class Parse : public GraphKit {
   void merge(          int target_bci);
   // Same as plain merge, except that it allocates a new path number.
   void merge_new_path( int target_bci);
-  // Merge the current mapping into an exception handler.
-  void merge_exception(int target_bci);
+  // Push the exception oop and merge the current mapping into an exception handler.
+  void push_and_merge_exception(int target_bci, Node* ex_oop);
   // Helper: Merge the current mapping into the given basic block
   void merge_common(Block* target, int pnum);
   // Helper functions for merging individual cells.

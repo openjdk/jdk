@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1651,9 +1651,14 @@ void Parse::merge_new_path(int target_bci) {
 }
 
 //-------------------------merge_exception-------------------------------------
-// Merge the current mapping into the basic block starting at bci
-// The ex_oop must be pushed on the stack, unlike throw_to_exit.
-void Parse::merge_exception(int target_bci) {
+// Push the given ex_oop onto the stack, then merge the current mapping into
+// the basic block starting at target_bci.
+void Parse::push_and_merge_exception(int target_bci, Node* ex_oop) {
+  // Add the safepoint before trimming the stack and pushing the exception oop.
+  // We could add the safepoint after, but then the bci would also need to be
+  // advanced to target_bci first, so the stack state matches.
+  maybe_add_safepoint(target_bci);
+  push_ex_oop(ex_oop);      // Push exception oop for handler
 #ifdef ASSERT
   if (target_bci <= bci()) {
     C->set_exception_backedge();
