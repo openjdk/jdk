@@ -67,6 +67,7 @@ import com.sun.tools.javac.tree.DCTree.DCIndex;
 import com.sun.tools.javac.tree.DCTree.DCInheritDoc;
 import com.sun.tools.javac.tree.DCTree.DCLink;
 import com.sun.tools.javac.tree.DCTree.DCLiteral;
+import com.sun.tools.javac.tree.DCTree.DCNote;
 import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCProvides;
 import com.sun.tools.javac.tree.DCTree.DCReference;
@@ -354,6 +355,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCLiteral newLiteralTree(TextTree text) {
         DCLiteral tree = new DCLiteral(Kind.LITERAL, (DCText) text);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCNote newNoteTree(String tagName, List<? extends DocTree> attributes, List<? extends DocTree> body, boolean isInline) {
+        DCNote tree = new DCNote(tagName, cast(attributes), cast(body), isInline);
         tree.pos = pos;
         return tree;
     }

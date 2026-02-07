@@ -28,6 +28,7 @@ package com.sun.tools.javac.api;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.BreakIterator;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -173,6 +174,7 @@ public class JavacTrees extends DocTrees {
     private final Symtab syms;
 
     private BreakIterator breakIterator;
+    private Set<String> customTags = Set.of();
     private final ParserFactory parserFactory;
 
     private DocCommentTreeTransformer docCommentTreeTransformer;
@@ -1121,7 +1123,7 @@ public class JavacTrees extends DocTrees {
 
         boolean isHtmlFile = jfo.getKind() == Kind.HTML;
 
-        var dct = new DocCommentParser(parserFactory, diagSource, comment, isHtmlFile).parse();
+        var dct = new DocCommentParser(parserFactory, diagSource, comment, customTags, isHtmlFile).parse();
         return transform(dct);
     }
 
@@ -1133,6 +1135,16 @@ public class JavacTrees extends DocTrees {
             return null;
         TreePath treePath = makeTreePath((PackageSymbol)packageElement, jfo, docCommentTree);
         return new DocTreePath(treePath, docCommentTree);
+    }
+
+    @Override
+    public Set<String> getCustomTags() {
+        return customTags;
+    }
+
+    @Override
+    public void setCustomTags(Set<String> customTags) {
+        this.customTags = Collections.unmodifiableSet(customTags);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1152,7 +1164,7 @@ public class JavacTrees extends DocTrees {
      * @param c the comment
      */
     public DocCommentTree getDocCommentTree(DiagnosticSource diagSource, Comment c) {
-        var dct = new DocCommentParser(parserFactory, diagSource, c).parse();
+        var dct = new DocCommentParser(parserFactory, diagSource, c, customTags).parse();
         return transform(dct);
     }
 

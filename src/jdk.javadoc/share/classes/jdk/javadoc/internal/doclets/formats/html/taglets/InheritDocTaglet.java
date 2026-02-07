@@ -121,12 +121,8 @@ public class InheritDocTaglet extends BaseTaglet {
         if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
             try {
                 var docFinder = utils.docFinder();
-                Result<Documentation> d;
-                if (src == null) {
-                    d = docFinder.find(method, m -> extractMainDescription(m, isFirstSentence, utils));
-                } else {
-                    d = docFinder.search(src, m -> extractMainDescription(m, isFirstSentence, utils));
-                }
+                Result<Documentation> d = docFinder.searchInherited(
+                        method, src, m -> extractMainDescription(m, isFirstSentence, utils));
                 if (d instanceof Result.Conclude<Documentation> doc) {
                     replacement = writer.commentTagsToOutput(doc.value().method, inheritDoc,
                             doc.value().mainDescription, isFirstSentence);
