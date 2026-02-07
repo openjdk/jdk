@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
@@ -365,13 +366,23 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             Collection<CipherSuite> allowedCipherSuites,
             List<ProtocolVersion> protocols) {
         LinkedHashSet<CipherSuite> suites = new LinkedHashSet<>();
+        List<String> disabledSuites = null;
+        List<String> unAvailableSuites = null;
+
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
+            disabledSuites = new ArrayList<>();
+            unAvailableSuites = new ArrayList<>();
+        }
+
         if (protocols != null && (!protocols.isEmpty())) {
             for (CipherSuite suite : allowedCipherSuites) {
                 if (!suite.isAvailable()) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn("ssl,sslctx")) {
+                        unAvailableSuites.add(suite.name);
+                    }
                     continue;
                 }
-
-                boolean isSupported = false;
                 for (ProtocolVersion protocol : protocols) {
                     if (!suite.supports(protocol) ||
                             !suite.bulkCipher.isAvailable()) {
@@ -382,25 +393,41 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                             EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                             suite.name, null)) {
                         suites.add(suite);
-                        isSupported = true;
+
                     } else if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,sslctx,verbose")) {
-                        SSLLogger.fine(
-                                "Ignore disabled cipher suite: " + suite.name);
+                            SSLLogger.isOn("ssl,sslctx")) {
+                        disabledSuites.add(suite.name);
                     }
-
                     break;
-                }
-
-                if (!isSupported && SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,sslctx,verbose")) {
-                    SSLLogger.finest(
-                            "Ignore unsupported cipher suite: " + suite);
                 }
             }
         }
 
+        if(SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
+            logSuites("Ignore disabled cipher suites for protocols: ",
+                    protocols, disabledSuites);
+            logSuites("Ignore unavailable cipher suites for protocols: ",
+                    protocols, unAvailableSuites);
+            logSuites("Available cipher suites for protocols: ",
+                    protocols, suites);
+
+        }
         return new ArrayList<>(suites);
+    }
+
+    private static void logSuites(String message,
+                                  List<ProtocolVersion> protocols,
+                                  Collection<?> suites) {
+        if (suites.isEmpty()) {
+            return;
+        }
+        String protocolStr = protocols.stream()
+                .map(pv -> pv.name)
+                .collect(Collectors.joining(", ", "[", "]"));
+        String suiteStr = String.join(", ",
+            suites.stream().map(Object::toString).collect(Collectors.toList()));
+        SSLLogger.finest(message + protocolStr + System.lineSeparator() +
+                Utilities.wrapText("[" + suiteStr + "]", 140));
     }
 
     /*
@@ -456,10 +483,14 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     }
                 }
             }
-
+            if (cipherSuites.isEmpty() && SSLLogger.isOn()
+                    && SSLLogger.isOn("ssl,sslctx")) {
+                SSLLogger.fine(
+                        "No cipher suites satisfy property: " + propertyName +
+                                ". Returning empty list");
+            }
             return cipherSuites;
         }
-
         return Collections.emptyList();
     }
 
@@ -527,9 +558,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         private static final List<ProtocolVersion> supportedProtocols;
         private static final List<ProtocolVersion> serverDefaultProtocols;
 
-        private static final List<CipherSuite> supportedCipherSuites;
-        private static final List<CipherSuite> serverDefaultCipherSuites;
-
         static {
             supportedProtocols = Arrays.asList(
                 ProtocolVersion.TLS13,
@@ -547,12 +575,14 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 ProtocolVersion.TLS11,
                 ProtocolVersion.TLS10
             });
-
-            supportedCipherSuites = getApplicableSupportedCipherSuites(
-                    supportedProtocols);
-            serverDefaultCipherSuites = getApplicableEnabledCipherSuites(
-                    serverDefaultProtocols, false);
         }
+
+        private static final LazyConstant<List<CipherSuite>>
+                supportedCipherSuites = LazyConstant.of(() ->
+                getApplicableSupportedCipherSuites(supportedProtocols));
+        private static final LazyConstant<List<CipherSuite>>
+                serverDefaultCipherSuites = LazyConstant.of(() ->
+                getApplicableEnabledCipherSuites(serverDefaultProtocols, false));
 
         @Override
         List<ProtocolVersion> getSupportedProtocolVersions() {
@@ -561,7 +591,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
         @Override
         List<CipherSuite> getSupportedCipherSuites() {
-            return supportedCipherSuites;
+            return supportedCipherSuites.get();
         }
 
         @Override
@@ -571,7 +601,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
         @Override
         List<CipherSuite> getServerDefaultCipherSuites() {
-            return serverDefaultCipherSuites;
+            return serverDefaultCipherSuites.get();
         }
 
         @Override
@@ -811,10 +841,18 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 clientDefaultCipherSuites =
                         getApplicableEnabledCipherSuites(
                                 clientDefaultProtocols, true);
-                serverDefaultCipherSuites =
-                        getApplicableEnabledCipherSuites(
-                                serverDefaultProtocols, false);
-
+                // getApplicableEnabledCipherSuites returns same CS List if
+                // no customized CS in use and protocols are same. Can avoid
+                // the getApplicableEnabledCipherSuites call
+                if (clientCustomizedCipherSuites.isEmpty() &&
+                        serverCustomizedCipherSuites.isEmpty() &&
+                        clientDefaultProtocols.equals(serverDefaultProtocols)) {
+                    serverDefaultCipherSuites = clientDefaultCipherSuites;
+                } else {
+                    serverDefaultCipherSuites =
+                            getApplicableEnabledCipherSuites(
+                                    serverDefaultProtocols, false);
+                }
             } else {
                 // unlikely to be used
                 clientDefaultProtocols = null;
