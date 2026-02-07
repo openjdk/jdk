@@ -96,6 +96,21 @@ os::PageSizes     os::_page_sizes;
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
+CPUTime::CPUTime(jlong user, jlong system) :
+  user(static_cast<int64_t>(user)), system(static_cast<int64_t>(system)) {};
+
+CPUTime& CPUTime::operator+=(const CPUTime &other) {
+  user += other.user;
+  system += other.system;
+  return *this;
+}
+
+CPUTime& CPUTime::operator-=(const CPUTime &other) {
+  user -= other.user;
+  system -= other.system;
+  return *this;
+}
+
 int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -502,6 +517,13 @@ void os::terminate_signal_thread() {
     signal_notify(sigexitnum_pd());
 }
 
+jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
+  CPUTime cpu_time = detailed_thread_cpu_time(thread);
+  if (cpu_time.user == -1) {
+    return -1;
+  }
+  return user_sys_cpu_time ? cpu_time.user + cpu_time.system : cpu_time.user;
+}
 
 // --------------------- loading libraries ---------------------
 

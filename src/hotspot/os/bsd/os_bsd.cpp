@@ -2399,6 +2399,29 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
+CPUTime os::detailed_thread_cpu_time(Thread* t) {
+#ifdef __APPLE__
+  struct thread_basic_info tinfo;
+  mach_msg_type_number_t tcount = THREAD_INFO_MAX;
+  kern_return_t kr;
+  thread_t mach_thread;
+
+  mach_thread = t->osthread()->thread_id();
+  kr = thread_info(mach_thread, THREAD_BASIC_INFO, (thread_info_t)&tinfo, &tcount);
+  if (kr != KERN_SUCCESS) {
+    return { -1, -1 };
+  }
+
+  return {
+    ((jlong) tinfo.user_time.seconds * NANOSECS_PER_SEC) + ((jlong) tinfo.user_time.microseconds * MICROS_PER_SEC),
+    ((jlong) tinfo.system_time.seconds * NANOSECS_PER_SEC) + ((jlong)tinfo.system_time.microseconds * MICROS_PER_SEC)
+  };
+#else
+  Unimplemented();
+  return { 0, 0 };
+#endif
+}
+
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
 // are used by JVM M&M and JVMTI to get user+sys or user CPU time
 // of a thread.
@@ -2432,34 +2455,6 @@ jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
   return 0;
 #endif
 }
-
-jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-#ifdef __APPLE__
-  struct thread_basic_info tinfo;
-  mach_msg_type_number_t tcount = THREAD_INFO_MAX;
-  kern_return_t kr;
-  thread_t mach_thread;
-
-  mach_thread = thread->osthread()->thread_id();
-  kr = thread_info(mach_thread, THREAD_BASIC_INFO, (thread_info_t)&tinfo, &tcount);
-  if (kr != KERN_SUCCESS) {
-    return -1;
-  }
-
-  if (user_sys_cpu_time) {
-    jlong nanos;
-    nanos = ((jlong) tinfo.system_time.seconds + tinfo.user_time.seconds) * (jlong)1000000000;
-    nanos += ((jlong) tinfo.system_time.microseconds + (jlong) tinfo.user_time.microseconds) * (jlong)1000;
-    return nanos;
-  } else {
-    return ((jlong)tinfo.user_time.seconds * 1000000000) + ((jlong)tinfo.user_time.microseconds * (jlong)1000);
-  }
-#else
-  Unimplemented();
-  return 0;
-#endif
-}
-
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits

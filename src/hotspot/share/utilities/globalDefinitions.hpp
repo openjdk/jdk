@@ -296,7 +296,9 @@ const int MILLIUNITS    = 1000;         // milli units per base unit
 const int MICROUNITS    = 1000000;      // micro units per base unit
 const int NANOUNITS     = 1000000000;   // nano units per base unit
 const int NANOUNITS_PER_MILLIUNIT = NANOUNITS / MILLIUNITS;
+const int NANOUNITS_PER_MICROUNIT = NANOUNITS / MICROUNITS;
 
+const jlong MICROS_PER_SEC        = CONST64(1000);
 const jlong NANOSECS_PER_SEC      = CONST64(1000000000);
 const jint  NANOSECS_PER_MILLISEC = 1000000;
 

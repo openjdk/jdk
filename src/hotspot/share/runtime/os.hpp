@@ -172,6 +172,15 @@ public:
   int saved_errno() { return _e; }
 };
 
+class CPUTime {
+public:
+  int64_t user;
+  int64_t system;
+  CPUTime(jlong user, jlong system);
+  CPUTime& operator+=(const CPUTime &other);
+  CPUTime& operator-=(const CPUTime &other);
+};
+
 class os: AllStatic {
   friend class JVMCIVMStructs;
   friend class MallocTracker;
@@ -1043,6 +1052,8 @@ class os: AllStatic {
   // Otherwise, only user time is returned
   static jlong current_thread_cpu_time(bool user_sys_cpu_time);
   static jlong thread_cpu_time(Thread* t, bool user_sys_cpu_time);
+
+  static CPUTime detailed_thread_cpu_time(Thread* t);
 
   // Return a bunch of info about the timers.
   // Note that the returned info for these two functions may be different

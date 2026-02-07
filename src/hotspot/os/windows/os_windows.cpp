@@ -53,6 +53,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
 #include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
@@ -4914,6 +4915,24 @@ bool os::same_files(const char* file1, const char* file2) {
 #define FT2INT64(ft) \
   ((jlong)((jlong)(ft).dwHighDateTime << 32 | (julong)(ft).dwLowDateTime))
 
+constexpr jlong filetime_interval = 100;
+
+CPUTime os::detailed_thread_cpu_time(Thread* t) {
+  FILETIME CreationTime;
+  FILETIME ExitTime;
+  FILETIME KernelTime;
+  FILETIME UserTime;
+
+  if (GetThreadTimes(t->osthread()->thread_handle(), &CreationTime,
+                      &ExitTime, &KernelTime, &UserTime) == 0) {
+    return { -1, -1 };
+  }
+
+  return {
+    FT2INT64(UserTime) * filetime_interval,
+    FT2INT64(KernelTime) * filetime_interval
+  };
+}
 
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
 // are used by JVM M&M and JVMTI to get user+sys or user CPU time
@@ -4935,24 +4954,6 @@ jlong os::thread_cpu_time(Thread* thread) {
 
 jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
   return os::thread_cpu_time(Thread::current(), user_sys_cpu_time);
-}
-
-jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
-  // This code is copy from classic VM -> hpi::sysThreadCPUTime
-  // If this function changes, os::is_thread_cpu_time_supported() should too
-  FILETIME CreationTime;
-  FILETIME ExitTime;
-  FILETIME KernelTime;
-  FILETIME UserTime;
-
-  if (GetThreadTimes(thread->osthread()->thread_handle(), &CreationTime,
-                      &ExitTime, &KernelTime, &UserTime) == 0) {
-    return -1;
-  } else if (user_sys_cpu_time) {
-    return (FT2INT64(UserTime) + FT2INT64(KernelTime)) * 100;
-  } else {
-    return FT2INT64(UserTime) * 100;
-  }
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
