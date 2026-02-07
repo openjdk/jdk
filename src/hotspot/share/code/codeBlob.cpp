@@ -619,7 +619,9 @@ DeoptimizationBlob::DeoptimizationBlob(
   CodeBuffer* cb,
   int         size,
   OopMapSet*  oop_maps,
-  int         unpack_offset,
+  int         unpack_subentries_offset,
+  int         unpack_subentry_size,
+  int         unpack_generic_offset,
   int         unpack_with_exception_offset,
   int         unpack_with_reexecution_offset,
   int         frame_size
@@ -627,9 +629,11 @@ DeoptimizationBlob::DeoptimizationBlob(
 : SingletonBlob("DeoptimizationBlob", CodeBlobKind::Deoptimization, cb,
                 size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
 {
-  _unpack_offset           = unpack_offset;
-  _unpack_with_exception   = unpack_with_exception_offset;
-  _unpack_with_reexecution = unpack_with_reexecution_offset;
+  _unpack_subentries_offset = unpack_subentries_offset;
+  _unpack_subentry_size     = unpack_subentry_size;
+  _unpack_offset            = unpack_generic_offset;
+  _unpack_with_exception    = unpack_with_exception_offset;
+  _unpack_with_reexecution  = unpack_with_reexecution_offset;
 #ifdef COMPILER1
   _unpack_with_exception_in_tls   = -1;
 #endif
@@ -639,10 +643,24 @@ DeoptimizationBlob::DeoptimizationBlob(
 DeoptimizationBlob* DeoptimizationBlob::create(
   CodeBuffer* cb,
   OopMapSet*  oop_maps,
-  int        unpack_offset,
-  int        unpack_with_exception_offset,
-  int        unpack_with_reexecution_offset,
-  int        frame_size)
+  int         unpack_generic_offset,
+  int         unpack_with_exception_offset,
+  int         unpack_with_reexecution_offset,
+  int         frame_size)
+{
+  return create(cb, oop_maps, -1, 0, unpack_generic_offset, unpack_with_exception_offset,
+                unpack_with_reexecution_offset, frame_size);
+}
+
+DeoptimizationBlob* DeoptimizationBlob::create(
+  CodeBuffer* cb,
+  OopMapSet*  oop_maps,
+  int         unpack_subentries_offset,
+  int         unpack_subentry_size,
+  int         unpack_generic_offset,
+  int         unpack_with_exception_offset,
+  int         unpack_with_reexecution_offset,
+  int         frame_size)
 {
   DeoptimizationBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
@@ -652,7 +670,9 @@ DeoptimizationBlob* DeoptimizationBlob::create(
     blob = new (size) DeoptimizationBlob(cb,
                                          size,
                                          oop_maps,
-                                         unpack_offset,
+                                         unpack_subentries_offset,
+                                         unpack_subentry_size,
+                                         unpack_generic_offset,
                                          unpack_with_exception_offset,
                                          unpack_with_reexecution_offset,
                                          frame_size);

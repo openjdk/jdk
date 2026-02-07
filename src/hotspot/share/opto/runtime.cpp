@@ -1903,39 +1903,41 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
   // exceptions from compiled java methods are handled in compiled code
   // using rethrow node
 
-  nm = CodeCache::find_nmethod(pc);
-  assert(nm != nullptr, "No NMethod found");
+  if (JvmtiExport::can_post_on_exceptions()) {
+    // "Full-speed catching" is not necessary here,
+    // since we're notifying the VM on every catch.
+    // Force deoptimization and the rest of the lookup
+    // will be fine.
+    deoptimize_caller_frame(current);
+  }
+
+  CodeBlob* cb = CodeCache::find_blob(pc);
+  bool is_deopt_pc = CodeCache::is_deopt_pc(pc, /*strictly_compiled = */true, cb);
+  // Check the stack guard pages.  If enabled, look for handler in this frame;
+  // otherwise, forcibly unwind the frame.
+  //
+  // 4826555: use default current sp for reguard_stack instead of &nm: it's more accurate.
+  bool force_unwind = !current->stack_overflow_state()->reguard_stack();
+  bool deopting = false;
+  if (is_deopt_pc) {
+    deopting = true;
+    RegisterMap map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
+    frame deoptee = current->last_frame().sender(&map);
+    assert(deoptee.is_deoptimized_frame(), "must be deopted");
+    // Adjust the pc back to the original throwing pc
+    pc = deoptee.pc();
+    cb = deoptee.cb();
+  }
+  nm = cb->as_nmethod();
+
   if (nm->is_native_method()) {
     fatal("Native method should not have path to exception handling");
   } else {
     // we are switching to old paradigm: search for exception handler in caller_frame
     // instead in exception handler of caller_frame.sender()
-
-    if (JvmtiExport::can_post_on_exceptions()) {
-      // "Full-speed catching" is not necessary here,
-      // since we're notifying the VM on every catch.
-      // Force deoptimization and the rest of the lookup
-      // will be fine.
-      deoptimize_caller_frame(current);
-    }
-
-    // Check the stack guard pages.  If enabled, look for handler in this frame;
-    // otherwise, forcibly unwind the frame.
-    //
-    // 4826555: use default current sp for reguard_stack instead of &nm: it's more accurate.
-    bool force_unwind = !current->stack_overflow_state()->reguard_stack();
-    bool deopting = false;
-    if (nm->is_deopt_pc(pc)) {
-      deopting = true;
-      RegisterMap map(current,
-                      RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::skip);
-      frame deoptee = current->last_frame().sender(&map);
-      assert(deoptee.is_deoptimized_frame(), "must be deopted");
-      // Adjust the pc back to the original throwing pc
-      pc = deoptee.pc();
-    }
 
     // If we are forcing an unwind because of stack overflow then deopt is
     // irrelevant since we are throwing the frame away anyway.

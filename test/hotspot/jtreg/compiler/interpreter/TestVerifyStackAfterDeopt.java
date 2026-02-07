@@ -23,7 +23,7 @@
 
 
 /*
- * @test TestVerifyStackAfterDeopt
+ * @test id=TestVerifyStackAfterDeopt
  * @bug 8148871
  * @bug 8209825
  * @summary Checks VerifyStack after deoptimization of array allocation slow call
@@ -31,6 +31,18 @@
  *                   -XX:AllocatePrefetchLines=1 -XX:AllocateInstancePrefetchLines=1 -XX:AllocatePrefetchStepSize=16 -XX:AllocatePrefetchDistance=1
  *                   -XX:MinTLABSize=1k -XX:TLABSize=1k
  *                   -XX:+DeoptimizeALot -XX:+VerifyStack
+ *                   compiler.interpreter.TestVerifyStackAfterDeopt
+ */
+
+/*
+ * @test id=TestVerifyStackAfterDeopt-with-deopt-stub-code
+ * @summary Checks VerifyStack after deoptimization of array allocation slow call
+ * @requires os.arch=="aarch64"
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:TieredStopAtLevel=1
+ *                   -XX:AllocatePrefetchLines=1 -XX:AllocateInstancePrefetchLines=1 -XX:AllocatePrefetchStepSize=16 -XX:AllocatePrefetchDistance=1
+ *                   -XX:MinTLABSize=1k -XX:TLABSize=1k
+ *                   -XX:+DeoptimizeALot -XX:+VerifyStack
+ *                   -XX:+AlwaysEmitDeoptStubCode
  *                   compiler.interpreter.TestVerifyStackAfterDeopt
  */
 

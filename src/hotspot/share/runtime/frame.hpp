@@ -125,6 +125,7 @@ class frame {
   // (a) the given PC belongs to an nmethod and
   // (b) it is a deopt PC
   address get_deopt_original_pc() const;
+  address get_deopt_original_pc_and_cb(CodeBlob*& out_cb) const;
 
   void set_pc(address newpc);
   void adjust_pc(address newpc);

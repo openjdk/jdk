@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -550,6 +551,8 @@ class DeoptimizationBlob: public SingletonBlob {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
+  int _unpack_subentries_offset;
+  int _unpack_subentry_size;
   int _unpack_offset;
   int _unpack_with_exception;
   int _unpack_with_reexecution;
@@ -567,6 +570,8 @@ class DeoptimizationBlob: public SingletonBlob {
     CodeBuffer* cb,
     int         size,
     OopMapSet*  oop_maps,
+    int         unpack_subentries_offset,
+    int         unpack_subentry_size,
     int         unpack_offset,
     int         unpack_with_exception_offset,
     int         unpack_with_reexecution_offset,
@@ -575,19 +580,67 @@ class DeoptimizationBlob: public SingletonBlob {
 
  public:
   static const int ENTRY_COUNT = 4 JVMTI_ONLY(+ 2);
+  static constexpr int UNPACK_SUBENTRY_COUNT = AARCH64_ONLY(1024) NOT_AARCH64(0);
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
     OopMapSet*  oop_maps,
-    int         unpack_offset,
+    int         unpack_generic_offset,
+    int         unpack_with_exception_offset,
+    int         unpack_with_reexecution_offset,
+    int         frame_size
+  );
+  static DeoptimizationBlob* create(
+    CodeBuffer* cb,
+    OopMapSet*  oop_maps,
+    int         unpack_subentries_offset,
+    int         unpack_subentry_size,
+    int         unpack_generic_offset,
     int         unpack_with_exception_offset,
     int         unpack_with_reexecution_offset,
     int         frame_size
   );
 
-  address unpack() const                         { return code_begin() + _unpack_offset;           }
+  address unpack() const                         { return code_begin() + _unpack_offset;   }
   address unpack_with_exception() const          { return code_begin() + _unpack_with_exception;   }
   address unpack_with_reexecution() const        { return code_begin() + _unpack_with_reexecution; }
+
+  address unpack_subentry(int subentry_index) const {
+    assert(_unpack_subentries_offset >= 0 && _unpack_subentry_size > 0, "Unsupported mode");
+    return code_begin() + _unpack_subentries_offset + subentry_index * _unpack_subentry_size;
+  }
+  bool get_unpack_subentry(address pc, int& subentry_index) const {
+    subentry_index = -1;
+    if (UNPACK_SUBENTRY_COUNT == 0) {
+      return false;
+    }
+
+    address unpack_subentries_begin = unpack_subentry(0);
+    address unpack_subentry_end = unpack_subentry(UNPACK_SUBENTRY_COUNT);
+    if (pc >= unpack_subentries_begin && pc < unpack_subentry_end) {
+      uintptr_t offset = pc - unpack_subentries_begin;
+      assert((offset % _unpack_subentry_size) == 0, "unaligned PC");
+      subentry_index = offset / _unpack_subentry_size;
+      return true;
+    }
+
+    return false;
+  }
+
+  bool get_original_pc(intptr_t* unextended_sp, address pc,
+                       address& out_original_pc) const {
+    out_original_pc = nullptr;
+
+    int subentry_index = -1;
+    if (!get_unpack_subentry(pc, subentry_index)) {
+      return false;
+    }
+
+    int orig_pc_offset = (subentry_index << LogBytesPerWord);
+    address original_pc_slot = (address)unextended_sp + orig_pc_offset;
+    out_original_pc = *(address*)original_pc_slot;
+    return true;
+  }
 
   // Alternate entry point for C1 where the exception and issuing pc
   // are in JavaThread::_exception_oop and JavaThread::_exception_pc

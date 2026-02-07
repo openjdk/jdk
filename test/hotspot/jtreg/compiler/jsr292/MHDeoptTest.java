@@ -30,12 +30,22 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
 /*
- * @test
+ * @test id=default
  * @bug 8336042
  * @library /test/lib /
  *
  * @run main/bootclasspath/othervm -Xbatch -XX:-TieredCompilation compiler.jsr292.MHDeoptTest
  *
+ */
+
+/*
+ * @test id=with-deopt-stub-code
+ * @library /test/lib /
+ *
+ * @requires os.arch=="aarch64"
+ * @run main/bootclasspath/othervm -Xbatch -XX:-TieredCompilation
+ *                                 -XX:+UnlockDiagnosticVMOptions -XX:+AlwaysEmitDeoptStubCode
+ *                                 compiler.jsr292.MHDeoptTest
  */
 public class MHDeoptTest {
 
