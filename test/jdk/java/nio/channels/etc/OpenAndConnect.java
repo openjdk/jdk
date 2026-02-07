@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -48,6 +49,7 @@ import static jdk.test.lib.net.IPSupport.*;
  *          addresses (Inet4Address, Inet6Address).
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.net.IPSupport
  * @run testng/othervm OpenAndConnect
  */
 
@@ -77,10 +79,14 @@ public class OpenAndConnect {
         }
     }
 
+    @BeforeClass
+    void printSupportedPlatform(){
+        IPSupport.printPlatformSupport(System.out);
+    }
+
     @BeforeTest()
     public void setup() {
         NetworkConfiguration.printSystemConfiguration(out);
-        IPSupport.printPlatformSupport(out);
         throwSkippedExceptionIfNonOperational();
 
         out.println("IA4LOCAL:    " + IA4LOCAL);

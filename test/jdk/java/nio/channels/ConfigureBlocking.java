@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,19 @@
 /* @test
  * @bug 4797768
  * @summary test configureBlocking on closed channels
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ * @run main ConfigureBlocking
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.io.*;
 import java.nio.channels.*;
 
 public class ConfigureBlocking {
     public static void main (String [] str) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         SelectableChannel [] channels = null;
         channels = new SelectableChannel [] {
             DatagramChannel.open(),

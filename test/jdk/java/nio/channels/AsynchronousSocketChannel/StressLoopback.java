@@ -24,10 +24,14 @@
 /* @test
  * @bug 6834246 6842687
  * @summary Stress test connections through the loopback interface
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @run main StressLoopback
  * @run main/othervm/timeout=480 -Djdk.net.useFastTcpLoopback StressLoopback
  * @key randomness
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.nio.ByteBuffer;
 import java.net.*;
@@ -39,6 +43,7 @@ public class StressLoopback {
     static final Random rand = new Random();
 
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         // setup listener
         AsynchronousServerSocketChannel listener =
             AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "mac" | os.family == "windows")
  * @bug 8209152
+ * @build jdk.test.lib.net.IPSupport
  * @run main PrintSupportedOptions
  * @run main/othervm -Djava.net.preferIPv4Stack=true PrintSupportedOptions
  */
@@ -45,6 +46,7 @@ public class PrintSupportedOptions {
     }
 
     public static void main(String[] args) throws IOException {
+        IPSupport.printPlatformSupport(System.out);
         IPSupport.throwSkippedExceptionIfNonOperational();
 
         test(() -> SocketChannel.open());
