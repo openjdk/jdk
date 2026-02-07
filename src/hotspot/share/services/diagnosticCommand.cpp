@@ -99,6 +99,7 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSecurityPropertiesDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export));
@@ -334,48 +335,45 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
-void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
-  // load VMSupport
+// helper method for printing system and security properties
+static void print_properties(Symbol* method_name, outputStream* out, TRAPS) {
   Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
   Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
   InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->should_be_initialized()) {
-    ik->initialize(THREAD);
+      ik->initialize(THREAD);
   }
   if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
+      java_lang_Throwable::print(PENDING_EXCEPTION, out);
+      out->cr();
+      CLEAR_PENDING_EXCEPTION;
+      return;
   }
-
-  // invoke the serializePropertiesToByteArray method
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
-
   Symbol* signature = vmSymbols::void_byte_array_signature();
-  JavaCalls::call_static(&result,
-                         ik,
-                         vmSymbols::serializePropertiesToByteArray_name(),
-                         signature,
-                         &args,
-                         THREAD);
+  JavaCalls::call_static(&result, ik, method_name, signature, &args, THREAD);
+
   if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
+      java_lang_Throwable::print(PENDING_EXCEPTION, out);
+      out->cr();
+      CLEAR_PENDING_EXCEPTION;
+      return;
   }
-
-  // The result should be a [B
   oop res = result.get_oop();
-  assert(res->is_typeArray(), "just checking");
-  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
-
-  // copy the bytes to the output stream
+  assert(res->is_typeArray(), "should be a byte array");
+  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "should be a byte array");
   typeArrayOop ba = typeArrayOop(res);
-  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
-  output()->print_raw((const char*)addr, ba->length());
+  jbyte* addr = ba->byte_at_addr(0);
+  out->print_raw((const char*)addr, ba->length());
+}
+
+void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
+  print_properties(vmSymbols::serializePropertiesToByteArray_name(), output(), THREAD);
+}
+
+void PrintSecurityPropertiesDCmd::execute(DCmdSource source, TRAPS) {
+  print_properties(vmSymbols::serializeSecurityPropertiesToByteArray_name(), output(), THREAD);
 }
 
 VMUptimeDCmd::VMUptimeDCmd(outputStream* output, bool heap) :

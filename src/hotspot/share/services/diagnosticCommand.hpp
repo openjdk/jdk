@@ -94,6 +94,15 @@ public:
     virtual void execute(DCmdSource source, TRAPS);
 };
 
+class PrintSecurityPropertiesDCmd : public DCmd {
+public:
+    PrintSecurityPropertiesDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+    static const char* name() { return "VM.security_properties"; }
+    static const char* description() { return "Print java.security.Security properties."; }
+    static const char* impact() { return "Low"; }
+    virtual void execute(DCmdSource source, TRAPS);
+};
+
 // See also: print_flag in attachListener.cpp
 class PrintVMFlagsDCmd : public DCmdWithParser {
 protected:
