@@ -251,13 +251,26 @@ public class Http2TestServerConnection {
         if (maxProcessedStreamId == -1) {
             maxProcessedStreamId = 0;
         }
+        sendGoAway(maxProcessedStreamId, error, new byte[0]);
+    }
+
+    /**
+     * Sends a GOAWAY frame with the specified error code and debug data.
+     * This is useful for testing error handling scenarios.
+     *
+     * @param lastStreamId the last stream ID that was or might be processed
+     * @param errorCode the HTTP/2 error code
+     * @param debugData optional debug data (may be empty but not null)
+     * @throws IOException if an I/O error occurs
+     */
+    public void sendGoAway(int lastStreamId, int errorCode, byte[] debugData) throws IOException {
         boolean send = false;
         int currentGoAwayReqStrmId = goAwayRequestStreamId.get();
         // update the last processed stream id and send a goaway frame if the new last processed
         // stream id is lesser than the last processed stream id sent in
         // a previous goaway frame (if any)
-        while (currentGoAwayReqStrmId == -1 || maxProcessedStreamId < currentGoAwayReqStrmId) {
-            if (goAwayRequestStreamId.compareAndSet(currentGoAwayReqStrmId, maxProcessedStreamId)) {
+        while (currentGoAwayReqStrmId == -1 || lastStreamId < currentGoAwayReqStrmId) {
+            if (goAwayRequestStreamId.compareAndSet(currentGoAwayReqStrmId, lastStreamId)) {
                 send = true;
                 break;
             }
@@ -266,7 +279,7 @@ public class Http2TestServerConnection {
         if (!send) {
             return;
         }
-        final GoAwayFrame frame = new GoAwayFrame(maxProcessedStreamId, error);
+        final GoAwayFrame frame = new GoAwayFrame(lastStreamId, errorCode, debugData);
         outputQ.put(frame);
         System.err.println(server.name + ": Sending GOAWAY frame " + frame + " from server connection " + this);
     }
@@ -324,7 +337,7 @@ public class Http2TestServerConnection {
         close(-1);
     }
 
-    void close(int error) {
+    public void close(int error) {
         if (stopping)
             return;
         stopping = true;
