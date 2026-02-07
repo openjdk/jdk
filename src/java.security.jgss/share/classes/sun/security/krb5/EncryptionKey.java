@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,7 +520,7 @@ public class EncryptionKey
      * that the kvno is N/A might be lost when converting between this
      * class and KerberosKey.
      */
-    private static boolean versionMatches(Integer v1, Integer v2) {
+    public static boolean versionMatches(Integer v1, Integer v2) {
         if (v1 == null || v1 == 0 || v2 == null || v2 == 0) {
             return true;
         }
@@ -576,15 +576,18 @@ public class EncryptionKey
                     Integer kv = keys[i].getKeyVersionNumber();
                     etypeFound = true;
                     if (versionMatches(kvno, kv)) {
-                        return new EncryptionKey(etype, keys[i].getBytes());
+                        return new EncryptionKey(keys[i].getBytes(), etype, kv);
                     } else if (kv > kvno_found) {
-                        key_found = new EncryptionKey(etype, keys[i].getBytes());
+                        key_found = new EncryptionKey(keys[i].getBytes(), etype, kv);
                         kvno_found = kv;
                     }
                 }
             }
         }
         if (etypeFound) {
+            if (DEBUG != null) {
+                DEBUG.println("Returned kvno " + key_found.kvno + ", wanted " + kvno);
+            }
             return key_found;
             // For compatibility, will not fail here.
             //throw new KrbException(Krb5.KRB_AP_ERR_BADKEYVER);
