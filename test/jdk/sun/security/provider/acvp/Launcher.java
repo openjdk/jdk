@@ -67,8 +67,6 @@ import java.util.zip.ZipFile;
 /// specified with local path to the test.
 /// The test looks for test data files in the archive listed with `TEST_FILES`.
 ///
-/// These tests are currently compatible with ACVP version 1.1.0.38.
-///
 /// By default, the test uses system-preferred implementations.
 /// If you want to test a specific provider, set the
 /// `test.acvp.provider` test property. The provider must be
@@ -92,7 +90,7 @@ public class Launcher {
 
     private static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
     private static final String ACVP_BUNDLE_NAME = "ACVP-Server";
-    private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
+    private static final String ACVP_BUNDLE_VERSION = "1.1.0.41";
     // Zip archive entry name, do not update to use File.separator
     private static final String[] TEST_FILES = {
             "gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
