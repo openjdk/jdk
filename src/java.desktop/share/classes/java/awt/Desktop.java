@@ -652,7 +652,7 @@ public class Desktop {
      *
      * @implNote Please note that for macOS, notifications
      * are only sent if the Java app is a bundled application,
-     * with a {@code CFBundleDocumentTypes} array present in its
+     * with a {@code CFBundleURLTypes} array present in its
      * {@code Info.plist}. Check the
      * <a href="https://developer.apple.com/documentation">
      * Apple Developer Documentation</a> for more information about
