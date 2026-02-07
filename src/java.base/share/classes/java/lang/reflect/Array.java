@@ -31,10 +31,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * The {@code Array} class provides static methods to dynamically create and
  * access Java arrays.
  *
- * <p>{@code Array} permits widening conversions to occur during a get or set
- * operation, but throws an {@code IllegalArgumentException} if a narrowing
- * conversion would occur.
- *
  * @author Nakul Saraiya
  * @since 1.1
  */
@@ -126,8 +122,8 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object.  The value is automatically wrapped in an object
-     * if it has a primitive type.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code Object}.
      *
      * @param array the array
      * @param index the index
@@ -145,15 +141,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as a {@code boolean}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code boolean}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -164,15 +160,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as a {@code byte}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code byte}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -183,15 +179,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as a {@code char}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code char}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -202,15 +198,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as a {@code short}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code short}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -221,15 +217,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as an {@code int}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code int}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -240,15 +236,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as a {@code long}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code long}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -259,15 +255,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as a {@code float}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code float}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -278,15 +274,15 @@ class Array {
 
     /**
      * Returns the value of the indexed component in the specified
-     * array object, as a {@code double}.
+     * array object, {@linkplain java.lang.reflect##output-conversions converted}
+     * from the underlying array's component type to {@code double}.
      *
      * @param array the array
      * @param index the index
      * @return the value of the indexed component in the specified array
      * @throws    NullPointerException If the specified object is null
      * @throws    IllegalArgumentException If the specified object is not
-     * an array, or if the indexed element cannot be converted to the
-     * return type by an identity or widening conversion
+     * an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to the
      * length of the specified array
@@ -297,17 +293,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified new value.  The new value is first
-     * automatically unwrapped if the array has a primitive component
-     * type.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code Object} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param value the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the array component type is primitive and
-     * an unwrapping conversion fails
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -317,16 +312,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code boolean} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code boolean} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param z the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -337,16 +332,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code byte} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code byte} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param b the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -357,16 +352,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code char} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code char} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param c the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -377,16 +372,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code short} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code short} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param s the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -397,16 +392,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code int} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code int} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param i the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -417,16 +412,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code long} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code long} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param l the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -437,16 +432,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code float} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code float} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param f the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -457,16 +452,16 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code double} value.
+     * object to the new value {@linkplain java.lang.reflect##input-conversions
+     * converted} from the specified {@code double} value.
+     *
      * @param array the array
      * @param index the index into the array
      * @param d the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the specified value cannot be converted
-     * to the underlying array's component type by an identity or a
-     * primitive widening conversion
+     * is not an array, or if the conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
