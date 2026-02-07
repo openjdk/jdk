@@ -352,6 +352,7 @@ public class ClassUnloadCommon {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
             }
+            attempt++;
         }
 
         // force GC to unload marked class loader and its classes
