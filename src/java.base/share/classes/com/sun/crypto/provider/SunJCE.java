@@ -78,6 +78,8 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - ML-KEM
  *
+ * - X-Wing
+ *
  * - HKDF-SHA256, HKDF-SHA384, and HKDF-SHA512
  */
 
@@ -776,6 +778,12 @@ public final class SunJCE extends Provider {
         psA("KeyFactory", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Impls$KF2", attrs);
         psA("KeyFactory", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Impls$KF3", attrs);
         psA("KeyFactory", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$KF5", attrs);
+
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        ps("KEM", "X-Wing", "com.sun.crypto.provider.XWing", null, attrs);
+        ps("KeyPairGenerator", "X-Wing", "com.sun.crypto.provider.XWingKeyPairGenerator", null, attrs);
+        ps("KeyFactory", "X-Wing", "com.sun.crypto.provider.XWingKeyFactory", null, attrs);
 
         /*
          * SSL/TLS mechanisms
