@@ -3110,7 +3110,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", StubRoutines::get_stub_name(stub_id));
+    assert(vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32), "should not generate this stub (%s) with CRC32 intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32_updateBytes {");
     Register       table   = Z_ARG4;  // crc32 table address.
@@ -3130,7 +3130,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", StubRoutines::get_stub_name(stub_id));
+    assert(vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32C), "should not generate this stub (%s) with CRC32C intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32C_updateBytes {");
     Register       table   = Z_ARG4;  // crc32c table address.
@@ -3311,11 +3311,11 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeMemoryAccess::create_table(4); // 4 for setMemory
     }
 
-    if (UseCRC32Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32)) {
       StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes();
     }
 
-    if (UseCRC32CIntrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_updateBytesCRC32C)) {
       StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes();
     }
 
@@ -3363,57 +3363,51 @@ class StubGenerator: public StubCodeGenerator {
 
 #if COMPILER2_OR_JVMCI
     // Generate AES intrinsics code.
-    if (UseAESIntrinsics) {
-      if (VM_Version::has_Crypto_AES()) {
-        StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock();
-        StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock();
-        StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt();
-        StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt();
-      } else {
-        // In PRODUCT builds, the function pointers will keep their initial (null) value.
-        // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
-        assert(VM_Version::has_Crypto_AES(), "Inconsistent settings. Check vm_version_s390.cpp");
-      }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_aescrypt_encryptBlock)) {
+      StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_aescrypt_decryptBlock)) {
+      StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_cipherBlockChaining_encryptAESCrypt)) {
+      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_cipherBlockChaining_decryptAESCrypt)) {
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt();
     }
 
-    if (UseAESCTRIntrinsics) {
-      if (VM_Version::has_Crypto_AES_CTR()) {
-        StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
-      } else {
-        // In PRODUCT builds, the function pointers will keep their initial (null) value.
-        // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
-        assert(VM_Version::has_Crypto_AES_CTR(), "Inconsistent settings. Check vm_version_s390.cpp");
-      }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_counterMode_AESCrypt)) {
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
     }
 
     // Generate GHASH intrinsics code
-    if (UseGHASHIntrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_ghash_processBlocks)) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     // Generate SHA1/SHA256/SHA512 intrinsics code.
-    if (UseSHA1Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress)) {
       StubRoutines::_sha1_implCompress     = generate_SHA1_stub(StubId::stubgen_sha1_implCompress_id);
       StubRoutines::_sha1_implCompressMB   = generate_SHA1_stub(StubId::stubgen_sha1_implCompressMB_id);
     }
-    if (UseSHA256Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress)) {
       StubRoutines::_sha256_implCompress   = generate_SHA256_stub(StubId::stubgen_sha256_implCompress_id);
       StubRoutines::_sha256_implCompressMB = generate_SHA256_stub(StubId::stubgen_sha256_implCompressMB_id);
     }
-    if (UseSHA512Intrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress)) {
       StubRoutines::_sha512_implCompress   = generate_SHA512_stub(StubId::stubgen_sha512_implCompress_id);
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(StubId::stubgen_sha512_implCompressMB_id);
     }
 
 #ifdef COMPILER2
-    if (UseMultiplyToLenIntrinsic) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_multiplyToLen)) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
-    if (UseMontgomeryMultiplyIntrinsic) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_montgomeryMultiply)) {
       StubRoutines::_montgomeryMultiply
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_multiply);
     }
-    if (UseMontgomerySquareIntrinsic) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_montgomerySquare)) {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
