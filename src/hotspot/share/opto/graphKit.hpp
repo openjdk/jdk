@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -845,7 +845,8 @@ class GraphKit : public Phase {
   Node* load_String_coder(Node* str, bool set_ctrl);
   void store_String_value(Node* str, Node* value);
   void store_String_coder(Node* str, Node* value);
-  Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
+  Node* capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type);
+  void memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type);
   Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
   void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);
   void inflate_string_slow(Node* src, Node* dst, Node* start, Node* count);
