@@ -44,8 +44,10 @@ include gensrc/GensrcVarHandles.gmk
 CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
 CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
+DTPFACTORY_GEN_DONE := $(GENSRC_DIR)/_dtpfactory-gensrc.marker
 TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
 ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
+DTPFACTORY_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/DateTimePrinterParserFactory.java.template
 
 # The `-utf8` option is used even for US English, as some names
 # may contain non-ASCII characters, such as “Türkiye”.
@@ -68,7 +70,20 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -utf8)
 	$(TOUCH) $@
 
-TARGETS += $(CLDR_GEN_DONE)
+# Generate DateTimePrinterParserFactory.java from template
+$(DTPFACTORY_GEN_DONE): $(DTPFACTORY_TEMPLATE) $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(GENSRC_DIR))
+	$(call LogInfo, Processing DateTimePrinterParserFactory template for java.base)
+	$(call ExecuteWithLog, $@, \
+	    $(TOOL_DTPFACTORYGENERATOR) \
+	    -dtpftempfile $(DTPFACTORY_TEMPLATE) \
+	    -o $(GENSRC_DIR))
+	$(TOUCH) $@
+
+# Ensure both CLDR and DateTimePrinterParserFactory generation complete before continuing
+$(CLDR_GEN_DONE) $(DTPFACTORY_GEN_DONE):
+
+TARGETS += $(CLDR_GEN_DONE) $(DTPFACTORY_GEN_DONE)
 
 ################################################################################
 
