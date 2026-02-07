@@ -1238,20 +1238,24 @@ Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
       return in(1);
     }
     // Check for useless sign-masking
+    int lshift_count = 0;
     if (in(1)->Opcode() == Op_LShift(bt) &&
         in(1)->req() == 3 &&
-        in(1)->in(2) == in(2)) {
+        const_shift_count(phase, in(1), &lshift_count)) {
       count &= bits_per_java_integer(bt) - 1; // semantics of Java shifts
-      // Compute masks for which this shifting doesn't change
-      jlong lo = (CONST64(-1) << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
-      jlong hi = ~lo;                                                            // 00007FFF
-      const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
-      if (t11 == nullptr) {
-        return this;
-      }
-      // Does actual value fit inside of mask?
-      if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
-        return in(1)->in(1);      // Then shifting is a nop
+      lshift_count &= bits_per_java_integer(bt) - 1;
+      if (count == lshift_count) {
+        // Compute masks for which this shifting doesn't change
+        jlong lo = (CONST64(-1) << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
+        jlong hi = ~lo;                                                            // 00007FFF
+        const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
+        if (t11 == nullptr) {
+          return this;
+        }
+        // Does actual value fit inside of mask?
+        if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
+          return in(1)->in(1);      // Then shifting is a nop
+        }
       }
     }
   }
