@@ -542,14 +542,23 @@ abstract class AbstractVector<E> extends Vector<E> {
     }
 
     private static boolean partInRangeSlow(int resSizeLog2, int phySizeLog2, int part) {
-        if (resSizeLog2 > phySizeLog2) {  // expansion
-            int limit = 1 << (resSizeLog2 - phySizeLog2);
+        int limit = partLimit(resSizeLog2, phySizeLog2);
+        if (limit > 0) {  // expansion, requires truncation in output shape
             return part >= 0 && part < limit;
-        } else if (resSizeLog2 < phySizeLog2) {  // contraction
-            int limit = 1 << (phySizeLog2 - resSizeLog2);
+        } else if (limit < 0) {  // contraction, requires padding in output shape
             return part > -limit && part <= 0;
         } else {
             return (part == 0);
+        }
+    }
+
+    private static int partLimit(int resSizeLog2, int phySizeLog2) {
+        if (resSizeLog2 > phySizeLog2) {  // expansion
+            return 1 << (resSizeLog2 - phySizeLog2);
+        } else if (resSizeLog2 < phySizeLog2) {  // contraction
+            return -1 << (phySizeLog2 - resSizeLog2);
+        } else {
+            return 0;
         }
     }
 
@@ -559,20 +568,59 @@ abstract class AbstractVector<E> extends Vector<E> {
               AbstractSpecies<?> rsp,
               boolean lanewise,
               int part) {
-        String laneChange = "";
+        int domSizeLog2 = dsp.vectorShape.vectorBitSizeLog2;
+        int phySizeLog2 = rsp.vectorShape.vectorBitSizeLog2;
+        int laneChangeLog2 = 0;
+        if (lanewise) {
+            laneChangeLog2 = (rsp.laneType.elementSizeLog2 -
+                              dsp.laneType.elementSizeLog2);
+        }
+        int limit = partLimit(domSizeLog2 + laneChangeLog2, phySizeLog2);
+        String ML = "1";
         String converting = "converting";
         int dsize = dsp.elementSize(), rsize = rsp.elementSize();
+        String laneChange = "";
         if (!lanewise) {
             converting = "reinterpreting";
-        } else if (dsize < rsize) {
-            laneChange = String.format(" (lanes are expanding by %d)",
-                                       rsize / dsize);
-        } else if (dsize > rsize) {
-            laneChange = String.format(" (lanes are contracting by %d)",
-                                       dsize / rsize);
+        } else if (laneChangeLog2 > 0) {
+            ML = String.format("%d", 1 << laneChangeLog2);
+            laneChange = String.format("; expanding lanes by ML=%s", ML);
+        } else if (laneChangeLog2 < 0) {
+            ML = String.format("1/%d", 1 << -laneChangeLog2);
+            laneChange = String.format("; contracting lanes by ML=%s", ML);
         }
-        String msg = String.format("bad part number %d %s %s -> %s%s",
-                                   part, converting, dsp, rsp, laneChange);
+        String MP = "1";
+        String shapeChange = null;
+        if (domSizeLog2 < phySizeLog2) {
+            MP = String.format("%d", 1 << (phySizeLog2 - domSizeLog2));
+        } else if (phySizeLog2 < domSizeLog2) {
+            MP = String.format("1/%d", 1 << (domSizeLog2 - phySizeLog2));
+        } else {
+            shapeChange = "";
+        }
+        if (shapeChange == null) {
+            shapeChange = String.format("; reshape factor MP=%s", MP);
+        }
+        String shouldBe = "0";
+        if (limit < -1 || limit > 1) {
+            int bot = 0, top = 0;
+            if (limit < 0)
+                bot = limit+1;
+            else
+                top = limit-1;
+            shouldBe = String.format("in [%d..%d]",
+                                     bot, top);
+        }
+        String formula = ("1".equals(MP) ? "ML" :
+                          "1".equals(ML) ? "1/MP" :
+                          String.format("ML/MP=%s/%s",
+                                        ML.contains("/") ? String.format("(%s)", ML) : ML,
+                                        MP.contains("/") ? String.format("(%s)", MP) : MP));
+        String M = String.format("%s=%s%d", formula, limit < 0 ? "1/" : "", Math.max(1, Math.abs(limit)));
+        String msg = String.format("bad part number %d should be %s; MS=%s%s%s; %s %s -> %s",
+                                   part, shouldBe,
+                                   M, laneChange, shapeChange,
+                                   converting, dsp, rsp);
         return new ArrayIndexOutOfBoundsException(msg);
     }
 
