@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,9 @@
 #include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
 
 class Edge;
 class EdgeStore;
@@ -36,21 +40,49 @@ class EdgeQueue;
 // Class responsible for iterating the heap depth-first
 class DFSClosure : public BasicOopIterateClosure {
  private:
-  // max dfs depth should not exceed size of stack
-  static const size_t max_dfs_depth = 3200;
+  static const size_t max_dfs_depth = 4000;
   static UnifiedOopRef _reference_stack[max_dfs_depth];
 
   EdgeStore* _edge_store;
   JFRBitSet* _mark_bits;
   const Edge*_start_edge;
   size_t _max_depth;
-  size_t _depth;
   bool _ignore_root_set;
 
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
+  ~DFSClosure();
 
   void add_chain();
-  void closure_impl(UnifiedOopRef reference, const oop pointee);
+
+  struct ProbeStackItem { // 16 bytes
+    UnifiedOopRef r;
+    unsigned depth;
+    int chunkindex; // only used if objArrayOop
+  };
+  Stack<ProbeStackItem, mtTracing> _probe_stack;
+
+  // Walkstate
+  UnifiedOopRef _current_ref;
+  oop _current_pointee;
+  size_t _current_depth;
+  int _current_chunkindex;
+  uint64_t _num_objects_processed;
+  uint64_t _num_sampled_objects_found;
+  uint64_t _times_max_depth_reached;
+  uint64_t _times_probe_stack_full;
+
+  bool pointee_was_visited(const oop pointee) const { return _mark_bits->is_marked(pointee); }
+  void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }
+  bool pointee_was_sampled(const oop pointee) const { return pointee->mark().is_marked(); }
+
+  void probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex);
+  void probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth);
+  bool probe_stack_pop();
+  void drain_probe_stack();
+  void handle_oop();
+  void handle_objarrayoop();
+
+  void log_reference_stack() DEBUG_ONLY(;) NOT_DEBUG({})
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
