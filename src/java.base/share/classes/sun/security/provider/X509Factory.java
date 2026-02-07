@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,10 @@ public class X509Factory extends CertificateFactorySpi {
         if (cert != null) {
             return cert;
         }
-        cert = new X509CertImpl(encoding);
-        addToCache(certCache, cert.getEncodedInternal(), cert);
-        return cert;
+        // Build outside lock
+        X509CertImpl newCert = new X509CertImpl(encoding);
+        byte[] enc = newCert.getEncodedInternal();
+        return addIfNotPresent(certCache, enc, newCert);
     }
 
     /**
@@ -156,7 +157,7 @@ public class X509Factory extends CertificateFactorySpi {
      * @throws CertificateException if failures occur while obtaining the DER
      *      encoding for certificate data.
      */
-    public static synchronized X509CertImpl intern(X509Certificate c)
+    public static X509CertImpl intern(X509Certificate c)
             throws CertificateException {
         if (c == null) {
             return null;
@@ -168,18 +169,23 @@ public class X509Factory extends CertificateFactorySpi {
         } else {
             encoding = c.getEncoded();
         }
-        X509CertImpl newC = getFromCache(certCache, encoding);
-        if (newC != null) {
-            return newC;
+        // First check under per-cache lock
+        X509CertImpl cached = getFromCache(certCache, encoding);
+        if (cached != null) {
+            return cached;
         }
+
+        // Build outside lock
+        X509CertImpl newC;
+        byte[] enc;
         if (isImpl) {
-            newC = (X509CertImpl)c;
+            newC = (X509CertImpl) c;
+            enc = encoding;
         } else {
             newC = new X509CertImpl(encoding);
-            encoding = newC.getEncodedInternal();
+            enc = newC.getEncodedInternal();
         }
-        addToCache(certCache, encoding, newC);
-        return newC;
+        return addIfNotPresent(certCache, enc, newC);
     }
 
     /**
@@ -192,7 +198,7 @@ public class X509Factory extends CertificateFactorySpi {
      * @throws CRLException if failures occur while obtaining the DER
      *      encoding for CRL data.
      */
-    public static synchronized X509CRLImpl intern(X509CRL c)
+    public static X509CRLImpl intern(X509CRL c)
             throws CRLException {
         if (c == null) {
             return null;
@@ -204,39 +210,46 @@ public class X509Factory extends CertificateFactorySpi {
         } else {
             encoding = c.getEncoded();
         }
-        X509CRLImpl newC = getFromCache(crlCache, encoding);
-        if (newC != null) {
-            return newC;
+        X509CRLImpl cached = getFromCache(crlCache, encoding);
+        if (cached != null) {
+            return cached;
         }
+
+        X509CRLImpl newC;
+        byte[] enc;
         if (isImpl) {
-            newC = (X509CRLImpl)c;
+            newC = (X509CRLImpl) c;
+            enc = encoding;
         } else {
             newC = new X509CRLImpl(encoding);
-            encoding = newC.getEncodedInternal();
+            enc = newC.getEncodedInternal();
         }
-        addToCache(crlCache, encoding, newC);
-        return newC;
+        return addIfNotPresent(crlCache, enc, newC);
     }
 
     /**
      * Get the X509CertImpl or X509CRLImpl from the cache.
      */
-    private static synchronized <K,V> V getFromCache(Cache<K,V> cache,
-            byte[] encoding) {
-        Object key = new Cache.EqualByteArray(encoding);
-        return cache.get(key);
+    private static <V> V getFromCache(Cache<Object, V> cache, byte[] encoding) {
+        return cache.get(new Cache.EqualByteArray(encoding));
     }
 
     /**
      * Add the X509CertImpl or X509CRLImpl to the cache.
      */
-    private static synchronized <V> void addToCache(Cache<Object, V> cache,
-            byte[] encoding, V value) {
+    private static <V> V addIfNotPresent(Cache<Object, V> cache, byte[] encoding, V value) {
         if (encoding.length > ENC_MAX_LENGTH) {
-            return;
+            return value;
         }
-        Object key = new Cache.EqualByteArray(encoding);
-        cache.put(key, value);
+        synchronized (cache) {
+            Object key = new Cache.EqualByteArray(encoding);
+            V existing = cache.get(key);
+            if (existing != null) {
+                return existing;
+            }
+            cache.put(key, value);
+            return value;
+        }
     }
 
     /**
@@ -389,13 +402,14 @@ public class X509Factory extends CertificateFactorySpi {
         try {
             byte[] encoding = readOneBlock(is);
             if (encoding != null) {
-                X509CRLImpl crl = getFromCache(crlCache, encoding);
-                if (crl != null) {
-                    return crl;
+                X509CRLImpl cached = getFromCache(crlCache, encoding);
+                if (cached != null) {
+                    return cached;
                 }
-                crl = new X509CRLImpl(encoding);
-                addToCache(crlCache, crl.getEncodedInternal(), crl);
-                return crl;
+                // Build outside lock
+                X509CRLImpl crl = new X509CRLImpl(encoding);
+                byte[] enc = crl.getEncodedInternal();
+                return addIfNotPresent(crlCache, enc, crl);
             } else {
                 throw new IOException("Empty input");
             }
