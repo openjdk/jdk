@@ -23,13 +23,13 @@
 
 package nsk.share;
 
-import java.io.*;
-
 /**
  * Thrown to indicate failure caused by some occasional reason,
  * which does not indicate a problem in the JVM being tested.
  */
 public class Failure extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
         /** Enwrap another throwable. */
         public Failure(Throwable throwable) {
                 super(throwable);

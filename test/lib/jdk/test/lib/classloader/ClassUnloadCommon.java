@@ -21,10 +21,11 @@
  * questions.
  */
 
-
 /*
- * To use ClassUnloadCommon from a sub-process, see test/hotspot/jtreg/runtime/logging/ClassLoadUnloadTest.java
+ * To use ClassUnloadCommon from a sub-process, see
+ * test/hotspot/jtreg/runtime/logging/ClassLoadUnloadTest.java
  * for an example.
+ * Warning! Using this component need VM option -XX:-UseGCOverheadLimit
  */
 
 
@@ -33,6 +34,7 @@ import jdk.test.whitebox.WhiteBox;
 
 import java.io.File;
 import java.io.Serial;
+import java.lang.ref.PhantomReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -42,9 +44,32 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import java.util.stream.Stream;
 
 public class ClassUnloadCommon {
+
+    private static final int MAX_UNLOAD_ATTEMPS = 20;
+
+    /**
+     * Class name of default class loader.
+     */
+    public static final String INTERNAL_CLASS_LOADER_NAME = "jdk.test.lib.classloader.CustomClassLoader";
+
+    /**
+     * Phantom reference to the class loader.
+     */
+    private PhantomReference<Object> customClassLoaderPhantomRef = null;
+
+    /**
+     * Current class loader used for loading classes.
+     */
+    private CustomClassLoader customClassLoader = null;
+
+    /**
+     * List of classes loaded with current class loader.
+     */
+    private Vector<Class<?>> classObjects = new Vector<Class<?>>();
     public static class TestFailure extends RuntimeException {
         @Serial
         private static final long serialVersionUID = -8108935949624559549L;
@@ -90,7 +115,7 @@ public class ClassUnloadCommon {
         WhiteBox wb = WhiteBox.getWhiteBox();
         Set<String> aliveClasses = new HashSet<>(classNames);
         int attempt = 0;
-        while (!aliveClasses.isEmpty() && attempt < 20) {
+        while (!aliveClasses.isEmpty() && attempt < MAX_UNLOAD_ATTEMPS) {
             ClassUnloadCommon.triggerUnloading();
             for (String className : classNames) {
                 if (aliveClasses.contains(className)) {
@@ -159,5 +184,185 @@ public class ClassUnloadCommon {
         } catch (Exception e) {
               return null;
         }
+    }
+
+    /**
+     * Has class loader been reclaimed or not.
+     */
+    private boolean isClassLoaderReclaimed() {
+        return customClassLoaderPhantomRef != null
+            && customClassLoaderPhantomRef.refersTo(null);
+    }
+
+    /**
+     * Class object of the first class been loaded with current class loader.
+     * To get the rest loaded classes use <code>getLoadedClass(int)</code>.
+     * The call <code>getLoadedClass()</code> is effectively equivalent to the call
+     * <code>getLoadedClass(0)</code>
+     *
+     * @return class object of the first loaded class.
+     *
+     * @see #getLoadedClass(int)
+     */
+    public Class<?> getLoadedClass() {
+        return classObjects.get(0);
+    }
+
+    /**
+     * Returns class objects at the specified index in the list of classes loaded
+     * with current class loader.
+     *
+     * @return class objects at the specified index.
+     */
+    public Class<?> getLoadedClass(int index) {
+        return classObjects.get(index);
+    }
+
+    /**
+     * Creates new instance of <code>CustomClassLoader</code> class as the current
+     * class loader and clears the list of loaded classes.
+     *
+     * @return created instance of <code>CustomClassLoader</code> class.
+     *
+     * @see #getClassLoader()
+     * @see #setClassLoader(CustomClassLoader)
+     */
+    public CustomClassLoader createClassLoader() {
+        customClassLoader = new CustomClassLoader();
+        classObjects.removeAllElements();
+
+        customClassLoaderPhantomRef = new PhantomReference<>(customClassLoader, null);
+
+        return customClassLoader;
+    }
+
+    /**
+     * Sets new current class loader and clears the list of loaded classes.
+     *
+     * @see #getClassLoader()
+     * @see #createClassLoader()
+     */
+    public void setClassLoader(CustomClassLoader customClassLoader) {
+        this.customClassLoader = customClassLoader;
+        classObjects.removeAllElements();
+
+        customClassLoaderPhantomRef = new PhantomReference<>(customClassLoader, null);
+    }
+
+    /**
+     * Returns current class loader or <i>null</i> if not yet created or set.
+     *
+     * @return class loader object or null.
+     *
+     * @see #createClassLoader()
+     * @see #setClassLoader(CustomClassLoader)
+     */
+    public CustomClassLoader getClassLoader() {
+        return customClassLoader;
+    }
+
+    /**
+     * Loads class for specified class name using current class loader.
+     *
+     * <p>Current class loader should be set and capable to load class using only
+     * given class name. No other information such a location of .class files
+     * is passed to class loader.
+     *
+     * @param className name of class to load
+     *
+     * @throws ClassNotFoundException if no bytecode found for specified class name
+     * @throws TestFailure if current class loader is not specified;
+     *                 or if class was actually loaded with different class loader
+     *
+     * @see #loadClass(String, String)
+     */
+    public void loadClass(String className) throws ClassNotFoundException {
+
+        if (customClassLoader == null) {
+            throw new TestFailure("No current class loader defined");
+        }
+
+        Class<?> cls = Class.forName(className, true, customClassLoader);
+
+        // ensure that class was loaded by current class loader
+        if (cls.getClassLoader() != customClassLoader) {
+            throw new TestFailure("Class was loaded by unexpected class loader: " + cls.getClassLoader());
+        }
+
+        classObjects.add(cls);
+    }
+
+    /**
+     * Loads class from .class file located into specified directory using
+     * current class loader.
+     *
+     * <p>If there is no current class loader, then default class loader
+     * is created using <code>createClassLoader()</code>. Parameter <i>classDir</i>
+     * is passed to class loader using <code>CustomClassLoader.setClassPath()</code>
+     * method before loading class.
+     *
+     * @param className name of class to load
+     * @param classDir path to .class file location
+     *
+     * @throws ClassNotFoundException if no .class file found
+     *          for specified class name
+     * @throws TestFailure if class was actually loaded with different class loader
+     *
+     * @see #loadClass(String)
+     * @see CustomClassLoader#setClassPath(String)
+     */
+    public void loadClass(String className, String classDir) throws ClassNotFoundException {
+
+        if (customClassLoader == null) {
+            createClassLoader();
+        }
+
+        customClassLoader.setClassPath(classDir);
+        loadClass(className);
+    }
+
+    /**
+     * Forces GC to unload previously loaded classes by cleaning all references
+     * to class loader with its loaded classes.
+     *
+     * @return  <i>true</i> if classes unloading has been detected
+             or <i>false</i> otherwise
+     *
+     * @throws  TestFailure if exception other than OutOfMemoryError
+     *           is thrown while triggering full GC
+     *
+     * @see WhiteBox.getWhiteBox().fullGC()
+     */
+
+    public boolean unloadClass() {
+
+        // free references to class and class loader to be able for collecting by GC
+        classObjects.removeAllElements();
+        customClassLoader = null;
+
+        // force class unloading by triggering full GC
+        WhiteBox.getWhiteBox().fullGC();
+        int attempt = 0;
+        while (attempt < MAX_UNLOAD_ATTEMPS && !isClassLoaderReclaimed()) {
+            System.out.println("ClassUnloadCommon: waiting for class loader reclaiming... " + attempt);
+            WhiteBox.getWhiteBox().fullGC();
+            try {
+                // small delay to give more changes to process objects
+                // inside VM like jvmti deferred queue
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            attempt++;
+        }
+
+        // force GC to unload marked class loader and its classes
+        if (isClassLoaderReclaimed()) {
+            System.out.println("ClassUnloadCommon: class loader has been reclaimed.");
+            return true;
+        }
+
+        // class loader has not been reclaimed
+        System.out.println("ClassUnloadCommon: class loader is still reachable.");
+        return false;
     }
 }

@@ -82,6 +82,7 @@ import nsk.share.TestFailure;
 import nsk.share.gc.*;
 import nsk.share.*;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class large001 extends ThreadedGCTest {
 
@@ -131,8 +132,8 @@ public class large001 extends ThreadedGCTest {
 
         public void run() {
             try {
-                // Use special ClassUnloader to load/unload classes
-                ClassUnloader unloader = new ClassUnloader();
+                // Use special ClassUnloadCommon to load/unload classes
+                ClassUnloadCommon unloader = new ClassUnloadCommon();
                 String[] classes = isOverLimitFields ? LCLASSES : SCLASSES;
 
                 for (String name : classes) {

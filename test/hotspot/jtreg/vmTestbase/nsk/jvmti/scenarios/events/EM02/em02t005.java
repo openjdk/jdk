@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class em02t005 extends DebugeeClass {
 
@@ -64,7 +65,7 @@ public class em02t005 extends DebugeeClass {
             path = args[0];
         }
 
-        ClassUnloader unloader = new ClassUnloader();
+        ClassUnloadCommon unloader = new ClassUnloadCommon();
         Class cls;
 
         for (int i = 0; i < STEP_NUMBER; i++) {

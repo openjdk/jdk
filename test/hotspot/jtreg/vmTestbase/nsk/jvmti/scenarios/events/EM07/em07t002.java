@@ -30,6 +30,7 @@ import java.io.File;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * Test executes the following scenario to check events <code>COMPILED_METHOD_LOAD</code>,
@@ -119,7 +120,7 @@ public class em07t002 extends DebugeeClass {
 
         Class<?> loadedClass;
         Thread thrd;
-        ClassUnloader unloader = new ClassUnloader();
+        ClassUnloadCommon unloader = new ClassUnloadCommon();
         for (int i = 0; i < attempts; i++) {
             logger.display("======================================");
             logger.display(" " + (i+1) + "-attempt");

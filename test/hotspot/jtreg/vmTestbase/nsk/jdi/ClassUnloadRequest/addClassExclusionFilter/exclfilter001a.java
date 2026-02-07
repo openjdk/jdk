@@ -29,6 +29,7 @@ import java.io.*;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  *  <code>exclfilter001a</code> is deugee's part of the test.
@@ -61,7 +62,7 @@ public class exclfilter001a {
         // define directory to class files
         String classDir = (argHandler.getArguments())[0] + File.separator + "loadclass";
 
-        ClassUnloader unloader = null;
+        ClassUnloadCommon unloader = null;
         String instr = pipe.readln();
 
         while (!instr.equals(exclfilter001.SGNL_BREAK)) {
@@ -99,8 +100,8 @@ public class exclfilter001a {
         System.exit(Consts.TEST_FAILED + Consts.JCK_STATUS_BASE);
     }
 
-    private static ClassUnloader loadClasses(String classDir) {
-        ClassUnloader unloader = new ClassUnloader();
+    private static ClassUnloadCommon loadClasses(String classDir) {
+        ClassUnloadCommon unloader = new ClassUnloadCommon();
         for (int i = 0; i < testedClasses.length; i++) {
             try {
                 unloader.loadClass(exclfilter001.prefix + testedClasses[i], classDir);
@@ -113,7 +114,7 @@ public class exclfilter001a {
         return unloader;
     }
 
-    private static void unloadClasses(ClassUnloader unloader) {
+    private static void unloadClasses(ClassUnloadCommon unloader) {
         unloader.unloadClass();
     }
 }

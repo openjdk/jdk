@@ -26,6 +26,7 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 import jdk.test.lib.Utils;
+import jdk.test.lib.classloader.ClassFileFinder;
 
 import com.sun.jdi.*;
 import com.sun.jdi.request.*;

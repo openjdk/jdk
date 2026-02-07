@@ -34,6 +34,7 @@ import java.util.Iterator;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 
 // This class is the debugger in the test
@@ -61,7 +62,7 @@ public class signature001 {
     static final String CHECKED_CLASS     = PREFIX + ".signature001c";
     static final String CHECKED_INTERFACE = PREFIX + ".signature001b";
     static final String CHECKED_ARRAY     = PREFIX + ".signature001c[]";
-    static final String KLASSLOADER       = ClassUnloader.INTERNAL_CLASS_LOADER_NAME;
+    static final String KLASSLOADER       = ClassUnloadCommon.INTERNAL_CLASS_LOADER_NAME;
 
     static private Debugee debuggee;
     static private VirtualMachine vm;

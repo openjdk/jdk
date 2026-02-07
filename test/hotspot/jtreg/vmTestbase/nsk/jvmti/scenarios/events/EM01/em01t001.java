@@ -28,6 +28,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.CustomClassLoader;
 
 public class em01t001 extends DebugeeClass {
 

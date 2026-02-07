@@ -29,7 +29,7 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.StepEvent;
-import nsk.share.ClassFileFinder;
+import jdk.test.lib.classloader.ClassFileFinder;
 import nsk.share.TestBug;
 import nsk.share.jdi.EventHandler;
 import nsk.share.jdi.TestDebuggerType2;

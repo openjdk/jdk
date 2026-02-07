@@ -27,6 +27,7 @@ import java.io.*;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * This test exercises the JVMTI event <code>ObjectFree</code>.
@@ -100,7 +101,7 @@ public class objfree001 {
         String location = args[0];
         String clsDir = location + File.separator + "loadclass";
 
-        ClassUnloader clsUnLoader = new ClassUnloader();
+        ClassUnloadCommon clsUnLoader = new ClassUnloadCommon();
         try {
             int callNum = Integer.parseInt(args[1]);
 

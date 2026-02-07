@@ -31,6 +31,7 @@
  * @compile test-classes/HelloUnload.java test-classes/CustomLoadee.java
  * @build jdk.test.whitebox.WhiteBox jdk.test.lib.classloader.ClassUnloadCommon
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloUnload
+ *                 jdk.test.lib.classloader.CustomClassLoader
  *                 jdk.test.lib.classloader.ClassUnloadCommon
  *                 jdk.test.lib.classloader.ClassUnloadCommon$1
  *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
@@ -40,9 +41,8 @@
  */
 
 import jdk.test.lib.cds.CDSOptions;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class HelloCustom {
     static {

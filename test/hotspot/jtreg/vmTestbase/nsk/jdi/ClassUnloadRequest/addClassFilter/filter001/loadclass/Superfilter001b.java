@@ -23,7 +23,7 @@
 
 package nsk.jdi.ClassUnloadRequest.addClassFilter;
 
-// These classes will be loaded by ClassUnloader
+// These classes will be loaded by ClassUnloadCommon
 
 class Superfilter001b {
     static String name = "Superfilter001b";

@@ -28,6 +28,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 
 import java.util.*;
@@ -76,7 +77,7 @@ public class em02t003 extends DebugeeClass {
         Class<?> loadedClass;
         Thread thrd;
 
-        ClassUnloader unloader = new ClassUnloader();
+        ClassUnloadCommon unloader = new ClassUnloadCommon();
         for (int i = 0; i < 3; i++) {
             try {
                 unloader.loadClass(TESTED_CLASS_NAME, path);

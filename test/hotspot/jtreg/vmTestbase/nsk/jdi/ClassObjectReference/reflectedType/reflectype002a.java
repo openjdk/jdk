@@ -28,6 +28,7 @@ import java.io.*;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 
 /**
@@ -61,7 +62,7 @@ public class reflectype002a {
 
         print_log_on_verbose("**> reflectype002a: waiting for \"checked class dir\" info...");
 
-        ClassUnloader classUnloader = new ClassUnloader();
+        ClassUnloadCommon classUnloader = new ClassUnloadCommon();
 
         try {
             classUnloader.loadClass(checked_class_name, checked_class_dir);

@@ -24,6 +24,7 @@
 package nsk.jdi.VirtualMachine.redefineClasses;
 
 import jdk.test.lib.Utils;
+import jdk.test.lib.classloader.ClassFileFinder;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;

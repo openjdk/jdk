@@ -22,7 +22,7 @@
  */
 package nsk.jvmti.AttachOnDemand.attach045;
 
-import nsk.share.CustomClassLoader;
+import jdk.test.lib.classloader.CustomClassLoader;
 import nsk.share.TestBug;
 import nsk.share.aod.*;
 import java.util.*;

@@ -28,6 +28,7 @@ import java.io.*;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 
 /**
@@ -60,7 +61,7 @@ public class isabstract002a {
         pipe.println("ready0");
         String checked_class_dir = (argHandler.getArguments())[0] + File.separator + "loadclass";
 
-        ClassUnloader classUnloader = new ClassUnloader();
+        ClassUnloadCommon classUnloader = new ClassUnloadCommon();
 
         try {
             classUnloader.loadClass(checked_class_name, checked_class_dir);

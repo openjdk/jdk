@@ -45,7 +45,7 @@
  *         - methods003b class was moved in 'loadclass' subdirectory;
  *         - package name was added in methods003b class;
  *         - ${COMMON_CLASSES_LOCATION} instead of ${TESTDIR} in .cfg file;
- *         - ClassUnloader seekes for methods003b class in
+ *         - ClassUnloadCommon seekes for methods003b class in
  *           ${COMMON_CLASSES_LOCATION}/loadclass directory.
  *   4505735 equals002 and other tests fail with merlin
  *

@@ -28,6 +28,7 @@ import java.io.*;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 
 /**
@@ -65,7 +66,7 @@ public class allfields003a {
         print_log_on_verbose
             ("--> allfields003a: checked class dir:" + checked_class_dir);
 
-        ClassUnloader classUnloader = new ClassUnloader();
+        ClassUnloadCommon classUnloader = new ClassUnloadCommon();
 
         try {
             classUnloader.loadClass(checked_class_name, checked_class_dir);

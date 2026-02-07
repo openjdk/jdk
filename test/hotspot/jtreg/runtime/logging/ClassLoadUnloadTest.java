@@ -35,15 +35,13 @@
  * @run driver ClassLoadUnloadTest
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class ClassLoadUnloadTest {
     private static class ClassUnloadTestMain {

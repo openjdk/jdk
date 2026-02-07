@@ -30,6 +30,7 @@
  * @build HelloUnload CustomLoadee jdk.test.lib.classloader.ClassUnloadCommon
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloUnload
+ *                 jdk.test.lib.classloader.CustomClassLoader
  *                 jdk.test.lib.classloader.ClassUnloadCommon
  *                 jdk.test.lib.classloader.ClassUnloadCommon$1
  *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
@@ -38,9 +39,7 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar HelloDynamicCustom
  */
 
-import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class HelloDynamicCustom extends DynamicArchiveTestBase {

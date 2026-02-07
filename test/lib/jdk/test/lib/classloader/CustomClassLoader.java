@@ -21,14 +21,16 @@
  * questions.
  */
 
-package nsk.share;
+package jdk.test.lib.classloader;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
- * The <code>CustomClassLoader</code> class is used in <code>ClassUnloader</code>.
+ * The <code>CustomClassLoader</code> class is used in <code>ClassUnloadCommon</code>.
  *
- * <p>This class loader can load classes and notify <code>ClassUnloader</code>
+ * <p>This class loader can load classes and notify <code>ClassUnloadCommon</code>
  * about own finalization to make sure that all loaded classes have been unloaded.
  *
  * <p>By default this class loader loads class from .class file located in directory
@@ -36,7 +38,7 @@ import java.io.*;
  * of class loading one should implement derived class, which would override
  * <code>findClass</code> method.
  *
- * @see nsk.share.ClassUnloader
+ * @see jdk.test.lib.classloader.ClassUnloadCommon;
  *
  * @see #setClassPath(String)
  * @see #findClass(String)
@@ -47,7 +49,7 @@ public class CustomClassLoader extends ClassLoader {
 
     /**
      * Initializes a newly created <code>CustomClassloader</code> object
-     * not yet linked with any <code>ClassUnloader</code> object.
+     * not yet linked with any <code>ClassUnloadCommon</code> object.
      *
      */
     public CustomClassLoader() {
@@ -75,7 +77,7 @@ public class CustomClassLoader extends ClassLoader {
      *
      * @see #setClassPath(String)
      */
-    protected synchronized Class findClass(String name) throws ClassNotFoundException {
+    protected synchronized Class<?> findClass(String name) throws ClassNotFoundException {
         java.nio.file.Path path = ClassFileFinder.findClassFile(name, classPath);
         if (path == null) {
             throw new ClassNotFoundException(name);

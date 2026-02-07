@@ -53,10 +53,10 @@
  *     Fixed due to the bug 4677256
  *     The test was modified to comply with new execution scheme
  *     to have separate directory for precompiled classes:
- *       - all classes to be loaded by ClassUnloader were separated and
+ *       - all classes to be loaded by ClassUnloadCommon were separated and
  *         moved into 'loadclass' subdirectory;
  *       - ${COMMON_CLASSES_LOCATION} instead of ${TESTDIR} in .cfg file;
- *       - ClassUnloader seekes for classes to load class in
+ *       - ClassUnloadCommon seekes for classes to load class in
  *         ${COMMON_CLASSES_LOCATION}/loadclass directory.
  *     Test updated to prevent possible VMDisconnectedException on VMDeathEvent:
  *     - throwing Failure exception on VMDisconnect is used in event handling loop

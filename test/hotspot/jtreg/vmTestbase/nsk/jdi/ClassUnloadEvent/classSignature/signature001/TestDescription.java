@@ -76,7 +76,7 @@
  *          - signature003b and signature003c classes were moved in
  *            'loadclass' subdirectory;
  *          - ${COMMON_CLASSES_LOCATION} instead of ${TESTDIR} in .cfg file;
- *          - ClassUnloader seekes for classes to load in
+ *          - ClassUnloadCommon seekes for classes to load in
  *            ${COMMON_CLASSES_LOCATION}/loadclass directory.
  *         Standard method Debugee.endDebugee() is used instead of cleaning
  *         event queue on debuggee VM exit.
