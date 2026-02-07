@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1195,13 +1195,10 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
     unlinked_count = _in_use_list.unlink_deflated(deflated_count, &delete_list, &safepointer);
 
-#ifdef ASSERT
+    GrowableArray<ObjectMonitorTable::Table*> table_delete_list;
     if (UseObjectMonitorTable) {
-      for (ObjectMonitor* monitor : delete_list) {
-        assert(!ObjectSynchronizer::contains_monitor(current, monitor), "Should have been removed");
-      }
+      ObjectMonitorTable::rebuild(&table_delete_list);
     }
-#endif
 
     log.before_handshake(unlinked_count);
 
@@ -1222,6 +1219,9 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // Delete the unlinked ObjectMonitors.
     deleted_count = delete_monitors(&delete_list, &safepointer);
+    if (UseObjectMonitorTable) {
+      ObjectMonitorTable::destroy(&table_delete_list);
+    }
     assert(unlinked_count == deleted_count, "must be");
   }
 
@@ -1549,11 +1549,11 @@ ObjectMonitor* ObjectSynchronizer::add_monitor(JavaThread* current, ObjectMonito
   return ObjectMonitorTable::monitor_put_get(current, monitor, obj);
 }
 
-bool ObjectSynchronizer::remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
+void ObjectSynchronizer::remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   assert(monitor->object_peek() == obj, "must be, cleared objects are removed by is_dead");
 
-  return ObjectMonitorTable::remove_monitor_entry(current, monitor);
+  ObjectMonitorTable::remove_monitor_entry(current, monitor);
 }
 
 void ObjectSynchronizer::deflate_mark_word(oop obj) {
@@ -1573,20 +1573,6 @@ void ObjectSynchronizer::create_om_table() {
     return;
   }
   ObjectMonitorTable::create();
-}
-
-bool ObjectSynchronizer::needs_resize() {
-  if (!UseObjectMonitorTable) {
-    return false;
-  }
-  return ObjectMonitorTable::should_resize();
-}
-
-bool ObjectSynchronizer::resize_table(JavaThread* current) {
-  if (!UseObjectMonitorTable) {
-    return true;
-  }
-  return ObjectMonitorTable::resize(current);
 }
 
 class ObjectSynchronizer::LockStackInflateContendedLocks : private OopClosure {
@@ -2296,21 +2282,13 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
 void ObjectSynchronizer::deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor) {
   if (obj != nullptr) {
     deflate_mark_word(obj);
-  }
-  bool removed = remove_monitor(current, monitor, obj);
-  if (obj != nullptr) {
-    assert(removed, "Should have removed the entry if obj was alive");
+    remove_monitor(current, monitor, obj);
   }
 }
 
 ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(Thread* current, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   return ObjectMonitorTable::monitor_get(current, obj);
-}
-
-bool ObjectSynchronizer::contains_monitor(Thread* current, ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
-  return ObjectMonitorTable::contains_monitor(current, monitor);
 }
 
 ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
