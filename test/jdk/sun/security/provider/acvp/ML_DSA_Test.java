@@ -25,10 +25,12 @@ import jdk.test.lib.json.JSONValue;
 import jdk.test.lib.security.FixedSecureRandom;
 import sun.security.provider.ML_DSA_Impls;
 import sun.security.util.DerOutputStream;
+import sun.security.util.SignatureParameterSpec;
 
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.HashSet;
 
 import static jdk.test.lib.Utils.toByteArray;
 
@@ -81,6 +83,20 @@ public class ML_DSA_Test {
         }
     }
 
+    static String h2h(String in) {
+        return switch (in) {
+            case "SHA2-512/224" -> "SHA-512/224";
+            case "SHA2-512/256" -> "SHA-512/256";
+            case "SHA2-224" -> "SHA-224";
+            case "SHA2-256" -> "SHA-256";
+            case "SHA2-384" -> "SHA-384";
+            case "SHA2-512" -> "SHA-512";
+            case "SHAKE-128" -> "SHAKE128-256";
+            case "SHAKE-256" -> "SHAKE256-512";
+            default -> in;
+        };
+    }
+
     static void sigGenTest(JSONValue kat, Provider p) throws Exception {
         var s = p == null
                 ? Signature.getInstance("ML-DSA")
@@ -88,32 +104,34 @@ public class ML_DSA_Test {
         for (var t : kat.get("testGroups").asArray()) {
             var pname = t.get("parameterSet").asString();
             System.out.println(">> " + pname + " sign");
-            var det = Boolean.parseBoolean(t.get("deterministic").asString());
+            var features = new HashSet<String>();
+            if (t.get("deterministic").asString().equals("true")) {
+                features.add("deterministic");
+            }
             if (t.get("signatureInterface").asString().equals("internal")) {
-                ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
-            } else {
-                ML_DSA_Impls.version = ML_DSA_Impls.Version.FINAL;
+                features.add("internal");
             }
             if (t.get("externalMu").asString().equals("true")) {
-                continue; // Not supported
+                features.add("externalMu");
             }
             for (var c : t.get("tests").asArray()) {
                 var cstr = c.get("context");
                 var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
                 var hashAlg = c.get("hashAlg").asString();
-                if (!hashAlg.equals("none") || ctxt.length != 0) {
-                    continue; // Not supported
-                }
+                var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
                 System.out.print(Integer.parseInt(c.get("tcId").asString()) + " ");
+                var sps = new SignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
                 var sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
                     public byte[] getEncoded() { return oct(toByteArray(c.get("sk").asString())); }
                 };
-                var sr = new FixedSecureRandom(
-                        det ? new byte[32] : toByteArray(c.get("rnd").asString()));
+                var sr = sps.hasFeature("deterministic")
+                        ? null
+                        : new FixedSecureRandom(toByteArray(c.get("rnd").asString()));
+                s.setParameter(sps);
                 s.initSign(sk, sr);
-                s.update(toByteArray(c.get("message").asString()));
+                s.update(toByteArray(sps.hasFeature("externalMu") ? c.get("mu").asString() : c.get("message").asString()));
                 var sig = s.sign();
                 Asserts.assertEqualsByteArray(toByteArray(c.get("signature").asString()), sig);
             }
@@ -132,25 +150,20 @@ public class ML_DSA_Test {
         for (var t : kat.get("testGroups").asArray()) {
             var pname = t.get("parameterSet").asString();
             System.out.println(">> " + pname + " verify");
-
+            var features = new HashSet<String>();
             if (t.get("signatureInterface").asString().equals("internal")) {
-                ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
-            } else {
-                ML_DSA_Impls.version = ML_DSA_Impls.Version.FINAL;
+                features.add("internal");
             }
-
             if (t.get("externalMu").asString().equals("true")) {
-                continue; // Not supported
+                features.add("externalMu");
             }
-
             for (var c : t.get("tests").asArray()) {
+                System.out.print(c.get("tcId").asString() + " ");
                 var cstr = c.get("context");
                 var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
                 var hashAlg = c.get("hashAlg").asString();
-                if (!hashAlg.equals("none") || ctxt.length != 0) {
-                    continue; // Not supported
-                }
-                System.out.print(c.get("tcId").asString() + " ");
+                var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
+                var sps = new SignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
                 var pk = new PublicKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
@@ -159,9 +172,10 @@ public class ML_DSA_Test {
                 // Only ML-DSA sigVer has negative tests
                 var expected = Boolean.parseBoolean(c.get("testPassed").asString());
                 var actual = true;
+                s.setParameter(sps);
                 try {
                     s.initVerify(pk);
-                    s.update(toByteArray(c.get("message").asString()));
+                    s.update(toByteArray(sps.hasFeature("externalMu") ? c.get("mu").asString() : c.get("message").asString()));
                     actual = s.verify(toByteArray(c.get("signature").asString()));
                 } catch (InvalidKeyException | SignatureException e) {
                     actual = false;

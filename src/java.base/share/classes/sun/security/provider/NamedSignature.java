@@ -26,13 +26,14 @@
 package sun.security.provider;
 
 import sun.security.pkcs.NamedPKCS8Key;
+import sun.security.util.SignatureParameterSpec;
 import sun.security.x509.NamedX509Key;
 
-import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.ProviderException;
 import java.security.PublicKey;
@@ -51,7 +52,11 @@ public abstract class NamedSignature extends SignatureSpi {
     private final String fname; // family name
     private final NamedKeyFactory fac;
 
-    private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
+    // Default value; never null
+    protected SignatureParameterSpec sps = SignatureParameterSpec.PURE;
+
+    // Default no preHash
+    private SignatureMessageAccumulator accu = new SignatureMessageAccumulator();
 
     // init with...
     private String pname;
@@ -82,7 +87,7 @@ public abstract class NamedSignature extends SignatureSpi {
         pubKey = nk.getRawBytes();
         pk2 = implCheckPublicKey(pname, pubKey);
         secKey = null;
-        bout.reset();
+        accu.reset();
     }
 
     @Override
@@ -93,24 +98,23 @@ public abstract class NamedSignature extends SignatureSpi {
         secKey = nk.getExpanded();
         sk2 = implCheckPrivateKey(pname, secKey);
         pubKey = null;
-        bout.reset();
+        accu.reset();
     }
 
     @Override
     protected void engineUpdate(byte b) throws SignatureException {
-        bout.write(b);
+        accu.write(b);
     }
 
     @Override
     protected void engineUpdate(byte[] b, int off, int len) throws SignatureException {
-        bout.write(b, off, len);
+        accu.write(b, off, len);
     }
 
     @Override
     protected byte[] engineSign() throws SignatureException {
         if (secKey != null) {
-            var msg = bout.toByteArray();
-            bout.reset();
+            var msg = accu.toByteArray();
             return implSign(pname, secKey, sk2, msg, appRandom);
         } else {
             throw new SignatureException("No private key");
@@ -120,8 +124,7 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected boolean engineVerify(byte[] sig) throws SignatureException {
         if (pubKey != null) {
-            var msg = bout.toByteArray();
-            bout.reset();
+            var msg = accu.toByteArray();
             return implVerify(pname, pubKey, pk2, msg, sig);
         } else {
             throw new SignatureException("No public key");
@@ -144,9 +147,21 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
-        if (params != null) {
-            throw new InvalidAlgorithmParameterException(
-                    "The " + fname + " algorithm does not take any parameters");
+        if (params instanceof SignatureParameterSpec sps) {
+            this.sps = sps;
+            var hash = sps.preHash();
+            if (hash == null) {
+                accu = new SignatureMessageAccumulator();
+            } else {
+                try {
+                    accu = new SignatureMessageAccumulator(hash);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new InvalidAlgorithmParameterException(e);
+                }
+            }
+        } else if (params != null) {
+            throw new InvalidAlgorithmParameterException("The " + fname
+                    + " algorithm does not take parameters of " + params.getClass());
         }
     }
 
@@ -160,7 +175,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pname parameter name
     /// @param sk private key in raw bytes
     /// @param sk2 parsed private key, `null` if none. See [#implCheckPrivateKey].
-    /// @param msg the message
+    /// @param msg the message; might be preHashed
     /// @param sr SecureRandom object, `null` if not initialized
     /// @return the signature
     /// @throws ProviderException if there is an internal error
@@ -173,7 +188,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pname parameter name
     /// @param pk public key in raw bytes
     /// @param pk2 parsed public key, `null` if none. See [#implCheckPublicKey].
-    /// @param msg the message
+    /// @param msg the message; might be preHashed
     /// @param sig the signature
     /// @return true if verified
     /// @throws ProviderException if there is an internal error
