@@ -3064,6 +3064,130 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void gcm_counterMode_AESCrypt_blocks(int round, Register in, Register out, Register key, Register counter,
+                                       Register input_len, VectorRegister *working_vregs, Register blocks,
+                                       VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
+    __ srli(blocks, input_len, 4);
+
+    const unsigned int BLOCK_SIZE = 16;
+    const unsigned int MASK_VALUE = 0b1000; // we need {1, 0, 0, 0} mask value here
+    __ vsetivli(x0, 1, Assembler::e8, Assembler::m1);
+    __ vmv_v_i(v0, MASK_VALUE);
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    // load keys to working_vregs according to round
+    aes_load_keys(key, working_vregs, round);
+
+    __ vle32_v(vtmp1, counter);
+    Label L_aes_ctr_loop;
+    __ bind(L_aes_ctr_loop);
+      __ vmv_v_v(vtmp2, vtmp1);
+      // encrypt counter according to round
+      aes_encrypt(vtmp2, working_vregs, round);
+      __ vle32_v(vtmp3, in);
+      __ vxor_vv(vtmp2, vtmp2, vtmp3);
+      __ vse32_v(vtmp2, out);
+      __ addi(out, out, BLOCK_SIZE);
+      __ addi(in, in, BLOCK_SIZE);
+      __ sub(blocks, blocks, 1);
+      __ vrev8_v(vtmp1, vtmp1, Assembler::VectorMask::v0_t);
+      __ vadd_vi(vtmp1, vtmp1, 0x1, Assembler::VectorMask::v0_t);
+      __ vrev8_v(vtmp1, vtmp1, Assembler::VectorMask::v0_t);
+      __ bnez(blocks, L_aes_ctr_loop);
+
+    __ vse32_v(vtmp1, counter);
+  }
+
+  void gcm_ghash_blocks(Register state, Register subkeyH, Register ct, Register input_len, Register blocks,
+                        VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
+    __ srli(blocks, input_len, 4);
+
+    ghash_loop(state, subkeyH, ct, blocks, vtmp1, vtmp2, vtmp3);
+
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+  }
+
+
+  // Vector AES Galois Counter Mode implementation. Parameters:
+  //
+  // in = c_rarg0
+  // input_len = c_rarg1
+  // ct = c_rarg2 - ciphertext that ghash will read (in for encrypt, out for decrypt)
+  // out = c_rarg3
+  // key = c_rarg4
+  // state = c_rarg5 - GHASH.state
+  // subkeyHtbl = c_rarg6 - powers of H
+  // counter = c_rarg7 - 16 bytes of CTR
+  // return - number of processed bytes
+  address generate_galoisCounterMode_AESCrypt() {
+    assert(UseGHASHIntrinsics, "need GHASH instructions (Zvkg extension) and Zvbb support");
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) and Zbb extension support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register in         = c_rarg0;
+    const Register input_len  = c_rarg1;
+    const Register ct         = c_rarg2;
+    const Register out        = c_rarg3;
+    const Register key        = c_rarg4;
+    const Register state      = c_rarg5;
+    const Register subkeyHtbl = c_rarg6;
+    const Register counter    = c_rarg7;
+
+    const Register keylen     = x28;
+    const Register blocks     = x29;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    VectorRegister vtmp1      = v16;
+    VectorRegister vtmp2      = v17;
+    VectorRegister vtmp3      = v18;
+
+    const address start = __ pc();
+    __ enter();
+
+    Label L_exit;
+    // Requires PARALLEN_LEN (512) bytes to efficiently use the intrinsic
+    __ andi(input_len, input_len, -512);
+    __ beqz(input_len, L_exit);
+
+    Label L_aes128, L_aes192;
+    // Compute #rounds for AES based on the length of the key array
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ mv(t0, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs crypt with key += 15*16
+    gcm_counterMode_AESCrypt_blocks(15, in, out, key, counter, input_len, working_vregs, blocks, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, blocks, vtmp1, vtmp2, vtmp3);
+
+    // Note: the following function performs crypt with key += 13*16
+    __ bind(L_aes192);
+    gcm_counterMode_AESCrypt_blocks(13, in, out, key, counter, input_len, working_vregs, blocks, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, blocks, vtmp1, vtmp2, vtmp3);
+
+    // Note: the following function performs crypt with key += 11*16
+    __ bind(L_aes128);
+    gcm_counterMode_AESCrypt_blocks(11, in, out, key, counter, input_len, working_vregs, blocks, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, blocks, vtmp1, vtmp2, vtmp3);
+
+    __ bind(L_exit);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU,
                              Register strL, Register strU, Label& DIFF) {
@@ -7288,6 +7412,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseAESCTRIntrinsics) {
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+
+    if (UseAESCTRIntrinsics && UseGHASHIntrinsics) {
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     }
 
     if (UseGHASHIntrinsics) {
