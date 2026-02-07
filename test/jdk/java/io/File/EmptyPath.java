@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 4842706 8024695 8361587 8362429
+ * @bug 4842706 8024695 8361587 8362429 8370216
  * @summary Test some file operations with empty path
  * @run junit EmptyPath
+ * @run junit/othervm -Djdk.io.File.failIfEmptyPath=true EmptyPath
  */
 
 import java.io.File;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -55,28 +57,35 @@ import static org.junit.jupiter.api.Assertions.*;
 public class EmptyPath {
     private static final String EMPTY_STRING = "";
 
+    static boolean failIfEmptyPath;
+
     static File f;
     static Path p;
 
     @BeforeAll
     public static void init() {
+        failIfEmptyPath = Boolean.getBoolean("jdk.io.File.failIfEmptyPath");
         f = new File(EMPTY_STRING);
         p = Path.of(EMPTY_STRING);
     }
 
+    private boolean failIfEmptyPath() {
+        return failIfEmptyPath;
+    }
+
     @Test
     public void canExecute() {
-        assertTrue(f.canExecute());
+        assertNotEquals(failIfEmptyPath, f.canExecute());
     }
 
     @Test
     public void canRead() {
-        assertTrue(f.canRead());
+        assertNotEquals(failIfEmptyPath, f.canRead());
     }
 
     @Test
     public void canWrite() {
-        assertTrue(f.canWrite());
+        assertNotEquals(failIfEmptyPath, f.canWrite());
     }
 
     @Test
@@ -107,7 +116,7 @@ public class EmptyPath {
 
     @Test
     public void exists() {
-        assertTrue(f.exists());
+        assertNotEquals(failIfEmptyPath, f.exists());
     }
 
     @Test
@@ -142,8 +151,12 @@ public class EmptyPath {
 
     @Test
     public void getFreeSpace() throws IOException {
-        FileStore fs = Files.getFileStore(f.toPath());
-        checkSpace(fs.getUnallocatedSpace(), f.getFreeSpace());
+        if (failIfEmptyPath)
+            assertEquals(0, f.getFreeSpace());
+        else {
+            FileStore fs = Files.getFileStore(f.toPath());
+            checkSpace(fs.getUnallocatedSpace(), f.getFreeSpace());
+        }
     }
 
     @Test
@@ -168,14 +181,22 @@ public class EmptyPath {
 
     @Test
     public void getTotalSpace() throws IOException {
-        FileStore fs = Files.getFileStore(f.toPath());
-        checkSpace(fs.getTotalSpace(), f.getTotalSpace());
+        if (failIfEmptyPath)
+            assertEquals(0, f.getTotalSpace());
+        else {
+            FileStore fs = Files.getFileStore(f.toPath());
+            checkSpace(fs.getTotalSpace(), f.getTotalSpace());
+        }
     }
 
     @Test
     public void getUsableSpace() throws IOException {
-        FileStore fs = Files.getFileStore(f.toPath());
-        checkSpace(fs.getUsableSpace(), f.getUsableSpace());
+        if (failIfEmptyPath)
+            assertEquals(0, f.getTotalSpace());
+        else {
+            FileStore fs = Files.getFileStore(f.toPath());
+            checkSpace(fs.getUsableSpace(), f.getUsableSpace());
+        }
     }
 
     @Test
@@ -190,7 +211,7 @@ public class EmptyPath {
 
     @Test
     public void isDirectory() {
-        assertTrue(f.isDirectory());
+        assertNotEquals(failIfEmptyPath, f.isDirectory());
     }
 
     @Test
@@ -205,22 +226,34 @@ public class EmptyPath {
 
     @Test
     public void lastModified() {
-        assertTrue(f.lastModified() > 0);
+        if (failIfEmptyPath)
+            assertEquals(0, f.lastModified());
+        else
+            assertTrue(f.lastModified() > 0);
     }
 
     @Test
     public void length() throws IOException {
-        assertEquals(Files.size(f.toPath()), f.length());
+        if (failIfEmptyPath)
+            assertEquals(0, f.length());
+        else
+            assertEquals(Files.size(f.toPath()), f.length());
     }
 
     @Test
     public void list() throws IOException {
-        list(f.list());
+        if (failIfEmptyPath)
+            assertNull(f.list());
+        else
+            list(f.list());
     }
 
     @Test
     public void listFilenameFilter() throws IOException {
-        list(f.list((FilenameFilter)null));
+        if (failIfEmptyPath)
+            assertNull(f.list((FilenameFilter)null));
+        else
+            list(f.list((FilenameFilter)null));
     }
 
     private void list(String[] files) throws IOException {
@@ -233,7 +266,10 @@ public class EmptyPath {
 
     @Test
     public void listFiles() throws IOException {
-        listFiles(x -> x.listFiles());
+        if (failIfEmptyPath)
+            assertNull(f.listFiles());
+        else
+            listFiles(x -> x.listFiles());
     }
 
     @Test
@@ -241,12 +277,18 @@ public class EmptyPath {
         FileFilter ff = new FileFilter() {
             public boolean accept(File pathname) { return true; }
         };
-        listFiles(x -> x.listFiles(ff));
+        if (failIfEmptyPath)
+            assertNull(f.listFiles(ff));
+        else
+            listFiles(x -> x.listFiles(ff));
     }
 
     @Test
     public void listFilesNullFileFilter() throws IOException {
-        listFiles(x -> x.listFiles((FileFilter)null));
+        if (failIfEmptyPath)
+            assertNull(f.listFiles((FileFilter)null));
+        else
+            listFiles(x -> x.listFiles((FileFilter)null));
     }
 
     @Test
@@ -254,12 +296,18 @@ public class EmptyPath {
         FilenameFilter fnf = new FilenameFilter() {
             public boolean accept(File dir, String name) { return true; }
         };
-        listFiles(x -> x.listFiles(fnf));
+        if (failIfEmptyPath)
+            assertNull(f.listFiles(fnf));
+        else
+            listFiles(x -> x.listFiles(fnf));
     }
 
     @Test
     public void listFilesNullFilenameFilter() throws IOException {
-        listFiles(x -> x.listFiles((FilenameFilter)null));
+        if (failIfEmptyPath)
+            assertNull(f.listFiles((FilenameFilter)null));
+        else
+            listFiles(x -> x.listFiles((FilenameFilter)null));
     }
 
     private void listFiles(Function<File,File[]> func) throws IOException {
@@ -317,13 +365,19 @@ public class EmptyPath {
     public void setLastModified() {
         long t0 = f.lastModified();
         long t = System.currentTimeMillis();
-        try {
-            assertTrue(f.setLastModified(t));
-            assertEquals(t, f.lastModified());
-            assertTrue(f.setLastModified(t0));
-            assertEquals(t0, f.lastModified());
-        } finally {
-            f.setLastModified(t0);
+        if (failIfEmptyPath) {
+            assertEquals(0, t0);
+            assertFalse(f.setLastModified(t));
+            assertEquals(0, f.lastModified());
+        } else {
+            try {
+                assertTrue(f.setLastModified(t));
+                assertEquals(t, f.lastModified());
+                assertTrue(f.setLastModified(t0));
+                assertEquals(t0, f.lastModified());
+            } finally {
+                f.setLastModified(t0);
+            }
         }
     }
 
@@ -334,45 +388,72 @@ public class EmptyPath {
     @Test
     @DisabledOnOs({OS.WINDOWS})
     public void setReadable() {
-        assertTrue(f.canRead());
-        try {
-            assertTrue(f.setReadable(false));
+        if (failIfEmptyPath) {
             assertFalse(f.canRead());
-            assertTrue(f.setReadable(true));
+            assertFalse(f.setReadable(false));
+            assertFalse(f.canRead());
+            assertFalse(f.setReadable(true));
+            assertFalse(f.canRead());
+        } else {
             assertTrue(f.canRead());
-        } finally {
-            f.setReadable(true);
+            try {
+                assertTrue(f.setReadable(false));
+                assertFalse(f.canRead());
+                assertTrue(f.setReadable(true));
+                assertTrue(f.canRead());
+            } finally {
+                f.setReadable(true);
+            }
         }
     }
 
     @Test
     @DisabledOnOs({OS.WINDOWS})
     public void setReadOnly() {
-        assertTrue(f.canExecute());
-        assertTrue(f.canRead());
-        assertTrue(f.canWrite());
-        try {
-            assertTrue(f.setReadOnly());
-            assertTrue(f.canRead());
+        if (failIfEmptyPath) {
+            assertFalse(f.canExecute());
+            assertFalse(f.canRead());
             assertFalse(f.canWrite());
-            assertTrue(f.setWritable(true, true));
+            assertFalse(f.setReadOnly());
+            assertFalse(f.canRead());
+            assertFalse(f.canWrite());
+            assertFalse(f.setWritable(true, true));
+            assertFalse(f.canWrite());
+        } else {
+            assertTrue(f.canExecute());
+            assertTrue(f.canRead());
             assertTrue(f.canWrite());
-        } finally {
-            f.setWritable(true, true);
+            try {
+                assertTrue(f.setReadOnly());
+                assertTrue(f.canRead());
+                assertFalse(f.canWrite());
+                assertTrue(f.setWritable(true, true));
+                assertTrue(f.canWrite());
+            } finally {
+                f.setWritable(true, true);
+            }
         }
     }
 
     @Test
     @DisabledOnOs({OS.WINDOWS})
     public void setWritable() {
-        assertTrue(f.canWrite());
-        try {
-            assertTrue(f.setWritable(false, true));
+        if (failIfEmptyPath) {
             assertFalse(f.canWrite());
-            assertTrue(f.setWritable(true, true));
+            assertFalse(f.setWritable(false, true));
+            assertFalse(f.canWrite());
+            assertFalse(f.setWritable(true, true));
+            assertFalse(f.canWrite());
+        } else {
             assertTrue(f.canWrite());
-        } finally {
-            f.setWritable(true, true);
+            try {
+                assertTrue(f.setWritable(false, true));
+                assertFalse(f.canWrite());
+                assertTrue(f.setWritable(true, true));
+                assertTrue(f.canWrite());
+            } finally {
+                f.setWritable(true, true);
+            }
         }
     }
 
@@ -391,6 +472,7 @@ public class EmptyPath {
         assertEquals(f.toPath().toUri(), f.toURI());
     }
 
+    @DisabledIf("failIfEmptyPath")
     @Test
     public void toURL() throws MalformedURLException {
         assertEquals(f.toPath().toUri().toURL(), f.toURL());
