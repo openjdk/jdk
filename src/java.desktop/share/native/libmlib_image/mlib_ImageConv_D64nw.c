@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,13 +150,14 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
         pk = k + off;
         sp = sl0;
 
-        k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
-        p2 = sp[0]; p3 = sp[sll]; p4 = sp[2*sll];
-
         dp = dl;
         kh = n - off;
 
         if (kh == 4) {
+
+          k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+          p2 = sp[0]; p3 = sp[sll]; p4 = sp[2*sll];
+
           sp += 3*sll;
 
           for (j = 0; j <= (hsize - 2); j += 2) {
@@ -184,6 +185,10 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           }
 
         } else if (kh == 3) {
+
+          k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
+          p2 = sp[0]; p3 = sp[sll];
+
           sp += 2*sll;
 
           for (j = 0; j <= (hsize - 2); j += 2) {
@@ -211,6 +216,10 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           }
 
         } else if (kh == 2) {
+
+          k0 = pk[0]; k1 = pk[1];
+          p2 = sp[0];
+
           sp += sll;
 
           for (j = 0; j <= (hsize - 2); j += 2) {
@@ -238,6 +247,9 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           }
 
         } else /* if (kh == 1) */ {
+
+          k0 = pk[0];
+
           for (j = 0; j < hsize; j++) {
             p0 = sp[0];
 
@@ -322,17 +334,16 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
           if (kw > 2*MAX_KER) kw = MAX_KER; else
             if (kw > MAX_KER) kw = kw/2;
 
-          p2 = sp0[0]; p3 = sp0[chan1]; p4 = sp0[chan2];
-          sp0 += chan3;
-          p5 = sp0[0]; p6 = sp0[chan1]; p7 = sp0[chan2];
-
-          k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
-          k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
-
           dp = dl;
 
           if (kw == 7) {
+
+            p2 = sp0[0]; p3 = sp0[chan1]; p4 = sp0[chan2];
+            sp0 += chan3;
+            p5 = sp0[0]; p6 = sp0[chan1]; p7 = sp0[chan2];
             sp = sp0 += chan3;
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4]; k5 = pk[5]; k6 = pk[6];
 
             if (pk == k) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -362,7 +373,13 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             }
 
           } else if (kw == 6) {
+
+            p2 = sp0[0]; p3 = sp0[chan1]; p4 = sp0[chan2];
+            sp0 += chan3;
+            p5 = sp0[0]; p6 = sp0[chan1];
             sp = sp0 += chan2;
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4]; k5 = pk[5];
 
             if (pk == k) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -392,7 +409,13 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             }
 
           } else if (kw == 5) {
+
+            p2 = sp0[0]; p3 = sp0[chan1]; p4 = sp0[chan2];
+            sp0 += chan3;
+            p5 = sp0[0];
             sp = sp0 += chan1;
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
+            k4 = pk[4];
 
             if (pk == k) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -423,7 +446,10 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
 
           } else if (kw == 4) {
 
+            p2 = sp0[0]; p3 = sp0[chan1]; p4 = sp0[chan2];
+            sp0 += chan3;
             sp = sp0;
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2]; k3 = pk[3];
 
             if (pk == k) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -453,7 +479,11 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             }
 
           } else if (kw == 3) {
+
+            p2 = sp0[0]; p3 = sp0[chan1];
+            sp0 += chan3;
             sp = sp0 -= chan1;
+            k0 = pk[0]; k1 = pk[1]; k2 = pk[2];
 
             if (pk == k) {
               for (i = 0; i <= (wid - 2); i += 2) {
@@ -483,7 +513,11 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
             }
 
           } else { /* kw == 2 */
+
+            p2 = sp0[0];
+            sp0 += chan3;
             sp = sp0 -= chan2;
+            k0 = pk[0]; k1 = pk[1];
 
             if (pk == k) {
               for (i = 0; i <= (wid - 2); i += 2) {
