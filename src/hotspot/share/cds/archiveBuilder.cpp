@@ -1154,7 +1154,7 @@ void ArchiveBuilder::print_stats() {
   _alloc_stats.print_stats(int(_ro_region.used()), int(_rw_region.used()));
 }
 
-void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info) {
+void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
   // AOTMetaspace::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == AOTMetaspace::n_regions, "sanity");
@@ -1213,8 +1213,8 @@ void ArchiveBuilder::count_relocated_pointer(bool tagged, bool nulled) {
 }
 
 void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
-                                        ArchiveMappedHeapInfo* mapped_heap_info,
-                                        ArchiveStreamedHeapInfo* streamed_heap_info) {
+                                        AOTMappedHeapInfo* mapped_heap_info,
+                                        AOTStreamedHeapInfo* streamed_heap_info) {
   // Print statistics of all the regions
   const size_t bitmap_used = mapinfo->region_at(AOTMetaspace::bm)->used();
   const size_t bitmap_reserved = mapinfo->region_at(AOTMetaspace::bm)->used_aligned();

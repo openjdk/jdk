@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -974,8 +974,8 @@ size_t FileMapInfo::remove_bitmap_zeros(CHeapBitMap* map) {
 
 char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
                                        CHeapBitMap* ro_ptrmap,
-                                       ArchiveMappedHeapInfo* mapped_heap_info,
-                                       ArchiveStreamedHeapInfo* streamed_heap_info,
+                                       AOTMappedHeapInfo* mapped_heap_info,
+                                       AOTStreamedHeapInfo* streamed_heap_info,
                                        size_t &size_in_bytes) {
   size_t removed_rw_leading_zeros = remove_bitmap_zeros(rw_ptrmap);
   size_t removed_ro_leading_zeros = remove_bitmap_zeros(ro_ptrmap);
@@ -1035,7 +1035,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-size_t FileMapInfo::write_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) {
+size_t FileMapInfo::write_mapped_heap_region(AOTMappedHeapInfo* heap_info) {
   char* buffer_start = heap_info->buffer_start();
   size_t buffer_size = heap_info->buffer_byte_size();
   write_region(AOTMetaspace::hp, buffer_start, buffer_size, false, false);
@@ -1043,7 +1043,7 @@ size_t FileMapInfo::write_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) {
   return buffer_size;
 }
 
-size_t FileMapInfo::write_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) {
+size_t FileMapInfo::write_streamed_heap_region(AOTStreamedHeapInfo* heap_info) {
   char* buffer_start = heap_info->buffer_start();
   size_t buffer_size = heap_info->buffer_byte_size();
   write_region(AOTMetaspace::hp, buffer_start, buffer_size, true, false);
