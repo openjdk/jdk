@@ -84,8 +84,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
     // into a sharply-typed and size-specific
@@ -180,6 +180,45 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                      FUnOp f) {
         if (m == null) {
             return uOpTemplate(f);
+        }
+        short[] vec = vec();
+        short[] res = new short[length()];
+        boolean[] mbits = ((AbstractMask<Short>)m).getBits();
+        for (int i = 0; i < res.length; i++) {
+            res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
+        }
+        return vectorFactory(res);
+    }
+
+    /*package-private*/
+    interface FSnOp {
+        short apply(int i, short a);
+    }
+
+    /*package-private*/
+    abstract
+    ShortVector sOp(FSnOp f);
+    @ForceInline
+    final
+    ShortVector sOpTemplate(FSnOp f) {
+        short[] vec = vec();
+        short[] res = new short[length()];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = f.apply(i, vec[i]);
+        }
+        return vectorFactory(res);
+    }
+
+    /*package-private*/
+    abstract
+    ShortVector sOp(VectorMask<Short> m,
+                             FSnOp f);
+    @ForceInline
+    final
+    ShortVector sOpTemplate(VectorMask<Short> m,
+                                     FSnOp f) {
+        if (m == null) {
+            return sOpTemplate(f);
         }
         short[] vec = vec();
         short[] res = new short[length()];
@@ -2439,7 +2478,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.uOp((i, a) -> {
+            (v1, s_, m_) -> v1.sOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -2466,7 +2505,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.uOp((i, a) -> {
+                   (v1, s_, m_) -> v1.sOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -2492,7 +2531,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.uOp((i, a) -> {
+                (v0, s_, m_) -> v0.sOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -2500,7 +2539,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.uOp((i, a) -> {
+                (v1, s_, m_) -> v1.sOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
@@ -2892,6 +2931,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             default: return null;
         }
     }
+
 
     private static final short MIN_OR_INF = Short.MIN_VALUE;
     private static final short MAX_OR_INF = Short.MAX_VALUE;
@@ -4156,11 +4196,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     @Override
     public final
-    Vector<?>
+    Float16Vector
     viewAsFloatingLanes() {
         LaneType flt = LaneType.SHORT.asFloating();
-        // asFloating() will throw UnsupportedOperationException for the unsupported type short
-        throw new AssertionError("Cannot reach here");
+        return (Float16Vector) asVectorRaw(flt);
     }
 
     // ================================================
@@ -4455,13 +4494,13 @@ public abstract class ShortVector extends AbstractVector<Short> {
         @Override
         @ForceInline
         public final ShortVector zero() {
-            if ((Class<?>) vectorType() == ShortMaxVector.class)
-                return ShortMaxVector.ZERO;
+            if ((Class<?>) vectorType() == ShortVectorMax.class)
+                return ShortVectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return Short64Vector.ZERO;
-                case 128: return Short128Vector.ZERO;
-                case 256: return Short256Vector.ZERO;
-                case 512: return Short512Vector.ZERO;
+                case 64: return ShortVector64.ZERO;
+                case 128: return ShortVector128.ZERO;
+                case 256: return ShortVector256.ZERO;
+                case 512: return ShortVector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -4469,13 +4508,13 @@ public abstract class ShortVector extends AbstractVector<Short> {
         @Override
         @ForceInline
         public final ShortVector iota() {
-            if ((Class<?>) vectorType() == ShortMaxVector.class)
-                return ShortMaxVector.IOTA;
+            if ((Class<?>) vectorType() == ShortVectorMax.class)
+                return ShortVectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return Short64Vector.IOTA;
-                case 128: return Short128Vector.IOTA;
-                case 256: return Short256Vector.IOTA;
-                case 512: return Short512Vector.IOTA;
+                case 64: return ShortVector64.IOTA;
+                case 128: return ShortVector128.IOTA;
+                case 256: return ShortVector256.IOTA;
+                case 512: return ShortVector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -4484,13 +4523,13 @@ public abstract class ShortVector extends AbstractVector<Short> {
         @Override
         @ForceInline
         public final VectorMask<Short> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == ShortMaxVector.class)
-                return ShortMaxVector.ShortMaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == ShortVectorMax.class)
+                return ShortVectorMax.ShortMaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return Short64Vector.Short64Mask.maskAll(bit);
-                case 128: return Short128Vector.Short128Mask.maskAll(bit);
-                case 256: return Short256Vector.Short256Mask.maskAll(bit);
-                case 512: return Short512Vector.Short512Mask.maskAll(bit);
+                case 64: return ShortVector64.ShortMask64.maskAll(bit);
+                case 128: return ShortVector128.ShortMask128.maskAll(bit);
+                case 256: return ShortVector256.ShortMask256.maskAll(bit);
+                case 512: return ShortVector512.ShortMask512.maskAll(bit);
             }
             throw new AssertionError();
         }
@@ -4518,42 +4557,42 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Short> SPECIES_64
         = new ShortSpecies(VectorShape.S_64_BIT,
-                            Short64Vector.class,
-                            Short64Vector.Short64Mask.class,
-                            Short64Vector.Short64Shuffle.class,
-                            Short64Vector::new);
+                            ShortVector64.class,
+                            ShortVector64.ShortMask64.class,
+                            ShortVector64.ShortShuffle64.class,
+                            ShortVector64::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Short> SPECIES_128
         = new ShortSpecies(VectorShape.S_128_BIT,
-                            Short128Vector.class,
-                            Short128Vector.Short128Mask.class,
-                            Short128Vector.Short128Shuffle.class,
-                            Short128Vector::new);
+                            ShortVector128.class,
+                            ShortVector128.ShortMask128.class,
+                            ShortVector128.ShortShuffle128.class,
+                            ShortVector128::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Short> SPECIES_256
         = new ShortSpecies(VectorShape.S_256_BIT,
-                            Short256Vector.class,
-                            Short256Vector.Short256Mask.class,
-                            Short256Vector.Short256Shuffle.class,
-                            Short256Vector::new);
+                            ShortVector256.class,
+                            ShortVector256.ShortMask256.class,
+                            ShortVector256.ShortShuffle256.class,
+                            ShortVector256::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Short> SPECIES_512
         = new ShortSpecies(VectorShape.S_512_BIT,
-                            Short512Vector.class,
-                            Short512Vector.Short512Mask.class,
-                            Short512Vector.Short512Shuffle.class,
-                            Short512Vector::new);
+                            ShortVector512.class,
+                            ShortVector512.ShortMask512.class,
+                            ShortVector512.ShortShuffle512.class,
+                            ShortVector512::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Short> SPECIES_MAX
         = new ShortSpecies(VectorShape.S_Max_BIT,
-                            ShortMaxVector.class,
-                            ShortMaxVector.ShortMaxMask.class,
-                            ShortMaxVector.ShortMaxShuffle.class,
-                            ShortMaxVector::new);
+                            ShortVectorMax.class,
+                            ShortVectorMax.ShortMaskMax.class,
+                            ShortVectorMax.ShortShuffleMax.class,
+                            ShortVectorMax::new);
 
     /**
      * Preferred species for {@link ShortVector}s.

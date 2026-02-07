@@ -84,8 +84,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
     // into a sharply-typed and size-specific
@@ -180,6 +180,45 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                      FUnOp f) {
         if (m == null) {
             return uOpTemplate(f);
+        }
+        float[] vec = vec();
+        float[] res = new float[length()];
+        boolean[] mbits = ((AbstractMask<Float>)m).getBits();
+        for (int i = 0; i < res.length; i++) {
+            res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
+        }
+        return vectorFactory(res);
+    }
+
+    /*package-private*/
+    interface FSnOp {
+        float apply(int i, float a);
+    }
+
+    /*package-private*/
+    abstract
+    FloatVector sOp(FSnOp f);
+    @ForceInline
+    final
+    FloatVector sOpTemplate(FSnOp f) {
+        float[] vec = vec();
+        float[] res = new float[length()];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = f.apply(i, vec[i]);
+        }
+        return vectorFactory(res);
+    }
+
+    /*package-private*/
+    abstract
+    FloatVector sOp(VectorMask<Float> m,
+                             FSnOp f);
+    @ForceInline
+    final
+    FloatVector sOpTemplate(VectorMask<Float> m,
+                                     FSnOp f) {
+        if (m == null) {
+            return sOpTemplate(f);
         }
         float[] vec = vec();
         float[] res = new float[length()];
@@ -2304,7 +2343,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.uOp((i, a) -> {
+            (v1, s_, m_) -> v1.sOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -2331,7 +2370,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.uOp((i, a) -> {
+                   (v1, s_, m_) -> v1.sOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -2357,7 +2396,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.uOp((i, a) -> {
+                (v0, s_, m_) -> v0.sOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -2365,7 +2404,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.uOp((i, a) -> {
+                (v1, s_, m_) -> v1.sOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
@@ -2725,6 +2764,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             default: return null;
         }
     }
+
 
     private static final float MIN_OR_INF = Float.NEGATIVE_INFINITY;
     private static final float MAX_OR_INF = Float.POSITIVE_INFINITY;
@@ -3926,13 +3966,13 @@ public abstract class FloatVector extends AbstractVector<Float> {
         @Override
         @ForceInline
         public final FloatVector zero() {
-            if ((Class<?>) vectorType() == FloatMaxVector.class)
-                return FloatMaxVector.ZERO;
+            if ((Class<?>) vectorType() == FloatVectorMax.class)
+                return FloatVectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return Float64Vector.ZERO;
-                case 128: return Float128Vector.ZERO;
-                case 256: return Float256Vector.ZERO;
-                case 512: return Float512Vector.ZERO;
+                case 64: return FloatVector64.ZERO;
+                case 128: return FloatVector128.ZERO;
+                case 256: return FloatVector256.ZERO;
+                case 512: return FloatVector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -3940,13 +3980,13 @@ public abstract class FloatVector extends AbstractVector<Float> {
         @Override
         @ForceInline
         public final FloatVector iota() {
-            if ((Class<?>) vectorType() == FloatMaxVector.class)
-                return FloatMaxVector.IOTA;
+            if ((Class<?>) vectorType() == FloatVectorMax.class)
+                return FloatVectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return Float64Vector.IOTA;
-                case 128: return Float128Vector.IOTA;
-                case 256: return Float256Vector.IOTA;
-                case 512: return Float512Vector.IOTA;
+                case 64: return FloatVector64.IOTA;
+                case 128: return FloatVector128.IOTA;
+                case 256: return FloatVector256.IOTA;
+                case 512: return FloatVector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -3955,13 +3995,13 @@ public abstract class FloatVector extends AbstractVector<Float> {
         @Override
         @ForceInline
         public final VectorMask<Float> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == FloatMaxVector.class)
-                return FloatMaxVector.FloatMaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == FloatVectorMax.class)
+                return FloatVectorMax.FloatMaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return Float64Vector.Float64Mask.maskAll(bit);
-                case 128: return Float128Vector.Float128Mask.maskAll(bit);
-                case 256: return Float256Vector.Float256Mask.maskAll(bit);
-                case 512: return Float512Vector.Float512Mask.maskAll(bit);
+                case 64: return FloatVector64.FloatMask64.maskAll(bit);
+                case 128: return FloatVector128.FloatMask128.maskAll(bit);
+                case 256: return FloatVector256.FloatMask256.maskAll(bit);
+                case 512: return FloatVector512.FloatMask512.maskAll(bit);
             }
             throw new AssertionError();
         }
@@ -3989,42 +4029,42 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Float> SPECIES_64
         = new FloatSpecies(VectorShape.S_64_BIT,
-                            Float64Vector.class,
-                            Float64Vector.Float64Mask.class,
-                            Float64Vector.Float64Shuffle.class,
-                            Float64Vector::new);
+                            FloatVector64.class,
+                            FloatVector64.FloatMask64.class,
+                            FloatVector64.FloatShuffle64.class,
+                            FloatVector64::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Float> SPECIES_128
         = new FloatSpecies(VectorShape.S_128_BIT,
-                            Float128Vector.class,
-                            Float128Vector.Float128Mask.class,
-                            Float128Vector.Float128Shuffle.class,
-                            Float128Vector::new);
+                            FloatVector128.class,
+                            FloatVector128.FloatMask128.class,
+                            FloatVector128.FloatShuffle128.class,
+                            FloatVector128::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Float> SPECIES_256
         = new FloatSpecies(VectorShape.S_256_BIT,
-                            Float256Vector.class,
-                            Float256Vector.Float256Mask.class,
-                            Float256Vector.Float256Shuffle.class,
-                            Float256Vector::new);
+                            FloatVector256.class,
+                            FloatVector256.FloatMask256.class,
+                            FloatVector256.FloatShuffle256.class,
+                            FloatVector256::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Float> SPECIES_512
         = new FloatSpecies(VectorShape.S_512_BIT,
-                            Float512Vector.class,
-                            Float512Vector.Float512Mask.class,
-                            Float512Vector.Float512Shuffle.class,
-                            Float512Vector::new);
+                            FloatVector512.class,
+                            FloatVector512.FloatMask512.class,
+                            FloatVector512.FloatShuffle512.class,
+                            FloatVector512::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Float> SPECIES_MAX
         = new FloatSpecies(VectorShape.S_Max_BIT,
-                            FloatMaxVector.class,
-                            FloatMaxVector.FloatMaxMask.class,
-                            FloatMaxVector.FloatMaxShuffle.class,
-                            FloatMaxVector::new);
+                            FloatVectorMax.class,
+                            FloatVectorMax.FloatMaskMax.class,
+                            FloatVectorMax.FloatShuffleMax.class,
+                            FloatVectorMax::new);
 
     /**
      * Preferred species for {@link FloatVector}s.

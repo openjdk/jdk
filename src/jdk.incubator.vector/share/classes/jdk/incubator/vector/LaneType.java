@@ -35,19 +35,21 @@ import static jdk.incubator.vector.VectorIntrinsics.*;
  * It caches all sorts of goodies that we can't put on java.lang.Class.
  */
 enum LaneType {
-    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE),
-    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE),
-    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE),
-    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE),
-    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE),
-    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE);
+    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, float.class),
+    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, double.class),
+    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, byte.class),
+    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, short.class),
+    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, int.class),
+    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, long.class),
+    FLOAT16(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, short.class);
 
     LaneType(Class<?> elementType,
              Class<?> genericElementType,
              Class<?> arrayType,
              char elementKind,
              int elementPrecision,
-             int elementSize) {
+             int elementSize,
+             Class<?> carrierType) {
         if (elementPrecision <= 0)
             elementPrecision += elementSize;
         this.elementType = elementType;
@@ -65,7 +67,8 @@ enum LaneType {
         // printName.  If we do unsigned or vector or bit lane types,
         // report that condition also.
         this.typeChar = genericElementType.getSimpleName().charAt(0);
-        assert("FDBSIL".indexOf(typeChar) == ordinal()) : this;
+        this.carrierType = carrierType;
+        assert("FDBSILS".charAt(ordinal()) == typeChar) : this;
     }
 
     final Class<?> elementType;
@@ -78,6 +81,7 @@ enum LaneType {
     final int switchKey;  // 1+ordinal(), which is non-zero
     final String printName;
     final char typeChar; // one of "BSILFD"
+    final Class<?> carrierType;
 
     private @Stable LaneType asIntegral;
     private @Stable LaneType asFloating;
@@ -170,13 +174,14 @@ enum LaneType {
     // don't optimize properly; see JDK-8161245
 
     static final int
-        SK_FLOAT    = 1,
-        SK_DOUBLE   = 2,
-        SK_BYTE     = 3,
-        SK_SHORT    = 4,
-        SK_INT      = 5,
-        SK_LONG     = 6,
-        SK_LIMIT    = 7;
+        SK_FLOAT     = 1,
+        SK_DOUBLE    = 2,
+        SK_BYTE      = 3,
+        SK_SHORT     = 4,
+        SK_INT       = 5,
+        SK_LONG      = 6,
+        SK_FLOAT16   = 7,
+        SK_LIMIT     = 8;
 
     /*package-private*/
     @ForceInline
@@ -273,5 +278,6 @@ enum LaneType {
         assert(ofLaneTypeOrdinal(LT_SHORT) == SHORT);
         assert(ofLaneTypeOrdinal(LT_INT) == INT);
         assert(ofLaneTypeOrdinal(LT_LONG) == LONG);
+        assert(ofLaneTypeOrdinal(LT_FLOAT16) == FLOAT16);
     }
 }

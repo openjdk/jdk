@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
 // Copyright 2025 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -8225,6 +8225,34 @@ instruct castII(iRegI dst)
 %}
 
 instruct castII_checked(iRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastII dst));
+  effect(KILL cr);
+
+  format %{ "# castII_checked of $dst" %}
+  ins_encode %{
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// The unchecked and checked variants for CastII below both use iRegINoSp for src and dst
+// as some consumers of CastII node like ConvHF2F forbid the stack pointer as an input
+// (please see convHF2F_reg_reg rule which requires input to be in an iRegINoSp register).
+instruct castII_nosp(iRegINoSp dst)
+%{
+  predicate(VerifyConstraintCasts == 0);
+  match(Set dst (CastII dst));
+
+  size(0);
+  format %{ "# castII of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castII_checked_nosp(iRegINoSp dst, rFlagsReg cr)
 %{
   predicate(VerifyConstraintCasts > 0);
   match(Set dst (CastII dst));

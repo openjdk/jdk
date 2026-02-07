@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,19 +51,24 @@ compilation=$(${JAVAC} -d . "${JDK_SRC_HOME}/make/jdk/src/classes/build/tools/sp
 Log false "$compilation\n"
 Log true "done\n"
 
+# Nomenclature 
+#  - type : refers to vector primitive lane type or carrier type.
+#  - Type : refers to vector box lane type.
 # For each type
-for type in byte short int long float double
+for type in byte short int long float double float16
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
-  args="-K$type -Dtype=$type -DType=$Type -DTYPE=$TYPE"
+  args="-K$type -DType=$Type -DTYPE=$TYPE"
 
+  VectorPrefix=$Type
   Boxtype=$Type
   Wideboxtype=$Boxtype
   MaxValue=MAX_VALUE
   MinValue=MIN_VALUE
 
   kind=BITWISE
+  fpkind=BITWISE
 
   bitstype=$type
   Bitstype=$Type
@@ -99,6 +104,7 @@ do
       ;;
     float)
       kind=FP
+      fpkind=FP32
       bitstype=int
       Bitstype=Int
       Boxbitstype=Integer
@@ -108,6 +114,7 @@ do
       ;;
     double)
       kind=FP
+      fpkind=FP64
       bitstype=long
       Bitstype=Long
       Boxbitstype=Long
@@ -115,15 +122,27 @@ do
       MaxValue=POSITIVE_INFINITY
       MinValue=NEGATIVE_INFINITY
       ;;
+    float16)
+      kind=FP
+      fpkind=FP16
+      bitstype=short
+      type=short
+      Bitstype=Short
+      Boxbitstype=Short
+      Wideboxtype=Float16
+      MaxValue=POSITIVE_INFINITY
+      MinValue=NEGATIVE_INFINITY
+      Type=Float16
+      ;;
   esac
 
-  args="$args -K$kind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
+  args="$args -Dtype=$type -K$kind -K$fpkind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
 
-  abstractvectortype=${typeprefix}${Type}Vector
-  abstractvectorteststype=${typeprefix}${Type}VectorTests
-  abstractbitsvectortype=${typeprefix}${Bitstype}Vector
+  abstractvectortype=${typeprefix}${VectorPrefix}Vector
+  abstractvectorteststype=${typeprefix}${VectorPrefix}VectorTests
+  abstractbitsvectortype=${typeprefix}${VectorPrefixe}Vector
   abstractfpvectortype=${typeprefix}${Fptype}Vector
   args="$args -Dabstractvectortype=$abstractvectortype -Dabstractvectorteststype=$abstractvectorteststype -Dabstractbitsvectortype=$abstractbitsvectortype -Dabstractfpvectortype=$abstractfpvectortype"
 
@@ -133,12 +152,12 @@ do
 
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorTests
-    vectorbenchtype=${typeprefix}${Type}${bits}Vector
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${VectorPrefix}$Vector{bits}
+    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}Tests
+    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}
+    masktype=${typeprefix}${Type}$Mask{bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
@@ -208,12 +227,12 @@ do
   # For each size
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorLoadStoreTests
-    vectorbenchtype=${typeprefix}${Type}${bits}VectorLoadStore
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${VectorPrefix}Vector${bits}
+    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}LoadStoreTests
+    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}LoadStore
+    masktype=${typeprefix}${Type}Mask${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
