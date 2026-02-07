@@ -590,15 +590,6 @@ oop oop_Relocation::oop_value() {
   return *oop_addr();
 }
 
-
-void oop_Relocation::fix_oop_relocation() {
-  if (!oop_is_immediate()) {
-    // get the oop from the pool, and re-insert it into the instruction:
-    set_value(value());
-  }
-}
-
-
 void oop_Relocation::verify_oop_relocation() {
   if (!oop_is_immediate()) {
     // get the oop from the pool, and re-insert it into the instruction:
@@ -627,11 +618,12 @@ Metadata* metadata_Relocation::metadata_value() {
   }
 
 
-void metadata_Relocation::fix_metadata_relocation() {
+bool metadata_Relocation::fix_metadata_relocation() {
   if (!metadata_is_immediate()) {
     // get the metadata from the pool, and re-insert it into the instruction:
-    pd_fix_value(value());
+    return pd_fix_value(value());
   }
+  return false;
 }
 
 address virtual_call_Relocation::cached_value() {

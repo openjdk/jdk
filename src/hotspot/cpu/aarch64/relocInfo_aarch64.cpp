@@ -54,6 +54,13 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
     break;
   }
+
+  assert(_binding != nullptr, "expect to be called with RelocIterator in use");
+
+  if (UseDeferredICacheInvalidation) {
+    return;
+  }
+
   ICache::invalidate_range(addr(), bytes);
 }
 
@@ -115,5 +122,6 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
   }
 }
 
-void metadata_Relocation::pd_fix_value(address x) {
+bool metadata_Relocation::pd_fix_value(address x) {
+  return false;
 }

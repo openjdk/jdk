@@ -26,6 +26,10 @@
 #ifndef OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
 #define OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP
 
+#include "memory/allocation.hpp"
+#include "runtime/vm_version.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
 // has to be flushed.
@@ -37,8 +41,109 @@ class ICache : public AbstractICache {
     __builtin___clear_cache((char *)addr, (char *)(addr + 4));
   }
   static void invalidate_range(address start, int nbytes) {
-    __builtin___clear_cache((char *)start, (char *)(start + nbytes));
+    if (NeoverseN1Errata1542419) {
+      assert(VM_Version::is_cache_idc_enabled(),
+             "Expect CTR_EL0.IDC to be enabled for Neoverse N1 with erratum "
+             "1542419");
+      assert(!VM_Version::is_cache_dic_enabled(),
+             "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
+             "1542419");
+      asm volatile("dsb ish       \n"
+                   "ic  ivau, xzr \n"
+                   "dsb ish       \n"
+                   "isb           \n"
+                   : : : "memory");
+    } else {
+      __builtin___clear_cache((char *)start, (char *)(start + nbytes));
+    }
   }
 };
+
+class AArch64ICacheInvalidationContext : StackObj {
+ private:
+
+#ifdef ASSERT
+  static THREAD_LOCAL AArch64ICacheInvalidationContext* _current_context;
+#endif
+
+  bool _has_modified_code;
+
+ public:
+  NONCOPYABLE(AArch64ICacheInvalidationContext);
+
+  AArch64ICacheInvalidationContext()
+      : _has_modified_code(false) {
+    assert(_current_context == nullptr, "nested ICacheInvalidationContext not supported");
+#ifdef ASSERT
+    _current_context = this;
+#endif
+  }
+
+  ~AArch64ICacheInvalidationContext() {
+    NOT_PRODUCT(_current_context = nullptr);
+
+    if (!_has_modified_code || !UseDeferredICacheInvalidation) {
+      return;
+    }
+
+    assert(VM_Version::is_cache_idc_enabled(), "Expect CTR_EL0.IDC to be enabled");
+
+    asm volatile("dsb ish" : : : "memory");
+
+    if (NeoverseN1Errata1542419) {
+      assert(!VM_Version::is_cache_dic_enabled(),
+             "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
+             "1542419");
+
+      // Errata 1542419: Neoverse N1 cores with the 'COHERENT_ICACHE' feature
+      // may fetch stale instructions when software depends on
+      // prefetch-speculation-protection instead of explicit synchronization.
+      //
+      // Neoverse-N1 implementation mitigates the errata 1542419 with a
+      // workaround:
+      // - Disable coherent icache.
+      // - Trap IC IVAU instructions.
+      // - Execute:
+      //   - tlbi vae3is, xzr
+      //   - dsb sy
+      // - Ignore trapped IC IVAU instructions.
+      //
+      // `tlbi vae3is, xzr` invalidates all translation entries (all VAs, all
+      // possible levels). It waits for all memory accesses using in-scope old
+      // translation information to complete before it is considered complete.
+      //
+      // As this workaround has significant overhead, Arm Neoverse N1 (MP050)
+      // Software Developer Errata Notice version 29.0 suggests:
+      //
+      // "Since one TLB inner-shareable invalidation is enough to avoid this
+      // erratum, the number of injected TLB invalidations should be minimized
+      // in the trap handler to mitigate the performance impact due to this
+      // workaround."
+      // As the address for icache invalidation is not relevant and
+      // IC IVAU instruction is ignored, we use XZR in it.
+      asm volatile(
+          "ic  ivau, xzr \n"
+          "dsb ish       \n"
+          :
+          :
+          : "memory");
+    } else {
+      assert(VM_Version::is_cache_dic_enabled(), "Expect CTR_EL0.DIC to be enabled");
+    }
+    asm volatile("isb" : : : "memory");
+  }
+
+  void set_has_modified_code() {
+    _has_modified_code = true;
+  }
+
+#ifdef ASSERT
+  static bool is_deferring_icache_invalidation() {
+    return _current_context != nullptr && UseDeferredICacheInvalidation;
+  }
+#endif
+};
+
+#define PD_ICACHE_INVALIDATION_CONTEXT AArch64ICacheInvalidationContext
 
 #endif // OS_CPU_LINUX_AARCH64_ICACHE_AARCH64_HPP

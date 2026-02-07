@@ -127,6 +127,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
           "Always merge DMB instructions in code emission")             \
+  product(bool, NeoverseN1Errata1542419, false, DIAGNOSTIC,             \
+          "Enable workaround for Neoverse N1 erratum 1542419")          \
 
 // end of ARCH_FLAGS
 
