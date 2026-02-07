@@ -105,4 +105,8 @@ public abstract class DelegatingHttpExchange extends HttpExchange {
     public HttpPrincipal getPrincipal() {
         return exchange.getPrincipal();
     }
+
+    public void upgrade(com.sun.net.httpserver.HttpUpgradeHandler handler) throws IOException {
+        exchange.upgrade(handler);
+    }
 }

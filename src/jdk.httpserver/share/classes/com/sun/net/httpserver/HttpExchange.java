@@ -319,4 +319,52 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      * @return the {@code HttpPrincipal}, or {@code null} if no authenticator is set
      */
     public abstract HttpPrincipal getPrincipal();
+
+    /**
+     * Upgrades the HTTP connection to use a different protocol.
+     * 
+     * <p>This method enables support for HTTP protocol upgrade, such as
+     * upgrading to WebSocket. When called, the server will:
+     * <ol>
+     *   <li>Send an HTTP 101 (Switching Protocols) response with the upgrade
+     *       response headers that have been set via {@link #getResponseHeaders()}
+     *   <li>Transfer control of the underlying socket to the provided
+     *       {@link HttpUpgradeHandler}
+     *   <li>Invoke the handler with direct access to the socket streams
+     * </ol>
+     * 
+     * <p>This method must be called before {@link #sendResponseHeaders(int, long)}.
+     * Appropriate upgrade response headers (such as {@code Upgrade} and
+     * {@code Connection: upgrade}) must be set before calling this method.
+     * 
+     * <p>After this method is called, the exchange is considered complete and
+     * no further HTTP operations should be performed on it. The upgrade handler
+     * takes full control of the connection.
+     * 
+     * <p>Example usage for WebSocket upgrade:
+     * <pre>{@code
+     * public void handle(HttpExchange exchange) throws IOException {
+     *     Headers requestHeaders = exchange.getRequestHeaders();
+     *     if ("websocket".equalsIgnoreCase(requestHeaders.getFirst("Upgrade"))) {
+     *         Headers responseHeaders = exchange.getResponseHeaders();
+     *         responseHeaders.set("Upgrade", "websocket");
+     *         responseHeaders.set("Connection", "Upgrade");
+     *         // Set other required headers like Sec-WebSocket-Accept
+     *         
+     *         exchange.upgrade((input, output) -> {
+     *             // Handle WebSocket protocol
+     *             // Read and write WebSocket frames
+     *         });
+     *     }
+     * }
+     * }</pre>
+     * 
+     * @param handler the handler for the upgraded protocol
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalStateException if response headers have already been sent
+     *         or if the connection cannot be upgraded
+     * @throws NullPointerException if handler is {@code null}
+     * @since 26
+     */
+    public abstract void upgrade(HttpUpgradeHandler handler) throws IOException;
 }
