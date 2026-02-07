@@ -28,9 +28,12 @@
 #include "opto/convertnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rangeinference.hpp"
 #include "opto/subnode.hpp"
+#include "opto/type.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -592,33 +595,60 @@ Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
+static const TypeLong* mulhi_range_fold_signed(jlong t1_lo, jlong t1_hi, jlong t2_lo, jlong t2_hi, int widen) {
+  const jlong lo_lo_product = multiply_high_signed(t1_lo, t2_lo);
+  const jlong lo_hi_product = multiply_high_signed(t1_lo, t2_hi);
+  const jlong hi_lo_product = multiply_high_signed(t1_hi, t2_lo);
+  const jlong hi_hi_product = multiply_high_signed(t1_hi, t2_hi);
+  const jlong lo = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  const jlong hi = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  return TypeLong::make(lo, hi, widen);
+}
+
+static const TypeLong* mulhi_range_fold_unsigned(julong t1_lo, julong t1_hi, julong t2_lo, julong t2_hi, int widen) {
+  const julong lo_lo_product = multiply_high_unsigned(t1_lo, t2_lo);
+  const julong lo_hi_product = multiply_high_unsigned(t1_lo, t2_hi);
+  const julong hi_lo_product = multiply_high_unsigned(t1_hi, t2_lo);
+  const julong hi_hi_product = multiply_high_unsigned(t1_hi, t2_hi);
+  const julong lo = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  const julong hi = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+  return TypeLong::make_unsigned(lo, hi, widen);
+}
+
+static const TypeLong* mulhi_value(const TypeLong* t1, const TypeLong* t2, bool is_unsigned) {
+  const int widen = MIN2(t1->_widen, t2->_widen);
+  if (is_unsigned) {
+    return mulhi_range_fold_unsigned(t1->_ulo, t1->_uhi, t2->_ulo, t2->_uhi, widen);
+  }
+  return mulhi_range_fold_signed(t1->_lo, t1->_hi, t2->_lo, t2->_hi, widen);
+}
+
 const Type* MulHiLNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  const Type *bot = bottom_type();
-  return MulHiValue(t1, t2, bot);
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+
+  // Either input is TOP ==> the result is TOP
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const TypeLong* longType1 = t1->is_long();
+  const TypeLong* longType2 = t2->is_long();
+  return mulhi_value(longType1, longType2, false);
 }
 
 const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  const Type *bot = bottom_type();
-  return MulHiValue(t1, t2, bot);
-}
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
 
-// A common routine used by UMulHiLNode and MulHiLNode
-const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
   // Either input is TOP ==> the result is TOP
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
-  // It is not worth trying to constant fold this stuff!
-  return TypeLong::LONG;
+  const TypeLong* longType1 = t1->is_long();
+  const TypeLong* longType2 = t2->is_long();
+  return mulhi_value(longType1, longType2, true);
 }
 
 //=============================================================================

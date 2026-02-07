@@ -1509,6 +1509,16 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_L, "MulL");
     }
 
+    public static final String MUL_HI_L = PREFIX + "MUL_HI_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_HI_L, "MulHiL");
+    }
+
+    public static final String UMUL_HI_L = PREFIX + "UMUL_HI_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(UMUL_HI_L, "UMulHiL");
+    }
+
     public static final String MUL_VL = VECTOR_PREFIX + "MUL_VL" + POSTFIX;
     static {
         vectorNode(MUL_VL, "MulVL", TYPE_LONG);
