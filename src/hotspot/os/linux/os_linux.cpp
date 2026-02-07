@@ -4999,6 +4999,15 @@ int os::open(const char *path, int oflag, int mode) {
 // clock CPUCLOCK_SCHED (0b010) which reports the thread's consumed system+user
 // time (as mandated by the POSIX standard POSIX.1-2024/IEEE Std 1003.1-2024
 // §3.90).
+
+
+// Linux Kernel internal bit encoding for dynamic CPU clocks:
+// [31:3] : Bitwise NOT of the PID or TID (~0 for current thread)
+// [2]    : 1 = Per-thread clock, 0 = Per-process clock
+// [1:0]  : Clock type (0 = PROF, 1 = VIRT/User-only, 2 = SCHED)
+static_assert(sizeof(clockid_t) == 4, "Linux clockid_t must be 32-bit");
+constexpr clockid_t CLOCK_CURRENT_THREAD_USERTIME = static_cast<clockid_t>(~0u << 3 | 4 | 1);
+
 static bool get_thread_clockid(Thread* thread, clockid_t* clockid, bool total) {
   constexpr clockid_t CLOCK_TYPE_MASK = 3;
   constexpr clockid_t CPUCLOCK_VIRT = 1;
@@ -5048,7 +5057,7 @@ jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
   if (user_sys_cpu_time) {
     return os::Linux::thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
   } else {
-    return user_thread_cpu_time(Thread::current());
+    return os::Linux::thread_cpu_time(CLOCK_CURRENT_THREAD_USERTIME);
   }
 }
 
