@@ -1284,6 +1284,11 @@ final class ServerHello {
                     "The ServerHello.legacy_version field is not TLS 1.2");
             }
 
+            if (chc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "SERVER_HELLO messages must align with a record boundary");
+            }
+
             chc.negotiatedCipherSuite = serverHello.cipherSuite;
             chc.handshakeHash.determine(
                     chc.negotiatedProtocol, chc.negotiatedCipherSuite);
