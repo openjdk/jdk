@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                     SSLHandshake.ENCRYPTED_EXTENSIONS.id, HANDSHAKE,
                     SSLHandshake.CERTIFICATE_REQUEST.id, HANDSHAKE,
                     SSLHandshake.CERTIFICATE.id, HANDSHAKE,
+                    SSLHandshake.COMPRESSED_CERTIFICATE.id, HANDSHAKE,
                     SSLHandshake.CERTIFICATE_VERIFY.id, HANDSHAKE,
                     SSLHandshake.FINISHED.id, HANDSHAKE,
                     SSLHandshake.NEW_SESSION_TICKET.id, ONE_RTT);

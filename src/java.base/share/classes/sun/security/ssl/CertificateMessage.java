@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,14 +774,6 @@ final class CertificateMessage {
         }
 
         T13CertificateMessage(HandshakeContext handshakeContext,
-                byte[] requestContext, List<CertificateEntry> certificates) {
-            super(handshakeContext);
-
-            this.requestContext = requestContext.clone();
-            this.certEntries = certificates;
-        }
-
-        T13CertificateMessage(HandshakeContext handshakeContext,
                 ByteBuffer m) throws IOException {
             super(handshakeContext);
 
@@ -917,16 +909,26 @@ final class CertificateMessage {
                 HandshakeMessage message) throws IOException {
             // The producing happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (hc.sslConfig.isClientMode) {
-                return onProduceCertificate(
-                        (ClientHandshakeContext)context, message);
-            } else {
-                return onProduceCertificate(
+            T13CertificateMessage cm = hc.sslConfig.isClientMode ?
+                onProduceCertificate(
+                        (ClientHandshakeContext)context, message) :
+                onProduceCertificate(
                         (ServerHandshakeContext)context, message);
+
+            // Output the handshake message.
+            if (hc.certDeflater == null) {
+                cm.write(hc.handshakeOutput);
+                hc.handshakeOutput.flush();
+            } else {
+                // Replace with CompressedCertificate message
+                CompressedCertificate.handshakeProducer.produce(hc, cm);
             }
+
+            // The handshake message has been delivered.
+            return null;
         }
 
-        private byte[] onProduceCertificate(ServerHandshakeContext shc,
+        private T13CertificateMessage onProduceCertificate(ServerHandshakeContext shc,
                 HandshakeMessage message) throws IOException {
             ClientHelloMessage clientHello = (ClientHelloMessage)message;
 
@@ -984,12 +986,7 @@ final class CertificateMessage {
                 SSLLogger.fine("Produced server Certificate message", cm);
             }
 
-            // Output the handshake message.
-            cm.write(shc.handshakeOutput);
-            shc.handshakeOutput.flush();
-
-            // The handshake message has been delivered.
-            return null;
+            return cm;
         }
 
         private static SSLPossession choosePossession(
@@ -1028,7 +1025,7 @@ final class CertificateMessage {
             return pos;
         }
 
-        private byte[] onProduceCertificate(ClientHandshakeContext chc,
+        private T13CertificateMessage onProduceCertificate(ClientHandshakeContext chc,
                 HandshakeMessage message) throws IOException {
             ClientHelloMessage clientHello = (ClientHelloMessage)message;
             SSLPossession pos = choosePossession(chc, clientHello);
@@ -1071,12 +1068,7 @@ final class CertificateMessage {
                 SSLLogger.fine("Produced client Certificate message", cm);
             }
 
-            // Output the handshake message.
-            cm.write(chc.handshakeOutput);
-            chc.handshakeOutput.flush();
-
-            // The handshake message has been delivered.
-            return null;
+            return cm;
         }
     }
 
@@ -1096,6 +1088,7 @@ final class CertificateMessage {
             HandshakeContext hc = (HandshakeContext)context;
 
             // clean up this consumer
+            hc.handshakeConsumers.remove(SSLHandshake.COMPRESSED_CERTIFICATE.id);
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
 
             // Ensure that the Certificate message has not been sent w/o

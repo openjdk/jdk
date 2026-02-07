@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ public class SSLParameters {
     private String[] applicationProtocols = new String[0];
     private String[] signatureSchemes = null;
     private String[] namedGroups = null;
+    private boolean enableCertificateCompression = true;
 
     /**
      * Constructs SSLParameters.
@@ -94,8 +95,8 @@ public class SSLParameters {
      * constraints, endpoint identification algorithm, signature schemes,
      * server names and server name matchers are set to {@code null};
      * useCipherSuitesOrder, wantClientAuth and needClientAuth are set
-     * to {@code false}; enableRetransmissions is set to {@code true};
-     * maximum network packet size is set to {@code 0}.
+     * to {@code false}; enableRetransmissions and enableCertificateCompression
+     * are set to {@code true}; maximum network packet size is set to {@code 0}.
      */
     public SSLParameters() {
         // empty
@@ -959,5 +960,47 @@ public class SSLParameters {
         }
 
         this.namedGroups = tempGroups;
+    }
+
+    /**
+     * Sets whether TLS certificate compression should be enabled.
+     * This method only applies to TLSv1.3.
+     *
+     * @apiNote The peer needs to support the underlying extension
+     * and compression format in order for certificate compression
+     * to work.
+     *
+     * @implNote The SunJSSE provider supports only zlib compression.
+     * Other JSSE providers may not support this method.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc8879
+     * RFC 8879: TLS Certificate Compression
+     *
+     * @param   enableCertificateCompression
+     *          {@code true} indicates that TLS certificate compression
+     *          should be enabled; {@code false} indicates that TLS certificate
+     *          compression should be disabled
+     *
+     * @see     #getEnableCertificateCompression()
+     *
+     * @since 27
+     */
+    public void setEnableCertificateCompression(
+            boolean enableCertificateCompression) {
+        this.enableCertificateCompression = enableCertificateCompression;
+    }
+
+    /**
+     * Returns whether TLS certificate compression should be enabled.
+     * This method only applies to TLSv1.3.
+     *
+     * @return  true, if TLS certificate compression should be enabled
+     *
+     * @see     #setEnableCertificateCompression(boolean)
+     *
+     * @since 27
+     */
+    public boolean getEnableCertificateCompression() {
+        return this.enableCertificateCompression;
     }
 }

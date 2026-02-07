@@ -29,6 +29,7 @@ import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import javax.crypto.KeyGenerator;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SNIMatcher;
@@ -63,6 +64,11 @@ final class SSLConfiguration implements Cloneable {
 
     // the configured named groups for the "supported_groups" extensions
     String[]                   namedGroups;
+
+    // The configured certificate compression algorithms for
+    // "compress_certificate" extensions
+    Map<String, Function<byte[], byte[]>> certDeflaters;
+    Map<String, Function<byte[], byte[]>> certInflaters;
 
     // Configurations per SSLSocket or SSLEngine instance.
     boolean                     isClientMode;
@@ -245,6 +251,16 @@ final class SSLConfiguration implements Cloneable {
                 CustomizedServerSignatureSchemes.signatureSchemes != null ?
                         CustomizedServerSignatureSchemes.signatureSchemes :
                         SupportedSigSchemes.DEFAULT;
+
+        if (Utilities.getBooleanProperty(
+                "jdk.tls.enableCertificateCompression", true)) {
+            this.certDeflaters = CompressionAlgorithm.getDefaultDeflaters();
+            this.certInflaters = CompressionAlgorithm.getDefaultInflaters();
+        } else {
+            this.certDeflaters = Map.of();
+            this.certInflaters = Map.of();
+        }
+
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         // Configurations per SSLSocket or SSLEngine instance.
         this.isClientMode = isClientMode;
@@ -295,6 +311,8 @@ final class SSLConfiguration implements Cloneable {
         params.setMaximumPacketSize(this.maximumPacketSize);
         params.setSignatureSchemes(this.signatureSchemes);
         params.setNamedGroups(this.namedGroups);
+        params.setEnableCertificateCompression(!this.certInflaters.isEmpty()
+                && !this.certDeflaters.isEmpty());
 
         return params;
     }
@@ -361,6 +379,14 @@ final class SSLConfiguration implements Cloneable {
             this.namedGroups = ngs;
         } else {    // Otherwise, use the default values.
             this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
+        }
+
+        if (params.getEnableCertificateCompression()) {
+            this.certDeflaters = CompressionAlgorithm.getDefaultDeflaters();
+            this.certInflaters = CompressionAlgorithm.getDefaultInflaters();
+        } else {
+            this.certDeflaters = Map.of();
+            this.certInflaters = Map.of();
         }
 
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();

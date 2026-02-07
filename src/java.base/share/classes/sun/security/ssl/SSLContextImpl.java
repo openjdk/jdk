@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.ssl.CompressedCertificate.CompCertCacheKey;
 import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
+import sun.security.util.Cache;
 import sun.security.validator.Validator;
 
 /**
@@ -71,6 +73,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private volatile StatusResponseManager statusResponseManager;
 
     private final ReentrantLock contextLock = new ReentrantLock();
+
+    // Avoid compressing local certificates repeatedly for every handshake.
+    private final Cache<CompCertCacheKey, byte[]> compCertCache =
+            Cache.newSoftMemoryCache(12);
 
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
@@ -222,6 +228,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     EphemeralKeyManager getEphemeralKeyManager() {
         return ephemeralKeyManager;
+    }
+
+    Cache<CompCertCacheKey, byte[]> getCompCertCache() {
+        return compCertCache;
     }
 
     // Used for DTLS in server mode only.
