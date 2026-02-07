@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,10 @@ public class FdlibmTranslit {
 
     public static double tanh(double x) {
         return Tanh.compute(x);
+    }
+
+    public static double asinh(double x) {
+        return Asinh.compute(x);
     }
 
     public static double IEEEremainder(double f1, double f2) {
@@ -2750,6 +2754,46 @@ public class FdlibmTranslit {
                 x *= one;           /* create necessary signal */
             }
             return x;               /* exact output */
+        }
+    }
+
+    /*
+    *  Return the Inverse Hyperbolic Sine of x
+    *
+    *  Method :
+    *
+    *   Based on
+    *     asinh(x) = sign(x) * log [ |x| + sqrt(x*x+1) ]
+    *    we have
+    *    asinh(x) := x  if  1+x*x=1,
+    *             := sign(x)*(log(x)+ln2)) for large |x|, else
+    *             := sign(x)*log(2|x|+1/(|x|+sqrt(x*x+1))) if|x|>2, else
+    *             := sign(x)*log1p(|x| + x^2/(1 + sqrt(1+x^2)))
+    */
+    private static final class Asinh {
+        private static final double one = 1.0;
+        private static final double ln2 = 6.93147180559945286227e-01;
+        private static final double huge = 1.0e300;
+
+        static double compute(double x) {
+            double t,w;
+            int hx,ix;
+            hx = __HI(x);
+            ix = hx&0x7fffffff;
+            if(ix>=0x7ff00000) return x+x;  /* x is inf or NaN */
+            if(ix< 0x3e300000) {    /* |x|<2**-28 */
+                if(huge+x>one) return x;    /* return x inexact except 0 */
+            }
+            if(ix>0x41b00000) { /* |x| > 2**28 */
+                w = log(Math.abs(x))+ln2;
+            } else if (ix>0x40000000) { /* 2**28 > |x| > 2.0 */
+                t = Math.abs(x);
+                w = log(2.0*t+one/(sqrt(x*x+one)+t));
+            } else {        /* 2.0 > |x| > 2**-28 */
+                t = x*x;
+                w =log1p(Math.abs(x)+t/(one+sqrt(one+t)));
+            }
+            if(hx>0) return w; else return -w;
         }
     }
 }
