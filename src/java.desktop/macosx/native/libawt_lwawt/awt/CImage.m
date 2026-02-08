@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ JNI_COCOA_ENTER(env);
         NSRect fromRect = NSMakeRect(0, 0, sw, sh);
         NSRect toRect = NSMakeRect(0, 0, dw, dh);
         CImage_CopyNSImageIntoArray(img, dst, fromRect, toRect);
-        (*env)->ReleasePrimitiveArrayCritical(env, buffer, dst, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, buffer, dst, 0);
     }
 
 JNI_COCOA_EXIT(env);
