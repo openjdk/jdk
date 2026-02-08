@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,11 @@
 /*
  * @test
  * @bug 8156486
- * @run testng/othervm VarHandleTestMethodTypeBoolean
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeBoolean
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false VarHandleTestMethodTypeBoolean
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeBoolean
+ * @run junit/othervm VarHandleTestMethodTypeBoolean
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeBoolean
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false VarHandleTestMethodTypeBoolean
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeBoolean
  */
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -40,10 +36,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.testng.Assert.*;
-
 import static java.lang.invoke.MethodType.*;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
     static final boolean static_final_v = true;
 
@@ -63,7 +63,7 @@ public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         vhFinalField = MethodHandles.lookup().findVarHandle(
                 VarHandleTestMethodTypeBoolean.class, "final_v", boolean.class);
@@ -80,7 +80,6 @@ public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
         vhArray = MethodHandles.arrayElementVarHandle(boolean[].class);
     }
 
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -115,7 +114,8 @@ public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -123,7 +123,6 @@ public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
             atc.testAccess(t);
         }
     }
-
 
     static void testInstanceFieldWrongMethodType(VarHandleTestMethodTypeBoolean recv, VarHandle vh) throws Throwable {
         // Get
