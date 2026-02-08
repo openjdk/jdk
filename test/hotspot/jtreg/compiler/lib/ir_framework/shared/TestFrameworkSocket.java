@@ -24,40 +24,27 @@
 package compiler.lib.ir_framework.shared;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.network.*;
+import compiler.lib.ir_framework.driver.network.testvm.TestVmMessageReader;
+import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessages;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.net.*;
+import java.util.concurrent.*;
 
 /**
- * Dedicated socket to send data from the flag and Test VM back to the Driver VM.
+ * Dedicated Driver VM socket to receive data from the Test VM. Could either be received from Java and C2 code.
  */
 public class TestFrameworkSocket implements AutoCloseable {
-    public static final String STDOUT_PREFIX = "[STDOUT]";
-    public static final String TESTLIST_TAG = "[TESTLIST]";
-    public static final String DEFAULT_REGEX_TAG = "[DEFAULT_REGEX]";
-    public static final String PRINT_TIMES_TAG = "[PRINT_TIMES]";
-    public static final String NOT_COMPILABLE_TAG = "[NOT_COMPILABLE]";
-
-    // Static fields used for Test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
-    private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
 
-    private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");
-    private static Socket clientSocket = null;
-    private static PrintWriter clientWriter = null;
-
-    private final String serverPortPropertyFlag;
-    private FutureTask<String> socketTask;
+    private final int serverSocketPort;
     private final ServerSocket serverSocket;
-    private boolean receivedStdOut = false;
+    private boolean running;
+    private final ExecutorService executor;
+    private Future<JavaMessages> javaFuture;
 
     public TestFrameworkSocket() {
         try {
@@ -66,140 +53,80 @@ public class TestFrameworkSocket implements AutoCloseable {
         } catch (IOException e) {
             throw new TestFrameworkException("Failed to create TestFramework server socket", e);
         }
-        int port = serverSocket.getLocalPort();
+        serverSocketPort = serverSocket.getLocalPort();
+        executor = Executors.newCachedThreadPool();
         if (TestFramework.VERBOSE) {
-            System.out.println("TestFramework server socket uses port " + port);
+            System.out.println("TestFramework server socket uses port " + serverSocketPort);
         }
-        serverPortPropertyFlag = "-D" + SERVER_PORT_PROPERTY + "=" + port;
         start();
     }
 
     public String getPortPropertyFlag() {
-        return serverPortPropertyFlag;
+        return "-D" + SERVER_PORT_PROPERTY + "=" + serverSocketPort;
     }
 
     private void start() {
-        socketTask = initSocketTask();
-        Thread socketThread = new Thread(socketTask);
-        socketThread.start();
+        running = true;
+        executor.submit(this::acceptLoop);
     }
 
     /**
-     * Waits for a client (created by flag or Test VM) to connect. Return the messages received from the client.
+     * Main loop to wait for new client connections and handling them upon connection request.
      */
-    private FutureTask<String> initSocketTask() {
-        return new FutureTask<>(() -> {
-            try (Socket clientSocket = serverSocket.accept();
-                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-            ) {
-                StringBuilder builder = new StringBuilder();
-                String next;
-                while ((next = in.readLine()) != null) {
-                    builder.append(next).append(System.lineSeparator());
-                    if (next.startsWith(STDOUT_PREFIX)) {
-                        receivedStdOut = true;
-                    }
-                }
-                return builder.toString();
-            } catch (IOException e) {
+    private void acceptLoop() {
+        while (running) {
+            try {
+                acceptNewClientConnection();
+            } catch (TestFrameworkException e) {
+                running = false;
+                throw e;
+            } catch (Exception e) {
+                running = false;
                 throw new TestFrameworkException("Server socket error", e);
             }
-        });
+        }
+    }
+
+    /**
+     * Accept new client connection and then submit a task accordingly to manage incoming message on that connection/socket.
+     */
+    private void acceptNewClientConnection() throws IOException {
+        Socket client = serverSocket.accept();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        submitTask(client, reader);
+    }
+
+    /**
+     * Submit dedicated tasks which are wrapped into {@link Future} objects. The tasks will read all messages sent
+     * over that connection.
+     */
+    private void submitTask(Socket client, BufferedReader reader) {
+        javaFuture = executor.submit(new TestVmMessageReader(client, reader));
     }
 
     @Override
     public void close() {
         try {
+            running = false;
             serverSocket.close();
         } catch (IOException e) {
             throw new TestFrameworkException("Could not close socket", e);
         }
+        executor.shutdown();
     }
 
-    /**
-     * Only called by Test VM to write to server socket.
-     */
-    public static void write(String msg, String tag) {
-        write(msg, tag, false);
+    public TestVMData testVmData(String hotspotPidFileName, boolean allowNotCompilable) {
+        JavaMessages javaMessages = testVmMessages();
+        return new TestVMData(javaMessages, hotspotPidFileName, allowNotCompilable);
     }
 
-    /**
-     * Only called by Test VM to write to server socket.
-     * <p>
-     * The Test VM is spawned by the main jtreg VM. The stdout of the Test VM is hidden
-     * unless the Verbose or ReportStdout flag is used. TestFrameworkSocket is used by the parent jtreg
-     * VM and the Test VM to communicate. By sending the prints through the TestFrameworkSocket with the
-     * parameter stdout set to true, the parent VM will print the received messages to its stdout, making it
-     * visible to the user.
-     */
-    public static void write(String msg, String tag, boolean stdout) {
-        if (REPRODUCE) {
-            System.out.println("Debugging Test VM: Skip writing due to -DReproduce");
-            return;
-        }
-        TestFramework.check(SERVER_PORT != -1, "Server port was not set correctly for flag and/or Test VM "
-                                               + "or method not called from flag or Test VM");
+    private JavaMessages testVmMessages() {
         try {
-            // Keep the client socket open until the Test VM terminates (calls closeClientSocket before exiting main()).
-            if (clientSocket == null) {
-                clientSocket = new Socket(InetAddress.getLoopbackAddress(), SERVER_PORT);
-                clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
-            }
-            if (stdout) {
-                msg = STDOUT_PREFIX + tag + " " + msg;
-            }
-            clientWriter.println(msg);
-        } catch (Exception e) {
-            // When the Test VM is directly run, we should ignore all messages that would normally be sent to the
-            // Driver VM.
-            String failMsg = System.lineSeparator() + System.lineSeparator() + """
-                             ###########################################################
-                              Did you directly run the Test VM (TestVM class)
-                              to reproduce a bug?
-                              => Append the flag -DReproduce=true and try again!
-                             ###########################################################
-                             """;
-            throw new TestRunException(failMsg, e);
-        }
-        if (TestFramework.VERBOSE) {
-            System.out.println("Written " + tag + " to socket:");
-            System.out.println(msg);
-        }
-    }
-
-    /**
-     * Closes (and flushes) the printer to the socket and the socket itself. Is called as last thing before exiting
-     * the main() method of the flag and the Test VM.
-     */
-    public static void closeClientSocket() {
-        if (clientSocket != null) {
-            try {
-                clientWriter.close();
-                clientSocket.close();
-            } catch (IOException e) {
-                throw new RuntimeException("Could not close TestVM socket", e);
-            }
-        }
-    }
-
-    /**
-     * Get the socket output of the Flag VM.
-     */
-    public String getOutput() {
-        try {
-            return socketTask.get();
+            return javaFuture.get();
         } catch (ExecutionException e) {
-            // Thrown when socket task was not finished, yet (i.e. no client sent data) but socket was already closed.
-            return "";
+            throw new TestFrameworkException("No test VM messages were received", e);
         } catch (Exception e) {
-            throw new TestFrameworkException("Could not read from socket task", e);
+            throw new TestFrameworkException("Error while fetching Test VM Future", e);
         }
-    }
-
-    /**
-     * Return whether Test VM sent messages to be put on stdout (starting with {@link ::STDOUT_PREFIX}).
-     */
-    public boolean hasStdOut() {
-        return receivedStdOut;
     }
 }
