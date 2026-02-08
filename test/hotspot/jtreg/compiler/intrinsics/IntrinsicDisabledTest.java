@@ -34,29 +34,29 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:DisableIntrinsic=_putCharVolatile,_putInt
- *                   -XX:DisableIntrinsic=_putIntVolatile
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putChar,ccstrlist,DisableIntrinsic,_getCharVolatile,_getInt
- *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putCharVolatile,ccstrlist,DisableIntrinsic,_getIntVolatile
+ *                   -XX:DisableIntrinsic=_loadFence,_fullFence
+ *                   -XX:DisableIntrinsic=_storeStoreFence
+ *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::storeFence,ccstrlist,DisableIntrinsic,_getReferenceMO,_putReferenceMO
+ *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::loadFence,ccstrlist,DisableIntrinsic,_getPrimitiveBitsMO
  *                   compiler.intrinsics.IntrinsicDisabledTest
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:ControlIntrinsic=-_putCharVolatile,-_putInt
- *                   -XX:ControlIntrinsic=-_putIntVolatile
- *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putChar,-_getCharVolatile,-_getInt
- *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,-_getIntVolatile
+ *                   -XX:ControlIntrinsic=-_loadFence,-_fullFence
+ *                   -XX:ControlIntrinsic=-_storeStoreFence
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::storeFence,-_getReferenceMO,-_putReferenceMO
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::loadFence,-_getPrimitiveBitsMO
  *                   compiler.intrinsics.IntrinsicDisabledTest
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:ControlIntrinsic=+_putIntVolatile,+_putCharVolatile,+_putInt
- *                   -XX:DisableIntrinsic=_putCharVolatile,_putInt
- *                   -XX:DisableIntrinsic=_putIntVolatile
- *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putChar,+_getCharVolatile,+_getInt
- *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,+_getIntVolatile
- *                   -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::putChar,_getCharVolatile,_getInt
- *                   -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::putCharVolatile,_getIntVolatile
+ *                   -XX:ControlIntrinsic=+_storeStoreFence,+_loadFence,+_fullFence
+ *                   -XX:DisableIntrinsic=_loadFence,_fullFence
+ *                   -XX:DisableIntrinsic=_storeStoreFence
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::storeFence,+_getReferenceMO,+_putReferenceMO
+ *                   -XX:CompileCommand=ControlIntrinsic,jdk.internal.misc.Unsafe::loadFence,+_getPrimitiveBitsMO
+ *                   -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::storeFence,_getReferenceMO,_putReferenceMO
+ *                   -XX:CompileCommand=DisableIntrinsic,jdk.internal.misc.Unsafe::loadFence,_getPrimitiveBitsMO
  *                   compiler.intrinsics.IntrinsicDisabledTest
 */
 
@@ -67,7 +67,6 @@ import jdk.test.whitebox.WhiteBox;
 import compiler.whitebox.CompilerWhiteBoxTest;
 
 import java.lang.reflect.Executable;
-import java.util.Objects;
 
 public class IntrinsicDisabledTest {
 
@@ -78,141 +77,120 @@ public class IntrinsicDisabledTest {
 
     private static final int TIERED_STOP_AT_LEVEL = wb.getIntxVMFlag("TieredStopAtLevel").intValue();
 
-    /* This test uses several methods from jdk.internal.misc.Unsafe. The method
-     * getMethod() returns a different Executable for each different
-     * combination of its input parameters. There are eight possible
-     * combinations, getMethod can return an Executable representing
-     * the following methods: putChar, putCharVolatile, getChar,
-     * getCharVolatile, putInt, putIntVolatile, getInt,
-     * getIntVolatile. These methods were selected because they can
-     * be intrinsified by both the C1 and the C2 compiler.
+    /* This test uses several methods from java.lang.Math. The method
+     * getMethod() returns a different Executable for each name.
+     * These methods were selected because they can be intrinsified by
+     *  both the C1 and the C2 compiler.
      */
-    static Executable getMethod(boolean isChar, boolean isPut, boolean isVolatile) throws RuntimeException {
-        Executable aMethod;
-        String methodTypeName = isChar ? "Char" : "Int";
-
+    static Executable getMethod(String name, Class<?>... parameters) throws RuntimeException {
         try {
-            Class aClass = Class.forName("jdk.internal.misc.Unsafe");
-            if (isPut) {
-                aMethod = aClass.getDeclaredMethod("put" + methodTypeName + (isVolatile ? "Volatile" : ""),
-                                                   Object.class,
-                                                   long.class,
-                                                   isChar ? char.class : int.class);
-            } else {
-                aMethod = aClass.getDeclaredMethod("get" + methodTypeName + (isVolatile ? "Volatile" : ""),
-                                                   Object.class,
-                                                   long.class);
-            }
+            return jdk.internal.misc.Unsafe.class.getDeclaredMethod(name, parameters);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Test bug, method is unavailable. " + e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Test bug, class is unavailable. " + e);
         }
-
-        return aMethod;
     }
 
     public static void test(int compLevel) {
 
-        Executable putChar = getMethod(true, /*isPut =*/ true, /*isVolatile = */ false);
-        Executable getChar = getMethod(true, /*isPut =*/ false, /*isVolatile = */ false);
-        Executable putCharVolatile = getMethod(true, /*isPut =*/ true, /*isVolatile = */ true);
-        Executable getCharVolatile = getMethod(true, /*isPut =*/ false, /*isVolatile = */ true);
-        Executable putInt = getMethod(false, /*isPut =*/ true, /*isVolatile = */ false);
-        Executable getInt = getMethod(false, /*isPut =*/ false, /*isVolatile = */ false);
-        Executable putIntVolatile = getMethod(false, /*isPut =*/ true, /*isVolatile = */ true);
-        Executable getIntVolatile = getMethod(false, /*isPut =*/ false, /*isVolatile = */ true);
+        Executable loadFence  = getMethod("loadFence");
+        Executable storeFence  = getMethod("storeFence");
+        Executable storeStoreFence  = getMethod("storeStoreFence");
+        Executable fullFence = getMethod("fullFence");
+        Executable getReferenceMO = getMethod("getReferenceMO", byte.class, Object.class, long.class);
+        Executable putReferenceMO  = getMethod("putReferenceMO", byte.class, Object.class, long.class, Object.class);
+        Executable getPrimitiveBitsMO  = getMethod("getPrimitiveBitsMO", byte.class, byte.class, Object.class, long.class);
+        Executable putPrimitiveBitsMO = getMethod("putPrimitiveBitsMO", byte.class, byte.class, Object.class, long.class, long.class);
 
         /* Test if globally disabling intrinsics works. */
-        if (!wb.isIntrinsicAvailable(putChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putChar.toGenericString() +
+        if (!wb.isIntrinsicAvailable(storeFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + storeFence.toGenericString() +
                                        "] is not available globally although it should be.");
         }
 
-        if (wb.isIntrinsicAvailable(putCharVolatile, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putCharVolatile.toGenericString() +
+        if (wb.isIntrinsicAvailable(loadFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + loadFence.toGenericString() +
                                        "] is available globally although it should not be.");
         }
 
-        if (wb.isIntrinsicAvailable(putInt, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putInt.toGenericString() +
+        if (wb.isIntrinsicAvailable(fullFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + fullFence.toGenericString() +
                                        "] is available globally although it should not be.");
         }
 
-        if (wb.isIntrinsicAvailable(putIntVolatile, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putIntVolatile.toGenericString() +
+        if (wb.isIntrinsicAvailable(storeStoreFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + storeStoreFence.toGenericString() +
                                        "] is available globally although it should not be.");
         }
 
         /* Test if disabling intrinsics on a per-method level
          * works. The method for which intrinsics are
-         * disabled (the compilation context) is putChar. */
-        if (!wb.isIntrinsicAvailable(getChar, putChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + getChar.toGenericString() +
+         * disabled (the compilation context) is storeFence. */
+        if (!wb.isIntrinsicAvailable(putPrimitiveBitsMO, storeFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + putPrimitiveBitsMO.toGenericString() +
                                        "] is not available for intrinsification in [" +
-                                       putChar.toGenericString() + "] although it should be.");
+                                       storeFence.toGenericString() + "] although it should be.");
         }
 
-        if (wb.isIntrinsicAvailable(getCharVolatile, putChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + getCharVolatile.toGenericString() +
+        if (wb.isIntrinsicAvailable(getReferenceMO, storeFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + getReferenceMO.toGenericString() +
                                        "] is available for intrinsification in [" +
-                                       putChar.toGenericString() + "] although it should not be.");
+                                       storeFence.toGenericString() + "] although it should not be.");
         }
 
-        if (wb.isIntrinsicAvailable(getInt, putChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + getInt.toGenericString() +
+        if (wb.isIntrinsicAvailable(putReferenceMO, storeFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + putReferenceMO.toGenericString() +
                                        "] is available for intrinsification in [" +
-                                       putChar.toGenericString() + "] although it should not be.");
+                                       storeFence.toGenericString() + "] although it should not be.");
         }
 
-        if (wb.isIntrinsicAvailable(getIntVolatile, putCharVolatile, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + getIntVolatile.toGenericString() +
+        if (wb.isIntrinsicAvailable(getPrimitiveBitsMO, loadFence, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + getPrimitiveBitsMO.toGenericString() +
                                        "] is available for intrinsification in [" +
-                                       putCharVolatile.toGenericString() + "] although it should not be.");
+                                       loadFence.toGenericString() + "] although it should not be.");
         }
 
         /* Test if disabling intrinsics on a per-method level
          * leaves those intrinsics enabled globally. */
-        if (!wb.isIntrinsicAvailable(getCharVolatile, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + getCharVolatile.toGenericString() +
+        if (!wb.isIntrinsicAvailable(getReferenceMO, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + getReferenceMO.toGenericString() +
                                        "] is not available globally although it should be.");
         }
 
-        if (!wb.isIntrinsicAvailable(getInt, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + getInt.toGenericString() +
+        if (!wb.isIntrinsicAvailable(putReferenceMO, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + putReferenceMO.toGenericString() +
                                        "] is not available globally although it should be.");
         }
 
 
-        if (!wb.isIntrinsicAvailable(getIntVolatile, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + getIntVolatile.toGenericString() +
+        if (!wb.isIntrinsicAvailable(getPrimitiveBitsMO, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + getPrimitiveBitsMO.toGenericString() +
                                        "] is not available globally although it should be.");
         }
 
         /* Test if disabling an intrinsic globally disables it on a
          * per-method level as well. */
-        if (!wb.isIntrinsicAvailable(putChar, getChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putChar.toGenericString() +
+        if (!wb.isIntrinsicAvailable(storeFence, putPrimitiveBitsMO, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + storeFence.toGenericString() +
                                        "] is not available for intrinsification in [" +
-                                       getChar.toGenericString() + "] although it should be.");
+                                       putPrimitiveBitsMO.toGenericString() + "] although it should be.");
         }
 
-        if (wb.isIntrinsicAvailable(putCharVolatile, getChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putCharVolatile.toGenericString() +
+        if (wb.isIntrinsicAvailable(loadFence, putPrimitiveBitsMO, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + loadFence.toGenericString() +
                                        "] is available for intrinsification in [" +
-                                       getChar.toGenericString() + "] although it should not be.");
+                                       putPrimitiveBitsMO.toGenericString() + "] although it should not be.");
         }
 
-        if (wb.isIntrinsicAvailable(putInt, getChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putInt.toGenericString() +
+        if (wb.isIntrinsicAvailable(fullFence, putPrimitiveBitsMO, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + fullFence.toGenericString() +
                                        "] is available for intrinsification in [" +
-                                       getChar.toGenericString() + "] although it should not be.");
+                                       putPrimitiveBitsMO.toGenericString() + "] although it should not be.");
         }
 
-        if (wb.isIntrinsicAvailable(putIntVolatile, getChar, compLevel)) {
-            throw new RuntimeException("Intrinsic for [" + putIntVolatile.toGenericString() +
+        if (wb.isIntrinsicAvailable(storeStoreFence, putPrimitiveBitsMO, compLevel)) {
+            throw new RuntimeException("Intrinsic for [" + storeStoreFence.toGenericString() +
                                        "] is available for intrinsification in [" +
-                                       getChar.toGenericString() + "] although it should not be.");
+                                       putPrimitiveBitsMO.toGenericString() + "] although it should not be.");
         }
     }
 

@@ -96,34 +96,26 @@ BufferBlob* Compiler::init_buffer_blob() {
   return buffer_blob;
 }
 
-bool Compiler::is_intrinsic_supported(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
-
-  if (method->is_synchronized()) {
-    // C1 does not support intrinsification of synchronized methods.
-    return false;
-  }
-  return Compiler::is_intrinsic_supported(id);
-}
-
-bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
+bool Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id) {
   switch (id) {
-  case vmIntrinsics::_compareAndSetLong:
+  case vmIntrinsics::_compareAndExchangeReferenceMO:
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+    // FIXME:  Most platforms support full cmpxchg in all sizes.
+    return false;
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+  case vmIntrinsics::_compareAndSetReferenceMO:
+    // all platforms must support at least T_OBJECT, T_INT, T_LONG
     break;
-  case vmIntrinsics::_getAndAddInt:
-    if (!VM_Version::supports_atomic_getadd4()) return false;
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    if (!(VM_Version::supports_atomic_getadd4() ||
+          VM_Version::supports_atomic_getadd8() ||
+          VM_Version::supports_atomic_getset4() ||
+          VM_Version::supports_atomic_getset8())) {
+      // if any of the hardware ops are present, try the expansion
+      return false;
+    }
     break;
-  case vmIntrinsics::_getAndAddLong:
-    if (!VM_Version::supports_atomic_getadd8()) return false;
-    break;
-  case vmIntrinsics::_getAndSetInt:
-    if (!VM_Version::supports_atomic_getset4()) return false;
-    break;
-  case vmIntrinsics::_getAndSetLong:
-    if (!VM_Version::supports_atomic_getset8()) return false;
-    break;
-  case vmIntrinsics::_getAndSetReference:
+  case vmIntrinsics::_getAndSetReferenceMO:
 #ifdef _LP64
     if (!UseCompressedOops && !VM_Version::supports_atomic_getset8()) return false;
     if (UseCompressedOops && !VM_Version::supports_atomic_getset4()) return false;
@@ -176,50 +168,10 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
-  case vmIntrinsics::_getReference:
-  case vmIntrinsics::_getBoolean:
-  case vmIntrinsics::_getByte:
-  case vmIntrinsics::_getShort:
-  case vmIntrinsics::_getChar:
-  case vmIntrinsics::_getInt:
-  case vmIntrinsics::_getLong:
-  case vmIntrinsics::_getFloat:
-  case vmIntrinsics::_getDouble:
-  case vmIntrinsics::_putReference:
-  case vmIntrinsics::_putBoolean:
-  case vmIntrinsics::_putByte:
-  case vmIntrinsics::_putShort:
-  case vmIntrinsics::_putChar:
-  case vmIntrinsics::_putInt:
-  case vmIntrinsics::_putLong:
-  case vmIntrinsics::_putFloat:
-  case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getReferenceVolatile:
-  case vmIntrinsics::_getBooleanVolatile:
-  case vmIntrinsics::_getByteVolatile:
-  case vmIntrinsics::_getShortVolatile:
-  case vmIntrinsics::_getCharVolatile:
-  case vmIntrinsics::_getIntVolatile:
-  case vmIntrinsics::_getLongVolatile:
-  case vmIntrinsics::_getFloatVolatile:
-  case vmIntrinsics::_getDoubleVolatile:
-  case vmIntrinsics::_putReferenceVolatile:
-  case vmIntrinsics::_putBooleanVolatile:
-  case vmIntrinsics::_putByteVolatile:
-  case vmIntrinsics::_putShortVolatile:
-  case vmIntrinsics::_putCharVolatile:
-  case vmIntrinsics::_putIntVolatile:
-  case vmIntrinsics::_putLongVolatile:
-  case vmIntrinsics::_putFloatVolatile:
-  case vmIntrinsics::_putDoubleVolatile:
-  case vmIntrinsics::_getShortUnaligned:
-  case vmIntrinsics::_getCharUnaligned:
-  case vmIntrinsics::_getIntUnaligned:
-  case vmIntrinsics::_getLongUnaligned:
-  case vmIntrinsics::_putShortUnaligned:
-  case vmIntrinsics::_putCharUnaligned:
-  case vmIntrinsics::_putIntUnaligned:
-  case vmIntrinsics::_putLongUnaligned:
+  case vmIntrinsics::_getPrimitiveBitsMO:
+  case vmIntrinsics::_putPrimitiveBitsMO:
+  case vmIntrinsics::_getReferenceMO:
+  case vmIntrinsics::_putReferenceMO:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_updateCRC32:
@@ -230,8 +182,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
   case vmIntrinsics::_vectorizedMismatch:
-  case vmIntrinsics::_compareAndSetInt:
-  case vmIntrinsics::_compareAndSetReference:
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
 #ifdef JFR_HAVE_INTRINSICS
@@ -248,6 +198,49 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     return false; // Intrinsics not on the previous list are not available.
   }
 
+  return true;
+}
+bool Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
+                                         vmIntrinsics::MemoryOrder mo,
+                                         BasicType bt,
+                                         vmIntrinsics::BitsOperation op) {
+  assert(vmIntrinsics::polymorphic_prefix(id) != vmIntrinsics::PP_NONE, "");
+  if (!is_intrinsic_supported_nv(id))  return false;
+  switch (id) {
+  case vmIntrinsics::_compareAndSetReferenceMO:
+    assert(op == vmIntrinsics::OP_NONE, "");
+    assert(bt == T_OBJECT, "");    // and fall through
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    assert(op == vmIntrinsics::OP_NONE, "");
+    if (bt == T_INT || bt == T_LONG || bt == T_OBJECT) {
+      return true;
+    }
+    // FIXME: detect other combinations supported by platform
+    return false;
+
+  case vmIntrinsics::_getAndSetReferenceMO:
+    assert(bt == T_OBJECT, "");
+    assert(op == vmIntrinsics::OP_NONE, "");
+    // and fall through
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    switch (op) {
+    case vmIntrinsics::OP_ADD:
+      if (bt == T_INT  && !VM_Version::supports_atomic_getadd4()) return false;
+      if (bt == T_LONG && !VM_Version::supports_atomic_getadd8()) return false;
+      break;
+    case vmIntrinsics::OP_SWAP:
+      if (bt == T_INT  && !VM_Version::supports_atomic_getset4()) return false;
+      if (bt == T_LONG && !VM_Version::supports_atomic_getset8()) return false;
+      break;
+    default:
+      return false;
+    }
+    // FIXME: Most platforms (including arm64 and x64) support byte
+    // and short as well, and with all the bitwise combination ops.
+    return (bt == T_INT || bt == T_LONG || bt == T_OBJECT);
+  default:
+    break;
+  }
   return true;
 }
 

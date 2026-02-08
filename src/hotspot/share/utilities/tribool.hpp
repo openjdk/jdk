@@ -39,12 +39,12 @@ class TriBool{
   explicit TriBool(u1 raw) : _value(raw & 3) {}
 
  public:
-  TriBool() : _value(0) {}
-  TriBool(bool value) : _value(value) {
+  constexpr TriBool() : _value(0) {}
+  constexpr TriBool(bool value) : _value(value) {
     // set to not-default in separate step to avoid conversion warnings
     _value |= 2;
   }
-  TriBool(const TriBool& o): _value(o._value) {}
+  constexpr TriBool(const TriBool& o): _value(o._value) {}
 
   TriBool& operator=(bool value) {
     _value = value;
@@ -63,6 +63,10 @@ class TriBool{
 
   /*explicit*/ operator bool() const {
     return (_value & 1);
+  }
+
+  bool match(bool value) {
+    return is_default() || value == (bool)*this;
   }
 };
 

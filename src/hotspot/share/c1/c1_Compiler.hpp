@@ -53,11 +53,25 @@ class Compiler: public AbstractCompiler {
   // Print compilation timers and statistics
   virtual void print_timers();
 
-  // Check if the C1 compiler supports an intrinsic for 'method'.
-  virtual bool is_intrinsic_supported(const methodHandle& method);
+  // Check if the C1 compiler supports an intrinsic.
+  // Return true if the intrinsic `id` is supported.
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id) {
+    return is_intrinsic_supported_nv(id);
+  }
+  // Fine-grained query about polymorphic intrinsics,
+  // applicable only to an intrinsic with a polymorphic prefix.
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id,
+                                      vmIntrinsics::MemoryOrder mo,
+                                      BasicType bt = T_OBJECT,
+                                      vmIntrinsics::BitsOperation op = vmIntrinsics::OP_NONE) {
+    return is_intrinsic_supported_nv(id, mo, bt, op);
+  }
 
-  // Return true if the intrinsic `id` is supported by C1
-  static bool is_intrinsic_supported(vmIntrinsics::ID id);
+  static bool is_intrinsic_supported_nv(vmIntrinsics::ID id);
+  static bool is_intrinsic_supported_nv(vmIntrinsics::ID id,
+                                        vmIntrinsics::MemoryOrder mo,
+                                        BasicType bt,
+                                        vmIntrinsics::BitsOperation op);
 
   // Size of the code buffer
   static uint code_buffer_size();

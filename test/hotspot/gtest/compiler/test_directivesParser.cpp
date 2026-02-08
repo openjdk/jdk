@@ -99,7 +99,7 @@ TEST_VM_F(DirectivesParserTest, control_intrinsic) {
       "    match: \"foo/bar.*\"," "\n"
       "    c2: {" "\n"
       "      DisableIntrinsic: \"_compareToL\"," "\n"
-      "      ControlIntrinsic: \"+_mulAdd,+_getInt,-_arraycopy,+_compareToL\"" "\n"
+      "      ControlIntrinsic: \"+_mulAdd,+_loadFence,-_arraycopy,+_compareToL\"" "\n"
       "    }" "\n"
       "  }" "\n"
       "]" "\n");
