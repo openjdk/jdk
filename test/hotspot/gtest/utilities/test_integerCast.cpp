@@ -103,6 +103,17 @@ template<typename To, typename From>
 TestIntegerCastIntegerValues<To, From>
 TestIntegerCastIntegerValues<To, From>::values{};
 
+template<typename To, typename From>
+static void good_integer_conversion(From from) {
+  ASSERT_TRUE(is_integer_convertible<To>(from));
+  EXPECT_EQ(static_cast<To>(from), integer_cast<To>(from));
+}
+
+template<typename To, typename From>
+static void bad_integer_conversion(From from) {
+  EXPECT_FALSE(is_integer_convertible<To>(from));
+}
+
 // signed -> signed is tautological unless From is wider than To.
 
 TEST(TestIntegerCast, wide_signed_to_narrow_signed_integers) {
@@ -111,15 +122,15 @@ TEST(TestIntegerCast, wide_signed_to_narrow_signed_integers) {
   using Values = TestIntegerCastIntegerValues<To, From>;
   const Values& values = Values::values;
 
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.minus_one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.zero));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.one));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.max));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.max));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.min - 1));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.max + 1));
+  good_integer_conversion<To>(values.from.minus_one);
+  good_integer_conversion<To>(values.from.zero);
+  good_integer_conversion<To>(values.from.one);
+  bad_integer_conversion<To>(values.from.min);
+  bad_integer_conversion<To>(values.from.max);
+  good_integer_conversion<To>(values.to_as_from.min);
+  good_integer_conversion<To>(values.to_as_from.max);
+  bad_integer_conversion<To>(values.to_as_from.min - 1);
+  bad_integer_conversion<To>(values.to_as_from.max + 1);
 }
 
 // unsigned -> unsigned is tautological unless From is wider than To.
@@ -130,15 +141,15 @@ TEST(TestIntegerCast, wide_unsigned_to_narrow_unsigned_integers) {
   using Values = TestIntegerCastIntegerValues<To, From>;
   const Values& values = Values::values;
 
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.minus_one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.zero));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.max));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.min - 1));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.max + 1));
+  bad_integer_conversion<To>(values.from.minus_one);
+  good_integer_conversion<To>(values.from.zero);
+  good_integer_conversion<To>(values.from.one);
+  good_integer_conversion<To>(values.from.min);
+  bad_integer_conversion<To>(values.from.max);
+  good_integer_conversion<To>(values.to_as_from.min);
+  good_integer_conversion<To>(values.to_as_from.min);
+  bad_integer_conversion<To>(values.to_as_from.min - 1);
+  bad_integer_conversion<To>(values.to_as_from.max + 1);
 }
 
 TEST(TestIntegerCast, unsigned_to_signed_same_size_integers) {
@@ -147,13 +158,13 @@ TEST(TestIntegerCast, unsigned_to_signed_same_size_integers) {
   using Values = TestIntegerCastIntegerValues<To, From>;
   const Values& values = Values::values;
 
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.zero));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.max));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.max));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.max + 1));
+  good_integer_conversion<To>(values.from.zero);
+  good_integer_conversion<To>(values.from.one);
+  good_integer_conversion<To>(values.from.min);
+  bad_integer_conversion<To>(values.from.max);
+  bad_integer_conversion<To>(values.to_as_from.min);
+  good_integer_conversion<To>(values.to_as_from.max);
+  bad_integer_conversion<To>(values.to_as_from.max + 1);
 }
 
 // Narrow unsigned to wide signed is tautological.
@@ -164,15 +175,15 @@ TEST(TestIntegerCast, wide_unsigned_to_narrow_signed_integers) {
   using Values = TestIntegerCastIntegerValues<To, From>;
   const Values& values = Values::values;
 
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.minus_one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.zero));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.max));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.max));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.min - 1));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.max + 1));
+  bad_integer_conversion<To>(values.from.minus_one);
+  good_integer_conversion<To>(values.from.zero);
+  good_integer_conversion<To>(values.from.one);
+  good_integer_conversion<To>(values.from.min);
+  bad_integer_conversion<To>(values.from.max);
+  bad_integer_conversion<To>(values.to_as_from.min);
+  good_integer_conversion<To>(values.to_as_from.max);
+  bad_integer_conversion<To>(values.to_as_from.min - 1);
+  bad_integer_conversion<To>(values.to_as_from.max + 1);
 }
 
 TEST(TestIntegerCast, signed_to_unsigned_same_size_integers) {
@@ -181,13 +192,13 @@ TEST(TestIntegerCast, signed_to_unsigned_same_size_integers) {
   using Values = TestIntegerCastIntegerValues<To, From>;
   const Values& values = Values::values;
 
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.minus_one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.zero));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.one));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.min));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.max));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.max));
+  bad_integer_conversion<To>(values.from.minus_one);
+  good_integer_conversion<To>(values.from.zero);
+  good_integer_conversion<To>(values.from.one);
+  bad_integer_conversion<To>(values.from.min);
+  good_integer_conversion<To>(values.from.max);
+  good_integer_conversion<To>(values.to_as_from.min);
+  bad_integer_conversion<To>(values.to_as_from.max);
 }
 
 TEST(TestIntegerCast, narrow_signed_to_wide_unsigned_integers) {
@@ -196,13 +207,13 @@ TEST(TestIntegerCast, narrow_signed_to_wide_unsigned_integers) {
   using Values = TestIntegerCastIntegerValues<To, From>;
   const Values& values = Values::values;
 
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.minus_one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.zero));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.one));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.min));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.max));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.to_as_from.max));
+  bad_integer_conversion<To>(values.from.minus_one);
+  good_integer_conversion<To>(values.from.zero);
+  good_integer_conversion<To>(values.from.one);
+  bad_integer_conversion<To>(values.from.min);
+  good_integer_conversion<To>(values.from.max);
+  good_integer_conversion<To>(values.to_as_from.min);
+  bad_integer_conversion<To>(values.to_as_from.max);
 }
 
 TEST(TestIntegerCast, wide_signed_to_narrow_unsigned_integers) {
@@ -211,11 +222,62 @@ TEST(TestIntegerCast, wide_signed_to_narrow_unsigned_integers) {
   using Values = TestIntegerCastIntegerValues<To, From>;
   const Values& values = Values::values;
 
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.minus_one));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.zero));
-  EXPECT_TRUE(is_integer_convertible<To>(values.from.one));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.min));
-  EXPECT_FALSE(is_integer_convertible<To>(values.from.max));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.min));
-  EXPECT_TRUE(is_integer_convertible<To>(values.to_as_from.max));
+  bad_integer_conversion<To>(values.from.minus_one);
+  good_integer_conversion<To>(values.from.zero);
+  good_integer_conversion<To>(values.from.one);
+  bad_integer_conversion<To>(values.from.min);
+  bad_integer_conversion<To>(values.from.max);
+  good_integer_conversion<To>(values.to_as_from.min);
+  good_integer_conversion<To>(values.to_as_from.max);
 }
+
+TEST(TestIntegerCast, permit_tautology) {
+  using From = uint32_t;
+  using To = int64_t;
+  using Values = TestIntegerCastIntegerValues<To, From>;
+  const Values& values = Values::values;
+
+  static_assert(is_always_integer_convertible<From, To>());
+  EXPECT_EQ(static_cast<To>(values.from.min),
+            (integer_cast<To, true>(values.from.min)));
+  EXPECT_EQ(static_cast<To>(values.from.max),
+            (integer_cast<To, true>(values.from.max)));
+}
+
+TEST(TestIntegerCast, check_constexpr) {
+  using From = int64_t;
+  using To = int32_t;
+  constexpr From value = std::numeric_limits<To>::max();
+  constexpr To converted = integer_cast<To>(value);
+  EXPECT_EQ(static_cast<To>(value), converted);
+}
+
+#ifdef ASSERT
+
+TEST_VM_ASSERT(TestIntegerCast, cast_failure_signed_range) {
+  using From = int64_t;
+  using To = int32_t;
+  using Values = TestIntegerCastIntegerValues<To, From>;
+  const Values& values = Values::values;
+
+  From value = values.from.max;
+  To expected = static_cast<To>(value); // Narrowing conversion.
+  EXPECT_FALSE(is_integer_convertible<To>(value));
+  // Should assert.  If it doesn't, then shuld be equal, so fail.
+  EXPECT_NE(static_cast<To>(value), integer_cast<To>(value));
+}
+
+TEST_VM_ASSERT(TestIntegerCast, cast_failure_unsigned_range) {
+  using From = uint64_t;
+  using To = uint32_t;
+  using Values = TestIntegerCastIntegerValues<To, From>;
+  const Values& values = Values::values;
+
+  From value = values.from.max;
+  To expected = static_cast<To>(value); // Narrowing conversion.
+  EXPECT_FALSE(is_integer_convertible<To>(value));
+  // Should assert.  If it doesn't, then should be equal, so fail.
+  EXPECT_NE(static_cast<To>(value), integer_cast<To>(value));
+}
+
+#endif // ASSERT
