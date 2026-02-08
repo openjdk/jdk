@@ -33,7 +33,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array
- * @bug 8329273
+ * @bug 8329273 8356184
  * @key randomness
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
@@ -154,7 +154,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-buffer
- * @bug 8329273
+ * @bug 8329273 8356184
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteBuffer
@@ -613,12 +613,9 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // FAILS: RangeCheck cannot be eliminated because of int_index
+    // 8356184: Vectorization depends on backing store type - heap byte[] segments (ByteArray, ByteBuffer)
+    // vectorize due to RCE handling ConvI2L(iv + invar), while native/other segment types don't.
+    // No IR rule since we can't distinguish provider types in IR framework conditions.
     static Object[] testIntLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             int int_index = i + invar;
@@ -804,12 +801,9 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // FAILS: RangeCheck cannot be eliminated because of int_index
+    // 8356184: Vectorization depends on backing store type - heap byte[] segments (ByteArray, ByteBuffer)
+    // vectorize due to RCE handling ConvI2L(iv + invar), while native/other segment types don't.
+    // No IR rule since we can't distinguish provider types in IR framework conditions.
     static Object[] testLongLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             int int_index = (int)(i + invar);

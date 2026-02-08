@@ -34,7 +34,7 @@ import java.lang.foreign.*;
 
 /*
  * @test
- * @bug 8343685 8331659
+ * @bug 8343685 8331659 8356184
  * @key randomness
  * @summary Test vectorization with various invariants that are equivalent, but not trivially so,
  *          i.e. where the invariants have the same summands, but in a different order.
@@ -104,6 +104,18 @@ public class TestEquivalentInvariants {
         tests.put("testMemorySegmentBInvarIAdr", () -> {
           MemorySegment data = MemorySegment.ofArray(aB.clone());
           return testMemorySegmentBInvarIAdr(data, 101, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarISub", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarISub(data, 101, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarI2Adr", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarI2Adr(data, 42, 10, RANGE-200);
+        });
+        tests.put("testMemorySegmentBInvarIMulAdd", () -> {
+          MemorySegment data = MemorySegment.ofArray(aB.clone());
+          return testMemorySegmentBInvarIMulAdd(data, 10, RANGE/2 - 100);
         });
         tests.put("testMemorySegmentBInvarLAdr", () -> {
           MemorySegment data = MemorySegment.ofArray(aB.clone());
@@ -233,6 +245,9 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentBInvarI",
                  "testMemorySegmentBInvarL",
                  "testMemorySegmentBInvarIAdr",
+                 "testMemorySegmentBInvarISub",
+                 "testMemorySegmentBInvarI2Adr",
+                 "testMemorySegmentBInvarIMulAdd",
                  "testMemorySegmentBInvarLAdr",
                  "testMemorySegmentBInvarI3a",
                  "testMemorySegmentBInvarI3b",
@@ -424,12 +439,11 @@ public class TestEquivalentInvariants {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Does not vectorize: RangeChecks are not eliminated.
-    // Filed RFE: JDK-8327209
     static Object[] testMemorySegmentBInvarI(MemorySegment m, int invar, int size) {
         for (int i = 0; i < size; i++) {
             byte v = m.get(ValueLayout.JAVA_BYTE, i + invar);
@@ -458,15 +472,61 @@ public class TestEquivalentInvariants {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Does not vectorize: RangeChecks are not eliminated.
-    // Filed RFE: JDK-8327209
     static Object[] testMemorySegmentBInvarIAdr(MemorySegment m, int invar, int size) {
         for (int i = 0; i < size; i++) {
             long adr = i + invar;
+            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
+            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Subtraction inside ConvI2L: ConvI2L(SubI(iv, invar))
+    static Object[] testMemorySegmentBInvarISub(MemorySegment m, int invar, int size) {
+        for (int i = invar; i < size; i++) {
+            long adr = i - invar;
+            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
+            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Nested int additions inside ConvI2L: ConvI2L(AddI(AddI(iv, invar1), invar2))
+    static Object[] testMemorySegmentBInvarI2Adr(MemorySegment m, int invar1, int invar2, int size) {
+        for (int i = 0; i < size; i++) {
+            long adr = (i + invar1) + invar2;
+            byte v = m.get(ValueLayout.JAVA_BYTE, adr);
+            m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+        }
+        return new Object[]{ m };
+    }
+
+    @Test
+    @IR(failOn = {IRNode.RANGE_CHECK_TRAP},
+        applyIfPlatform = {"64-bit", "true"})
+    // Scaled iv plus offset inside ConvI2L: ConvI2L(iv * K + E)
+    // Tests the short_scale code path in RCE (range check elimination).
+    // Not expected to vectorize due to stride-2 access pattern.
+    static Object[] testMemorySegmentBInvarIMulAdd(MemorySegment m, int invar, int size) {
+        for (int i = 0; i < size; i++) {
+            long adr = i * 2 + invar;
             byte v = m.get(ValueLayout.JAVA_BYTE, adr);
             m.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
         }
