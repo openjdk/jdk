@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,6 @@ public interface Checksum {
     default public void update(ByteBuffer buffer) {
         int pos = buffer.position();
         int limit = buffer.limit();
-        assert (pos <= limit);
         int rem = limit - pos;
         if (rem <= 0) {
             return;
