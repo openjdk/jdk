@@ -553,11 +553,15 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
 bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
                                       PhaseTransform* phase) {
-  // Trivial case: Non-overlapping values, be careful, we can cast a raw pointer to an oop (e.g. in
-  // the allocation pattern) so joining the types only works if both are oops
+  // Trivial case: Non-overlapping values. Be careful, we can cast a raw pointer to an oop (e.g. in
+  // the allocation pattern) so joining the types only works if both are oops. join may also give
+  // an incorrect result when both pointers are nullable and the result is supposed to be
+  // TypePtr::NULL_PTR, so we exclude that case.
   const Type* p1_type = p1->bottom_type();
   const Type* p2_type = p2->bottom_type();
-  if (p1_type->isa_oopptr() && p2_type->isa_oopptr() && p1_type->join(p2_type)->empty()) {
+  if (p1_type->isa_oopptr() && p2_type->isa_oopptr() &&
+      (!p1_type->maybe_null() || !p2_type->maybe_null()) &&
+      p1_type->join(p2_type)->empty()) {
     return true;
   }
 
