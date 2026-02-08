@@ -161,9 +161,8 @@ import java.util.function.Supplier;
  * to a lazy constant.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
- * Except for {@linkplain Object#equals(Object) equals(obj)} and
- * {@linkplain #orElse(Object) orElse(other)} parameters, all method parameters
- * must be <em>non-null</em>, or a {@link NullPointerException} will be thrown.
+ * Except for {@linkplain Object#equals(Object) equals(obj)}, all method parameters must
+ * be <em>non-null</em>, or a {@link NullPointerException} will be thrown.
  *
  * @apiNote Once a lazy constant is initialized, its contents cannot ever be removed.
  *          This can be a source of an unintended memory leak. More specifically,
@@ -205,19 +204,6 @@ public sealed interface LazyConstant<T>
         permits LazyConstantImpl {
 
     /**
-     * {@return the contents of this lazy constant if initialized, otherwise,
-     *          returns {@code other}}
-     * <p>
-     * This method never triggers initialization of this lazy constant and will observe
-     * initialization by other threads atomically (i.e., it returns the contents
-     * if and only if the initialization has already completed).
-     *
-     * @param other value to return if the content is not initialized
-     *              (can be {@code null})
-     */
-    T orElse(T other);
-
-    /**
      * {@return the contents of this initialized constant. If not initialized, first
      *          computes and initializes this constant using the computing function}
      * <p>
@@ -229,14 +215,6 @@ public sealed interface LazyConstant<T>
      * attempt the computation again.
      */
     T get();
-
-    /**
-     * {@return {@code true} if the constant is initialized, {@code false} otherwise}
-     * <p>
-     * This method never triggers initialization of this lazy constant and will observe
-     * changes in the initialization state made by other threads atomically.
-     */
-    boolean isInitialized();
 
     // Object methods
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,7 @@
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 final class LazyConstantTestUtil {
 
@@ -78,6 +75,22 @@ final class LazyConstantTestUtil {
         public R apply(T t) {
             incrementCounter();
             return delegate.apply(t);
+        }
+
+    }
+
+    public static final class CountingPredicate<T>
+            extends AbstractCounting<Predicate<T>>
+            implements Predicate<T> {
+
+        public CountingPredicate(Predicate<T> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public boolean test(T t) {
+            incrementCounter();
+            return delegate.test(t);
         }
 
     }

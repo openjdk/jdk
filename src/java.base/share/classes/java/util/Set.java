@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,11 @@
  */
 
 package java.util;
+
+import jdk.internal.javac.PreviewFeature;
+
+import java.io.Serializable;
+import java.util.function.Predicate;
 
 /**
  * A collection that contains no duplicate elements.  More formally, sets
@@ -77,7 +82,7 @@ package java.util;
  * Set to behave inconsistently or its contents to appear to change.
  * <li>They disallow {@code null} elements. Attempts to create them with
  * {@code null} elements result in {@code NullPointerException}.
- * <li>They are serializable if all elements are serializable.
+ * <li>Unless otherwise specified, they are serializable if all elements are serializable.
  * <li>They reject duplicate elements at creation time. Duplicate elements
  * passed to a static factory method result in {@code IllegalArgumentException}.
  * <li>The iteration order of set elements is unspecified and is subject to change.
@@ -734,4 +739,109 @@ public interface Set<E> extends Collection<E> {
             return (Set<E>)Set.of(new HashSet<>(coll).toArray());
         }
     }
+
+    /**
+     * {@return a new lazily computed set whose logical membership for each provided
+     *          {@code elementCandidates} is computed via the provided
+     *          {@code computingFunction} on demand}
+     * <p>
+     * In the following, the term <em>membership status</em> means whether an element is a
+     * logical member or a non-member. The returned set is an
+     * {@linkplain Collection##unmodifiable unmodifiable} set whose element candidates are
+     * known at construction. The set's element membership statuses are lazily computed
+     * via the provided {@code computingFunction} when first accessed (e.g., via
+     * {@linkplain Set#contains(Object) Set::contains}). Once the membership status has
+     * been successfully computed for an element candidate, the associated membership
+     * status is initialized (i.e., either as <em>a logical member</em> or as
+     * <em>a logical non-member</em>).
+     * <p>
+     * The provided computing function is guaranteed to be successfully invoked
+     * at most once per element candidate, even in a multi-threaded environment. Competing
+     * threads accessing an element candidate already under membership status computation
+     * will block until the membership status of the element candidate is computed or the
+     * computing function completes abnormally.
+     * <p>
+     * If invoking the provided computing function throws an exception, it
+     * is rethrown to the initial caller and no membership status associated with the
+     * provided element candidate is recorded.
+     * <p>
+     * If the provided computing function recursively calls itself via
+     * the returned lazy set for the same element candidate, an
+     * {@linkplain IllegalStateException} will be thrown.
+     * <p>
+     * The returned set's {@linkplain Object Object methods};
+     * {@linkplain Object#equals(Object) equals()},
+     * {@linkplain Object#hashCode() hashCode()}, and
+     * {@linkplain Object#toString() toString()} methods may trigger initialization of
+     * one or more lazy elements.
+     * <p>
+     * The returned lazy set strongly references its underlying
+     * computing function used to compute membership status at least as long as there are
+     * uncomputed element candidates.
+     * <p>
+     * The returned Set is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * Here is an example involving an application that manages various configurable
+     * options -- commonly referred to as "switches" -- that control its behavior. The
+     * state of these switches can be determined through the command line, a configuration
+     * file, or even a remote connection. By using a lazy set, we ensure that the states
+     * of these switches are evaluated only once. Once computed, the results are eligible
+     * for constant folding by the JVM:
+     * {@snippet lang = java:
+     * class Application {
+     *
+     *     enum Option{VERBOSE, DRY_RUN, STRICT}
+     *
+     *     // Lazily initialized Set of Options
+     *     static final Set<Option> OPTIONS =
+     *             Set.ofLazy(EnumSet.allOf(Option.class), Application::isEnabled);
+     *
+     *     public static void process() {
+     *         if (OPTIONS.contains(Option.DRY_RUN)) {
+     *             // Skip processing in DRY_RUN mode
+     *             return;
+     *         }
+     *         // Actual processing logic goes here
+     *     }
+     *
+     *     // Determines if a given Option is enabled (true) or disabled (false)
+     *     private static boolean isEnabled(Option option) {
+     *         ...
+     *     }
+     *
+     * }
+     * }
+     * <p>
+     * If the provided Set of {@code elementCandidates} is subsequently modified, the
+     * returned Set will not reflect such modifications.
+     * <p>
+     * The Set of {@code elementCandidates} must use
+     * {@linkplain Set#equals(Object) equals()} as its equivalence relation, or its
+     * comparison method must be consistent with equals, otherwise the behavior is
+     * unspecified.
+     *
+     * @implNote  after all element membership statuses have been initialized successfully,
+     *            the computing function is no longer strongly referenced and becomes
+     *            eligible for garbage collection.
+     *
+     * @param elementCandidates the (non-null) element candidates to be evaluated
+     * @param computingFunction to invoke whenever the membership status of an element
+     *                          candidate is first computed
+     * @param <E>               the type of elements maintained by the returned set
+     * @throws NullPointerException if the provided set of {@code elementCandidates} is
+     *                              {@code null}, if the set of {@code elementCandidates}
+     *                              contains a {@code null} element, or if the provided
+     *                              {@code computingFunction} is {@code null}
+     *
+     * @see LazyConstant
+     * @since 27
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.LAZY_CONSTANTS)
+    static <E> Set<E> ofLazy(Set<? extends E> elementCandidates,
+                             Predicate<? super E> computingFunction) {
+        Objects.requireNonNull(elementCandidates);
+        Objects.requireNonNull(computingFunction);
+        return LazyCollections.ofLazySet(elementCandidates, computingFunction);
+    }
+
 }
