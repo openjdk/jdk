@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This file identifies the root of the test-suite hierarchy.
@@ -123,7 +123,7 @@ requires.properties= \
     jdk.static
 
 # Minimum jtreg version
-requiredVersion=8.1+1
+requiredVersion=8.2.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
