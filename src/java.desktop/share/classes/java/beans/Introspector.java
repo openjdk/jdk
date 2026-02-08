@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1345,30 +1345,37 @@ class GenericBeanInfo extends SimpleBeanInfo {
         this.targetBeanInfoRef = old.targetBeanInfoRef;
     }
 
+    @Override
     public PropertyDescriptor[] getPropertyDescriptors() {
         return properties;
     }
 
+    @Override
     public int getDefaultPropertyIndex() {
         return defaultProperty;
     }
 
+    @Override
     public EventSetDescriptor[] getEventSetDescriptors() {
         return events;
     }
 
+    @Override
     public int getDefaultEventIndex() {
         return defaultEvent;
     }
 
+    @Override
     public MethodDescriptor[] getMethodDescriptors() {
         return methods;
     }
 
+    @Override
     public BeanDescriptor getBeanDescriptor() {
         return beanDescriptor;
     }
 
+    @Override
     public java.awt.Image getIcon(int iconKind) {
         BeanInfo targetBeanInfo = getTargetBeanInfo();
         if (targetBeanInfo != null) {
