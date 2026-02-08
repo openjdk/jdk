@@ -68,6 +68,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _new_top(nullptr),
   _empty_time(os::elapsedTime()),
   _top_before_promoted(nullptr),
+  _top_at_evac_start(start),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
   _tlab_allocs(0),
@@ -566,12 +567,17 @@ void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  _top_at_evac_start = _bottom;
   _mixed_candidate_garbage_words = 0;
   set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
   set_update_watermark(bottom());
+  if (is_old()) {
+    heap->old_generation()->clear_cards_for(this);
+  }
+
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
   }

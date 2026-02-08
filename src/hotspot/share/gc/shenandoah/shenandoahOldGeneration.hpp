@@ -178,8 +178,8 @@ public:
   void handle_failed_promotion(Thread* thread, size_t size);
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
-  // A successful evacuation re-dirties the cards and registers the object with the remembered set
-  void handle_evacuation(HeapWord* obj, size_t words) const;
+  // Iterate over recently promoted objects to update card table and object registrations
+  void update_card_table();
 
   // Clear the flag after it is consumed by the control thread
   bool clear_failed_evacuation() {
@@ -205,6 +205,26 @@ public:
   // Mark card for this location as dirty
   void mark_card_as_dirty(void* location);
 
+  template<typename T>
+  class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
+    T _region_lambda;
+  public:
+    explicit ShenandoahHeapRegionLambda(T region_lambda) : _region_lambda(region_lambda) {}
+    void heap_region_do(ShenandoahHeapRegion* r) override {
+      _region_lambda(r);
+    }
+
+    bool is_thread_safe() override {
+      return true;
+    }
+  };
+
+  template<typename LambdaT>
+  void for_each_region(LambdaT lambda) {
+    ShenandoahHeapRegionLambda l(lambda);
+    parallel_heap_region_iterate(&l);
+  }
+
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
   void parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
@@ -217,6 +237,10 @@ public:
 
   void set_concurrent_mark_in_progress(bool in_progress) override;
   bool is_concurrent_mark_in_progress() override;
+
+  // For old regions, objects between top at evac start and top represent promoted objects.
+  // These objects will need to have their cards dirtied and their offsets within the cards registered.
+  void record_tops_at_evac_start();
 
   bool entry_coalesce_and_fill();
   void prepare_for_mixed_collections_after_global_gc();

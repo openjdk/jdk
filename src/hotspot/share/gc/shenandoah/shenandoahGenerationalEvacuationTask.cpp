@@ -189,7 +189,6 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   }
 
   ShenandoahOldGeneration* const old_gen = _heap->old_generation();
-  ShenandoahYoungGeneration* const young_gen = _heap->young_generation();
 
   // Rebuild the remembered set information and mark the entire range as DIRTY.  We do NOT scan the content of this
   // range to determine which cards need to be DIRTY.  That would force us to scan the region twice, once now, and
@@ -238,6 +237,9 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
     // is_collector_free range.  We'll add it to that range below.
     region->restore_top_before_promote();
+
+    // We also need to record where those allocations begin so that we can later update the remembered set.
+    region->record_top_at_evac_start();
 #ifdef ASSERT
     size_t region_to_be_used_in_old = region->used();
     assert(region_to_be_used_in_old + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");

@@ -31,6 +31,33 @@
 #include "logging/log.hpp"
 #include "runtime/threads.hpp"
 
+// A closure that takes an oop in the old generation and, if it's pointing
+// into the young generation, dirties the corresponding remembered set entry.
+class ShenandoahDirtyRememberedSetClosure : public BasicOopIterateClosure {
+protected:
+  ShenandoahGenerationalHeap* const _heap;
+  ShenandoahScanRemembered*   const _scanner;
+
+public:
+  ShenandoahDirtyRememberedSetClosure() :
+          _heap(ShenandoahGenerationalHeap::heap()),
+          _scanner(_heap->old_generation()->card_scan()) {}
+
+  template<class T>
+  void work(T* p) {
+    assert(_heap->is_in_old(p), "Expecting to get an old gen address");
+    if (T o = RawAccess<>::oop_load(p); !CompressedOops::is_null(o)) {
+      if (const oop obj = CompressedOops::decode_not_null(o); _heap->is_in_young(obj)) {
+        // Dirty the card containing the cross-generational pointer.
+        _scanner->mark_card_as_dirty((HeapWord*) p);
+      }
+    }
+  }
+
+  void do_oop(narrowOop* p) override { work(p); }
+  void do_oop(oop* p) override       { work(p); }
+};
+
 size_t ShenandoahDirectCardMarkRememberedSet::last_valid_index() const {
   return _card_table->last_valid_index();
 }
@@ -161,7 +188,6 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
   uint8_t offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
 
   if (!starts_object(card_at_start)) {
-    set_starts_object_bit(card_at_start);
     set_first_start(card_at_start, offset_in_card);
     set_last_start(card_at_start, offset_in_card);
   } else {
@@ -169,6 +195,49 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
       set_first_start(card_at_start, offset_in_card);
     if (offset_in_card > get_last_start(card_at_start))
       set_last_start(card_at_start, offset_in_card);
+  }
+}
+
+void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
+  HeapWord* address = start;
+  HeapWord* previous_address = nullptr;
+  uint8_t previous_offset = 0;
+  size_t previous_card_index = -1;
+  ShenandoahDirtyRememberedSetClosure make_cards_dirty;
+
+  log_debug(gc, remset)("Update remembered set from " PTR_FORMAT ", to " PTR_FORMAT, p2i(start), p2i(end));
+  _rs->mark_range_as_dirty(start, pointer_delta(end, start));
+
+  while (address < end) {
+
+    // Compute card and offset in card for this object
+    const size_t object_card_index = _rs->card_index_for_addr(address);
+    const HeapWord* card_start_address = _rs->addr_for_card_index(object_card_index);
+    const uint8_t offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
+
+    if (object_card_index != previous_card_index) {
+      if (previous_address != nullptr) {
+        // Register the previous object on the previous card, we are starting a new card here
+        set_last_start(previous_card_index, previous_offset);
+      }
+
+      previous_card_index = object_card_index;
+      if (!starts_object(object_card_index)) {
+        // The previous cycle may have recorded an earlier start in this card. Do not overwrite it.
+        set_first_start(object_card_index, offset_in_card);
+      }
+    }
+
+    previous_offset = offset_in_card;
+    previous_address = address;
+
+    const oop obj = cast_to_oop(address);
+    address += obj->size();
+  }
+
+  // Register the last object seen in this range.
+  if (previous_address != nullptr) {
+    set_last_start(previous_card_index, previous_offset);
   }
 }
 
@@ -641,36 +710,6 @@ void ShenandoahScanRemembered::merge_worker_card_stats_cumulative(
 }
 #endif
 
-// A closure that takes an oop in the old generation and, if it's pointing
-// into the young generation, dirties the corresponding remembered set entry.
-// This is only used to rebuild the remembered set after a full GC.
-class ShenandoahDirtyRememberedSetClosure : public BasicOopIterateClosure {
-protected:
-  ShenandoahGenerationalHeap* const _heap;
-  ShenandoahScanRemembered*   const _scanner;
-
-public:
-  ShenandoahDirtyRememberedSetClosure() :
-          _heap(ShenandoahGenerationalHeap::heap()),
-          _scanner(_heap->old_generation()->card_scan()) {}
-
-  template<class T>
-  inline void work(T* p) {
-    assert(_heap->is_in_old(p), "Expecting to get an old gen address");
-    T o = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_in_young(obj)) {
-        // Dirty the card containing the cross-generational pointer.
-        _scanner->mark_card_as_dirty((HeapWord*) p);
-      }
-    }
-  }
-
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
-
 ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable* card_table, size_t total_card_count) :
   LogCardValsPerIntPtr(log2i_exact(sizeof(intptr_t)) - log2i_exact(sizeof(CardValue))),
   LogCardSizeInWords(log2i_exact(CardTable::card_size_in_words())) {
@@ -1039,38 +1078,44 @@ void ShenandoahReconstructRememberedSetTask::work(uint worker_id) {
   ShenandoahDirtyRememberedSetClosure dirty_cards_for_cross_generational_pointers;
 
   while (r != nullptr) {
-    if (r->is_old() && r->is_active()) {
-      HeapWord* obj_addr = r->bottom();
-      if (r->is_humongous_start()) {
-        // First, clear the remembered set
-        oop obj = cast_to_oop(obj_addr);
-        size_t size = obj->size();
-
-        size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-        size_t region_index = r->index();
-        ShenandoahHeapRegion* humongous_region = heap->get_region(region_index);
-        while (num_regions-- != 0) {
-          scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
-          region_index++;
-          humongous_region = heap->get_region(region_index);
-        }
-
-        // Then register the humongous object and DIRTY relevant remembered set cards
-        scanner->register_object_without_lock(obj_addr);
-        obj->oop_iterate(&dirty_cards_for_cross_generational_pointers);
-      } else if (!r->is_humongous()) {
-        scanner->reset_object_range(r->bottom(), r->end());
-
-        // Then iterate over all objects, registering object and DIRTYing relevant remembered set cards
-        HeapWord* t = r->top();
-        while (obj_addr < t) {
+    if (r->is_active()) {
+      if (r->is_old()) {
+        HeapWord* obj_addr = r->bottom();
+        if (r->is_humongous_start()) {
+          // First, clear the remembered set
           oop obj = cast_to_oop(obj_addr);
+          size_t size = obj->size();
+
+          size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+          size_t region_index = r->index();
+          ShenandoahHeapRegion* humongous_region = heap->get_region(region_index);
+          while (num_regions-- != 0) {
+            scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
+            region_index++;
+            humongous_region = heap->get_region(region_index);
+          }
+
+          // Then register the humongous object and DIRTY relevant remembered set cards
           scanner->register_object_without_lock(obj_addr);
-          obj_addr += obj->oop_iterate_size(&dirty_cards_for_cross_generational_pointers);
-        }
-      } // else, ignore humongous continuation region
+          obj->oop_iterate(&dirty_cards_for_cross_generational_pointers);
+        } else if (!r->is_humongous()) {
+          scanner->reset_object_range(r->bottom(), r->end());
+
+          // Then iterate over all objects, registering object and DIRTYing relevant remembered set cards
+          HeapWord* t = r->top();
+          while (obj_addr < t) {
+            oop obj = cast_to_oop(obj_addr);
+            scanner->register_object_without_lock(obj_addr);
+            obj_addr += obj->oop_iterate_size(&dirty_cards_for_cross_generational_pointers);
+          }
+        } // else, ignore humongous continuation region
+      } else {
+        // The region is young, but it may become old again and we don't want stale remembered set data.
+        assert(r->is_young(), "Region: %zu, is active but free", r->index());
+        heap->old_generation()->clear_cards_for(r);
+      }
     }
-    // else, this region is FREE or YOUNG or inactive and we can ignore it.
+    // else, this region is FREE or inactive and we can ignore it.
     r = _regions->next();
   }
 }

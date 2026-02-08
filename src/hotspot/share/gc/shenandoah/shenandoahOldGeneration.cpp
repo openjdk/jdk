@@ -284,6 +284,12 @@ bool ShenandoahOldGeneration::is_concurrent_mark_in_progress() {
   return ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress();
 }
 
+void ShenandoahOldGeneration::record_tops_at_evac_start() {
+  for_each_region([](ShenandoahHeapRegion* region) {
+    region->record_top_at_evac_start();
+  });
+}
+
 void ShenandoahOldGeneration::cancel_marking() {
   if (is_concurrent_mark_in_progress()) {
     log_debug(gc)("Abandon SATB buffers");
@@ -624,15 +630,17 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
   }
 }
 
-void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words) const {
-  // Only register the copy of the object that won the evacuation race.
-  _card_scan->register_object_without_lock(obj);
-
-  // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
-  // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
-  // do this in batch, in a background GC thread than to try to carefully dirty only cards
-  // that hold interesting pointers right now.
-  _card_scan->mark_range_as_dirty(obj, words);
+void ShenandoahOldGeneration::update_card_table() {
+  for_each_region([this](ShenandoahHeapRegion* region) {
+    if (region->is_regular()) {
+      // Humongous regions are promoted in place, remembered set maintenance is handled there
+      // Regular regions that are promoted in place have their rset maintenance handled for
+      // the objects in the region when it was promoted. We record TEAS for such a region
+      // when the in-place-promotion is completed. Such a region may be used for additional
+      // promotions in the same cycle it was itself promoted.
+      _card_scan->update_card_table(region->get_top_at_evac_start(), region->top());
+    }
+  });
 }
 
 bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {
