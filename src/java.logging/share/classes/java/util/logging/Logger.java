@@ -643,7 +643,7 @@ public class Logger {
         }
         return manager.demandLogger(name, resourceBundleName, caller);
         // ends up calling new Logger(name, resourceBundleName, caller)
-        // iff the logger doesn't exist already
+        // if the logger doesn't exist already
     }
 
     /**
