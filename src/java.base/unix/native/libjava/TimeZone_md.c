@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,33 +352,15 @@ getPlatformTimeZoneID()
 }
 
 static char *
-mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
+mapTimezoneToJava(const char *tz_buf, size_t tz_len, const char *mapfilename) {
     FILE *tzmapf;
-    char mapfilename[PATH_MAX + 1];
     char line[256];
     int linecount = 0;
-    char *tz_buf = NULL;
-    char *temp_tz = NULL;
     char *javatz = NULL;
-    size_t tz_len = 0;
 
-    /* On AIX, the TZ environment variable may end with a comma
-     * followed by modifier fields until early AIX6.1.
-     * This restriction has been removed from AIX7. */
-
-    tz_buf = strdup(tz);
-    tz_len = strlen(tz_buf);
-
-    /* Open tzmappings file, with buffer overrun check */
-    if ((strlen(java_home_dir) + 15) > PATH_MAX) {
-        jio_fprintf(stderr, "Path %s/lib/tzmappings exceeds maximum path length\n", java_home_dir);
-        goto tzerr;
-    }
-    strcpy(mapfilename, java_home_dir);
-    strcat(mapfilename, "/lib/tzmappings");
     if ((tzmapf = fopen(mapfilename, "r")) == NULL) {
         jio_fprintf(stderr, "can't open %s\n", mapfilename);
-        goto tzerr;
+        return NULL;
     }
 
     while (fgets(line, sizeof(line), tzmapf) != NULL) {
@@ -431,10 +413,49 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
             break;
         }
     }
+
     (void) fclose(tzmapf);
+    return javatz;
+}
+
+static char *
+mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
+    char mapfilename[PATH_MAX + 1];
+    char *tz_buf = NULL;
+    char *javatz = NULL;
+    char *temp_tz = NULL;
+    size_t tz_len = 0;
+
+    /* On AIX, the TZ environment variable may end with a comma
+     * followed by modifier fields until early AIX6.1.
+     * This restriction has been removed from AIX7. */
+
+    tz_buf = strdup(tz);
+    tz_len = strlen(tz_buf);
+
+    /* Open tzmappings file, with buffer overrun check */
+    if ((strlen(java_home_dir) + 15) > PATH_MAX) {
+        jio_fprintf(stderr, "Path %s/lib/tzmappings exceeds maximum path length\n", java_home_dir);
+        goto tzerr;
+    }
+    strcpy(mapfilename, java_home_dir);
+    strcat(mapfilename, "/lib/tzmappings");
+
+    // First attempt to find the Java timezone for the full tz string
+    javatz = mapTimezoneToJava(tz_buf, tz_len, mapfilename);
+
+    // If no match was found, check for timezone with truncated value
+    if (javatz == NULL) {
+        temp_tz = strchr(tz, ',');
+        tz_len = (temp_tz == NULL) ? strlen(tz) : temp_tz - tz;
+        tz_buf = (char *)malloc(tz_len + 1);
+        memcpy(tz_buf, tz, tz_len);
+        tz_buf[tz_len] = '\0';
+        javatz = mapTimezoneToJava(tz_buf, tz_len, mapfilename);
+    }
 
 tzerr:
-    if (tz_buf != NULL ) {
+    if (tz_buf != NULL) {
         free((void *) tz_buf);
     }
 
