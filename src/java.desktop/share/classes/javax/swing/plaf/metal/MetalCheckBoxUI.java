@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package javax.swing.plaf.metal;
-
-import sun.awt.AppContext;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicCheckBoxUI;
@@ -57,7 +55,7 @@ public class MetalCheckBoxUI extends MetalRadioButtonUI {
     // of BasicCheckBoxUI because we want to pick up all the
     // painting changes made in MetalRadioButtonUI.
 
-    private static final Object METAL_CHECK_BOX_UI_KEY = new Object();
+    private static final ComponentUI UI = new MetalCheckBoxUI();
 
     private static final String propertyPrefix = "CheckBox" + ".";
 
@@ -79,14 +77,7 @@ public class MetalCheckBoxUI extends MetalRadioButtonUI {
      * @return a new instance of {@code MetalCheckBoxUI}
      */
     public static ComponentUI createUI(JComponent b) {
-        AppContext appContext = AppContext.getAppContext();
-        MetalCheckBoxUI checkboxUI =
-                (MetalCheckBoxUI) appContext.get(METAL_CHECK_BOX_UI_KEY);
-        if (checkboxUI == null) {
-            checkboxUI = new MetalCheckBoxUI();
-            appContext.put(METAL_CHECK_BOX_UI_KEY, checkboxUI);
-        }
-        return checkboxUI;
+        return UI;
     }
 
     public String getPropertyPrefix() {
