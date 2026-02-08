@@ -1115,7 +1115,7 @@ void TemplateTable::aastore() {
   transition(vtos, vtos);
   // stack: ..., array, index, value
   __ ldr(r0, at_tos());    // value
-  __ ldr(r2, at_tos_p1()); // index
+  __ ldrw(r2, at_tos_p1());// index
   __ ldr(r3, at_tos_p2()); // array
 
   Address element_address(r3, r4, Address::uxtw(LogBytesPerHeapOop));
