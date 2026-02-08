@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -75,13 +76,13 @@ public:
       return 0;
     }
 
-    u4 a_offset = ArchiveBuilder::current()->any_to_offset_u4(a_name);
-    u4 b_offset = ArchiveBuilder::current()->any_to_offset_u4(b_name);
+    u4 a_narrowp = cast_to_u4(AOTCompressedPointers::encode_not_null(a_name));
+    u4 b_narrowp = cast_to_u4(AOTCompressedPointers::encode_not_null(b_name));
 
-    if (a_offset < b_offset) {
+    if (a_narrowp < b_narrowp) {
       return -1;
     } else {
-      assert(a_offset > b_offset, "must be");
+      assert(a_narrowp > b_narrowp, "must be");
       return 1;
     }
   }
