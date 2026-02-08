@@ -36,6 +36,8 @@ public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
     private static final VectorSpecies<Integer> SPECIES_I256 = IntVector.SPECIES_256;
+    private static final VectorSpecies<Integer> SPECIES_I128 = IntVector.SPECIES_128;
+    private static final VectorSpecies<Integer> SPECIES_I64  = IntVector.SPECIES_64;
     private static final VectorSpecies<Byte> SPECIES_B       = ByteVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Byte> SPECIES_B64     = ByteVector.SPECIES_64;
     private static final VectorSpecies<Float> SPECIES_F      = FloatVector.SPECIES_PREFERRED;
@@ -58,11 +60,20 @@ public class VectorAlgorithmsImpl {
         public int[] rI2;
         public int[] rI3;
         public int[] rI4;
-        public int[] eI;
+        public int[] rI5;
+
+        // Search element for "findI"
+        public int[] eI_findI;
         // The test has to use the same index into eI for all implementations. But in the
         // benchmark, we'd like to use random indices, so we use the index to advance through
         // the array.
-        public int eI_idx = 0;
+        public int eI_findI_idx = 0;
+
+        // Data and threshold eI value for "filterI".
+        // We create the data in a range, and then pick a threshold scaled to that range,
+        // so that the branch in the filter is branchProbability.
+        public int[] aI_filterI;
+        public int eI_filterI;
 
         public float[] aF;
         public float[] bF;
@@ -76,7 +87,7 @@ public class VectorAlgorithmsImpl {
         public int[] oopsX4;
         public int[] memX4;
 
-        public Data(int size, int seed, int numX4Objects) {
+        public Data(int size, int seed, int numX4Objects, float branchProbability) {
             Random random = new Random(seed);
 
             // int: one input array and multiple output arrays so different implementations can
@@ -86,13 +97,19 @@ public class VectorAlgorithmsImpl {
             rI2 = new int[size];
             rI3 = new int[size];
             rI4 = new int[size];
+            rI5 = new int[size];
             Arrays.setAll(aI, i -> random.nextInt());
 
             // Populate with some random values from aI, and some totally random values.
-            eI = new int[0x10000];
-            for (int i = 0; i < eI.length; i++) {
-                eI[i] = (random.nextInt(10) == 0) ? random.nextInt() : aI[random.nextInt(size)];
+            eI_findI = new int[0x10000];
+            for (int i = 0; i < eI_findI.length; i++) {
+                eI_findI[i] = (random.nextInt(10) == 0) ? random.nextInt() : aI[random.nextInt(size)];
             }
+
+            int filterI_range = 1000_000;
+            aI_filterI = new int[size];
+            Arrays.setAll(aI, i -> random.nextInt(filterI_range));
+            eI_filterI = (int)(filterI_range * (1.0f - branchProbability));
 
             // X4 oop setup.
             // oopsX4 holds "addresses" (i.e. indices), that point to the 16-byte objects in memX4.
@@ -651,7 +668,7 @@ public class VectorAlgorithmsImpl {
         return r;
     }
 
-    public static Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
+    public static Object filterI_VectorAPI_v1(int[] a, int[] r, int threshold) {
         var thresholds = IntVector.broadcast(SPECIES_I, threshold);
         int j = 0;
         int i = 0;
@@ -665,6 +682,115 @@ public class VectorAlgorithmsImpl {
             j += trueCount;
         }
 
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    // Idea: on platforms that do not support the "v1" solution with "compress" and
+    //       masked stores, we struggle to deal with the loop-carried dependency of j.
+    //       But we can still use dynamic uniformity to enable some vectorized performance.
+    public static Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
+        var thresholds = IntVector.broadcast(SPECIES_I64, threshold);
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I64.loopBound(a.length); i += SPECIES_I64.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I64, a, i);
+            var mask = v.compare(VectorOperators.GE, thresholds);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 2;
+            } else if (mask.anyTrue()) {
+                int v0 = v.lane(0);
+                int v1 = v.lane(1);
+                if (v0 >= threshold) { r[j++] = v0; }
+                if (v1 >= threshold) { r[j++] = v1; }
+            } else {
+                // nothing
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    public static Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
+        var thresholds = IntVector.broadcast(SPECIES_I128, threshold);
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I128.loopBound(a.length); i += SPECIES_I128.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I128, a, i);
+            var mask = v.compare(VectorOperators.GE, thresholds);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 4;
+            } else if (mask.anyTrue()) {
+                int v0 = v.lane(0);
+                int v1 = v.lane(1);
+                int v2 = v.lane(2);
+                int v3 = v.lane(3);
+                if (v0 >= threshold) { r[j++] = v0; }
+                if (v1 >= threshold) { r[j++] = v1; }
+                if (v2 >= threshold) { r[j++] = v2; }
+                if (v3 >= threshold) { r[j++] = v3; }
+            } else {
+                // nothing
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    public static Object filterI_VectorAPI_v2_l8(int[] a, int[] r, int threshold) {
+        var thresholds = IntVector.broadcast(SPECIES_I256, threshold);
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I256.loopBound(a.length); i += SPECIES_I256.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I256, a, i);
+            var mask = v.compare(VectorOperators.GE, thresholds);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 8;
+            } else if (mask.anyTrue()) {
+                int v0 = v.lane(0);
+                int v1 = v.lane(1);
+                int v2 = v.lane(2);
+                int v3 = v.lane(3);
+                int v4 = v.lane(4);
+                int v5 = v.lane(5);
+                int v6 = v.lane(6);
+                int v7 = v.lane(7);
+                if (v0 >= threshold) { r[j++] = v0; }
+                if (v1 >= threshold) { r[j++] = v1; }
+                if (v2 >= threshold) { r[j++] = v2; }
+                if (v3 >= threshold) { r[j++] = v3; }
+                if (v4 >= threshold) { r[j++] = v4; }
+                if (v5 >= threshold) { r[j++] = v5; }
+                if (v6 >= threshold) { r[j++] = v6; }
+                if (v7 >= threshold) { r[j++] = v7; }
+            } else {
+                // nothing
+            }
+        }
         for (; i < a.length; i++) {
             int ai = a[i];
             if (ai >= threshold) {

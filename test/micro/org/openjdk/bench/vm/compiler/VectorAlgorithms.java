@@ -51,13 +51,20 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 3, time = 1)
-@Fork(value = 5, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl*::*"})
+@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl*::*"})
 public class VectorAlgorithms {
     @Param({"640000"})
     public int SIZE;
+    // Specifies the length of the arrays / number of elements in the container.
 
     @Param({"10000"})
     public int NUM_X_OBJECTS;
+    // Number of simulated "objects" in the "reduceAddIFieldsX4" benchmark.
+
+    @Param({"0.5"})
+    public float BRANCH_PROBABILITY;
+    // Branch probability for the following benchmarks:
+    // - filterI
 
     @Param({"0"})
     public int SEED;
@@ -66,7 +73,7 @@ public class VectorAlgorithms {
 
     @Setup
     public void init() {
-        d = new VectorAlgorithmsImpl.Data(SIZE, SEED, NUM_X_OBJECTS);
+        d = new VectorAlgorithmsImpl.Data(SIZE, SEED, NUM_X_OBJECTS, BRANCH_PROBABILITY);
     }
 
     // ------------------------------------------------------------------------------------------
@@ -208,15 +215,15 @@ public class VectorAlgorithms {
         // Every invocation should have a different value for e, so that
         // we don't get branch-prediction that is too good. And also so
         // that the position where we exit is more evenly distributed.
-        d.eI_idx = (d.eI_idx + 1) & 0xffff;
-        int e = d.eI[d.eI_idx];
+        d.eI_findI_idx = (d.eI_findI_idx + 1) & 0xffff;
+        int e = d.eI_findI[d.eI_findI_idx];
         return VectorAlgorithmsImpl.findI_loop(d.aI, e);
     }
 
     @Benchmark
     public int findI_VectorAPI() {
-        d.eI_idx = (d.eI_idx + 1) & 0xffff;
-        int e = d.eI[d.eI_idx];
+        d.eI_findI_idx = (d.eI_findI_idx + 1) & 0xffff;
+        int e = d.eI_findI[d.eI_findI_idx];
         return VectorAlgorithmsImpl.findI_VectorAPI(d.aI, e);
     }
 
@@ -235,16 +242,27 @@ public class VectorAlgorithms {
         // Every invocation should have a different value for e, so that
         // we don't get branch-prediction that is too good. And also so
         // That the length of the resulting data is more evenly distributed.
-        d.eI_idx = (d.eI_idx + 1) & 0xffff;
-        int e = d.eI[d.eI_idx];
-        return VectorAlgorithmsImpl.filterI_loop(d.aI, d.rI1, e);
+        return VectorAlgorithmsImpl.filterI_loop(d.aI, d.rI1, d.eI_filterI);
     }
 
     @Benchmark
-    public Object filterI_VectorAPI() {
-        d.eI_idx = (d.eI_idx + 1) & 0xffff;
-        int e = d.eI[d.eI_idx];
-        return VectorAlgorithmsImpl.filterI_VectorAPI(d.aI, d.rI1, e);
+    public Object filterI_VectorAPI_v1() {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v1(d.aI, d.rI1, d.eI_filterI);
+    }
+
+    @Benchmark
+    public Object filterI_VectorAPI_v2_l2() {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(d.aI, d.rI1, d.eI_filterI);
+    }
+
+    @Benchmark
+    public Object filterI_VectorAPI_v2_l4() {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(d.aI, d.rI1, d.eI_filterI);
+    }
+
+    @Benchmark
+    public Object filterI_VectorAPI_v2_l8() {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l8(d.aI, d.rI1, d.eI_filterI);
     }
 
     @Benchmark

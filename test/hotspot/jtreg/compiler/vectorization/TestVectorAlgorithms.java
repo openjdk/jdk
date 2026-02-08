@@ -133,16 +133,19 @@ public class TestVectorAlgorithms {
         testGroups.get("findMinIndexI").put("findMinIndexI_VectorAPI", i -> { return findMinIndexI_VectorAPI(d.aI); });
 
         testGroups.put("findI", new HashMap<String,TestFunction>());
-        testGroups.get("findI").put("findI_loop",      i -> { return findI_loop(d.aI, d.eI[i]); });
-        testGroups.get("findI").put("findI_VectorAPI", i -> { return findI_VectorAPI(d.aI, d.eI[i]); });
+        testGroups.get("findI").put("findI_loop",      i -> { return findI_loop(d.aI, d.eI_findI[i]); });
+        testGroups.get("findI").put("findI_VectorAPI", i -> { return findI_VectorAPI(d.aI, d.eI_findI[i]); });
 
         testGroups.put("reverseI", new HashMap<String,TestFunction>());
         testGroups.get("reverseI").put("reverseI_loop",      i -> { return reverseI_loop(d.aI, d.rI1); });
         testGroups.get("reverseI").put("reverseI_VectorAPI", i -> { return reverseI_VectorAPI(d.aI, d.rI2); });
 
         testGroups.put("filterI", new HashMap<String,TestFunction>());
-        testGroups.get("filterI").put("filterI_loop",      i -> { return filterI_loop(d.aI, d.rI1, d.eI[i]); });
-        testGroups.get("filterI").put("filterI_VectorAPI", i -> { return filterI_VectorAPI(d.aI, d.rI2, d.eI[i]); });
+        testGroups.get("filterI").put("filterI_loop",            i -> { return filterI_loop(d.aI, d.rI1, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v1",    i -> { return filterI_VectorAPI_v1(d.aI, d.rI2, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l2", i -> { return filterI_VectorAPI_v2_l2(d.aI, d.rI3, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l4", i -> { return filterI_VectorAPI_v2_l4(d.aI, d.rI4, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l8", i -> { return filterI_VectorAPI_v2_l8(d.aI, d.rI5, d.eI_filterI); });
 
         testGroups.put("reduceAddIFieldsX4", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      i -> { return reduceAddIFieldsX4_loop(d.oopsX4, d.memX4); });
@@ -186,7 +189,10 @@ public class TestVectorAlgorithms {
                  "reverseI_loop",
                  "reverseI_VectorAPI",
                  "filterI_loop",
-                 "filterI_VectorAPI",
+                 "filterI_VectorAPI_v1",
+                 "filterI_VectorAPI_v2_l2",
+                 "filterI_VectorAPI_v2_l4",
+                 "filterI_VectorAPI_v2_l8",
                  "reduceAddIFieldsX4_loop",
                  "reduceAddIFieldsX4_VectorAPI",
                  "lowerCaseB_loop",
@@ -200,7 +206,8 @@ public class TestVectorAlgorithms {
             int size = 100_000 + RANDOM.nextInt(10_000);
             int seed = RANDOM.nextInt();
             int numXObjects = 10_000;
-            d = new VectorAlgorithmsImpl.Data(size, seed, numXObjects);
+            float branchProbability = RANDOM.nextFloat(0.3f, 0.7f);
+            d = new VectorAlgorithmsImpl.Data(size, seed, numXObjects, branchProbability);
 
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
@@ -507,8 +514,45 @@ public class TestVectorAlgorithms {
                   IRNode.COMPRESS_VI,         "> 0",
                   IRNode.STORE_VECTOR_MASKED, "> 0"},
         applyIfCPUFeature = {"avx2", "true"})
-    public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
-        return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
+    public Object filterI_VectorAPI_v1(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v1(a, r, threshold);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "= 0", // not implemented
+                  IRNode.VECTOR_TEST,                         "= 0", // not implemented
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeature = {"sse4.1", "true"})
+    // x86 seems to have a limitation with 2-element VectorStoreMask, this blocks intrinsification
+    // TODO: file RFE
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "> 0",
+                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true"})
+    public Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(a, r, threshold);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "> 0",
+                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(a, r, threshold);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "> 0",
+                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object filterI_VectorAPI_v2_l8(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l8(a, r, threshold);
     }
 
     @Test
