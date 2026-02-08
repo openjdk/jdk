@@ -687,14 +687,14 @@ public class TestMergeStores {
                   IRNode.STORE_B_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "8"},
         applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1g(byte[] a) {
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
-        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByteMO(Unsafe.MO_RELEASE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
         return new Object[]{ a };
     }
 
@@ -721,14 +721,14 @@ public class TestMergeStores {
                   IRNode.STORE_B_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "8"},
         applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1i(byte[] a) {
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
-        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByteMO(Unsafe.MO_OPAQUE, a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
         return new Object[]{ a };
     }
 

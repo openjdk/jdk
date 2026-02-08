@@ -1258,8 +1258,34 @@ void GraphBuilder::compare_op(ValueType* type, Bytecodes::Code code) {
 }
 
 
+#define CanonicalizeConversions (!UseNewCode3)  // New code marker; FIXME.
 void GraphBuilder::convert(Bytecodes::Code op, BasicType from, BasicType to) {
-  push(as_ValueType(to), append(new Convert(op, pop(as_ValueType(from)), as_ValueType(to))));
+  ValueType* xt = as_ValueType(from);
+  ValueType* rt = as_ValueType(to);
+  Value x = pop(xt);
+  if (CanonicalizeConversions &&
+      x->as_Convert() != nullptr && rt->is_int()) {
+    Value v = nullptr;
+    Bytecodes::Code op2 = match_conversion(x, &v);
+    if (op2 == Bytecodes::_i2l || op2 == Bytecodes::_i2d) {
+      // Canonicalize l2i(x=i2l(v)) => v and same for d2i(x=i2d(v))
+      // Back-to-back l2i/i2l pair show up frequently in unsafe wrappers.
+      ipush(v); return;
+    }
+    if (op2 == op || (op == Bytecodes::_i2s && op2 == Bytecodes::_i2b)) {
+      // Canonicalize i2b(x=i2b(v)) => x=i2b(v) and same for i2c and i2s
+      // Also, having got this far, do i2s(x=i2b(v)) => x=i2b(v).
+      ipush(x); return;
+    }
+    if ((op  == Bytecodes::_i2s || op  == Bytecodes::_i2c || op == Bytecodes::_i2b)
+        &&
+        (op2 == Bytecodes::_i2s || op2 == Bytecodes::_i2c)) {
+      // Do i2b(x=i2[sc](v)) => i2b(v), i2[cs](x=i2[sc](v)) => i2[cs](v)
+      // This shows up naturally when a cast follows a field load.
+      x = v;  // and fall through
+    }
+  }
+  push(as_ValueType(to), append(new Convert(op, x, rt)));
 }
 
 
@@ -3211,7 +3237,7 @@ void GraphBuilder::setup_osr_entry_block() {
       Value off_val = append(new Constant(new IntConstant(offset)));
       get = append(new UnsafeGet(as_BasicType(local->type()), e,
                                  off_val,
-                                 false/*is_volatile*/,
+                                 vmIntrinsics::UNSAFE_MO_PLAIN/*!is_volatile*/,
                                  true/*is_raw*/));
     }
     _state->store_local(index, get);
@@ -3568,59 +3594,42 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   // Some intrinsics need special IR nodes.
+  Value arg, subst;
   switch(id) {
-  case vmIntrinsics::_getReference           : append_unsafe_get(callee, T_OBJECT,  false); return;
-  case vmIntrinsics::_getBoolean             : append_unsafe_get(callee, T_BOOLEAN, false); return;
-  case vmIntrinsics::_getByte                : append_unsafe_get(callee, T_BYTE,    false); return;
-  case vmIntrinsics::_getShort               : append_unsafe_get(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_getChar                : append_unsafe_get(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_getInt                 : append_unsafe_get(callee, T_INT,     false); return;
-  case vmIntrinsics::_getLong                : append_unsafe_get(callee, T_LONG,    false); return;
-  case vmIntrinsics::_getFloat               : append_unsafe_get(callee, T_FLOAT,   false); return;
-  case vmIntrinsics::_getDouble              : append_unsafe_get(callee, T_DOUBLE,  false); return;
-  case vmIntrinsics::_putReference           : append_unsafe_put(callee, T_OBJECT,  false); return;
-  case vmIntrinsics::_putBoolean             : append_unsafe_put(callee, T_BOOLEAN, false); return;
-  case vmIntrinsics::_putByte                : append_unsafe_put(callee, T_BYTE,    false); return;
-  case vmIntrinsics::_putShort               : append_unsafe_put(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_putChar                : append_unsafe_put(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_putInt                 : append_unsafe_put(callee, T_INT,     false); return;
-  case vmIntrinsics::_putLong                : append_unsafe_put(callee, T_LONG,    false); return;
-  case vmIntrinsics::_putFloat               : append_unsafe_put(callee, T_FLOAT,   false); return;
-  case vmIntrinsics::_putDouble              : append_unsafe_put(callee, T_DOUBLE,  false); return;
-  case vmIntrinsics::_getShortUnaligned      : append_unsafe_get(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_getCharUnaligned       : append_unsafe_get(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_getIntUnaligned        : append_unsafe_get(callee, T_INT,     false); return;
-  case vmIntrinsics::_getLongUnaligned       : append_unsafe_get(callee, T_LONG,    false); return;
-  case vmIntrinsics::_putShortUnaligned      : append_unsafe_put(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_putCharUnaligned       : append_unsafe_put(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_putIntUnaligned        : append_unsafe_put(callee, T_INT,     false); return;
-  case vmIntrinsics::_putLongUnaligned       : append_unsafe_put(callee, T_LONG,    false); return;
-  case vmIntrinsics::_getReferenceVolatile   : append_unsafe_get(callee, T_OBJECT,  true); return;
-  case vmIntrinsics::_getBooleanVolatile     : append_unsafe_get(callee, T_BOOLEAN, true); return;
-  case vmIntrinsics::_getByteVolatile        : append_unsafe_get(callee, T_BYTE,    true); return;
-  case vmIntrinsics::_getShortVolatile       : append_unsafe_get(callee, T_SHORT,   true); return;
-  case vmIntrinsics::_getCharVolatile        : append_unsafe_get(callee, T_CHAR,    true); return;
-  case vmIntrinsics::_getIntVolatile         : append_unsafe_get(callee, T_INT,     true); return;
-  case vmIntrinsics::_getLongVolatile        : append_unsafe_get(callee, T_LONG,    true); return;
-  case vmIntrinsics::_getFloatVolatile       : append_unsafe_get(callee, T_FLOAT,   true); return;
-  case vmIntrinsics::_getDoubleVolatile      : append_unsafe_get(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_putReferenceVolatile   : append_unsafe_put(callee, T_OBJECT,  true); return;
-  case vmIntrinsics::_putBooleanVolatile     : append_unsafe_put(callee, T_BOOLEAN, true); return;
-  case vmIntrinsics::_putByteVolatile        : append_unsafe_put(callee, T_BYTE,    true); return;
-  case vmIntrinsics::_putShortVolatile       : append_unsafe_put(callee, T_SHORT,   true); return;
-  case vmIntrinsics::_putCharVolatile        : append_unsafe_put(callee, T_CHAR,    true); return;
-  case vmIntrinsics::_putIntVolatile         : append_unsafe_put(callee, T_INT,     true); return;
-  case vmIntrinsics::_putLongVolatile        : append_unsafe_put(callee, T_LONG,    true); return;
-  case vmIntrinsics::_putFloatVolatile       : append_unsafe_put(callee, T_FLOAT,   true); return;
-  case vmIntrinsics::_putDoubleVolatile      : append_unsafe_put(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_compareAndSetLong:
-  case vmIntrinsics::_compareAndSetInt:
-  case vmIntrinsics::_compareAndSetReference : append_unsafe_CAS(callee); return;
-  case vmIntrinsics::_getAndAddInt:
-  case vmIntrinsics::_getAndAddLong          : append_unsafe_get_and_set(callee, true); return;
-  case vmIntrinsics::_getAndSetInt           :
-  case vmIntrinsics::_getAndSetLong          :
-  case vmIntrinsics::_getAndSetReference     : append_unsafe_get_and_set(callee, false); return;
+  // canonicalize back-to-back float-vs-int, long-vs-double conversions
+  case vmIntrinsics::_floatToRawIntBits:
+    arg = fpop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_intBitsToFloat == match_unary_intrinsic(arg, &subst)) {
+      ipush(subst); return;     // eliminated a back-to-back pair
+    } else {
+      fpush(arg); break;        // no such luck; generate the intrinsic
+    }
+  case vmIntrinsics::_intBitsToFloat:
+    arg = ipop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_floatToRawIntBits == match_unary_intrinsic(arg, &subst)) {
+      fpush(subst); return;     // eliminated a back-to-back pair
+    } else {
+      ipush(arg); break;        // no such luck; generate the intrinsic
+    }
+  case vmIntrinsics::_doubleToRawLongBits:
+    arg = dpop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_longBitsToDouble == match_unary_intrinsic(arg, &subst)) {
+      lpush(subst); return;     // eliminated a back-to-back pair
+    } else {
+      dpush(arg); break;        // no such luck; generate the intrinsic
+    }
+  case vmIntrinsics::_longBitsToDouble:
+    arg = lpop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_doubleToRawLongBits == match_unary_intrinsic(arg, &subst)) {
+      dpush(subst); return;     // eliminated a back-to-back pair
+    } else {
+      lpush(arg); break;        // no such luck; generate the intrinsic
+    }
+
   case vmIntrinsics::_getCharStringU         : append_char_access(callee, false); return;
   case vmIntrinsics::_putCharStringU         : append_char_access(callee, true); return;
   case vmIntrinsics::_clone                  : append_alloc_array_copy(callee); return;
@@ -3655,7 +3664,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
     }
   }
 
-  Intrinsic* result = new Intrinsic(result_type, callee->intrinsic_id(),
+  Intrinsic* result = new Intrinsic(result_type, id,
                                     args, has_receiver, state_before,
                                     vmIntrinsics::preserves_state(id),
                                     vmIntrinsics::can_trap(id));
@@ -3670,6 +3679,118 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   }
 }
 
+
+bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignore_return) {
+  vmIntrinsics::ID id = callee->intrinsic_id();
+  vmIntrinsics::PolymorphicPrefix pfx = vmIntrinsics::polymorphic_prefix(id);
+  assert(pfx != vmIntrinsics::PP_NONE, "must have a polymorphic prefix");
+  const int args_base = state()->stack_size() - callee->arg_size();
+  int prefix_end = args_base;  // incremented over the prefix
+  assert(!callee->is_static(), "");
+  ++prefix_end;  // skip over Unsafe receiver object
+  jint mo = -1;  // mo should be MO_PLAIN or the like; use MO_VOLATILE if not constant
+  jint bt = -1;  // bt should be T_BYTE or the like; bail if not constant
+  jint op = -1;  // op should be OP_SWAP or the like; bail if not constant
+  {
+    IntConstant* intcon;
+    switch (pfx) {
+    case vmIntrinsics::PP_MO:
+      intcon = state()->stack_at_inc(prefix_end)->type()->as_IntConstant();
+      if (intcon != nullptr)  mo = intcon->value() & 0xFF;
+      bt = T_OBJECT;  // getReferenceMO etc.
+      break;
+    case vmIntrinsics::PP_MO_BT:
+      intcon = state()->stack_at_inc(prefix_end)->type()->as_IntConstant();
+      if (intcon != nullptr)  mo = intcon->value() & 0xFF;
+      intcon = state()->stack_at_inc(prefix_end)->type()->as_IntConstant();
+      if (intcon != nullptr)  bt = intcon->value() & 0xFF;
+      if (!vmIntrinsics::is_valid_primitive_type(bt))  return false;
+      break;
+    case vmIntrinsics::PP_MO_BT_OP:
+      intcon = state()->stack_at_inc(prefix_end)->type()->as_IntConstant();
+      if (intcon != nullptr)  mo = intcon->value() & 0xFF;
+      intcon = state()->stack_at_inc(prefix_end)->type()->as_IntConstant();
+      if (intcon != nullptr)  bt = intcon->value() & 0xFF;
+      intcon = state()->stack_at_inc(prefix_end)->type()->as_IntConstant();
+      if (intcon != nullptr)  op = intcon->value() & 0xFF;
+      if (!vmIntrinsics::is_valid_primitive_type(bt))  return false;
+      if (!vmIntrinsics::is_valid_primitive_bits_op(op))  return false;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  }
+  // after skipping prefix, remember the number of skipped items
+  const int prefix_size = prefix_end - args_base - 1;  //do not count receiver
+  // if MO is unknown, fall down to MO_VOLATILE, for atomics & refs only
+  if (!vmIntrinsics::is_valid_memory_order(mo)) {
+    switch (id) {
+    case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+    case vmIntrinsics::_compareAndSetReferenceMO:
+    case vmIntrinsics::_compareAndExchangeReferenceMO:
+    case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    case vmIntrinsics::_getAndSetReferenceMO:
+    case vmIntrinsics::_getReferenceMO:
+    case vmIntrinsics::_putReferenceMO:
+      // every atomic, even a "plain" one, must be fully aligned
+      // also references are always aligned
+      mo = vmIntrinsics::UNSAFE_MO_VOLATILE;
+      break;
+    case vmIntrinsics::_getPrimitiveBitsMO:
+    case vmIntrinsics::_putPrimitiveBitsMO:
+    default:
+      // Plain bitwise accesses are sometimes unaligned, but in that
+      // case we cannot assume that a MO_VOLATILE instruction is safe.
+      return false;
+    }
+  }
+  BasicType t = (BasicType)bt;
+  assert(bt >= 0 && is_java_type(t), "");
+  if (op < 0)  op = vmIntrinsics::OP_NONE;
+  // Having collected the prefix, make one more check for backend support.
+  if (!_compilation->compiler()
+      ->is_intrinsic_supported(id, (vmIntrinsics::MemoryOrder)mo,
+                               t, (vmIntrinsics::BitsOperation)op)) {
+    return false;
+  }
+  // We know it is supported.  Now emit the code.
+  switch(id) {
+  case vmIntrinsics::_getReferenceMO:
+    assert(t == T_OBJECT, "");    // and fall through
+  case vmIntrinsics::_getPrimitiveBitsMO:
+    append_unsafe_get(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size);
+    return true;
+
+  case vmIntrinsics::_putReferenceMO:
+    assert(t == T_OBJECT, "");    // and fall through
+  case vmIntrinsics::_putPrimitiveBitsMO:
+    append_unsafe_put(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size);
+    return true;
+
+  case vmIntrinsics::_compareAndSetReferenceMO:
+    assert(t == T_OBJECT, "");    // and fall through
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
+                      vmIntrinsics::OP_NONE, prefix_size);
+    return true;
+
+  case vmIntrinsics::_getAndSetReferenceMO:
+    assert(t == T_OBJECT, "");
+    assert(op == vmIntrinsics::OP_NONE, "");
+    op = vmIntrinsics::OP_SWAP;
+    // and fall through
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
+                      (vmIntrinsics::BitsOperation)op, prefix_size);
+    return true;
+
+  default:
+    return false;
+  }
+}
+
+
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
@@ -3679,17 +3800,29 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     VM_ENTRY_MARK;
     methodHandle mh(THREAD, callee->get_Method());
     is_available = _compilation->compiler()->is_intrinsic_available(mh, _compilation->directive());
+    if (is_available && mh->is_synchronized()) {
+      // C1 does not support intrinsification of synchronized methods.
+      is_available = false;
+    }
   }
 
   if (!is_available) {
     if (!InlineNatives) {
       // Return false and also set message that the inlining of
       // intrinsics has been disabled in general.
+      // FIXME: It is not clear that InlineNatives is the correct switch for this.
+      // Some intrinsics are regular non-native methods, yet they get blocked here.
       INLINE_BAILOUT("intrinsic method inlining disabled");
     } else {
+      // Return false but allow for normal inlining
       return false;
     }
   }
+
+  if (vmIntrinsics::polymorphic_prefix(callee->intrinsic_id()) != vmIntrinsics::PP_NONE) {
+    return try_inline_polymorphic_intrinsic(callee, ignore_return);
+  }
+
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
     return false;
@@ -3893,7 +4026,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   // now perform tests that are based on flag settings
   bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
   if (callee->force_inline() || inlinee_by_directive) {
-    if (inline_level() > MaxForceInlineLevel                      ) INLINE_BAILOUT("MaxForceInlineLevel");
+    // Intrinsics do not by themselves cause deep inlining, and they should be
+    // allowed to inline fully even if calling code is getting close to the limit.
+    bool check_level = (callee->intrinsic_id() == vmIntrinsics::_none);
+    if (check_level && inline_level() > MaxForceInlineLevel       ) INLINE_BAILOUT("MaxForceInlineLevel");
     if (recursive_inline_level(callee) > C1MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
 
     const char* msg = "";
@@ -4319,71 +4455,215 @@ void GraphBuilder::pop_scope_for_jsr() {
   _scope_data = scope_data()->parent();
 }
 
-void GraphBuilder::append_unsafe_get(ciMethod* callee, BasicType t, bool is_volatile) {
+void GraphBuilder::append_unsafe_get(ciMethod* callee,
+                                     vmIntrinsics::MemoryOrder mo, BasicType t,
+                                     int prefix_size) {
   Values* args = state()->pop_arguments(callee->arg_size());
   null_check(args->at(0));
-  Instruction* offset = args->at(2);
-#ifndef _LP64
-  offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
-#endif
-  Instruction* op = append(new UnsafeGet(t, args->at(1), offset, is_volatile));
+  Value base   = args->at(prefix_size + 1);
+  Value offset = args->at(prefix_size + 2);
+  offset = adjust_unsafe_offset(offset);
+  Instruction* op = append(new UnsafeGet(t, base, offset, mo));
+  // The underlying get operation is strongly typed, but the result
+  // must be widened to 64 bits.
+  op = adjust_unsafe_container(op, t, T_LONG);
   push(op->type(), op);
   compilation()->set_has_unsafe_access(true);
 }
 
 
-void GraphBuilder::append_unsafe_put(ciMethod* callee, BasicType t, bool is_volatile) {
+void GraphBuilder::append_unsafe_put(ciMethod* callee,
+                                     vmIntrinsics::MemoryOrder mo, BasicType t,
+                                     int prefix_size) {
   Values* args = state()->pop_arguments(callee->arg_size());
   null_check(args->at(0));
-  Instruction* offset = args->at(2);
-#ifndef _LP64
-  offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
-#endif
-  Value val = args->at(3);
+  Value base   = args->at(prefix_size + 1);
+  Value offset = args->at(prefix_size + 2);
+  Value val = args->at(prefix_size + 3);
+  offset = adjust_unsafe_offset(offset);
+  val = adjust_unsafe_container(val, T_LONG, t);
   if (t == T_BOOLEAN) {
     Value mask = append(new Constant(new IntConstant(1)));
     val = append(new LogicOp(Bytecodes::_iand, val, mask));
   }
-  Instruction* op = append(new UnsafePut(t, args->at(1), offset, val, is_volatile));
+  Instruction* op = append(new UnsafePut(t, base, offset, val, mo));
   compilation()->set_has_unsafe_access(true);
   kill_all();
 }
 
-void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
+// Append compareAndSet (OP_NONE), getAndSet (OP_SWAP), or setAndFoo (OP_Foo).
+// The backend will inspect the intrinsic and prefix to DTRT.
+void GraphBuilder::append_unsafe_CAS(ciMethod* callee,
+                                     vmIntrinsics::MemoryOrder mo, BasicType t,
+                                     vmIntrinsics::BitsOperation op,
+                                     int prefix_size) {
   ValueStack* state_before = copy_state_for_exception();
-  ValueType* result_type = as_ValueType(callee->return_type());
-  assert(result_type->is_int(), "int result");
+  vmIntrinsics::ID id = callee->intrinsic_id();
+  // The uit (unsafe type) is long for primitive GAX, else T_OBJECT or T_BOOLEAN
+  BasicType uit = callee->return_type()->basic_type();
+  const bool is_plain_CAS = (op == vmIntrinsics::OP_NONE);  // CAS vs. GAS/GAX
+  ValueType* result_type = as_ValueType(is_plain_CAS ? T_BOOLEAN : t);
+  assert(is_plain_CAS
+         ? uit == T_BOOLEAN
+         : uit == T_OBJECT || uit == T_LONG, "correct polymorphic method return");
   Values* args = state()->pop_arguments(callee->arg_size());
 
   // Pop off some args to specially handle, then push back
-  Value newval = args->pop();
-  Value cmpval = args->pop();
+  Value newval = is_plain_CAS ? args->pop() : nullptr;
+  Value cmpval = args->pop();   // also, operand for GAS/GAX
   Value offset = args->pop();
-  Value src = args->pop();
-  Value unsafe_obj = args->pop();
+  Value base = args->pop();
+  assert(args->length() == 1+prefix_size, ""); // do not pop the prefix
+  Value unsafe_obj = args->at(0);
+  args->clear();  // discard unsafe obj and MO_BT prefix
 
   // Separately handle the unsafe arg. It is not needed for code
   // generation, but must be null checked
   null_check(unsafe_obj);
 
-#ifndef _LP64
-  offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
-#endif
+  offset = adjust_unsafe_offset(offset);
+  cmpval = adjust_unsafe_container(cmpval, T_LONG, t);
+  if (is_plain_CAS)
+    newval = adjust_unsafe_container(newval, T_LONG, t);
 
-  args->push(src);
+  args->push(base);
   args->push(offset);
-  args->push(cmpval);
-  args->push(newval);
+  args->push(cmpval);    // or operand for GAX, or newval for GAS
+  if (is_plain_CAS)
+    args->push(newval);  // GAS/GAX will compute the newval
 
   // An unsafe CAS can alias with other field accesses, but we don't
   // know which ones so mark the state as no preserved.  This will
   // cause CSE to invalidate memory across it.
-  bool preserves_state = false;
-  Intrinsic* result = new Intrinsic(result_type, callee->intrinsic_id(), args, false, state_before, preserves_state);
-  append_split(result);
-  push(result_type, result);
+  const bool not_ps = false;  // preserve_state = false
+  Intrinsic* result = new Intrinsic(result_type, id, args, false, state_before, not_ps);
+  append_split(result->with_polymorphic_prefix(mo, t, op));
+  switch (uit) {
+  case T_BOOLEAN:
+    assert(is_plain_CAS, "plain CAS returns boolean");
+    assert(id == vmIntrinsics::_compareAndSetReferenceMO ||
+           id == vmIntrinsics::_compareAndSetPrimitiveBitsMO, "");
+    ipush(result); break;
+  case T_OBJECT:
+    assert(!is_plain_CAS && op == vmIntrinsics::OP_NONE, "swap returns reference");
+    assert(id == vmIntrinsics::_getAndSetReferenceMO ||
+           id == vmIntrinsics::_getAndOperatePrimitiveBitsMO, "");
+    apush(result); break;
+  default:
+    assert(!is_plain_CAS && uit == T_LONG, "returns primitive bits");
+    assert(id == vmIntrinsics::_getAndOperatePrimitiveBitsMO, "");
+    // The underlying intrinsic is strongly typed, but the result must
+    // be widened to 64 bits.
+    lpush(adjust_unsafe_container(result, t, T_LONG)); break;
+  }
   compilation()->set_has_unsafe_access(true);
 }
+
+// Support for shifting a container type, without changing significant
+// bits.  It is used by "primitive-bits" methods in the Unsafe API.
+//
+// If the container is widened, there are no guarantees about what
+// high bits are used for padding, as per the Unsafe API javadoc.
+// To canonicalize bits, you might use something like _iand or _i2s.
+//
+// The invariant is that the representational bits of the smaller type
+// are preserved exactly.  We might execute _i2l or _l2i but never _i2f.
+// If we need to deal with floats, we use the bit-conversion intrinsics.
+//
+// In subwords, there are no guarantees about the value of
+// insignificant padding bits -- they do not need to be sign bits (as
+// for byte) or zero bits (as for char).  Not even _i2b is necessary;
+// it would not break the invariant but it would be useless.
+//
+// As a special case, if either type is T_OBJECT, this is a nop,
+// because object pointers are all the same format.  The user
+// might has asked for T_LONG to be converted to T_OBJECT,
+// but such a nonsense request will be quietly refused.
+// This makes it easier for common code to handle both
+// references and primitives.
+Value GraphBuilder::adjust_unsafe_container(Value x, BasicType from, BasicType to) {
+  if (from == T_OBJECT || to == T_OBJECT) {
+    // T_OBJECT does not mix with anything else; just return it
+    assert(x->type()->is_object(), "");
+    return x;
+  }
+  assert(x->type()->tag() == as_ValueType(from)->tag(), "");
+  if (from == to)  return x;  // no action
+  assert(is_java_primitive(from) && is_java_primitive(to), "");
+  if (is_double_word_type(from) != is_double_word_type(to)) {
+    // size changes always go through T_INT
+    if (from == T_INT) {
+      assert(to == T_LONG, "T_DOUBLE is not a container");
+      return append(new Convert(Bytecodes::_i2l, x, as_ValueType(T_LONG)));
+    } else if (to == T_INT) {
+      assert(from == T_LONG, "T_DOUBLE is not a container");
+      Value v = nullptr;
+      if (CanonicalizeConversions &&
+          match_conversion(x, &v) == Bytecodes::_i2l) {
+        return v;  // back-to-back i2l->l2i means no change
+      }
+      return append(new Convert(Bytecodes::_l2i, x, as_ValueType(T_INT)));
+    } else {
+      // use one or two bitwise conversions, one of which is int-vs-long
+      Value y = adjust_unsafe_container(x, from, T_INT);
+      Value z = adjust_unsafe_container(y, T_INT, to);
+      return z;
+    }
+  }
+  if (is_floating_point_type(from) || is_floating_point_type(to)) {
+    vmIntrinsics::ID id = vmIntrinsics::raw_floating_conversion(from, to);
+    assert(id != vmIntrinsics::_none, "must be");
+    // bitwise same-size raw conversion: int-vs-float or long-vs-double
+    Value subst = nullptr;
+    if (CanonicalizeConversions &&
+        match_unary_intrinsic(x, &subst) == vmIntrinsics::raw_floating_conversion(to, from)) {
+      return subst;  // back-to-back inverse means no change
+    }
+    const bool ps = true, ct = false;
+    assert(vmIntrinsics::preserves_state(id) == ps &&
+           vmIntrinsics::can_trap(id) == ct, "must be");
+    Values* args = new Values(1);
+    args->push(x);
+    return append_split(new Intrinsic(as_ValueType(to), id, args, false, state(), ps, ct));
+  }
+  // nothing left to do, since we do not care about subword padding
+  assert(!is_double_word_type(from) && !is_double_word_type(to), "");
+  assert(from == T_INT || as_ValueType(from)->is_int(), "");
+  assert(to   == T_INT || as_ValueType(to)->is_int(), "");
+  return x;
+}
+
+
+Bytecodes::Code GraphBuilder::match_conversion(Value x, Value* arg) {
+  assert(CanonicalizeNodes, "else do not call");
+  Convert* conv = x->as_Convert();
+  if (conv != nullptr) {
+    *arg = conv->value();
+    return conv->op();
+  } else {
+    return Bytecodes::_illegal;
+  }
+}
+
+
+vmIntrinsics::ID GraphBuilder::match_unary_intrinsic(Value x, Value* arg) {
+  assert(CanonicalizeNodes, "else do not call");
+  Intrinsic* intr = x->as_Intrinsic();
+  if (intr != nullptr && intr->number_of_arguments() == 1) {
+    *arg = intr->argument_at(0);
+    return intr->id();
+  } else {
+    return vmIntrinsics::_none;
+  }
+}
+
+
+Value GraphBuilder::adjust_unsafe_offset(Value offset) {
+  // cut down the offset to machine word size
+  BasicType T_INTX = LP64_ONLY(T_LONG) NOT_LP64(T_INT);
+  return adjust_unsafe_container(offset, T_LONG, T_INTX);
+}
+
 
 void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
   // This intrinsic accesses byte[] array as char[] array. Computing the offsets
@@ -4472,20 +4752,6 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }
-}
-
-void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-  BasicType t = callee->return_type()->basic_type();
-  null_check(args->at(0));
-  Instruction* offset = args->at(2);
-#ifndef _LP64
-  offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
-#endif
-  Instruction* op = append(new UnsafeGetAndSet(t, args->at(1), offset, args->at(3), is_add));
-  compilation()->set_has_unsafe_access(true);
-  kill_all();
-  push(op->type(), op);
 }
 
 #ifndef PRODUCT

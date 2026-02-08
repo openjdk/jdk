@@ -29,6 +29,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A {@code CallSite} is a holder for a variable {@link MethodHandle},
@@ -287,7 +288,7 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
 
     /*package-private*/
     final MethodHandle getTargetVolatile() {
-        return (MethodHandle) UNSAFE.getReferenceVolatile(this, getTargetOffset());
+        return (MethodHandle) UNSAFE.getReferenceMO(Unsafe.MO_VOLATILE, this, getTargetOffset());
     }
 
     /*package-private*/

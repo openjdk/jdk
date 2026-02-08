@@ -123,19 +123,19 @@ public class CASandCAEwithNegExpected {
         f_byte = -1;
         f_short = -1;
 
-        if (unsafe.weakCompareAndSetInt(this, f_int_off, -1, 42) && f_int != 42) {
+        if (unsafe.compareAndSetIntMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_int_off, -1, 42) && f_int != 42) {
             throw new RuntimeException("CAS failed");
         }
 
-        if (unsafe.weakCompareAndSetLong(this, f_long_off, -1, 42) && f_long != 42) {
+        if (unsafe.compareAndSetLongMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_long_off, -1, 42) && f_long != 42) {
             throw new RuntimeException("CAS failed");
         }
 
-        if (unsafe.weakCompareAndSetByte(this, f_byte_off, (byte)-1, (byte)42) && f_byte != 42) {
+        if (unsafe.compareAndSetByteMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_byte_off, (byte)-1, (byte)42) && f_byte != 42) {
             throw new RuntimeException("CAS failed");
         }
 
-        if (unsafe.weakCompareAndSetShort(this, f_short_off, (short)-1, (short)42) && f_short != 42) {
+        if (unsafe.compareAndSetShortMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, f_short_off, (short)-1, (short)42) && f_short != 42) {
             throw new RuntimeException("CAS failed");
         }
     }
