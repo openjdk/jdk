@@ -277,6 +277,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         TYPEIDENT,
 
+        /** 'var' type.
+         */
+        VARTYPE,
+
         /** Array types, of type TypeArray.
          */
         TYPEARRAY,
@@ -1031,15 +1035,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public VarSymbol sym;
         /** how the variable's type was declared */
         public DeclKind declKind;
-        /** a source code position to use for "vartype" when null (can happen if declKind != EXPLICIT) */
-        public int typePos;
 
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
                          JCExpression vartype,
                          JCExpression init,
                          VarSymbol sym) {
-            this(mods, name, vartype, init, sym, DeclKind.EXPLICIT, Position.NOPOS);
+            this(mods, name, vartype, init, sym, DeclKind.EXPLICIT);
         }
 
         protected JCVariableDecl(JCModifiers mods,
@@ -1047,21 +1049,19 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                                  JCExpression vartype,
                                  JCExpression init,
                                  VarSymbol sym,
-                                 DeclKind declKind,
-                                 int typePos) {
+                                 DeclKind declKind) {
             this.mods = mods;
             this.name = name;
             this.vartype = vartype;
             this.init = init;
             this.sym = sym;
             this.declKind = declKind;
-            this.typePos = typePos;
         }
 
         protected JCVariableDecl(JCModifiers mods,
                          JCExpression nameexpr,
                          JCExpression vartype) {
-            this(mods, null, vartype, null, null, DeclKind.EXPLICIT, Position.NOPOS);
+            this(mods, null, vartype, null, null, DeclKind.EXPLICIT);
             this.nameexpr = nameexpr;
             if (nameexpr.hasTag(Tag.IDENT)) {
                 this.name = ((JCIdent)nameexpr).name;
@@ -1071,8 +1071,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             }
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public boolean isImplicitlyTyped() {
-            return vartype == null;
+            return declKind != DeclKind.EXPLICIT;
         }
 
         public boolean declaredUsingVar() {
@@ -2040,7 +2041,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.params = params;
             this.body = body;
             if (params.isEmpty() ||
-                params.head.vartype != null) {
+                !params.head.isImplicitlyTyped()) {
                 paramKind = ParameterKind.EXPLICIT;
             } else {
                 paramKind = ParameterKind.IMPLICIT;
@@ -2817,6 +2818,24 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return TYPEIDENT;
+        }
+    }
+
+    public static class JCVarType extends JCExpression implements VarTypeTree {
+        public JCVarType() {}
+        @Override
+        public void accept(Visitor v) { v.visitVarType(this); }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() { return Kind.VAR_TYPE; }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitVarType(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return VARTYPE;
         }
     }
 
@@ -3597,6 +3616,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitIdent(JCIdent that)                 { visitTree(that); }
         public void visitLiteral(JCLiteral that)             { visitTree(that); }
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }
+        public void visitVarType(JCVarType that)             { visitTree(that); }
         public void visitTypeArray(JCArrayTypeTree that)     { visitTree(that); }
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }
         public void visitTypeUnion(JCTypeUnion that)         { visitTree(that); }

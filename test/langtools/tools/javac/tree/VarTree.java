@@ -52,27 +52,27 @@ public class VarTree {
     public static void main(String... args) throws Exception {
         VarTree test = new VarTree();
         test.run("|var testVar = 0;| ",
-                 "int testVar = 0");
+                 "var testVar = 0");
         test.run("|var testVar = 0;| undef undef;",
-                 "int testVar = 0");
+                 "var testVar = 0");
         test.run("|final var testVar = 0;| ",
-                 "final int testVar = 0");
+                 "final var testVar = 0");
         test.run("for (|var testVar| : java.util.Arrays.asList(0, 1)) {}",
-                 "java.lang.Integer testVar");
+                 "var testVar");
         test.run("for (|final var testVar| : java.util.Arrays.asList(0, 1)) {}",
-                 "final java.lang.Integer testVar");
+                 "final var testVar");
         test.run("java.util.function.Consumer<String> c = |testVar| -> {};",
-                 "java.lang.String testVar");
+                 "/*missing*/ testVar"); //TODO: is the /*missing*/ here ideal?
         test.run("java.util.function.Consumer<String> c = (|testVar|) -> {};",
-                 "java.lang.String testVar");
+                 "/*missing*/ testVar"); //TODO: is the /*missing*/ here ideal?
         test.run("java.util.function.Consumer<String> c = (|var testVar|) -> {};",
-                 "java.lang.String testVar");
+                 "var testVar");
         test.run("java.util.function.Consumer<String> c = (|final var testVar|) -> {};",
-                 "final java.lang.String testVar");
+                 "final var testVar");
         test.run("record Rec(int x) { }; switch (null) { case Rec(|var testVar|) -> {} default -> {} };",
-                 "int testVar");
+                 "var testVar");
         test.run("record Rec(int x) { }; switch (null) { case Rec(|final var testVar|) -> {} default -> {} };",
-                 "final int testVar");
+                 "final var testVar");
     }
 
     void run(String code, String expected) throws IOException {
@@ -136,11 +136,13 @@ public class VarTree {
                             throw new AssertionError("Unexpected span: " + snip);
                         }
 
-                        int typeStart = (int) trees.getSourcePositions().getStartPosition(cut, node.getType());
-                        int typeEnd   = (int) trees.getSourcePositions().getEndPosition(cut, node.getType());
+                        if (node.getType() != null) {
+                            int typeStart = (int) trees.getSourcePositions().getStartPosition(cut, node.getType());
+                            int typeEnd   = (int) trees.getSourcePositions().getEndPosition(cut, node.getType());
 
-                        if (typeStart != (-1) && typeEnd != (-1)) {
-                            throw new AssertionError("Unexpected type position: " + typeStart + ", " + typeEnd);
+                            if (typeStart + 3 != typeEnd) {
+                                throw new AssertionError("Unexpected type position: " + typeStart + ", " + typeEnd);
+                            }
                         }
 
                         found[0] = true;
