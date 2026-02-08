@@ -516,7 +516,12 @@ class SqrtDNode : public Node {
 public:
   SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
+    // Treat node only as expensive if a control input is set because it might
+    // be created from a SqrtVDNode in VectorNode::Ideal while pushing broadcasts
+    // across SqrtVD vectornode which has no control input.
+    if (c != nullptr) {
+      C->add_expensive_node(this);
+    }
   }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
