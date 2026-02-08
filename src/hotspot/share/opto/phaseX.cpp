@@ -2728,6 +2728,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       worklist.push(cmp);
     }
   }
+  // VectorMaskToLongNode::Ideal_MaskAll looks through VectorStoreMask
+  // to fold constant masks.
+  if (use_op == Op_VectorStoreMask) {
+    add_users_to_worklist0(use, worklist);
+  }
 
   // From CastX2PNode::Ideal
   // CastX2P(AddX(x, y))
