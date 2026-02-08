@@ -40,6 +40,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class Basic {
 
@@ -133,46 +134,42 @@ public class Basic {
         /**
          * Test: Enumerate all FileStores
          */
-        if (FileUtils.areMountPointsAccessibleAndUnique()) {
-            FileStore prev = null;
-            for (FileStore store: FileSystems.getDefault().getFileStores()) {
-                System.out.format("%s (name=%s type=%s)\n", store, store.name(),
-                    store.type());
+        assumeTrue(FileUtils.areMountPointsAccessibleAndUnique());
+        FileStore prev = null;
+        for (FileStore store: FileSystems.getDefault().getFileStores()) {
+            System.out.format("%s (name=%s type=%s)\n", store, store.name(),
+                store.type());
 
-                // check space attributes are accessible
-                try {
-                    store.getTotalSpace();
-                    store.getUnallocatedSpace();
-                    store.getUsableSpace();
-                } catch (NoSuchFileException nsfe) {
-                    // ignore exception as the store could have been
-                    // deleted since the iterator was instantiated
-                    System.err.format("%s was not found\n", store);
-                } catch (AccessDeniedException ade) {
-                    // ignore exception as the lack of ability to access the
-                    // store due to lack of file permission or similar does not
-                    // reflect whether the space attributes would be accessible
-                    // were access to be permitted
-                    System.err.format("%s is inaccessible\n", store);
-                } catch (FileSystemException fse) {
-                    // On Linux, ignore the FSE if the path is one of the
-                    // /run/user/$UID mounts created by pam_systemd(8) as it
-                    // might be mounted as a fuse.portal filesystem and
-                    // its access attempt might fail with EPERM
-                    if (!Platform.isLinux() || store.toString().indexOf("/run/user") == -1) {
-                        throw new RuntimeException(fse);
-                    } else {
-                        System.err.format("%s error: %s\n", store, fse);
-                    }
+            // check space attributes are accessible
+            try {
+                store.getTotalSpace();
+                store.getUnallocatedSpace();
+                store.getUsableSpace();
+            } catch (NoSuchFileException nsfe) {
+                // ignore exception as the store could have been
+                // deleted since the iterator was instantiated
+                System.err.format("%s was not found\n", store);
+            } catch (AccessDeniedException ade) {
+                // ignore exception as the lack of ability to access the
+                // store due to lack of file permission or similar does not
+                // reflect whether the space attributes would be accessible
+                // were access to be permitted
+                System.err.format("%s is inaccessible\n", store);
+            } catch (FileSystemException fse) {
+                // On Linux, ignore the FSE if the path is one of the
+                // /run/user/$UID mounts created by pam_systemd(8) as it
+                // might be mounted as a fuse.portal filesystem and
+                // its access attempt might fail with EPERM
+                if (!Platform.isLinux() || store.toString().indexOf("/run/user") == -1) {
+                    throw new RuntimeException(fse);
+                } else {
+                    System.err.format("%s error: %s\n", store, fse);
                 }
-
-                // two distinct FileStores should not be equal
-                assertTrue(!store.equals(prev));
-                prev = store;
             }
-        } else {
-            System.err.println
-                ("Skipping FileStore check due to file system access failure");
+
+            // two distinct FileStores should not be equal
+            assertTrue(!store.equals(prev));
+            prev = store;
         }
     }
 }
