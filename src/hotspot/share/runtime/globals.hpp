@@ -502,7 +502,7 @@ const int ObjectAlignmentInBytes = 8;
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See controlled_crash() "      \
           "in vmError.cpp.")                                                \
-          range(0, 18)                                                      \
+          range(0, 19)                                                      \
                                                                             \
   develop(uint, TestCrashInErrorHandler, 0,                                 \
           "If > 0, provokes an error inside VM error handler (a secondary " \
@@ -2005,6 +2005,13 @@ const int ObjectAlignmentInBytes = 8;
   develop(uint, BinarySearchThreshold, 16,                                  \
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
+                                                                            \
+  product(bool, UseAltSigStacks, false, DIAGNOSTIC,                         \
+          "Enable the use of alternative signal stacks.")                   \
+                                                                            \
+  product(intx, AltSigStackSize, 128, DIAGNOSTIC,                           \
+          range(128, 8192)                                                  \
+          "If UseAltSigStacks is enabled, signal stack size (in Kbytes).")  \
                                                                             \
 
 // end of RUNTIME_FLAGS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,13 @@
 
 #include "runtime/os.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 #include "unittest.hpp"
 
 
@@ -88,3 +91,57 @@ TEST_VM(StackOverflow, basics) {
     ASSERT_TRUE(so.in_stack_reserved_zone(so.stack_reserved_zone_base() - 1));
   }
 }
+
+// Test UseAltSigStacks
+
+// (relies on VMError::controlled_crash which is only available in debug builds)
+#ifdef ASSERT
+#if !defined(_WINDOWS) && !defined(AIX)
+
+static void cause_native_stack_overflow() {
+  tty->print_cr("Will trigger a deliberate stack overflow. "
+                "Please ignore the following stack overflow messages.");
+  VMError::controlled_crash(19);
+}
+
+// Test that we get hs-err files for non-Java threads that have no java
+// guard pages enabled. To work reliably, this requires platform libc or kernel
+// to have its guard pages installed at the bottom of a pthread stack. But that
+// should typically be the case.
+struct NonJavaTestThread : public NamedThread {
+  void run() override { cause_native_stack_overflow(); }
+  NonJavaTestThread() {
+    set_name("Test Thread for native stack overflow gtest");
+    if (os::create_thread(this, os::vm_thread)) {
+      os::start_thread(this);
+    }
+  }
+}; // NativeHeapTrimmer
+
+TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInNonJavaThread,
+                     MACOS_ONLY("SIGBUS") NOT_MACOS("SIGSEGV")) {
+  if (!UseAltSigStacks) {
+    return;
+  }
+  new NonJavaTestThread();
+  // Wait some time for the thread to come up and crash the process
+  int wait_ms = 5000;
+  while (wait_ms > 0) {
+    os::naked_short_sleep(100);
+    wait_ms -= 100;
+  }
+  ASSERT_FALSE(false); // We should have died by this point
+}
+
+// Test that we get hs-err files for stack overflows in JVM-hosted JavaThreads. There
+// is a companion jtreg test (runtime/ErrorHandling/NativeStackoverflowTest) which
+// tests the same thing, but for custom JNI code invoked from java.
+TEST_VM_CRASH_SIGNAL(StackOverflow, nativeStackOverflowInJavaThread, "SIGSEGV") {
+  if (!UseAltSigStacks) {
+    return;
+  }
+  // Gtests get invoked on the "main" java thread, so its a java thread.
+  cause_native_stack_overflow();
+}
+#endif
+#endif

@@ -352,11 +352,11 @@ inline T byte_size_in_proper_unit(T s) {
 
 // Printing a range, with start and bytes given
 #define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
-#define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
+#define RANGEFMTARGS(p1, size) p2u(p1), (p2u(p1) + size), size
 
 // Printing a range, with start and end given
 #define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
-#define RANGE2FMTARGS(p1, p2) p2i(p1), p2i(p2), ((uintptr_t)p2 - (uintptr_t)p1)
+#define RANGE2FMTARGS(p1, p2) p2u(p1), p2u(p2), ((uintptr_t)p2 - (uintptr_t)p1)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64

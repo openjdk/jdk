@@ -247,7 +247,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // Check if fault address is within thread stack.
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
-        if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+        if (os::Posix::handle_stack_overflow(thread, addr, pc, info, uc, &stub)) {
           return true; // continue
         }
       }

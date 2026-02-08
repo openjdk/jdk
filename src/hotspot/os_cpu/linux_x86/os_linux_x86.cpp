@@ -203,7 +203,7 @@ enum {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  /*
+/*
   NOTE: does not seem to work on linux.
   if (info == nullptr || info->si_code <= 0 || info->si_code == SI_NOINFO) {
     // can't decode this kind of signal
@@ -234,7 +234,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
-        if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+        if (os::Posix::handle_stack_overflow(thread, addr, pc, info, uc, &stub)) {
           return true; // continue
         }
       }

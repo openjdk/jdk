@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -938,7 +938,12 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     stringStream ss;
     ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print_on(&ss);
-    method()->print_codes_on(&ss);
+    // nmethod::continuation_for_implicit_exception runs in a signal handler, and
+    // Method::print_codes_on implicitly assumes (see methodHandle::methodHandle)
+    // that we run on the same stack as the faulting code.
+    if (!UseAltSigStacks) {
+      method()->print_codes_on(&ss);
+    }
     print_code_on(&ss);
     print_pcs_on(&ss);
     tty->print("%s", ss.as_string()); // print all at once

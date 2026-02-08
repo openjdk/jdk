@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #define PRAGMA_DIAG_POP  _Pragma("warning(pop)")
 
 #define PRAGMA_DEPRECATED_IGNORED PRAGMA_DISABLE_MSVC_WARNING(4996)
+#define PRAGMA_INFINITE_RECURSION_IGNORED PRAGMA_DISABLE_MSVC_WARNING(4717)
 
 // This macro is used by the IMPORTED variants of FORBID_C_FUNCTION.
 //
