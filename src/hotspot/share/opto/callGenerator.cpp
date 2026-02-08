@@ -159,6 +159,9 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     call->set_override_symbolic_info(true);
   }
   _call_node = call;  // Save the call node in case we need it later
+  if (is_late_inline()) {
+    _call_node->set_late_inlined_call(true);
+  }
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
     // Since we share a map with the caller, his JVMS gets adjusted.
