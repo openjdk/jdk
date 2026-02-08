@@ -432,7 +432,7 @@ public final class ErrorTest {
             testSpec().removeArgs("--input").error("error.no-input-parameter"),
             // no --module-path
             testSpec().appDesc("com.other/com.other.Hello").removeArgs("--module-path")
-                    .error("ERR_MissingArgument2", "--runtime-image", "--module-path"),
+                    .error("ERR_MissingOption2", "--module", "--runtime-image", "--module-path"),
             // no main class in module path
             testSpec().noAppDesc().addArgs("--module", "java.base", "--runtime-image", Token.JAVA_HOME.token())
                     .error("ERR_NoMainClass"),
@@ -652,6 +652,7 @@ public final class ErrorTest {
         ).map(TestSpec.Builder::create).toList());
 
         macInvalidRuntime(testCases::add);
+        macMissingSignIdentityOption(testCases::add);
 
         // Test a few app-image options that should not be used when signing external app image
         testCases.addAll(Stream.of(
@@ -773,6 +774,26 @@ public final class ErrorTest {
                     testSpec().nativeType().noAppDesc()
             ).map(mapper::applyTo).map(TestSpec.Builder::create).forEach(accumulator);
         });
+    }
+
+    private static void macMissingSignIdentityOption(Consumer<TestSpec> accumulator) {
+
+        var appImageSignError = makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+                "ERR_MissingOption2",
+                "--mac-sign",
+                "--mac-signing-key-user-name", "--mac-app-image-sign-identity"));
+
+        var pkgSignError = makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+                "ERR_MissingOption3",
+                "--mac-sign",
+                "--mac-signing-key-user-name", "--mac-app-image-sign-identity", "--mac-installer-sign-identity"));
+
+        Stream.of(
+                testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token(), "--mac-sign").messages(appImageSignError),
+                testSpec().addArgs("--mac-sign").messages(appImageSignError),
+                testSpec().type(PackageType.MAC_DMG).addArgs("--mac-sign").messages(appImageSignError),
+                testSpec().type(PackageType.MAC_PKG).addArgs("--mac-sign").messages(pkgSignError)
+        ).map(TestSpec.Builder::create).forEach(accumulator);
     }
 
     private record MissingRuntimeFileError(Token runtimeDir, String missingFile) {

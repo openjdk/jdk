@@ -265,7 +265,7 @@ public class OptionsProcessorTest {
     public void testMultipleCommandLineStructureAnalyzerErrors() {
         build().createAppImageByDefault().expectValidationErrors(
                 new JPackageException(I18N.format("ERR_MutuallyExclusiveOptions", "-m", "--main-jar")),
-                new JPackageException(I18N.format("ERR_MissingArgument2", "--runtime-image", "--module-path")),
+                new JPackageException(I18N.format("ERR_MissingOption2", "--module", "--runtime-image", "--module-path")),
                 new JPackageException(I18N.format("error.no-input-parameter"))
         ).validationErrorsOrdered(false).create("-m", "com.foo", "--main-jar", "main.jar").validate();
     }

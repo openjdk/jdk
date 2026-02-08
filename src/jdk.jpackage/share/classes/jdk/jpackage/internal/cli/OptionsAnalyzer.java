@@ -52,11 +52,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingEnvironment;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
-import jdk.jpackage.internal.model.BundleType;
 
 /**
  * Analyzes jpackage command line structure.
@@ -115,16 +115,26 @@ final class OptionsAnalyzer {
             errors.add(errorWithOrigin(error("error.app-image.mac-sign.required")));
         }
 
+        switch (bundlingOperation) {
+            case CREATE_MAC_APP_IMAGE, CREATE_MAC_DMG, SIGN_MAC_APP_IMAGE -> {
+                findMissingRequiredOption(cmdline, MAC_SIGN,
+                        MAC_SIGNING_KEY_NAME, MAC_APP_IMAGE_SIGN_IDENTITY).ifPresent(errors::add);
+            }
+            case CREATE_MAC_PKG -> {
+                findMissingRequiredOption(cmdline, MAC_SIGN,
+                        MAC_SIGNING_KEY_NAME, MAC_APP_IMAGE_SIGN_IDENTITY, MAC_INSTALLER_SIGN_IDENTITY).ifPresent(errors::add);
+            }
+            default -> {
+                // NOP
+            }
+        }
+
         if (isBuildingAppImage()) {
             if (MAIN_JAR.containsIn(cmdline) && !INPUT.containsIn(cmdline)) {
                 errors.add(errorWithOrigin(error("error.no-input-parameter"), MAIN_JAR.getSpec()));
             }
 
-            if (MODULE.containsIn(cmdline) && Stream.of(PREDEFINED_RUNTIME_IMAGE, MODULE_PATH).noneMatch(ov -> {
-                return ov.containsIn(cmdline);
-            })) {
-                errors.add(errorWithOrigin(error("ERR_MissingArgument2", PREDEFINED_RUNTIME_IMAGE, MODULE_PATH), MODULE.getSpec()));
-            }
+            findMissingRequiredOption(cmdline, MODULE, PREDEFINED_RUNTIME_IMAGE, MODULE_PATH).ifPresent(errors::add);
         }
 
         if (typedOptions) {
@@ -368,6 +378,41 @@ final class OptionsAnalyzer {
 
     private static ExceptionWithOrigin errorWithOrigin(Exception error, List<? extends OptionSpec<?>> origin) {
         return new ExceptionWithOrigin(error, origin);
+    }
+
+    private static Optional<ExceptionWithOrigin> findMissingRequiredOption(
+            Options cmdline, OptionValue<?> mainOption, OptionValue<?>... requiredCandidates) {
+
+        Objects.requireNonNull(cmdline);
+        Objects.requireNonNull(mainOption);
+
+        String format;
+        switch (requiredCandidates.length) {
+            case 2 -> {
+                format = "ERR_MissingOption2";
+            }
+            case 3 -> {
+                format = "ERR_MissingOption3";
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        if (!mainOption.containsIn(cmdline)) {
+            return Optional.empty();
+        }
+
+        if (Stream.of(requiredCandidates).anyMatch(ov -> {
+            return ov.containsIn(cmdline);
+        })) {
+            return Optional.empty();
+        }
+
+        return Optional.of(errorWithOrigin(error(format, Stream.concat(
+                Stream.of(mainOption),
+                Stream.of(requiredCandidates)
+        ).toArray()), mainOption.getSpec()));
     }
 
 
