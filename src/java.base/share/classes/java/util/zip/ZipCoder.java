@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,19 @@ import sun.nio.cs.UTF_8;
  * for other charsets require external synchronization.
  */
 class ZipCoder {
-
+    // Used for efficient UTF-8 string operations
     private static final jdk.internal.access.JavaLangAccess JLA =
         jdk.internal.access.SharedSecrets.getJavaLangAccess();
 
     // Encoding/decoding is stateless, so make it singleton.
     static final UTF8ZipCoder UTF8 = new UTF8ZipCoder(UTF_8.INSTANCE);
 
+    /**
+     * Return a ZipCoder supporting operations using the provided charset
+     *
+     * @param charset the charset to use by the ZipCoder
+     * @return a ZipCoder using the provided charset
+     */
     public static ZipCoder get(Charset charset) {
         if (charset == UTF_8.INSTANCE) {
             return UTF8;
@@ -82,22 +88,66 @@ class ZipCoder {
          */
         NO_MATCH = 2;
 
-    String toString(byte[] ba, int off, int length) {
+    /**
+     * Returns a hash code for use in ZipFile entry name lookups.
+     *
+     * If the name ends with a trailing '/', we generate the hash code
+     * as-if calling String.hashCode().
+     *
+     * If the name has no trailing '/', we generate the hash code
+     * as-if first appending '/' to the name, then calling String.hashCode()
+     * on the result.
+     *
+     * This "slash-normalization" ensures that "directory" and "directory/" produce
+     * identical hash codes and allows us to simplify and speed up lookups.
+     *
+     * @param name the ZIP entry name to generate a hash code for
+     * @return the slash-normalized hash code of the name
+     */
+    static int hash(String name) {
+        int hsh = name.hashCode();
+        int len = name.length();
+        if (len > 0 && name.charAt(len - 1) != '/') {
+            hsh = hsh * 31 + '/';
+        }
+        return hsh;
+    }
+
+    /**
+     * Constructs a new String by decoding the given byte
+     * array using the charset of this ZipCoder
+     *
+     * @param bytes the byte array to decode
+     * @return the decoded String
+     */
+    String toString(byte[] bytes) {
+        return toString(bytes, 0, bytes.length);
+    }
+
+    /**
+     * Constructs a new String by decoding the given byte
+     * array subrange using the charset of this ZipCoder
+     *
+     * @param bytes byte array holding the encoded string
+     * @param off index of the first byte to decode
+     * @param len the number of bytes to decode
+     * @return the decoded String
+     */
+    String toString(byte[] bytes, int off, int length) {
         try {
-            return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
+            return decoder().decode(ByteBuffer.wrap(bytes, off, length)).toString();
         } catch (CharacterCodingException x) {
             throw new IllegalArgumentException(x);
         }
     }
 
-    String toString(byte[] ba, int length) {
-        return toString(ba, 0, length);
-    }
-
-    String toString(byte[] ba) {
-        return toString(ba, 0, ba.length);
-    }
-
+    /**
+     * Encodes the given string into a sequence of bytes
+     * using the charset of this ZipCoder
+     *
+     * @param s the string to encode
+     * @return the resultant byte array
+     */
     byte[] getBytes(String s) {
         try {
             ByteBuffer bb = encoder().encode(CharBuffer.wrap(s));
@@ -114,24 +164,32 @@ class ZipCoder {
         }
     }
 
-    static String toStringUTF8(byte[] ba, int len) {
-        return UTF8.toString(ba, 0, len);
-    }
-
+    /**
+     * Returns {@code true} if this ZipCoder uses UTF-8 for its operations
+     *
+     * @return true if this ZipCoder uses UTF-8
+     */
     boolean isUTF8() {
         return false;
     }
 
-    // Hash code functions for ZipFile entry names. We generate the hash as-if
-    // we first decoded the byte sequence to a String, then appended '/' if no
-    // trailing slash was found, then called String.hashCode(). This
-    // normalization ensures we can simplify and speed up lookups.
-    //
-    // Does encoding error checking and hashing in a single pass for efficiency.
-    // On an error, this function will throw CharacterCodingException while the
-    // UTF8ZipCoder override will throw IllegalArgumentException, so we declare
-    // throws Exception to keep things simple.
-    int checkedHash(byte[] a, int off, int len) throws Exception {
+    /**
+     * Returns a hash code for an encoded ZIP entry name, equivalent to
+     * that produced by {@link #hash(String)}
+     *
+     * We generate the hash code as-if we first decoded the byte sequence to
+     * a String, then generated the hash code using {@link #hash(String)}.
+     *
+     * Does encoding error checking and hashing in a single pass for efficiency.
+     * On an error, this function will throw CharacterCodingException while the
+     * UTF8ZipCoder override will throw IllegalArgumentException, so we declare
+     * throws Exception to keep things simple.
+     *
+     * @param bytes byte array holding the encoded name
+     * @param off index of the first byte of the encoded name
+     * @param len length of encoded name in bytes
+     */
+    int checkedHash(byte[] bytes, int off, int len) throws Exception {
         if (len == 0) {
             return 0;
         }
@@ -139,7 +197,7 @@ class ZipCoder {
         int h = 0;
         // cb will be a newly allocated CharBuffer with pos == 0,
         // arrayOffset == 0, backed by an array.
-        CharBuffer cb = decoder().decode(ByteBuffer.wrap(a, off, len));
+        CharBuffer cb = decoder().decode(ByteBuffer.wrap(bytes, off, len));
         int limit = cb.limit();
         char[] decoded = cb.array();
         for (int i = 0; i < limit; i++) {
@@ -151,38 +209,21 @@ class ZipCoder {
         return h;
     }
 
-    // Hash function equivalent of checkedHash for String inputs
-    static int hash(String name) {
-        int hsh = name.hashCode();
-        int len = name.length();
-        if (len > 0 && name.charAt(len - 1) != '/') {
-            hsh = hsh * 31 + '/';
-        }
-        return hsh;
-    }
-
     private final Charset cs;
-    protected CharsetDecoder dec;
+    private CharsetDecoder dec;
     private CharsetEncoder enc;
 
     private ZipCoder(Charset cs) {
         this.cs = cs;
     }
 
-    protected CharsetDecoder decoder() {
+    private CharsetDecoder decoder() {
         if (dec == null) {
             dec = cs.newDecoder()
               .onMalformedInput(CodingErrorAction.REPORT)
               .onUnmappableCharacter(CodingErrorAction.REPORT);
         }
         return dec;
-    }
-
-    /**
-     * {@return the {@link Charset} used by this {@code ZipCoder}}
-     */
-    final Charset charset() {
-        return this.cs;
     }
 
     private CharsetEncoder encoder() {
@@ -220,15 +261,15 @@ class ZipCoder {
      * and this ZipCoder are known to encode strings to the same bytes.
      *
      * @param str The lookup string to compare with the encoded string.
-     * @param b The byte array holding the encoded string
+     * @param bytes The byte array holding the encoded string
      * @param off The offset into the array where the encoded string starts
      * @param len The length of the encoded string in bytes
      * @param matchDirectory If {@code true} and the strings do not match exactly,
      *                      a directory match will also be tested
      *
      */
-    byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
-        String decoded = toString(b, off, len);
+    byte compare(String str, byte[] bytes, int off, int len, boolean matchDirectory) {
+        String decoded = toString(bytes, off, len);
         if (decoded.startsWith(str)) {
             if (decoded.length() == str.length()) {
                 return EXACT_MATCH;
@@ -252,11 +293,11 @@ class ZipCoder {
         }
 
         @Override
-        String toString(byte[] ba, int off, int length) {
+        String toString(byte[] bytes, int off, int length) {
             try {
                 // Copy subrange for exclusive use by the string being created
-                byte[] bytes = Arrays.copyOfRange(ba, off, off + length);
-                return JLA.uncheckedNewStringOrThrow(bytes, StandardCharsets.UTF_8);
+                byte[] copy = Arrays.copyOfRange(bytes, off, off + length);
+                return JLA.uncheckedNewStringOrThrow(copy, StandardCharsets.UTF_8);
             } catch (CharacterCodingException cce) {
                 throw new IllegalArgumentException(cce);
             }
@@ -272,20 +313,20 @@ class ZipCoder {
         }
 
         @Override
-        int checkedHash(byte[] a, int off, int len) throws Exception {
+        int checkedHash(byte[] bytes, int off, int len) throws Exception {
             if (len == 0) {
                 return 0;
             }
             int end = off + len;
-            int asciiLen = JLA.countPositives(a, off, len);
+            int asciiLen = JLA.countPositives(bytes, off, len);
             if (asciiLen != len) {
                 // Non-ASCII, fall back to decoding a String
                 // We avoid using decoder() here since the UTF8ZipCoder is
                 // shared and that decoder is not thread safe.
-                return hash(toString(a, off, len));
+                return hash(toString(bytes, off, len));
             }
-            int h = ArraysSupport.hashCodeOfUnsigned(a, off, len, 0);
-            if (a[end - 1] != '/') {
+            int h = ArraysSupport.hashCodeOfUnsigned(bytes, off, len, 0);
+            if (bytes[end - 1] != '/') {
                 h = 31 * h + '/';
             }
             return h;
@@ -296,13 +337,13 @@ class ZipCoder {
         }
 
         @Override
-        byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
+        byte compare(String str, byte[] bytes, int off, int len, boolean matchDirectory) {
             try {
                 byte[] encoded = JLA.uncheckedGetBytesOrThrow(str, UTF_8.INSTANCE);
-                int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
+                int mismatch = Arrays.mismatch(encoded, 0, encoded.length, bytes, off, off+len);
                 if (mismatch == -1) {
                     return EXACT_MATCH;
-                } else if (matchDirectory && len == mismatch + 1 && hasTrailingSlash(b, off + len)) {
+                } else if (matchDirectory && len == mismatch + 1 && hasTrailingSlash(bytes, off + len)) {
                     return DIRECTORY_MATCH;
                 } else {
                     return NO_MATCH;
