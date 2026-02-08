@@ -49,6 +49,27 @@
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
+
+  struct VSetVliState {
+    Assembler::SEW _sew;
+    uint _vlen;
+    Assembler::LMUL _vlmul;
+    Assembler::VMA _vma;
+    Assembler::VTA _vta;
+    bool _valid;
+  };
+
+  static thread_local VSetVliState _current_state;
+
+  void invalidate_vsetvli_state() {
+    _current_state._valid = false;
+  }
+
+  void bind(Label& L) {
+    invalidate_vsetvli_state();
+    MacroAssembler::bind(L);
+  }
+
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box,
                  Register tmp1, Register tmp2, Register tmp3, Register tmp4);
@@ -268,7 +289,12 @@
                              VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
                              uint vector_length, VectorMask vm = Assembler::unmasked);
 
-  void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
+  void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, 
+                      Assembler::VMA vma = Assembler::ma, Assembler::VTA vta = Assembler::ta, Register tmp = t0);
+
+  void vsetvli_helper(BasicType bt, uint vector_length, Assembler::VMA vma) {
+    vsetvli_helper(bt, vector_length, Assembler::m1, vma);
+  }
 
   void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
                           BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
