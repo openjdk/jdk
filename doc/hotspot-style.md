@@ -884,8 +884,7 @@ rather than `NULL`.  See the paper for reasons to avoid `NULL`.
 
 Don't use (constant expression or literal) 0 for pointers.  Note that C++14
 removed non-literal 0 constants from _null pointer constants_, though some
-compilers continue to treat them as such.  For historical reasons there may be
-lingering uses of 0 as a pointer.
+compilers continue to treat them as such.
 
 ### &lt;atomic&gt;
 
