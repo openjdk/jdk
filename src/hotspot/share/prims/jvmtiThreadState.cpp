@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,21 @@ bool JvmtiThreadState::_seen_interp_only_mode = false;
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
-  _thread               = thread;
-  _thread_saved         = nullptr;
+
+  // The _thread field is a link to the JavaThread associated with JvmtiThreadState.
+  // The _thread_saved field is used for carrier threads only when a virtual thread
+  // is mounted. Otherwise, it must be set to nullptr.
+  // Carrier and virtual threads can temporarily share same JavaThread. In such a case,
+  // only virtual _thread should have a link from JvmtiThreadState to JavaThread.
+  // The carrier thread _thread field is set to nullptr if a virtual thread is monted.
+  // This is important for interp-only mechanism.
+  if (JvmtiEnvBase::is_thread_carrying_vthread(thread, thread_oop)) {
+    _thread = nullptr;
+    _thread_saved = thread;
+  } else { // virtual or non-carrying platform thread
+    _thread = thread;
+    _thread_saved = nullptr;
+  }
   _exception_state      = ES_CLEARED;
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
