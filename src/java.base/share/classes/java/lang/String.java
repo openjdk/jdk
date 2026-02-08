@@ -1881,6 +1881,16 @@ public final class String
     }
 
     /**
+     * @since 27
+     */
+    public int codePointCount() {
+        if (isLatin1()) {
+            return value.length;
+        }
+        return StringUTF16.codePointCount(value, 0, value.length >> 1);
+    }
+
+    /**
      * Returns the index within this {@code String} that is
      * offset from the given {@code index} by
      * {@code codePointOffset} code points. Unpaired surrogates

@@ -315,6 +315,18 @@ public class CharBufferAsCharSequenceTest {
 
     @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
+    void testCodePointCount(CharSequence actual, char[] expected, int start, int stop, String description) {
+        int expectedCount = 0;
+        OfInt it = actual.codePoints().iterator();
+        while (it.hasNext()) {
+            it.nextInt();
+            expectedCount++;
+        }
+        assertEquals(expectedCount, actual.codePointCount(), "codePointCount for " + description);
+    }
+
+    @ParameterizedTest(name="{4}")
+    @MethodSource("charBufferArguments")
     void testSubSequence(CharSequence actual, char[] expected, int start, int stop, String description) {
         int maxTests = Math.min(7,  ((stop - start) >> 1) - 1);
         for (int i = 0; i < maxTests; ++i) {

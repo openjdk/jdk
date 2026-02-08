@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,6 +251,31 @@ public interface CharSequence {
                         Spliterator.ORDERED),
                 Spliterator.ORDERED,
                 false);
+    }
+
+    /**
+     * {@return the number of Unicode code points in this character sequence}
+     * Isolated surrogate code units count as one code point each.
+     *
+     * @since 27
+     */
+    public default int codePointCount() {
+        final int length = length();
+        int n = length;
+        final int lastIndex = length - 1;
+
+        // i < lastIndex works properly even for an empty sequence
+        // thank to the fact that the length/index type in Java is signed
+        // All we have to do here is to count the number of surrogate pairs.
+        // The first code unit of a surrogate pair is in [0, lastIndex).
+        for (int i = 0; i < lastIndex;) {
+            if (Character.isHighSurrogate(charAt(i++)) && Character.isLowSurrogate(charAt(i))) {
+                n--;
+                i++;
+            }
+        }
+
+        return n;
     }
 
     /**
