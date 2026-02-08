@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,8 +211,8 @@ class CustomMediaSizeName extends MediaSizeName {
                     } catch (IllegalArgumentException e) {
                         /* PDF printer in Linux for Ledger paper causes
                         "IllegalArgumentException: X dimension > Y dimension".
-                        We rotate based on IPP spec. */
-                        new MediaSize(length, width, Size2DSyntax.INCH, value);
+                        */
+                        CustomMediaSize.create(width, length, Size2DSyntax.INCH, value);
                     }
                 }
             }

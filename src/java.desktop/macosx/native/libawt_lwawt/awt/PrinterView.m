@@ -34,9 +34,12 @@
 
 static jclass sjc_CPrinterJob = NULL;
 static jclass sjc_PAbortEx = NULL;
+static jclass sjc_Paper = NULL;
+
 #define GET_CPRINTERJOB_CLASS() (sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
 #define GET_CPRINTERJOB_CLASS_RETURN(ret) GET_CLASS_RETURN(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob", ret);
 #define GET_PRINERABORTEXCEPTION_CLASS(ret) GET_CLASS_RETURN(sjc_PAbortEx, "java/awt/print/PrinterAbortException", ret);
+#define GET_PAPER_CLASS_RETURN(ret) GET_CLASS_RETURN(sjc_Paper, "java/awt/print/Paper", ret)
 
 @implementation PrinterView
 
@@ -175,12 +178,16 @@ static jclass sjc_PAbortEx = NULL;
 
     JNIEnv* env = [ThreadUtilities getJNIEnvUncached];
     GET_CPRINTERJOB_CLASS_RETURN(NSZeroRect);
+    GET_PAPER_CLASS_RETURN(NSZeroRect);
     DECLARE_METHOD_RETURN(jm_getPageformatPrintablePeekgraphics, sjc_CPrinterJob,
                            "getPageformatPrintablePeekgraphics", "(I)[Ljava/lang/Object;", NSZeroRect);
     DECLARE_METHOD_RETURN(jm_printAndGetPageFormatArea, sjc_CPrinterJob, "printAndGetPageFormatArea",
                           "(Ljava/awt/print/Printable;Ljava/awt/Graphics;Ljava/awt/print/PageFormat;I)Ljava/awt/geom/Rectangle2D;", NSZeroRect);
     DECLARE_CLASS_RETURN(sjc_PageFormat, "java/awt/print/PageFormat", NSZeroRect);
     DECLARE_METHOD_RETURN(jm_getOrientation, sjc_PageFormat, "getOrientation", "()I", NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_getPaper, sjc_PageFormat, "getPaper", "()Ljava/awt/print/Paper;", NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_getWidth, sjc_Paper, "getWidth", "()D", NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_getHeight, sjc_Paper, "getHeight", "()D", NSZeroRect);
 
     // Assertions removed, and corresponding DeleteGlobalRefs added, for radr://3962543
     // Actual fix that will keep these assertions from being true is radr://3205462 ,
@@ -233,10 +240,36 @@ static jclass sjc_PAbortEx = NULL;
                                     fCurPeekGraphics, fCurPageFormat, jPageNumber);
         CHECK_EXCEPTION();
         if (pageFormatArea != NULL) {
+
+            jobject jPaper = (*env)->CallObjectMethod(env, fCurPageFormat, jm_getPaper); // AWT_THREADING Safe (!appKit)
+            CHECK_EXCEPTION();
+            jdouble jPaperW = (*env)->CallDoubleMethod(env, jPaper, jm_getWidth);
+            CHECK_EXCEPTION();
+            jdouble jPaperH = (*env)->CallDoubleMethod(env, jPaper, jm_getHeight);
+            CHECK_EXCEPTION();
+
+            (*env)->DeleteLocalRef(env, jPaper);
+
+            jint orientation = (*env)->CallIntMethod(env, fCurPageFormat, jm_getOrientation);
+            CHECK_EXCEPTION();
+
+            // rotate orientation to align it with the user space
+            if (jPaperW > jPaperH) {
+                switch (orientation) {
+                 case java_awt_print_PageFormat_PORTRAIT:
+                    orientation = java_awt_print_PageFormat_LANDSCAPE;
+                    break;
+                 case java_awt_print_PageFormat_LANDSCAPE:
+                 case java_awt_print_PageFormat_REVERSE_LANDSCAPE:
+                    orientation = java_awt_print_PageFormat_PORTRAIT;
+                    break;
+                 }
+            }
+
             NSPrintingOrientation currentOrientation =
                     [[[NSPrintOperation currentOperation] printInfo] orientation];
             // set page orientation
-            switch ((*env)->CallIntMethod(env, fCurPageFormat, jm_getOrientation)) {
+            switch (orientation) {
                 case java_awt_print_PageFormat_PORTRAIT:
                 default:
                     if (currentOrientation != NSPortraitOrientation) {
