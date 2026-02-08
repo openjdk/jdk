@@ -421,6 +421,8 @@ public:
   void vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, XMMRegister src, AddressLiteral mask, int vec_enc,
                                XMMRegister xtmp, Register rscratch = noreg);
 
+  void vector_reverse_bit_bmm(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp, int vec_enc);
+
   void vector_reverse_byte(BasicType bt, XMMRegister dst, XMMRegister src, int vec_enc);
 
   void vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,

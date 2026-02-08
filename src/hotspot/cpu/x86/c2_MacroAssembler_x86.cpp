@@ -5966,6 +5966,12 @@ void C2_MacroAssembler::vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, X
   vector_reverse_byte(bt, dst, xtmp, vec_enc);
 }
 
+void C2_MacroAssembler::vector_reverse_bit_bmm(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp, int vec_enc) {
+  assert(VM_Version::supports_avx512bmm(), "");
+  evpbitrev(xtmp, k0, src, true, vec_enc);
+  vector_reverse_byte(bt, dst, xtmp, vec_enc);
+}
+
 void C2_MacroAssembler::vector_swap_nbits(int nbits, int bitmask, XMMRegister dst, XMMRegister src,
                                           XMMRegister xtmp1, Register rtmp, int vec_enc) {
   vbroadcast(T_INT, xtmp1, bitmask, rtmp, vec_enc);
@@ -6338,7 +6344,11 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
 
 void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
                                  XMMRegister xtmp2, Register rtmp) {
-  if(VM_Version::supports_gfni()) {
+  if (VM_Version::supports_avx512bmm()) {
+    movq(xtmp1, src);
+    evpbitrev(xtmp1, k0, xtmp1, true, Assembler::AVX_128bit);
+    movq(dst, xtmp1);
+  } else if (VM_Version::supports_gfni()) {
     // Galois field instruction based bit reversal based on following algorithm.
     // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
     mov64(rtmp, 0x8040201008040201L);

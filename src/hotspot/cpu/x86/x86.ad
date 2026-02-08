@@ -8639,7 +8639,7 @@ instruct countTrailingZerosL_bsf(rRegI dst, rRegL src, rFlagsReg cr) %{
 
 //--------------- Reverse Operation Instructions ----------------
 instruct bytes_reversebit_int(rRegI dst, rRegI src, rRegI rtmp, rFlagsReg cr) %{
-  predicate(!VM_Version::supports_gfni());
+  predicate(!VM_Version::supports_gfni() && !VM_Version::supports_avx512bmm());
   match(Set dst (ReverseI src));
   effect(TEMP dst, TEMP rtmp, KILL cr);
   format %{ "reverse_int $dst $src\t! using $rtmp as TEMP" %}
@@ -8650,12 +8650,23 @@ instruct bytes_reversebit_int(rRegI dst, rRegI src, rRegI rtmp, rFlagsReg cr) %{
 %}
 
 instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, vlRegF xtmp1, vlRegF xtmp2, rRegL rtmp, rFlagsReg cr) %{
-  predicate(VM_Version::supports_gfni());
+  predicate(VM_Version::supports_gfni() && !VM_Version::supports_avx512bmm());
   match(Set dst (ReverseI src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
   format %{ "reverse_int $dst $src\t! using $rtmp, $xtmp1 and $xtmp2 as TEMP" %}
   ins_encode %{
     __ reverseI($dst$$Register, $src$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $rtmp$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_int_bmm(rRegI dst, rRegI src, vlRegF xtmp) %{
+  predicate(VM_Version::supports_avx512bmm());
+  match(Set dst (ReverseI src));
+  effect(TEMP xtmp);
+  format %{ "reverse_int $dst $src\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    __ reverseI($dst$$Register, $src$$Register, $xtmp$$XMMRegister, xnoreg, noreg);
   %}
   ins_pipe( ialu_reg );
 %}
@@ -23995,7 +24006,7 @@ instruct vcompress_mask_reg_evex(kReg dst, kReg mask, rRegL rtmp1, rRegL rtmp2, 
 // -------------------------------- Bit and Byte Reversal Vector Operations ------------------------
 
 instruct vreverse_reg(vec dst, vec src, vec xtmp1, vec xtmp2, rRegI rtmp) %{
-  predicate(!VM_Version::supports_gfni());
+  predicate(!VM_Version::supports_gfni() && !VM_Version::supports_avx512bmm());
   match(Set dst (ReverseV src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp);
   format %{ "vector_reverse_bit_evex $dst, $src!\t using $xtmp1, $xtmp2 and $rtmp as TEMP" %}
@@ -24009,7 +24020,7 @@ instruct vreverse_reg(vec dst, vec src, vec xtmp1, vec xtmp2, rRegI rtmp) %{
 %}
 
 instruct vreverse_reg_gfni(vec dst, vec src, vec xtmp) %{
-  predicate(VM_Version::supports_gfni());
+  predicate(VM_Version::supports_gfni() && !VM_Version::supports_avx512bmm());
   match(Set dst (ReverseV src));
   effect(TEMP dst, TEMP xtmp);
   format %{ "vector_reverse_bit_gfni $dst, $src!\t using $xtmp as TEMP" %}
@@ -24019,6 +24030,19 @@ instruct vreverse_reg_gfni(vec dst, vec src, vec xtmp) %{
     InternalAddress addr = $constantaddress(jlong(0x8040201008040201));
     __ vector_reverse_bit_gfni(bt, $dst$$XMMRegister, $src$$XMMRegister, addr, vec_enc,
                                $xtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vreverse_reg_bmm(vec dst, vec src, vec xtmp) %{
+  predicate(VM_Version::supports_avx512bmm());
+  match(Set dst (ReverseV src));
+  effect(TEMP dst, TEMP xtmp);
+  format %{ "vector_reverse_bit_bmm $dst, $src!\t using $xtmp as TEMP" %}
+  ins_encode %{
+    int vec_enc = vector_length_encoding(this);
+    BasicType bt  = Matcher::vector_element_basic_type(this);
+    __ vector_reverse_bit_bmm(bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister, vec_enc);
   %}
   ins_pipe( pipe_slow );
 %}
