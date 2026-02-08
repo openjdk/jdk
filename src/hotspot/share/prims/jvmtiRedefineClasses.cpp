@@ -1481,6 +1481,8 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
       } else {
         return JVMTI_ERROR_INTERNAL;
       }
+    } else if (res != JVMTI_ERROR_NONE) {
+      return res;
     }
 
 #ifdef ASSERT
@@ -2045,7 +2047,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_record_attribute(InstanceKlass* scra
       AnnotationArray* type_annotations = component->type_annotations();
       if (type_annotations != nullptr && type_annotations->length() != 0) {
         int byte_i = 0;  // byte index into annotations
-        if (!rewrite_cp_refs_in_annotations_typeArray(type_annotations, byte_i)) {
+        if (!rewrite_cp_refs_in_type_annotations_typeArray(type_annotations, byte_i, "record_info")) {
           log_debug(redefine, class, annotation)("bad record_component_type_annotations at %d", i);
           // propagate failure back to caller
           return false;
