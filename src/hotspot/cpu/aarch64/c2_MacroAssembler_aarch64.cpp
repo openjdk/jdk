@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1866,6 +1867,27 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
 
   BLOCK_COMMENT("neon_reduce_mul_fp {");
     switch(bt) {
+      // The T_SHORT type below is for Float16 type which also uses floating-point
+      // instructions.
+      case T_SHORT:
+        fmulh(dst, fsrc, vsrc);
+        ext(vtmp, T8B, vsrc, vsrc, 2);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 6);
+        fmulh(dst, dst, vtmp);
+        if (isQ) {
+          ext(vtmp, T16B, vsrc, vsrc, 8);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 10);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 14);
+          fmulh(dst, dst, vtmp);
+        }
+        break;
       case T_FLOAT:
         fmuls(dst, fsrc, vsrc);
         ins(vtmp, S, vsrc, 0, 1);
@@ -1888,6 +1910,33 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
         ShouldNotReachHere();
     }
   BLOCK_COMMENT("} neon_reduce_mul_fp");
+}
+
+// Vector reduction add for half float type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_add_fp16(FloatRegister dst, FloatRegister fsrc, FloatRegister vsrc,
+                                             unsigned vector_length_in_bytes, FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_add_fp16 {");
+    faddh(dst, fsrc, vsrc);
+    ext(vtmp, T8B, vsrc, vsrc, 2);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 4);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 6);
+    faddh(dst, dst, vtmp);
+    if (isQ) {
+      ext(vtmp, T16B, vsrc, vsrc, 8);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 10);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 12);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 14);
+      faddh(dst, dst, vtmp);
+    }
+  BLOCK_COMMENT("} neon_reduce_add_fp16");
 }
 
 // Helper to select logical instruction

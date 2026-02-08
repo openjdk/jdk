@@ -3215,10 +3215,10 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
       !n->in(2)->is_Con() ) {   // right use is not a constant
     // Check for commutative opcode
     switch( nop ) {
-    case Op_AddI:  case Op_AddF:  case Op_AddD:  case Op_AddL:
+    case Op_AddI:  case Op_AddF:  case Op_AddD:  case Op_AddHF:  case Op_AddL:
     case Op_MaxI:  case Op_MaxL:  case Op_MaxF:  case Op_MaxD:
     case Op_MinI:  case Op_MinL:  case Op_MinF:  case Op_MinD:
-    case Op_MulI:  case Op_MulF:  case Op_MulD:  case Op_MulL:
+    case Op_MulI:  case Op_MulF:  case Op_MulD:  case Op_MulHF:  case Op_MulL:
     case Op_AndL:  case Op_XorL:  case Op_OrL:
     case Op_AndI:  case Op_XorI:  case Op_OrI: {
       // Move "last use" input to left by swapping inputs
@@ -3297,6 +3297,8 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
   // Count all float operations that may use FPU
+  case Op_AddHF:
+  case Op_MulHF:
   case Op_AddF:
   case Op_SubF:
   case Op_MulF:
@@ -3804,10 +3806,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_AddReductionVI:
   case Op_AddReductionVL:
+  case Op_AddReductionVHF:
   case Op_AddReductionVF:
   case Op_AddReductionVD:
   case Op_MulReductionVI:
   case Op_MulReductionVL:
+  case Op_MulReductionVHF:
   case Op_MulReductionVF:
   case Op_MulReductionVD:
   case Op_MinReductionV:

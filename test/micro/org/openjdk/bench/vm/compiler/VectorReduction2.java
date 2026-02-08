@@ -27,6 +27,7 @@ import org.openjdk.jmh.infra.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
+import jdk.incubator.vector.Float16;
 
 /**
  * Note: there is a corresponding IR test:
@@ -64,6 +65,9 @@ public abstract class VectorReduction2 {
     private double[] in1D;
     private double[] in2D;
     private double[] in3D;
+    private short[] in1F16;
+    private short[] in2F16;
+    private short[] in3F16;
 
     @Param("0")
     private int seed;
@@ -96,6 +100,9 @@ public abstract class VectorReduction2 {
         in1D = new double[SIZE];
         in2D = new double[SIZE];
         in3D = new double[SIZE];
+        in1F16 = new short[SIZE];
+        in2F16 = new short[SIZE];
+        in3F16 = new short[SIZE];
 
         for (int i = 0; i < SIZE; i++) {
             in1B[i] = (byte)r.nextInt();
@@ -121,6 +128,9 @@ public abstract class VectorReduction2 {
             in1D[i] = r.nextDouble();
             in2D[i] = r.nextDouble();
             in3D[i] = r.nextDouble();
+            in1F16[i] = Float.floatToFloat16(r.nextFloat());
+            in2F16[i] = Float.floatToFloat16(r.nextFloat());
+            in3F16[i] = Float.floatToFloat16(r.nextFloat());
         }
     }
 
@@ -1449,10 +1459,86 @@ public abstract class VectorReduction2 {
         bh.consume(acc);
     }
 
-    @Fork(value = 1, jvmArgs = {"-XX:+UseSuperWord"})
+    // ---------float16***Simple ------------------------------------------------------------
+    @Benchmark
+    public void float16AddSimple(Blackhole bh) {
+        short acc = (short)0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            acc = Float16.float16ToRawShortBits(
+                    Float16.add(Float16.shortBitsToFloat16(acc), Float16.shortBitsToFloat16(in1F16[i])));
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void float16MulSimple(Blackhole bh) {
+        short acc = Float.floatToFloat16(1.0f); // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            acc = Float16.float16ToRawShortBits(
+                    Float16.multiply(Float16.shortBitsToFloat16(acc), Float16.shortBitsToFloat16(in1F16[i])));
+        }
+        bh.consume(acc);
+    }
+
+    // ---------float16***DotProduct ------------------------------------------------------------
+    @Benchmark
+    public void float16AddDotProduct(Blackhole bh) {
+        short acc = (short)0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            Float16 val = Float16.multiply(Float16.shortBitsToFloat16(in1F16[i]),
+                                           Float16.shortBitsToFloat16(in2F16[i]));
+            acc = Float16.float16ToRawShortBits(
+                    Float16.add(Float16.shortBitsToFloat16(acc), val));
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void float16MulDotProduct(Blackhole bh) {
+        short acc = Float.floatToFloat16(1.0f); // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            Float16 val = Float16.multiply(Float16.shortBitsToFloat16(in1F16[i]),
+                                           Float16.shortBitsToFloat16(in2F16[i]));
+            acc = Float16.float16ToRawShortBits(
+                    Float16.multiply(Float16.shortBitsToFloat16(acc), val));
+        }
+        bh.consume(acc);
+    }
+
+    // ---------float16***Big ------------------------------------------------------------
+    @Benchmark
+    public void float16AddBig(Blackhole bh) {
+        short acc = (short)0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            Float16 a = Float16.shortBitsToFloat16(in1F16[i]);
+            Float16 b = Float16.shortBitsToFloat16(in2F16[i]);
+            Float16 c = Float16.shortBitsToFloat16(in3F16[i]);
+            Float16 val = Float16.add(Float16.multiply(a, b),
+                                      Float16.add(Float16.multiply(a, c), Float16.multiply(b, c)));
+            acc = Float16.float16ToRawShortBits(
+                    Float16.add(Float16.shortBitsToFloat16(acc), val));
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void float16MulBig(Blackhole bh) {
+        short acc = Float.floatToFloat16(1.0f); // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            Float16 a = Float16.shortBitsToFloat16(in1F16[i]);
+            Float16 b = Float16.shortBitsToFloat16(in2F16[i]);
+            Float16 c = Float16.shortBitsToFloat16(in3F16[i]);
+            Float16 val = Float16.add(Float16.multiply(a, b),
+                                      Float16.add(Float16.multiply(a, c), Float16.multiply(b, c)));
+            acc = Float16.float16ToRawShortBits(
+                    Float16.multiply(Float16.shortBitsToFloat16(acc), val));
+        }
+        bh.consume(acc);
+    }
+
+    @Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:+UseSuperWord"})
     public static class WithSuperword extends VectorReduction2 {}
 
-    @Fork(value = 1, jvmArgs = {"-XX:-UseSuperWord"})
+    @Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:-UseSuperWord"})
     public static class NoSuperword extends VectorReduction2 {}
 }
-

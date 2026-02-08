@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Arm Limited. All rights reserved.
+ * Copyright (c) 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,19 +33,21 @@
 */
 
 package compiler.vectorization;
-import compiler.lib.ir_framework.*;
-import jdk.incubator.vector.Float16;
-import static jdk.incubator.vector.Float16.*;
-import static java.lang.Float.*;
-import java.util.Arrays;
-import jdk.test.lib.*;
 import compiler.lib.generators.Generator;
+import compiler.lib.ir_framework.*;
+import compiler.lib.verify.Verify;
+import java.util.Arrays;
+import jdk.incubator.vector.Float16;
+import jdk.test.lib.*;
 import static compiler.lib.generators.Generators.G;
+import static java.lang.Float.*;
+import static jdk.incubator.vector.Float16.*;
 
 public class TestFloat16VectorOperations {
     private short[] input1;
     private short[] input2;
     private short[] input3;
+    private Float16[] input4;
     private short[] output;
     private static short FP16_SCALAR = (short)0x7777;
     private static final int LEN = 2048;
@@ -77,6 +79,7 @@ public class TestFloat16VectorOperations {
         input1 = new short[LEN];
         input2 = new short[LEN];
         input3 = new short[LEN];
+        input4 = new Float16[LEN];
         output = new short[LEN];
 
         short min_value = float16ToRawShortBits(Float16.MIN_VALUE);
@@ -86,6 +89,7 @@ public class TestFloat16VectorOperations {
             input1[i] = gen.next();
             input2[i] = gen.next();
             input3[i] = gen.next();
+            input4[i] = shortBitsToFloat16(gen.next());
         }
     }
 
@@ -349,7 +353,9 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.SUB_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.SUB_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorSubConstInputFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(subtract(shortBitsToFloat16(input1[i]), FP16_CONST));
@@ -367,7 +373,9 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.MUL_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.MUL_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorMulConstantInputFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(multiply(FP16_CONST, shortBitsToFloat16(input2[i])));
@@ -385,7 +393,9 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.DIV_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.DIV_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorDivConstantInputFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(divide(FP16_CONST, shortBitsToFloat16(input2[i])));
@@ -403,7 +413,9 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.MAX_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.MAX_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorMaxConstantInputFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(max(FP16_CONST, shortBitsToFloat16(input2[i])));
@@ -421,7 +433,9 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.MIN_VHF, " >0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "sve", "true"})
+    @IR(counts = {IRNode.MIN_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorMinConstantInputFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(min(FP16_CONST, shortBitsToFloat16(input2[i])));
@@ -435,4 +449,206 @@ public class TestFloat16VectorOperations {
             assertResults(2, float16ToRawShortBits(FP16_CONST), input2[i], expected, output[i]);
         }
     }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.ADD_REDUCTION_VHF, " >0 "},
+        applyIfCPUFeature = {"sve", "true"})
+    @IR(counts = {IRNode.ADD_REDUCTION_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public short vectorAddReductionFloat16() {
+        short result = (short) 0;
+        for (int i = 0; i < LEN; i++) {
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
+        }
+        return result;
+    }
+
+    @Check(test="vectorAddReductionFloat16")
+    public void checkResultAddReductionFloat16() {
+        short expected = (short) 0;
+        for (int i = 0; i < LEN; ++i) {
+            expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i]));
+        }
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorAddReductionFloat16()));
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MUL_REDUCTION_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
+        applyIf = {"MaxVectorSize", "<=16"})
+    public short vectorMulReductionFloat16() {
+        short result = floatToFloat16(1.0f);
+        for (int i = 0; i < LEN; i++) {
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
+        }
+        return result;
+    }
+
+    @Check(test="vectorMulReductionFloat16")
+    public void checkResultMulReductionFloat16() {
+        short expected = floatToFloat16(1.0f);
+        for (int i = 0; i < LEN; ++i) {
+            expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i]));
+        }
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMulReductionFloat16()));
+    }
+
+    // This testcase verifies that autovectorization takes place in scenarios where masked
+    // add reduction instructions are required to be generated on platforms that support
+    // such masked/partial instructions.
+    @Test
+    @Warmup(500)
+    @IR(counts = {"reduce_addFHF_masked", " >0 "}, phase = {CompilePhase.FINAL_CODE},
+        applyIfCPUFeature = {"sve", "true"})
+    public short vectorAddReductionFloat16Partial() {
+        short result = (short) 0;
+        for (int i = 0; i < LEN; i+=8) {
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+1])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+2])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+3])));
+        }
+        return result;
+    }
+
+    @Check(test="vectorAddReductionFloat16Partial")
+    public void checkResultvectorAddReductionFloat16Partial() {
+        short expected = (short) 0;
+        for (int i = 0; i < LEN; i+=8) {
+            expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i]));
+            expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i+1]));
+            expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i+2]));
+            expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i+3]));
+        }
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorAddReductionFloat16Partial()));
+    }
+
+    // Partial multiply reduction for floating point is disabled on aarch64. This test makes sure that code that performs such partial
+    // multiply reduction operation for FP16 runs without any failures/result mismatch.
+    @Test
+    @Warmup(500)
+    public short vectorMulReductionFloat16Partial() {
+        short result = floatToFloat16(1.0f);
+        for (int i = 0; i < LEN; i+=8) {
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+1])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+2])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+3])));
+        }
+        return result;
+    }
+
+    @Check(test="vectorMulReductionFloat16Partial")
+    public void checkResultvectorMulReductionFloat16Partial() {
+        short expected = floatToFloat16(1.0f);
+        for (int i = 0; i < LEN; i+=8) {
+            expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i]));
+            expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i+1]));
+            expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i+2]));
+            expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i+3]));
+        }
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMulReductionFloat16Partial()));
+    }
+
+    // This testcase verifies that autovectorization does NOT take place when using Float16
+    // Filed RFE: JDK-8375321
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.ADD_REDUCTION_VHF, " =0 "},
+        applyIfCPUFeature = {"sve", "true"})
+    @IR(counts = {IRNode.ADD_REDUCTION_VHF, " =0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public Float16 vectorAddReductionFloat16NotVectorized() {
+        Float16 result = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; i++) {
+            result = add(result, input4[i]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorAddReductionFloat16NotVectorized")
+    public void checkResultAddReductionFloat16NotVectorized() {
+        Float16 expected = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; ++i) {
+            expected = Float16.valueOf(expected.floatValue() + input4[i].floatValue());
+        }
+        Verify.checkEQ(expected, vectorAddReductionFloat16NotVectorized());
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MUL_REDUCTION_VHF, " =0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
+        applyIf = {"MaxVectorSize", "<=16"})
+    public Float16 vectorMulReductionFloat16NotVectorized() {
+        Float16 result = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; i++) {
+            result = multiply(result, input4[i]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorMulReductionFloat16NotVectorized")
+    public void checkResultMulReductionFloat16NotVectorized() {
+        Float16 expected = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; ++i) {
+            expected = Float16.valueOf(expected.floatValue() * input4[i].floatValue());
+        }
+        Verify.checkEQ(expected, vectorMulReductionFloat16NotVectorized());
+    }
+
+    @Test
+    @Warmup(500)
+    @IR(counts = {"reduce_addFHF_masked", " =0 "}, phase = {CompilePhase.FINAL_CODE},
+        applyIfCPUFeature = {"sve", "true"})
+    public Float16 vectorAddReductionFloat16PartialNotVectorized() {
+        Float16 result = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            result = add(result, input4[i]);
+            result = add(result, input4[i + 1]);
+            result = add(result, input4[i + 2]);
+            result = add(result, input4[i + 3]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorAddReductionFloat16PartialNotVectorized")
+    public void checkResultAddReductionFloat16PartialNotVectorized() {
+        Float16 expected = Float16.valueOf(0.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            expected = Float16.valueOf(expected.floatValue() + input4[i].floatValue());
+            expected = Float16.valueOf(expected.floatValue() + input4[i + 1].floatValue());
+            expected = Float16.valueOf(expected.floatValue() + input4[i + 2].floatValue());
+            expected = Float16.valueOf(expected.floatValue() + input4[i + 3].floatValue());
+        }
+        Verify.checkEQ(expected, vectorAddReductionFloat16PartialNotVectorized());
+    }
+
+    @Test
+    @Warmup(500)
+    public Float16 vectorMulReductionFloat16PartialNotVectorized() {
+        Float16 result = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            result = multiply(result, input4[i]);
+            result = multiply(result, input4[i + 1]);
+            result = multiply(result, input4[i + 2]);
+            result = multiply(result, input4[i + 3]);
+        }
+        return result;
+    }
+
+    @Check(test="vectorMulReductionFloat16PartialNotVectorized")
+    public void checkResultMulReductionFloat16PartialNotVectorized() {
+        Float16 expected = Float16.valueOf(1.0f);
+        for (int i = 0; i < LEN; i += 8) {
+            expected = Float16.valueOf(expected.floatValue() * input4[i].floatValue());
+            expected = Float16.valueOf(expected.floatValue() * input4[i + 1].floatValue());
+            expected = Float16.valueOf(expected.floatValue() * input4[i + 2].floatValue());
+            expected = Float16.valueOf(expected.floatValue() * input4[i + 3].floatValue());
+        }
+        Verify.checkEQ(expected, vectorMulReductionFloat16PartialNotVectorized());
+    }
+
 }

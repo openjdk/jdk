@@ -175,6 +175,9 @@
                           FloatRegister fsrc, FloatRegister vsrc,
                           unsigned vector_length_in_bytes, FloatRegister vtmp);
 
+  void neon_reduce_add_fp16(FloatRegister dst, FloatRegister fsrc, FloatRegister vsrc,
+                            unsigned vector_length_in_bytes, FloatRegister vtmp);
+
   void neon_reduce_logical(int opc, Register dst, BasicType bt, Register isrc,
                            FloatRegister vsrc, unsigned vector_length_in_bytes);
 

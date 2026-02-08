@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,5 +314,23 @@ public class Float16OperationsBenchmark {
             distRes = float16ToRawShortBits(add(shortBitsToFloat16(vectorRes[i]), shortBitsToFloat16(distRes)));
         }
         return distRes;
+    }
+
+    @Benchmark
+    public short reductionAddFP16() {
+       short result = (short) 0;
+       for (int i = 0; i < vectorDim; i++) {
+           result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(vector1[i])));
+       }
+       return result;
+    }
+
+    @Benchmark
+    public short reductionMulFP16() {
+       short result = floatToFloat16(1.0f);
+       for (int i = 0; i < vectorDim; i++) {
+           result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(vector1[i])));
+       }
+       return result;
     }
 }
