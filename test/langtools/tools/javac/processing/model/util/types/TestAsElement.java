@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8300857
+ * @bug 8300857 8284315
  * @summary Test Types.asElement in cases specified to return null
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestAsElement
@@ -64,6 +64,9 @@ public class TestAsElement extends JavacTestingAbstractProcessor {
         expectNullAsElement(typeUtils.getNoType(TypeKind.VOID));
         expectNullAsElement(typeUtils.getNoType(TypeKind.NONE));
         expectNullAsElement(typeUtils.getNullType());
+
+        expectNullAsElement(typeUtils.getArrayType(typeUtils.getDeclaredType(
+                eltUtils.getTypeElement("java.lang.Object"))));
 
         Element objectElement = eltUtils.getTypeElement("java.lang.Object");
         expectNullAsElement(typeUtils.getWildcardType(objectElement.asType(), null));
