@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1840,6 +1840,7 @@ public class KeyStore {
         }
 
         KeyStore keystore = null;
+        String possibleMatch = null;
 
         try (DataInputStream dataStream =
             new DataInputStream(
@@ -1864,6 +1865,8 @@ public class KeyStore {
                                         "KEYSTORE", ksAlgo)) {
                                     keystore = new KeyStore(impl, p, ksAlgo);
                                     break;
+                                } else {
+                                    possibleMatch = ksAlgo;
                                 }
                             }
                         } catch (NoSuchAlgorithmException e) {
@@ -1894,9 +1897,14 @@ public class KeyStore {
                 return keystore;
             }
         }
-
-        throw new KeyStoreException("Unrecognized keystore format. "
-                + "Please load it with a specified type");
+        if (possibleMatch == null) {
+            throw new KeyStoreException("Unrecognized keystore format. "
+                    + "Please load it with a specified type");
+        } else {
+            throw new KeyStoreException("Possible keystore format " +
+                    possibleMatch +
+                    " disabled by jce.crypto.disabledAlgrithms property");
+        }
     }
 
     /**
