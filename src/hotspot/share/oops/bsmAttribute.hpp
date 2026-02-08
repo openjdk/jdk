@@ -128,7 +128,7 @@ public:
       _bootstrap_methods(bootstrap_methods) {}
 
   bool is_empty() const {
-    return _offsets == nullptr && _bootstrap_methods == nullptr;
+    return _offsets == nullptr || _bootstrap_methods == nullptr;
   }
 
   Array<u4>*& offsets() { return _offsets; }
