@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -797,6 +797,19 @@ JvmtiDeferredEvent JvmtiDeferredEvent::class_unload_event(const char* name) {
   return event;
 }
 
+JvmtiDeferredEvent JvmtiDeferredEvent::resource_exhausted_event(
+      const jint flags, const void* reserved, const char* description) {
+  JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_RESOURCE_EXHAUSTED);
+  // Need to make a copy of the description since we don't know how long
+  // the event poster will keep it around after we enqueue the
+  // deferred event and return. strdup() failure is handled in
+  // the post() routine below.
+  event._event_data.resource_exhausted.flags = flags;
+  event._event_data.resource_exhausted.reserved = reserved;
+  event._event_data.resource_exhausted.description = os::strdup(description);
+  return event;
+}
+
 void JvmtiDeferredEvent::post() {
   assert(Thread::current()->is_service_thread(),
          "Service thread must post enqueued events");
@@ -833,6 +846,19 @@ void JvmtiDeferredEvent::post() {
       if (_event_data.class_unload.name != nullptr) {
         // release our copy
         os::free((void *)_event_data.class_unload.name);
+      }
+      break;
+    }
+    case TYPE_RESOURCE_EXHAUSTED: {
+      JvmtiExport::post_resource_exhausted(
+        _event_data.resource_exhausted.flags,
+        // if strdup failed give the event a default name
+        (_event_data.resource_exhausted.description == nullptr)
+          ? "no description" : _event_data.resource_exhausted.description
+        );
+      if (_event_data.resource_exhausted.description != nullptr) {
+        // release our copy
+        os::free((void *)_event_data.resource_exhausted.description);
       }
       break;
     }

@@ -1810,12 +1810,10 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
   log_error(jvmti)("Posting Resource Exhausted event: %s",
                    description != nullptr ? description : "unknown");
 
-  // JDK-8213834: handlers of ResourceExhausted may attempt some analysis
-  // which often requires running java.
-  // This will cause problems on threads not able to run java, e.g. compiler
-  // threads. To forestall these problems, we therefore suppress sending this
-  // event from threads which are not able to run java.
   if (!thread->can_call_java()) {
+    JvmtiDeferredEvent event = JvmtiDeferredEvent::resource_exhausted_event(
+        resource_exhausted_flags, nullptr, description);
+    ServiceThread::enqueue_deferred_event(&event);
     return;
   }
 

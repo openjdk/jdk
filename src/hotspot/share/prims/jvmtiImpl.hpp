@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,7 +297,8 @@ class JvmtiDeferredEvent {
     TYPE_COMPILED_METHOD_LOAD,
     TYPE_COMPILED_METHOD_UNLOAD,
     TYPE_DYNAMIC_CODE_GENERATED,
-    TYPE_CLASS_UNLOAD
+    TYPE_CLASS_UNLOAD,
+    TYPE_RESOURCE_EXHAUSTED
   } Type;
 
   Type _type;
@@ -315,6 +316,11 @@ class JvmtiDeferredEvent {
     struct {
       const char* name;
     } class_unload;
+    struct {
+      jint flags;
+      const void* reserved;
+      const char* description;
+    } resource_exhausted;
   } _event_data;
 
   JvmtiDeferredEvent(Type t) : _type(t) {}
@@ -333,7 +339,9 @@ class JvmtiDeferredEvent {
           NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
   static JvmtiDeferredEvent class_unload_event(
       const char* name) NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
-
+  static JvmtiDeferredEvent resource_exhausted_event(
+      const jint flags, const void* reserved, const char* description)
+          NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
   // Actually posts the event.
   void post() NOT_JVMTI_RETURN;
   void post_compiled_method_load_event(JvmtiEnv* env) NOT_JVMTI_RETURN;
