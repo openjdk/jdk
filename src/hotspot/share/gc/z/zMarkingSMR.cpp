@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #include "gc/z/zMarkingSMR.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 
 ZMarkingSMR::ZMarkingSMR()
   : _worker_states(),
@@ -70,7 +69,7 @@ void ZMarkingSMR::free_node(ZMarkStackListNode* node) {
   ZArray<ZMarkStackListNode*>* const scanned_hazards = &local_state->_scanned_hazards;
 
   for (ZWorkerState* remote_state; iter.next(&remote_state);) {
-    ZMarkStackListNode* const hazard = AtomicAccess::load(&remote_state->_hazard_ptr);
+    ZMarkStackListNode* const hazard = remote_state->_hazard_ptr.load_relaxed();
 
     if (hazard != nullptr) {
       scanned_hazards->append(hazard);
@@ -107,6 +106,6 @@ void ZMarkingSMR::free() {
   }
 }
 
-ZMarkStackListNode* volatile* ZMarkingSMR::hazard_ptr() {
-  return &_worker_states.addr()->_hazard_ptr;
+Atomic<ZMarkStackListNode*>& ZMarkingSMR::hazard_ptr() {
+  return _worker_states.addr()->_hazard_ptr;
 }
