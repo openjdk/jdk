@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1236,9 +1236,7 @@ public class LWWindowPeer
             return false;
         }
 
-        AppContext targetAppContext = AWTAccessor.getComponentAccessor().getAppContext(getTarget());
-        KeyboardFocusManager kfm = AWTAccessor.getKeyboardFocusManagerAccessor()
-                .getCurrentKeyboardFocusManager(targetAppContext);
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         Window currentActive = kfm.getActiveWindow();
 
 

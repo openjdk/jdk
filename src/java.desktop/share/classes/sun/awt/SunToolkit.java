@@ -426,6 +426,10 @@ public abstract class SunToolkit extends Toolkit
         }
     }
 
+    public static void postEvent(AWTEvent event) {
+        postEvent(AppContext.getAppContext(), event);
+    }
+
     /*
      * Post an AWTEvent to the Java EventQueue, using the PostEventQueue
      * to avoid possibly calling client code (EventQueueSubclass.postEvent())
