@@ -321,6 +321,8 @@ public:
   virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
+  // Allow barriers that depend on transitive inputs to be re-evaluated.
+  virtual void enqueue_dependent_gc_barriers(Unique_Node_List& worklist, Node* use) const {}
 
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const { }
