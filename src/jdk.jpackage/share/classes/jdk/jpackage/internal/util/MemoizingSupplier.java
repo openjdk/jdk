@@ -22,12 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.util;
 
-@FunctionalInterface
-public interface ExecutorFactory {
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.function.Supplier;
 
-    Executor executor();
+public final class MemoizingSupplier<T> implements Supplier<T> {
 
-    public static final ExecutorFactory DEFAULT = Executor::new;
+    public MemoizingSupplier(Supplier<T> supplier) {
+        this.future = new FutureTask<>(Objects.requireNonNull(supplier)::get);
+    }
+
+    @Override
+    public T get() {
+        try {
+            future.run();
+            return future.get();
+        } catch (InterruptedException ex) {
+            throw ExceptionBox.toUnchecked(ex);
+        } catch (ExecutionException ex) {
+            throw ExceptionBox.toUnchecked(ExceptionBox.unbox(ex.getCause()));
+        }
+    }
+
+    public static <T> Supplier<T> runOnce(Supplier<T> supplier) {
+        return new MemoizingSupplier<>(supplier);
+    }
+
+    private final FutureTask<T> future;
 }

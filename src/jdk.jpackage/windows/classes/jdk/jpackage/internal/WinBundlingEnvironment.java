@@ -29,6 +29,7 @@ import static jdk.jpackage.internal.WinPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_EXE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_MSI;
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import jdk.jpackage.internal.cli.Options;
 
