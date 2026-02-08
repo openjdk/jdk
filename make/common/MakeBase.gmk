@@ -142,6 +142,63 @@ endef
 $(eval $(call SetupLogging))
 
 ################################################################################
+# Make does not have support for VARARGS, you can send variable amount
+# of arguments, but you can for example not append a list at the end.
+# It is therefore not easy to send the elements of a list of unknown
+# length as argument to a function. This can somewhat be worked around
+# by sending a list as an argument, and then interpreting each element
+# of the list as an argument to the function. However, Make is
+# limited, and using this method you can not easily send spaces.
+#
+# We need to quote strings for two reasons when sending them as
+# "variable append packs":
+#
+# 1) variable appends can include spaces, and those must be preserved
+# 2) variable appends can include assignment strings ":=", and those
+# must be quoted to a form so that we can recognise the "append pack".
+# We recognise an "append pack" by its lack of strict assignment ":="
+
+q       := $(HASH)
+spaceQ  := $(q)s
+appendQ := $(q)+
+assignQ := $(q)a
+qQ      := $(q)$(q)
+
+# $(call quote,echo "#trala:=") -> echo#s"##trala#a"
+quote = $(subst :=,$(assignQ),$(subst $(SPACE),$(spaceQ),$(subst $(q),$(qQ),$1)))
+
+# $(call unQuote,echo#s"##trala#a") -> echo "#trala:="
+unQuote = $(subst $(qQ),$(q),$(subst $(spaceQ),$(SPACE),$(subst $(assignQ),:=,$1)))
+
+# $(call quoteAppend,name,some value) -> name#+some#svalue
+# $(call quoteAppend,bad+=name,some value) -> error
+quoteAppend = $(if $(findstring +=,$1),$(error you can not have += in a variable name: "$1"),$(call quote,$1)$(appendQ)$(call quote,$2))
+
+# $(call unquoteAppendIndex,name#+some#svalue,1) -> name
+# $(call unquoteAppendIndex,name#+some#svalue,2) -> some value
+unquoteAppendIndex = $(call unQuote,$(word $2,$(subst $(appendQ),$(SPACE),$1)))
+
+# $(call filterFiles,dir,%.cpp) -> file1.cpp file2.cpp (without path)
+filterFiles = $(filter $2,$(notdir $(call FindFiles,$1)))
+
+# $(call unpack module_,file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion) -> module_file1.cpp_CXXFLAGS += -Wconversion
+#                                                                                             module_file2.cpp_CXXFLAGS += -Wconversion
+unpack = $(foreach pair,$2,$1$(call unquoteAppendIndex,$(pair),1) += $(call unquoteAppendIndex,$(pair),2)$(NEWLINE))
+
+# This macro takes four arguments:
+# $1: directory where to find files, example: $(TOPDIR)/src/hotspot/share/gc/g1
+# $2: filter to match what to keep, example: g1Concurrent%.cpp
+# $3: what flags to override: example: _CXXFLAGS
+# $4: what value to append to the flag, example: $(CFLAGS_CONVERSION_WARNINGS)
+#
+# The result will be a quoted string that can be unpacked to a list of
+# variable appendings (see macro unpack above). You do not need to take
+# care of unpacking, it is done in NamedParamsMacroTemplate.
+
+# $(call extendingFlags,dir,%.cpp,_CXXFLAGS,-Wconversion) -> file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion
+extendingFlags = $(foreach file,$(call filterFiles,$1,$2,),$(call quoteAppend,$(file)$3,$4))
+
+################################################################################
 
 MAX_PARAMS := 96
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
@@ -166,7 +223,10 @@ define NamedParamsMacroTemplate
       Too many named arguments to macro, please update MAX_PARAMS in MakeBase.gmk))
   # Iterate over 2 3 4... and evaluate the named parameters with $1_ as prefix
   $(foreach i, $(PARAM_SEQUENCE), $(if $(strip $($i)), \
-    $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE)))
+    $(if $(findstring :=,$($i)), \
+      $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE), \
+      $(call unpack,$(strip $1)_,$($i)))))
+
   # Debug print all named parameter names and values
   $(if $(findstring $(LOG_LEVEL), trace), \
     $(info $0 $(strip $1) $(foreach i, $(PARAM_SEQUENCE), \
