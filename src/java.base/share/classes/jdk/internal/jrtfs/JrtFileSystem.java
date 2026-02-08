@@ -63,6 +63,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import jdk.internal.jimage.ImageReader.Node;
+import jdk.internal.jimage.PreviewMode;
 
 /**
  * jrt file system implementation built on System jimage files.
@@ -85,7 +86,8 @@ class JrtFileSystem extends FileSystem {
             throws IOException
     {
         this.provider = provider;
-        this.image = SystemImage.open();  // open image file
+        // TODO: Obtain and pass correct preview mode flag value here.
+        this.image = SystemImage.open(PreviewMode.DISABLED);  // open image file
         this.isOpen = true;
         this.isClosable = env != null;
     }
