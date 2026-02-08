@@ -112,17 +112,17 @@ public class DigestOptionsBase extends CommandLineOptionTest {
     public static BooleanSupplier getPredicateForOption(String optionName) {
         switch (optionName) {
             case DigestOptionsBase.USE_MD5_INTRINSICS_OPTION:
-                return IntrinsicPredicates.MD5_INSTRUCTION_AVAILABLE;
+                return IntrinsicPredicates.isMD5IntrinsicAvailable();
             case DigestOptionsBase.USE_SHA_OPTION:
                 return IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE;
             case DigestOptionsBase.USE_SHA1_INTRINSICS_OPTION:
-                return IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE;
+                return IntrinsicPredicates.isSHA1IntrinsicAvailable();
             case DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION:
-                return IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE;
+                return IntrinsicPredicates.isSHA256IntrinsicAvailable();
             case DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION:
                 return IntrinsicPredicates.isSHA512IntrinsicAvailable();
             case DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION:
-                return IntrinsicPredicates.SHA3_INSTRUCTION_AVAILABLE;
+                return IntrinsicPredicates.isSHA3IntrinsicAvailable();
             default:
                 throw new Error("Unexpected option " + optionName);
         }
