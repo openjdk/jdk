@@ -32,8 +32,8 @@
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "logging/logStream.hpp"
 
-typedef ShenandoahLock    ShenandoahRebuildLock;
-typedef ShenandoahLocker  ShenandoahRebuildLocker;
+typedef ShenandoahReentrantLock<ShenandoahLock>  ShenandoahRebuildLock;
+typedef ShenandoahLocker<ShenandoahRebuildLock>  ShenandoahRebuildLocker;
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -787,33 +787,19 @@ public:
   // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
   // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
   // locked action can be seen by these unlocked functions.
-  inline size_t capacity_holding_lock() const {
-    shenandoah_assert_heaplocked();
-    return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
-  }
-  inline size_t capacity_not_holding_lock() {
-    shenandoah_assert_not_heaplocked();
+  inline size_t capacity() {
     ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
-  }
-  inline size_t used_holding_lock() const {
-    shenandoah_assert_heaplocked();
-    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
-  }
-  inline size_t used_not_holding_lock() {
-    shenandoah_assert_not_heaplocked();
-    ShenandoahRebuildLocker locker(rebuild_lock());
-    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
-  }
-  inline size_t available() {
-    shenandoah_assert_not_heaplocked();
-    ShenandoahRebuildLocker locker(rebuild_lock());
-    return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
 
-  // Use this version of available() if the heap lock is held.
-  inline size_t available_locked() const {
-    return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator);
+  inline size_t used() {
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
+  }
+
+  inline size_t available() {
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }

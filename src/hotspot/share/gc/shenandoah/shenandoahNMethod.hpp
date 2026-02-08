@@ -32,6 +32,10 @@
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 
+// Use ShenandoahReentrantLock as ShenandoahNMethodLock
+typedef ShenandoahReentrantLock<ShenandoahSimpleLock> ShenandoahNMethodLock;
+typedef ShenandoahLocker<ShenandoahNMethodLock>       ShenandoahNMethodLocker;
+
 // ShenandoahNMethod tuple records the internal locations of oop slots within reclocation stream in
 // the nmethod. This allows us to quickly scan the oops without doing the nmethod-internal scans,
 // that sometimes involves parsing the machine code. Note it does not record the oops themselves,
@@ -43,16 +47,16 @@ private:
   int                     _oops_count;
   bool                    _has_non_immed_oops;
   bool                    _unregistered;
-  ShenandoahReentrantLock _lock;
-  ShenandoahReentrantLock _ic_lock;
+  ShenandoahNMethodLock   _lock;
+  ShenandoahNMethodLock   _ic_lock;
 
 public:
   ShenandoahNMethod(nmethod *nm, GrowableArray<oop*>& oops, bool has_non_immed_oops);
   ~ShenandoahNMethod();
 
   inline nmethod* nm() const;
-  inline ShenandoahReentrantLock* lock();
-  inline ShenandoahReentrantLock* ic_lock();
+  inline ShenandoahNMethodLock* lock();
+  inline ShenandoahNMethodLock* ic_lock();
   inline void oops_do(OopClosure* oops, bool fix_relocations = false);
   // Update oops when the nmethod is re-registered
   void update();
@@ -60,8 +64,8 @@ public:
   inline bool is_unregistered() const;
 
   static ShenandoahNMethod* for_nmethod(nmethod* nm);
-  static inline ShenandoahReentrantLock* lock_for_nmethod(nmethod* nm);
-  static inline ShenandoahReentrantLock* ic_lock_for_nmethod(nmethod* nm);
+  static inline ShenandoahNMethodLock* lock_for_nmethod(nmethod* nm);
+  static inline ShenandoahNMethodLock* ic_lock_for_nmethod(nmethod* nm);
 
   static void heal_nmethod(nmethod* nm);
   static inline void heal_nmethod_metadata(ShenandoahNMethod* nmethod_data);

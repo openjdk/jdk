@@ -117,9 +117,23 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-typedef ShenandoahLock    ShenandoahHeapLock;
-typedef ShenandoahLocker  ShenandoahHeapLocker;
-typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
+typedef ShenandoahLock                       ShenandoahHeapLock;
+// ShenandoahHeapLocker implements locker to assure mutually exclusive access to the global heap data structures.
+// Asserts in the implementation detect potential deadlock usage with regards the rebuild lock that is present
+// in ShenandoahFreeSet.  Whenever both locks are acquired, this lock should be acquired before the
+// ShenandoahFreeSet rebuild lock.
+class ShenandoahHeapLocker : public StackObj {
+private:
+  ShenandoahHeapLock* _lock;
+public:
+  ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_block_for_safepoint = false);
+
+  ~ShenandoahHeapLocker() {
+    _lock->unlock();
+  }
+};
+
+typedef Stack<oop, mtGC>                     ShenandoahScanObjectStack;
 
 // Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
 // for concurent evacuation and a snapshot-at-the-beginning write barrier for

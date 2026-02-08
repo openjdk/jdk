@@ -611,7 +611,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   size_t young_capacity = young_gen->max_capacity();
   size_t young_usage = young_gen->used(); // includes humongous waste
   size_t young_available = ((young_capacity >= young_usage)? young_capacity - young_usage: 0);
-  size_t freeset_available = free_set()->available_locked();
+  size_t freeset_available = free_set()->available();
   if (young_available > freeset_available) {
     young_available = freeset_available;
   }
