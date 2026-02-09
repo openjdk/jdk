@@ -31,21 +31,34 @@
  * @run junit Basic
  */
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.stream.StreamSupport;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Set;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystemException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.junit.jupiter.api.Test;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class Basic {
 
