@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @bug 8374798
- * @summary RShift(LShift(x, C), C) Identity missed when shift counts are different
- *          constant nodes for the same effective count (e.g. -1 vs 31) due to
- *          mask_and_replace_shift_amount normalizing them at different times.
+ * @bug 8377389
+ * @summary URShift(LShift(x, C), C) Ideal optimization missed due to missing IGVN notification:
+ *          when LShift inputs change, its URShift users were not re-queued for the
+ *          (X << C) >>> C -> X & mask optimization.
  *
- * @run main/othervm -XX:+StressIGVN -XX:+StressCCP -XX:VerifyIterativeGVN=1000 -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,*MissedRShiftLShiftIdentity*::test* MissedRShiftLShiftIdentity
+ * @run main/othervm -XX:+StressIGVN -XX:+StressCCP -XX:VerifyIterativeGVN=0100 -Xbatch -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,*MissedURShiftLShiftIdeal*::test* MissedURShiftLShiftIdeal
  */
 
-public class MissedRShiftLShiftIdentity {
+public class MissedURShiftLShiftIdeal {
     public static int iFld = 0;
 
     public static void test() {
@@ -43,7 +43,7 @@ public class MissedRShiftLShiftIdentity {
             iFld = i11;
             for (int i1 = 0; i1 < 10; i1++) {
                 iFld <<= i3;
-                iFld >>= i2; // RShift
+                iFld >>>= i2; // URShift
                 i3 = i2;
             }
             int i16 = 0;
