@@ -462,7 +462,7 @@ size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
   HeapWord* start = AtomicAccess::load(&_start);
   HeapWord* top = AtomicAccess::load(&_top);
   // There has been a race when retrieving _top and _start. Return 0.
-  if (_top < _start) {
+  if (top < start) {
     return 0;
   }
   size_t used_bytes = pointer_delta(top, start, 1);
