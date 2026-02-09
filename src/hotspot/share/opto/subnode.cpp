@@ -1914,41 +1914,19 @@ bool BoolNode::is_counted_loop_exit_test() {
 
 template<typename IntegerType>
 static const IntegerType* integral_abs_value(const IntegerType* t) {
-  typedef typename IntegerType::NativeType NativeType;
+  typedef typename IntegerType::NativeUType NativeUType;
 
-  if (t->is_con()) {
-    // Handle minimum value separately to avoid overflow
-    if (t->get_con() == IntegerType::MIN->_lo) {
-      return IntegerType::MIN;
-    }
+  // Find the absolute value of a type, resulting in a range that fits inside the unsigned range [0, signed_max+1].
 
-    return IntegerType::make(ABS(t->get_con()));
-  }
+  // An integer type consists of two simple ranges [lo, signed(uhi)] and [signed(ulo), hi] where signed(uhi) <= 0 and
+  // signed(ulo) >= 0. Finding the minimum value of the result type involves finding which of ulo and uhi are closer to 0,
+  // and finding the maximum value involves finding which of hi and lo are furthest from 0. The calculations are done in the
+  // unsigned domain to gracefully handle jint_min and jlong_min, as the absolute value of those values are themselves.
 
-  if (t->_lo == IntegerType::MIN->_lo) {
-    // If lo is type_min, then hi must be type_max. This is because:
-    // - An integer type is defined as type_min <= lo <= hi <= type_max.
-    // - Since t is not a constant, it must be that lo < hi.
-    // - Therefore, hi must be >= type_min+1.
-    // - As abs(type_min+1) == type_max and for all n from type_min+1 to hi, abs(n) <= type_max, the upper bound must be type_max.
+  NativeUType umin = MIN2<NativeUType>(g_uabs(t->_ulo), g_uabs(t->_uhi));
+  NativeUType umax = MAX2<NativeUType>(g_uabs(t->_lo), g_uabs(t->_hi));
 
-    return IntegerType::TYPE_DOMAIN;
-  }
-
-  // Knowing that min_type is not in t, we know there is no overflow.
-  NativeType lo_abs = ABS(t->_lo);
-  NativeType hi_abs = ABS(t->_hi);
-
-  NativeType lo = 0;
-  if (t->_hi < 0 || t->_lo >= 0) {
-    // If both values are positive or negative, select the value that is closer to 0.
-    lo = MIN2(lo_abs, hi_abs);
-  }
-
-  // Select the value that extends the furthest from 0.
-  NativeType hi = MAX2(lo_abs, hi_abs);
-
-  return IntegerType::make(lo, hi, t->_widen);
+  return IntegerType::make_unsigned(umin, umax, t->_widen);
 }
 
 //=============================================================================
