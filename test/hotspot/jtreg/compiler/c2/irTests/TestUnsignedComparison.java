@@ -340,4 +340,60 @@ public class TestUnsignedComparison {
                                  i >= CONST_INDEX);
         }
     }
+
+    @Test
+    @IR(failOn = {XOR_I})
+    @IR(counts = {ADD_I, "1"})
+    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_I_REG_MIN, "1"})
+    public int testXorIntMin(int x) {
+        return x ^ INT_MIN;
+    }
+
+    @Test
+    @IR(failOn = {XOR_L})
+    @IR(counts = {ADD_L, "1"})
+    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_L_REG_MIN, "1"})
+    public long testXorLongMin(long x) {
+        return x ^ LONG_MIN;
+    }
+
+    @Run(test = {"testXorIntMin", "testXorLongMin"})
+    public void checkTestXorMin() {
+        // x ^ MIN_VALUE flips the sign bit, same as x + MIN_VALUE
+        for (int i = 0; i < INT_DATA.length; i++) {
+            Asserts.assertEquals(testXorIntMin(INT_DATA[i]),
+                                 INT_DATA[i] + INT_MIN);
+        }
+        for (int i = 0; i < LONG_DATA.length; i++) {
+            Asserts.assertEquals(testXorLongMin(LONG_DATA[i]),
+                                 LONG_DATA[i] + LONG_MIN);
+        }
+    }
+
+    @Test
+    @IR(counts = {ADD_I, "1"})
+    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_I_REG_MIN, "1"})
+    public int testAddIntMin(int x) {
+        return x + INT_MIN;
+    }
+
+    @Test
+    @IR(counts = {ADD_L, "1"})
+    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_L_REG_MIN, "1"})
+    public long testAddLongMin(long x) {
+        return x + LONG_MIN;
+    }
+
+    @Run(test = {"testAddIntMin", "testAddLongMin"})
+    public void checkTestAddMin() {
+        // x + MIN_VALUE should be matched by addI_reg_min / addL_reg_min on AArch64
+        for (int i = 0; i < INT_DATA.length; i++) {
+            Asserts.assertEquals(testAddIntMin(INT_DATA[i]),
+                                 INT_DATA[i] + INT_MIN);
+        }
+        for (int i = 0; i < LONG_DATA.length; i++) {
+            Asserts.assertEquals(testAddLongMin(LONG_DATA[i]),
+                                 LONG_DATA[i] + LONG_MIN);
+        }
+    }
 }

@@ -3944,6 +3944,26 @@ operand immI_M1()
   interface(CONST_INTER);
 %}
 
+// 32 bit integer MIN_VALUE (0x80000000)
+operand immI_MIN()
+%{
+  predicate(n->get_int() == min_jint);
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 64 bit integer MIN_VALUE (0x8000000000000000)
+operand immL_MIN()
+%{
+  predicate(n->get_long() == min_jlong);
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Shift values for add/sub extension shift
 operand immIExt()
 %{
@@ -9149,6 +9169,38 @@ instruct addL_reg_imm(iRegLNoSp dst, iRegL src1, immLAddSub src2) %{
   ins_pipe(ialu_reg_imm);
 %}
 
+// Rewrite x + MIN_INT as x ^ MIN_INT (integer variant)
+instruct addI_reg_min(iRegINoSp dst, iRegIorL2I src1, immI_MIN src2) %{
+  match(Set dst (AddI src1 src2));
+
+  ins_cost(INSN_COST);
+  format %{ "eorw  $dst, $src1, #0x80000000\t# int add MIN_VALUE as xor" %}
+
+  ins_encode %{
+    __ eorw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            (uint64_t)0x80000000);
+  %}
+
+  ins_pipe(ialu_reg_imm);
+%}
+
+// Rewrite x + MIN_INT as x ^ MIN_INT (long variant)
+instruct addL_reg_min(iRegLNoSp dst, iRegL src1, immL_MIN src2) %{
+  match(Set dst (AddL src1 src2));
+
+  ins_cost(INSN_COST);
+  format %{ "eor  $dst, $src1, #0x8000000000000000\t# long add MIN_VALUE as xor" %}
+
+  ins_encode %{
+    __ eor(as_Register($dst$$reg),
+           as_Register($src1$$reg),
+           (uint64_t)0x8000000000000000);
+  %}
+
+  ins_pipe(ialu_reg_imm);
+%}
+
 // Integer Subtraction
 instruct subI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (SubI src1 src2));
@@ -9208,6 +9260,38 @@ instruct subL_reg_imm(iRegLNoSp dst, iRegL src1, immLAddSub src2) %{
   opcode(0x1);
 
   ins_encode( aarch64_enc_addsub_imm(dst, src1, src2) );
+
+  ins_pipe(ialu_reg_imm);
+%}
+
+// Rewrite x - MIN_INT as x ^ MIN_INT (integer variant)
+instruct subI_reg_min(iRegINoSp dst, iRegIorL2I src1, immI_MIN src2) %{
+  match(Set dst (SubI src1 src2));
+
+  ins_cost(INSN_COST);
+  format %{ "eorw  $dst, $src1, #0x80000000\t# int sub MIN_VALUE as xor" %}
+
+  ins_encode %{
+    __ eorw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            (uint64_t)0x80000000);
+  %}
+
+  ins_pipe(ialu_reg_imm);
+%}
+
+// Rewrite x - MIN_INT as x ^ MIN_INT (long variant)
+instruct subL_reg_min(iRegLNoSp dst, iRegL src1, immL_MIN src2) %{
+  match(Set dst (SubL src1 src2));
+
+  ins_cost(INSN_COST);
+  format %{ "eor  $dst, $src1, #0x8000000000000000\t# long sub MIN_VALUE as xor" %}
+
+  ins_encode %{
+    __ eor(as_Register($dst$$reg),
+           as_Register($src1$$reg),
+           (uint64_t)0x8000000000000000);
+  %}
 
   ins_pipe(ialu_reg_imm);
 %}

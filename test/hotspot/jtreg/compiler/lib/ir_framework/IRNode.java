@@ -3157,6 +3157,16 @@ public class IRNode {
         beforeMatchingNameRegex(OPAQUE_CONSTANT_BOOL, "OpaqueConstantBool");
     }
 
+    public static final String AARCH64_ADD_I_REG_MIN = PREFIX + "AARCH64_ADD_I_REG_MIN" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_ADD_I_REG_MIN, "addI_reg_min");
+    }
+
+    public static final String AARCH64_ADD_L_REG_MIN = PREFIX + "AARCH64_ADD_L_REG_MIN" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_ADD_L_REG_MIN, "addL_reg_min");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
