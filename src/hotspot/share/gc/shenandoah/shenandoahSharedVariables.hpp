@@ -131,7 +131,7 @@ typedef struct ShenandoahSharedBitmap {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
-        ShenandoahSharedValue ov = value.load_acquire();
+      ShenandoahSharedValue ov = value.load_acquire();
       if ((ov & mask_val) == 0) {
         // already unset
         return;
