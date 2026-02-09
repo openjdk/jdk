@@ -821,27 +821,28 @@ static bool is_barrier_traversal_node(int op) {
          op == Op_CheckCastPP || op == Op_CMoveN || op == Op_CMoveP || op == Op_Proj;
 }
 
-static void enqueue_dependent_gc_barriers_helper(Unique_Node_List& worklist, Unique_Node_List& visited, Node* n) {
-  if (visited.member(n)) {
-    return;
-  }
-  visited.push(n);
-  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-    Node* u = n->fast_out(i);
-    if (u->Opcode() == Op_ShenandoahLoadReferenceBarrier) {
-      worklist.push(u);
-    } else if (is_barrier_traversal_node(u->Opcode())) {
-      enqueue_dependent_gc_barriers_helper(worklist, visited, u);
-    }
-  }
-}
-
 void ShenandoahBarrierSetC2::enqueue_dependent_gc_barriers(Unique_Node_List& worklist, Node* n) const {
   if (!is_barrier_traversal_node(n->Opcode())) {
     return;
   }
   Unique_Node_List visited;
-  enqueue_dependent_gc_barriers_helper(worklist, visited, n);
+  Unique_Node_List stack;
+  stack.push(n);
+  while (stack.size() > 0) {
+    Node* cur = stack.pop();
+    if (visited.member(cur)) {
+      continue;
+    }
+    visited.push(cur);
+    for (DUIterator_Fast imax, i = cur->fast_outs(imax); i < imax; i++) {
+      Node* u = cur->fast_out(i);
+      if (u->Opcode() == Op_ShenandoahLoadReferenceBarrier) {
+        worklist.push(u);
+      } else if (is_barrier_traversal_node(u->Opcode())) {
+        stack.push(u);
+      }
+    }
+  }
 }
 
 bool ShenandoahBarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
