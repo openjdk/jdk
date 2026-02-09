@@ -987,4 +987,26 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
     _shared_table.reset();
   }
 }
+
+void StringTable::move_shared_strings_into_runtime_table() {
+  precond(CDSConfig::is_dumping_final_static_archive());
+  JavaThread* THREAD = JavaThread::current();
+  HandleMark hm(THREAD);
+
+  int n = 0;
+  _shared_table.iterate_all([&](oop string) {
+    int length = java_lang_String::length(string);
+    Handle h_string (THREAD, string);
+    StringWrapper name(h_string, length);
+    unsigned int hash = hash_wrapped_string(name);
+
+    assert(!_alt_hash, "too early");
+    oop interned = do_intern(name, hash, THREAD);
+    assert(string == interned, "must be");
+    n++;
+  });
+
+  _shared_table.reset();
+  log_info(aot)("Moved %d interned strings to runtime table", n);
+}
 #endif //INCLUDE_CDS_JAVA_HEAP

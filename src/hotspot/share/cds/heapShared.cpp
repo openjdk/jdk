@@ -210,7 +210,7 @@ static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], Instan
 
 bool HeapShared::is_subgraph_root_class(InstanceKlass* ik) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
-  if (!CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_klass_subgraphs()) {
     // Legacy CDS archive support (to be deprecated)
     return is_subgraph_root_class_of(archive_subgraph_entry_fields, ik) ||
            is_subgraph_root_class_of(fmg_archive_subgraph_entry_fields, ik);
@@ -455,7 +455,6 @@ int HeapShared::append_root(oop obj) {
 
 oop HeapShared::get_root(int index, bool clear) {
   assert(index >= 0, "sanity");
-  assert(!CDSConfig::is_dumping_heap() && CDSConfig::is_using_archive(), "runtime only");
   assert(is_archived_heap_in_use(), "getting roots into heap that is not used");
 
   oop result;
@@ -600,8 +599,7 @@ public:
   void set_oop(MetaspaceObj* ptr, oop o) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
     OopHandle handle(Universe::vm_global(), o);
-    bool is_new = put(ptr, handle);
-    assert(is_new, "cannot set twice");
+    put_when_absent(ptr, handle);
   }
   void remove_oop(MetaspaceObj* ptr) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
@@ -614,6 +612,11 @@ public:
 };
 
 void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
+  if (CDSConfig::is_dumping_preimage_static_archive() && scratch_resolved_references(src) != nullptr) {
+    // We are in AOT training run. The class has been redefined and we are giving it a new resolved_reference.
+    // Ignore it, as this class will be excluded from the AOT config.
+    return;
+  }
   if (SystemDictionaryShared::is_builtin_loader(src->pool_holder()->class_loader_data())) {
     _scratch_objects_table->set_oop(src, dest);
   }
@@ -934,7 +937,7 @@ void HeapShared::scan_java_class(Klass* orig_k) {
 void HeapShared::archive_subgraphs() {
   assert(CDSConfig::is_dumping_heap(), "must be");
 
-  if (!CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_klass_subgraphs()) {
     archive_object_subgraphs(archive_subgraph_entry_fields,
                              false /* is_full_module_graph */);
     if (CDSConfig::is_dumping_full_module_graph()) {
@@ -1292,10 +1295,7 @@ static void verify_the_heap(Klass* k, const char* which) {
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
 void HeapShared::resolve_classes(JavaThread* current) {
   assert(CDSConfig::is_using_archive(), "runtime only!");
-  if (!is_archived_heap_in_use()) {
-    return; // nothing to do
-  }
-  if (!CDSConfig::is_using_aot_linked_classes()) {
+  if (CDSConfig::is_using_klass_subgraphs()) {
     resolve_classes_for_subgraphs(current, archive_subgraph_entry_fields);
     resolve_classes_for_subgraphs(current, fmg_archive_subgraph_entry_fields);
   }
@@ -1385,7 +1385,7 @@ void HeapShared::init_classes_for_special_subgraph(Handle class_loader, TRAPS) {
 
 void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k) {
   JavaThread* THREAD = current;
-  if (!is_archived_heap_in_use()) {
+  if (!CDSConfig::is_using_klass_subgraphs()) {
     return; // nothing to do
   }
 
@@ -1861,7 +1861,7 @@ void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
                                                              const char* klass_name,
                                                              int field_offset,
                                                              const char* field_name) {
-  assert(CDSConfig::is_dumping_heap(), "dump time only");
+  precond(CDSConfig::is_dumping_klass_subgraphs());
   assert(k->defined_by_boot_loader(), "must be boot class");
 
   oop m = k->java_mirror();
@@ -1912,7 +1912,7 @@ class VerifySharedOopClosure: public BasicOopIterateClosure {
 };
 
 void HeapShared::verify_subgraph_from_static_field(InstanceKlass* k, int field_offset) {
-  assert(CDSConfig::is_dumping_heap(), "dump time only");
+  precond(CDSConfig::is_dumping_klass_subgraphs());
   assert(k->defined_by_boot_loader(), "must be boot class");
 
   oop m = k->java_mirror();
@@ -2138,7 +2138,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 void HeapShared::init_subgraph_entry_fields(TRAPS) {
   assert(CDSConfig::is_dumping_heap(), "must be");
   _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
-  if (!CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_klass_subgraphs()) {
     init_subgraph_entry_fields(archive_subgraph_entry_fields, CHECK);
     if (CDSConfig::is_dumping_full_module_graph()) {
       init_subgraph_entry_fields(fmg_archive_subgraph_entry_fields, CHECK);
