@@ -452,6 +452,17 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   return collection_set()->is_in_loc(p);
 }
 
+inline char ShenandoahHeap::gc_state() const {
+  return _gc_state.raw_value();
+}
+
+inline bool ShenandoahHeap::is_gc_state(GCState state) const {
+  // If the global gc state has been changed, but hasn't yet been propagated to all threads, then
+  // the global gc state is the correct value. Once the gc state has been synchronized with all threads,
+  // _gc_state_changed will be toggled to false and we need to use the thread local state.
+  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
+}
+
 inline bool ShenandoahHeap::is_idle() const {
   return _gc_state_changed ? _gc_state.is_clear() : ShenandoahThreadLocalData::gc_state(Thread::current()) == 0;
 }

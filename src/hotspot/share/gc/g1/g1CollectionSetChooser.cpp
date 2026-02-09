@@ -203,13 +203,13 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   G1CollectedHeap* _g1h;
   G1HeapRegionClaimer _hrclaimer;
 
-  uint volatile _num_regions_added;
+  Atomic<uint> _num_regions_added;
 
   G1BuildCandidateArray _result;
 
   void update_totals(uint num_regions) {
     if (num_regions > 0) {
-      AtomicAccess::add(&_num_regions_added, num_regions);
+      _num_regions_added.add_then_fetch(num_regions);
     }
   }
 
@@ -221,7 +221,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   void prune(G1HeapRegion** data) {
     G1Policy* p = G1CollectedHeap::heap()->policy();
 
-    uint num_candidates = AtomicAccess::load(&_num_regions_added);
+    uint num_candidates = _num_regions_added.load_relaxed();
 
     uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
     uint num_pruned = 0;
@@ -254,7 +254,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
                               wasted_bytes,
                               allowed_waste);
 
-    AtomicAccess::sub(&_num_regions_added, num_pruned, memory_order_relaxed);
+    _num_regions_added.sub_then_fetch(num_pruned, memory_order_relaxed);
   }
 
 public:
@@ -275,7 +275,7 @@ public:
     _result.sort_by_gc_efficiency();
     prune(_result.array());
     candidates->set_candidates_from_marking(_result.array(),
-                                            _num_regions_added);
+                                            _num_regions_added.load_relaxed());
   }
 };
 

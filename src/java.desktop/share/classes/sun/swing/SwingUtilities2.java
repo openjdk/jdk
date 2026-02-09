@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,12 +120,6 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  *
  */
 public class SwingUtilities2 {
-    /**
-     * The {@code AppContext} key for our one {@code LAFState}
-     * instance.
-     */
-    public static final Object LAF_STATE_KEY =
-            new StringBuffer("LookAndFeel State");
 
     public static final Object MENU_SELECTION_MANAGER_LISTENER_KEY =
             new StringBuffer("MenuSelectionManager listener key");

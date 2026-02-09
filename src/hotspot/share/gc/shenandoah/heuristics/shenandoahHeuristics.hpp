@@ -183,6 +183,7 @@ protected:
 
   static int compare_by_garbage(RegionData a, RegionData b);
 
+  // This is a helper function to choose_collection_set()
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                      RegionData* data, size_t data_size,
                                                      size_t free) = 0;
@@ -233,6 +234,8 @@ public:
 
   virtual void record_requested_gc();
 
+  // Choose the collection set, returning the number of regions that need to be transferred to the old reserve from the young
+  // reserve in order to effectively evacuate the chosen collection set.  In non-generational mode, the return value is 0.
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();

@@ -1700,3 +1700,28 @@ jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128
 #    com.sun.security.allowedAIALocations=http://some.company.com/cacert \
 #          ldap://ldap.company.com/dc=company,dc=com?caCertificate;binary
 com.sun.security.allowedAIALocations=
+
+#
+# PKCS #8 encoding format for newly created ML-KEM and ML-DSA private keys
+#
+# draft-ietf-lamps-kyber-certificates-11 and RFC 9881 define three possible formats for a private key:
+# a seed (64 bytes for ML-KEM, 32 bytes for ML-DSA), an expanded private key,
+# or a sequence containing both.
+#
+# The following security properties determine the encoding format used when a
+# new keypair is generated with a KeyPairGenerator, and the output of the
+# translateKey method on an existing key using a ML-KEM or ML-DSA KeyFactory.
+#
+# Valid values for these properties are "seed", "expandedKey", and "both"
+# (case-insensitive). The default is "seed".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# Note: These properties are currently used by the SunJCE (for ML-KEM) and SUN
+# (for ML-DSA) providers in the JDK Reference implementation. They are not
+# guaranteed to be supported by other implementations or third-party security
+# providers.
+#
+#jdk.mlkem.pkcs8.encoding = seed
+#jdk.mldsa.pkcs8.encoding = seed

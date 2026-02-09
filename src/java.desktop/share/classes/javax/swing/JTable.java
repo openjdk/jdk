@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3191,9 +3191,23 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * (maximum or minimum).
      *
      */
+
     public void doLayout() {
+        boolean prefWidthSet = false;
         TableColumn resizingColumn = getResizingColumn();
-        if (resizingColumn == null) {
+        // doLayout is called for both pack and show
+        // so if initial preferred width is set by user then
+        // it needs to be honoured even if resizingColumn
+        // is set to last column on account of
+        // AUTO_RESIZE_LAST_COLUMN autoResizeMode
+        for (int i = 0; i < columnModel.getColumnCount(); i++) {
+            if (columnModel.getColumn(i).getPreferredWidth() != 75
+                    && columnModel.getColumn(i).getWidth() == 75) {
+                prefWidthSet = true;
+                break;
+            }
+        }
+        if (resizingColumn == null || prefWidthSet) {
             setWidthsFromPreferredWidths(false);
         }
         else {

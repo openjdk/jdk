@@ -46,6 +46,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
@@ -759,7 +760,7 @@ class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1
   const size_t*       _surviving_young_words;
   uint                _active_workers;
   G1EvacFailureRegions* _evac_failure_regions;
-  volatile uint       _num_retained_regions;
+  Atomic<uint>        _num_retained_regions;
 
   FreeCSetStats* worker_stats(uint worker) {
     return &_worker_stats[worker];
@@ -794,7 +795,7 @@ public:
   virtual ~FreeCollectionSetTask() {
     Ticks serial_time = Ticks::now();
 
-    bool has_new_retained_regions = AtomicAccess::load(&_num_retained_regions) != 0;
+    bool has_new_retained_regions = _num_retained_regions.load_relaxed() != 0;
     if (has_new_retained_regions) {
       G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
       candidates->sort_by_efficiency();
@@ -829,7 +830,7 @@ public:
     // Report per-region type timings.
     cl.report_timing();
 
-    AtomicAccess::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
+    _num_retained_regions.add_then_fetch(cl.num_retained_regions(), memory_order_relaxed);
   }
 };
 

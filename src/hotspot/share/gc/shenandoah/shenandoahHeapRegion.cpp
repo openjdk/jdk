@@ -595,6 +595,8 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
     _recycling.unset();
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
+    // Otherwise, the mutator might see region as fully recycled and might change its affiliation only to have
+    // the racing GC worker thread overwrite its affiliation to FREE.
     while (_recycling.is_set()) {
       if (os::is_MP()) {
         SpinPause();
@@ -605,6 +607,8 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
   }
 }
 
+// Note that return from try_recycle() does not mean the region has been recycled.  It only means that
+// some GC worker thread has taken responsibility to recycle the region, eventually.
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
   if (is_trash() && _recycling.try_set()) {

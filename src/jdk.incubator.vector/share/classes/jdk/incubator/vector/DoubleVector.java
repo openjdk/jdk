@@ -3612,6 +3612,18 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return this;
     }
 
+    @Override
+    @ForceInline
+    final
+    DoubleVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<Double> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (DoubleVector) this.rearrange(shuffle);
+    }
+
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
     static final long ARRAY_BASE =
