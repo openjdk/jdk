@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,11 @@ public final class Connection implements Runnable {
 
             lock.lock();
             try {
+                if (!useable) {
+                    // don't attempt to write the "abandon request" LDAP message
+                    // on a (closed) stream of a connection that can no longer be used.
+                    return;
+                }
                 outStream.write(ber.getBuf(), 0, ber.getDataLen());
                 outStream.flush();
             } finally {
