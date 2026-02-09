@@ -1467,11 +1467,16 @@ public class Check {
     }
 
     void checkRaw(JCTree tree, Env<AttrContext> env) {
-        if (tree.type.hasTag(CLASS) &&
-            !TreeInfo.isDiamond(tree) &&
+        if (!TreeInfo.isDiamond(tree)) {
+            checkRaw(tree.pos(), tree.type, env);
+        }
+    }
+
+    void checkRaw(DiagnosticPosition pos, Type type, Env<AttrContext> env) {
+        if (type.hasTag(CLASS) &&
             !withinAnonConstr(env) &&
-            tree.type.isRaw()) {
-            log.warning(tree.pos(), LintWarnings.RawClassUse(tree.type, tree.type.tsym.type));
+            type.isRaw()) {
+            log.warning(pos, LintWarnings.RawClassUse(type, type.tsym.type));
         }
     }
     //where

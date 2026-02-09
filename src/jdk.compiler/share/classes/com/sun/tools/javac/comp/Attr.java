@@ -5743,6 +5743,7 @@ public class Attr extends JCTree.Visitor {
             @Override
             public Type visitClassType(ClassType t, Object s) {
                 checkSymbol(pos, null, t.tsym);
+                chk.checkRaw(pos, t, env);
                 return super.visitClassType(t, s);
             }
         }.apply(type);
