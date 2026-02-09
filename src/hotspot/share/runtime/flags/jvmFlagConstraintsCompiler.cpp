@@ -241,7 +241,7 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if (OptoLoopAlignment > CodeEntryAlignment) {
+  if (checked_cast<uintx>(OptoLoopAlignment) > CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                         "OptoLoopAlignment (%zd) must be "
                         "less or equal to CodeEntryAlignment (%d)\n",
@@ -339,7 +339,7 @@ JVMFlag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose) {
 
 #ifdef COMPILER2
 JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
-  if (InteriorEntryAlignment > CodeEntryAlignment) {
+  if (checked_cast<uintx>(InteriorEntryAlignment) > CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                        "InteriorEntryAlignment (%zd) must be "
                        "less than or equal to CodeEntryAlignment (%d)\n",
