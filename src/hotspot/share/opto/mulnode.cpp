@@ -1241,6 +1241,8 @@ Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
     int lshift_count = 0;
     if (in(1)->Opcode() == Op_LShift(bt) &&
         in(1)->req() == 3 &&
+        // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+        // negative constant (e.g. -1 vs 31)
         const_shift_count(phase, in(1), &lshift_count)) {
       count &= bits_per_java_integer(bt) - 1; // semantics of Java shifts
       lshift_count &= bits_per_java_integer(bt) - 1;
