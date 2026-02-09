@@ -11742,7 +11742,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_setMemory)) {
+      StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+    }
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
