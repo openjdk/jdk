@@ -61,14 +61,29 @@ public class ShortVector256LoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
 
+    static void AssertEquals(short actual, short expected) {
+        Assert.assertEquals(actual, expected);
+    }
+
+    static void AssertEquals(short actual, short expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+
+    static void AssertEquals(short [] actual, short [] expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals(short [] actual, short [] expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+
     static void assertArraysEquals(short[] r, short[] a, boolean[] mask) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0);
+                AssertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0, "at index #" + i);
+            AssertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0, "at index #" + i);
         }
     }
 
@@ -322,7 +337,7 @@ public class ShortVector256LoadStoreTests extends AbstractVectorLoadStoreTest {
                 av.intoArray(r, i);
             }
         }
-        Assert.assertEquals(r, a);
+        AssertEquals(r, a);
     }
 
     @Test(dataProvider = "shortProviderForIOOBE")
@@ -1114,11 +1129,11 @@ public class ShortVector256LoadStoreTests extends AbstractVectorLoadStoreTest {
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    Assert.assertEquals(r[j], a[i + indexMap[j]]);
+                    AssertEquals(r[j], a[i + indexMap[j]]);
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
+            AssertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
         }
     }
 
@@ -1129,11 +1144,11 @@ public class ShortVector256LoadStoreTests extends AbstractVectorLoadStoreTest {
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    Assert.assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0);
+                    AssertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0);
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0, "at index #" + j);
+            AssertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0, "at index #" + j);
         }
     }
 
@@ -1149,7 +1164,7 @@ public class ShortVector256LoadStoreTests extends AbstractVectorLoadStoreTest {
             }
         }
 
-        Assert.assertEquals(r, expected);
+        AssertEquals(r, expected);
     }
 
     static void assertScatterArraysEquals(short[] r, short[] a, int[] indexMap) {
@@ -1162,7 +1177,7 @@ public class ShortVector256LoadStoreTests extends AbstractVectorLoadStoreTest {
             }
         }
 
-        Assert.assertEquals(r, expected);
+        AssertEquals(r, expected);
     }
 
     @DataProvider

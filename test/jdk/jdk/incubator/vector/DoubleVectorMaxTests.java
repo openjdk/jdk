@@ -2686,20 +2686,20 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] a = fa.apply(SPECIES.length());
         double id = ADD_IDENTITY;
 
-        Assert.assertEquals((double) (scalar_add(id, id)), id,
+        AssertEquals((double) (scalar_add(id, id)), id,
                             "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals((double) (scalar_add(id, x)), x);
-                Assert.assertEquals((double) (scalar_add(x, id)), x);
+                AssertEquals((double) (scalar_add(id, x)), x);
+                AssertEquals((double) (scalar_add(x, id)), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals((double) (scalar_add(id, x)), x,
+            AssertEquals((double) (scalar_add(id, x)), x,
                                 "ADD(ADD_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals((double) (scalar_add(x, id)), x,
+            AssertEquals((double) (scalar_add(x, id)), x,
                                 "ADD(" + x + ", ADD_IDENTITY) != " + x);
         }
     }
@@ -2788,20 +2788,20 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] a = fa.apply(SPECIES.length());
         double id = MUL_IDENTITY;
 
-        Assert.assertEquals((double) (scalar_mul(id, id)), id,
+        AssertEquals((double) (scalar_mul(id, id)), id,
                             "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals((double) (scalar_mul(id, x)), x);
-                Assert.assertEquals((double) (scalar_mul(x, id)), x);
+                AssertEquals((double) (scalar_mul(id, x)), x);
+                AssertEquals((double) (scalar_mul(x, id)), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals((double) (scalar_mul(id, x)), x,
+            AssertEquals((double) (scalar_mul(id, x)), x,
                                 "MUL(MUL_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals((double) (scalar_mul(x, id)), x,
+            AssertEquals((double) (scalar_mul(x, id)), x,
                                 "MUL(" + x + ", MUL_IDENTITY) != " + x);
         }
     }
@@ -2890,20 +2890,20 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] a = fa.apply(SPECIES.length());
         double id = MIN_IDENTITY;
 
-        Assert.assertEquals(scalar_min(id, id), id,
+        AssertEquals(scalar_min(id, id), id,
                             "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals(scalar_min(id, x), x);
-                Assert.assertEquals(scalar_min(x, id), x);
+                AssertEquals(scalar_min(id, x), x);
+                AssertEquals(scalar_min(x, id), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(scalar_min(id, x), x,
+            AssertEquals(scalar_min(id, x), x,
                                 "MIN(MIN_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals(scalar_min(x, id), x,
+            AssertEquals(scalar_min(x, id), x,
                                 "MIN(" + x + ", MIN_IDENTITY) != " + x);
         }
     }
@@ -2992,20 +2992,20 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] a = fa.apply(SPECIES.length());
         double id = MAX_IDENTITY;
 
-        Assert.assertEquals(scalar_max(id, id), id,
+        AssertEquals(scalar_max(id, id), id,
                             "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals(scalar_max(id, x), x);
-                Assert.assertEquals(scalar_max(x, id), x);
+                AssertEquals(scalar_max(id, x), x);
+                AssertEquals(scalar_max(x, id), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(scalar_max(id, x), x,
+            AssertEquals(scalar_max(id, x), x,
                                 "MAX(MAX_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals(scalar_max(x, id), x,
+            AssertEquals(scalar_max(x, id), x,
                                 "MAX(" + x + ", MAX_IDENTITY) != " + x);
         }
     }
@@ -3094,20 +3094,20 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] a = fa.apply(SPECIES.length());
         double id = FIRST_NONZERO_IDENTITY;
 
-        Assert.assertEquals(firstNonZero(id, id), id,
+        AssertEquals(firstNonZero(id, id), id,
                             "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
 
         double x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals(firstNonZero(id, x), x);
-                Assert.assertEquals(firstNonZero(x, id), x);
+                AssertEquals(firstNonZero(id, x), x);
+                AssertEquals(firstNonZero(x, id), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(firstNonZero(id, x), x,
+            AssertEquals(firstNonZero(id, x), x,
                                 "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals(firstNonZero(x, id), x,
+            AssertEquals(firstNonZero(x, id), x,
                                 "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
         }
     }
@@ -5306,10 +5306,10 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], a[i] & bits);
+                AssertEquals(r[i], a[i] & bits);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], a[i] & bits, "(" + a[i] + ") at index #" + i);
+            AssertEquals(r[i], a[i] & bits, "(" + a[i] + ") at index #" + i);
         }
     }
 

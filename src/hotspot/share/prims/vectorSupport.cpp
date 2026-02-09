@@ -54,7 +54,7 @@ bool VectorSupport::is_vector_mask(Klass* klass) {
 BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(ik->is_subclass_of(vmClasses::vector_VectorPayload_klass()), "%s not a VectorPayload", ik->name()->as_C_string());
   fieldDescriptor fd; // find_field initializes fd if found
-  // static final Class<?> ETYPE;
+  // static final Class<?> CTYPE;
   Klass* holder = ik->find_field(vmSymbols::CTYPE_name(), vmSymbols::class_signature(), &fd);
 
   assert(holder != nullptr, "sanity");

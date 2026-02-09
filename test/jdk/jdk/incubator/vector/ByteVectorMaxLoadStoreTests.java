@@ -68,14 +68,29 @@ public class ByteVectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
 
+    static void AssertEquals(byte actual, byte expected) {
+        Assert.assertEquals(actual, expected);
+    }
+
+    static void AssertEquals(byte actual, byte expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+
+    static void AssertEquals(byte [] actual, byte [] expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals(byte [] actual, byte [] expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+
     static void assertArraysEquals(byte[] r, byte[] a, boolean[] mask) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (byte) 0);
+                AssertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (byte) 0);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (byte) 0, "at index #" + i);
+            AssertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (byte) 0, "at index #" + i);
         }
     }
 
@@ -329,7 +344,7 @@ public class ByteVectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest {
                 av.intoArray(r, i);
             }
         }
-        Assert.assertEquals(r, a);
+        AssertEquals(r, a);
     }
 
     @Test(dataProvider = "byteProviderForIOOBE")
@@ -964,11 +979,11 @@ public class ByteVectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest {
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    Assert.assertEquals(r[j], a[i + indexMap[j]]);
+                    AssertEquals(r[j], a[i + indexMap[j]]);
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
+            AssertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
         }
     }
 
@@ -979,11 +994,11 @@ public class ByteVectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest {
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    Assert.assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (byte) 0);
+                    AssertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (byte) 0);
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (byte) 0, "at index #" + j);
+            AssertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (byte) 0, "at index #" + j);
         }
     }
 
@@ -999,7 +1014,7 @@ public class ByteVectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest {
             }
         }
 
-        Assert.assertEquals(r, expected);
+        AssertEquals(r, expected);
     }
 
     static void assertScatterArraysEquals(byte[] r, byte[] a, int[] indexMap) {
@@ -1012,7 +1027,7 @@ public class ByteVectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest {
             }
         }
 
-        Assert.assertEquals(r, expected);
+        AssertEquals(r, expected);
     }
 
     @DataProvider

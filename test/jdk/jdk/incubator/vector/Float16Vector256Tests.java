@@ -77,13 +77,13 @@ public class Float16Vector256Tests extends AbstractVectorTest {
         Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected), Float.float16ToFloat((short)delta), msg);
     }
     static void AssertEquals(short [] actual, short [] expected) {
-        Assert.assertEquals(actual.length, expected.length);
+        assert actual.length == expected.length;
         for (int i = 0; i < actual.length; i++) {
             Assert.assertEquals(Float.float16ToFloat((short)actual[i]), Float.float16ToFloat((short)expected[i]));
         }
     }
     static void AssertEquals(short [] actual, short [] expected, String msg) {
-        Assert.assertEquals(actual.length, expected.length);
+        assert actual.length == expected.length;
         for (int i = 0; i < actual.length; i++) {
             Assert.assertEquals(Float.float16ToFloat((short)actual[i]), Float.float16ToFloat((short)expected[i]), msg);
         }
@@ -2708,20 +2708,20 @@ public class Float16Vector256Tests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short id = ADD_IDENTITY;
 
-        Assert.assertEquals((short) (scalar_add(id, id)), id,
+        AssertEquals((short) (scalar_add(id, id)), id,
                             "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
 
         short x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals((short) (scalar_add(id, x)), x);
-                Assert.assertEquals((short) (scalar_add(x, id)), x);
+                AssertEquals((short) (scalar_add(id, x)), x);
+                AssertEquals((short) (scalar_add(x, id)), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals((short) (scalar_add(id, x)), x,
+            AssertEquals((short) (scalar_add(id, x)), x,
                                 "ADD(ADD_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals((short) (scalar_add(x, id)), x,
+            AssertEquals((short) (scalar_add(x, id)), x,
                                 "ADD(" + x + ", ADD_IDENTITY) != " + x);
         }
     }
@@ -2810,20 +2810,20 @@ public class Float16Vector256Tests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short id = MUL_IDENTITY;
 
-        Assert.assertEquals((short) (scalar_mul(id, id)), id,
+        AssertEquals((short) (scalar_mul(id, id)), id,
                             "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
 
         short x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals((short) (scalar_mul(id, x)), x);
-                Assert.assertEquals((short) (scalar_mul(x, id)), x);
+                AssertEquals((short) (scalar_mul(id, x)), x);
+                AssertEquals((short) (scalar_mul(x, id)), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals((short) (scalar_mul(id, x)), x,
+            AssertEquals((short) (scalar_mul(id, x)), x,
                                 "MUL(MUL_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals((short) (scalar_mul(x, id)), x,
+            AssertEquals((short) (scalar_mul(x, id)), x,
                                 "MUL(" + x + ", MUL_IDENTITY) != " + x);
         }
     }
@@ -2912,20 +2912,20 @@ public class Float16Vector256Tests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short id = MIN_IDENTITY;
 
-        Assert.assertEquals(scalar_min(id, id), id,
+        AssertEquals(scalar_min(id, id), id,
                             "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
 
         short x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals(scalar_min(id, x), x);
-                Assert.assertEquals(scalar_min(x, id), x);
+                AssertEquals(scalar_min(id, x), x);
+                AssertEquals(scalar_min(x, id), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(scalar_min(id, x), x,
+            AssertEquals(scalar_min(id, x), x,
                                 "MIN(MIN_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals(scalar_min(x, id), x,
+            AssertEquals(scalar_min(x, id), x,
                                 "MIN(" + x + ", MIN_IDENTITY) != " + x);
         }
     }
@@ -3014,20 +3014,20 @@ public class Float16Vector256Tests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short id = MAX_IDENTITY;
 
-        Assert.assertEquals(scalar_max(id, id), id,
+        AssertEquals(scalar_max(id, id), id,
                             "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
 
         short x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals(scalar_max(id, x), x);
-                Assert.assertEquals(scalar_max(x, id), x);
+                AssertEquals(scalar_max(id, x), x);
+                AssertEquals(scalar_max(x, id), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(scalar_max(id, x), x,
+            AssertEquals(scalar_max(id, x), x,
                                 "MAX(MAX_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals(scalar_max(x, id), x,
+            AssertEquals(scalar_max(x, id), x,
                                 "MAX(" + x + ", MAX_IDENTITY) != " + x);
         }
     }
@@ -3116,20 +3116,20 @@ public class Float16Vector256Tests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short id = FIRST_NONZERO_IDENTITY;
 
-        Assert.assertEquals(firstNonZero(id, id), id,
+        AssertEquals(firstNonZero(id, id), id,
                             "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
 
         short x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals(firstNonZero(id, x), x);
-                Assert.assertEquals(firstNonZero(x, id), x);
+                AssertEquals(firstNonZero(id, x), x);
+                AssertEquals(firstNonZero(x, id), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(firstNonZero(id, x), x,
+            AssertEquals(firstNonZero(id, x), x,
                                 "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
-            Assert.assertEquals(firstNonZero(x, id), x,
+            AssertEquals(firstNonZero(x, id), x,
                                 "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
         }
     }
@@ -5286,10 +5286,10 @@ public class Float16Vector256Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], a[i] & bits);
+                AssertEquals(r[i], a[i] & bits);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], a[i] & bits, "(" + a[i] + ") at index #" + i);
+            AssertEquals(r[i], a[i] & bits, "(" + a[i] + ") at index #" + i);
         }
     }
 
