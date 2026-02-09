@@ -34,7 +34,8 @@ class ThreadLocalAllocStats;
 
 // ThreadLocalAllocBuffer is a descriptor for thread-local storage used by
 // mutator threads for local/private allocation. As a TLAB is thread-private,
-// there is no concurrent/parallel access to its memory or its members.
+// there is no concurrent/parallel access to its memory or its members,
+// other than by estimated_used_bytes().
 //
 // Heap sampling is performed via the end and allocation_end
 // fields.
