@@ -138,6 +138,26 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
+// Collects commonly used scoped objects that are related to initial setup.
+class G1GCMark : StackObj {
+  ResourceMark _rm;
+  IsSTWGCActiveMark _active_gc_mark;
+  GCIdMark _gc_id_mark;
+  SvcGCMarker _sgcm;
+  GCTraceCPUTime _tcpu;
+
+public:
+  G1GCMark(GCTracer* tracer, bool is_full_gc) :
+    _rm(),
+    _active_gc_mark(),
+    _gc_id_mark(),
+    _sgcm(is_full_gc ? SvcGCMarker::FULL : SvcGCMarker::MINOR),
+    _tcpu(tracer) {
+
+    assert_at_safepoint_on_vm_thread();
+  }
+};
+
 void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   uint num_workers = MAX2(1u, MIN2(cl->num_workers_estimate(), workers()->active_workers()));
   cl->set_max_workers(num_workers);
@@ -914,12 +934,11 @@ void G1CollectedHeap::verify_after_full_collection() {
 void G1CollectedHeap::do_full_collection(size_t allocation_word_size,
                                          bool clear_all_soft_refs,
                                          bool do_maximal_compaction) {
-  assert_at_safepoint_on_vm_thread();
-
-  G1FullGCMark gc_mark;
+  G1FullGCTracer tracer;
+  G1GCMark gc_mark(&tracer, true /* is_full_gc */);
   GCTraceTime(Info, gc) tm("Pause Full", nullptr, gc_cause(), true);
-  G1FullCollector collector(this, clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
+  G1FullCollector collector(this, clear_all_soft_refs, do_maximal_compaction, &tracer);
   collector.prepare_collection();
   collector.collect();
   collector.complete_collection(allocation_word_size);
@@ -2714,16 +2733,7 @@ void G1CollectedHeap::flush_region_pin_cache() {
 }
 
 void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_size) {
-  assert_at_safepoint_on_vm_thread();
-  assert(!is_stw_gc_active(), "collection is not reentrant");
-
-  ResourceMark rm;
-
-  IsSTWGCActiveMark active_gc_mark;
-  GCIdMark gc_id_mark;
-  SvcGCMarker sgcm(SvcGCMarker::MINOR);
-
-  GCTraceCPUTime tcpu(_gc_tracer_stw);
+  G1GCMark gcm(_gc_tracer_stw, false /* is_full_gc */);
 
   _bytes_used_during_gc = 0;
 
