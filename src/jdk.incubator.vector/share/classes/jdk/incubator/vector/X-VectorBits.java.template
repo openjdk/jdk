@@ -54,6 +54,8 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<$Carriertype$> CTYPE = $carriertype$.class; // carrier type used by the JVM
+
     static final Class<$Boxtype$> ETYPE = $type$.class; // used by the JVM
 
     $vectortype$($type$[] v) {
@@ -91,6 +93,9 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     public final Class<$Boxtype$> elementType() { return $type$.class; }
+
+    @ForceInline
+    final Class<$Carriertype$> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -853,7 +858,8 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     static final class $masktype$ extends AbstractMask<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<$Boxtype$> ETYPE = $type$.class; // used by the JVM
+
+        static final Class<$Carriertype$> CTYPE = $carriertype$.class; // used by the JVM
 
         $masktype$(boolean[] bits) {
             this(bits, 0);
@@ -1100,7 +1106,8 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     static final class $shuffletype$ extends AbstractShuffle<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<$Boxbitstype$> ETYPE = $bitstype$.class; // used by the JVM
+
+        static final Class<$Boxbitstype$> CTYPE = $bitstype$.class; // used by the JVM
 
         $shuffletype$($bitstype$[] indices) {
             super(indices);

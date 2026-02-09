@@ -54,6 +54,8 @@ final class Short64Vector extends ShortVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Short> CTYPE = short.class; // carrier type used by the JVM
+
     static final Class<Short> ETYPE = short.class; // used by the JVM
 
     Short64Vector(short[] v) {
@@ -91,6 +93,9 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     public final Class<Short> elementType() { return short.class; }
+
+    @ForceInline
+    final Class<Short> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -572,7 +577,8 @@ final class Short64Vector extends ShortVector {
 
     static final class Short64Mask extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         Short64Mask(boolean[] bits) {
             this(bits, 0);
@@ -804,7 +810,8 @@ final class Short64Vector extends ShortVector {
 
     static final class Short64Shuffle extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         Short64Shuffle(short[] indices) {
             super(indices);

@@ -54,6 +54,8 @@ final class FloatMaxVector extends FloatVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Float> CTYPE = float.class; // carrier type used by the JVM
+
     static final Class<Float> ETYPE = float.class; // used by the JVM
 
     FloatMaxVector(float[] v) {
@@ -91,6 +93,9 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     @Override
     public final Class<Float> elementType() { return float.class; }
+
+    @ForceInline
+    final Class<Float> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -554,7 +559,8 @@ final class FloatMaxVector extends FloatVector {
 
     static final class FloatMaxMask extends AbstractMask<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+
+        static final Class<Float> CTYPE = float.class; // used by the JVM
 
         FloatMaxMask(boolean[] bits) {
             this(bits, 0);
@@ -786,7 +792,8 @@ final class FloatMaxVector extends FloatVector {
 
     static final class FloatMaxShuffle extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         FloatMaxShuffle(int[] indices) {
             super(indices);

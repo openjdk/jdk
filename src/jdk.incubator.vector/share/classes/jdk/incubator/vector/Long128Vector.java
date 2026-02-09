@@ -54,6 +54,8 @@ final class Long128Vector extends LongVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Long> CTYPE = long.class; // carrier type used by the JVM
+
     static final Class<Long> ETYPE = long.class; // used by the JVM
 
     Long128Vector(long[] v) {
@@ -91,6 +93,9 @@ final class Long128Vector extends LongVector {
     @ForceInline
     @Override
     public final Class<Long> elementType() { return long.class; }
+
+    @ForceInline
+    final Class<Long> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -558,7 +563,8 @@ final class Long128Vector extends LongVector {
 
     static final class Long128Mask extends AbstractMask<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         Long128Mask(boolean[] bits) {
             this(bits, 0);
@@ -790,7 +796,8 @@ final class Long128Vector extends LongVector {
 
     static final class Long128Shuffle extends AbstractShuffle<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         Long128Shuffle(long[] indices) {
             super(indices);

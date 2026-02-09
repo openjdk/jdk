@@ -54,6 +54,8 @@ final class Double128Vector extends DoubleVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Double> CTYPE = double.class; // carrier type used by the JVM
+
     static final Class<Double> ETYPE = double.class; // used by the JVM
 
     Double128Vector(double[] v) {
@@ -91,6 +93,9 @@ final class Double128Vector extends DoubleVector {
     @ForceInline
     @Override
     public final Class<Double> elementType() { return double.class; }
+
+    @ForceInline
+    final Class<Double> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -557,7 +562,8 @@ final class Double128Vector extends DoubleVector {
 
     static final class Double128Mask extends AbstractMask<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Double> ETYPE = double.class; // used by the JVM
+
+        static final Class<Double> CTYPE = double.class; // used by the JVM
 
         Double128Mask(boolean[] bits) {
             this(bits, 0);
@@ -789,7 +795,8 @@ final class Double128Vector extends DoubleVector {
 
     static final class Double128Shuffle extends AbstractShuffle<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         Double128Shuffle(long[] indices) {
             super(indices);

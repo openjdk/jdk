@@ -54,6 +54,8 @@ final class Int64Vector extends IntVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Integer> CTYPE = int.class; // carrier type used by the JVM
+
     static final Class<Integer> ETYPE = int.class; // used by the JVM
 
     Int64Vector(int[] v) {
@@ -91,6 +93,9 @@ final class Int64Vector extends IntVector {
     @ForceInline
     @Override
     public final Class<Integer> elementType() { return int.class; }
+
+    @ForceInline
+    final Class<Integer> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -568,7 +573,8 @@ final class Int64Vector extends IntVector {
 
     static final class Int64Mask extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         Int64Mask(boolean[] bits) {
             this(bits, 0);
@@ -800,7 +806,8 @@ final class Int64Vector extends IntVector {
 
     static final class Int64Shuffle extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         Int64Shuffle(int[] indices) {
             super(indices);

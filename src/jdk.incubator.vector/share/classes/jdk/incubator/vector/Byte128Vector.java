@@ -54,6 +54,8 @@ final class Byte128Vector extends ByteVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Byte> CTYPE = byte.class; // carrier type used by the JVM
+
     static final Class<Byte> ETYPE = byte.class; // used by the JVM
 
     Byte128Vector(byte[] v) {
@@ -91,6 +93,9 @@ final class Byte128Vector extends ByteVector {
     @ForceInline
     @Override
     public final Class<Byte> elementType() { return byte.class; }
+
+    @ForceInline
+    final Class<Byte> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -596,7 +601,8 @@ final class Byte128Vector extends ByteVector {
 
     static final class Byte128Mask extends AbstractMask<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         Byte128Mask(boolean[] bits) {
             this(bits, 0);
@@ -828,7 +834,8 @@ final class Byte128Vector extends ByteVector {
 
     static final class Byte128Shuffle extends AbstractShuffle<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         Byte128Shuffle(byte[] indices) {
             super(indices);

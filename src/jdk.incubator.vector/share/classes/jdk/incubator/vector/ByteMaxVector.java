@@ -54,6 +54,8 @@ final class ByteMaxVector extends ByteVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Byte> CTYPE = byte.class; // carrier type used by the JVM
+
     static final Class<Byte> ETYPE = byte.class; // used by the JVM
 
     ByteMaxVector(byte[] v) {
@@ -91,6 +93,9 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     public final Class<Byte> elementType() { return byte.class; }
+
+    @ForceInline
+    final Class<Byte> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -566,7 +571,8 @@ final class ByteMaxVector extends ByteVector {
 
     static final class ByteMaxMask extends AbstractMask<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         ByteMaxMask(boolean[] bits) {
             this(bits, 0);
@@ -798,7 +804,8 @@ final class ByteMaxVector extends ByteVector {
 
     static final class ByteMaxShuffle extends AbstractShuffle<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         ByteMaxShuffle(byte[] indices) {
             super(indices);
