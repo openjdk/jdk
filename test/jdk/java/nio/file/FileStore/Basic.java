@@ -35,6 +35,11 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.stream.StreamSupport;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.HashSet;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
@@ -135,7 +140,12 @@ public class Basic {
          */
         assumeTrue(FileUtils.areMountPointsAccessibleAndUnique());
         FileStore prev = null;
-        for (FileStore store: FileSystems.getDefault().getFileStores()) {
+        List<FileStore> stores = StreamSupport.stream(FileSystems.getDefault()
+                                 .getFileStores().spliterator(), false)
+                                 .collect(Collectors.toList());
+        Set<FileStore> uniqueStores = new HashSet<>(stores);
+        assertEquals(stores.size(), uniqueStores.size(), "FileStores should be unique");
+        for (FileStore store: stores) {
             System.out.format("%s (name=%s type=%s)\n", store, store.name(),
                 store.type());
 
@@ -165,10 +175,6 @@ public class Basic {
                     System.err.format("%s error: %s\n", store, fse);
                 }
             }
-
-            // two distinct FileStores should not be equal
-            assertTrue(!store.equals(prev));
-            prev = store;
         }
     }
 }
