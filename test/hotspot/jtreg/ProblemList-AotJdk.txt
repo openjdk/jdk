@@ -56,3 +56,16 @@ compiler/ciReplay/TestInliningProtectionDomain.java   0000000 generic-all
 # These tests fail often with AotJdk due to JDK-8323727
 compiler/arguments/TestStressReflectiveCode.java 8323727 generic-all
 compiler/arraycopy/TestCloneWithStressReflectiveCode.java 8323727 generic-all
+
+#############################################################################
+
+# Preview project specific failures go here at the end of the file.
+#
+# These are NOT failures that occur with the '--enable-preview' option
+# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# These are failures that occur WITHOUT the '--enable-preview' option
+# specified AND occur because of some issue with preview project code,
+# in either implementation or test code.
+
+#############################################################################
+

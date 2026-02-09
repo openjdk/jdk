@@ -854,7 +854,7 @@ public:
 
       void do_thread(Thread* thread) {
         if (UseTLAB && ResizeTLAB) {
-          static_cast<JavaThread*>(thread)->tlab().resize();
+          thread->tlab().resize();
         }
 
         G1BarrierSet::g1_barrier_set()->update_card_table_base(thread);
