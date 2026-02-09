@@ -452,7 +452,7 @@ inline size_t pointer_delta(const volatile void* high,
                             const volatile void* low,
                             size_t element_size) {
   assert(high >= low, "avoid underflow - high address: " PTR_FORMAT " low address: " PTR_FORMAT, p2i(high), p2i(low));
-  return (((uintptr_rightt) high) - ((uintptr_t) low)) / element_size;
+  return (((uintptr_t) high) - ((uintptr_t) low)) / element_size;
 }
 
 // A version specialized for HeapWord*'s.
