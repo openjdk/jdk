@@ -406,6 +406,7 @@ final class StringUTF16 {
      * @param dst the target Latin-1 string byte array
      * @param srcOff the index (inclusive) of the first character in {@code dst}
      * @param len the maximum number of characters to copy
+     *
      * @return the number of characters copied
      *
      * @throws NullPointerException if {@code src} or {@code dst} is null
@@ -444,6 +445,7 @@ final class StringUTF16 {
      * @param dst the target Latin-1 string byte array
      * @param dstOff the index (inclusive) of the first character in {@code dst}
      * @param len the maximum number of characters to copy
+     *
      * @return the number of characters copied
      *
      * @throws NullPointerException if {@code src} or {@code dst} is null
@@ -520,6 +522,10 @@ final class StringUTF16 {
      * @param value a UTF-16 string byte array
      * @param other a UTF-16 string byte array
      *
+     * @return {@code 0} if {@code value} is equal to {@code other}, a value
+     * less than {@code 0} if {@code value} is lexicographically less than
+     * {@code other}; a value greater than {@code 0} otherwise.
+     *
      * @throws NullPointerException if {@code value} or {@code other} is null
      */
     static int compareTo(byte[] value, byte[] other) {
@@ -575,6 +581,10 @@ final class StringUTF16 {
      * @param value a UTF-16 string byte array
      * @param other a Latin-1 string byte array
      *
+     * @return {@code 0} if {@code value} is equal to {@code other}, a value
+     * less than {@code 0} if {@code value} is lexicographically less than
+     * {@code other}; a value greater than {@code 0} otherwise.
+     *
      * @throws NullPointerException if {@code value} or {@code other} is null
      */
     static int compareToLatin1(byte[] value, byte[] other) {
@@ -597,6 +607,11 @@ final class StringUTF16 {
      * @param other a Latin-1 string byte array
      * @param len1 the number of characters from {@code value} to compare
      * @param len2 the number of characters from {@code other} to compare
+     *
+     * @return {@code 0} if the {@code value} sub-range is equal to the
+     * {@code other} sub-range, a value less than {@code 0} if the {@code value}
+     * sub-range is lexicographically less than the {@code other} sub-range; a
+     * value greater than {@code 0} otherwise.
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
      * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
@@ -813,13 +828,14 @@ final class StringUTF16 {
 
     /**
      * Searches for the first occurrence of {@code str} in {@code value}, and,
-     * if found, returns the index of the first character in {@code value};
-     * {@code -1} otherwise.
+     * if found, returns the index of the first character of the matching
+     * {@code value} sub-range; {@code -1} otherwise.
      *
      * @param value a UTF-16 string byte array to search in
      * @param str a UTF-16 string byte array to search for
-     * @return the index of the first character in {@code value} if a match is
-     * found; {@code -1} otherwise
+     *
+     * @return the index of the first character of the matching {@code value}
+     * sub-range if a match is found; {@code -1} otherwise
      *
      * @throws NullPointerException if {@code value} or {@code str} is null
      */
@@ -844,15 +860,17 @@ final class StringUTF16 {
     /**
      * Searches for the first occurrence of the given {@code str} sub-range in
      * the given {@code value} sub-range, and, if found, returns the index of
-     * the first character in {@code value}; {@code -1} otherwise.
+     * the first character of the matching {@code value} sub-range; {@code -1}
+     * otherwise.
      *
      * @param value a UTF-16 string byte array to search in
      * @param valueToIndex the index (exclusive) of the last character in {@code value}
      * @param str a UTF-16 string byte array to search for
      * @param strToIndex the index (exclusive) of the last character in {@code str}
      * @param valueFromIndex the index (inclusive) of the first character in {@code value}
-     * @return the index of the first character in {@code value} if a match is
-     * found; {@code -1} otherwise
+     *
+     * @return the index of the first character of the matching {@code value}
+     * sub-range if a match is found; {@code -1} otherwise
      *
      * @throws NullPointerException if {@code value} or {@code str} is null
      * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
@@ -900,13 +918,14 @@ final class StringUTF16 {
     /**
      * Searches for the first occurrence of the given Latin-1 string byte array
      * {@code str} in the given UTF-16 string byte array {@code value}, and, if
-     * found, returns the index of the first character in {@code value};
-     * {@code -1} otherwise.
+     * found, returns the index of the first character of the matching
+     * {@code value} sub-range; {@code -1} otherwise.
      *
      * @param value a UTF-16 string byte array to search in
      * @param str a Latin-1 string byte array to search for
-     * @return the index of the first character in {@code value} if a match is
-     * found; {@code -1} otherwise
+     *
+     * @return the index of the first character of the matching {@code value}
+     * sub-range if a match is found; {@code -1} otherwise
      *
      * @throws NullPointerException if {@code value} or {@code str} is null
      */
@@ -940,8 +959,9 @@ final class StringUTF16 {
      * @param tgt a Latin-1 string byte array to search for
      * @param tgtToIndex the index (exclusive) of the last character in {@code tgt}
      * @param tgtFromIndex the index (inclusive) of the first character in {@code src}
-     * @return the index of the first character in {@code src} if a match is
-     * found; {@code -1} otherwise
+     *
+     * @return the index of the first character of the matching {@code src}
+     * sub-range if a match is found; {@code -1} otherwise
      *
      * @throws NullPointerException if {@code src} or {@code tgt} is null
      * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
