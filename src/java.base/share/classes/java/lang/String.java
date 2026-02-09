@@ -2126,6 +2126,16 @@ public final class String
         return getBytes(cs).length;
     }
 
+    static int getByteLength(String s, Charset cs) {
+        Objects.requireNonNull(cs);
+        if (cs == UTF_8.INSTANCE) {
+            return encodedLengthUTF8(s.coder, s.value);
+        } else if (cs == ISO_8859_1.INSTANCE || cs == US_ASCII.INSTANCE) {
+            return encodedLengthASCIIor8859_1(s.coder, s.value);
+        }
+        return s.getBytes(cs).length;
+    }
+
     boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
         if (isLatin1()) {
             if (charset == ISO_8859_1.INSTANCE) {

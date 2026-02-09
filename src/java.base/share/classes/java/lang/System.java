@@ -2169,6 +2169,10 @@ public final class System {
                 return String.getBytesUTF8OrThrow(s);
             }
 
+            public int getByteLength(String s, Charset cs) {
+                return String.getByteLength(s, cs);
+            }
+
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }

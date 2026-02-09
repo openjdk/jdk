@@ -23,6 +23,8 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.CharacterCodingException;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -118,5 +120,17 @@ public class StringLoopJmhBenchmark {
   @Benchmark
   public int getByteLength() throws Exception {
     return stringData.getByteLength(StandardCharsets.UTF_8);
+  }
+
+  @Benchmark
+  public int newEncoder() throws Exception {
+    try {
+        return StandardCharsets.UTF_8.newEncoder()
+                .onUnmappableCharacter(CodingErrorAction.REPLACE)
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .getByteLength(stringData);
+    } catch (CharacterCodingException e) {
+        throw new IllegalStateException(e);
+    }
   }
 }

@@ -27,6 +27,9 @@
 
 package java.nio.charset;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -136,6 +139,8 @@ import jdk.internal.util.ArraysSupport;
  */
 
 public abstract class Charset$Coder$ {
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private final Charset charset;
     private final float average$ItypesPerOtype$;
@@ -1014,6 +1019,54 @@ public abstract class Charset$Coder$ {
         else
             cb = CharBuffer.wrap(cs.toString());
         return canEncode(cb);
+    }
+
+    /**
+     * {@return the length in bytes of the given {@link String} encoded with this encoder}
+     *
+     * @param s The The given String
+     * @throws  CharacterCodingException
+     *          if the input is not a legal Unicode sequence and the current
+     *          malformed-input action is {@code CodingErrorAction.REPORT}.
+     * @since 27
+     */
+    public int getByteLength(String s) throws CharacterCodingException {
+        if (malformedInputAction == CodingErrorAction.REPLACE &&
+                unmappableCharacterAction == CodingErrorAction.REPLACE) {
+            return JLA.getByteLength(s, charset);
+        }
+        return getByteLength(CharBuffer.wrap(s));
+    }
+
+    /**
+     * {@return the length in bytes of the given {@link CharSequence} encoded with this encoder}
+     *
+     * @param cs The The given CharSequence
+     * @throws  CharacterCodingException
+     *          if the input is not a legal Unicode sequence and the current
+     *          malformed-input action is {@code CodingErrorAction.REPORT}.
+     * @since 27
+     */
+    public int getByteLength(CharSequence cs) throws CharacterCodingException {
+        CharBuffer cb;
+        if (cs instanceof CharBuffer)
+            cb = ((CharBuffer)cs).duplicate();
+        else
+            cb = CharBuffer.wrap(cs.toString());
+        return getByteLength(cb);
+    }
+
+    /**
+     * {@return the length in bytes of the given {@link CharBuffer} encoded with this encoder}
+     *
+     * @param cb The The given CharBuffer
+     * @throws  CharacterCodingException
+     *          if the input is not a legal Unicode sequence and the current
+     *          malformed-input action is {@code CodingErrorAction.REPORT}.
+     * @since 27
+     */
+    public int getByteLength(CharBuffer cb) throws CharacterCodingException {
+        return encode(cb).limit();
     }
 
 #end[encoder]

@@ -419,6 +419,15 @@ public interface JavaLangAccess {
     byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException;
 
     /**
+     * {@return the length in bytes of the given {@code String} encoded with the given {@link Charset}}
+     *
+     * @param s The {@link String}
+     * @param cs The {@link Charset} used to the compute the length
+     * @since 27
+     */
+    int getByteLength(String s, Charset cs);
+
+    /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
      * {@code StringLatin1.inflate}.
      *
