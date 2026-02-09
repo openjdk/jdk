@@ -75,6 +75,10 @@ private:
   // should be subtracted from what's available.
   size_t                _young_available_bytes_collected;
 
+  // When a region having memory available to be allocated is added to the collection set, the region's available memory
+  // should be subtracted from what's available.
+  size_t                _old_available_bytes_collected;
+
   shenandoah_padding(0);
   volatile size_t       _current_index;
   shenandoah_padding(1);
@@ -120,6 +124,9 @@ public:
 
   // Returns the amount of free bytes in young regions in the collection set.
   size_t get_young_available_bytes_collected() const { return _young_available_bytes_collected; }
+
+  // Returns the amount of free bytes in old regions in the collection set.
+  size_t get_old_available_bytes_collected() const { return _old_available_bytes_collected; }
 
   // Returns the amount of garbage in old regions in the collection set.
   inline size_t get_old_garbage() const;

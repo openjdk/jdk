@@ -261,6 +261,7 @@
   develop(uintx, ObjArrayMarkingStride, 2048,                               \
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
+          range(1, INT_MAX/2)                                               \
                                                                             \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "(Deprecated) Never act like a server-class machine")             \

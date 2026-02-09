@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,13 +134,13 @@ private:
     int _size_in_bytes;
     int _id; // Each object has a unique serial ID, starting from zero. The ID is assigned
              // when the object is added into _source_objs.
-    MetaspaceObj::Type _msotype;
+    MetaspaceClosureType _type;
     address _source_addr;    // The source object to be copied.
     address _buffered_addr;  // The copy of this object insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
       _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _has_embedded_pointer(false), _follow_mode(follow_mode),
-      _size_in_bytes(ref->size() * BytesPerWord), _id(0), _msotype(ref->msotype()),
+      _size_in_bytes(ref->size() * BytesPerWord), _id(0), _type(ref->type()),
       _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
         _buffered_addr = ref->obj();
@@ -155,7 +155,7 @@ private:
     SourceObjInfo(address src, SourceObjInfo* renegerated_obj_info) :
       _ptrmap_start(0), _ptrmap_end(0), _read_only(false),
       _follow_mode(renegerated_obj_info->_follow_mode),
-      _size_in_bytes(0), _msotype(renegerated_obj_info->_msotype),
+      _size_in_bytes(0), _type(renegerated_obj_info->_type),
       _source_addr(src),  _buffered_addr(renegerated_obj_info->_buffered_addr) {}
 
     bool should_copy() const { return _follow_mode == make_a_copy; }
@@ -182,7 +182,7 @@ private:
       }
       return _buffered_addr;
     }
-    MetaspaceObj::Type msotype() const { return _msotype; }
+    MetaspaceClosureType type() const { return _type; }
     FollowMode follow_mode() const { return _follow_mode; }
   };
 

@@ -81,6 +81,7 @@ class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
+class ThreadWXEnable;
 
 class JavaThread: public Thread {
   friend class VMStructs;
@@ -1288,6 +1289,15 @@ public:
   bool get_and_clear_interrupted();
 
 private:
+
+#ifdef MACOS_AARCH64
+  friend class ThreadWXEnable;
+  friend class PosixSignals;
+
+  ThreadWXEnable* _cur_wx_enable;
+  WXMode* _cur_wx_mode;
+#endif
+
   LockStack _lock_stack;
   OMCache _om_cache;
 

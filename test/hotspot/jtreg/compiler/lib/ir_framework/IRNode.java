@@ -1574,6 +1574,16 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
+    public static final String UMIN_REDUCTION_V = PREFIX + "UMIN_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(UMIN_REDUCTION_V, "UMinReductionV");
+    }
+
+    public static final String UMAX_REDUCTION_V = PREFIX + "UMAX_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(UMAX_REDUCTION_V, "UMaxReductionV");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
@@ -3165,6 +3175,11 @@ public class IRNode {
     public static final String REPLICATE_HF_IMM8 = PREFIX + "REPLICATE_HF_IMM8" + POSTFIX;
     static {
         machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
+    }
+
+    public static final String OPAQUE_CONSTANT_BOOL = PREFIX + "OPAQUE_CONSTANT_BOOL" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OPAQUE_CONSTANT_BOOL, "OpaqueConstantBool");
     }
 
     /*
