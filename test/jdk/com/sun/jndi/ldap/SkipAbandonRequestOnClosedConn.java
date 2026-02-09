@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *        BaseLdapServer LdapMessage
  * @run junit/othervm ${test.main.class}
  */
-class LdapConnCloseUnexpectedException {
+class SkipAbandonRequestOnClosedConn {
 
     private static final String LOOKUP_NAME = "ou=People,o=FooBar";
 
