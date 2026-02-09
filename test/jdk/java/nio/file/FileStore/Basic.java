@@ -55,7 +55,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
@@ -64,14 +69,8 @@ public class Basic {
 
     static final long G = 1024L * 1024L * 1024L;
 
-    @Test
-    public void testBasic() throws IOException {
-        Path dir = TestUtil.createTemporaryDirectory();
-        try {
-            doTests(dir);
-        } finally {
-            TestUtil.removeAll(dir);
-        }
+    static Path[] factory(@TempDir Path tempDir) {
+        return new Path[] { tempDir };
     }
 
     static void checkWithin1GB(String space, long expected, long actual) {
@@ -94,15 +93,18 @@ public class Basic {
         }
     }
 
-    static void doTests(Path dir) throws IOException {
-        /**
-         * Test: Directory should be on FileStore that is writable
-         */
-        assertTrue(!Files.getFileStore(dir).isReadOnly());
 
-        /**
-         * Test: Two files should have the same FileStore
-         */
+    @ParameterizedTest
+    @MethodSource("factory")
+    @DisplayName("Test: Directory should be on FileStore that is writable")
+    public void testDirectoryWritable(Path dir) throws IOException {
+        assertTrue(!Files.getFileStore(dir).isReadOnly());
+    }
+
+    @ParameterizedTest
+    @MethodSource("factory")
+    @DisplayName("Test: Two files should have the same FileStore")
+    public void testFileStoreEquality(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
         FileStore store1 = Files.getFileStore(file1);
@@ -110,29 +112,42 @@ public class Basic {
         assertTrue(store1.equals(store2));
         assertTrue(store2.equals(store1));
         assertTrue(store1.hashCode() == store2.hashCode());
+    }
 
-        if (Platform.isWindows()) {
-            /**
-             * Test: FileStore.equals() should not be case sensitive
-             */
-            FileStore upper = Files.getFileStore(Path.of("C:\\"));
-            FileStore lower = Files.getFileStore(Path.of("c:\\"));
-            assertTrue(lower.equals(upper));
-        }
+    @ParameterizedTest
+    @MethodSource("factory")
+    @DisplayName("Test: FileStore.equals() should not be case sensitive")
+    @EnabledOnOs({OS.WINDOWS})
+    public void testFileStoreCaseSensitivity(Path dir) throws IOException {
+        FileStore upper = Files.getFileStore(Path.of("C:\\"));
+        FileStore lower = Files.getFileStore(Path.of("c:\\"));
+        assertTrue(lower.equals(upper));
+    }
 
-        /**
-         * Test: File and FileStore attributes
-         */
+    @ParameterizedTest
+    @MethodSource("factory")
+    @DisplayName("Test: File and FileStore attributes")
+    public void testAttributes(Path dir) throws IOException {
+        Path file1 = Files.createFile(dir.resolve("foo"));
+        Path file2 = Files.createFile(dir.resolve("bar"));
+        FileStore store1 = Files.getFileStore(file1);
+        FileStore store2 = Files.getFileStore(file2);
         assertTrue(store1.supportsFileAttributeView("basic"));
         testFileAttributes(dir, BasicFileAttributeView.class, "basic");
         testFileAttributes(dir, PosixFileAttributeView.class, "posix");
         testFileAttributes(dir, DosFileAttributeView.class, "dos");
         testFileAttributes(dir, AclFileAttributeView.class, "acl");
         testFileAttributes(dir, UserDefinedFileAttributeView.class, "user");
+    }
 
-        /**
-         * Test: Space atributes
-         */
+    @ParameterizedTest
+    @MethodSource("factory")
+    @DisplayName("Test: Space attributes")
+    public void testSpaceAttributes(Path dir) throws IOException {
+        Path file1 = Files.createFile(dir.resolve("foo"));
+        Path file2 = Files.createFile(dir.resolve("bar"));
+        FileStore store1 = Files.getFileStore(file1);
+        FileStore store2 = Files.getFileStore(file2);
         File f = file1.toFile();
 
         // check values are "close"
@@ -147,10 +162,12 @@ public class Basic {
                        (Long)store1.getAttribute("unallocatedSpace"));
         checkWithin1GB("usable", f.getUsableSpace(),
                        (Long)store1.getAttribute("usableSpace"));
+    }
 
-        /**
-         * Test: Enumerate all FileStores
-         */
+    @ParameterizedTest
+    @MethodSource("factory")
+    @DisplayName("Test: Enumerate all FileStores")
+    public void testEnumerateFileStores(Path dir) throws IOException {
         assumeTrue(FileUtils.areMountPointsAccessibleAndUnique());
         FileStore prev = null;
         List<FileStore> stores = StreamSupport.stream(FileSystems.getDefault()
