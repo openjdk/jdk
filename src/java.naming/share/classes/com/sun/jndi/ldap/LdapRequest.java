@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 final class LdapRequest {
 
-    private static final BerDecoder CLOSED_MARKER = new BerDecoder(new byte[]{}, -1, 0);
+    private static final BerDecoder CONN_CLOSED_MARKER = new BerDecoder(new byte[]{}, -1, 0);
     private static final BerDecoder CANCELLED_MARKER = new BerDecoder(new byte[]{}, -1, 0);
     private static final String CLOSE_MSG = "LDAP connection has been closed";
 
@@ -44,7 +44,7 @@ final class LdapRequest {
     private final boolean pauseAfterReceipt;
 
     private volatile boolean cancelled;
-    private volatile boolean closed;
+    private volatile boolean connectionClosed;
     private volatile boolean completed;
 
     LdapRequest(int msgId, boolean pause, int replyQueueCapacity) {
@@ -62,9 +62,18 @@ final class LdapRequest {
         replies.offer(CANCELLED_MARKER);
     }
 
-    void close() {
-        closed = true;
-        replies.offer(CLOSED_MARKER);
+    void connectionClosed() {
+        connectionClosed = true;
+        replies.offer(CONN_CLOSED_MARKER);
+    }
+
+    /**
+     * {@return true if an "abandon request" may be sent for this request, false otherwise}
+     */
+    boolean shouldAbandonRequest() {
+        // if the connection to which this request belonged was closed, then
+        // don't send any further "abandon request" message
+        return !connectionClosed;
     }
 
     boolean addReplyBer(BerDecoder ber) {
@@ -73,7 +82,7 @@ final class LdapRequest {
         // this is merely a best effort basis check and if we do add the reply
         // due to a race, that's OK since the replies queue would have necessary
         // markers for cancelled/closed state and those will be detected by getReplyBer().
-        if (cancelled || closed) {
+        if (cancelled || connectionClosed) {
             return false;
         }
         // if the request is not already completed, check if the reply being added
@@ -127,7 +136,7 @@ final class LdapRequest {
                 throw new CommunicationException("Request: " + msgId +
                         " cancelled");
             }
-            if (closed) {
+            if (connectionClosed) {
                 throw new IOException(CLOSE_MSG);
             }
         }
@@ -146,7 +155,7 @@ final class LdapRequest {
             throw new CommunicationException("Request: " + msgId +
                 " cancelled");
         }
-        if (result == CLOSED_MARKER) {
+        if (result == CONN_CLOSED_MARKER) {
             throw new IOException(CLOSE_MSG);
         }
         return result;
