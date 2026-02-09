@@ -210,12 +210,18 @@ public:
     T _region_lambda;
   public:
     explicit ShenandoahHeapRegionLambda(T region_lambda) : _region_lambda(region_lambda) {}
+
     void heap_region_do(ShenandoahHeapRegion* r) override {
       _region_lambda(r);
     }
 
     bool is_thread_safe() override {
       return true;
+    }
+
+    size_t parallel_region_stride() override {
+      // Temporarily override to force parallelism when updating card table
+      return 8;
     }
   };
 
