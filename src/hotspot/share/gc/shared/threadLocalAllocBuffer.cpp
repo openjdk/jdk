@@ -459,6 +459,9 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
 }
 
 size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
+  // The following code accessing _start and _top in a racy way is undefined
+  // behavior. Using Atomic<T> for them will not improve the situation, so use
+  // AtomicAccess.
   HeapWord* start = AtomicAccess::load(&_start);
   HeapWord* top = AtomicAccess::load(&_top);
   // If there has been a race when retrieving _top and _start. Return 0.
