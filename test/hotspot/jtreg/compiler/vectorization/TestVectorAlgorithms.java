@@ -272,7 +272,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.ADD_VI,       "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeature = {"sse4.1", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Note: also works with NEON/asimd, but only with TieredCompilation.
     public Object iotaI_VectorAPI(int[] r) {
         return VectorAlgorithmsImpl.iotaI_VectorAPI(r);
@@ -360,7 +360,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.MUL_VF,          "> 0"},
-        applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"UseSuperWord", "true"})
     public float dotProductF_VectorAPI_naive(float[] a, float[] b) {
         return VectorAlgorithmsImpl.dotProductF_VectorAPI_naive(a, b);
@@ -370,7 +370,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.MUL_VF,          "> 0"},
-        applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"UseSuperWord", "true"})
     public float dotProductF_VectorAPI_reduction_after_loop(float[] a, float[] b) {
         return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(a, b);
@@ -392,7 +392,8 @@ public class TestVectorAlgorithms {
                   IRNode.MUL_VI,           IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_VI,           IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_REDUCTION_VI,                       "> 0"},
-        applyIfCPUFeature = {"avx2", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"},
+        applyIf = {"MaxVectorSize", ">=32"})
     public int hashCodeB_VectorAPI_v1(byte[] a) {
         return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v1(a);
     }
@@ -402,7 +403,7 @@ public class TestVectorAlgorithms {
                   IRNode.MUL_VI,           "> 0",
                   IRNode.ADD_VI,           "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0"},
-        applyIfCPUFeature = {"avx2", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public int hashCodeB_VectorAPI_v2(byte[] a) {
         return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v2(a);
     }
@@ -506,7 +507,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_TEST,         "> 0",
                   IRNode.COMPRESS_VI,         "> 0",
                   IRNode.STORE_VECTOR_MASKED, "> 0"},
-        applyIfCPUFeature = {"avx2", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
     public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
     }
