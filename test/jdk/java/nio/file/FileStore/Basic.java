@@ -169,7 +169,6 @@ public class Basic {
     @DisplayName("Test: Enumerate all FileStores")
     public void testEnumerateFileStores(Path dir) throws IOException {
         assumeTrue(FileUtils.areMountPointsAccessibleAndUnique());
-        FileStore prev = null;
         List<FileStore> stores = StreamSupport.stream(FileSystems.getDefault()
                                  .getFileStores().spliterator(), false)
                                  .collect(Collectors.toList());
