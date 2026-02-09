@@ -58,10 +58,9 @@ public class Basic {
 
     static void checkWithin1GB(String space, long expected, long actual) {
         long diff = Math.abs(actual - expected);
-        String msg = String.format("%s: |actual %d - expected %d| = %d (%f G)",
+        assertTrue(diff <= G, () -> String.format("%s: |actual %d - expected %d| = %d (%f G)",
                                        space, actual, expected, diff,
-                                       (float)diff/G);
-        assertTrue(diff < G, msg);
+                                       (float)diff/G));
     }
 
     static <V extends FileAttributeView> void testFileAttributes(Path file,
