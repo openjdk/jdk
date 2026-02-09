@@ -2762,8 +2762,7 @@ public class Attr extends JCTree.Visitor {
             clazzid1 = make.at(clazz.pos).Select(make.Type(encltype),
                                                  ((JCIdent) clazzid).name);
 
-            EndPosTable endPosTable = this.env.toplevel.endPositions;
-            endPosTable.storeEnd(clazzid1, clazzid.getEndPosition(endPosTable));
+            clazzid1.endpos = clazzid.getEndPosition();
             if (clazz.hasTag(ANNOTATED_TYPE)) {
                 JCAnnotatedType annoType = (JCAnnotatedType) clazz;
                 List<JCAnnotation> annos = annoType.annotations;
@@ -5314,7 +5313,7 @@ public class Attr extends JCTree.Visitor {
         annotate.flush();
 
         // Now that this tree is attributed, we can calculate the Lint configuration everywhere within it
-        lintMapper.calculateLints(env.toplevel.sourcefile, env.tree, env.toplevel.endPositions);
+        lintMapper.calculateLints(env.toplevel.sourcefile, env.tree);
     }
 
     public void attribPackage(DiagnosticPosition pos, PackageSymbol p) {

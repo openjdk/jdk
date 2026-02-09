@@ -42,7 +42,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -174,9 +173,9 @@ public class LintMapper {
      * @param sourceFile source file
      * @param tree top-level declaration (class, package, or module)
      */
-    public void calculateLints(JavaFileObject sourceFile, JCTree tree, EndPosTable endPositions) {
+    public void calculateLints(JavaFileObject sourceFile, JCTree tree) {
         Assert.check(rootLint != null);
-        fileInfoMap.get(sourceFile).afterAttr(tree, endPositions, syms);
+        fileInfoMap.get(sourceFile).afterAttr(tree, syms);
     }
 
     /**
@@ -278,15 +277,15 @@ public class LintMapper {
             rootRange = new LintRange(rootLint);
             for (JCTree decl : tree.defs) {
                 if (isTopLevelDecl(decl))
-                    unmappedDecls.add(new Span(decl, tree.endPositions));
+                    unmappedDecls.add(new Span(decl));
             }
         }
 
         // After attribution: Discard the span from "unmappedDecls" and populate the declaration's subtree under "rootRange"
-        void afterAttr(JCTree tree, EndPosTable endPositions, Symtab syms) {
+        void afterAttr(JCTree tree, Symtab syms) {
             for (Iterator<Span> i = unmappedDecls.iterator(); i.hasNext(); ) {
                 if (i.next().contains(tree.pos())) {
-                    rootRange.populateSubtree(this, tree, endPositions, syms);
+                    rootRange.populateSubtree(this, tree, syms);
                     i.remove();
                     return;
                 }
@@ -338,8 +337,8 @@ public class LintMapper {
 
         static final Span MAXIMAL = new Span(Integer.MIN_VALUE, Integer.MAX_VALUE);
 
-        Span(JCTree tree, EndPosTable endPositions) {
-            this(TreeInfo.getStartPos(tree), TreeInfo.getEndPos(tree, endPositions));
+        Span(JCTree tree) {
+            this(TreeInfo.getStartPos(tree), TreeInfo.getEndPos(tree));
         }
 
         boolean contains(DiagnosticPosition pos) {
@@ -373,10 +372,8 @@ public class LintMapper {
         }
 
         // Create a node representing the given declaration and its corresponding Lint configuration
-        LintRange(JCTree tree, EndPosTable endPositions, Lint lint, Symbol symbol,
-          JCAnnotation annotation, EnumSet<LintCategory> suppressions) {
-            this(new Span(tree, endPositions), lint, symbol,
-              annotation, suppressions, EnumSet.copyOf(suppressions), new LinkedList<>());
+        LintRange(JCTree tree, Lint lint, Symbol symbol, JCAnnotation annotation, EnumSet<LintCategory> suppressions) {
+            this(new Span(tree), lint, symbol, annotation, suppressions, EnumSet.copyOf(suppressions), new LinkedList<>());
         }
 
         // Find the most specific node in this tree (including me) that contains the given position, if any
@@ -440,7 +437,7 @@ public class LintMapper {
         // Only "interesting" declarations are included:
         //  - Declarations that have a different Lint configuration from their parent
         //  - Declarations with a @SuppressWarnings annotation
-        void populateSubtree(FileInfo fileInfo, JCTree tree, EndPosTable endPositions, Symtab syms) {
+        void populateSubtree(FileInfo fileInfo, JCTree tree, Symtab syms) {
             new TreeScanner() {
 
                 // Variables declared together (separated by commas) share any @SuppressWarnings annotation, so they must also
@@ -504,7 +501,7 @@ public class LintMapper {
 
                     // Add a new node here and proceed
                     final LintRange previousNode = currentNode;
-                    currentNode = new LintRange(tree, endPositions, newLint, symbol, annotation, suppressed);
+                    currentNode = new LintRange(tree, newLint, symbol, annotation, suppressed);
                     previousNode.children.add(currentNode);
                     try {
                         recursor.accept(tree);

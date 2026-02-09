@@ -906,6 +906,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand validateOutput(TKit.TextStreamVerifier.Group group) {
+        group.tryCreate().ifPresent(this::validateOutput);
+        return this;
+    }
+
     @FunctionalInterface
     public interface CannedArgument {
         public String value(JPackageCommand cmd);
@@ -947,11 +952,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand validateOutput(CannedFormattedString... str) {
         // Will look up the given errors in the order they are specified.
-        Stream.of(str).map(this::getValue)
+        validateOutput(Stream.of(str).map(this::getValue)
                 .map(TKit::assertTextStream)
                 .reduce(TKit.TextStreamVerifier.group(),
                         TKit.TextStreamVerifier.Group::add,
-                        TKit.TextStreamVerifier.Group::add).tryCreate().ifPresent(this::validateOutput);
+                        TKit.TextStreamVerifier.Group::add));
         return this;
     }
 
