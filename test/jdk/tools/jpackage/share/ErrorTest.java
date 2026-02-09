@@ -32,6 +32,7 @@ import static jdk.jpackage.test.JPackageCommand.makeError;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -54,14 +55,24 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.CertificateType;
+import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
+import jdk.jpackage.test.MacSign.ResolvedKeychain;
+import jdk.jpackage.test.MacSign.StandardCertificateNamePrefix;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.mock.Script;
+import jdk.jpackage.test.mock.VerbatimCommandMock;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
+import jdk.jpackage.test.stdmock.MacSignMockUtils;
 
 /*
  * @test
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.stdmock.*
  * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
@@ -73,6 +84,7 @@ import jdk.jpackage.test.TKit;
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.stdmock.*
  * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
@@ -129,6 +141,8 @@ public final class ErrorTest {
         }),
         ADD_LAUNCHER_PROPERTY_FILE,
         EMPTY_KEYCHAIN,
+        KEYCHAIN_WITH_APP_IMAGE_CERT,
+        KEYCHAIN_WITH_PKG_CERT,
         ;
 
         private Token() {
@@ -579,7 +593,7 @@ public final class ErrorTest {
     }
 
     public static Collection<Object[]> invalidAppVersion() {
-        return fromTestSpecBuilders(Stream.of(
+        return toTestArgs(Stream.of(
                 // Invalid app version. Just cover all different error messages.
                 // Extensive testing of invalid version strings is done in DottedVersionTest unit test.
                 testSpec().addArgs("--app-version", "").error("error.version-string-empty"),
@@ -622,7 +636,7 @@ public final class ErrorTest {
             argsStream = Stream.concat(argsStream, Stream.of(List.of("--win-console")));
         }
 
-        return fromTestSpecBuilders(argsStream.map(args -> {
+        return toTestArgs(argsStream.map(args -> {
             var builder = testSpec().noAppDesc().nativeType()
                     .addArgs("--runtime-image", Token.JAVA_HOME.token())
                     .addArgs(args);
@@ -650,7 +664,7 @@ public final class ErrorTest {
     }
 
     public static Collection<Object[]> testAdditionLaunchers() {
-        return fromTestSpecBuilders(Stream.of(
+        return toTestArgs(Stream.of(
             testSpec().addArgs("--add-launcher", Token.ADD_LAUNCHER_PROPERTY_FILE.token())
                     .error("error.parameter-add-launcher-malformed", Token.ADD_LAUNCHER_PROPERTY_FILE, "--add-launcher"),
             testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
@@ -660,12 +674,88 @@ public final class ErrorTest {
 
     @Test(ifOS = MACOS)
     @ParameterSupplier
+    @ParameterSupplier("testMacPkgSignWithoutIdentity")
     public static void testMacSignWithoutIdentity(TestSpec spec) {
-        MacSign.withKeychain(keychain -> {
+        // The test called JPackage Command.useToolProviderBy Default(),
+        // which alters global variables in the test library,
+        // so run the test case with a new global state to isolate the alteration of the globals.
+        TKit.withNewState(() -> {
+            testMacSignWithoutIdentityWithNewTKitState(spec);
+        });
+    }
+
+   private static void testMacSignWithoutIdentityWithNewTKitState(TestSpec spec) {
+        final Token keychainToken = spec.expectedMessages().stream().flatMap(cannedStr -> {
+            return Stream.of(cannedStr.args()).filter(Token.class::isInstance).map(Token.class::cast).filter(token -> {
+                switch (token) {
+                    case EMPTY_KEYCHAIN, KEYCHAIN_WITH_APP_IMAGE_CERT, KEYCHAIN_WITH_PKG_CERT -> {
+                        return true;
+                    }
+                    default -> {
+                        return false;
+                    }
+                }
+            });
+        }).distinct().reduce((a, b) -> {
+            throw new IllegalStateException(String.format(
+                    "Error messages %s reference multiple keychains: %s and %s", spec.expectedMessages(), a, b));
+        }).orElseThrow();
+
+        final ResolvedKeychain keychain;
+
+        switch (keychainToken) {
+            case EMPTY_KEYCHAIN -> {
+                keychain = new ResolvedKeychain(new KeychainWithCertsSpec(MacSign.createEmptyKeychain(), List.of()));
+            }
+            case KEYCHAIN_WITH_APP_IMAGE_CERT, KEYCHAIN_WITH_PKG_CERT -> {
+                CertificateType existingCertType;
+                switch (keychainToken) {
+                    case KEYCHAIN_WITH_APP_IMAGE_CERT -> {
+                        existingCertType = CertificateType.CODE_SIGN;
+                    }
+                    case KEYCHAIN_WITH_PKG_CERT -> {
+                        existingCertType = CertificateType.INSTALLER;
+                    }
+                    default -> {
+                        throw new AssertionError();
+                    }
+                }
+
+                // Pick the first suitable signing identity.
+                var certRequest = SignEnvMock.VALUE.keySet().stream().filter(v -> {
+                    return v.trusted() && !v.expired() && v.type() == existingCertType;
+                }).findFirst().orElseThrow();
+
+                // Create a keychain mock containing the picked signing identity.
+                var signEnv = new MacSignMockUtils.SignEnv("foo.keychain", SignEnvMock.VALUE, certRequest);
+
+                var script = Script.build()
+                        // Disable the mutation making mocks "run once".
+                        .commandMockBuilderMutator(null)
+                        // Replace "/usr/bin/security" with the mock bound to the keychain mock.
+                        .map(MacSignMockUtils.securityMock(signEnv))
+                        // Don't mock other external commands.
+                        .use(VerbatimCommandMock.INSTANCE)
+                        .createLoop();
+
+                // Create jpackage tool provider using the /usr/bin/security mock.
+                var jpackage = JPackageMockUtils.createJPackageToolProvider(script);
+
+                // Override the default jpackage tool provider with the one using the /usr/bin/security mock.
+                JPackageCommand.useToolProviderByDefault(jpackage);
+
+                keychain = signEnv.keychains().getFirst();
+            }
+            default -> {
+                throw new AssertionError();
+            }
+        }
+
+        MacSign.withKeychain(_ -> {
             spec.mapExpectedMessages(cannedStr -> {
                 return cannedStr.mapArgs(arg -> {
                     switch (arg) {
-                        case MacSign.StandardCertificateNamePrefix certPrefix -> {
+                        case StandardCertificateNamePrefix certPrefix -> {
                             return certPrefix.value();
                         }
                         case Token _ -> {
@@ -676,8 +766,8 @@ public final class ErrorTest {
                         }
                     }
                 });
-            }).test(Map.of(Token.EMPTY_KEYCHAIN, _ -> keychain.name()));
-        }, MacSign.createEmptyKeychain());
+            }).test(Map.of(keychainToken, _ -> keychain.name()));
+        }, keychain);
     }
 
     public static Collection<Object[]> testMacSignWithoutIdentity() {
@@ -713,7 +803,57 @@ public final class ErrorTest {
             }
         }
 
-        return toTestArgs(testCases.stream());
+        return toTestArgs(testCases);
+    }
+
+    public static Collection<Object[]> testMacPkgSignWithoutIdentity() {
+        final List<TestSpec.Builder> testCases = new ArrayList<>();
+
+        final var appImageArgs = List.of("--app-image", Token.APP_IMAGE_WITH_SHORT_NAME.token());
+
+        for (var withAppImage : List.of(true, false)) {
+            for (var existingCertType : CertificateType.values()) {
+                Token keychain;
+                StandardCertificateNamePrefix missingCertificateNamePrefix;
+                switch (existingCertType) {
+                    case INSTALLER -> {
+                        keychain = Token.KEYCHAIN_WITH_PKG_CERT;
+                        missingCertificateNamePrefix = StandardCertificateNamePrefix.CODE_SIGN;
+                    }
+                    case CODE_SIGN -> {
+                        keychain = Token.KEYCHAIN_WITH_APP_IMAGE_CERT;
+                        missingCertificateNamePrefix = StandardCertificateNamePrefix.INSTALLER;
+                    }
+                    default -> {
+                        throw new AssertionError();
+                    }
+                }
+
+                var builder = testSpec()
+                        .type(PackageType.MAC_PKG)
+                        .addArgs("--mac-sign", "--mac-signing-keychain", keychain.token())
+                        .error("error.cert.not.found", missingCertificateNamePrefix, keychain);
+
+                if (withAppImage) {
+                    builder.noAppDesc().addArgs(appImageArgs);
+                } else {
+                    /*
+                     * Use shorter name to avoid
+                     *
+                     * [03:08:55.623] --mac-package-name is set to 'MacSignWithoutIdentityErrorTest', which is longer than 16 characters. For a better Mac experience consider shortening it.
+                     *
+                     * in the output.
+                     * The same idea is behind using the "APP_IMAGE_WITH_SHORT_NAME" token
+                     * instead of the "APP_IMAGE" for the predefined app image.
+                     */
+                    builder.removeArgs("--name");
+                }
+
+                testCases.add(builder);
+            }
+        }
+
+        return toTestArgs(testCases);
     }
 
     @Test
@@ -1086,8 +1226,14 @@ public final class ErrorTest {
         );
     }
 
-    private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {
-        return stream.filter(v -> {
+    private static Collection<Object[]> toTestArgs(Stream<?> stream) {
+        return stream.map(v -> {
+            if (v instanceof TestSpec.Builder builder) {
+                return builder.create();
+            } else {
+                return v;
+            }
+        }).filter(v -> {
             if (v instanceof TestSpec ts) {
                 return ts.isSupported();
             } else {
@@ -1098,8 +1244,8 @@ public final class ErrorTest {
         }).toList();
     }
 
-    private static Collection<Object[]> fromTestSpecBuilders(Stream<TestSpec.Builder> stream) {
-        return toTestArgs(stream.map(TestSpec.Builder::create));
+    private static Collection<Object[]> toTestArgs(Collection<?> col) {
+        return toTestArgs(col.stream());
     }
 
     private static String adjustTextStreamVerifierArg(String str) {
@@ -1107,4 +1253,9 @@ public final class ErrorTest {
     }
 
     private static final Pattern LINE_SEP_REGEXP = Pattern.compile("\\R");
+
+    private final class SignEnvMock {
+        static final Map<CertificateRequest, X509Certificate> VALUE =
+                MacSignMockUtils.load(TKit.TEST_SRC_ROOT.resolve("macosx/sign-env.xml"));
+    }
 }
