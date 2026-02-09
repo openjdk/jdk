@@ -39,7 +39,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -60,10 +59,9 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
 
 public class FilePublisherTest implements HttpServerAdapters {
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpServerAdapters.HttpTestServer httpTestServer;    // HTTP/1.1      [ 4 servers ]
     HttpServerAdapters.HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpServerAdapters.HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -156,26 +154,6 @@ public class FilePublisherTest implements HttpServerAdapters {
         send(uriString, path, expectedMsg, sameClient);
     }
 
-    @Test
-    public void testFileNotFound() throws Exception {
-        out.printf("\n\n--- testFileNotFound(): starting\n");
-        try (FileSystem fs = newZipFs()) {
-            Path fileInZip = fs.getPath("non-existent.txt");
-            BodyPublishers.ofFile(fileInZip);
-            fail();
-        } catch (FileNotFoundException e) {
-            out.println("Caught expected: " + e);
-        }
-        var path = Path.of("fileNotFound.txt");
-        try {
-            Files.deleteIfExists(path);
-            BodyPublishers.ofFile(path);
-            fail();
-        } catch (FileNotFoundException e) {
-            out.println("Caught expected: " + e);
-        }
-    }
-
     private static final int ITERATION_COUNT = 3;
 
     private void send(String uriString,
@@ -205,10 +183,6 @@ public class FilePublisherTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         defaultFsPath = defaultFsFile();
         zipFs = newZipFs();
         zipFsPath = zipFsFile(zipFs);

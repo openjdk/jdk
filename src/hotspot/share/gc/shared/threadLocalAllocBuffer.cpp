@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/threadSMR.hpp"
@@ -72,12 +72,11 @@ size_t ThreadLocalAllocBuffer::remaining() {
 }
 
 void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocStats* stats) {
-  Thread* thr     = thread();
-  size_t capacity = Universe::heap()->tlab_capacity(thr);
-  size_t used     = Universe::heap()->tlab_used(thr);
+  size_t capacity = Universe::heap()->tlab_capacity();
+  size_t used = Universe::heap()->tlab_used();
 
   _gc_waste += (unsigned)remaining();
-  size_t total_allocated = thr->allocated_bytes();
+  size_t total_allocated = (size_t)thread()->allocated_bytes();
   size_t allocated_since_last_gc = total_allocated - _allocated_before_last_gc;
   _allocated_before_last_gc = total_allocated;
 
@@ -148,7 +147,7 @@ void ThreadLocalAllocBuffer::resize() {
   // Compute the next tlab size using expected allocation amount
   assert(ResizeTLAB, "Should not call this otherwise");
   size_t alloc = (size_t)(_allocation_fraction.average() *
-                          (Universe::heap()->tlab_capacity(thread()) / HeapWordSize));
+                          (Universe::heap()->tlab_capacity() / HeapWordSize));
   size_t new_size = alloc / _target_refills;
 
   new_size = clamp(new_size, min_size(), max_size());
@@ -204,7 +203,7 @@ void ThreadLocalAllocBuffer::initialize() {
 
   set_desired_size(initial_desired_size());
 
-  size_t capacity = Universe::heap()->tlab_capacity(thread()) / HeapWordSize;
+  size_t capacity = Universe::heap()->tlab_capacity() / HeapWordSize;
   if (capacity > 0) {
     // Keep alloc_frac as float and not double to avoid the double to float conversion
     float alloc_frac = desired_size() * target_refills() / (float)capacity;
@@ -268,7 +267,7 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
     // Initial size is a function of the average number of allocating threads.
     unsigned int nof_threads = ThreadLocalAllocStats::allocating_threads_avg();
 
-    init_sz  = (Universe::heap()->tlab_capacity(thread()) / HeapWordSize) /
+    init_sz  = (Universe::heap()->tlab_capacity() / HeapWordSize) /
                       (nof_threads * target_refills());
     init_sz = align_object_size(init_sz);
   }
@@ -289,7 +288,7 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
   Thread* thrd = thread();
   size_t waste = _gc_waste + _refill_waste;
   double waste_percent = percent_of(waste, _allocated_size);
-  size_t tlab_used  = Universe::heap()->tlab_used(thrd);
+  size_t tlab_used  = Universe::heap()->tlab_used();
   log.trace("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
             " desired_size: %zuKB"
             " slow allocs: %d  refill waste: %zuB"
@@ -459,10 +458,19 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
   return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
 }
 
-const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
-  return Atomic::load(&_start);
-}
-
-const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
-  return Atomic::load(&_top);
+size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
+  HeapWord* start = AtomicAccess::load(&_start);
+  HeapWord* top = AtomicAccess::load(&_top);
+  // There has been a race when retrieving _top and _start. Return 0.
+  if (_top < _start) {
+    return 0;
+  }
+  size_t used_bytes = pointer_delta(_top, _start, 1);
+  // Comparing diff with the maximum allowed size will ensure that we don't add
+  // the used bytes from a semi-initialized TLAB ending up with implausible values.
+  // In this case also just return 0.
+  if (used_bytes > ThreadLocalAllocBuffer::max_size_in_bytes()) {
+    return 0;
+  }
+  return used_bytes;
 }

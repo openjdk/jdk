@@ -33,8 +33,6 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahControlThread: public ShenandoahController {
-  friend class VMStructs;
-
 private:
   typedef enum {
     none,
@@ -47,6 +45,9 @@ private:
   GCCause::Cause       _requested_gc_cause;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
+  // This lock is used to coordinate waking up the control thread
+  Monitor _control_lock;
+
 public:
   ShenandoahControlThread();
 
@@ -56,6 +57,8 @@ public:
   void request_gc(GCCause::Cause cause) override;
 
 private:
+  // Sets the requested cause and flag and notifies the control thread
+  void notify_control_thread(GCCause::Cause cause);
 
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
   void service_concurrent_normal_cycle(GCCause::Cause cause);

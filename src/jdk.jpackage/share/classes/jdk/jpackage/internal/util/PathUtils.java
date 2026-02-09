@@ -25,7 +25,9 @@
 package jdk.jpackage.internal.util;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 public final class PathUtils {
 
@@ -47,8 +49,13 @@ public final class PathUtils {
         return parent != null ? parent.resolve(filename) : Path.of(filename);
     }
 
-    public static Path resolveNullablePath(Path base, Path path) {
-        return Optional.ofNullable(path).map(base::resolve).orElse(null);
+    public static Path mapNullablePath(UnaryOperator<Path> mapper, Path path) {
+        Objects.requireNonNull(mapper);
+        if (path != null) {
+            return mapper.apply(path);
+        } else {
+            return null;
+        }
     }
 
     public static Path normalizedAbsolutePath(Path path) {

@@ -26,7 +26,7 @@
 #define SHARE_SERVICES_ATTACHLISTENER_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "utilities/debug.hpp"
@@ -123,24 +123,24 @@ class AttachListener: AllStatic {
   }
 
   static void set_state(AttachListenerState new_state) {
-    Atomic::store(&_state, new_state);
+    AtomicAccess::store(&_state, new_state);
   }
 
   static AttachListenerState get_state() {
-    return Atomic::load(&_state);
+    return AtomicAccess::load(&_state);
   }
 
   static AttachListenerState transit_state(AttachListenerState new_state,
                                            AttachListenerState cmp_state) {
-    return Atomic::cmpxchg(&_state, cmp_state, new_state);
+    return AtomicAccess::cmpxchg(&_state, cmp_state, new_state);
   }
 
   static bool is_initialized() {
-    return Atomic::load(&_state) == AL_INITIALIZED;
+    return AtomicAccess::load(&_state) == AL_INITIALIZED;
   }
 
   static void set_initialized() {
-    Atomic::store(&_state, AL_INITIALIZED);
+    AtomicAccess::store(&_state, AL_INITIALIZED);
   }
 
   // indicates if this VM supports attach-on-demand

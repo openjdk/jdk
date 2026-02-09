@@ -13,13 +13,13 @@
 			<dayPeriodRule type="am" from="00:00" before="12:00"/>	<!-- AM -->
 			<dayPeriodRule type="pm" from="12:00" before="24:00"/>	<!-- PM -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="en">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnight -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- noon -->
-			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- morning -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- afternoon -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- evening -->
-			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- night -->
+		<dayPeriodRules locales="en km">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnight/កណ្តាលអាធ្រាត្រ-->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- noon/ៃ​ត្រង -->
+			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- morning/ព្រឹក -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- afternoon/រសៀល -->
+			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- evening/ល្ងាច -->
+			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- night/យប់ -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="af">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- middernag -->
@@ -52,13 +52,13 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- Abend -->
 			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- Nacht -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="da">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnat -->
-			<dayPeriodRule type="morning1" from="05:00" before="10:00"/>	<!-- morgen -->
-			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftermiddag -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften -->
-			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat -->
+		<dayPeriodRules locales="da sv">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnat/midnatt -->
+			<dayPeriodRule type="morning1" from="05:00" before="10:00"/>	<!-- morgen/morgon -->
+			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag/förmiddag -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftermiddag/eftermiddag -->
+			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften/kväll -->
+			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat/natt -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="nb nn no">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnatt -->
@@ -68,29 +68,21 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- kveld -->
 			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- natt -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="sv">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnatt -->
-			<dayPeriodRule type="morning1" from="05:00" before="10:00"/>	<!-- morgon -->
-			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- förmiddag -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftermiddag -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- kväll -->
-			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- natt -->
+		<dayPeriodRules locales="is it lt hy am">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- miðnætti/mezzanotte/vidurnaktis/կեսգիշեր/እኩለ ሌሊት -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- hádegi/mezzogiorno/vidurdienis/կեսօր/ቀትር -->
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- morgunn/mattina/rytas/առավոտ/ጥዋት1 -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftir hádegi/pomeriggio/diena/ցերեկ/ከሰዓት በኋላ -->
+			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- kvöld/sera/vakaras/երեկո/ማታ -->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- nótt/notte/naktis/գիշեր/ሌሊት -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="is">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- miðnætti -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- hádegi -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- morgunn -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftir hádegi -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- kvöld -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- nótt -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="pt">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- meia-noite -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- meio-dia -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- manhã -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- tarde -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- noite -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- madrugada -->
+		<dayPeriodRules locales="pt kgp yrl">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- meia-noite/kuty-si/pituna pyterupé -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- meio-dia/kurã-kuju/iandé-ara-pyturepé -->
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- manhã/kusãg ki/kuêma ramẽ -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- tarde/rãkãnh kỹ/karuka ramẽ -->
+			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- noite/kuty kỹ/pituna ramẽ-->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- madrugada/kurã ge/pitunaeté ramẽ -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="gl">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- medianoite -->
@@ -122,14 +114,6 @@
 			<dayPeriodRule type="evening1" from="19:00" before="21:00"/>	<!-- vespre -->
 			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- nit -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="it">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- mezzanotte -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- mezzogiorno -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- mattina -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- pomeriggio -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- sera -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- notte -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="lij">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- mëzaneutte -->
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- mëzogiorno -->
@@ -146,13 +130,13 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- seară -->
 			<dayPeriodRule type="night1" from="22:00" before="05:00"/>	<!-- noapte -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="fr">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- minuit -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- midi -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- matin -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- après-midi -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- soir -->
-			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- nuit -->
+		<dayPeriodRules locales="fr scn uk">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- minuit//північ -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- midi//полудень -->
+			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- matin//ранок -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- après-midi//день -->
+			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- soir//вечір -->
+			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- nuit//ніч -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="ru">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- полночь -->
@@ -161,14 +145,6 @@
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- день -->
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- вечер -->
 			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- ночь -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="uk">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- північ -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- полудень -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- ранок -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- день -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- вечір -->
-			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- ніч -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="bg">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- полунощ -->
@@ -187,29 +163,21 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- навечер -->
 			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- по полноќ -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="sr">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- поноћ -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- подне -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- јутро -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- поподне -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- вече -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- ноћ -->
+		<dayPeriodRules locales="sr kk ky mn">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- поноћ/түн жарымы/түн ортосу/шөнө дунд -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- подне/талтүс/чак түш/үд дунд -->
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- јутро/таң/эртең менен/өглөө -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- поподне/түстен кейін/түштөн кийин/өдөр -->
+			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- вече/кеш/кечкурун/орой -->
+			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- ноћтүн/түншөнө -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="hr">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- ponoć -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- podne -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- jutro -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- popodne -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- večer -->
-			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- noć -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="bs">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- u ponoć -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- podne -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- jutro -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- poslijepodne -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- veče -->
-			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- noć -->
+		<dayPeriodRules locales="hr bs vi">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- ponoć/u ponoć/nửa đêm -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- podne/podne/trưa -->
+			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- jutro/jutro/sáng -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- popodne/poslijepodne/chiều -->
+			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- večer/veče/tối -->
+			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- noć/noć/đêm -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="sl">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- polnoč -->
@@ -220,23 +188,14 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- zvečer -->
 			<dayPeriodRule type="night1" from="22:00" before="06:00"/>	<!-- ponoči -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="cs">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- půlnoc -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- poledne -->
-			<dayPeriodRule type="morning1" from="04:00" before="09:00"/>	<!-- ráno -->
-			<dayPeriodRule type="morning2" from="09:00" before="12:00"/>	<!-- dopoledne -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- odpoledne -->
-			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- večer -->
-			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- noc -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="sk">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- polnoc -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- poludnie -->
-			<dayPeriodRule type="morning1" from="04:00" before="09:00"/>	<!-- ráno -->
-			<dayPeriodRule type="morning2" from="09:00" before="12:00"/>	<!-- dopoludnie -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- popoludnie -->
-			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- večer -->
-			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- noc -->
+		<dayPeriodRules locales="cs sk">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- půlnoc/polnoc -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- poledne/poludnie -->
+			<dayPeriodRule type="morning1" from="04:00" before="09:00"/>	<!-- ráno/ráno -->
+			<dayPeriodRule type="morning2" from="09:00" before="12:00"/>	<!-- dopoledne/dopoludnie -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- odpoledne/popoludnie -->
+			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- večer/večer -->
+			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- noc/noc -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="pl">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- północ -->
@@ -246,14 +205,6 @@
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- popołudnie -->
 			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- wieczór -->
 			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- noc -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="lt">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- vidurnaktis -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- vidurdienis -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- rytas -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- diena -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- vakaras -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- naktis -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="lv">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- pusnakts -->
@@ -271,21 +222,6 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- شام -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- رات -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="hi">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- आधी रात -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
-			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
-			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="hi_Latn"> <!-- Also needs noon defined since it inherits from en_IN -->
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- आधी रात -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- noon -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
-			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
-			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="bn ccp">
 			<dayPeriodRule type="morning1" from="04:00" before="06:00"/>	<!-- ভোর -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- সকাল -->
@@ -294,12 +230,20 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- সন্ধ্যা -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- রাত্রি -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="gu">
+		<dayPeriodRules locales="gu hi kok kok_Latn">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- મધ્યરાત્રિ -->
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- સવાર -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- બપોર -->
 			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- સાંજ -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- રાત્રિ -->
+		</dayPeriodRules>
+		<dayPeriodRules locales="hi_Latn"> <!-- Also needs noon defined since it inherits from en_IN -->
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- आधी रात -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- noon -->
+			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
+			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
+			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="mr">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- मध्यरात्र -->
@@ -351,14 +295,6 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- mbrëmje -->
 			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- natë -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="hy">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- կեսգիշեր -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- կեսօր -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- առավոտ -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ցերեկ -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- երեկո -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- գիշեր -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="fa">
 			<dayPeriodRule type="morning1" from="01:00" before="04:00"/> <!-- بامداد -->
 			<dayPeriodRule type="morning2" from="04:00" before="12:00"/> <!-- صبح -->
@@ -366,7 +302,7 @@
 			<dayPeriodRule type="afternoon2" from="13:00" before="19:00"/> <!-- عصر -->
 			<dayPeriodRule type="night1" from="19:00" before="24:00"/> <!-- شب -->
 			<dayPeriodRule type="night2" from="00:00" before="01:00"/> <!-- نیمه‌شب -->
-        </dayPeriodRules>
+		</dayPeriodRules>
 		<dayPeriodRules locales="ta">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- நள்ளிரவு -->
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- நண்பகல் -->
@@ -378,12 +314,12 @@
 			<dayPeriodRule type="evening2" from="18:00" before="21:00"/>	<!-- அந்தி மாலை -->
 			<dayPeriodRule type="night1" from="21:00" before="03:00"/>	<!-- இரவு -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="te">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- అర్థరాత్రి -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ఉదయం -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- మధ్యాహ్నం -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- సాయంత్రం -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- రాత్రి -->
+		<dayPeriodRules locales="kn te">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- ಮಧ್ಯರಾತ್ರಿ/అర్థరాత్రి -->
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ಬೆಳಗ್ಗೆ/ఉదయం -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ಮಧ್ಯಾಹ್ನ/మధ్యాహ్నం -->
+			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- ಸಂಜೆ/సాయంత్రం -->
+			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- ರಾತ್ರಿ/రాత్రి -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="ml">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- അർദ്ധരാത്രി -->
@@ -395,13 +331,6 @@
 			<dayPeriodRule type="evening1" from="15:00" before="18:00"/>	<!-- വൈകുന്നേരം -->
 			<dayPeriodRule type="evening2" from="18:00" before="19:00"/>	<!-- സന്ധ്യ -->
 			<dayPeriodRule type="night1" from="19:00" before="03:00"/>	<!-- രാത്രി -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="kn">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- ಮಧ್ಯರಾತ್ರಿ -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ಬೆಳಗ್ಗೆ -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ಮಧ್ಯಾಹ್ನ -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- ಸಂಜೆ -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- ರಾತ್ರಿ -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="fi">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- keskiyö -->
@@ -430,23 +359,14 @@
 			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- éjjel -->
 			<dayPeriodRule type="night2" from="04:00" before="06:00"/>	<!-- hajnal -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="zh">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- 午夜 -->
-			<dayPeriodRule type="morning1" from="05:00" before="08:00"/>	<!-- 早上 -->
-			<dayPeriodRule type="morning2" from="08:00" before="12:00"/>	<!-- 上午 -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="13:00"/>	<!-- 中午 -->
-			<dayPeriodRule type="afternoon2" from="13:00" before="19:00"/>	<!-- 下午 -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- 晚上 -->
-			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- 凌晨 -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="yue">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- 午夜 -->
-			<dayPeriodRule type="morning1" from="05:00" before="08:00"/>	<!-- 清晨 -->
-			<dayPeriodRule type="morning2" from="08:00" before="12:00"/>	<!-- 朝早 -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="13:00"/>	<!-- 中午 -->
-			<dayPeriodRule type="afternoon2" from="13:00" before="19:00"/>	<!-- 下晝 -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- 夜晚 -->
-			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- 凌晨 -->
+		<dayPeriodRules locales="zh yue">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- 午夜/午夜 -->
+			<dayPeriodRule type="morning1" from="05:00" before="08:00"/>	<!-- 早上/清晨 -->
+			<dayPeriodRule type="morning2" from="08:00" before="12:00"/>	<!-- 上午/朝早 -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="13:00"/>	<!-- 中午/中午 -->
+			<dayPeriodRule type="afternoon2" from="13:00" before="19:00"/>	<!-- 下午/下晝 -->
+			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- 晚上/夜晚 -->
+			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- 凌晨/凌晨 -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="ja">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- 真夜中 -->
@@ -536,22 +456,6 @@
 			<dayPeriodRule type="night1" from="19:00" before="24:00"/>	<!-- axşam -->
 			<dayPeriodRule type="night2" from="00:00" before="04:00"/>	<!-- gecə -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="kk">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- түн жарымы -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- талтүс -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- таң -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- түстен кейін -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- кеш -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- түн -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="ky">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- түн ортосу -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- чак түш -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- эртең менен -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- түштөн кийин -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- кечкурун -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- түн -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="uz">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- yarim kechasi -->
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- tush payti -->
@@ -577,30 +481,6 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- ערב -->
 			<dayPeriodRule type="night1" from="22:00" before="03:00"/>	<!-- לילה -->
 			<dayPeriodRule type="night2" from="03:00" before="06:00"/>	<!-- לפנות בוקר -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="am">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- እኩለ ሌሊት -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- ቀትር -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ጥዋት1 -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ከሰዓት በኋላ -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- ማታ -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- ሌሊት -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="vi">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- nửa đêm -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- trưa -->
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- sáng -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- chiều -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- tối -->
-			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- đêm -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="km">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- កណ្តាលអាធ្រាត្រ -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- ថ្ងៃ​ត្រង់ -->
-			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- ព្រឹក -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- រសៀល -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- ល្ងាច -->
-			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- យប់ -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="sw">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- saa sita za usiku -->
@@ -635,14 +515,6 @@
 			<dayPeriodRule type="evening1" from="19:00" before="21:00"/>	<!-- iluntzea -->
 			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- gaua -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="mn">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- шөнө дунд -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- үд дунд -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- өглөө -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- өдөр -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- орой -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- шөнө -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="chr">
 			<dayPeriodRule type="noon" at="12:00"/>	<!-- ᎢᎦ -->
 			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- ᏌᎾᎴ -->
@@ -663,22 +535,6 @@
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/> <!-- afternoon -->
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/> <!-- evening -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="kgp">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- kuty-si -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- kurã-kuju -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kusãg ki -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- rãkãnh kỹ -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- kuty kỹ -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- kurã ge -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="yrl">
-			<dayPeriodRule type="midnight" at="00:00"/>	<!-- pituna pyterupé -->
-			<dayPeriodRule type="noon" at="12:00"/>	<!-- iandé-ara-pyturepé -->
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kuêma ramẽ -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- karuka ramẽ -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- pituna ramẽ -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- pitunaeté ramẽ -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="blo">
 			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- gajanɩ -->
 			<dayPeriodRule type="morning1" from="04:00" before="07:00"/>	<!-- asʊbaa -->
@@ -693,23 +549,17 @@
 			<dayPeriodRule type="am" from="00:00" before="12:00"/>	<!-- AM -->
 			<dayPeriodRule type="pm" from="12:00" before="24:00"/>	<!-- PM -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="en">
-			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- morning -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- afternoon -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- evening -->
-			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- night -->
+		<dayPeriodRules locales="en km">
+			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- morning/ព្រឹក -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- afternoon/រសៀល -->
+			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- evening/ល្ងាច -->
+			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- night/យប់ -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="af">
 			<dayPeriodRule type="morning1" from="05:00" before="12:00"/>	<!-- oggend -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- middag -->
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aand -->
 			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nag -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="nl">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ochtend -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- middag -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- avond -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- nacht -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="gsw">
 			<dayPeriodRule type="midnight" at="00:00"/>			<!-- Mitternacht -->
@@ -727,12 +577,12 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- Abend -->
 			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- Nacht -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="da">
-			<dayPeriodRule type="morning1" from="05:00" before="10:00"/>	<!-- morgen -->
-			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftermiddag -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften -->
-			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat -->
+		<dayPeriodRules locales="da sv">
+			<dayPeriodRule type="morning1" from="05:00" before="10:00"/>	<!-- morgen/morgon -->
+			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag/förmiddag -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftermiddag/eftermiddag -->
+			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften/kväll -->
+			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat/natt -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="nb nn no">
 			<dayPeriodRule type="morning1" from="06:00" before="10:00"/>	<!-- morgen -->
@@ -741,24 +591,17 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- kveld -->
 			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- natt -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="sv">
-			<dayPeriodRule type="morning1" from="05:00" before="10:00"/>	<!-- morgon -->
-			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- förmiddag -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftermiddag -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- kväll -->
-			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- natt -->
+		<dayPeriodRules locales="nl is it lt hy am">
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ochtend/morgunn/mattin/rytas/առավոտ/ጥዋት1 -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- middag/eftir hádegi/pomeriggio/diena/ցերեկ/ከሰዓት በኋላ -->
+			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- avond/kvöld/sera/vakaras/երեկո/ማታ -->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- nacht/nótt/notte/naktis/գիշեր/ሌሊት -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="is">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- morgunn -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- eftir hádegi -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- kvöld -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- nótt -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="pt">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- manhã -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- tarde -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- noite -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- madrugada -->
+		<dayPeriodRules locales="pt kgp yrl">
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- manhã/kusãg ki/kuêma ramẽ -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- tarde/rãkãnh kỹ/karuka ramẽ -->
+			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- noite/kuty kỹ/pituna ramẽ -->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- madrugadakurã ge/pitunaeté ramẽ -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="gl">
 			<dayPeriodRule type="morning1" from="00:00" before="06:00"/>	<!-- madrugada -->
@@ -786,12 +629,6 @@
 			<dayPeriodRule type="evening1" from="19:00" before="21:00"/>	<!-- vespre -->
 			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- nit -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="it">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- mattina -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- pomeriggio -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- sera -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- notte -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="lij">
 			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- mattin -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- depoidisnâ -->
@@ -804,29 +641,23 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- seară -->
 			<dayPeriodRule type="night1" from="22:00" before="05:00"/>	<!-- noapte -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="fr">
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- matin -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- après-midi -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- soir -->
-			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- nuit -->
+		<dayPeriodRules locales="fr scn uk">
+			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- matin//ранок -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- après-midi//день -->
+			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- soir//вечір -->
+			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- nuit//ніч -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="hr">
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- jutro -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- popodne -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- večer -->
-			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- noć -->
+		<dayPeriodRules locales="hr bs vi">
+			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- jutro/jutro/sáng -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- popodne/poslijepodne/chiều -->
+			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- večer/veče/tối -->
+			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- noć/noć/đêm -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="bs">
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- jutro -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- poslijepodne -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- veče -->
-			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- noć -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="sr">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- јутро -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- поподне -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- вече -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- ноћ -->
+		<dayPeriodRules locales="sr kk ky mn kn te">
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- јутро/таң/эртең менен/өглөө/ಬೆಳಗ್ಗೆ/ఉదయం -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- поподне/түстен кейін/түштөн кийин/өдөр/ಮಧ್ಯಾಹ್ನ/మధ్యాహ్నం -->
+			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- вече/кеш/кечкурун/орой/ಸಂಜೆ/సాయంత్రం -->
+			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- ноћ/түн/түн/шөнө/ರಾತ್ರಿ/రాత్రి -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="sl">
 			<dayPeriodRule type="morning1" from="06:00" before="10:00"/>	<!-- zjutraj -->
@@ -835,19 +666,12 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- zvečer -->
 			<dayPeriodRule type="night1" from="22:00" before="06:00"/>	<!-- ponoči -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="cs">
-			<dayPeriodRule type="morning1" from="04:00" before="09:00"/>	<!-- ráno -->
-			<dayPeriodRule type="morning2" from="09:00" before="12:00"/>	<!-- dopoledne -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- odpoledne -->
-			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- večer -->
-			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- noc -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="sk">
-			<dayPeriodRule type="morning1" from="04:00" before="09:00"/>	<!-- ráno -->
-			<dayPeriodRule type="morning2" from="09:00" before="12:00"/>	<!-- dopoludnie -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- popoludnie -->
-			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- večer -->
-			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- noc -->
+		<dayPeriodRules locales="cs sk">
+			<dayPeriodRule type="morning1" from="04:00" before="09:00"/>	<!-- ráno/ráno -->
+			<dayPeriodRule type="morning2" from="09:00" before="12:00"/>	<!-- dopoledne/dopoludnie -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- odpoledne/popoludnie -->
+			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- večer/večer -->
+			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- noc/noc -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="pl">
 			<dayPeriodRule type="morning1" from="06:00" before="10:00"/>	<!-- rano -->
@@ -876,18 +700,6 @@
 			<dayPeriodRule type="evening1" from="18:00" before="22:00"/>	<!-- вечер -->
 			<dayPeriodRule type="night1" from="22:00" before="04:00"/>	<!-- ночь -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="uk">
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- ранок -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- день -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- вечір -->
-			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- ніч -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="lt">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- rytas -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- diena -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- vakaras -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- naktis -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="lv">
 			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- rīts -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- pēcpusdiena -->
@@ -907,12 +719,6 @@
 			<dayPeriodRule type="afternoon2" from="13:00" before="19:00"/> <!-- عصر -->
 			<dayPeriodRule type="night1" from="19:00" before="24:00"/> <!-- شب -->
 			<dayPeriodRule type="night2" from="00:00" before="01:00"/> <!-- نیمه‌شب -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="hy">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- առավոտ -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ցերեկ -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- երեկո -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- գիշեր -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="ka">
 			<dayPeriodRule type="morning1" from="05:00" before="12:00"/>	<!-- დილა -->
@@ -934,12 +740,6 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- شام -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- رات -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="hi">
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- सुबह -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दोपहर -->
-			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- शाम -->
-			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- रात -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="bn ccp">
 			<dayPeriodRule type="morning1" from="04:00" before="06:00"/>	<!-- ভোর -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- সকাল -->
@@ -948,7 +748,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="20:00"/>	<!-- সন্ধ্যা -->
 			<dayPeriodRule type="night1" from="20:00" before="04:00"/>	<!-- রাত্রি -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="gu">
+		<dayPeriodRules locales="gu hi hi_Latn kok kok_Latn">
 			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- સવાર -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- બપોર -->
 			<dayPeriodRule type="evening1" from="16:00" before="20:00"/>	<!-- સાંજ -->
@@ -991,12 +791,6 @@
 			<dayPeriodRule type="evening2" from="18:00" before="21:00"/>	<!-- அந்தி மாலை -->
 			<dayPeriodRule type="night1" from="21:00" before="03:00"/>	<!-- இரவு -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="te">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ఉదయం -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- మధ్యాహ్నం -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- సాయంత్రం -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- రాత్రి -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="ml">
 			<dayPeriodRule type="morning1" from="03:00" before="06:00"/>	<!-- പുലർച്ചെ -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- രാവിലെ -->
@@ -1006,21 +800,7 @@
 			<dayPeriodRule type="evening2" from="18:00" before="19:00"/>	<!-- സന്ധ്യ -->
 			<dayPeriodRule type="night1" from="19:00" before="03:00"/>	<!-- രാത്രി -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="kn">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ಬೆಳಗ್ಗೆ -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ಮಧ್ಯಾಹ್ನ -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- ಸಂಜೆ -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- ರಾತ್ರಿ -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="zh">
-			<dayPeriodRule type="morning1" from="05:00" before="08:00"/>	<!-- 早上 -->
-			<dayPeriodRule type="morning2" from="08:00" before="12:00"/>	<!-- 上午 -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="13:00"/>	<!-- 中午 -->
-			<dayPeriodRule type="afternoon2" from="13:00" before="19:00"/>	<!-- 下午 -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- 晚上 -->
-			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- 凌晨 -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="yue">
+		<dayPeriodRules locales="zh yue">
 			<dayPeriodRule type="morning1" from="05:00" before="08:00"/>	<!-- 早上 -->
 			<dayPeriodRule type="morning2" from="08:00" before="12:00"/>	<!-- 上午 -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="13:00"/>	<!-- 中午 -->
@@ -1057,18 +837,6 @@
 			<dayPeriodRule type="evening1" from="17:00" before="19:00"/>	<!-- axşamüstü -->
 			<dayPeriodRule type="night1" from="19:00" before="24:00"/>	<!-- axşam -->
 			<dayPeriodRule type="night2" from="00:00" before="04:00"/>	<!-- gecə -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="kk">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- таң -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- түстен кейін -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- кеш -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- түн -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="ky">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- эртең менен -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- түштөн кийин -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- кечкурун -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- түн -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="uz">
 			<dayPeriodRule type="morning1" from="06:00" before="11:00"/>	<!-- ertalab -->
@@ -1148,18 +916,6 @@
 			<dayPeriodRule type="evening1" from="16:00" before="18:00"/>	<!-- hapon -->
 			<dayPeriodRule type="night1" from="18:00" before="24:00"/>	<!-- gabi -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="vi">
-			<dayPeriodRule type="morning1" from="04:00" before="12:00"/>	<!-- sáng -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- chiều -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- tối -->
-			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- đêm -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="km">
-			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- ព្រឹក -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- រសៀល -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- ល្ងាច -->
-			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- យប់ -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="sw">
 			<dayPeriodRule type="morning1" from="04:00" before="07:00"/>	<!-- alfajiri -->
 			<dayPeriodRule type="morning2" from="07:00" before="12:00"/>	<!-- asubuhi -->
@@ -1174,12 +930,6 @@
 			<dayPeriodRule type="evening1" from="13:00" before="19:00"/>	<!-- ebusuku1 -->
 			<dayPeriodRule type="night1" from="19:00" before="24:00"/>	<!-- ebusuku -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="am">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- ጥዋት1 -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ከሰዓት በኋላ -->
-			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- ማታ -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- ሌሊት -->
-		</dayPeriodRules>
 		<dayPeriodRules locales="eu">
 			<dayPeriodRule type="morning1" from="00:00" before="06:00"/>	<!-- goizaldea -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- goiza -->
@@ -1187,12 +937,6 @@
 			<dayPeriodRule type="afternoon2" from="14:00" before="19:00"/>	<!-- arratsaldea -->
 			<dayPeriodRule type="evening1" from="19:00" before="21:00"/>	<!-- iluntzea -->
 			<dayPeriodRule type="night1" from="21:00" before="24:00"/>	<!-- gaua -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="mn">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- өглөө -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- өдөр -->
-			<dayPeriodRule type="evening1" from="18:00" before="21:00"/>	<!-- орой -->
-			<dayPeriodRule type="night1" from="21:00" before="06:00"/>	<!-- шөнө -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="my">
 			<dayPeriodRule type="morning1" from="00:00" before="12:00"/>	<!-- နံနက် -->
@@ -1216,18 +960,6 @@
 			<dayPeriodRule type="morning1" from="00:00" before="12:00"/> <!-- morning -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/> <!-- afternoon -->
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/> <!-- evening -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="kgp">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kusãg ki -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- rãkãnh kỹ -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- kuty kỹ -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- kurã ge -->
-		</dayPeriodRules>
-		<dayPeriodRules locales="yrl">
-			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kuêma ramẽ -->
-			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- karuka ramẽ -->
-			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- pituna ramẽ -->
-			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- pitunaeté ramẽ -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="blo">
 			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- gajanɩ -->

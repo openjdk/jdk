@@ -49,6 +49,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="az">အဇာဘိုင်ဂျန်</language>
 			<language type="az" alt="short">အဇာရီ</language>
 			<language type="ba">ဘက်ရှ်ကာ</language>
+			<language type="bal">ဘယ်လူချီ</language>
 			<language type="ban">ဘာလီ</language>
 			<language type="bas">ဘာဆာ</language>
 			<language type="be">ဘီလာရုစ်</language>
@@ -180,7 +181,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">တောင် ဟိုင်ဒါ</language>
 			<language type="he">ဟီဘရူး</language>
 			<language type="hi">ဟိန္ဒီ</language>
-			<language type="hi_Latn">ဟိန္ဒီ (လက်တင်)</language>
 			<language type="hil">ဟီလီဂေနွန်</language>
 			<language type="hmn">မုံ</language>
 			<language type="hr">ခရိုအေးရှား</language>
@@ -248,6 +248,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">ဘာဖီအာ</language>
 			<language type="ksh">ကိုလိုနီယန်း</language>
 			<language type="ku">ကဒ်</language>
+			<language type="ku" menu="core">ကဒ်</language>
+			<language type="ku" menu="extension">ကာမန်းဂျီ</language>
 			<language type="kum">ကွမ်မိုက်</language>
 			<language type="kv">ကိုမီ</language>
 			<language type="kw">ခိုနီရှ်</language>
@@ -550,7 +552,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Syrc">ဆီရီရက်ခ်</script>
 			<script type="Tale">တိုင်လီ</script>
 			<script type="Taml">တမီးလ်</script>
-			<script type="Telu">တီလု</script>
+			<script type="Telu">တယ်လူဂူ</script>
 			<script type="Tfng">တီဖီနော</script>
 			<script type="Tglg">တဂလော့ဂ်</script>
 			<script type="Thaa">သာအ်</script>
@@ -653,6 +655,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">တရုတ်</territory>
 			<territory type="CO">ကိုလံဘီယာ</territory>
 			<territory type="CP">ကလစ်ပါတန်ကျွန်း</territory>
+			<territory type="CQ">ဆာ့က်</territory>
 			<territory type="CR">ကို့စ်တာရီကာ</territory>
 			<territory type="CU">ကျူးဘား</territory>
 			<territory type="CV">ကိတ်ဗာဒီ</territory>
@@ -898,44 +901,83 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="cf">ငွေရေတွက်ပုံစနစ်</key>
 			<key type="collation">အစဉ်လိုက်စီရန်</key>
 			<key type="currency">ငွေကြေး</key>
+			<key type="em">အီမိုဂျီဖော်ပြချက်</key>
 			<key type="hc">နာရီစက်ဝန်း (၁၂ နှင့် ၂၄)</key>
 			<key type="lb">စာပိုဒ်ခွဲပုံစံ</key>
+			<key type="lw">စာပုဒ်ခြား</key>
 			<key type="ms">တိုင်းတာရေးစနစ်</key>
 			<key type="numbers">ကိန်းဂဏန်း</key>
+			<key type="ss">စာလုံးခြား</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ဗုဒ္ဓ ပြက္ခဒိန်</type>
+			<type key="calendar" type="buddhist" scope="core">ဗုဒ္ဓ</type>
 			<type key="calendar" type="chinese">တရုတ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="chinese" scope="core">တရုတ်</type>
 			<type key="calendar" type="coptic">ကို့ပ်တစ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="coptic" scope="core">ကို့ပ်တစ်</type>
 			<type key="calendar" type="dangi">ဒန်းဂိ ပြက္ခဒိန်</type>
+			<type key="calendar" type="dangi" scope="core">ဒန်းဂိ</type>
 			<type key="calendar" type="ethiopic">အီသီယိုးပီးယား ပြက္ခဒိန်</type>
+			<type key="calendar" type="ethiopic" scope="core">အီသီယိုးပီးယား</type>
 			<type key="calendar" type="ethiopic-amete-alem">အီသီယိုပစ်ခ် အာမဲတဲ အာလင်မ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">အီသီယိုပစ်ခ် အာမဲတဲ အာလင်မ်</type>
 			<type key="calendar" type="gregorian">နိုင်ငံတကာသုံး ပြက္ခဒိန်</type>
+			<type key="calendar" type="gregorian" scope="core">နိုင်ငံတကာသုံး</type>
 			<type key="calendar" type="hebrew">ဟီဘရူး ပြက္ခဒိန်</type>
+			<type key="calendar" type="hebrew" scope="core">ဟီဘရူး</type>
 			<type key="calendar" type="indian">အိန္ဒြိယ အမျိုးသား ပြက္ခဒိန်</type>
 			<type key="calendar" type="islamic">အစ္စလာမ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="islamic" scope="core">အစ္စလာမ်</type>
 			<type key="calendar" type="islamic-civil">အစ္စလာမ်မစ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="islamic-civil" scope="core">အစ္စလာမ်</type>
 			<type key="calendar" type="islamic-umalqura">အယ်လ်ကူရာ အစ္စလာမ်မစ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">အစ္စလာမ်</type>
 			<type key="calendar" type="iso8601">ISO-8601 ပြက္ခဒိန်</type>
 			<type key="calendar" type="japanese">ဂျပန် ပြက္ခဒိန်</type>
+			<type key="calendar" type="japanese" scope="core">ဂျပန်</type>
 			<type key="calendar" type="persian">ပါရှား ပြက္ခဒိန်</type>
+			<type key="calendar" type="persian" scope="core">ပါရှား</type>
 			<type key="calendar" type="roc">မင်ဂုအို ပြက္ခဒိန်</type>
+			<type key="calendar" type="roc" scope="core">မင်ဂုအို</type>
 			<type key="cf" type="account">စာရင်းကိုင်သုံး ငွေရေတွက်ပုံစနစ်</type>
+			<type key="cf" type="account" scope="core">စာရင်းကိုင်</type>
 			<type key="cf" type="standard">ပုံမှန် ငွေရေတွက်ပုံစနစ်</type>
+			<type key="cf" type="standard" scope="core">ပုံမှန်</type>
 			<type key="collation" type="ducet">အစဉ်လိုက်စီထားသော ယူနီကုတ်</type>
+			<type key="collation" type="ducet" scope="core">ပုံသေယူနီကုတ်</type>
 			<type key="collation" type="phonebook">ဖုန်းစာအုပ် အစီအစဉ်</type>
 			<type key="collation" type="search">ယေဘုယျရှာခြင်း</type>
+			<type key="collation" type="search" scope="core">ရှာဖွေမှု</type>
 			<type key="collation" type="standard">ပုံမှန်စီထားသော</type>
+			<type key="collation" type="standard" scope="core">ပုံမှန်</type>
+			<type key="em" type="default" scope="core">ပုံသေ | မူသေ | မူရင်း | ပင်တိုင်</type>
+			<type key="em" type="emoji" scope="core">အီမိုဂျီ</type>
+			<type key="em" type="text" scope="core">စာသား</type>
 			<type key="hc" type="h11">၁၂ နာရီ စနစ် (၀–၁၁)</type>
+			<type key="hc" type="h11" scope="core">၁၂ (၀−၁၁)</type>
 			<type key="hc" type="h12">၁၂ နာရီစနစ် (၁–၁၂)</type>
+			<type key="hc" type="h12" scope="core">၁၂ (၁−၁၂)</type>
 			<type key="hc" type="h23">၂၄ နာရီ စနစ် (၀–၂၃)</type>
+			<type key="hc" type="h23" scope="core">၂၄ (၀−၂၃)</type>
 			<type key="hc" type="h24">၂၄ နာရီ စနစ်(၁–၂၄)</type>
+			<type key="hc" type="h24" scope="core">၂၄ (၁−၂၄)</type>
 			<type key="lb" type="loose">ကန့်သတ်မထားသော စာပိုဒ်ခွဲပုံစံ</type>
+			<type key="lb" type="loose" scope="core">ကန့်သတ်မထား</type>
 			<type key="lb" type="normal">ပုံမှန်စာပိုဒ်ခွဲပုံစံ</type>
+			<type key="lb" type="normal" scope="core">ပုံမှန်</type>
 			<type key="lb" type="strict">ကန့်သတ်ထားသော စာပိုဒ်ခွဲပုံစံ</type>
+			<type key="lb" type="strict" scope="core">ကန့်သတ်ထား</type>
+			<type key="lw" type="breakall" scope="core">အားလုံးခွဲရန်</type>
+			<type key="lw" type="keepall" scope="core">အားလုံးတွဲထားရန်</type>
+			<type key="lw" type="normal" scope="core">ပုံမှန်</type>
+			<type key="lw" type="phrase" scope="core">စကားစုအလိုက် တွဲထားရန်</type>
 			<type key="ms" type="metric">မက်ထရစ်စနစ်</type>
+			<type key="ms" type="metric" scope="core">မက်ထရစ်</type>
 			<type key="ms" type="uksystem">ဗြိတိသျှတိုင်းတာစနစ်</type>
+			<type key="ms" type="uksystem" scope="core">ဗြိတိန်</type>
 			<type key="ms" type="ussystem">အမေရိကန်တိုင်းတာစနစ်</type>
+			<type key="ms" type="ussystem" scope="core">အမေရိကန်</type>
 			<type key="numbers" type="arab">အာရပ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="arabext">တိုးချဲ့အာရပ် ဂဏန်းခြေ</type>
 			<type key="numbers" type="armn">အာမေးနီးယား ဂဏန်းခြေ</type>
@@ -977,6 +1019,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="thai">ထိုင်း ဂဏန်းခြေ</type>
 			<type key="numbers" type="tibt">တိဘက် ဂဏန်းခြေ</type>
 			<type key="numbers" type="vaii">ဗိုင်း ဂဏန်းခြေ</type>
+			<type key="ss" type="none" scope="core">ပိတ်</type>
+			<type key="ss" type="standard" scope="core">ဖွင့်</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">မက်ထရစ်စနစ်</measurementSystemName>
@@ -997,9 +1041,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — … ၊ ။ ‘’ “” ( ) \[ \] \{ \} @ * / #]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1062,22 +1103,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Eh">E a h</dateFormatItem>
 						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="GyMd">GGGGG y/M/d</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y-MM-dd၊ E</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G d MMM y</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d၊ E</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="hv">v a h</dateFormatItem>
+						<dateFormatItem id="Hv">v HH'h'</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">MM-dd၊ E</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>
 						<dateFormatItem id="MMMMEd">MMMM d Eနေ့</dateFormatItem>
 						<dateFormatItem id="yyyyM">G M/y</dateFormatItem>
 						<dateFormatItem id="yyyyMd">GGGGG dd/MM/Y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">G d MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y MMM d၊ E</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
@@ -1096,6 +1145,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">GGGGG y/M – GGGGG y/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d၊ E – MMM d၊ E</greatestDifference>
+							<greatestDifference id="G">G y MMM d၊ E – G y MMM d၊ E</greatestDifference>
+							<greatestDifference id="M">G y MMM d၊ E – MMM d၊ E</greatestDifference>
+							<greatestDifference id="y">G y MMM d၊ E – y MMM d၊ E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -1234,15 +1289,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="fri">သ</day>
 							<day type="sat">စ</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">နွေ</day>
-							<day type="mon">လာ</day>
-							<day type="tue">ဂါ</day>
-							<day type="wed">ဟူး</day>
-							<day type="thu">တေး</day>
-							<day type="fri">ကြာ</day>
-							<day type="sat">နေ</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -1261,12 +1307,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Q1</quarter>
-							<quarter type="2">Q2</quarter>
-							<quarter type="3">Q3</quarter>
-							<quarter type="4">Q4</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">ပ</quarter>
 							<quarter type="2">ဒု</quarter>
@@ -1374,13 +1414,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d ရက် E</dateFormatItem>
+						<dateFormatItem id="Eh">E a h</dateFormatItem>
 						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="GyMd">G y/M/d</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y/ MMM d/ E</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y-MM-dd၊ E</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d၊ E</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
@@ -1388,6 +1431,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hmsv">v HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmv">v a h:mm</dateFormatItem>
 						<dateFormatItem id="Hmv">v HH:mm</dateFormatItem>
+						<dateFormatItem id="hv">v a h</dateFormatItem>
+						<dateFormatItem id="Hv">v HH</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">d/M E</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d E</dateFormatItem>
@@ -2088,6 +2133,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>အီစတာ</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>ကွိုင်းဟိုင်ခ်</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>ပွန်တာ အရီနာစ်</exemplarCity>
 			</zone>
@@ -2353,9 +2401,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ဖနွမ်ပင်</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>အန်ဒါဘူရီ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ကန်တွန်</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3025,9 +3070,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>အနောက်အာဖရိက အချိန်</generic>
-					<standard>အနောက်အာဖရိက စံတော်ချိန်</standard>
-					<daylight>အနောက်အာဖရိက နွေရာသီ အချိန်</daylight>
+					<standard>အနောက်အာဖရိက အချိန်</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3375,6 +3418,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>ဂိုင်ယာနာ အချိန်</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>ဟာဝိုင်ယီ အယ်လူးရှန်း စံတော်ချိန်</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3801,6 +3849,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ချုခ် အချိန်</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>တူရကီ အချိန်</generic>
+					<standard>တူရကီ စံတော်ချိန်</standard>
+					<daylight>တူရကီ နွေရာသီ အချိန်</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>တာ့ခ်မင်နစ္စတန် အချိန်</generic>
@@ -3938,28 +3993,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other">¤ 0 ထောင်</pattern>
-					<pattern type="10000" count="other">¤ 0 သောင်း</pattern>
-					<pattern type="100000" count="other">¤ 0 သိန်း</pattern>
-					<pattern type="1000000" count="other">¤ 0 သန်း</pattern>
-					<pattern type="10000000" count="other">¤ 0 ကုဋေ</pattern>
-					<pattern type="100000000" count="other">¤ 00 ကုဋေ</pattern>
-					<pattern type="1000000000" count="other">¤ 000 ကုဋေ</pattern>
-					<pattern type="10000000000" count="other">¤ 0000 ကုဋေ</pattern>
-					<pattern type="100000000000" count="other">¤ ကုဋေ 0 သောင်း</pattern>
-					<pattern type="1000000000000" count="other">¤ ကုဋေ 0 သိန်း</pattern>
-					<pattern type="10000000000000" count="other">¤ ကုဋေ 0 သန်း</pattern>
-					<pattern type="100000000000000" count="other">¤ 0 ကောဋိ</pattern>
+					<pattern type="1000" count="other">0 ထောင် ¤</pattern>
+					<pattern type="10000" count="other">0 သောင်း ¤</pattern>
+					<pattern type="100000" count="other">0 သိန်း ¤</pattern>
+					<pattern type="1000000" count="other">0 သန်း ¤</pattern>
+					<pattern type="10000000" count="other">0 ကုဋေ ¤</pattern>
+					<pattern type="100000000" count="other">00 ကုဋေ ¤</pattern>
+					<pattern type="1000000000" count="other">000 ဋေ ¤</pattern>
+					<pattern type="10000000000" count="other">ဋေ 0 ထ ¤</pattern>
+					<pattern type="100000000000" count="other">ဋေ 0 သ ¤</pattern>
+					<pattern type="1000000000000" count="other">ဋေ 0 သိန်း ¤</pattern>
+					<pattern type="10000000000000" count="other">ဋေ 0 သန်း ¤</pattern>
+					<pattern type="100000000000000" count="other">0 ကောဋိ ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -4397,7 +4464,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="SLL">
 				<displayName>ဆီယာရာလီယွန်း လီအိုနီ (၁၉၆၄—၂၀၂၂)</displayName>
-				<displayName count="other">ဆီယာရာလီယွန်း လီအိုနီ (၁၉၆၄—၂၀၂၂)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ဆိုမာလီ သျှီလင်</displayName>
@@ -4507,6 +4573,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XCD">
 				<displayName>အရှေ့ကာရစ်ဘီယံ ဒေါ်လာ</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>ကာရစ်ဘီယံ ဂင်းဒါး</displayName>
+				<displayName count="other">ကာရစ်ဘီယံ ဂင်းဒါး</displayName>
+			</currency>
 			<currency type="XDR">
 				<displayName>အထူးထုတ်ယူခွင့်</displayName>
 			</currency>
@@ -4538,6 +4608,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWD">
 				<displayName>ဇင်ဘာဘွေ ဒေါ်လာ</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>ဇင်ဘာဘွေ ရွှေ</displayName>
+				<displayName count="other">ဇင်ဘာဘွေ ရွှေ</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4723,7 +4797,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>တစ်လီတာရှိ မီလီမိုးလ်</displayName>
 				<unitPattern count="other">တစ်လီတာရှိ {0} မီလီမိုးလ်</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ပတ်</displayName>
+				<unitPattern count="other">{0} ပတ်</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">တစ်သန်းပုံ {0} ပုံ</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
@@ -4736,6 +4814,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<unitPattern count="other">{0} ပါမီရိတ်</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>မိုး</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>ဂလူးကို့စ်</displayName>
+				<unitPattern count="other">{0} ဂလူးကို့စ်</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>တစ်ကီလိုမီတာရှိ လီတာ</displayName>
@@ -5066,6 +5151,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ပြဒါးမီလီမီတာ</displayName>
 				<unitPattern count="other">{0} ပြဒါးမီလီမီတာ</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ပြဒါး</displayName>
+				<unitPattern count="other">{0} ပြဒါး</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="other">တစ်စတုရန်းလက်မလျှင် {0} ပေါင်</unitPattern>
 			</unit>
@@ -5177,6 +5266,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>မထ္ထရစ် ခွက်</displayName>
 				<unitPattern count="other">{0} မထ္ထရစ် ခွက်</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>မက်ထရစ် အရည် အောင်စ</displayName>
+				<unitPattern count="other">{0} မက်ထရစ် အရည် အောင်စ</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<unitPattern count="other">{0} ဧက-ပေ</unitPattern>
 			</unit>
@@ -5214,18 +5307,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-dessert-spoon-imperial">
 				<unitPattern count="other">ဗြိတိသျှသုံး အချိုပွဲဇွန်း {0} ဇွန်း</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>အလင်း</displayName>
-				<unitPattern count="other">{0} အလင်း</unitPattern>
+			<unit type="angle-steradian">
+				<displayName>စတယ်ရေဒီယန်</displayName>
+				<unitPattern count="other">{0} စတယ်ရေဒီယန်</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
-				<displayName>သန်းတစ်ထောင်ပုံ တစ်ပုံ</displayName>
+			<unit type="concentr-katal">
+				<displayName>ကတ်တဲလ်</displayName>
+				<unitPattern count="other">{0} ကတ်တဲလ်</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>ဖာရက်ဒ်</displayName>
+				<unitPattern count="other">{0} ဖာရက်ဒ်</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>ဟင်နရီ</displayName>
+				<unitPattern count="other">{0} ဟင်နရီ</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>စီးမန်</displayName>
+				<unitPattern count="other">{0} စီးမန်</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>ကယ်လိုရီ [IT]</displayName>
+				<unitPattern count="other">{0} ကယ်လိုရီ [IT]</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>ဂရေးစ်</displayName>
+				<unitPattern count="other">{0} ဂရေးစ်</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>ကီလိုဂရမ်စွမ်းအင်</displayName>
+				<unitPattern count="other">{0} ကီလိုဂရမ်စွမ်းအင်</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>တက်စလာ</displayName>
+				<unitPattern count="other">{0} တက်စလာ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">သန်းတစ်ထောင်ပုံ {0} ပုံ</unitPattern>
-			</unit>
-			<unit type="duration-night">
-				<displayName>ည</displayName>
-				<unitPattern count="other">{0} ည</unitPattern>
-				<perUnitPattern>{0}/ည</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>အရပ် လေးမျက်နှာ</displayName>
@@ -5285,11 +5404,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<displayName>ကာရက်</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ပတ်</displayName>
+				<unitPattern count="other">{0} ပတ်</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>တစ်သန်းပုံ တစ်ပုံ</displayName>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>ပါမီရိတ်</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>ဂလူးကို့စ်</displayName>
+				<unitPattern count="other">{0} ဂလူးကို့စ်</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>လီတာ/ကီလိုမီတာ</displayName>
@@ -5692,11 +5819,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ဗြိတိသျှသုံး ကွတ်</displayName>
 				<unitPattern count="other">ဗြိတိသျှသုံး {0} ကွတ်</unitPattern>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>ကယ်လိုရီ-IT</displayName>
+				<unitPattern count="other">{0} ကယ်လိုရီ-IT</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>အလင်း</displayName>
 				<unitPattern count="other">{0} အလင်း</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>သန်းတစ်ထောင်ပုံ တစ်ပုံ</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -5716,8 +5847,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="angle-degree">
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
-			<unit type="area-square-centimeter">
-				<displayName>cm²</displayName>
+			<unit type="concentr-part">
+				<displayName>ပတ်</displayName>
+				<unitPattern count="other">{0} ပတ်</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -5841,17 +5976,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-drop">
 				<displayName>စက်</displayName>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>ကယ်လိုရီ-IT</displayName>
+				<unitPattern count="other">{0} ကယ်လိုရီ-IT</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
-				<displayName>အလင်း</displayName>
 				<unitPattern count="other">{0}အလင်း</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">{0}ppb</unitPattern>
-			</unit>
-			<unit type="duration-night">
-				<displayName>ည</displayName>
-				<unitPattern count="other">{0} ည</unitPattern>
-				<perUnitPattern>{0}/ည</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>

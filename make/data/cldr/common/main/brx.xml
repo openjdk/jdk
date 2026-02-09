@@ -1059,9 +1059,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">मिंगुव’ फान्जामुथि</type>
 			<type key="cf" type="account">मुद्रानि नुथायखौ हिसाब लाखिनाय</type>
 			<type key="cf" type="standard">थाखोआरि मुद्रानि नुथाय</type>
-			<type key="collation" type="big5han">पारम्पारिक चीनी वर्गीकरण बीग फ़ाईव</type>
 			<type key="collation" type="ducet">गरहाजिर इउनिकड रान्नायनि फारि</type>
-			<type key="collation" type="gb2312han">सरलीकृत चीनी वर्गीकरण जीबी2312</type>
 			<type key="collation" type="phonebook">दूरभाष निर्देशिका वर्गीकरण</type>
 			<type key="collation" type="pinyin">पिनयीन वर्गीकरण</type>
 			<type key="collation" type="search">सादारन-जाहोननि नायगिरनाय</type>
@@ -1551,13 +1549,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMd">GGGGG dd-MM-y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM E d</dateFormatItem>
 						<dateFormatItem id="h">a नि h</dateFormatItem>
-						<dateFormatItem id="hmsv">a नि h:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
@@ -1648,7 +1644,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M –/dM</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">d/M, E –d/M, E</greatestDifference>
@@ -2575,9 +2571,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>नॉम पेन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>एन्डारबारी</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>केन्ट’न</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3251,9 +3244,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>सोनाब आफ्रिकानि सम</generic>
-					<standard>सोनाब आफ्रिकानि थाखोआरि सम</standard>
-					<daylight>सोनाब आफ्रिकानि दैज्लां सम</daylight>
+					<standard>सोनाब आफ्रिकानि सम</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3634,6 +3625,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>गुयाना सम</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>हावाई-एल्युतियान थाखोआरि सम</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4084,6 +4080,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>चूक सम</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>तुर्की टाईम</generic>
+					<standard>तुर्की स्टैंडर्ड टाईम</standard>
+					<daylight>तुर्की समर टाईम</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>तुर्कमेनीस्तान सम</generic>
@@ -4249,39 +4252,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
 					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="100000" count="one">¤000K</pattern>
-					<pattern type="100000" count="other">¤000K</pattern>
-					<pattern type="1000000" count="one">¤0M</pattern>
-					<pattern type="1000000" count="other">¤0M</pattern>
-					<pattern type="10000000" count="one">¤00M</pattern>
-					<pattern type="10000000" count="other">¤00M</pattern>
-					<pattern type="100000000" count="one">¤000M</pattern>
-					<pattern type="100000000" count="other">¤000M</pattern>
-					<pattern type="1000000000" count="one">¤0B</pattern>
-					<pattern type="1000000000" count="other">¤0B</pattern>
-					<pattern type="10000000000" count="one">¤00B</pattern>
-					<pattern type="10000000000" count="other">¤00B</pattern>
-					<pattern type="100000000000" count="one">¤000B</pattern>
-					<pattern type="100000000000" count="other">¤000B</pattern>
-					<pattern type="1000000000000" count="one">¤0T</pattern>
-					<pattern type="1000000000000" count="other">¤0T</pattern>
-					<pattern type="10000000000000" count="one">¤00T</pattern>
-					<pattern type="10000000000000" count="other">¤00T</pattern>
-					<pattern type="100000000000000" count="one">¤000T</pattern>
-					<pattern type="100000000000000" count="other">¤000T</pattern>
+					<pattern type="1000" count="one">¤ 0के</pattern>
+					<pattern type="1000" count="other">¤ 0के</pattern>
+					<pattern type="10000" count="one">¤ 00के</pattern>
+					<pattern type="10000" count="other">¤ 00के</pattern>
+					<pattern type="100000" count="one">¤ 000के</pattern>
+					<pattern type="100000" count="other">¤ 000के</pattern>
+					<pattern type="1000000" count="one">¤ 0एम</pattern>
+					<pattern type="1000000" count="other">¤ 0एम</pattern>
+					<pattern type="10000000" count="one">¤ 00एम</pattern>
+					<pattern type="10000000" count="other">¤ 00एम</pattern>
+					<pattern type="100000000" count="one">¤ 000एम</pattern>
+					<pattern type="100000000" count="other">¤ 000एम</pattern>
+					<pattern type="1000000000" count="one">¤ 0बि</pattern>
+					<pattern type="1000000000" count="other">¤ 0बि</pattern>
+					<pattern type="10000000000" count="one">¤ 00बि</pattern>
+					<pattern type="10000000000" count="other">¤ 00बि</pattern>
+					<pattern type="100000000000" count="one">¤ 000बि</pattern>
+					<pattern type="100000000000" count="other">¤ 000बि</pattern>
+					<pattern type="1000000000000" count="one">¤ 0ति</pattern>
+					<pattern type="1000000000000" count="other">¤ 0ति</pattern>
+					<pattern type="10000000000000" count="one">¤ 00ति</pattern>
+					<pattern type="10000000000000" count="other">¤ 00ति</pattern>
+					<pattern type="100000000000000" count="one">¤ 000ति</pattern>
+					<pattern type="100000000000000" count="other">¤ 000ति</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>

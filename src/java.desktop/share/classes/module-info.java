@@ -61,7 +61,6 @@ module java.desktop {
     requires transitive java.datatransfer;
     requires transitive java.xml;
 
-    exports java.applet;
     exports java.awt;
     exports java.awt.color;
     exports java.awt.desktop;

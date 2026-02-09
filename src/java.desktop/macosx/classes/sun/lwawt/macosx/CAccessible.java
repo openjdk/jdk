@@ -49,7 +49,7 @@ import javax.accessibility.AccessibleState;
 import sun.awt.AWTAccessor;
 
 
-class CAccessible extends CFRetainedResource implements Accessible {
+final class CAccessible extends CFRetainedResource implements Accessible {
 
     public static CAccessible getCAccessible(final Accessible a) {
         if (a == null) return null;
@@ -111,7 +111,7 @@ class CAccessible extends CFRetainedResource implements Accessible {
         }
     }
 
-    private class AXChangeNotifier implements PropertyChangeListener {
+    private final class AXChangeNotifier implements PropertyChangeListener {
 
         @Override
         public void propertyChange(PropertyChangeEvent e) {

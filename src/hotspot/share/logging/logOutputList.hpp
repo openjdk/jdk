@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogOutput;
@@ -127,7 +127,7 @@ class LogOutputList {
     void operator++(int) {
       // FIXME: memory_order_consume could be used here.
       // Atomic access on the reading side for LogOutputList.
-      _current = Atomic::load_acquire(&_current->_next);
+      _current = AtomicAccess::load_acquire(&_current->_next);
     }
 
     bool operator!=(const LogOutputNode *ref) const {
@@ -143,7 +143,7 @@ class LogOutputList {
     increase_readers();
     // FIXME: memory_order_consume could be used here.
     // Atomic access on the reading side for LogOutputList.
-    return Iterator(this, Atomic::load_acquire(&_level_start[level]));
+    return Iterator(this, AtomicAccess::load_acquire(&_level_start[level]));
   }
 
   LogOutputNode* end() const {

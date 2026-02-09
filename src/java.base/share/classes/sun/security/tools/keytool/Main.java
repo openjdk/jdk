@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,8 @@ import java.security.cert.X509CRLEntry;
 import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
 import java.util.Base64;
+
+import jdk.internal.util.StaticProperty;
 
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
@@ -1292,7 +1294,7 @@ public final class Main {
             }
 
             if (alias != null) {
-                doPrintEntry(rb.getString("the.certificate"), alias, out);
+                doPrintEntry(alias, out);
             } else {
                 doPrintEntries(out);
             }
@@ -1560,9 +1562,6 @@ public final class Main {
 
     private void doGenCRL(PrintStream out)
             throws Exception {
-        if (ids == null) {
-            throw new Exception("Must provide -id when -gencrl");
-        }
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);
@@ -2178,9 +2177,10 @@ public final class Main {
     /**
      * Prints a single keystore entry.
      */
-    private void doPrintEntry(String label, String alias, PrintStream out)
+    private void doPrintEntry(String alias, PrintStream out)
         throws Exception
     {
+        String label = "<" + alias + ">";
         CertPathConstraintsParameters cpcp;
         if (!keyStore.containsAlias(alias)) {
             MessageFormat form = new MessageFormat
@@ -2632,7 +2632,7 @@ public final class Main {
         List<String> aliases = Collections.list(keyStore.aliases());
         aliases.sort(String::compareTo);
         for (String alias : aliases) {
-            doPrintEntry("<" + alias + ">", alias, out);
+            doPrintEntry(alias, out);
             if (verbose || rfc) {
                 out.println(rb.getString("NEWLINE"));
                 out.println(rb.getString
@@ -3549,7 +3549,7 @@ public final class Main {
 
     private static BufferedReader stdinAwareReader(InputStream in) {
         InputStreamReader reader = in == System.in
-                ? new InputStreamReader(in, Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset()))
+                ? new InputStreamReader(in, Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset()))
                 : new InputStreamReader(in);
         return new BufferedReader(reader);
     }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +206,7 @@ public final class DateTimeFormatterBuilder {
      * for the requested dateStyle and/or timeStyle.
      * <p>
      * If the locale contains the "rg" (region override)
-     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the formatting pattern is overridden with the one appropriate for the region.
      *
      * @param dateStyle  the FormatStyle for the date, null for time-only pattern
@@ -235,7 +236,7 @@ public final class DateTimeFormatterBuilder {
      * for the requested template.
      * <p>
      * If the locale contains the "rg" (region override)
-     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the formatting pattern is overridden with the one appropriate for the region.
      * <p>
      * Refer to {@link #appendLocalized(String)} for the detail of {@code requestedTemplate}
@@ -894,8 +895,10 @@ public final class DateTimeFormatterBuilder {
      * {@link DateTimeFormatter#parsedLeapSecond()} for full details.
      * <p>
      * When formatting, the instant will always be suffixed by 'Z' to indicate UTC.
-     * When parsing, the behaviour of {@link DateTimeFormatterBuilder#appendOffsetId()}
-     * will be used to parse the offset, converting the instant to UTC as necessary.
+     * When parsing, the lenient mode behaviour of
+     * {@link DateTimeFormatterBuilder#appendOffset(String, String)
+     * appendOffset("+HH", "Z")} will be used to parse the offset,
+     * converting the instant to UTC as necessary.
      * <p>
      * An alternative to this method is to format/parse the instant as a single
      * epoch-seconds value. That is achieved using {@code appendValue(INSTANT_SECONDS)}.
@@ -956,7 +959,7 @@ public final class DateTimeFormatterBuilder {
      * Appends the zone offset, such as '+01:00', to the formatter.
      * <p>
      * This appends an instruction to format/parse the offset ID to the builder.
-     * This is equivalent to calling {@code appendOffset("+HH:mm:ss", "Z")}.
+     * This is equivalent to calling {@code appendOffset("+HH:MM:ss", "Z")}.
      * See {@link #appendOffset(String, String)} for details on formatting
      * and parsing.
      *
@@ -1935,7 +1938,7 @@ public final class DateTimeFormatterBuilder {
                     padNext(pad); // pad and continue parsing
                 }
                 // main rules
-                TemporalField field = FIELD_MAP.get(cur);
+                TemporalField field = getField(cur);
                 if (field != null) {
                     parseField(cur, count, field);
                 } else if (cur == 'z') {
@@ -2183,48 +2186,55 @@ public final class DateTimeFormatterBuilder {
         }
     }
 
-    /** Map of letters to fields. */
-    private static final Map<Character, TemporalField> FIELD_MAP = new HashMap<>();
-    static {
+    /**
+     * Returns the TemporalField for the given pattern character.
+     *
+     * @param ch the pattern character
+     * @return the TemporalField for the given pattern character, or null if not applicable
+     */
+    private static TemporalField getField(char ch) {
         // SDF = SimpleDateFormat
-        FIELD_MAP.put('G', ChronoField.ERA);                       // SDF, LDML (different to both for 1/2 chars)
-        FIELD_MAP.put('y', ChronoField.YEAR_OF_ERA);               // SDF, LDML
-        FIELD_MAP.put('u', ChronoField.YEAR);                      // LDML (different in SDF)
-        FIELD_MAP.put('Q', IsoFields.QUARTER_OF_YEAR);             // LDML (removed quarter from 310)
-        FIELD_MAP.put('q', IsoFields.QUARTER_OF_YEAR);             // LDML (stand-alone)
-        FIELD_MAP.put('M', ChronoField.MONTH_OF_YEAR);             // SDF, LDML
-        FIELD_MAP.put('L', ChronoField.MONTH_OF_YEAR);             // SDF, LDML (stand-alone)
-        FIELD_MAP.put('D', ChronoField.DAY_OF_YEAR);               // SDF, LDML
-        FIELD_MAP.put('d', ChronoField.DAY_OF_MONTH);              // SDF, LDML
-        FIELD_MAP.put('F', ChronoField.ALIGNED_WEEK_OF_MONTH);     // SDF, LDML
-        FIELD_MAP.put('E', ChronoField.DAY_OF_WEEK);               // SDF, LDML (different to both for 1/2 chars)
-        FIELD_MAP.put('c', ChronoField.DAY_OF_WEEK);               // LDML (stand-alone)
-        FIELD_MAP.put('e', ChronoField.DAY_OF_WEEK);               // LDML (needs localized week number)
-        FIELD_MAP.put('a', ChronoField.AMPM_OF_DAY);               // SDF, LDML
-        FIELD_MAP.put('H', ChronoField.HOUR_OF_DAY);               // SDF, LDML
-        FIELD_MAP.put('k', ChronoField.CLOCK_HOUR_OF_DAY);         // SDF, LDML
-        FIELD_MAP.put('K', ChronoField.HOUR_OF_AMPM);              // SDF, LDML
-        FIELD_MAP.put('h', ChronoField.CLOCK_HOUR_OF_AMPM);        // SDF, LDML
-        FIELD_MAP.put('m', ChronoField.MINUTE_OF_HOUR);            // SDF, LDML
-        FIELD_MAP.put('s', ChronoField.SECOND_OF_MINUTE);          // SDF, LDML
-        FIELD_MAP.put('S', ChronoField.NANO_OF_SECOND);            // LDML (SDF uses milli-of-second number)
-        FIELD_MAP.put('A', ChronoField.MILLI_OF_DAY);              // LDML
-        FIELD_MAP.put('n', ChronoField.NANO_OF_SECOND);            // 310 (proposed for LDML)
-        FIELD_MAP.put('N', ChronoField.NANO_OF_DAY);               // 310 (proposed for LDML)
-        FIELD_MAP.put('g', JulianFields.MODIFIED_JULIAN_DAY);
-        // 310 - z - time-zone names, matches LDML and SimpleDateFormat 1 to 4
-        // 310 - Z - matches SimpleDateFormat and LDML
-        // 310 - V - time-zone id, matches LDML
-        // 310 - v - general timezone names, not matching exactly with LDML because LDML specify to fall back
-        //           to 'VVVV' if general-nonlocation unavailable but here it's not falling back because of lack of data
-        // 310 - p - prefix for padding
-        // 310 - X - matches LDML, almost matches SDF for 1, exact match 2&3, extended 4&5
-        // 310 - x - matches LDML
-        // 310 - w, W, and Y are localized forms matching LDML
-        // LDML - B - day periods
-        // LDML - U - cycle year name, not supported by 310 yet
-        // LDML - l - deprecated
-        // LDML - j - not relevant
+        return switch (ch) {
+            case 'G' -> ChronoField.ERA;                       // SDF, LDML (different to both for 1/2 chars)
+            case 'y' -> ChronoField.YEAR_OF_ERA;               // SDF, LDML
+            case 'u' -> ChronoField.YEAR;                      // LDML (different in SDF)
+            case 'Q' -> IsoFields.QUARTER_OF_YEAR;             // LDML (removed quarter from 310)
+            case 'q' -> IsoFields.QUARTER_OF_YEAR;             // LDML (stand-alone)
+            case 'M' -> ChronoField.MONTH_OF_YEAR;             // SDF, LDML
+            case 'L' -> ChronoField.MONTH_OF_YEAR;             // SDF, LDML (stand-alone)
+            case 'D' -> ChronoField.DAY_OF_YEAR;               // SDF, LDML
+            case 'd' -> ChronoField.DAY_OF_MONTH;              // SDF, LDML
+            case 'F' -> ChronoField.ALIGNED_WEEK_OF_MONTH;     // SDF, LDML
+            case 'E' -> ChronoField.DAY_OF_WEEK;               // SDF, LDML (different to both for 1/2 chars)
+            case 'c' -> ChronoField.DAY_OF_WEEK;               // LDML (stand-alone)
+            case 'e' -> ChronoField.DAY_OF_WEEK;               // LDML (needs localized week number)
+            case 'a' -> ChronoField.AMPM_OF_DAY;               // SDF, LDML
+            case 'H' -> ChronoField.HOUR_OF_DAY;               // SDF, LDML
+            case 'k' -> ChronoField.CLOCK_HOUR_OF_DAY;         // SDF, LDML
+            case 'K' -> ChronoField.HOUR_OF_AMPM;              // SDF, LDML
+            case 'h' -> ChronoField.CLOCK_HOUR_OF_AMPM;        // SDF, LDML
+            case 'm' -> ChronoField.MINUTE_OF_HOUR;            // SDF, LDML
+            case 's' -> ChronoField.SECOND_OF_MINUTE;          // SDF, LDML
+            case 'S' -> ChronoField.NANO_OF_SECOND;            // LDML (SDF uses milli-of-second number)
+            case 'A' -> ChronoField.MILLI_OF_DAY;              // LDML
+            case 'n' -> ChronoField.NANO_OF_SECOND;            // 310 (proposed for LDML)
+            case 'N' -> ChronoField.NANO_OF_DAY;               // 310 (proposed for LDML)
+            case 'g' -> JulianFields.MODIFIED_JULIAN_DAY;
+            default -> null;
+            // 310 - z - time-zone names, matches LDML and SimpleDateFormat 1 to 4
+            // 310 - Z - matches SimpleDateFormat and LDML
+            // 310 - V - time-zone id, matches LDML
+            // 310 - v - general timezone names, not matching exactly with LDML because LDML specify to fall back
+            //           to 'VVVV' if general-nonlocation unavailable but here it's not falling back because of lack of data
+            // 310 - p - prefix for padding
+            // 310 - X - matches LDML, almost matches SDF for 1, exact match 2&3, extended 4&5
+            // 310 - x - matches LDML
+            // 310 - w, W, and Y are localized forms matching LDML
+            // LDML - B - day periods
+            // LDML - U - cycle year name, not supported by 310 yet
+            // LDML - l - deprecated
+            // LDML - j - not relevant
+        };
     }
 
     //-----------------------------------------------------------------------
@@ -2475,10 +2485,15 @@ public final class DateTimeFormatterBuilder {
          *
          * @param context  the context to format using, not null
          * @param buf  the buffer to append to, not null
+         * @param optional  whether the enclosing formatter is optional.
+         *                  If true and this formatter is nested in an optional formatter
+         *                  and the data is not available, then no error is returned and
+         *                  nothing is appended to the buffer. If false and the data is not available
+         *                  then an exception is thrown or false is returned as appropriate.
          * @return false if unable to query the value from the date-time, true otherwise
          * @throws DateTimeException if the date-time cannot be printed successfully
          */
-        boolean format(DateTimePrintContext context, StringBuilder buf);
+        boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional);
 
         /**
          * Parses text into date-time information.
@@ -2528,21 +2543,13 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int length = buf.length();
-            if (optional) {
-                context.startOptional();
-            }
-            try {
-                for (DateTimePrinterParser pp : printerParsers) {
-                    if (pp.format(context, buf) == false) {
-                        buf.setLength(length);  // reset buffer
-                        return true;
-                    }
-                }
-            } finally {
-                if (optional) {
-                    context.endOptional();
+            boolean effectiveOptional = optional | this.optional;
+            for (DateTimePrinterParser pp : printerParsers) {
+                if (!pp.format(context, buf, effectiveOptional)) {
+                    buf.setLength(length);  // reset buffer
+                    return true;
                 }
             }
             return true;
@@ -2611,9 +2618,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int preLen = buf.length();
-            if (printerParser.format(context, buf) == false) {
+            if (printerParser.format(context, buf, optional) == false) {
                 return false;
             }
             int len = buf.length() - preLen;
@@ -2680,7 +2687,7 @@ public final class DateTimeFormatterBuilder {
         LENIENT;
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             return true;  // nothing to do here
         }
 
@@ -2722,7 +2729,7 @@ public final class DateTimeFormatterBuilder {
             this.value = value;
         }
 
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             return true;
         }
 
@@ -2748,7 +2755,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             buf.append(literal);
             return true;
         }
@@ -2798,7 +2805,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             buf.append(literal);
             return true;
         }
@@ -2910,8 +2917,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long valueLong = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long valueLong = context.getValue(field, optional);
             if (valueLong == null) {
                 return false;
             }
@@ -3365,8 +3372,8 @@ public final class DateTimeFormatterBuilder {
         };
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
             }
@@ -3554,8 +3561,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
             }
@@ -3702,8 +3709,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
             }
@@ -3715,7 +3722,7 @@ public final class DateTimeFormatterBuilder {
                 text = provider.getText(chrono, field, value, textStyle, context.getLocale());
             }
             if (text == null) {
-                return numberPrinterParser().format(context, buf);
+                return numberPrinterParser().format(context, buf, optional);
             }
             buf.append(text);
             return true;
@@ -3797,9 +3804,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             // use INSTANT_SECONDS, thus this code is not bound by Instant.MAX
-            Long inSecs = context.getValue(INSTANT_SECONDS);
+            Long inSecs = context.getValue(INSTANT_SECONDS, optional);
             Long inNanos = null;
             if (context.getTemporal().isSupported(NANO_OF_SECOND)) {
                 inNanos = context.getTemporal().getLong(NANO_OF_SECOND);
@@ -3887,7 +3894,8 @@ public final class DateTimeFormatterBuilder {
                     .appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
                     .appendValue(SECOND_OF_MINUTE, 2)
                     .appendFraction(NANO_OF_SECOND, minDigits, maxDigits, true)
-                    .appendOffsetId()
+                    .parseLenient()
+                    .appendOffset("+HH", "Z")
                     .toFormatter().toPrinterParser(false);
             DateTimeParseContext newContext = context.copy();
             int pos = parser.parse(newContext, text, position);
@@ -3982,8 +3990,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long offsetSecs = context.getValue(OFFSET_SECONDS);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
             if (offsetSecs == null) {
                 return false;
             }
@@ -4281,8 +4289,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long offsetSecs = context.getValue(OFFSET_SECONDS);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
             if (offsetSecs == null) {
                 return false;
             }
@@ -4495,8 +4503,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            ZoneId zone = context.getValue(TemporalQueries.zoneId());
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            ZoneId zone = context.getValue(TemporalQueries.zoneId(), optional);
             if (zone == null) {
                 return false;
             }
@@ -4617,8 +4625,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            ZoneId zone = context.getValue(query);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            ZoneId zone = context.getValue(query, optional);
             if (zone == null) {
                 return false;
             }
@@ -5042,8 +5050,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Chronology chrono = context.getValue(TemporalQueries.chronology());
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Chronology chrono = context.getValue(TemporalQueries.chronology(), optional);
             if (chrono == null) {
                 return false;
             }
@@ -5139,9 +5147,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             Chronology chrono = Chronology.from(context.getTemporal());
-            return formatter(context.getLocale(), chrono).toPrinterParser(false).format(context, buf);
+            return formatter(context.getLocale(), chrono).toPrinterParser(false).format(context, buf, optional);
         }
 
         @Override
@@ -5250,8 +5258,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            return printerParser(context.getLocale()).format(context, buf);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            return printerParser(context.getLocale()).format(context, buf, optional);
         }
 
         @Override
@@ -5354,12 +5362,12 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long hod = context.getValue(HOUR_OF_DAY);
+        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+            Long hod = context.getValue(HOUR_OF_DAY, optional);
             if (hod == null) {
                 return false;
             }
-            Long moh = context.getValue(MINUTE_OF_HOUR);
+            Long moh = context.getValue(MINUTE_OF_HOUR, optional);
             long value = Math.floorMod(hod, 24) * 60 + (moh != null ? Math.floorMod(moh, 60) : 0);
             Locale locale = context.getLocale();
             LocaleStore store = findDayPeriodStore(locale);

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,6 @@ public:
   bool is_safepoint_poll();
   bool is_movz();
   bool is_movk();
-  bool is_sigill_not_entrant();
   bool is_stop();
 
 protected:
@@ -91,16 +90,18 @@ protected:
 
   s_char sbyte_at(int offset) const { return *(s_char*)addr_at(offset); }
   u_char ubyte_at(int offset) const { return *(u_char*)addr_at(offset); }
-  jint int_at(int offset) const { return *(jint*)addr_at(offset); }
-  juint uint_at(int offset) const { return *(juint*)addr_at(offset); }
-  address ptr_at(int offset) const { return *(address*)addr_at(offset); }
-  oop oop_at(int offset) const { return *(oop*)addr_at(offset); }
+  jint int_at(int offset) const     { return *(jint*)addr_at(offset); }
+  juint uint_at(int offset) const   { return *(juint*)addr_at(offset); }
+  address ptr_at(int offset) const  { return *(address*)addr_at(offset); }
+  oop oop_at(int offset) const      { return *(oop*)addr_at(offset); }
 
-  void set_char_at(int offset, char c) { *addr_at(offset) = (u_char)c; }
-  void set_int_at(int offset, jint i) { *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint i) { *(juint*)addr_at(offset) = i; }
-  void set_ptr_at(int offset, address ptr) { *(address*)addr_at(offset) = ptr; }
-  void set_oop_at(int offset, oop o) { *(oop*)addr_at(offset) = o; }
+#define MACOS_WX_WRITE MACOS_AARCH64_ONLY(os::thread_wx_enable_write())
+  void set_char_at(int offset, char c)     { MACOS_WX_WRITE;  *addr_at(offset) = (u_char)c; }
+  void set_int_at(int offset, jint i)      { MACOS_WX_WRITE;  *(jint*)addr_at(offset) = i; }
+  void set_uint_at(int offset, jint i)     { MACOS_WX_WRITE;  *(juint*)addr_at(offset) = i; }
+  void set_ptr_at(int offset, address ptr) { MACOS_WX_WRITE;  *(address*)addr_at(offset) = ptr; }
+  void set_oop_at(int offset, oop o)       { MACOS_WX_WRITE;  *(oop*)addr_at(offset) = o; }
+#undef MACOS_WX_WRITE
 
   void wrote(int offset);
 
@@ -360,9 +361,6 @@ public:
 
   // Insertion of native jump instruction
   static void insert(address code_pos, address entry);
-  // MT-safe insertion of native jump at verified method entry
-  static void check_verified_entry_alignment(address entry, address verified_entry);
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
 };
 
 inline NativeJump* nativeJump_at(address address) {
@@ -383,9 +381,7 @@ public:
   address jump_destination() const;
   void set_jump_destination(address dest);
 
-  static void insert_unconditional(address code_pos, address entry);
   static void replace_mt_safe(address instr_addr, address code_buffer);
-  static void verify();
 };
 
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
@@ -531,14 +527,31 @@ inline NativeLdSt* NativeLdSt_at(address addr) {
 // can store an offset from the initial nop to the nmethod.
 
 class NativePostCallNop: public NativeInstruction {
+private:
+  static bool is_movk_to_zr(uint32_t insn) {
+    return ((insn & 0xffe0001f) == 0xf280001f);
+  }
+
 public:
+  enum AArch64_specific_constants {
+    // The two parts should be checked separately to prevent out of bounds access in case
+    // the return address points to the deopt handler stub code entry point which could be
+    // at the end of page.
+    first_check_size = instruction_size
+  };
+
   bool check() const {
-    uint64_t insns = *(uint64_t*)addr_at(0);
-    // Check for two instructions: nop; movk zr, xx
-    // These instructions only ever appear together in a post-call
-    // NOP, so it's unnecessary to check that the third instruction is
-    // a MOVK as well.
-    return (insns & 0xffe0001fffffffff) == 0xf280001fd503201f;
+    // Check the first instruction is NOP.
+    if (is_nop()) {
+      uint32_t insn = *(uint32_t*)addr_at(first_check_size);
+      // Check next instruction is MOVK zr, xx.
+      // These instructions only ever appear together in a post-call
+      // NOP, so it's unnecessary to check that the third instruction is
+      // a MOVK as well.
+      return is_movk_to_zr(insn);
+    }
+
+    return false;
   }
 
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {

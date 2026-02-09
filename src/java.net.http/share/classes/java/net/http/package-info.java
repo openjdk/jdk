@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /**
  * <h2>HTTP Client and WebSocket APIs</h2>
  *
- * <p> Provides high-level client interfaces to HTTP (versions 1.1 and 2) and
+ * <p> Provides high-level client interfaces to HTTP (versions 1.1, 2, and 3) and
  * low-level client interfaces to WebSocket. The main types defined are:
  *
  * <ul>
@@ -37,10 +37,12 @@
  * </ul>
  *
  * <p> The protocol-specific requirements are defined in the
- * <a href="https://tools.ietf.org/html/rfc7540">Hypertext Transfer Protocol
- * Version 2 (HTTP/2)</a>, the <a href="https://tools.ietf.org/html/rfc2616">
+ * <a href="https://www.rfc-editor.org/info/rfc9114">Hypertext Transfer Protocol
+ * Version 3 (HTTP/3)</a>, the <a href="https://www.rfc-editor.org/info/rfc7540">
+ * Hypertext Transfer Protocol Version 2 (HTTP/2)</a>, the
+ * <a href="https://www.rfc-editor.org/info/rfc2616">
  * Hypertext Transfer Protocol (HTTP/1.1)</a>, and
- * <a href="https://tools.ietf.org/html/rfc6455">The WebSocket Protocol</a>.
+ * <a href="https://www.rfc-editor.org/info/rfc6455">The WebSocket Protocol</a>.
  *
  * <p> In general, asynchronous tasks execute in either the thread invoking
  * the operation, e.g. {@linkplain HttpClient#send(HttpRequest, BodyHandler)
@@ -65,6 +67,15 @@
  *
  * <p> Unless otherwise stated, {@code null} parameter values will cause methods
  * of all classes in this package to throw {@code NullPointerException}.
+ *
+ * @spec https://www.rfc-editor.org/info/rfc9114
+ *      RFC 9114: HTTP/3
+ * @spec https://www.rfc-editor.org/info/rfc7540
+ *      RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
+ * @spec https://www.rfc-editor.org/info/rfc2616
+ *      RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
+ * @spec https://www.rfc-editor.org/info/rfc6455
+ *      RFC 6455: The WebSocket Protocol
  *
  * @since 11
  */

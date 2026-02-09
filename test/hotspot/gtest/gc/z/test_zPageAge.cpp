@@ -44,4 +44,8 @@ TEST(ZPageAgeRangeTest, test) {
   ZPageAgeRange rangeOld = ZPageAgeRangeOld;
   EXPECT_EQ(rangeOld.first(), ZPageAge::old);
   EXPECT_EQ(rangeOld.last(), ZPageAge::old);
+
+  ZPageAgeRange rangeAll = ZPageAgeRangeAll;
+  EXPECT_EQ(rangeAll.first(), ZPageAge::eden);
+  EXPECT_EQ(rangeAll.last(), ZPageAge::old);
 }

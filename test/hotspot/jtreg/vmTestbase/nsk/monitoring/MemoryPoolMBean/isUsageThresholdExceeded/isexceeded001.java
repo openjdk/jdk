@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,8 @@ public class isexceeded001 {
             // but cannot assume this affects the pool we are testing.
             b = new byte[INCREMENT];
 
-            isExceeded = monitor.isUsageThresholdExceeded(pool);
+            // Ensure the observation of isExceeded is sticky to match peakUsage.
+            isExceeded = isExceeded || monitor.isUsageThresholdExceeded(pool);
             log.display("  Allocated heap.  isExceeded = " + isExceeded);
 
             // Fetch usage information: use peak usage in comparisons below, in case usage went up and then down.

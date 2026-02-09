@@ -235,7 +235,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-03:00) Punta Arenas -->
 			<mapZone other="Magallanes Standard Time" territory="001" type="America/Punta_Arenas"/>
-			<mapZone other="Magallanes Standard Time" territory="CL" type="America/Punta_Arenas"/>
+			<mapZone other="Magallanes Standard Time" territory="CL" type="America/Punta_Arenas America/Coyhaique"/>
 
 			<!-- (UTC-03:00) Saint Pierre and Miquelon -->
 			<mapZone other="Saint Pierre Standard Time" territory="001" type="America/Miquelon"/>

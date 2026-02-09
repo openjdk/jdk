@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ final class RSAServerKeyExchange {
             RSAServerKeyExchangeMessage skem =
                     new RSAServerKeyExchangeMessage(
                             shc, x509Possession, rsaPossession);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced RSA ServerKeyExchange handshake message", skem);
             }
@@ -296,7 +296,7 @@ final class RSAServerKeyExchange {
 
             RSAServerKeyExchangeMessage skem =
                     new RSAServerKeyExchangeMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Consuming RSA ServerKeyExchange handshake message", skem);
             }

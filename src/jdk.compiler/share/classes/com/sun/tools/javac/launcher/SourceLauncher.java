@@ -226,6 +226,8 @@ public final class SourceLauncher {
 
         Object instance = null;
 
+        // Similar to sun.launcher.LauncherHelper#checkAndLoadMain, including
+        // checks performed in LauncherHelper#validateMainMethod
         if (!isStatic) {
             if (Modifier.isAbstract(mainClass.getModifiers())) {
                 throw new Fault(Errors.CantInstantiate(mainClassName));
@@ -236,6 +238,10 @@ public final class SourceLauncher {
                 constructor = mainClass.getDeclaredConstructor();
             } catch (NoSuchMethodException e) {
                 throw new Fault(Errors.CantFindConstructor(mainClassName));
+            }
+
+            if (Modifier.isPrivate(constructor.getModifiers())) {
+                throw new Fault(Errors.CantUsePrivateConstructor(mainClassName));
             }
 
             try {
@@ -259,13 +265,19 @@ public final class SourceLauncher {
             }
         } catch (IllegalAccessException e) {
             throw new Fault(Errors.CantAccessMainMethod(mainClassName));
-        } catch (InvocationTargetException e) {
+        } catch (InvocationTargetException exception) {
             // remove stack frames for source launcher
-            int invocationFrames = e.getStackTrace().length;
-            Throwable target = e.getCause();
-            StackTraceElement[] targetTrace = target.getStackTrace();
-            target.setStackTrace(Arrays.copyOfRange(targetTrace, 0, targetTrace.length - invocationFrames));
-            throw e;
+            StackTraceElement[] invocationElements = exception.getStackTrace();
+            if (invocationElements == null) throw exception;
+            Throwable cause = exception.getCause();
+            if (cause == null) throw exception;
+            StackTraceElement[] causeElements = cause.getStackTrace();
+            if (causeElements == null) throw exception;
+            int range = causeElements.length - invocationElements.length;
+            if (range >= 0) {
+                cause.setStackTrace(Arrays.copyOfRange(causeElements, 0, range));
+            }
+            throw exception;
         }
 
         return mainClass;

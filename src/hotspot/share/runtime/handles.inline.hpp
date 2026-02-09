@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 #include "runtime/handles.hpp"
 
-#include "runtime/javaThread.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
+#include "runtime/javaThread.hpp"
 
 // these inline functions are in a separate file to break an include cycle
 // between Thread and Handle

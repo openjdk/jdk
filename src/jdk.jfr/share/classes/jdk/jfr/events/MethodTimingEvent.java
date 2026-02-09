@@ -29,11 +29,13 @@ import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Timespan;
 import jdk.jfr.internal.RemoveFields;
+import jdk.jfr.Description;
 
 @Name("jdk.MethodTiming")
 @Label("Method Timing")
 @Category({ "Java Virtual Machine", "Method Tracing" })
 @RemoveFields({ "duration", "eventThread", "stackTrace" })
+@Description("Measures the approximate time it takes for a method to execute, including all delays, not just CPU processing time")
 public final class MethodTimingEvent extends AbstractJDKEvent {
 
     @Label("Method")
@@ -43,14 +45,17 @@ public final class MethodTimingEvent extends AbstractJDKEvent {
     public long invocations;
 
     @Label("Minimum Time")
+    @Description("The value may be missing (Long.MIN_VALUE) if the clock-resolution is too low to establish a minimum time")
     @Timespan(Timespan.TICKS)
     public long minimum;
 
     @Label("Average Time")
+    @Description("The value may be missing (Long.MIN_VALUE) if the clock-resolution is too low to establish an average time")
     @Timespan(Timespan.TICKS)
     public long average;
 
     @Label("Maximum Time")
+    @Description("The value may be missing (Long.MIN_VALUE) if the clock-resolution is too low to establish a maximum time")
     @Timespan(Timespan.TICKS)
     public long maximum;
 

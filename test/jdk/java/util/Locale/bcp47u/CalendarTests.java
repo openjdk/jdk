@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,25 +28,24 @@
  * @summary Tests Calendar class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
- * @run testng/othervm CalendarTests
+ * @run junit/othervm CalendarTests
  */
-
-import static org.testng.Assert.assertEquals;
 
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test Calendar with BCP47 U extensions
  */
-@Test
 public class CalendarTests {
     private static TimeZone defaultTZ;
 
@@ -64,19 +63,18 @@ public class CalendarTests {
     private static final Locale FW_FRI = Locale.forLanguageTag("en-US-u-fw-fri");
     private static final Locale FW_SAT = Locale.forLanguageTag("en-US-u-fw-sat");
 
-    @BeforeTest
-    public void beforeTest() {
+    @BeforeAll
+    static void beforeTest() {
         defaultTZ = TimeZone.getDefault();
         TimeZone.setDefault(AMLA);
     }
 
-    @AfterTest
-    public void afterTest() {
+    @AfterAll
+    static void afterTest() {
         TimeZone.setDefault(defaultTZ);
     }
 
-    @DataProvider(name="tz")
-    Object[][] tz() {
+    static Object[][] tz() {
         return new Object[][] {
             // Locale, Expected Zone,
             {JPTYO, ASIATOKYO},
@@ -87,8 +85,7 @@ public class CalendarTests {
         };
     }
 
-    @DataProvider(name="firstDayOfWeek")
-    Object[][] firstDayOfWeek () {
+    static Object[][] firstDayOfWeek () {
         return new Object[][] {
             // Locale, Expected DayOfWeek,
             {Locale.US, Calendar.SUNDAY},
@@ -114,8 +111,7 @@ public class CalendarTests {
         };
     }
 
-    @DataProvider(name="minDaysInFirstWeek")
-    Object[][] minDaysInFrstWeek () {
+    static Object[][] minDaysInFirstWeek () {
         return new Object[][] {
             // Locale, Expected minDay,
             {Locale.US, 1},
@@ -126,33 +122,36 @@ public class CalendarTests {
         };
     }
 
-    @Test(dataProvider="tz")
-    public void test_tz(Locale locale, TimeZone zoneExpected) {
+    @MethodSource("tz")
+    @ParameterizedTest
+    void test_tz(Locale locale, TimeZone zoneExpected) {
         DateFormat df = DateFormat.getTimeInstance(DateFormat.FULL, locale);
-        assertEquals(df.getTimeZone(), zoneExpected);
+        assertEquals(zoneExpected, df.getTimeZone());
 
         Calendar c = Calendar.getInstance(locale);
-        assertEquals(c.getTimeZone(), zoneExpected);
+        assertEquals(zoneExpected, c.getTimeZone());
 
         c = new Calendar.Builder().setLocale(locale).build();
-        assertEquals(c.getTimeZone(), zoneExpected);
+        assertEquals(zoneExpected, c.getTimeZone());
     }
 
-    @Test(dataProvider="firstDayOfWeek")
-    public void test_firstDayOfWeek(Locale locale, int dowExpected) {
+    @MethodSource("firstDayOfWeek")
+    @ParameterizedTest
+    void test_firstDayOfWeek(Locale locale, int dowExpected) {
         Calendar c = Calendar.getInstance(locale);
-        assertEquals(c.getFirstDayOfWeek(), dowExpected);
+        assertEquals(dowExpected, c.getFirstDayOfWeek());
 
         c = new Calendar.Builder().setLocale(locale).build();
-        assertEquals(c.getFirstDayOfWeek(), dowExpected);
+        assertEquals(dowExpected, c.getFirstDayOfWeek());
     }
 
-    @Test(dataProvider="minDaysInFirstWeek")
-    public void test_minDaysInFirstWeek(Locale locale, int minDaysExpected) {
+    @MethodSource("minDaysInFirstWeek")
+    @ParameterizedTest
+    void test_minDaysInFirstWeek(Locale locale, int minDaysExpected) {
         Calendar c = Calendar.getInstance(locale);
-        assertEquals(c.getMinimalDaysInFirstWeek(), minDaysExpected);
+        assertEquals(minDaysExpected, c.getMinimalDaysInFirstWeek());
 
         c = new Calendar.Builder().setLocale(locale).build();
-        assertEquals(c.getMinimalDaysInFirstWeek(), minDaysExpected);
+        assertEquals(minDaysExpected, c.getMinimalDaysInFirstWeek());
     }
 }

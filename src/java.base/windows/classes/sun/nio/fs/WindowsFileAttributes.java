@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,6 +412,10 @@ class WindowsFileAttributes
         return isSymbolicLink() && ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
     }
 
+    boolean isDirectoryJunction() {
+        return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+    }
+
     @Override
     public boolean isSymbolicLink() {
         return reparseTag == IO_REPARSE_TAG_SYMLINK;
@@ -423,10 +427,8 @@ class WindowsFileAttributes
 
     @Override
     public boolean isDirectory() {
-        // ignore FILE_ATTRIBUTE_DIRECTORY attribute if file is a sym link
-        if (isSymbolicLink())
-            return false;
-        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
+        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0 &&
+                (fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) == 0);
     }
 
     @Override

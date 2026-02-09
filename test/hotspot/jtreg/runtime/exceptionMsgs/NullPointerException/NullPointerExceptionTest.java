@@ -54,6 +54,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -1365,7 +1366,7 @@ public class NullPointerExceptionTest {
         // If NPE is thrown in a native method, the message should
         // not be generated.
         try {
-            Class.forName(null);
+            Array.get(null,0);
             Asserts.fail();
         } catch (NullPointerException e) {
             Asserts.assertNull(e.getMessage());

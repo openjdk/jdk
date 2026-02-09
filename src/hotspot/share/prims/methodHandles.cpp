@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
 #include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/oopMapCache.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -52,11 +52,11 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/timerTrace.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/timerTrace.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -557,7 +557,7 @@ bool MethodHandles::is_basic_type_signature(Symbol* sig) {
     switch (ss.type()) {
     case T_OBJECT:
       // only java/lang/Object is valid here
-      if (strncmp((char*) ss.raw_bytes(), OBJ_SIG, OBJ_SIG_LEN) != 0)
+      if (strncmp((char*) ss.raw_bytes(), OBJ_SIG, ss.raw_length()) != 0)
         return false;
       break;
     case T_VOID:
@@ -771,7 +771,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
           LinkResolver::resolve_static_call(result,
-                        link_info, false, THREAD);
+                        link_info, ClassInitMode::dont_init, THREAD);
         } else if (ref_kind == JVM_REF_invokeInterface) {
           LinkResolver::resolve_interface_call(result, Handle(), defc,
                         link_info, false, THREAD);
@@ -833,7 +833,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         LinkInfo link_info(defc, name, type, caller, LinkInfo::AccessCheck::skip, loader_constraint_check);
-        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
+        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, ClassInitMode::dont_init, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           if (speculative_resolve) {
             CLEAR_PENDING_EXCEPTION;
@@ -902,7 +902,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       if (clazz == nullptr) {
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nothing to expand (as field)");
       }
-      InstanceKlass* defc = InstanceKlass::cast(java_lang_Class::as_Klass(clazz));
+      InstanceKlass* defc = java_lang_Class::as_InstanceKlass(clazz);
       DEBUG_ONLY(clazz = nullptr);  // safety
       intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
       bool is_static = ((flags & JVM_ACC_STATIC) != 0);

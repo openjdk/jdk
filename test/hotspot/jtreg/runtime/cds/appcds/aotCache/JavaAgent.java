@@ -24,7 +24,31 @@
 
 
 /*
- * @test
+ * @test id=static
+ * @bug 8361725
+ * @summary -javaagent is not allowed when creating static CDS archive
+ * @requires vm.cds.supports.aot.class.linking
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build JavaAgent JavaAgentTransformer Util
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp JavaAgentApp$ShouldBeTransformed
+ * @run driver JavaAgent STATIC
+ */
+
+/**
+ * @test id=dynamic
+ * @bug 8362561
+ * @summary -javaagent is not allowed when creating dynamic CDS archive
+ * @requires vm.cds.supports.aot.class.linking
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build JavaAgent JavaAgentTransformer Util
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp JavaAgentApp$ShouldBeTransformed
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. JavaAgent DYNAMIC
+ */
+
+/*
+ * @test id=aot
  * @summary -javaagent should be allowed in AOT workflow. However, classes transformed/redefined by agents will not
  *          be cached.
  * @requires vm.cds.supports.aot.class.linking
@@ -53,7 +77,13 @@ public class JavaAgent {
                                         ClassFileInstaller.Manifest.fromSourceFile("JavaAgentTransformer.mf"),
                                         agentClasses);
 
-        new Tester().run(args);
+        Tester t = new Tester();
+        if (args[0].equals("STATIC") || args[0].equals("DYNAMIC")) {
+            // Some child processes may have non-zero exits. These are checked by
+            // checkExecutionForStaticWorkflow() and checkExecutionForDynamicWorkflow
+            t.setCheckExitValue(false);
+        }
+        t.run(args);
     }
 
     static class Tester extends CDSAppTester {
@@ -68,7 +98,11 @@ public class JavaAgent {
 
         @Override
         public String[] vmArgs(RunMode runMode) {
-            return new String[] { "-javaagent:" + agentJar, "-Xlog:aot,cds"};
+            return new String[] {
+                "-javaagent:" + agentJar,
+                "-Xlog:aot,cds",
+                "-XX:+AOTClassLinking",
+            };
         }
 
         @Override
@@ -80,7 +114,20 @@ public class JavaAgent {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            String agentLoadedMsg = "JavaAgentTransformer.premain() is called";
+            if (isAOTWorkflow()) {
+                checkExecutionForAOTWorkflow(out, runMode);
+            } else if (isStaticWorkflow()) {
+                checkExecutionForStaticWorkflow(out, runMode);
+            } else {
+                checkExecutionForDynamicWorkflow(out, runMode);
+            }
+        }
+
+        static String agentLoadedMsg = "JavaAgentTransformer.premain() is called";
+        static String agentPremainFinished = "JavaAgentTransformer::premain() is finished";
+
+        public void checkExecutionForAOTWorkflow(OutputAnalyzer out, RunMode runMode) throws Exception {
+
             if (runMode.isApplicationExecuted()) {
                 out.shouldContain(agentLoadedMsg);
                 out.shouldContain("Transforming: JavaAgentApp$ShouldBeTransformed; Class<?> = null");
@@ -91,11 +138,44 @@ public class JavaAgent {
 
             switch (runMode) {
             case RunMode.TRAINING:
+                out.shouldContain(agentPremainFinished);
                 out.shouldContain("Skipping JavaAgentApp$ShouldBeTransformed: From ClassFileLoadHook");
                 out.shouldContain("Skipping JavaAgentTransformer: Unsupported location");
                 break;
             case RunMode.ASSEMBLY:
                 out.shouldContain("Disabled all JVMTI agents during -XX:AOTMode=create");
+                out.shouldNotContain(agentPremainFinished);
+                break;
+            }
+
+        }
+
+        public void checkExecutionForStaticWorkflow(OutputAnalyzer out, RunMode runMode) throws Exception {
+            switch (runMode) {
+            case RunMode.TRAINING:
+                out.shouldContain(agentPremainFinished);
+                out.shouldHaveExitValue(0);
+                break;
+            case RunMode.DUMP_STATIC:
+                out.shouldContain("JVMTI agents are not allowed when dumping CDS archives");
+                out.shouldNotHaveExitValue(0);
+                break;
+            case RunMode.PRODUCTION:
+                out.shouldContain("Unable to use shared archive: invalid archive");
+                out.shouldNotHaveExitValue(0);
+                break;
+            }
+        }
+
+        public void checkExecutionForDynamicWorkflow(OutputAnalyzer out, RunMode runMode) throws Exception {
+            switch (runMode) {
+            case RunMode.DUMP_DYNAMIC:
+                out.shouldContain("JVMTI agents are not allowed when dumping CDS archives");
+                out.shouldNotHaveExitValue(0);
+                break;
+            case RunMode.PRODUCTION:
+                out.shouldContain("Unable to use shared archive: invalid archive");
+                out.shouldNotHaveExitValue(0);
                 break;
             }
         }

@@ -158,7 +158,8 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
         TEXT_PLAIN,
         /**
          * JSON (JavaScript Object Notation) format.
-         * @spec https://datatracker.ietf.org/doc/html/rfc8259 JavaScript Object Notation
+         * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
+         *      Object Notation (JSON) Data Interchange Format
          */
         JSON,
     }

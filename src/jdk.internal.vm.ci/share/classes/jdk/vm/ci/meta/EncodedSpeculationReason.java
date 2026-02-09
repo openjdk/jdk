@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,5 +112,26 @@ public class EncodedSpeculationReason implements SpeculationReason {
     @Override
     public String toString() {
         return String.format("%s@%d%s", groupName, groupId, Arrays.toString(context));
+    }
+
+    /**
+     * Returns the group ID of this speculation reason.
+     */
+    public int getGroupId() {
+        return groupId;
+    }
+
+    /**
+     * Returns the group name of this speculation reason.
+     */
+    public String getGroupName() {
+        return groupName;
+    }
+
+    /**
+     * Returns a copy of the array of context objects.
+     */
+    public Object[] getContext() {
+        return (context == null) ? null : context.clone();
     }
 }

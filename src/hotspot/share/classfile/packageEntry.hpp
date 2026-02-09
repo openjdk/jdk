@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 #ifndef SHARE_CLASSFILE_PACKAGEENTRY_HPP
 #define SHARE_CLASSFILE_PACKAGEENTRY_HPP
 
+#include "cds/aotGrowableArray.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_JFR
@@ -114,7 +116,7 @@ private:
   bool _must_walk_exports;
   // Contains list of modules this package is qualifiedly exported to.  Access
   // to this list is protected by the Module_lock.
-  GrowableArray<ModuleEntry*>* _qualified_exports;
+  AOTGrowableArray<ModuleEntry*>* _qualified_exports;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
   // Initial size of a package entry's list of qualified exports.
@@ -205,13 +207,24 @@ public:
   void purge_qualified_exports();
   void delete_qualified_exports();
 
+  void pack_qualified_exports(); // used by AOT
+
+  // methods required by MetaspaceClosure
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(PackageEntry)); }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::PackageEntryType; }
+  static bool is_read_only_by_default() { return false; }
+
   void print(outputStream* st = tty);
 
+  char* name_as_C_string() const {
+    assert(_name != nullptr, "name can't be null");
+    return name()->as_C_string();
+  }
+
 #if INCLUDE_CDS_JAVA_HEAP
-  void iterate_symbols(MetaspaceClosure* closure);
-  PackageEntry* allocate_archived_entry() const;
-  void init_as_archived_entry();
-  static PackageEntry* get_archived_entry(PackageEntry* orig_entry);
+  bool should_be_archived() const;
+  void remove_unshareable_info();
   void load_from_archive();
 #endif
 
@@ -221,18 +234,18 @@ public:
 
   bool is_defined_by_cds_in_class_path(int idx) const {
     assert(idx < max_index_for_defined_in_class_path(), "sanity");
-    return((Atomic::load(&_defined_by_cds_in_class_path) & ((int)1 << idx)) != 0);
+    return((AtomicAccess::load(&_defined_by_cds_in_class_path) & ((int)1 << idx)) != 0);
   }
   void set_defined_by_cds_in_class_path(int idx) {
     assert(idx < max_index_for_defined_in_class_path(), "sanity");
-    Atomic::fetch_then_or(&_defined_by_cds_in_class_path, ((int)1 << idx));
+    AtomicAccess::fetch_then_or(&_defined_by_cds_in_class_path, ((int)1 << idx));
   }
 };
 
 // The PackageEntryTable is a Hashtable containing a list of all packages defined
 // by a particular class loader.  Each package is represented as a PackageEntry node.
 class PackageEntryTable : public CHeapObj<mtModule> {
-  ResourceHashtable<SymbolHandle, PackageEntry*, 109, AnyObj::C_HEAP, mtModule,
+  HashTable<SymbolHandle, PackageEntry*, 109, AnyObj::C_HEAP, mtModule,
                     SymbolHandle::compute_hash> _table;
 public:
   PackageEntryTable();
@@ -270,9 +283,7 @@ public:
   void print(outputStream* st = tty);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  void iterate_symbols(MetaspaceClosure* closure);
-  Array<PackageEntry*>* allocate_archived_entries();
-  void init_archived_entries(Array<PackageEntry*>* archived_packages);
+  Array<PackageEntry*>* build_aot_table(ClassLoaderData* loader_data, TRAPS);
   void load_archived_entries(Array<PackageEntry*>* archived_packages);
 #endif
 };

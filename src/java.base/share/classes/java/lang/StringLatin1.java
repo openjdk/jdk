@@ -32,6 +32,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -41,61 +43,49 @@ import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
-    public static char charAt(byte[] value, int index) {
+    static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
     }
 
-    public static boolean canEncode(char cp) {
+    static boolean canEncode(char cp) {
         return cp <= 0xff;
     }
 
-    public static boolean canEncode(int cp) {
+    static boolean canEncode(int cp) {
         return cp >=0 && cp <= 0xff;
     }
 
-    public static byte coderFromChar(char cp) {
+    static byte coderFromChar(char cp) {
         return (byte)((0xff - cp) >>> (Integer.SIZE - 1));
     }
 
-    public static int length(byte[] value) {
+    static int length(byte[] value) {
         return value.length;
     }
 
-    public static int codePointAt(byte[] value, int index, int end) {
-        return value[index] & 0xff;
-    }
-
-    public static int codePointBefore(byte[] value, int index) {
-        return value[index - 1] & 0xff;
-    }
-
-    public static int codePointCount(byte[] value, int beginIndex, int endIndex) {
-        return endIndex - beginIndex;
-    }
-
-    public static char[] toChars(byte[] value) {
+    static char[] toChars(byte[] value) {
         char[] dst = new char[value.length];
         inflate(value, 0, dst, 0, value.length);
         return dst;
     }
 
-    public static byte[] inflate(byte[] value, int off, int len) {
+    static byte[] inflate(byte[] value, int off, int len) {
         byte[] ret = StringUTF16.newBytesFor(len);
         inflate(value, off, ret, 0, len);
         return ret;
     }
 
-    public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+    static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         inflate(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
-    public static void getBytes(byte[] value, int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
+    static void getBytes(byte[] value, int srcBegin, int srcEnd, byte[] dst, int dstBegin) {
         System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     @IntrinsicCandidate
-    public static boolean equals(byte[] value, byte[] other) {
+    static boolean equals(byte[] value, byte[] other) {
         if (value.length == other.length) {
             for (int i = 0; i < value.length; i++) {
                 if (value[i] != other[i]) {
@@ -108,20 +98,20 @@ final class StringLatin1 {
     }
 
     @IntrinsicCandidate
-    public static int compareTo(byte[] value, byte[] other) {
+    static int compareTo(byte[] value, byte[] other) {
         int len1 = value.length;
         int len2 = other.length;
         return compareTo(value, other, len1, len2);
     }
 
-    public static int compareTo(byte[] value, byte[] other, int len1, int len2) {
+    static int compareTo(byte[] value, byte[] other, int len1, int len2) {
         int lim = Math.min(len1, len2);
         int k = ArraysSupport.mismatch(value, other, lim);
         return (k < 0) ? len1 - len2 : getChar(value, k) - getChar(other, k);
     }
 
     @IntrinsicCandidate
-    public static int compareToUTF16(byte[] value, byte[] other) {
+    static int compareToUTF16(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         return compareToUTF16Values(value, other, len1, len2);
@@ -130,7 +120,7 @@ final class StringLatin1 {
     /*
      * Checks the boundary and then compares the byte arrays.
      */
-    public static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
+    static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
         checkOffset(len1, length(value));
         checkOffset(len2, StringUTF16.length(other));
 
@@ -149,7 +139,7 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
-    public static int compareToCI(byte[] value, byte[] other) {
+    static int compareToCI(byte[] value, byte[] other) {
         int len1 = value.length;
         int len2 = other.length;
         int lim = Math.min(len1, len2);
@@ -169,7 +159,7 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
-    public static int compareToCI_UTF16(byte[] value, byte[] other) {
+    static int compareToCI_UTF16(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         int lim = Math.min(len1, len2);
@@ -191,12 +181,134 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
-    public static int hashCode(byte[] value) {
+    private static int compareToFC0(byte[] value, int off, int last, byte[] other, int ooff, int olast) {
+        int k1 = off, k2 = ooff;
+        boolean lo1 = false, lo2 = false;  // true if we have a leftover 's' from u+00df -> ss
+        while ((k1 < last || lo1) && (k2 < olast || lo2)) {
+            int c1, c2;
+            if (lo1) {
+                c1 = 0x73; // leftover 's'
+                lo1 = false;
+            } else {
+                c1 = getChar(value, k1++);
+                if (c1 == 0xdf) {
+                    c1 = 0x73;
+                    lo1 = true;
+                }
+            }
+            if (lo2) {
+                c2 = 0x73; // 's'
+                lo2 = false;
+            } else {
+                c2 = getChar(other, k2++);
+                if (c2 == 0xdf) {
+                    c2 = 0x73;
+                    lo2 = true;
+                }
+            }
+            if (!CharacterDataLatin1.equalsIgnoreCase((byte)c1, (byte)c2)) {
+                return Character.toLowerCase(c1) - Character.toLowerCase(c2);
+            }
+        }
+        if (k1 < last || lo1) {
+            return 1;
+        }
+        if (k2 < olast || lo2) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int compareToFC(byte[] value, byte[] other) {
+        int len = value.length;
+        int olen = other.length;
+        int lim = Math.min(len, olen);
+        for (int k = 0; k < lim; k++) {
+            byte b1 = value[k];
+            byte b2 = other[k];
+            if (!CharacterDataLatin1.equalsIgnoreCase(b1, b2)) {
+                int c1 = b1 & 0xff;
+                int c2 = b2 & 0xff;
+                if (c1 == 0xdf || c2 == 0xdf) {  // 0xdf is the only 1:M in latin1 range
+                    return compareToFC0(value, k, len, other, k, olen);
+                }
+                return Character.toLowerCase(c1) - Character.toLowerCase(c2);
+            }
+        }
+        return len - olen;
+    }
+
+    private static int compareToFC0_UTF16(byte[] value, int off, int last, byte[] other, int ooff, int olast) {
+        int f1 = 0, f2 = 0;
+        int k1 = off, k2 = ooff;
+        while ((k1 < last || f1 != 0) && (k2 < olast || f2 != 0)) {
+            int c1, c2;
+            if (f1 != 0) {
+                c1 = (f1 & 0xffff); f1 >>>= 16;
+            } else {
+                c1 = getChar(value, k1++);
+                var f = CaseFolding.fold(c1);
+                if (CaseFolding.isSingleCodePoint(f)) {
+                    c1 = (int)(f & 0xfffff);
+                } else {
+                    c1 = (int)f & 0xffff;
+                    f1 = (int)(f >>> 16);
+                }
+            }
+            if (f2 != 0) {
+                c2 = f2 & 0xffff; f2 >>>= 16;
+            } else {
+                c2 = StringUTF16.codePointAt(other, k2, olast, true);
+                k2 += Character.charCount(c2);
+                var f = CaseFolding.fold(c2);
+                if (CaseFolding.isSingleCodePoint(f)) {
+                    c2 = (int)(f & 0xfffff);
+                } else {
+                    c2 = (int)(f & 0xffff);
+                    f2 = (int)(f >>> 16);
+                }
+            }
+            if (c1 != c2) {
+                return c1 - c2;
+            }
+        }
+        if (k1 < last || f1 != 0) {
+            return 1;
+        }
+        if (k2 < olast || f2 != 0) {
+            return -1;
+        }
+        return 0;
+    }
+
+    // latin1 vs utf16
+    static int compareToFC_UTF16(byte[] value, byte[] other) {
+        int last = length(value);
+        int olast = StringUTF16.length(other);
+        int lim = Math.min(last, olast);
+        for (int k = 0; k < lim; k++) {
+            int cp1 = getChar(value, k);
+            int cp2 = StringUTF16.codePointAt(other, k, olast, true);
+            if (cp1 != cp2) {
+                long cf1 = CaseFolding.fold(cp1);
+                long cf2 = CaseFolding.fold(cp2);
+                if (cf1 != cf2) {
+                    if (!CaseFolding.isSingleCodePoint(cf1) || !CaseFolding.isSingleCodePoint(cf2)) {
+                        return compareToFC0_UTF16(value, k, last, other, k, olast);
+                    }
+                    return (int)(cf1 - cf2);
+                }
+            }
+        }
+        return last - olast;
+    }
+
+    static int hashCode(byte[] value) {
         return ArraysSupport.hashCodeOfUnsigned(value, 0, value.length, 0);
     }
 
     // Caller must ensure that from- and toIndex are within bounds
-    public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
+    static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
             return -1;
         }
@@ -215,7 +327,7 @@ final class StringLatin1 {
     }
 
     @IntrinsicCandidate
-    public static int indexOf(byte[] value, byte[] str) {
+    static int indexOf(byte[] value, byte[] str) {
         if (str.length == 0) {
             return 0;
         }
@@ -226,7 +338,7 @@ final class StringLatin1 {
     }
 
     @IntrinsicCandidate
-    public static int indexOf(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
+    static int indexOf(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
         byte first = str[0];
         int max = (valueCount - strCount);
         for (int i = fromIndex; i <= max; i++) {
@@ -248,8 +360,8 @@ final class StringLatin1 {
         return -1;
     }
 
-    public static int lastIndexOf(byte[] src, int srcCount,
-                                  byte[] tgt, int tgtCount, int fromIndex) {
+    static int lastIndexOf(byte[] src, int srcCount,
+                           byte[] tgt, int tgtCount, int fromIndex) {
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
@@ -276,7 +388,7 @@ final class StringLatin1 {
         }
     }
 
-    public static int lastIndexOf(final byte[] value, int ch, int fromIndex) {
+    static int lastIndexOf(final byte[] value, int ch, int fromIndex) {
         if (!canEncode(ch)) {
             return -1;
         }
@@ -289,7 +401,7 @@ final class StringLatin1 {
         return -1;
     }
 
-    public static String replace(byte[] value, char oldChar, char newChar) {
+    static String replace(byte[] value, char oldChar, char newChar) {
         if (canEncode(oldChar)) {
             int len = value.length;
             int i = -1;
@@ -326,8 +438,8 @@ final class StringLatin1 {
         return null; // for string to return this;
     }
 
-    public static String replace(byte[] value, int valLen, byte[] targ,
-                                 int targLen, byte[] repl, int replLen)
+    static String replace(byte[] value, int valLen, byte[] targ,
+                          int targLen, byte[] repl, int replLen)
     {
         assert targLen > 0;
         int i, j, p = 0;
@@ -377,8 +489,8 @@ final class StringLatin1 {
     }
 
     // case insensitive
-    public static boolean regionMatchesCI(byte[] value, int toffset,
-                                          byte[] other, int ooffset, int len) {
+    static boolean regionMatchesCI(byte[] value, int toffset,
+                                   byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
             byte b1 = value[toffset++];
@@ -391,8 +503,8 @@ final class StringLatin1 {
         return true;
     }
 
-    public static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
-                                                byte[] other, int ooffset, int len) {
+    static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
+                                         byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
             char c1 = (char)(value[toffset++] & 0xff);
@@ -413,7 +525,7 @@ final class StringLatin1 {
         return true;
     }
 
-    public static String toLowerCase(String str, byte[] value, Locale locale) {
+    static String toLowerCase(String str, byte[] value, Locale locale) {
         if (locale == null) {
             throw new NullPointerException();
         }
@@ -480,7 +592,7 @@ final class StringLatin1 {
         return StringUTF16.newString(result, 0, resultOffset);
     }
 
-    public static String toUpperCase(String str, byte[] value, Locale locale) {
+    static String toUpperCase(String str, byte[] value, Locale locale) {
         if (locale == null) {
             throw new NullPointerException();
         }
@@ -560,7 +672,7 @@ final class StringLatin1 {
         return StringUTF16.newString(result, 0, resultOffset);
     }
 
-    public static String trim(byte[] value) {
+    static String trim(byte[] value) {
         int len = value.length;
         int st = 0;
         while ((st < len) && ((value[st] & 0xff) <= ' ')) {
@@ -573,7 +685,7 @@ final class StringLatin1 {
             newString(value, st, len - st) : null;
     }
 
-    public static int indexOfNonWhitespace(byte[] value) {
+    static int indexOfNonWhitespace(byte[] value) {
         int length = value.length;
         int left = 0;
         while (left < length) {
@@ -586,9 +698,8 @@ final class StringLatin1 {
         return left;
     }
 
-    public static int lastIndexOfNonWhitespace(byte[] value) {
-        int length = value.length;
-        int right = length;
+    static int lastIndexOfNonWhitespace(byte[] value) {
+        int right = value.length;
         while (0 < right) {
             char ch = getChar(value, right - 1);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
@@ -599,7 +710,7 @@ final class StringLatin1 {
         return right;
     }
 
-    public static String strip(byte[] value) {
+    static String strip(byte[] value) {
         int left = indexOfNonWhitespace(value);
         if (left == value.length) {
             return "";
@@ -609,12 +720,12 @@ final class StringLatin1 {
         return ifChanged ? newString(value, left, right - left) : null;
     }
 
-    public static String stripLeading(byte[] value) {
+    static String stripLeading(byte[] value) {
         int left = indexOfNonWhitespace(value);
         return (left != 0) ? newString(value, left, value.length - left) : null;
     }
 
-    public static String stripTrailing(byte[] value) {
+    static String stripTrailing(byte[] value) {
         int right = lastIndexOfNonWhitespace(value);
         return (right != value.length) ? newString(value, 0, right) : null;
     }
@@ -713,14 +824,14 @@ final class StringLatin1 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+    static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
         value[i] = (byte)c1;
         value[i + 1] = (byte)c2;
         value[i + 2] = (byte)c3;
         value[i + 3] = (byte)c4;
     }
 
-    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+    static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
         value[i] = (byte)c1;
         value[i + 1] = (byte)c2;
         value[i + 2] = (byte)c3;
@@ -728,32 +839,15 @@ final class StringLatin1 {
         value[i + 4] = (byte)c5;
     }
 
-    public static void putChar(byte[] val, int index, int c) {
-        //assert (canEncode(c));
-        val[index] = (byte)(c);
-    }
-
-    public static char getChar(byte[] val, int index) {
+    static char getChar(byte[] val, int index) {
         return (char)(val[index] & 0xff);
     }
 
-    public static byte[] toBytes(int[] val, int off, int len) {
-        byte[] ret = new byte[len];
-        for (int i = 0; i < len; i++) {
-            int cp = val[off++];
-            if (!canEncode(cp)) {
-                return null;
-            }
-            ret[i] = (byte)cp;
-        }
-        return ret;
-    }
-
-    public static byte[] toBytes(char c) {
+    static byte[] toBytes(char c) {
         return new byte[] { (byte)c };
     }
 
-    public static String newString(byte[] val, int index, int len) {
+    static String newString(byte[] val, int index, int len) {
         if (len == 0) {
             return "";
         }
@@ -763,7 +857,7 @@ final class StringLatin1 {
 
     // inflatedCopy byte[] -> char[]
     @IntrinsicCandidate
-    public static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+    static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             dst[dstOff++] = (char)(src[srcOff++] & 0xff);
         }
@@ -771,7 +865,7 @@ final class StringLatin1 {
 
     // inflatedCopy byte[] -> byte[]
     @IntrinsicCandidate
-    public static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+    static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         StringUTF16.inflate(src, srcOff, dst, dstOff, len);
     }
 
@@ -824,7 +918,7 @@ final class StringLatin1 {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() { return fence - index; }
 
         @Override
         public int characteristics() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ class G1MonotonicArenaMemoryStats;
 class G1NewTracer;
 class G1ParScanThreadStateSet;
 class G1Policy;
-class G1RedirtyCardsQueueSet;
 class G1RemSet;
 class G1SurvivorRegions;
 class G1YoungGCAllocationFailureInjector;
@@ -79,6 +78,7 @@ class G1YoungCollector {
   G1YoungGCAllocationFailureInjector* allocation_failure_injector() const;
 
   GCCause::Cause _gc_cause;
+  size_t _allocation_word_size;
 
   bool _concurrent_operation_is_full_mark;
 
@@ -137,7 +137,8 @@ class G1YoungCollector {
   bool evacuation_alloc_failed() const;
 
 public:
-  G1YoungCollector(GCCause::Cause gc_cause);
+  G1YoungCollector(GCCause::Cause gc_cause,
+                   size_t allocation_word_size);
   void collect();
 
   bool concurrent_operation_is_full_mark() const { return _concurrent_operation_is_full_mark; }

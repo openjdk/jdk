@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,15 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *         finalizers along with any assumptions under which this answer holds
      */
     AssumptionResult<Boolean> hasFinalizableSubclass();
+
+    /**
+     * Returns true if this type represents an annotation interface.
+     *
+     * @return {@code true} if this type represents an annotation interface
+     */
+    default boolean isAnnotation() {
+        return (getModifiers() & java.lang.reflect.AccessFlag.ANNOTATION.mask()) != 0;
+    }
 
     /**
      * Checks whether this type is an interface.

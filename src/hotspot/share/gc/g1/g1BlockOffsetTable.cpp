@@ -49,7 +49,7 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
 
 void G1BlockOffsetTable::set_offset_array(uint8_t* addr, uint8_t offset) {
   check_address(addr, "Block offset table address out of range");
-  Atomic::store(addr, offset);
+  AtomicAccess::store(addr, offset);
 }
 
 void G1BlockOffsetTable::set_offset_array(uint8_t* addr, HeapWord* high, HeapWord* low) {

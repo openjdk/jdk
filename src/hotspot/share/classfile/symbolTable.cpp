@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"
@@ -146,7 +146,7 @@ public:
            "refcount %d", value.refcount());
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
-      // We have allocated with MetaspaceShared::symbol_space_alloc(). No deallocation is needed.
+      // We have allocated with AOTMetaspace::symbol_space_alloc(). No deallocation is needed.
       // Unreferenced Symbols will not be copied into the archive.
       return;
     }
@@ -185,7 +185,7 @@ private:
       // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
       // sometimes be higher. This would cause non-deterministic contents in the archive.
       DEBUG_ONLY(static void* last = nullptr);
-      void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
+      void* p = (void*)AOTMetaspace::symbol_space_alloc(alloc_size);
       assert(p > last, "must increase monotonically");
       DEBUG_ONLY(last = p);
       return p;
@@ -216,17 +216,17 @@ void SymbolTable::create_table ()  {
   }
 }
 
-void SymbolTable::reset_has_items_to_clean() { Atomic::store(&_has_items_to_clean, false); }
-void SymbolTable::mark_has_items_to_clean()  { Atomic::store(&_has_items_to_clean, true); }
-bool SymbolTable::has_items_to_clean()       { return Atomic::load(&_has_items_to_clean); }
+void SymbolTable::reset_has_items_to_clean() { AtomicAccess::store(&_has_items_to_clean, false); }
+void SymbolTable::mark_has_items_to_clean()  { AtomicAccess::store(&_has_items_to_clean, true); }
+bool SymbolTable::has_items_to_clean()       { return AtomicAccess::load(&_has_items_to_clean); }
 
 void SymbolTable::item_added() {
-  Atomic::inc(&_items_count);
+  AtomicAccess::inc(&_items_count);
 }
 
 void SymbolTable::item_removed() {
-  Atomic::inc(&(_symbols_removed));
-  Atomic::dec(&_items_count);
+  AtomicAccess::inc(&(_symbols_removed));
+  AtomicAccess::dec(&_items_count);
 }
 
 double SymbolTable::get_load_factor() {
@@ -237,7 +237,7 @@ size_t SymbolTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
-bool SymbolTable::has_work() { return Atomic::load_acquire(&_has_work); }
+bool SymbolTable::has_work() { return AtomicAccess::load_acquire(&_has_work); }
 
 void SymbolTable::trigger_cleanup() {
   // Avoid churn on ServiceThread
@@ -272,9 +272,7 @@ public:
 void SymbolTable::symbols_do(SymbolClosure *cl) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   // all symbols from shared table
-  SharedSymbolIterator iter(cl);
-  _shared_table.iterate(&iter);
-  _dynamic_shared_table.iterate(&iter);
+  shared_symbols_do(cl);
 
   // all symbols from the dynamic table
   SymbolsDo sd(cl);
@@ -284,8 +282,8 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
 // Call function for all symbols in shared table. Used by -XX:+PrintSharedArchiveAndExit
 void SymbolTable::shared_symbols_do(SymbolClosure *cl) {
   SharedSymbolIterator iter(cl);
-  _shared_table.iterate(&iter);
-  _dynamic_shared_table.iterate(&iter);
+  _shared_table.iterate_all(&iter);
+  _dynamic_shared_table.iterate_all(&iter);
 }
 
 Symbol* SymbolTable::lookup_dynamic(const char* name,
@@ -669,14 +667,14 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
       st->print_cr("# Shared symbols:");
       st->print_cr("#----------------");
       DumpSharedSymbol dss(st);
-      _shared_table.iterate(&dss);
+      _shared_table.iterate_all(&dss);
     }
     if (!_dynamic_shared_table.empty()) {
       st->print_cr("#------------------------");
       st->print_cr("# Dynamic shared symbols:");
       st->print_cr("#------------------------");
       DumpSharedSymbol dss(st);
-      _dynamic_shared_table.iterate(&dss);
+      _dynamic_shared_table.iterate_all(&dss);
     }
   }
 }
@@ -765,6 +763,10 @@ struct SymbolTableDeleteCheck : StackObj {
 };
 
 void SymbolTable::clean_dead_entries(JavaThread* jt) {
+  // BulkDeleteTask::prepare() may take ConcurrentHashTableResize_lock (nosafepoint-2).
+  // When NativeHeapTrimmer is enabled, SuspendMark may take NativeHeapTrimmer::_lock (nosafepoint).
+  // Take SuspendMark first to keep lock order and avoid deadlock.
+  NativeHeapTrimmer::SuspendMark sm("symboltable");
   SymbolTableHash::BulkDeleteTask bdt(_local_table);
   if (!bdt.prepare(jt)) {
     return;
@@ -772,7 +774,6 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 
   SymbolTableDeleteCheck stdc;
   SymbolTableDoDelete stdd;
-  NativeHeapTrimmer::SuspendMark sm("symboltable");
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, symboltable, perf));
     while (bdt.do_task(jt, stdc, stdd)) {
@@ -786,7 +787,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
     bdt.done(jt);
   }
 
-  Atomic::add(&_symbols_counted, stdc._processed);
+  AtomicAccess::add(&_symbols_counted, stdc._processed);
 
   log_debug(symboltable)("Cleaned %zu of %zu",
                          stdd._deleted, stdc._processed);
@@ -814,7 +815,7 @@ void SymbolTable::do_concurrent_work(JavaThread* jt) {
   // Rehash if needed.  Rehashing goes to a safepoint but the rest of this
   // work is concurrent.
   if (needs_rehashing() && maybe_rehash_table()) {
-    Atomic::release_store(&_has_work, false);
+    AtomicAccess::release_store(&_has_work, false);
     return; // done, else grow
   }
   log_debug(symboltable, perf)("Concurrent work, live factor: %g", get_load_factor());
@@ -824,7 +825,7 @@ void SymbolTable::do_concurrent_work(JavaThread* jt) {
   } else {
     clean_dead_entries(jt);
   }
-  Atomic::release_store(&_has_work, false);
+  AtomicAccess::release_store(&_has_work, false);
 }
 
 // Called at VM_Operation safepoint

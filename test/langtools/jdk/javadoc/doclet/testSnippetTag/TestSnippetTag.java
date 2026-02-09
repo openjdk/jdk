@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8275788 8276964 8299080
+ * @bug 8266666 8275788 8276964 8299080 8276966
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2166,6 +2166,7 @@ public class TestSnippetTag extends SnippetTester {
                         Hello, Snippet!
                         ----------------- external -----------------
                         Hello, Snippet!...more
+                        --------------------------------------------
                         </pre>
                         </details>
                         """);
@@ -2207,8 +2208,16 @@ public class TestSnippetTag extends SnippetTester {
                 "pkg");
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
-                    """
-                    A.java:4: error: contents mismatch""");
+                """
+                    A.java:4: error: contents mismatch""",
+                """
+                      ----------------- inline -------------------
+                      Hello, Snippet! ...more
+                    \s\s
+                      ----------------- external -----------------
+                      Hello, Snippet!
+                    \s\s
+                      --------------------------------------------""");
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
                         <summary>invalid @snippet</summary>
@@ -2219,6 +2228,7 @@ public class TestSnippetTag extends SnippetTester {
                         ----------------- external -----------------
                         Hello, Snippet!
 
+                        --------------------------------------------
                         </pre>
                         </details>
                         """);

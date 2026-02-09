@@ -86,12 +86,25 @@
 // Support warnings for use of certain C functions, except where explicitly
 // permitted.
 
-// FORBID_C_FUNCTION(Signature, Alternative)
+// FORBID_C_FUNCTION(Signature, Noexcept, Alternative)
 // - Signature: the function that should not normally be used.
+// - Noexcept: either the token `noexcept` or nothing. See below.
 // - Alternative: a string literal that may be used in a warning about a use,
 //   often suggesting an alternative.
 // Declares the C-linkage function designated by Signature to be deprecated,
 // using the `deprecated` attribute with Alternative as an argument.
+//
+// The Noexcept argument is used to deal with differences among the standard
+// libraries of various platforms.  For example, the C standard library on
+// Linux declares many functions `noexcept`. Windows and BSD C standard
+// libraries don't include exception specifications at all. This matters
+// because some compilers reject (some) differences between declarations that
+// differ in the exception specification. clang complains if the first
+// declaration is not noexcept while some later declaration is, but not the
+// reverse. gcc doesn't seem to care. (Maybe that's a gcc bug?) So if the
+// forbidding declaration differs from the platform's library then we may get
+// errors building with clang (but not gcc), depending on the difference and
+// the include order.
 //
 // The variants with IMPORTED in the name are to deal with Windows
 // requirements, using FORBIDDEN_FUNCTION_IMPORT_SPEC.  See the Visual
@@ -102,8 +115,21 @@
 // FORBID_NORETURN_C_FUNCTION deals with a clang issue.  See the clang
 // definition of FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE for more
 // details.  The default expands to `[[noreturn]]`.
-#define FORBID_C_FUNCTION(Signature, Alternative) \
-  extern "C" { [[deprecated(Alternative)]] Signature; }
+#define FORBID_C_FUNCTION(Signature, Noexcept, Alternative)     \
+  extern "C" {                                                  \
+    [[deprecated(Alternative)]]                                 \
+    Signature                                                   \
+    /* 2-step pasting to avoid expansion of FFCN => nothing. */ \
+    PASTE_TOKENS(                                               \
+      FORBIDDEN_FUNCTION_,                                      \
+      PASTE_TOKENS(COND_NOEXCEPT_, Noexcept))                   \
+    ;                                                           \
+  }
+
+// Both Linux and AIX C libraries declare functions noexcept.
+// Neither BSD nor Windows C libraries declare functions noexcept.
+#define FORBIDDEN_FUNCTION_COND_NOEXCEPT_noexcept NOT_WINDOWS(NOT_BSD(noexcept))
+#define FORBIDDEN_FUNCTION_COND_NOEXCEPT_
 
 #ifndef FORBIDDEN_FUNCTION_IMPORT_SPEC
 #define FORBIDDEN_FUNCTION_IMPORT_SPEC
@@ -117,14 +143,14 @@
 #define FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING
 #endif
 
-#define FORBID_IMPORTED_C_FUNCTION(Signature, Alternative) \
-  FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_IMPORT_SPEC Signature, Alternative)
+#define FORBID_IMPORTED_C_FUNCTION(Signature, Noexcept, Alternative) \
+  FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_IMPORT_SPEC Signature, Noexcept, Alternative)
 
-#define FORBID_NORETURN_C_FUNCTION(Signature, Alternative) \
-  FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE Signature, Alternative)
+#define FORBID_NORETURN_C_FUNCTION(Signature, Noexcept, Alternative) \
+  FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE Signature, Noexcept, Alternative)
 
-#define FORBID_IMPORTED_NORETURN_C_FUNCTION(Signature, Alternative) \
-  FORBID_NORETURN_C_FUNCTION(FORBIDDEN_FUNCTION_IMPORT_SPEC Signature, Alternative)
+#define FORBID_IMPORTED_NORETURN_C_FUNCTION(Signature, Noexcept, Alternative) \
+  FORBID_NORETURN_C_FUNCTION(FORBIDDEN_FUNCTION_IMPORT_SPEC Signature, Noexcept, Alternative)
 
 // A BEGIN/END_ALLOW_FORBIDDEN_FUNCTIONS pair establishes a scope in which the
 // deprecation warnings used to forbid the use of certain functions are

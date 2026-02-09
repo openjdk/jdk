@@ -513,6 +513,10 @@ AC_DEFUN([JVM_FEATURES_VERIFY],
 [
   variant=$1
 
+  if JVM_FEATURES_IS_ACTIVE(jfr) && ! JVM_FEATURES_IS_ACTIVE(services); then
+    AC_MSG_ERROR([Specified JVM feature 'jfr' requires feature 'services' for variant '$variant'])
+  fi
+
   if JVM_FEATURES_IS_ACTIVE(jvmci) && ! (JVM_FEATURES_IS_ACTIVE(compiler1) || \
       JVM_FEATURES_IS_ACTIVE(compiler2)); then
     AC_MSG_ERROR([Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1' for variant '$variant'])

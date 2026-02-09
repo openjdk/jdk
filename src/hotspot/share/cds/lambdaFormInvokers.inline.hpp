@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CDS_LAMBDAFORMINVOKERS_INLINE_HPP
 
 #include "cds/lambdaFormInvokers.hpp"
+
 #include "classfile/vmSymbols.hpp"
 
 inline bool LambdaFormInvokers::may_be_regenerated_class(Symbol* name) {

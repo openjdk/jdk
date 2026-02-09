@@ -26,9 +26,9 @@
 #define SHARE_JFR_RECORDER_SERVICE_JFRRECORDERTHREAD_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
-class JavaThread;
 class JfrCheckpointManager;
 class JfrPostBox;
 class Thread;
@@ -40,6 +40,14 @@ class JfrRecorderThreadEntry : AllStatic {
  public:
   static JfrPostBox& post_box();
   static bool start(JfrCheckpointManager* cp_manager, JfrPostBox* post_box, TRAPS);
+};
+
+class JfrRecorderThread : public JavaThread {
+ public:
+  JfrRecorderThread(ThreadFunction entry_point) : JavaThread(entry_point) {}
+  virtual ~JfrRecorderThread() {}
+
+  virtual bool is_JfrRecorder_thread() const { return true; }
 };
 
 #endif // SHARE_JFR_RECORDER_SERVICE_JFRRECORDERTHREAD_HPP

@@ -27,6 +27,7 @@ package sun.security.ec;
 
 import java.io.*;
 import java.security.interfaces.XECPrivateKey;
+import java.util.Arrays;
 import java.util.Optional;
 import java.security.*;
 import java.security.spec.*;
@@ -106,12 +107,15 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
         XECParameters params = paramSpec.getName().equalsIgnoreCase("X25519")
                 ? XECParameters.X25519
                 : XECParameters.X448;
+        var kClone = k.clone();
         try {
             return new XDHPublicKeyImpl(params,
-                    new XECOperations(params).computePublic(k.clone()));
+                    new XECOperations(params).computePublic(kClone));
         } catch (InvalidKeyException e) {
             throw new ProviderException(
                     "Unexpected error calculating public key", e);
+        } finally {
+            Arrays.fill(kClone, (byte)0);
         }
     }
 

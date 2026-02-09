@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package jdk.jpackage.internal;
 
-import static java.util.stream.Collectors.joining;
+import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
@@ -38,19 +39,21 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
 final class AppImageSigner {
 
-    static Consumer<Path> createSigner(MacApplication app, CodesignConfig signingCfg) {
+    static Consumer<MacBundle> createSigner(MacApplication app, CodesignConfig signingCfg) {
         return toConsumer(appImage -> {
             try {
                 new AppImageSigner(Codesigners.create(signingCfg)).sign(app, appImage);
@@ -58,21 +61,22 @@ final class AppImageSigner {
                 throw handleCodesignException(app, ex);
             } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof CodesignException codesignEx) {
-                    handleCodesignException(app, codesignEx);
+                    throw handleCodesignException(app, codesignEx);
+                } else {
+                    throw ex;
                 }
-                throw ex;
             }
         });
     }
 
     private static final class SignFilter implements Predicate<Path> {
 
-        SignFilter(Application app, Path appImage) {
+        SignFilter(Application app, MacBundle appImage) {
             Objects.requireNonNull(appImage);
 
             // Don't explicitly sign main launcher. It will be implicitly signed when the bundle is signed.
             otherExcludePaths = app.asApplicationLayout().map(appLayout -> {
-                return appLayout.resolveAt(appImage);
+                return appLayout.resolveAt(appImage.root());
             }).map(ApplicationLayout::launchersDirectory).flatMap(launchersDir -> {
                 return app.mainLauncher().map(Launcher::executableNameWithSuffix).map(launchersDir::resolve);
             }).map(Set::of).orElseGet(Set::of);
@@ -98,11 +102,16 @@ final class AppImageSigner {
         private final Set<Path> otherExcludePaths;
     }
 
-    private void sign(MacApplication app, Path appImage) throws CodesignException, IOException {
+    private void sign(MacApplication app, MacBundle appImage) throws CodesignException, IOException {
+        if (!appImage.isValid()) {
+            throw new IllegalArgumentException();
+        }
+
+        app = copyWithUnresolvedAppImageLayout(app);
 
         final var fileFilter = new SignFilter(app, appImage);
 
-        try (var content = Files.walk(appImage)) {
+        try (var content = Files.walk(appImage.root())) {
             content.filter(fileFilter).forEach(toConsumer(path -> {
                 final var origPerms = ensureCanWrite(path);
                 try {
@@ -118,10 +127,15 @@ final class AppImageSigner {
 
         // Sign runtime root directory if present
         app.asApplicationLayout().map(appLayout -> {
-            return appLayout.resolveAt(appImage);
-        }).map(MacApplicationLayout.class::cast).map(MacApplicationLayout::runtimeRootDirectory).ifPresent(codesigners);
+            return appLayout.resolveAt(appImage.root());
+        }).map(MacApplicationLayout.class::cast)
+                .map(MacApplicationLayout::runtimeRootDirectory)
+                .flatMap(MacBundle::fromPath)
+                .filter(MacBundle::isValid)
+                .map(MacBundle::root)
+                .ifPresent(codesigners);
 
-        final var frameworkPath = appImage.resolve("Contents/Frameworks");
+        final var frameworkPath = appImage.contentsDir().resolve("Frameworks");
         if (Files.isDirectory(frameworkPath)) {
             try (var content = Files.list(frameworkPath)) {
                 content.forEach(toConsumer(path -> {
@@ -131,7 +145,7 @@ final class AppImageSigner {
         }
 
         // Sign the app image itself
-        codesigners.accept(appImage);
+        codesigners.accept(appImage.root());
     }
 
     private static Set<PosixFilePermission> ensureCanWrite(Path path) {
@@ -150,13 +164,9 @@ final class AppImageSigner {
         }
     }
 
-    private static CodesignException handleCodesignException(MacApplication app, CodesignException ex) {
-        // Log output of "codesign" in case of error. It should help
-        // user to diagnose issues when using --mac-app-image-sign-identity.
-        // In addition add possible reason for failure. For example
-        // "--app-content" can fail "codesign".
-
-        if (!app.contentDirs().isEmpty()) {
+    private static IOException handleCodesignException(MacApplication app, CodesignException ex) {
+        if (!app.contentDirSources().isEmpty()) {
+            // Additional content may cause signing error.
             Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 
@@ -167,19 +177,13 @@ final class AppImageSigner {
             Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
         }
 
-        // Log "codesign" output
-        Log.info(I18N.format("error.tool.failed.with.output", "codesign"));
-        Log.info(Stream.of(ex.getOutput()).collect(joining("\n")).strip());
-
-        return ex;
+        return ex.getCause();
     }
 
     private static boolean isXcodeDevToolsInstalled() {
-        try {
-            return Executor.of("/usr/bin/xcrun", "--help").setQuiet(true).execute() == 0;
-        } catch (IOException ex) {
-            return false;
-        }
+        return Result.of(
+                Executor.of("/usr/bin/xcrun", "--help").setQuiet(true)::executeExpectSuccess,
+                IOException.class).hasValue();
     }
 
     private static void unsign(Path path) throws IOException {
@@ -229,9 +233,23 @@ final class AppImageSigner {
 
             final var codesignExecutableFile = Codesign.build(signingCfg::toCodesignArgs).quiet(true).create().asConsumer();
             final var codesignFile = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).quiet(true).create().asConsumer();
-            final var codesignDir = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).force(true).create().asConsumer();
+            final var codesignDir = Codesign.build(signingCfg::toCodesignArgs).force(true).create().asConsumer();
 
             return new Codesigners(codesignFile, codesignExecutableFile, codesignDir);
+        }
+    }
+
+    private static MacApplication copyWithUnresolvedAppImageLayout(MacApplication app) {
+        switch (app.imageLayout()) {
+            case MacApplicationLayout macLayout -> {
+                return MacApplicationBuilder.overrideAppImageLayout(app, APPLICATION_LAYOUT);
+            }
+            case RuntimeLayout macLayout -> {
+                return MacApplicationBuilder.overrideAppImageLayout(app, RUNTIME_BUNDLE_LAYOUT);
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
         }
     }
 

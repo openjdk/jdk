@@ -71,7 +71,8 @@ public class GetKey {
         passwdText.getBytes(), "PBE");
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
+        Provider p = Security.getProvider(
+            System.getProperty("test.provider.name", "SunJCE"));
 
         EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(encEdECKey,
             EncryptedPrivateKeyInfo.class);

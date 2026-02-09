@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @compile -XDignore.symbol.file UnresolvedExceptions.java
  * @run main UnresolvedExceptions
  * @summary Verifying jvm won't segv if exception not available
- * @author Joseph D. Darcy, ksrini
  */
 
 import java.io.File;

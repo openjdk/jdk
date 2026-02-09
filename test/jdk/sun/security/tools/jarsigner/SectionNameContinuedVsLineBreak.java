@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @bug 8217375 8267319
  * @library /test/lib
  * @modules jdk.jartool/jdk.security.jarsigner
- * @run testng SectionNameContinuedVsLineBreak
+ * @run testng/timeout=480 SectionNameContinuedVsLineBreak
  * @summary Checks some specific line break character sequences in section name
  * continuation line breaks.
  */

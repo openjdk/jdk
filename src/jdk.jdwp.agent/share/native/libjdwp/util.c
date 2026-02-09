@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2730,10 +2730,6 @@ typedef struct ClassCountData {
     jvmtiError   error;
 } ClassCountData;
 
-/* Two different cbObjectCounter's, one for FollowReferences, one for
- *    IterateThroughHeap. Pick a card, any card.
- */
-
 /* Callback for object count heap traversal (heap_reference_callback) */
 static jint JNICALL
 cbObjectCounterFromRef(jvmtiHeapReferenceKind reference_kind,
@@ -2785,38 +2781,6 @@ cbObjectCounterFromRef(jvmtiHeapReferenceKind reference_kind,
     /* Absolute value of class tag is an index into the counts[] array */
     jindex = JLONG_ABS(class_tag);
     index = CLASSTAG2INDEX(jindex);
-    if (index < 0 || index >= data->classCount) {
-        data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
-        return JVMTI_VISIT_ABORT;
-    }
-
-    /* Bump instance count on this class */
-    data->counts[index]++;
-    return JVMTI_VISIT_OBJECTS;
-}
-
-/* Callback for instance count heap traversal (heap_iteration_callback) */
-static jint JNICALL
-cbObjectCounter(jlong class_tag, jlong size, jlong* tag_ptr, jint length,
-                        void* user_data)
-{
-    ClassCountData  *data;
-    int              index;
-
-    /* Check data structure */
-    data = (ClassCountData*)user_data;
-    if (data == NULL) {
-        return JVMTI_VISIT_ABORT;
-    }
-
-    /* Classes with no tag should be filtered out. */
-    if ( class_tag == (jlong)0 ) {
-        data->error = AGENT_ERROR_INTERNAL;
-        return JVMTI_VISIT_ABORT;
-    }
-
-    /* Class tag is actually an index into data arrays */
-    index = CLASSTAG2INDEX(class_tag);
     if (index < 0 || index >= data->classCount) {
         data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
         return JVMTI_VISIT_ABORT;
@@ -2879,53 +2843,27 @@ classInstanceCounts(jint classCount, jclass *classes, jlong *counts)
         /* Clear out callbacks structure */
         (void)memset(&heap_callbacks,0,sizeof(heap_callbacks));
 
-        /* Check debug flags to see how to do this. */
-        if ( (gdata->debugflags & USE_ITERATE_THROUGH_HEAP) == 0 ) {
+        /* Using FollowReferences only gives us live objects, but we
+         *   need to tag the objects to avoid counting them twice since
+         *   the callback is per reference.
+         *   The jclass objects have been tagged with their index in the
+         *   supplied list, and that tag may flip to negative if it
+         *   is also an object of interest.
+         *   All other objects being counted that weren't in the
+         *   supplied classes list will have a negative classCount
+         *   tag value. So all objects counted will have negative tags.
+         *   If the absolute tag value is an index in the supplied
+         *   list, then it's one of the supplied classes.
+         */
+        data.negObjTag = -INDEX2CLASSTAG(classCount);
 
-            /* Using FollowReferences only gives us live objects, but we
-             *   need to tag the objects to avoid counting them twice since
-             *   the callback is per reference.
-             *   The jclass objects have been tagged with their index in the
-             *   supplied list, and that tag may flip to negative if it
-             *   is also an object of interest.
-             *   All other objects being counted that weren't in the
-             *   supplied classes list will have a negative classCount
-             *   tag value. So all objects counted will have negative tags.
-             *   If the absolute tag value is an index in the supplied
-             *   list, then it's one of the supplied classes.
-             */
-            data.negObjTag = -INDEX2CLASSTAG(classCount);
+        /* Setup callbacks, only using object reference callback */
+        heap_callbacks.heap_reference_callback = &cbObjectCounterFromRef;
 
-            /* Setup callbacks, only using object reference callback */
-            heap_callbacks.heap_reference_callback = &cbObjectCounterFromRef;
-
-            /* Follow references, no initiating object, tagged classes only */
-            error = JVMTI_FUNC_PTR(jvmti,FollowReferences)
-                          (jvmti, JVMTI_HEAP_FILTER_CLASS_UNTAGGED,
-                           NULL, NULL, &heap_callbacks, &data);
-
-        } else {
-
-            /* Using IterateThroughHeap means that we will visit each object
-             *   once, so no special tag tricks here. Just simple counting.
-             *   However in this case the object might not be live, so we do
-             *   a GC beforehand to make sure we minimize this.
-             */
-
-            /* FIXUP: Need some kind of trigger here to avoid excessive GC's? */
-            error = JVMTI_FUNC_PTR(jvmti,ForceGarbageCollection)(jvmti);
-            if ( error != JVMTI_ERROR_NONE ) {
-
-                /* Setup callbacks, just need object callback */
-                heap_callbacks.heap_iteration_callback = &cbObjectCounter;
-
-                /* Iterate through entire heap, tagged classes only */
-                error = JVMTI_FUNC_PTR(jvmti,IterateThroughHeap)
-                              (jvmti, JVMTI_HEAP_FILTER_CLASS_UNTAGGED,
-                               NULL, &heap_callbacks, &data);
-
-            }
-        }
+        /* Follow references, no initiating object, tagged classes only */
+        error = JVMTI_FUNC_PTR(jvmti,FollowReferences)
+                      (jvmti, JVMTI_HEAP_FILTER_CLASS_UNTAGGED,
+                       NULL, NULL, &heap_callbacks, &data);
 
         /* Use data error if needed */
         if ( error == JVMTI_ERROR_NONE ) {

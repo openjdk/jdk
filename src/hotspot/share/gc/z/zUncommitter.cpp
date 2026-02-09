@@ -400,7 +400,7 @@ size_t ZUncommitter::uncommit() {
     }
 
     // Record flushed memory as claimed and how much we've flushed for this partition
-    Atomic::add(&_partition->_claimed, flushed);
+    AtomicAccess::add(&_partition->_claimed, flushed);
   }
 
   // Unmap and uncommit flushed memory
@@ -416,7 +416,7 @@ size_t ZUncommitter::uncommit() {
     ZLocker<ZLock> locker(&_partition->_page_allocator->_lock);
 
     // Adjust claimed and capacity to reflect the uncommit
-    Atomic::sub(&_partition->_claimed, flushed);
+    AtomicAccess::sub(&_partition->_claimed, flushed);
     _partition->decrease_capacity(flushed, false /* set_max_capacity */);
     register_uncommit(flushed);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,7 @@ public class HotSpotVMConfigAccess {
      * @return the field
      * @throws JVMCIError if the field is not present and {@code required == true}
      */
-    private VMField getField(String name, String cppType, boolean required) {
+    public VMField getField(String name, String cppType, boolean required) {
         VMField entry = store.vmFields.get(name);
         if (entry == null) {
             if (!required) {

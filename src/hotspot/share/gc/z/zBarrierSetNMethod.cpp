@@ -105,3 +105,8 @@ oop ZBarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
 oop ZBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
   return ZNMethod::oop_load_phantom(nm, index);
 }
+
+uintptr_t ZBarrierSetNMethod::color(nmethod* nm) {
+  // color is stored at low order bits of int; conversion to uintptr_t is fine
+  return uintptr_t(guard_value(nm) & ~not_entrant);
+}

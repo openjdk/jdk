@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.nio.ch;
 
+import java.util.concurrent.locks.LockSupport;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 // Signalling operations on native threads
 //
@@ -37,46 +40,50 @@ package sun.nio.ch;
 // always returns -1 and the signal(long) method has no effect.
 
 public class NativeThread {
-    private static final long VIRTUAL_THREAD_ID = -1L;
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    private NativeThread() { }
 
     /**
-     * Returns the id of the current native thread if the platform can signal
-     * native threads, 0 if the platform can not signal native threads, or
-     * -1L if the current thread is a virtual thread.
+     * Returns the Thread to signal the current thread.
+     *
+     * The first use of this method on a platform thread will capture the thread's
+     * native thread ID.
      */
-    public static long current() {
-        if (Thread.currentThread().isVirtual()) {
-            return VIRTUAL_THREAD_ID;
+    public static Thread threadToSignal() {
+        Thread t = Thread.currentThread();
+        if (!t.isVirtual() && JLA.nativeThreadID(t) == 0) {
+            JLA.setThreadNativeID(current0());
+        }
+        return t;
+    }
+
+    /**
+     * Signals the given thread. For a platform thread it sends a signal to the thread.
+     * For a virtual thread it just unparks it.
+     * @throws IllegalStateException if the thread is a platform thread that hasn't set its native ID
+     */
+    public static void signal(Thread thread) {
+        if (thread.isVirtual()) {
+            LockSupport.unpark(thread);
         } else {
-            return current0();
+            long id = JLA.nativeThreadID(thread);
+            if (id == 0)
+                throw new IllegalStateException("Native thread ID not set");
+            signal0(id);
         }
     }
 
     /**
-     * Signals the given native thread.
-     *
-     * @throws IllegalArgumentException if tid is not a token to a native thread
+     * Return true if the operating system supports pending signals. If a signal is sent
+     * to a thread but cannot be delivered immediately then it will be delivered when the
+     * thread is in the appropriate state.
      */
-    public static void signal(long tid) {
-        if (tid == 0 || tid == VIRTUAL_THREAD_ID)
-            throw new IllegalArgumentException();
-        signal0(tid);
+    static boolean supportPendingSignals() {
+        return supportPendingSignals0();
     }
 
-    /**
-     * Returns true the tid is the id of a native thread.
-     */
-    static boolean isNativeThread(long tid) {
-        return (tid != 0 && tid != VIRTUAL_THREAD_ID);
-    }
-
-    /**
-     * Returns true if tid is -1L.
-     * @see #current()
-     */
-    static boolean isVirtualThread(long tid) {
-        return (tid == VIRTUAL_THREAD_ID);
-    }
+    private static native boolean supportPendingSignals0();
 
     // Returns an opaque token representing the native thread underlying the
     // invoking Java thread.  On systems that do not require signalling, this

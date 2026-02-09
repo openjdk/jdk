@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,6 @@
  * @library ../Math
  * @build DoubleConsts
  * @run main ToHexString
- * @author Joseph D. Darcy
  */
 
 import java.util.regex.*;
@@ -174,6 +174,26 @@ public class ToHexString {
             {"-0.0",                                    "8000000000000000"},
             {"+4.9e-324",                               "0000000000000001"},
             {"-4.9e-324",                               "8000000000000001"},
+
+            // Test cases for trailing zeros in significand
+            // These test the removal of trailing zeros in the hexadecimal representation
+            // The comments indicate the number of trailing zeros removed from the significand
+            // For "0x1.0p1", there are 13 trailing zeros in the significand, but only 12 are removed
+            // as we always keep at least one hex digit in the significand
+            {"0x1.0p1",                                 "4000000000000000"}, // 12 trailing zeros removed (13 total, but only 12 removed)
+            {"0x1.1p1",                                 "4001000000000000"}, // 12 trailing zeros removed (all zeros after '1')
+            {"0x1.01p1",                                "4000100000000000"}, // 11 trailing zeros removed
+            {"0x1.001p1",                               "4000010000000000"}, // 10 trailing zeros removed
+            {"0x1.0001p1",                              "4000001000000000"}, // 9  trailing zeros removed
+            {"0x1.00001p1",                             "4000000100000000"}, // 8  trailing zeros removed
+            {"0x1.000001p1",                            "4000000010000000"}, // 7  trailing zeros removed
+            {"0x1.0000001p1",                           "4000000001000000"}, // 6  trailing zeros removed
+            {"0x1.00000001p1",                          "4000000000100000"}, // 5  trailing zeros removed
+            {"0x1.000000001p1",                         "4000000000010000"}, // 4  trailing zeros removed
+            {"0x1.0000000001p1",                        "4000000000001000"}, // 3  trailing zeros removed
+            {"0x1.00000000001p1",                       "4000000000000100"}, // 2  trailing zeros removed
+            {"0x1.000000000001p1",                      "4000000000000010"}, // 1  trailing zero  removed (minimum)
+            {"0x1.0000000000001p1",                     "4000000000000001"}, // 0  trailing zeros removed (no trailing zeros to remove)
 
             // fdlibm k_sin.c
             {"+5.00000000000000000000e-01",             "3FE0000000000000"},

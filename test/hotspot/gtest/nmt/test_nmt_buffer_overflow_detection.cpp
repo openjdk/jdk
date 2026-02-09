@@ -23,6 +23,7 @@
  */
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "sanitizers/address.hpp"
@@ -31,11 +32,9 @@
 #include "unittest.hpp"
 #include "testutils.hpp"
 
-#if !INCLUDE_ASAN
-
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
-#define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT corruption"
+#define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT has detected a memory corruption bug."
 
 #define DEFINE_TEST(test_function, expected_assertion_message)                            \
   TEST_VM_FATAL_ERROR_MSG(NMT, test_function, ".*" expected_assertion_message ".*") {     \
@@ -50,6 +49,8 @@
   }
 
 ///////
+
+#if !INCLUDE_ASAN
 
 static void test_overwrite_front() {
   address p = (address) os::malloc(1, mtTest);
@@ -142,6 +143,21 @@ DEFINE_TEST(test_corruption_on_realloc_growing, COMMON_NMT_HEAP_CORRUPTION_MESSA
 static void test_corruption_on_realloc_shrinking()  { test_corruption_on_realloc(0x11, 0x10); }
 DEFINE_TEST(test_corruption_on_realloc_shrinking, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
 
+static void test_chunkpool_lock() {
+  if (!MemTracker::enabled()) {
+    tty->print_cr("Skipped");
+    return;
+  }
+  PrintNMTStatistics = true;
+  {
+    ChunkPoolLocker cpl;
+    char* mem = (char*)os::malloc(100, mtTest);
+    memset(mem - 16, 0, 100 + 16 + 2);
+    os::free(mem);
+  }
+}
+DEFINE_TEST(test_chunkpool_lock, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
+
 ///////
 
 // realloc is the trickiest of the bunch. Test that realloc works and correctly takes over
@@ -163,5 +179,89 @@ TEST_VM(NMT, test_realloc) {
     }
   }
 }
+
+TEST_VM_FATAL_ERROR_MSG(NMT, memory_corruption_call_stack, ".*header canary.*") {
+  if (MemTracker::tracking_level() != NMT_detail) {
+    guarantee(false, "fake message ignore this - header canary");
+  }
+  const size_t SIZE = 1024;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  *(p - 1) = 0;
+  os::free(p);
+}
+
+#else // ASAN is enabled
+
+#define DEFINE_ASAN_TEST(test_function)  \
+  DEFINE_TEST(test_function, ".*AddressSanitizer.*")
+
+static void test_write_header() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  *(uint16_t*)((char*)p - 5) = 1;
+}
+
+static void test_read_header() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  uint16_t read_canary = *(uint16_t*)((char*)p - 5);
+}
+
+static void test_write_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + SIZE);
+  *footer_ptr = 1;
+}
+
+static void test_read_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + SIZE);
+  uint16_t read_footer = *footer_ptr;
+}
+
+static void test_write_header_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  *(uint16_t*)((char*)p - 5) = 1;
+}
+
+static void test_read_header_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  uint16_t read_canary = *(uint16_t*)((char*)p - 5);
+}
+
+static void test_write_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + 2 * SIZE);
+  *footer_ptr = 1;
+}
+
+static void test_read_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + 2 * SIZE);
+  uint16_t read_footer = *footer_ptr;
+}
+
+DEFINE_ASAN_TEST(test_write_header);
+DEFINE_ASAN_TEST(test_read_header);
+DEFINE_ASAN_TEST(test_write_footer);
+DEFINE_ASAN_TEST(test_read_footer);
+DEFINE_ASAN_TEST(test_write_header_after_realloc);
+DEFINE_ASAN_TEST(test_read_header_after_realloc);
+DEFINE_ASAN_TEST(test_write_footer_after_realloc);
+DEFINE_ASAN_TEST(test_read_footer_after_realloc);
 
 #endif // !INCLUDE_ASAN

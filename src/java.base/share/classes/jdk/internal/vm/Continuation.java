@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ public class Continuation {
     /** Reason for pinning */
     public enum Pinned {
         /** Native frame on stack */ NATIVE,
-        /** Monitor held */          MONITOR,
         /** In critical section */   CRITICAL_SECTION,
         /** Exception (OOME/SOE) */  EXCEPTION
     }
@@ -69,8 +68,7 @@ public class Continuation {
         /** Permanent failure: continuation already yielding */             PERM_FAIL_YIELDING(null),
         /** Permanent failure: continuation not mounted on the thread */    PERM_FAIL_NOT_MOUNTED(null),
         /** Transient failure: continuation pinned due to a held CS */      TRANSIENT_FAIL_PINNED_CRITICAL_SECTION(Pinned.CRITICAL_SECTION),
-        /** Transient failure: continuation pinned due to native frame */   TRANSIENT_FAIL_PINNED_NATIVE(Pinned.NATIVE),
-        /** Transient failure: continuation pinned due to a held monitor */ TRANSIENT_FAIL_PINNED_MONITOR(Pinned.MONITOR);
+        /** Transient failure: continuation pinned due to native frame */   TRANSIENT_FAIL_PINNED_NATIVE(Pinned.NATIVE);
 
         final Pinned pinned;
         private PreemptStatus(Pinned reason) { this.pinned = reason; }
@@ -85,8 +83,7 @@ public class Continuation {
         return switch (reason) {
             case 2 -> Pinned.CRITICAL_SECTION;
             case 3 -> Pinned.NATIVE;
-            case 4 -> Pinned.MONITOR;
-            case 5 -> Pinned.EXCEPTION;
+            case 4 -> Pinned.EXCEPTION;
             default -> throw new AssertionError("Unknown pinned reason: " + reason);
         };
     }

@@ -2229,9 +2229,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">oa de l’Africa de ponente</generic>
-					<standard draft="unconfirmed">oa standard de l’Africa de ponente</standard>
-					<daylight draft="unconfirmed">oa de stæ de l’Africa de ponente</daylight>
+					<standard draft="unconfirmed">oa de l’Africa de ponente</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2579,6 +2577,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard draft="unconfirmed">oa da Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">oa standard de Hawaii-Aleutiñe</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3143,9 +3146,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern draft="contributed">#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
 					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -4160,7 +4165,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} elemento</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} elementi</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">parte pe mion</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} parte pe mion</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} parte pe mion</unitPattern>
@@ -5262,7 +5267,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0}elem</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}elem</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one" draft="unconfirmed">{0}ppm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ppm</unitPattern>
 			</unit>

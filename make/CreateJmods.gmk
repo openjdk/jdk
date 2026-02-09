@@ -184,7 +184,7 @@ endif
 ################################################################################
 # Include module specific build settings
 
-THIS_SNIPPET := modules/$(MODULE)/Jmod.gmk
+THIS_SNIPPET := $(call GetModuleSnippetName, Jmod)
 
 ifneq ($(wildcard $(THIS_SNIPPET)), )
   include MakeSnippetStart.gmk
@@ -218,10 +218,14 @@ ifeq ($(call isTargetOs, windows), true)
   ifeq ($(SHIP_DEBUG_SYMBOLS), )
     JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.pdb,*.map}'
   else
-    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.map}'
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.map}'
   endif
 else
-  JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
+  ifeq ($(SHIP_DEBUG_SYMBOLS), )
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
+  else
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*}'
+  endif
 endif
 
 # Unless we are creating a very large module, use the small tool JVM options
@@ -257,6 +261,7 @@ $(eval $(call SetupExecute, create_$(JMOD_FILE), \
     WARN := Creating $(INTERIM_MSG)$(JMOD_FILE), \
     DEPS := $(DEPS), \
     OUTPUT_FILE := $(JMODS_DIR)/$(JMOD_FILE), \
+    WORKING_DIR := $(WORKSPACE_ROOT), \
     SUPPORT_DIR := $(JMODS_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) $(JMODS_DIR)/$(JMOD_FILE) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
     COMMAND := $(JMOD) $(JMOD_SMALL_FLAGS) create --module-version $(VERSION_SHORT) \

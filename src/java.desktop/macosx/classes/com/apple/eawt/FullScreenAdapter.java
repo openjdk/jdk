@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,12 @@ import com.apple.eawt.event.FullScreenEvent;
  * @since Java for Mac OS X 10.7 Update 1
  */
 public abstract class FullScreenAdapter implements FullScreenListener {
+        @Override
         public void windowEnteringFullScreen(final FullScreenEvent e) {}
+        @Override
         public void windowEnteredFullScreen(final FullScreenEvent e) {}
+        @Override
         public void windowExitingFullScreen(final FullScreenEvent e) {}
+        @Override
         public void windowExitedFullScreen(final FullScreenEvent e) {}
 }

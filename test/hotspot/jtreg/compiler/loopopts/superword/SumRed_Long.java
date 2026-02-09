@@ -98,7 +98,7 @@ public class SumRed_Long {
         counts = {IRNode.ADD_REDUCTION_VL, ">= 1", IRNode.ADD_REDUCTION_VL, "<= 2"}) // one for main-loop, one for vector-post-loop
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8", "MaxVectorSize", ">=32"},
         counts = {IRNode.ADD_REDUCTION_VL, ">= 1", IRNode.ADD_REDUCTION_VL, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static long sumReductionImplement(
             long[] a,

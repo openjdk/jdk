@@ -24,8 +24,10 @@
 #ifndef SHARE_OPTO_VTRANSFORM_HPP
 #define SHARE_OPTO_VTRANSFORM_HPP
 
+#include "libadt/vectset.hpp"
 #include "opto/node.hpp"
 #include "opto/vectorization.hpp"
+#include "opto/vectornode.hpp"
 
 // VTransform:
 // - Models the transformation of the scalar loop to vectorized loop:
@@ -38,34 +40,56 @@
 //
 // This is the life-cycle of a VTransform:
 // - Construction:
-//   - From SuperWord, with the SuperWordVTransformBuilder.
+//   - From SuperWord PackSet, with the SuperWordVTransformBuilder.
 //
-// - Future Plans: optimize, if-conversion, etc.
+// - Optimize:
+//   - Move non-strict order reductions out of the loop. This means we have
+//     only element-wise operations inside the loop, rather than the much
+//     more expensive lane-crossing reductions. We need to do this before
+//     assessing profitability with the cost-model.
 //
 // - Schedule:
 //   - Compute linearization of the VTransformGraph, into an order that respects
 //     all edges in the graph (bailout if cycle detected).
 //
+// - Cost-Model:
+//   - We use a cost-model as a heuristic to determine if vectorization is profitable.
+//     Compute the cost of the loop with and without vectorization.
+//
 // - Apply:
 //   - Changes to the C2 IR are only made once the "apply" method is called.
+//   - Align the main loop, by adjusting pre loop limit.
+//   - Add speculative runtime checks (alignment and aliasing).
 //   - Each vtnode generates its corresponding scalar and vector C2 nodes,
-//     possibly replacing old scalar C2 nodes.
+//     possibly replacing old scalar C2 nodes. We apply each vtnode in order
+//     of the schedule, so that all input vtnodes are already applied, i.e.
+//     all input vtnodes have already generated the transformed C2 nodes.
+//   - We also build the new memory graph on the fly. The schedule may have
+//     reordered the memory operations, and so we cannot use the old memory
+//     graph, but must build it from the scheduled order. We keep track of
+//     the current memory state in VTransformApplyState.
 //
 // Future Plans with VTransform:
 // - Cost model: estimate if vectorization is profitable.
-// - Optimizations: moving unordered reductions out of the loop, whih decreases cost.
 // - Pack/Unpack/Shuffle: introduce additional nodes not present in the scalar loop.
 //                        This is difficult to do with the SuperWord packset approach.
 // - If-conversion: convert predicated nodes into CFG.
 
 typedef int VTransformNodeIDX;
+class VTransform;
 class VTransformNode;
-class VTransformScalarNode;
-class VTransformInputScalarNode;
+class VTransformMemopScalarNode;
+class VTransformDataScalarNode;
+class VTransformPhiScalarNode;
+class VTransformCFGNode;
+class VTransformCountedLoopNode;
+class VTransformOuterNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
+class VTransformCmpVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
+class VTransformPhiVectorNode;
 class VTransformMemVectorNode;
 class VTransformLoadVectorNode;
 class VTransformStoreVectorNode;
@@ -87,9 +111,12 @@ public:
     return VTransformApplyResult(n, 0, 0);
   }
 
-  static VTransformApplyResult make_vector(Node* n, uint vector_length, uint vector_width) {
-    assert(vector_length > 0 && vector_width > 0, "must have nonzero size");
-    return VTransformApplyResult(n, vector_length, vector_width);
+  static VTransformApplyResult make_vector(VectorNode* vn) {
+    return VTransformApplyResult(vn, vn->length(), vn->length_in_bytes());
+  }
+
+  static VTransformApplyResult make_vector(Node* n, const TypeVect* vt) {
+    return VTransformApplyResult(n, vt->length(), vt->length_in_bytes());
   }
 
   static VTransformApplyResult make_empty() {
@@ -109,19 +136,22 @@ public:
   const bool _verbose;
   const bool _rejections;
   const bool _align_vector;
+  const bool _speculative_aliasing_analysis;
   const bool _speculative_runtime_checks;
   const bool _info;
 
   VTransformTrace(const VTrace& vtrace,
                   const bool is_trace_rejections,
                   const bool is_trace_align_vector,
+                  const bool is_trace_speculative_aliasing_analysis,
                   const bool is_trace_speculative_runtime_checks,
                   const bool is_trace_info) :
     _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections                (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
-    _align_vector              (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
-    _speculative_runtime_checks(_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
-    _info                      (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
+    _rejections                    (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
+    _align_vector                  (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
+    _speculative_aliasing_analysis (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_aliasing_analysis),
+    _speculative_runtime_checks    (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
+    _info                          (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
 
   static bool is_trace_vtransform(const VTrace& vtrace) {
     return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
@@ -161,10 +191,11 @@ public:
   DEBUG_ONLY( bool is_empty() const { return _vtnodes.is_empty(); } )
   DEBUG_ONLY( bool is_scheduled() const { return _schedule.is_nonempty(); } )
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
+  const GrowableArray<VTransformNode*>& get_schedule() const { return _schedule; }
 
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
-  void apply_memops_reordering_with_schedule() const;
+  float cost_for_vector_loop() const;
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
 private:
@@ -173,15 +204,13 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
-
-  template<typename Callback>
-  void for_each_memop_in_schedule(Callback callback) const;
+  void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
+  int count_alive_vtnodes() const;
+  void mark_vtnodes_in_loop(VectorSet& in_loop) const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
   void print_schedule() const;
-  void print_memops_schedule() const;
   void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
                             const VectorSet& pre_visited,
                             const VectorSet& post_visited) const;
@@ -203,14 +232,14 @@ private:
 
   VTransformGraph _graph;
 
-  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // VPointer, and the alignment width (aw) for which we align the main-loop,
   // by adjusting the pre-loop limit.
-  MemNode const* _mem_ref_for_main_loop_alignment;
+  VPointer const* _vpointer_for_main_loop_alignment;
   int _aw_for_main_loop_alignment;
 
 public:
   VTransform(const VLoopAnalyzer& vloop_analyzer,
-             MemNode const* mem_ref_for_main_loop_alignment,
+             VPointer const* vpointer_for_main_loop_alignment,
              int aw_for_main_loop_alignment
              NOT_PRODUCT( COMMA const VTransformTrace trace)
              ) :
@@ -219,15 +248,19 @@ public:
     NOT_PRODUCT(_trace(trace) COMMA)
     _arena(mtCompiler, Arena::Tag::tag_superword),
     _graph(_vloop_analyzer, _arena NOT_PRODUCT(COMMA _trace)),
-    _mem_ref_for_main_loop_alignment(mem_ref_for_main_loop_alignment),
+    _vpointer_for_main_loop_alignment(vpointer_for_main_loop_alignment),
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
 
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
+  const VLoop& vloop() const { return _vloop; }
   Arena* arena() { return &_arena; }
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
 
+  void optimize();
   bool schedule() { return _graph.schedule(); }
+  bool is_profitable() const;
+  float cost_for_vector_loop() const { return _graph.cost_for_vector_loop(); }
   bool has_store_to_load_forwarding_failure() const { return _graph.has_store_to_load_forwarding_failure(_vloop_analyzer); }
   void apply();
 
@@ -245,46 +278,189 @@ private:
   }
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
-  void determine_mem_ref_and_aw_for_main_loop_alignment();
+  void determine_vpointer_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
-  void apply_speculative_runtime_checks();
+  void apply_speculative_alignment_runtime_checks();
+  void apply_speculative_aliasing_runtime_checks();
   void add_speculative_alignment_check(Node* node, juint alignment);
-  void add_speculative_check(BoolNode* bol);
+
+  template<typename Callback>
+  void add_speculative_check(Callback callback);
 
   void apply_vectorization() const;
+};
+
+// We keep track of the worklist during optimizations.
+// The concept is somewhat parallel to IGVN: we keep on
+// optimizing vtnodes on the worklist, which may in turn
+// add more nodes to the list. We keep on optimizing until
+// no more nodes are on the worklist.
+class VTransformOptimize : public StackObj {
+private:
+  const VLoopAnalyzer& _vloop_analyzer;
+  VTransform& _vtransform;
+
+  GrowableArray<VTransformNode*> _worklist;
+  VectorSet _worklist_set;
+
+public:
+  VTransformOptimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) :
+    _vloop_analyzer(vloop_analyzer),
+    _vtransform(vtransform) {}
+
+  const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
+  VTransform& vtransform() { return _vtransform; }
+
+  void worklist_push(VTransformNode* vtn);
+  void optimize();
+
+private:
+  VTransformNode* worklist_pop();
+  bool optimize_step(VTransformNode* vtn);
+  DEBUG_ONLY( void verify(); )
+};
+
+// Keeps track of the state during "VTransform::apply"
+// -> keep track of the already transformed nodes and the memory state.
+class VTransformApplyState : public StackObj {
+private:
+  const VLoopAnalyzer& _vloop_analyzer;
+
+  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
+  // Since "apply" is called on defs before uses, this allows us to find the
+  // generated def (input) nodes when we are generating the use nodes in "apply".
+  GrowableArray<Node*> _vtnode_idx_to_transformed_node;
+
+  // We keep track of the current memory state in each slice. If the slice has only
+  // loads (and no phi), then this is always the input memory state from before the
+  // loop. If there is a memory phi, this is initially the memory phi, and each time
+  // a store is processed, it is updated to that store.
+  GrowableArray<Node*> _memory_states;
+
+  // We need to keep track of the memory uses after the loop, for the slices that
+  // have a memory phi.
+  //   use->in(in_idx) = <last memory state in loop of slice alias_idx>
+  class MemoryStateUseAfterLoop : public StackObj {
+  public:
+    Node* _use;
+    int _in_idx;
+    int _alias_idx;
+
+    MemoryStateUseAfterLoop(Node* use, int in_idx, int alias_idx) :
+      _use(use), _in_idx(in_idx), _alias_idx(alias_idx) {}
+    MemoryStateUseAfterLoop() : MemoryStateUseAfterLoop(nullptr, 0, 0) {}
+  };
+
+  GrowableArray<MemoryStateUseAfterLoop> _memory_state_uses_after_loop;
+
+public:
+  VTransformApplyState(const VLoopAnalyzer& vloop_analyzer, int num_vtnodes) :
+    _vloop_analyzer(vloop_analyzer),
+    _vtnode_idx_to_transformed_node(num_vtnodes, num_vtnodes, nullptr),
+    _memory_states(num_slices(), num_slices(), nullptr)
+  {
+    init_memory_states_and_uses_after_loop();
+  }
+
+  const VLoop& vloop() const { return _vloop_analyzer.vloop(); }
+  PhaseIdealLoop* phase() const { return vloop().phase(); }
+  const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
+
+  void set_transformed_node(VTransformNode* vtn, Node* n);
+  Node* transformed_node(const VTransformNode* vtn) const;
+
+  Node* memory_state(int alias_idx) const { return _memory_states.at(alias_idx); }
+  void set_memory_state(int alias_idx, Node* n) { _memory_states.at_put(alias_idx, n); }
+
+  Node* memory_state(const TypePtr* adr_type) const {
+    int alias_idx = phase()->C->get_alias_index(adr_type);
+    return memory_state(alias_idx);
+  }
+
+  void set_memory_state(const TypePtr* adr_type, Node* n) {
+    int alias_idx = phase()->C->get_alias_index(adr_type);
+    return set_memory_state(alias_idx, n);
+  }
+
+  void fix_memory_state_uses_after_loop();
+
+private:
+  int num_slices() const { return _vloop_analyzer.memory_slices().heads().length(); }
+  void init_memory_states_and_uses_after_loop();
 };
 
 // The vtnodes (VTransformNode) resemble the C2 IR Nodes, and model a part of the
 // VTransform. Many such vtnodes make up the VTransformGraph. The vtnodes represent
 // the resulting scalar and vector nodes as closely as possible.
 // See description at top of this file.
+//
+// There are 3 tyes of edges:
+// - data edges (req):           corresponding to C2 IR Node data edges, except control
+//                               and memory.
+// - strong memory edges:        memory edges that must be respected when scheduling.
+// - weak memory edges:          memory edges that can be violated, but if violated then
+//                               corresponding aliasing analysis runtime checks must be
+//                               inserted.
+//
+// Strong edges: union of data edges and strong memory edges.
+//               These must be respected by scheduling in all cases.
+//
+// The C2 IR Node memory edges essentially define a linear order of all memory operations
+// (only Loads with the same memory input can be executed in an arbitrary order). This is
+// efficient, because it means every Load and Store has exactly one input memory edge,
+// which keeps the memory edge count linear. This is approach is too restrictive for
+// vectorization, for example, we could never vectorize stores, since they are all in a
+// dependency chain. Instead, we model the memory edges between all memory nodes, which
+// could be quadratic in the worst case. For vectorization, we must essentially reorder the
+// instructions in the graph. For this we must model all memory dependencies.
 class VTransformNode : public ArenaObj {
 public:
   const VTransformNodeIDX _idx;
 
 private:
-  // _in is split into required inputs (_req, i.e. all data dependencies),
-  // and memory dependencies.
+  bool _is_alive;
+
+  // We split _in into 3 sections:
+  // - data edges (req):     _in[0                           .. _req-1]
+  // - strong memory edges:  _in[_req                        .. _in_end_strong_memory_edges-1]
+  // - weak memory edges:    _in[_in_end_strong_memory_edges .. ]
   const uint _req;
+  uint _in_end_strong_memory_edges;
   GrowableArray<VTransformNode*> _in;
+
+  // We split _out into 2 sections:
+  // - strong edges:         _out[0                     .. _out_end_strong_edges-1]
+  // - weak memory edges:    _out[_out_end_strong_edges .. _len-1]
+  uint _out_end_strong_edges;
   GrowableArray<VTransformNode*> _out;
 
 public:
   VTransformNode(VTransform& vtransform, const uint req) :
     _idx(vtransform.graph().new_idx()),
+    _is_alive(true),
     _req(req),
+    _in_end_strong_memory_edges(req),
     _in(vtransform.arena(),  req, req, nullptr),
+    _out_end_strong_edges(0),
     _out(vtransform.arena(), 4, 0, nullptr)
   {
     vtransform.graph().add_vtnode(this);
   }
 
-  void set_req(uint i, VTransformNode* n) {
+  void init_req(uint i, VTransformNode* n) {
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
-    n->add_out(this);
+    n->add_out_strong_edge(this);
+  }
+
+  void set_req(uint i, VTransformNode* n) {
+    assert(i < _req, "must be a req");
+    VTransformNode* old = _in.at(i);
+    if (old != nullptr) { old->del_out_strong_edge(this); }
+    _in.at_put(i, n);
+    if (n != nullptr) { n->add_out_strong_edge(this); }
   }
 
   void swap_req(uint i, uint j) {
@@ -295,48 +471,136 @@ public:
     _in.at_put(j, tmp);
   }
 
-  void add_memory_dependency(VTransformNode* n) {
+  void add_strong_memory_edge(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
-    _in.push(n);
-    n->add_out(this);
+    if (_in_end_strong_memory_edges < (uint)_in.length()) {
+      // Put n in place of first weak memory edge, and move
+      // the weak memory edge to the end.
+      VTransformNode* first_weak = _in.at(_in_end_strong_memory_edges);
+      _in.at_put(_in_end_strong_memory_edges, n);
+      _in.push(first_weak);
+    } else {
+      _in.push(n);
+    }
+    _in_end_strong_memory_edges++;
+    n->add_out_strong_edge(this);
   }
 
-  void add_out(VTransformNode* n) {
+  void add_weak_memory_edge(VTransformNode* n) {
+    assert(n != nullptr, "no need to add nullptr");
+    _in.push(n);
+    n->add_out_weak_memory_edge(this);
+  }
+
+private:
+  void add_out_strong_edge(VTransformNode* n) {
+    if (_out_end_strong_edges < (uint)_out.length()) {
+      // Put n in place of first weak memory edge, and move
+      // the weak memory edge to the end.
+      VTransformNode* first_weak = _out.at(_out_end_strong_edges);
+      _out.at_put(_out_end_strong_edges, n);
+      _out.push(first_weak);
+    } else {
+      _out.push(n);
+    }
+    _out_end_strong_edges++;
+  }
+
+  void add_out_weak_memory_edge(VTransformNode* n) {
     _out.push(n);
   }
 
-  uint req() const { return _req; }
-  VTransformNode* in(int i) const { return _in.at(i); }
-  int outs() const { return _out.length(); }
-  VTransformNode* out(int i) const { return _out.at(i); }
+  void del_out_strong_edge(VTransformNode* n) {
+    int i = _out.find(n);
+    assert(0 <= i && i < (int)_out_end_strong_edges, "must be in strong edges");
 
-  bool has_req_or_dependency() const {
-    for (int i = 0; i < _in.length(); i++) {
+    // Replace n with the last strong edge.
+    VTransformNode* last_strong = _out.at(_out_end_strong_edges - 1);
+    _out.at_put(i, last_strong);
+
+    if (_out_end_strong_edges < (uint)_out.length()) {
+      // Now replace where last_strong was with the last weak edge.
+      VTransformNode* last_weak = _out.top();
+      _out.at_put(_out_end_strong_edges - 1, last_weak);
+    }
+    _out.pop();
+    _out_end_strong_edges--;
+  }
+
+public:
+  uint req() const { return _req; }
+  uint out_strong_edges() const { return _out_end_strong_edges; }
+  uint out_weak_edges() const { return _out.length() - _out_end_strong_edges; }
+
+  VTransformNode* in_req(uint i) const {
+    assert(i < _req, "must be a req");
+    return _in.at(i);
+  }
+
+  VTransformNode* out_strong_edge(uint i) const {
+    assert(i < out_strong_edges(), "must be a strong memory edge or data edge");
+    return _out.at(i);
+  }
+
+  VTransformNode* out_weak_edge(uint i) const {
+    assert(i < out_weak_edges(), "must be a strong memory edge");
+    return _out.at(_out_end_strong_edges + i);
+  }
+
+  bool has_strong_in_edge() const {
+    for (uint i = 0; i < _in_end_strong_memory_edges; i++) {
       if (_in.at(i) != nullptr) { return true; }
     }
     return false;
   }
 
-  virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
-  virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
+  VTransformNode* unique_out_strong_edge() const {
+    assert(out_strong_edges() == 1, "must be unique");
+    return _out.at(0);
+  }
+
+  bool is_alive() const { return _is_alive; }
+
+  void mark_dead(VTransformOptimize& vtoptimize) {
+    _is_alive = false;
+    // Remove all inputs, and put inputs on worklist in
+    // case they are also dead.
+    for (uint i = 0; i < req(); i++) {
+      VTransformNode* in = in_req(i);
+      if (in != nullptr) {
+        vtoptimize.worklist_push(in);
+      }
+      set_req(i, nullptr);
+    }
+  }
+
+  virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
+  virtual VTransformPhiScalarNode* isa_PhiScalar() { return nullptr; }
+  virtual VTransformCountedLoopNode* isa_CountedLoop() { return nullptr; }
+  virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
+  virtual VTransformCmpVectorNode* isa_CmpVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
+  virtual VTransformPhiVectorNode* isa_PhiVector() { return nullptr; }
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
 
   virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); }
+  virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
+  virtual bool is_loop_head_phi() const { return false; }
 
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
+  virtual bool optimize(VTransformOptimize& vtoptimize) { return false; }
 
-  Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
 
-  void register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const = 0;
+  virtual void apply_backedge(VTransformApplyState& apply_state) const {};
+  void apply_vtn_inputs_to_node(Node* n, VTransformApplyState& apply_state) const;
+  void register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const;
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
@@ -344,35 +608,112 @@ public:
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
-// Identity transform for scalar nodes.
-class VTransformScalarNode : public VTransformNode {
+// Identity transform for scalar loads and stores.
+class VTransformMemopScalarNode : public VTransformNode {
+private:
+  MemNode* _node;
+  const VPointer _vpointer;
+public:
+  VTransformMemopScalarNode(VTransform& vtransform, MemNode* n, const VPointer& vpointer) :
+    VTransformNode(vtransform, n->req()), _node(n), _vpointer(vpointer)
+  {
+    assert(node()->is_Load() || node()->is_Store(), "must be memop");
+  }
+
+  MemNode* node() const { return _node; }
+  virtual VTransformMemopScalarNode* isa_MemopScalar() override { return this; }
+
+  virtual bool is_load_in_loop() const override { return _node->is_Load(); }
+  virtual bool is_load_or_store_in_loop() const override { return true; }
+
+  virtual const VPointer& vpointer() const override { return _vpointer; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "MemopScalar"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for scalar data nodes.
+class VTransformDataScalarNode : public VTransformNode {
 private:
   Node* _node;
 public:
-  VTransformScalarNode(VTransform& vtransform, Node* n) :
-    VTransformNode(vtransform, n->req()), _node(n) {}
-  Node* node() const { return _node; }
-  virtual VTransformScalarNode* isa_Scalar() override { return this; }
-  virtual bool is_load_in_loop() const override { return _node->is_Load(); }
-  virtual bool is_load_or_store_in_loop() const override { return _node->is_Load() || _node->is_Store(); }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(node()->as_Mem()); }
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
+  VTransformDataScalarNode(VTransform& vtransform, Node* n) :
+    VTransformNode(vtransform, n->req()), _node(n)
+  {
+    assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
+  }
+
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "DataScalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for loop head phi nodes.
+class VTransformPhiScalarNode : public VTransformNode {
+private:
+  PhiNode* _node;
+public:
+  VTransformPhiScalarNode(VTransform& vtransform, PhiNode* n) :
+    VTransformNode(vtransform, n->req()), _node(n)
+  {
+    assert(_node->in(0)->is_Loop(), "phi ctrl must be Loop: %s", _node->in(0)->Name());
+  }
+
+  PhiNode* node() const { return _node; }
+
+  virtual VTransformPhiScalarNode* isa_PhiScalar() override { return this; }
+  virtual bool is_loop_head_phi() const override { return in_req(0)->isa_CountedLoop() != nullptr; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  virtual void apply_backedge(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "PhiScalar"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for CFG nodes.
+class VTransformCFGNode : public VTransformNode {
+private:
+  Node* _node;
+public:
+  VTransformCFGNode(VTransform& vtransform, Node* n) :
+    VTransformNode(vtransform, n->req()), _node(n)
+  {
+    assert(_node->is_CFG(), "must be CFG node: %s", _node->Name());
+  }
+
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "CFG"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// Identity transform for CountedLoop, the only CFG node with a backedge.
+class VTransformCountedLoopNode : public VTransformCFGNode {
+public:
+  VTransformCountedLoopNode(VTransform& vtransform, CountedLoopNode* n) :
+    VTransformCFGNode(vtransform, n) {}
+
+  virtual VTransformCountedLoopNode* isa_CountedLoop() override { return this; }
+  NOT_PRODUCT(virtual const char* name() const override { return "CountedLoop"; };)
 };
 
 // Wrapper node for nodes outside the loop that are inputs to nodes in the loop.
 // Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
 // we must wrap the inputs that are outside the loop into special vtnodes, too.
-class VTransformInputScalarNode : public VTransformScalarNode {
+class VTransformOuterNode : public VTransformNode {
+private:
+  Node* _node;
 public:
-  VTransformInputScalarNode(VTransform& vtransform, Node* n) :
-    VTransformScalarNode(vtransform, n) {}
-  virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
-  virtual bool is_load_in_loop() const override { return false; }
-  virtual bool is_load_or_store_in_loop() const override { return false; }
-  NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
+  VTransformOuterNode(VTransform& vtransform, Node* n) :
+    VTransformNode(vtransform, n->req()), _node(n) {}
+
+  virtual VTransformOuterNode* isa_Outer() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "Outer"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
@@ -383,8 +724,8 @@ private:
 public:
   VTransformReplicateNode(VTransform& vtransform, int vlen, BasicType element_type) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_type(element_type) {}
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Replicate"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
@@ -393,8 +734,8 @@ public:
 class VTransformConvI2LNode : public VTransformNode {
 public:
   VTransformConvI2LNode(VTransform& vtransform) : VTransformNode(vtransform, 2) {}
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ConvI2L"; };)
 };
 
@@ -408,8 +749,8 @@ private:
 public:
   VTransformShiftCountNode(VTransform& vtransform, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
@@ -422,41 +763,104 @@ private:
 public:
   VTransformPopulateIndexNode(VTransform& vtransform, int vlen, const BasicType element_bt) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt) {}
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// Base class for all vector vtnodes.
-class VTransformVectorNode : public VTransformNode {
+// Bundle the information needed for vector nodes.
+class VTransformVectorNodeProperties : public StackObj {
 private:
-  GrowableArray<Node*> _nodes;
-public:
-  VTransformVectorNode(VTransform& vtransform, const uint req, const uint number_of_nodes) :
-    VTransformNode(vtransform, req), _nodes(vtransform.arena(), number_of_nodes, number_of_nodes, nullptr) {}
+  Node* _approximate_origin; // for proper propagation of node notes
+  const int _scalar_opcode;
+  const uint _vector_length;
+  const BasicType _element_basic_type;
 
-  void set_nodes(const Node_List* pack) {
-    for (uint k = 0; k < pack->size(); k++) {
-      _nodes.at_put(k, pack->at(k));
-    }
+  VTransformVectorNodeProperties(Node* approximate_origin,
+                                 int scalar_opcode,
+                                 uint vector_length,
+                                 BasicType element_basic_type) :
+    _approximate_origin(approximate_origin),
+    _scalar_opcode(scalar_opcode),
+    _vector_length(vector_length),
+    _element_basic_type(element_basic_type) {}
+
+public:
+  static VTransformVectorNodeProperties make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
+    Node* first = pack->at(0);
+    int opc = first->Opcode();
+    int vlen = pack->size();
+    BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+    return VTransformVectorNodeProperties(first, opc, vlen, bt);
   }
 
-  const GrowableArray<Node*>& nodes() const { return _nodes; }
+  static VTransformVectorNodeProperties make_for_phi_vector(PhiNode* phi, int vlen, BasicType bt) {
+    return VTransformVectorNodeProperties(phi, phi->Opcode(), vlen, bt);
+  }
+
+  Node* approximate_origin()     const { return _approximate_origin; }
+  int scalar_opcode()            const { return _scalar_opcode; }
+  uint vector_length()           const { return _vector_length; }
+  BasicType element_basic_type() const { return _element_basic_type; }
+};
+
+// Abstract base class for all vector vtnodes.
+class VTransformVectorNode : public VTransformNode {
+private:
+  const VTransformVectorNodeProperties _properties;
+public:
+  VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
+    VTransformNode(vtransform, req), _properties(properties) {}
+
   virtual VTransformVectorNode* isa_Vector() override { return this; }
-  void register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
+  void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
   NOT_PRODUCT(virtual void print_spec() const override;)
+
+protected:
+  const VTransformVectorNodeProperties& properties() const { return _properties; }
+  Node* approximate_origin()     const { return _properties.approximate_origin(); }
+  int scalar_opcode()            const { return _properties.scalar_opcode(); }
+  uint vector_length()           const { return _properties.vector_length(); }
+  BasicType element_basic_type() const { return _properties.element_basic_type(); }
 };
 
 // Catch all for all element-wise vector operations.
 class VTransformElementWiseVectorNode : public VTransformVectorNode {
+private:
+  const int _vector_opcode;
 public:
-  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, uint number_of_nodes) :
-    VTransformVectorNode(vtransform, req, number_of_nodes) {}
+  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodeProperties properties, const int vector_opcode) :
+    VTransformVectorNode(vtransform, req, properties), _vector_opcode(vector_opcode) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// The scalar operation was a long -> int operation.
+// However, the vector operation is long -> long.
+// Hence, we vectorize it as: long --long_op--> long --cast--> int
+class VTransformElementWiseLongOpWithCastToIntVectorNode : public VTransformVectorNode {
+public:
+  VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 2, properties) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseLongOpWithCastToIntVector"; };)
+};
+
+class VTransformReinterpretVectorNode : public VTransformVectorNode {
+private:
+  const BasicType _src_bt;
+public:
+  VTransformReinterpretVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const BasicType src_bt) :
+    VTransformVectorNode(vtransform, 2, properties), _src_bt(src_bt) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "ReinterpretVector"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 struct VTransformBoolTest {
@@ -467,92 +871,108 @@ struct VTransformBoolTest {
     _mask(mask), _is_negated(is_negated) {}
 };
 
-class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {
+// Cmp + Bool -> VectorMaskCmp
+// The Bool node takes care of "apply".
+class VTransformCmpVectorNode : public VTransformVectorNode {
+public:
+  VTransformCmpVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 3, properties) {}
+  virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
+  NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
+};
+
+class VTransformBoolVectorNode : public VTransformVectorNode {
 private:
   const VTransformBoolTest _test;
 public:
-  VTransformBoolVectorNode(VTransform& vtransform, uint number_of_nodes, VTransformBoolTest test) :
-    VTransformElementWiseVectorNode(vtransform, 2, number_of_nodes), _test(test) {}
+  VTransformBoolVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, VTransformBoolTest test) :
+    VTransformVectorNode(vtransform, 2, properties), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 class VTransformReductionVectorNode : public VTransformVectorNode {
 public:
   // req = 3 -> [ctrl, scalar init, vector]
-  VTransformReductionVectorNode(VTransform& vtransform, uint number_of_nodes) :
-    VTransformVectorNode(vtransform, 3, number_of_nodes) {}
+  VTransformReductionVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, 3, properties) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual bool optimize(VTransformOptimize& vtoptimize) override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
+
+private:
+  int vector_reduction_opcode() const;
+  bool requires_strict_order() const;
+  bool optimize_move_non_strict_order_reductions_out_of_loop_preconditions(const VTransform& vtransform);
+  bool optimize_move_non_strict_order_reductions_out_of_loop(VTransformOptimize& vtoptimize);
+};
+
+class VTransformPhiVectorNode : public VTransformVectorNode {
+public:
+  VTransformPhiVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, req, properties) {}
+  virtual VTransformPhiVectorNode* isa_PhiVector() override { return this; }
+  virtual bool is_loop_head_phi() const override { return in_req(0)->isa_CountedLoop() != nullptr; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  virtual void apply_backedge(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "PhiVector"; };)
 };
 
 class VTransformMemVectorNode : public VTransformVectorNode {
 private:
   const VPointer _vpointer; // with size of the vector
+protected:
+  const TypePtr* _adr_type;
 
 public:
-  VTransformMemVectorNode(VTransform& vtransform, const uint req, uint number_of_nodes, const VPointer& vpointer) :
-    VTransformVectorNode(vtransform, req, number_of_nodes),
-    _vpointer(vpointer) {}
+  VTransformMemVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformVectorNode(vtransform, req, properties),
+    _vpointer(vpointer),
+    _adr_type(adr_type) {}
 
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+  virtual const VPointer& vpointer() const override { return _vpointer; }
 };
 
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
+private:
+  const LoadNode::ControlDependency _control_dependency;
+
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, uint number_of_nodes, const VPointer& vpointer) :
-    VTransformMemVectorNode(vtransform, 3, number_of_nodes, vpointer) {}
+  VTransformLoadVectorNode(VTransform& vtransform,
+                           const VTransformVectorNodeProperties properties,
+                           const VPointer& vpointer,
+                           const TypePtr* adr_type,
+                           const LoadNode::ControlDependency control_dependency) :
+    VTransformMemVectorNode(vtransform, 3, properties, vpointer, adr_type), _control_dependency(control_dependency) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
 };
 
 class VTransformStoreVectorNode : public VTransformMemVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransform& vtransform, uint number_of_nodes, const VPointer& vpointer) :
-    VTransformMemVectorNode(vtransform, 4, number_of_nodes, vpointer) {}
+  VTransformStoreVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const VPointer& vpointer, const TypePtr* adr_type) :
+    VTransformMemVectorNode(vtransform, 4, properties, vpointer, adr_type) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
   virtual bool is_load_in_loop() const override { return false; }
-  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
-                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
-
-// Invoke callback on all memops, in the order of the schedule.
-template<typename Callback>
-void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
-  assert(_schedule.length() == _vtnodes.length(), "schedule was computed");
-
-  for (int i = 0; i < _schedule.length(); i++) {
-    VTransformNode* vtn = _schedule.at(i);
-
-    // We can ignore input nodes, they are outside the loop.
-    if (vtn->isa_InputScalar() != nullptr) { continue; }
-
-    VTransformScalarNode* scalar = vtn->isa_Scalar();
-    if (scalar != nullptr && scalar->node()->is_Mem()) {
-      callback(scalar->node()->as_Mem());
-    }
-
-    VTransformVectorNode* vector = vtn->isa_Vector();
-    if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
-      for (int j = 0; j < vector->nodes().length(); j++) {
-        callback(vector->nodes().at(j)->as_Mem());
-      }
-    }
-  }
-}
-
 #endif // SHARE_OPTO_VTRANSFORM_HPP

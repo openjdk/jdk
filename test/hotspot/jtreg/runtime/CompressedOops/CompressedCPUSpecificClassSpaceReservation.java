@@ -28,6 +28,7 @@
  * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
  * @requires vm.flagless
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires (os.family != "windows") & (os.family != "aix")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

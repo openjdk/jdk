@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,9 +361,9 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
   jboolean needEnd = JNI_FALSE;
   if (_encoder != nil) {
     if (_destination != dest || renderOptions->isAA != _encoderStates.aa) {
-      J2dTraceLn2(J2D_TRACE_VERBOSE,
-                  "end common encoder because of dest change: %p -> %p",
-                  _destination, dest);
+      J2dTraceLn(J2D_TRACE_VERBOSE,
+                 "end common encoder because of dest change: %p -> %p",
+                 _destination, dest);
       needEnd = JNI_TRUE;
     } else if ((_useStencil == NO) != ([_mtlc.clip isShape] == NO)) {
       // 1. When mode changes RECT -> SHAPE we must recreate encoder with
@@ -374,9 +374,9 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
       // encoder with disabled stencil test, but [encoder
       // setDepthStencilState:nil] causes crash, so we have to recreate encoder
       // in such case
-      J2dTraceLn2(J2D_TRACE_VERBOSE,
-                  "end common encoder because toggle stencil: %d -> %d",
-                  (int)_useStencil, (int)[_mtlc.clip isShape]);
+      J2dTraceLn(J2D_TRACE_VERBOSE,
+                 "end common encoder because toggle stencil: %d -> %d",
+                 (int)_useStencil, (int)[_mtlc.clip isShape]);
       needEnd = JNI_TRUE;
     }
   }
@@ -426,7 +426,7 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
         rpd.stencilAttachment.storeAction = MTLStoreActionStore;
     }
 
-    // J2dTraceLn1(J2D_TRACE_VERBOSE, "created render encoder to draw on
+    // J2dTraceLn(J2D_TRACE_VERBOSE, "created render encoder to draw on
     // tex=%p", dest);
     _encoder = [[cbw getCommandBuffer] renderCommandEncoderWithDescriptor:rpd];
 

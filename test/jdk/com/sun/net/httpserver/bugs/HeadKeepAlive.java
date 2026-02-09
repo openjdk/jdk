@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class HeadKeepAlive
 {
@@ -111,15 +112,15 @@ public class HeadKeepAlive
                 port1 = t.getRemoteAddress().getPort();
                 System.out.println("First connection on client port = " + port1);
                 // send response
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, RSPBODY_EMPTY);
                 // the connection should still be reusable
             } else if (path.equals("/secondCall")) {
                 int port2 = t.getRemoteAddress().getPort();
                 System.out.println("Second connection on client port = " + port2);
                 if (port1 == port2) {
-                    t.sendResponseHeaders(200, -1);
+                    t.sendResponseHeaders(200, RSPBODY_EMPTY);
                 } else {
-                    t.sendResponseHeaders(500, -1);
+                    t.sendResponseHeaders(500, RSPBODY_EMPTY);
                 }
             }
             t.close();

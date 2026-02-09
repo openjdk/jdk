@@ -40,30 +40,30 @@ class UndefLengthOutputStream extends FilterOutputStream
     private boolean closed = false;
     ExchangeImpl t;
 
-    UndefLengthOutputStream (ExchangeImpl t, OutputStream src) {
-        super (src);
+    UndefLengthOutputStream(ExchangeImpl t, OutputStream src) {
+        super(src);
         this.t = t;
     }
 
-    public void write (int b) throws IOException {
+    public void write(int b) throws IOException {
         if (closed) {
-            throw new IOException ("stream closed");
+            throw new IOException("stream closed");
         }
         out.write(b);
     }
 
-    public void write (byte[]b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return;
         }
         if (closed) {
-            throw new IOException ("stream closed");
+            throw new IOException("stream closed");
         }
         out.write(b, off, len);
     }
 
-    public void close () throws IOException {
+    public void close() throws IOException {
         if (closed) {
             return;
         }
@@ -76,7 +76,7 @@ class UndefLengthOutputStream extends FilterOutputStream
             } catch (IOException e) {}
         }
         Event e = new Event.WriteFinished(t);
-        t.getHttpContext().getServerImpl().addEvent (e);
+        t.getHttpContext().getServerImpl().addEvent(e);
     }
 
     // flush is a pass-through

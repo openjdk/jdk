@@ -25,15 +25,30 @@
 
 package sun.net.www.protocol.file;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilePermission;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.FileNameMap;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.FileNameMap;
-import java.io.*;
-import java.text.Collator;
 import java.security.Permission;
-import sun.net.www.*;
-import java.util.*;
+import java.text.Collator;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+
+import sun.net.www.MessageHeader;
+import sun.net.www.ParseUtil;
+import sun.net.www.URLConnection;
 
 /**
  * Open a file input stream given a URL.
@@ -67,25 +82,49 @@ public class FileURLConnection extends URLConnection {
         this.file = file;
     }
 
-    /*
+    /**
+     * If already connected, then this method is a no-op.
+     * If not already connected, then this method does
+     * readability checks for the File.
+     * <p>
+     * If the File is a directory then the readability check
+     * is done by verifying that File.list() does not return
+     * null. On the other hand, if the File is not a directory,
+     * then this method constructs a temporary FileInputStream
+     * for the File and lets the FileInputStream's constructor
+     * implementation do the necessary readability checks.
+     * That temporary FileInputStream is closed before returning
+     * from this method.
+     * <p>
+     * In either case, if the readability checks fail, then
+     * an IOException is thrown from this method and the
+     * FileURLConnection stays unconnected.
+     * <p>
+     * A normal return from this method implies that the
+     * FileURLConnection is connected and the readability
+     * checks have passed for the File.
+     * <p>
      * Note: the semantics of FileURLConnection object is that the
      * results of the various URLConnection calls, such as
      * getContentType, getInputStream or getContentLength reflect
      * whatever was true when connect was called.
      */
+    @Override
     public void connect() throws IOException {
         if (!connected) {
-
             isDirectory = file.isDirectory();
+            // verify readability of the directory or the regular file
             if (isDirectory) {
                 String[] fileList = file.list();
-                if (fileList == null)
+                if (fileList == null) {
                     throw new FileNotFoundException(file.getPath() + " exists, but is not accessible");
+                }
                 directoryListing = Arrays.asList(fileList);
             } else {
-                is = new BufferedInputStream(new FileInputStream(file.getPath()));
+                // let FileInputStream constructor do the necessary readability checks
+                // and propagate any failures
+                new FileInputStream(file.getPath()).close();
             }
-
             connected = true;
         }
     }
@@ -112,9 +151,9 @@ public class FileURLConnection extends URLConnection {
                 FileNameMap map = java.net.URLConnection.getFileNameMap();
                 String contentType = map.getContentTypeFor(file.getPath());
                 if (contentType != null) {
-                    properties.add(CONTENT_TYPE, contentType);
+                    properties.set(CONTENT_TYPE, contentType);
                 }
-                properties.add(CONTENT_LENGTH, Long.toString(length));
+                properties.set(CONTENT_LENGTH, Long.toString(length));
 
                 /*
                  * Format the last-modified field into the preferred
@@ -126,30 +165,34 @@ public class FileURLConnection extends URLConnection {
                     SimpleDateFormat fo =
                         new SimpleDateFormat ("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
                     fo.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    properties.add(LAST_MODIFIED, fo.format(date));
+                    properties.set(LAST_MODIFIED, fo.format(date));
                 }
             } else {
-                properties.add(CONTENT_TYPE, TEXT_PLAIN);
+                properties.set(CONTENT_TYPE, TEXT_PLAIN);
             }
             initializedHeaders = true;
         }
     }
 
-    public Map<String,List<String>> getHeaderFields() {
+    @Override
+    public Map<String, List<String>> getHeaderFields() {
         initializeHeaders();
         return super.getHeaderFields();
     }
 
+    @Override
     public String getHeaderField(String name) {
         initializeHeaders();
         return super.getHeaderField(name);
     }
 
+    @Override
     public String getHeaderField(int n) {
         initializeHeaders();
         return super.getHeaderField(n);
     }
 
+    @Override
     public int getContentLength() {
         initializeHeaders();
         if (length > Integer.MAX_VALUE)
@@ -157,53 +200,73 @@ public class FileURLConnection extends URLConnection {
         return (int) length;
     }
 
+    @Override
     public long getContentLengthLong() {
         initializeHeaders();
         return length;
     }
 
+    @Override
     public String getHeaderFieldKey(int n) {
         initializeHeaders();
         return super.getHeaderFieldKey(n);
     }
 
+    @Override
     public MessageHeader getProperties() {
         initializeHeaders();
         return super.getProperties();
     }
 
+    @Override
     public long getLastModified() {
         initializeHeaders();
         return lastModified;
     }
 
+    @Override
     public synchronized InputStream getInputStream()
         throws IOException {
 
         connect();
+        // connect() does the necessary readability checks and is expected to
+        // throw IOException if any of those checks fail. A normal completion of connect()
+        // must mean that connect succeeded.
+        assert connected : "not connected";
 
-        if (is == null) {
-            if (isDirectory) {
+        // a FileURLConnection only ever creates and provides a single InputStream
+        if (is != null) {
+            return is;
+        }
 
-                if (directoryListing == null) {
-                    throw new FileNotFoundException(file.getPath());
-                }
+        if (isDirectory) {
+            // a successful connect() implies the directoryListing is non-null
+            // if the file is a directory
+            assert directoryListing != null : "missing directory listing";
 
-                directoryListing.sort(Collator.getInstance());
+            directoryListing.sort(Collator.getInstance());
 
-                StringBuilder sb = new StringBuilder();
-                for (String fileName : directoryListing) {
-                    sb.append(fileName);
-                    sb.append("\n");
-                }
-                // Put it into a (default) locale-specific byte-stream.
-                is = new ByteArrayInputStream(sb.toString().getBytes());
-            } else {
-                throw new FileNotFoundException(file.getPath());
+            StringBuilder sb = new StringBuilder();
+            for (String fileName : directoryListing) {
+                sb.append(fileName);
+                sb.append("\n");
             }
+            // Put it into a (default) locale-specific byte-stream.
+            is = new ByteArrayInputStream(sb.toString().getBytes());
+        } else {
+            is = new BufferedInputStream(new FileInputStream(file.getPath()));
         }
         return is;
     }
+
+    @Override
+    protected synchronized void ensureCanServeHeaders() throws IOException {
+        // connect() (if not already connected) does the readability checks
+        // and throws an IOException if those checks fail. A successful
+        // completion from connect() implies the File is readable.
+        connect();
+    }
+
 
     Permission permission;
 

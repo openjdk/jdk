@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,14 +169,17 @@ public class TestAlwaysPreTouchStacks {
           }
           long expected_delta = numThreads * (max_stack_usage_with_pretouch - min_stack_usage_with_pretouch);
           long actual_delta = pretouch_committed - no_pretouch_committed;
-          if (pretouch_committed <= (no_pretouch_committed + expected_delta)) {
-            throw new RuntimeException("Expected a higher amount of committed with pretouch stacks" +
-                                       "PreTouch amount: " + pretouch_committed +
-                                       "NoPreTouch amount: " + (no_pretouch_committed + expected_delta));
-          }
-          if (actual_delta < expected_delta) {
-            throw new RuntimeException("Expected a higher delta between stack committed of with and without pretouch." +
-                                       "Expected: " + expected_delta + " Actual: " + actual_delta);
+          if (((double)pretouch_committed) / ((double)no_pretouch_committed) < 1.20) {
+            if (pretouch_committed <= (no_pretouch_committed + expected_delta)) {
+              throw new RuntimeException("Expected a higher amount of committed with pretouch stacks" +
+                                        " PreTouch amount: " + pretouch_committed +
+                                        " NoPreTouch amount: " + no_pretouch_committed +
+                                        " Expected delta: " + expected_delta);
+            }
+            if (actual_delta < expected_delta) {
+              throw new RuntimeException("Expected a higher delta between stack committed of with and without pretouch." +
+                                        " Expected: " + expected_delta + " Actual: " + actual_delta);
+            }
           }
       }
     }

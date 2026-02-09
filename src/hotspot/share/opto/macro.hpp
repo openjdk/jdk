@@ -58,10 +58,10 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
-                   const Type* value_type, BasicType bt);
-  Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
-                   Node* value, BasicType bt);
+  Node* make_load_raw(Node* ctl, Node* mem, Node* base, int offset,
+                      const Type* value_type, BasicType bt);
+  Node* make_store_raw(Node* ctl, Node* mem, Node* base, int offset,
+                       Node* value, BasicType bt);
 
   Node* make_leaf_call(Node* ctrl, Node* mem,
                        const TypeFunc* call_type, address call_addr,
@@ -144,11 +144,10 @@ private:
                             Node* slice_idx,
                             Node* slice_len,
                             Node* dest_size);
-  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem, Node* io,
+  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                 const TypePtr* adr_type,
                                 BasicType basic_elem_type,
-                                AllocateNode* alloc,
-                                Node* src,  Node* src_offset,
+                                Node* src, Node* src_offset,
                                 Node* dest, Node* dest_offset,
                                 Node* dest_size, bool dest_uninitialized);
   MergeMemNode* generate_slow_arraycopy(ArrayCopyNode *ac,
@@ -182,7 +181,7 @@ private:
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);
-  Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path = false);
+  Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word);
   void copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call);
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,
                            const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1,
@@ -203,6 +202,7 @@ public:
   void refine_strip_mined_loop_macro_nodes();
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
+  void eliminate_opaque_looplimit_macro_nodes();
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
   static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);

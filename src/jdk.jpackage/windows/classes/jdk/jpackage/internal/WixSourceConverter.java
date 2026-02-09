@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
@@ -90,7 +91,7 @@ final class WixSourceConverter {
         this.outputFactory = XMLOutputFactory.newInstance();
     }
 
-    Status appyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
+    Status applyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
         // Save the resource into DOM tree and read xml namespaces from it.
         // If some namespaces are not recognized by this converter, save the resource as is.
         // If all detected namespaces are recognized, run transformation of the DOM tree and save
@@ -144,7 +145,7 @@ final class WixSourceConverter {
                     newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                             new Class<?>[]{XMLStreamWriter.class}, new NamespaceCleaner(nc.
                                     getPrefixToUri(), outputFactory.createXMLStreamWriter(outXml)))));
-            Files.createDirectories(IOUtils.getParent(resourceSaveAsFile));
+            Files.createDirectories(resourceSaveAsFile.getParent());
             Files.copy(new ByteArrayInputStream(outXml.toByteArray()), resourceSaveAsFile,
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (TransformerException | XMLStreamException ex) {
@@ -184,7 +185,7 @@ final class WixSourceConverter {
                     }).findAny().map(OverridableResource::getResourceDir).orElse(null);
                     var conv = new WixSourceConverter(resourceDir);
                     for (var e : resources.entrySet()) {
-                        conv.appyTo(e.getValue(), e.getKey());
+                        conv.applyTo(e.getValue(), e.getKey());
                     }
                 }
                 default -> {
@@ -193,7 +194,7 @@ final class WixSourceConverter {
             }
         }
 
-        private final Map<Path, OverridableResource> resources = new HashMap<>();
+        private final Map<Path, OverridableResource> resources = new TreeMap<>();
         private final WixToolsetType wixToolsetType;
     }
 

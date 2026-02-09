@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,8 +157,10 @@ class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-        logRuntimeExit(status);         // Log without holding the lock;
-
+        // log only if VM is fully initialized
+        if (VM.isBooted()) {
+            logRuntimeExit(status);         // Log without holding the lock;
+        }
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely

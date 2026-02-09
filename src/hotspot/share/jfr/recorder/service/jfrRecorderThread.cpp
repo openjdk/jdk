@@ -33,16 +33,8 @@
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
-
-class JfrRecorderThread : public JavaThread {
- public:
-  JfrRecorderThread(ThreadFunction entry_point) : JavaThread(entry_point) {}
-  virtual ~JfrRecorderThread() {}
-
-  virtual bool is_JfrRecorder_thread() const { return true; }
-};
+#include "utilities/preserveException.hpp"
 
 static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAPS) {
   assert(thread_oop.not_null(), "invariant");

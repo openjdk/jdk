@@ -22,6 +22,8 @@
  */
 package jdk.jfr.event.tracing;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.jfr.Event;
@@ -29,7 +31,9 @@ import jdk.jfr.StackTrace;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.Recording;
 
+import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Basic test of the MethodTrace event.
@@ -52,6 +56,31 @@ public class TestMethodTrace {
     }
 
     public static void main(String... args) throws Exception {
+        testWithoutThreshold();
+        testWithThreshold();
+    }
+
+    private static void testWithThreshold() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(EVENT_NAME)
+             .with("filter", CLASS_NAME + "::printHello")
+             .withThreshold(Duration.ofHours(1));
+            r.start();
+            printHello();
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            if (!events.isEmpty()) {
+                System.out.println(events);
+                throw new Exception("Unexpected MethodTrace event");
+            }
+        }
+    }
+
+    public static void printHello() {
+        System.out.println("Hello!");
+    }
+
+    private static void testWithoutThreshold() throws Exception {
         AtomicReference<RecordedEvent> o = new AtomicReference<>();
         AtomicReference<RecordedEvent> i = new AtomicReference<>();
         AtomicReference<RecordedEvent> e = new AtomicReference<>();

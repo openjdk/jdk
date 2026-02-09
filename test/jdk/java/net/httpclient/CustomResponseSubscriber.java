@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
@@ -58,6 +57,7 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import javax.net.ssl.SSLContext;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -70,7 +70,7 @@ import static org.testng.Assert.assertTrue;
 
 public class CustomResponseSubscriber {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
     HttpsServer httpsTestServer;       // HTTPS/1.1
     Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -187,10 +187,6 @@ public class CustomResponseSubscriber {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         // HTTP/1.1
         HttpHandler h1_fixedLengthHandler = new HTTP1_FixedLengthHandler();
         HttpHandler h1_chunkHandler = new HTTP1_ChunkedHandler();

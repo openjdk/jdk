@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,20 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng ClassPathTest
+ * @run junit ClassPathTest
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ClassPathTest extends KullaTesting {
 
     private final Compiler compiler = new Compiler();
     private final Path outDir = Paths.get("class_path_test");
 
+    @Test
     public void testDirectory() {
         compiler.compile(outDir, "package pkg; public class TestDirectory { }");
         assertDeclareFail("import pkg.TestDirectory;", "compiler.err.doesnt.exist");
@@ -52,6 +52,7 @@ public class ClassPathTest extends KullaTesting {
         assertEval("new pkg.TestDirectory();");
     }
 
+    @Test
     public void testJar() {
         compiler.compile(outDir, "package pkg; public class TestJar { }");
         String jarName = "test.jar";
@@ -62,6 +63,7 @@ public class ClassPathTest extends KullaTesting {
         assertEval("new pkg.TestJar();");
     }
 
+    @Test
     public void testAmbiguousDirectory() {
         Path p1 = outDir.resolve("dir1");
         compiler.compile(p1,
@@ -82,6 +84,7 @@ public class ClassPathTest extends KullaTesting {
         assertEval("new p.TestAmbiguous();", "first");
     }
 
+    @Test
     public void testAmbiguousJar() {
         Path p1 = outDir.resolve("dir1");
         compiler.compile(p1,
@@ -104,11 +107,13 @@ public class ClassPathTest extends KullaTesting {
         assertEval("new p.TestAmbiguous();", "first");
     }
 
+    @Test
     public void testEmptyClassPath() {
         addToClasspath("");
         assertEval("new java.util.ArrayList<String>();");
     }
 
+    @Test
     public void testUnknown() {
         addToClasspath(compiler.getPath(outDir.resolve("UNKNOWN")));
         assertDeclareFail("new Unknown();", "compiler.err.cant.resolve.location");

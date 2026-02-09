@@ -568,6 +568,9 @@ class Assembler : public AbstractAssembler {
     XSCVDPHP_OPCODE= (60u << OPCODE_SHIFT |  347u << 2 | 17u << 16), // XX2-FORM
     XXPERM_OPCODE  = (60u << OPCODE_SHIFT |   26u << 3),
     XXSEL_OPCODE   = (60u << OPCODE_SHIFT |    3u << 4),
+    XSCMPEQDP_OPCODE=(60u << OPCODE_SHIFT |   3u <<  3),
+    XSCMPGEDP_OPCODE=(60u << OPCODE_SHIFT |  19u <<  3),
+    XSCMPGTDP_OPCODE=(60u << OPCODE_SHIFT |  11u <<  3),
     XXSPLTIB_OPCODE= (60u << OPCODE_SHIFT |  360u << 1),
     XVDIVDP_OPCODE = (60u << OPCODE_SHIFT |  120u << 3),
     XVABSSP_OPCODE = (60u << OPCODE_SHIFT |  409u << 2),
@@ -757,6 +760,7 @@ class Assembler : public AbstractAssembler {
     VCTZH_OPCODE   = (4u  << OPCODE_SHIFT | 29u << 16 | 1538u),
     VCTZW_OPCODE   = (4u  << OPCODE_SHIFT | 30u << 16 | 1538u),
     VCTZD_OPCODE   = (4u  << OPCODE_SHIFT | 31u << 16 | 1538u),
+    VNEGW_OPCODE   = (4u  << OPCODE_SHIFT |  6u << 16 | 1538u),
 
     // Vector Floating-Point
     // not implemented yet
@@ -2058,12 +2062,12 @@ class Assembler : public AbstractAssembler {
  protected:
   inline void tdi_unchecked(int tobits, Register a, int si16);
   inline void twi_unchecked(int tobits, Register a, int si16);
+ public:
   inline void tdi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void twi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void td(           int tobits, Register a, Register b); // asserts UseSIGTRAP
   inline void tw(           int tobits, Register a, Register b); // asserts UseSIGTRAP
 
- public:
   static bool is_tdi(int x, int tobits, int ra, int si16) {
      return (TDI_OPCODE == (x & TDI_OPCODE_MASK))
          && (tobits == inv_to_field(x))
@@ -2372,6 +2376,7 @@ class Assembler : public AbstractAssembler {
   inline void vctzh(    VectorRegister d, VectorRegister b);
   inline void vctzw(    VectorRegister d, VectorRegister b);
   inline void vctzd(    VectorRegister d, VectorRegister b);
+  inline void vnegw(    VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
@@ -2422,6 +2427,9 @@ class Assembler : public AbstractAssembler {
   inline void xscvdphp( VectorSRegister d, VectorSRegister b);
   inline void xxland(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxsel(    VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c);
+  inline void xscmpeqdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgedp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgtdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
   inline void xxspltib( VectorSRegister d, int ui8);
   inline void xvdivsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvdivdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);

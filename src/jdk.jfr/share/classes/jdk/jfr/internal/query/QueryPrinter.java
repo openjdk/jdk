@@ -280,12 +280,14 @@ public final class QueryPrinter {
                     MEDIAN: The numeric median
                     MIN: The numeric minimum
                     P90, P95, P99, P999: The numeric percentile, 90%, 95%, 99% or 99.9%
+                    SET: All unique values in a comma-separated list
                     STDEV: The numeric standard deviation
                     SUM: The numeric sum
                     UNIQUE: The unique number of occurrences of a value
                    Null values are included, but ignored for numeric functions. If no
                    aggregator function is specified, the first non-null value is used.
                  - property, any of the following:
+                    none No formatting for the column
                     cell-height:<integer> Maximum height of a table cell
                     missing:whitespace Replace missing values (N/A) with blank space
                     normalized Normalize values between 0 and 1.0 for the column

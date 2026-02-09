@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +78,7 @@ class fixed_strings {
 
   public:
 
-  fixed_strings() : first(0) {}
+  fixed_strings() : first(nullptr) {}
   ~fixed_strings() {
     node* n = first;
     while (n) {
@@ -112,7 +113,7 @@ bool AixSymbols::get_function_name (
                                      //                 information (null if not available)
     bool demangle                    // [in] whether to demangle the name
   ) {
-  struct tbtable* tb = 0;
+  struct tbtable* tb = nullptr;
   unsigned int searchcount = 0;
 
   // initialize output parameters
@@ -652,10 +653,10 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
   // To print the first frame, use the current value of iar:
   // current entry indicated by iar (the current pc)
-  codeptr_t cur_iar = 0;
-  stackptr_t cur_sp = 0;
-  codeptr_t cur_rtoc = 0;
-  codeptr_t cur_lr = 0;
+  codeptr_t cur_iar = nullptr;
+  stackptr_t cur_sp = nullptr;
+  codeptr_t cur_rtoc = nullptr;
+  codeptr_t cur_lr = nullptr;
 
   const ucontext_t* uc = (const ucontext_t*) context;
 
@@ -925,7 +926,7 @@ static struct handletableentry* p_handletable = nullptr;
 static const char* rtv_linkedin_libpath() {
   constexpr int bufsize = 4096;
   static char buffer[bufsize];
-  static const char* libpath = 0;
+  static const char* libpath = nullptr;
 
   // we only try to retrieve the libpath once. After that try we
   // let libpath point to buffer, which then contains a valid libpath
@@ -936,7 +937,7 @@ static const char* rtv_linkedin_libpath() {
 
   // retrieve the path to the currently running executable binary
   // to open it
-  snprintf(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
+  os::snprintf_checked(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
   FILE* f = nullptr;
   struct xcoffhdr the_xcoff;
   struct scnhdr the_scn;
@@ -1154,7 +1155,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
         error_report = "dlerror returned no error description";
       }
       if (ebuf != nullptr && ebuflen > 0) {
-        snprintf(ebuf, ebuflen - 1, "%s", error_report);
+        os::snprintf_checked(ebuf, ebuflen, "%s", error_report);
       }
       assert(false, "os::pd_dll_unload() ::dlclose() failed");
     }
@@ -1189,4 +1190,3 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
-

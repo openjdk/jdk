@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -1165,7 +1164,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #setShowHorizontalLines
      */
     @BeanProperty(description
-            = "The color used to draw the grid lines.")
+            = "Whether grid lines are drawn around the cells.")
     public void setShowGrid(boolean showGrid) {
         setShowHorizontalLines(showGrid);
         setShowVerticalLines(showGrid);
@@ -3192,9 +3191,23 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * (maximum or minimum).
      *
      */
+
     public void doLayout() {
+        boolean prefWidthSet = false;
         TableColumn resizingColumn = getResizingColumn();
-        if (resizingColumn == null) {
+        // doLayout is called for both pack and show
+        // so if initial preferred width is set by user then
+        // it needs to be honoured even if resizingColumn
+        // is set to last column on account of
+        // AUTO_RESIZE_LAST_COLUMN autoResizeMode
+        for (int i = 0; i < columnModel.getColumnCount(); i++) {
+            if (columnModel.getColumn(i).getPreferredWidth() != 75
+                    && columnModel.getColumn(i).getWidth() == 75) {
+                prefWidthSet = true;
+                break;
+            }
+        }
+        if (resizingColumn == null || prefWidthSet) {
             setWidthsFromPreferredWidths(false);
         }
         else {
@@ -4454,8 +4467,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         if (e == null || e.getFirstRow() == TableModelEvent.HEADER_ROW) {
             // The whole thing changed
             clearSelectionAndLeadAnchor();
-
-            rowModel = null;
 
             if (sortManager != null) {
                 try {
@@ -6122,7 +6133,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             this.focusManager = fm;
         }
 
-        @SuppressWarnings("removal")
         public void propertyChange(PropertyChangeEvent ev) {
             if (!isEditing() || getClientProperty("terminateEditOnFocusLost") != Boolean.TRUE) {
                 return;
@@ -6133,8 +6143,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (c == JTable.this) {
                     // focus remains inside the table
                     return;
-                } else if ((c instanceof Window) ||
-                           (c instanceof Applet && c.getParent() == null)) {
+                } else if (c instanceof Window) {
                     if (c == SwingUtilities.getRoot(JTable.this)) {
                         if (!getCellEditor().stopCellEditing()) {
                             getCellEditor().cancelCellEditing();

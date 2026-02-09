@@ -22,6 +22,7 @@
  *
  */
 
+import java.lang.System.Logger.Level;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -30,11 +31,14 @@ import java.security.ProtectionDomain;
 // This class is available on the classpath so it can be accessed by JavaAgentApp
 public class JavaAgentTransformer  implements ClassFileTransformer {
     private static Instrumentation savedInstrumentation;
+    private static final System.Logger LOGGER = System.getLogger(JavaAgentTransformer.class.getName());
 
     public static void premain(String agentArguments, Instrumentation instrumentation) {
         System.out.println("JavaAgentTransformer.premain() is called");
         instrumentation.addTransformer(new JavaAgentTransformer(), /*canRetransform=*/true);
         savedInstrumentation = instrumentation;
+
+        LOGGER.log(Level.WARNING, "JavaAgentTransformer::premain() is finished");
     }
 
     public static Instrumentation getInstrumentation() {

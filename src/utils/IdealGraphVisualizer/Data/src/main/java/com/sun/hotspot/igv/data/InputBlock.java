@@ -135,7 +135,7 @@ public class InputBlock {
         successors.add(b);
     }
 
-    void setArtificial() {
+    public void setArtificial() {
         this.artificial = true;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,12 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
       long ptr = findLibPtrByAddress0(pc.asLongValue());
       return (ptr == 0L) ? null
                          : new LinuxAddress(this, ptr);
+    }
+
+    @Override
+    public boolean isSignalTrampoline(Address pc) {
+      var sym = lookup(getAddressValue(pc));
+      return sym == null ? false : SIGHANDLER_NAMES.contains(sym.getName());
     }
 
     // Note on Linux threads are really processes. When target process is

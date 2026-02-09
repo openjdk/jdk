@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,14 @@ import java.util.List;
 import java.util.Map;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.util.Enquoter;
 
 /**
  * Helper to install launchers as services using "systemd".
  */
 public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private LinuxLaunchersAsServices(BuildEnv env, Package pkg) throws IOException {
+    private LinuxLaunchersAsServices(BuildEnv env, Package pkg) {
         super(env.appImageDir(), pkg.app(), REQUIRED_PACKAGES, launcher -> {
             return new LauncherImpl(env, pkg, launcher);
         });
@@ -58,7 +59,7 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         return data;
     }
 
-    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(LINUX_REPLACEMENT_STRING_IDS);
         }

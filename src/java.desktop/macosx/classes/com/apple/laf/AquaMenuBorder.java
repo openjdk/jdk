@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-public class AquaMenuBorder implements Border, UIResource {
+public final class AquaMenuBorder implements Border, UIResource {
     public AquaMenuBorder() { }
 
     /**
@@ -44,6 +44,7 @@ public class AquaMenuBorder implements Border, UIResource {
      * @param width the width of the painted border
      * @param height the height of the painted border
      */
+    @Override
     public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
         // for now we don't paint a border. We let the button paint it since there
         // needs to be a strict ordering for aqua components.
@@ -59,6 +60,7 @@ public class AquaMenuBorder implements Border, UIResource {
      * is opaque, it is responsible for filling in it's own
      * background when painting.
      */
+    @Override
     public boolean isBorderOpaque() {
         return false;
     }
@@ -79,6 +81,7 @@ public class AquaMenuBorder implements Border, UIResource {
      * Returns the insets of the border.
      * @param c the component for which this border insets value applies
      */
+    @Override
     public Insets getBorderInsets(final Component c) {
         if (!(c instanceof JPopupMenu)) {
             return getItemInsets();

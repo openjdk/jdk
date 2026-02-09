@@ -34,6 +34,8 @@
  *                 TestApp$Foo
  *                 TestApp$Foo$Bar
  *                 TestApp$Foo$ShouldBeExcluded
+ *                 TestApp$Foo$ShouldBeExcludedChild
+ *                 TestApp$Foo$Taz
  *                 TestApp$MyInvocationHandler
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
  *                 CustyWithLoop
@@ -61,7 +63,7 @@ public class ExcludedClasses {
 
     public static void main(String[] args) throws Exception {
         Tester tester = new Tester();
-        tester.runAOTWorkflow();
+        tester.runAOTWorkflow("AOT", "--two-step-training");
     }
 
     static class Tester extends CDSAppTester {
@@ -77,7 +79,11 @@ public class ExcludedClasses {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds+resolve=trace",
+                "-Xlog:aot=debug",
+                "-Xlog:aot+class=debug",
+                "-Xlog:aot+resolve=trace",
+                "-Xlog:aot+verification=trace",
+                "-Xlog:class+load",
             };
         }
 
@@ -90,8 +96,12 @@ public class ExcludedClasses {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) {
-            if (isDumping(runMode)) {
-                out.shouldNotMatch("cds,resolve.*archived field.*TestApp.Foo => TestApp.Foo.ShouldBeExcluded.f:I");
+            if (runMode == RunMode.ASSEMBLY) {
+                out.shouldNotMatch("aot,resolve.*archived field.*TestApp.Foo => TestApp.Foo.ShouldBeExcluded.f:I");
+            } else if (runMode == RunMode.PRODUCTION) {
+                out.shouldContain("jdk.jfr.Event source: jrt:/jdk.jfr");
+                out.shouldMatch("TestApp[$]Foo[$]ShouldBeExcluded source: .*/app.jar");
+                out.shouldMatch("TestApp[$]Foo[$]ShouldBeExcludedChild source: .*/app.jar");
             }
         }
     }
@@ -102,8 +112,8 @@ class TestApp {
     static volatile Object custArrayInstance;
 
     public static void main(String args[]) throws Exception {
-        // In new workflow, classes from custom loaders are passed from the preimage
-        // to the final image. See ClassPrelinker::record_unregistered_klasses().
+        // In AOT workflow, classes from custom loaders are passed from the preimage
+        // to the final image. See FinalImageRecipes::record_all_classes().
         custInstance = initFromCustomLoader();
         custArrayInstance = Array.newInstance(custInstance.getClass(), 0);
         System.out.println(custArrayInstance);
@@ -157,6 +167,7 @@ class TestApp {
                 lambdaHotSpot();
                 s.hotSpot2();
                 b.hotSpot3();
+                Taz.hotSpot4();
 
                 // In JDK mainline, generated proxy classes are excluded from the AOT cache.
                 // In Leyden/premain, generated proxy classes included. The following code should
@@ -165,7 +176,7 @@ class TestApp {
                 counter += i.intValue();
 
                 if (custInstance != null) {
-                    // Classes loaded by custom loaders are included included in the AOT cache
+                    // Classes loaded by custom loaders are included in the AOT cache
                     // but their array classes are excluded.
                     counter += custInstance.equals(null) ? 1 : 2;
                 }
@@ -216,6 +227,16 @@ class TestApp {
                     f();
                 }
             }
+            int func() {
+                return 1;
+            }
+        }
+
+        static class ShouldBeExcludedChild extends ShouldBeExcluded {
+            @Override
+            int func() {
+                return 2;
+            }
         }
 
         static class Bar {
@@ -225,6 +246,24 @@ class TestApp {
             }
 
             void hotSpot3() {
+                long start = System.currentTimeMillis();
+                while (System.currentTimeMillis() - start < 20) {
+                    for (int i = 0; i < 50000; i++) {
+                        counter += i;
+                    }
+                    f();
+                }
+            }
+        }
+
+        static class Taz {
+            static ShouldBeExcluded m() {
+                // Taz should be excluded from the AOT cache because it has a verification constraint that
+                // "ShouldBeExcludedChild must be a subtype of ShouldBeExcluded", but ShouldBeExcluded is
+                // excluded from the AOT cache.
+                return new ShouldBeExcludedChild();
+            }
+            static void hotSpot4() {
                 long start = System.currentTimeMillis();
                 while (System.currentTimeMillis() - start < 20) {
                     for (int i = 0; i < 50000; i++) {

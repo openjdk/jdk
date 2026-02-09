@@ -337,20 +337,6 @@ abstract class UnixFileSystem
         return Pattern.compile(expr);
     }
 
-    // Override if the platform uses different Unicode normalization form
-    // for native file path. For example on MacOSX, the native path is stored
-    // in Unicode NFD form.
-    String normalizeNativePath(String path) {
-        return path;
-    }
-
-    // Override if the native file path use non-NFC form. For example on MacOSX,
-    // the native path is stored in Unicode NFD form, the path need to be
-    // normalized back to NFC before passed back to Java level.
-    String normalizeJavaPath(String path) {
-        return path;
-    }
-
     //  Unix implementation of Files#copy and Files#move methods.
 
     // calculate the least common multiple of two values;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 8139107 8174269
+ * @bug 8139107 8174269 8354548
  * @summary Test that date parsing with DateTimeFormatter pattern
  *   that contains timezone field doesn't trigger NPE. All supported
  *   locales are tested.
- * @run testng Bug8139107
+ * @run testng/timeout=480 Bug8139107
  */
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import org.testng.annotations.Test;
 
@@ -48,7 +49,16 @@ public class Bug8139107 {
         DateTimeFormatter inputDateTimeFormat = DateTimeFormatter
                 .ofPattern(pattern)
                 .withLocale(tl);
-        System.out.println("Parse result: " + inputDateTimeFormat.parse(inputDate));
+        try {
+            System.out.println("Parse result: " + inputDateTimeFormat.parse(inputDate));
+        } catch (DateTimeParseException dateTimeParseException) {
+            // Short tz name "MSK" no longer resides in the root locale since CLDR 48
+            // as the zone "Europe/Kirov" became the link to "moscow" metazone.
+            // Prior to that, "Europe/Kirov" had no l10n, thus only the short
+            // names were retrieved from TZDB, and placed in the root (thus
+            // guaranteed to be parsed in any locale before).
+            System.out.println(dateTimeParseException.getMessage());
+        }
     }
 
     // Input date time string with short time zone name
@@ -56,4 +66,3 @@ public class Bug8139107 {
     // Pattern with time zone field
     static final String pattern = "dd-MM-yyyy HH:mm:ss z";
 }
-

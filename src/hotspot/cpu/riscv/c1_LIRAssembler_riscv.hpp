@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -72,7 +72,7 @@ private:
     // See emit_exception_handler for detail
     _exception_handler_size = DEBUG_ONLY(256) NOT_DEBUG(32), // or smaller
     // See emit_deopt_handler for detail
-    // auipc (1) + far_jump (2)
+    // far_call (2) + j (1)
     _deopt_handler_size = 1 * MacroAssembler::instruction_size +
                           2 * MacroAssembler::instruction_size
   };

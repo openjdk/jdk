@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,20 @@
  * @test
  * @bug 8221431
  * @summary Tests decomposition of Japanese square era characters.
- * @run testng/othervm SquareEraCharacterTest
+ * @run junit/othervm SquareEraCharacterTest
  */
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.Normalizer;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SquareEraCharacterTest {
 
-    @DataProvider
     Object[][] squareEras() {
         return new Object[][] {
 
@@ -51,12 +51,10 @@ public class SquareEraCharacterTest {
         };
     }
 
-    @Test(dataProvider="squareEras")
-    public void test_normalize(char squareChar, String expected) {
-
-        assertEquals(
-            Normalizer.normalize(Character.toString(squareChar), Normalizer.Form.NFKD),
-            expected,
+    @ParameterizedTest
+    @MethodSource("squareEras")
+    void test_normalize(char squareChar, String expected) {
+        assertEquals(expected, Normalizer.normalize(Character.toString(squareChar), Normalizer.Form.NFKD),
             "decomposing " + Character.getName(squareChar) + ".");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@
 // that track a collections (logical spaces) in a heap;
 
 class HSpaceCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
  private:
   PerfVariable* _capacity;
   PerfVariable* _used;

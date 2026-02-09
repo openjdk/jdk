@@ -42,6 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -256,6 +257,14 @@ public class PropertyWriter extends AbstractMemberWriter {
     }
 
     @Override
+    protected Table<Element> createInheritedSummaryTable(TypeElement typeElement) {
+        return new Table<Element>(HtmlStyles.summaryTable)
+                .setHeader(getSummaryTableHeader(null))
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast)
+                .setRenderTabs(false);
+    }
+
+    @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
         Content classLink = getMemberSummaryLinkOrFQN(typeElement, VisibleMemberTable.Kind.PROPERTIES);
         Content label;
@@ -270,10 +279,15 @@ public class PropertyWriter extends AbstractMemberWriter {
         }
         var labelHeading =
                 HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING, label)
-                        .setId(htmlIds.forInheritedProperties(typeElement))
+                        .setId(getInheritedSummaryId(typeElement))
                         .add(Entity.NO_BREAK_SPACE)
                         .add(classLink);
         content.add(labelHeading);
+    }
+
+    @Override
+    protected HtmlId getInheritedSummaryId(TypeElement typeElement) {
+        return htmlIds.forInheritedProperties(typeElement);
     }
 
     @Override

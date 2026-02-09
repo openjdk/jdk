@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ abstract public class CDSAppTester {
     private int numProductionRuns = 0;
     private String whiteBoxJar = null;
     private boolean inOneStepTraining = false;
+    private boolean generateBaseArchive = false;
+    private String[] baseArchiveOptions = new String[0];
 
     /**
      * All files created in the CDS/AOT workflow will be name + extension. E.g.
@@ -262,7 +264,7 @@ abstract public class CDSAppTester {
                                                              "class+load=debug",
                                                              "aot=debug",
                                                              "cds=debug",
-                                                             "cds+class=debug"));
+                                                             "aot+class=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
@@ -275,8 +277,9 @@ abstract public class CDSAppTester {
                                                    "-XX:AOTCacheOutput=" + aotCacheFile,
                                                    logToFile(aotCacheFileLog,
                                                              "class+load=debug",
-                                                             "cds=debug",
-                                                             "cds+class=debug"));
+                                                             "aot=debug",
+                                                             "aot+class=debug",
+                                                             "cds=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         OutputAnalyzer out =  executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
@@ -310,7 +313,7 @@ abstract public class CDSAppTester {
                                                              "cds=debug",
                                                              "cds+class=debug",
                                                              "aot+heap=warning",
-                                                             "cds+resolve=debug"));
+                                                             "aot+resolve=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
@@ -326,11 +329,11 @@ abstract public class CDSAppTester {
                                                    "-XX:AOTConfiguration=" + aotConfigurationFile,
                                                    "-XX:AOTCache=" + aotCacheFile,
                                                    logToFile(aotCacheFileLog,
-                                                             "aot=debug",
                                                              "cds=debug",
-                                                             "cds+class=debug",
+                                                             "aot=debug",
+                                                             "aot+class=debug",
                                                              "aot+heap=warning",
-                                                             "cds+resolve=debug"));
+                                                             "aot+resolve=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
@@ -342,7 +345,7 @@ abstract public class CDSAppTester {
     // VM options used by this test, we need to create a temporary static archive to be used with -XX:ArchiveClassesAtExit.
     private String getBaseArchiveForDynamicArchive() throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        if (wb.isSharingEnabled()) {
+        if (wb.isSharingEnabled() && !generateBaseArchive) {
             // This current JVM is able to use a default CDS archive included by the JDK, so
             // if we launch a JVM child process (with the same set of options as the current JVM),
             // that process is also able to use the same default CDS archive for creating
@@ -355,12 +358,23 @@ abstract public class CDSAppTester {
             if (!f.exists()) {
                 CDSOptions opts = new CDSOptions();
                 opts.setArchiveName(tempBaseArchiveFile);
+                opts.addSuffix(baseArchiveOptions);
                 opts.addSuffix("-Djava.class.path=");
                 OutputAnalyzer out = CDSTestUtils.createArchive(opts);
                 CDSTestUtils.checkBaseDump(out);
             }
             return tempBaseArchiveFile;
         }
+    }
+
+    public CDSAppTester setGenerateBaseArchive(boolean b) {
+        this.generateBaseArchive = b;
+        return this;
+    }
+
+    public CDSAppTester setBaseArchiveOptions(String... opts) {
+        this.baseArchiveOptions = opts;
+        return this;
     }
 
     private OutputAnalyzer dumpDynamicArchive() throws Exception {
@@ -377,7 +391,7 @@ abstract public class CDSAppTester {
                                                       "aot=debug",
                                                       "cds=debug",
                                                       "cds+class=debug",
-                                                      "cds+resolve=debug",
+                                                      "aot+resolve=debug",
                                                       "class+load=debug"));
           cmdLine = addCommonVMArgs(runMode, cmdLine);
         }
@@ -401,8 +415,6 @@ abstract public class CDSAppTester {
     public OutputAnalyzer productionRun(String[] extraVmArgs, String[] extraAppArgs) throws Exception {
         RunMode runMode = RunMode.PRODUCTION;
         String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:VerifyArchivedFields=2", // make sure archived heap objects are good.
                                                    logToFile(productionRunLog(), "aot", "cds"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
 

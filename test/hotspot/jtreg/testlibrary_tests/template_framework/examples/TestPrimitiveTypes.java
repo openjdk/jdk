@@ -41,7 +41,8 @@ import java.util.HashMap;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.transparentScope;
 import static compiler.lib.template_framework.Template.dataNames;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
@@ -77,7 +78,7 @@ public class TestPrimitiveTypes {
         Map<String, TemplateToken> tests = new HashMap<>();
 
         // The boxing tests check if we can autobox with "boxedTypeName".
-        var boxingTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
+        var boxingTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> scope(
             let("CON1", type.con()),
             let("CON2", type.con()),
             let("Boxed", type.boxedTypeName()),
@@ -99,7 +100,7 @@ public class TestPrimitiveTypes {
         }
 
         // Integral and Float types have a size. Also test if "isFloating" is correct.
-        var integralFloatTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
+        var integralFloatTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> scope(
             let("size", type.byteSize()),
             let("isFloating", type.isFloating()),
             """
@@ -129,27 +130,31 @@ public class TestPrimitiveTypes {
 
         // Finally, test the type by creating some DataNames (variables), and sampling
         // from them. There should be no cross-over between the types.
-        var variableTemplate = Template.make("type", (PrimitiveType type) -> body(
+        // IMPORTANT: since we are adding the DataName via an inserted Template, we
+        //            must chose a "transparentScope", so that the DataName escapes. If we
+        //            instead chose "scope", the test would fail, because it later
+        //            finds no DataNames when we sample.
+        var variableTemplate = Template.make("type", (PrimitiveType type) -> transparentScope(
             let("CON", type.con()),
-            addDataName($("var"), type, MUTABLE),
+            addDataName($("var"), type, MUTABLE), // escapes the Template
             """
             #type $var = #CON;
             """
         ));
 
-        var sampleTemplate = Template.make("type", (PrimitiveType type) -> body(
-            let("var", dataNames(MUTABLE).exactOf(type).sample().name()),
+        var sampleTemplate = Template.make("type", (PrimitiveType type) -> scope(
             let("CON", type.con()),
+            dataNames(MUTABLE).exactOf(type).sampleAndLetAs("var"),
             """
             #var = #CON;
             """
         ));
 
-        var namesTemplate = Template.make(() -> body(
+        var namesTemplate = Template.make(() -> scope(
             """
             public static void test_names() {
             """,
-            Hooks.METHOD_HOOK.anchor(
+            Hooks.METHOD_HOOK.anchor(scope(
                 Collections.nCopies(10,
                     CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
                         Hooks.METHOD_HOOK.insert(variableTemplate.asToken(type))
@@ -161,7 +166,7 @@ public class TestPrimitiveTypes {
                 Collections.nCopies(10,
                     CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(sampleTemplate::asToken).toList()
                 )
-            ),
+            )),
             """
             }
             """
@@ -169,14 +174,61 @@ public class TestPrimitiveTypes {
 
         tests.put("test_names", namesTemplate.asToken());
 
+        // Test runtime random value generation with LibraryRNG
+        // Runtime random number generation of a given primitive type can be very helpful
+        // when writing tests that require random inputs.
+        var libraryRNGWithTypeTemplate = Template.make("type", (PrimitiveType type) -> scope(
+            """
+            {
+                // Fill an array with 1_000 random values. Every type has at least 2 values,
+                // so the chance that all values are the same is 2^-1_000 < 10^-300. This should
+                // never happen, even with a relatively weak PRNG.
+                #type[] a = new #type[1_000];
+                for (int i = 0; i < a.length; i++) {
+            """,
+            "       a[i] = ", type.callLibraryRNG(), ";\n",
+            """
+                }
+                boolean allSame = true;
+                for (int i = 0; i < a.length; i++) {
+                    if (a[i] != a[0]) {
+                        allSame = false;
+                        break;
+                    }
+                }
+                if (allSame) { throw new RuntimeException("all values were the same for #type"); }
+            }
+            """
+        ));
+
+        var libraryRNGTemplate = Template.make(() -> scope(
+            // Make sure we instantiate the LibraryRNG class.
+            PrimitiveType.generateLibraryRNG(),
+            // Now we can use it inside the test.
+            """
+            public static void test_LibraryRNG() {
+            """,
+            CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(libraryRNGWithTypeTemplate::asToken).toList(),
+            """
+            }
+            """
+        ));
+
+        tests.put("test_LibraryRNG", libraryRNGTemplate.asToken());
+
         // Finally, put all the tests together in a class, and invoke all
         // tests from the main method.
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             """
             package p.xyz;
 
             import compiler.lib.verify.*;
             import java.lang.foreign.MemorySegment;
+
+            // Imports for LibraryRNG
+            import java.util.Random;
+            import jdk.test.lib.Utils;
+            import compiler.lib.generators.*;
 
             public class InnerTest {
                 public static void main() {

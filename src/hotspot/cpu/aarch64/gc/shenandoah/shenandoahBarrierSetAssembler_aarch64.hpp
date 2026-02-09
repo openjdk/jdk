@@ -40,23 +40,16 @@ class StubCodeGenerator;
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
 
-  void satb_write_barrier_pre(MacroAssembler* masm,
-                              Register obj,
-                              Register pre_val,
-                              Register thread,
-                              Register tmp1,
-                              Register tmp2,
-                              bool tosca_live,
-                              bool expand_call);
-  void shenandoah_write_barrier_pre(MacroAssembler* masm,
-                                    Register obj,
-                                    Register pre_val,
-                                    Register thread,
-                                    Register tmp,
-                                    bool tosca_live,
-                                    bool expand_call);
+  void satb_barrier(MacroAssembler* masm,
+                    Register obj,
+                    Register pre_val,
+                    Register thread,
+                    Register tmp1,
+                    Register tmp2,
+                    bool tosca_live,
+                    bool expand_call);
 
-  void store_check(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj);
 
   void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
@@ -64,10 +57,10 @@ private:
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register start, Register count,
-                                        Register scratch, RegSet saved_regs);
+                                        Register scratch);
 
 public:
-  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_instruction_and_data_patch; }
 
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
@@ -79,7 +72,7 @@ public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs);
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register count, Register tmp, RegSet saved_regs);
+                                  Register start, Register count, Register tmp);
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register dst, Address src, Register tmp1, Register tmp2);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

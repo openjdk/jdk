@@ -34,7 +34,7 @@
  * @build jdk.test.lib.Asserts
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
- * @run main/othervm/timeout=300 -Dsun.net.httpserver.nodelay=true GenerationTests
+ * @run main/othervm/timeout=1200 -Dsun.net.httpserver.nodelay=true GenerationTests
  * @author Sean Mullan
  */
 

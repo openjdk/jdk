@@ -37,9 +37,10 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 void ShenandoahArguments::initialize() {
-#if !(defined AARCH64 || defined AMD64 || defined IA32 || defined PPC64 || defined RISCV64)
+#if !(defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
 
@@ -184,20 +185,28 @@ void ShenandoahArguments::initialize() {
   // Current default is good for generational collectors that run frequent young GCs.
   // With Shenandoah, GC cycles are much less frequent, so we need we need sizing policy
   // to converge faster over smaller number of resizing decisions.
-  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
+  if (strcmp(ShenandoahGCMode, "generational") && FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
+  // In generational mode, let TLABAllocationWeight keeps its default value of 35.
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
       err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
+  // Gen shen does not support any ShenandoahGCHeuristics value except for the default "adaptive"
+  if ((strcmp(ShenandoahGCMode, "generational") == 0)
+      && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
+    log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
+      " supports adaptive heuristics", ShenandoahGCHeuristics);
+  }
+
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {
-  size_t align = ShenandoahMaxRegionSize;
+  size_t align = next_power_of_2(ShenandoahMaxRegionSize);
   if (UseLargePages) {
     align = MAX2(align, os::large_page_size());
   }
@@ -217,6 +226,10 @@ void ShenandoahArguments::initialize_alignments() {
   }
   SpaceAlignment = align;
   HeapAlignment = align;
+
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    TLABSize = MAX2(ShenandoahHeapRegion::region_size_bytes() / 256, (size_t) 32 * 1024);
+  }
 }
 
 CollectedHeap* ShenandoahArguments::create_heap() {

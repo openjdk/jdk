@@ -25,6 +25,7 @@
 
 package java.security;
 
+import jdk.internal.util.ByteArray;
 import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.jca.Providers;
@@ -835,6 +836,16 @@ public class SecureRandom extends java.util.Random {
         }
 
         return next >>> (numBytes*8 - numBits);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long nextLong() {
+        byte[] b = new byte[8];
+        nextBytes(b); // Calls engineNextBytes internally
+        return ByteArray.getLong(b, 0);
     }
 
     /**

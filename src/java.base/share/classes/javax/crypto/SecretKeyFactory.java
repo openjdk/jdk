@@ -59,7 +59,9 @@ import sun.security.jca.GetInstance.Instance;
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code SecretKeyFactory} algorithms:
  * <ul>
- * <li>{@code DESede}</li>
+ * <li>{@code PBEWithHmacSHA256AndAES_128}</li>
+ * <li>{@code PBEWithHmacSHA256AndAES_256}</li>
+ * <li>{@code PBKDF2WithHmacSHA256}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#secretkeyfactory-algorithms">

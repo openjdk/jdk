@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  */
 package test.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.DayOfWeek;
 import java.time.Month;
@@ -37,9 +37,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestNarrowMonthNamesAndDayNames {
 
     static {
@@ -59,7 +61,6 @@ public class TestNarrowMonthNamesAndDayNames {
      * Locale en_US, de_DE, fr_FR, no_NO will have same Narrow and
      * Narrow_Standalone month Names for COMPAT Provider.
      */
-    @DataProvider(name = "MonthNarrows")
     public Object[][] monthNameData() {
         return new Object[][]{{new String[]{
             "J",
@@ -80,27 +81,23 @@ public class TestNarrowMonthNamesAndDayNames {
     //-----------------------------------------------------------------------
     // Check Narrow and Narrow_standalone month name values
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "MonthNarrows")
+    @ParameterizedTest
+    @MethodSource("monthNameData")
     public void compareMonthNarrowValues(String[] monthNarrowExpected) {
-        LOCARR.forEach((loc) -> {
-            TEXTSTYLELIST.forEach((style) -> {
-                MONTHVALUES.forEach((value) -> {
-                    String result = value.getDisplayName(style, loc);
-                    int index = value.ordinal();
-                    assertEquals(result, monthNarrowExpected[index], "Test failed"
-                            + " for COMPAT Provider for locale "
-                            + loc + " for style " + style.name()
-                            + " with Month value " + value.name());
-                });
-            });
-        });
+        LOCARR.forEach((loc) -> TEXTSTYLELIST.forEach((style) -> MONTHVALUES.forEach((value) -> {
+            String result = value.getDisplayName(style, loc);
+            int index = value.ordinal();
+            assertEquals(monthNarrowExpected[index], result, "Test failed"
+                    + " for COMPAT Provider for locale "
+                    + loc + " for style " + style.name()
+                    + " with Month value " + value.name());
+        })));
     }
 
     /**
      * Locale en_US, de_DE, fr_FR, no_NO will have different Narrow and
      * Narrow_Standalone Day Names for COMPAT Provider.
      */
-    @DataProvider(name = "DayNarrows")
     public Object[][] dayNameData() {
         return new Object[][]{
             {Locale.US, new String[]{"M", "T", "W", "T", "F", "S", "S"}},
@@ -112,17 +109,16 @@ public class TestNarrowMonthNamesAndDayNames {
     //-----------------------------------------------------------------------
     // Check Narrow and Narrow_standalone Day name values
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "DayNarrows")
+    @ParameterizedTest
+    @MethodSource("dayNameData")
     public void compareDayNarrowValues(Locale locale, String[] dayNarrowExpected) {
-        TEXTSTYLELIST.forEach((style) -> {
-            DAYVALUES.forEach((value) -> {
-                String result = value.getDisplayName(style, locale);
-                int index = value.ordinal();
-                assertEquals(result, dayNarrowExpected[index], "Test failed"
-                        + " for COMPAT Provider for locale "
-                        + locale + " for style " + style.name()
-                        + " with Day value " + value.name());
-            });
-        });
+        TEXTSTYLELIST.forEach((style) -> DAYVALUES.forEach((value) -> {
+            String result = value.getDisplayName(style, locale);
+            int index = value.ordinal();
+            assertEquals(dayNarrowExpected[index], result, "Test failed"
+                    + " for COMPAT Provider for locale "
+                    + locale + " for style " + style.name()
+                    + " with Day value " + value.name());
+        }));
     }
 }

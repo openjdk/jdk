@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,27 +45,13 @@ define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
-#ifdef AMD64
 define_pd_global(intx,  InteriorEntryAlignment,      16);
-define_pd_global(size_t, NewSizeThreadIncrease,     ScaleForWordSize(4*K));
+define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx,  LoopUnrollLimit,             60);
 // InitialCodeCacheSize derived from specjbb2000 run.
-define_pd_global(uintx, InitialCodeCacheSize,        2496*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(uintx, CodeCacheExpansionSize,      64*K);
+define_pd_global(size_t, InitialCodeCacheSize,       2496*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(size_t, CodeCacheExpansionSize,     64*K);
 
-// Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   128ULL*G);
-#else
-define_pd_global(intx,  InteriorEntryAlignment,      4);
-define_pd_global(size_t, NewSizeThreadIncrease,      4*K);
-define_pd_global(intx,  LoopUnrollLimit,             50);     // Design center runs on 1.3.1
-// InitialCodeCacheSize derived from specjbb2000 run.
-define_pd_global(uintx, InitialCodeCacheSize,        2304*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(uintx, CodeCacheExpansionSize,      32*K);
-
-// Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
-#endif // AMD64
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
 
 // Peephole and CISC spilling both break the graph, and so makes the
@@ -79,12 +65,12 @@ define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
 define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 define_pd_global(bool, IdealizeClearArrayNode,       true);
 
-define_pd_global(uintx, ReservedCodeCacheSize,       48*M);
-define_pd_global(uintx, NonProfiledCodeHeapSize,     21*M);
-define_pd_global(uintx, ProfiledCodeHeapSize,        22*M);
-define_pd_global(uintx, NonNMethodCodeHeapSize,      5*M );
-define_pd_global(uintx, CodeCacheMinBlockLength,     6);
-define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
+define_pd_global(size_t, ReservedCodeCacheSize,      48*M);
+define_pd_global(size_t, NonProfiledCodeHeapSize,    21*M);
+define_pd_global(size_t, ProfiledCodeHeapSize,       22*M);
+define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
+define_pd_global(size_t, CodeCacheMinBlockLength,    6);
+define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on x86.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,28 +28,26 @@
  * @summary Tests Currency class instantiates correctly with Unicode
  *      extensions
  * @modules jdk.localedata
- * @run testng/othervm CurrencyTests
+ * @run junit/othervm CurrencyTests
  */
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Currency;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test Currency with BCP47 U extensions
  */
-@Test
 public class CurrencyTests {
     private static final Currency USD = Currency.getInstance("USD");
     private static final Currency CAD = Currency.getInstance("CAD");
     private static final Currency JPY = Currency.getInstance("JPY");
 
-    @DataProvider(name="getInstanceData")
-    Object[][] getInstanceData() {
+    static Object[][] getInstanceData() {
         return new Object[][] {
             // Locale, Expected Currency
             // "cu"
@@ -76,8 +74,7 @@ public class CurrencyTests {
         };
     }
 
-    @DataProvider(name="getSymbolData")
-    Object[][] getSymbolData() {
+    static Object[][] getSymbolData() {
         return new Object[][] {
             // Currency, DisplayLocale, expected Symbol
             {USD, Locale.forLanguageTag("en-US-u-rg-jpzzzz"), "$"},
@@ -94,13 +91,15 @@ public class CurrencyTests {
         };
     }
 
-    @Test(dataProvider="getInstanceData")
-    public void test_getInstance(Locale locale, Currency currencyExpected) {
-        assertEquals(Currency.getInstance(locale), currencyExpected);
+    @MethodSource("getInstanceData")
+    @ParameterizedTest
+    void test_getInstance(Locale locale, Currency currencyExpected) {
+        assertEquals(currencyExpected, Currency.getInstance(locale));
     }
 
-    @Test(dataProvider="getSymbolData")
-    public void test_getSymbol(Currency c, Locale locale, String expected) {
-        assertEquals(c.getSymbol(locale), expected);
+    @MethodSource("getSymbolData")
+    @ParameterizedTest
+    void test_getSymbol(Currency c, Locale locale, String expected) {
+        assertEquals(expected, c.getSymbol(locale));
     }
 }

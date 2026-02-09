@@ -212,9 +212,6 @@
   develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
-  develop(bool, TimeEachLinearScan, false,                                  \
-          "print detailed timing of each LinearScan run")                   \
-                                                                            \
   develop(bool, CountLinearScan, false,                                     \
           "collect statistic counters during LinearScan")                   \
                                                                             \
@@ -244,9 +241,6 @@
   develop(bool, GenerateArrayStoreCheck, true,                              \
           "Generates code for array store checks")                          \
                                                                             \
-  develop(bool, DeoptC1, true,                                              \
-          "Use deoptimization in C1")                                       \
-                                                                            \
   develop(bool, PrintBailouts, false,                                       \
           "Print bailout and its reason")                                   \
                                                                             \
@@ -270,15 +264,6 @@
                                                                             \
   develop(bool, BailoutOnExceptionHandlers, false,                          \
           "bailout of compilation for methods with exception handlers")     \
-                                                                            \
-  develop(bool, InstallMethods, true,                                       \
-          "Install methods at the end of successful compilations")          \
-                                                                            \
-  /* The compiler assumes, in many places, that methods are at most 1MB. */ \
-  /* Therefore, we restrict this flag to at most 1MB.                    */ \
-  develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
-          "Maximum size of a compiled method.")                             \
-          range(0, 1*M)                                                     \
                                                                             \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \

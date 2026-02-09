@@ -98,12 +98,18 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
         throw new IllegalArgumentException("Unknown platform");
     }
 
-    public static ApplicationLayout javaRuntime() {
+    public static ApplicationLayout platformJavaRuntime() {
+        Path runtime = Path.of("");
+        Path runtimeHome = runtime;
+        if (TKit.isOSX()) {
+            runtimeHome = Path.of("Contents/Home");
+        }
+
         return new ApplicationLayout(
                 null,
                 null,
-                Path.of(""),
-                null,
+                runtime,
+                runtimeHome,
                 null,
                 null,
                 null,

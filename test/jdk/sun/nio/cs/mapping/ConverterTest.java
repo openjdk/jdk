@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @summary test Bug 4199484
  * @modules jdk.charsets
  * @run main ConverterTest
- * @bug 4199484 4199599 4199601 4199602 4159519 4201529 4199604 4201532 4947038 6217210
+ * @bug 4199484 4199599 4199601 4199602 4159519 4201529 4199604 4201532 4947038
+ *      6217210 8368845
 */
 
 import java.util.*;

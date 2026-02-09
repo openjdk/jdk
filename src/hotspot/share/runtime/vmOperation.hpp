@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@
   template(Verify)                                \
   template(HeapDumper)                            \
   template(CollectForMetadataAllocation)          \
-  template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
   template(SerialCollectForAllocation)            \
   template(SerialGCCollect)                       \
@@ -59,6 +58,7 @@
   template(G1PauseRemark)                         \
   template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
+  template(G1RendezvousGCThreads)                 \
   template(ZMarkEndOld)                           \
   template(ZMarkEndYoung)                         \
   template(ZMarkFlushOperation)                   \
@@ -68,10 +68,6 @@
   template(ZRelocateStartYoung)                   \
   template(ZRendezvousGCThreads)                  \
   template(ZVerifyOld)                            \
-  template(XMarkStart)                            \
-  template(XMarkEnd)                              \
-  template(XRelocateStart)                        \
-  template(XVerify)                               \
   template(HandshakeAllThreads)                   \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
@@ -113,7 +109,6 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)                   \
   template(RendezvousGCThreads)                   \
   template(JFRInitializeCPUTimeSampler)       \
   template(JFRTerminateCPUTimeSampler)        \
@@ -159,6 +154,10 @@ class VM_Operation : public StackObj {
   // Configuration. Override these appropriately in subclasses.
   virtual VMOp_Type type() const = 0;
   virtual bool allow_nested_vm_operations() const { return false; }
+
+  // VMOp_Type may belong to a category of the operation.
+  // Override is_XX_operation() appropriately in subclasses.
+  virtual bool is_gc_operation() const { return false; }
 
   // You may override skip_thread_oop_barriers to return true if the operation
   // does not access thread-private oops (including frames).

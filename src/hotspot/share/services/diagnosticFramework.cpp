@@ -208,7 +208,7 @@ void DCmdParser::parse(CmdLine* line, char delim, TRAPS) {
 
         strncpy(argbuf, iter.key_addr(), len);
         argbuf[len] = '\0';
-        jio_snprintf(buf, buflen - 1, "Unknown argument '%s' in diagnostic command.", argbuf);
+        jio_snprintf(buf, buflen, "Unknown argument '%s' in diagnostic command.", argbuf);
 
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
       }
@@ -236,7 +236,7 @@ void DCmdParser::check(TRAPS) {
   GenDCmdArgument* arg = _arguments_list;
   while (arg != nullptr) {
     if (arg->is_mandatory() && !arg->has_value()) {
-      jio_snprintf(buf, buflen - 1, "The argument '%s' is mandatory.", arg->name());
+      jio_snprintf(buf, buflen, "The argument '%s' is mandatory.", arg->name());
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
     }
     arg = arg->next();
@@ -244,7 +244,7 @@ void DCmdParser::check(TRAPS) {
   arg = _options;
   while (arg != nullptr) {
     if (arg->is_mandatory() && !arg->has_value()) {
-      jio_snprintf(buf, buflen - 1, "The option '%s' is mandatory.", arg->name());
+      jio_snprintf(buf, buflen, "The option '%s' is mandatory.", arg->name());
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
     }
     arg = arg->next();
@@ -563,10 +563,6 @@ DCmd* DCmdFactory::create_local_DCmd(DCmdSource source, CmdLine &line,
                                      outputStream* out, TRAPS) {
   DCmdFactory* f = factory(source, line.cmd_addr(), line.cmd_len());
   if (f != nullptr) {
-    if (!f->is_enabled()) {
-      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-                     f->disabled_message());
-    }
     return f->create_resource_instance(out);
   }
   THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
@@ -594,8 +590,7 @@ GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
     if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(new DCmdInfo(factory->name(),
                     factory->description(), factory->impact(),
-                    factory->num_arguments(),
-                    factory->is_enabled()));
+                    factory->num_arguments()));
     }
     factory = factory->next();
   }

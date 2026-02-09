@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,7 +307,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           assert( bol->is_Bool(), "" );
           if (bol->outcnt() == 1) {
             Node* use = bol->unique_out();
-            if (use->is_OpaqueNotNull() || use->is_OpaqueTemplateAssertionPredicate() ||
+            if (use->is_OpaqueConstantBool() || use->is_OpaqueTemplateAssertionPredicate() ||
                 use->is_OpaqueInitializedAssertionPredicate()) {
               if (use->outcnt() == 1) {
                 Node* iff = use->unique_out();
@@ -331,8 +331,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
             // Recursively sink any BoolNode
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
-              // Uses are either IfNodes, CMoves, OpaqueNotNull, or Opaque*AssertionPredicate
-              if (u->is_OpaqueNotNull() || u->is_OpaqueTemplateAssertionPredicate() ||
+              // Uses are either IfNodes, CMoves, OpaqueConstantBool or Opaque*AssertionPredicate
+              if (u->is_OpaqueConstantBool() || u->is_OpaqueTemplateAssertionPredicate() ||
                   u->is_OpaqueInitializedAssertionPredicate()) {
                 assert(u->in(1) == bol, "bad input");
                 for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
@@ -655,7 +655,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
     // Replace in the graph with lazy-update mechanism
     new_iff->set_req(0, new_iff); // hook self so it does not go dead
-    lazy_replace(ifp, ifpx);
+    replace_node_and_forward_ctrl(ifp, ifpx);
     new_iff->set_req(0, region);
 
     // Record bits for later xforms
@@ -669,9 +669,10 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
   _igvn.remove_dead_node(new_iff);
   // Lazy replace IDOM info with the region's dominator
-  lazy_replace(iff, region_dom);
-  lazy_update(region, region_dom); // idom must be update before handle_uses
-  region->set_req(0, nullptr);        // Break the self-cycle. Required for lazy_update to work on region
+  replace_node_and_forward_ctrl(iff, region_dom);
+  // Break the self-cycle. Required for forward_ctrl to work on region.
+  region->set_req(0, nullptr);
+  forward_ctrl(region, region_dom); // idom must be updated before handle_use
 
   // Now make the original merge point go dead, by handling all its uses.
   small_cache region_cache;

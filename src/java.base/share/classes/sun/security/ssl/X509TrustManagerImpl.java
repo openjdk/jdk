@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,25 +31,21 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
+import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
 
 /**
  * This class implements the SunJSSE X.509 trust manager using the internal
- * validator API in J2SE core. The logic in this class is minimal.<p>
+ * validator API in J2SE core. The logic in this class is minimal.
  * <p>
  * This class supports both the Simple validation algorithm from previous
- * JSSE versions and PKIX validation. Currently, it is not possible for the
- * application to specify PKIX parameters other than trust anchors. This will
- * be fixed in a future release using new APIs. When that happens, it may also
- * make sense to separate the Simple and PKIX trust managers into separate
- * classes.
+ * JSSE versions and PKIX validation.
  *
  * @author Andreas Sterbenz
  */
-final class X509TrustManagerImpl extends X509ExtendedTrustManager
-        implements X509TrustManager {
+final class X509TrustManagerImpl extends X509ExtendedTrustManager {
 
     private final String validatorType;
 
@@ -78,7 +74,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         this.trustedCerts = trustedCerts;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
             SSLLogger.fine("adding as trusted certificates",
                     (Object[])trustedCerts.toArray(new X509Certificate[0]));
         }
@@ -95,7 +91,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         trustedCerts = v.getTrustedCertificates();
         serverValidator = v;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
             SSLLogger.fine("adding as trusted certificates",
                     (Object[])trustedCerts.toArray(new X509Certificate[0]));
         }
@@ -142,6 +138,16 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
     public void checkServerTrusted(X509Certificate[] chain, String authType,
             SSLEngine engine) throws CertificateException {
         checkTrusted(chain, authType, engine, false);
+    }
+
+    public void checkClientTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        checkTrusted(chain, authType, quicTLSEngine, true);
+    }
+
+    void checkServerTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        checkTrusted(chain, authType, quicTLSEngine, false);
     }
 
     private Validator checkTrustedInit(X509Certificate[] chain,
@@ -195,98 +201,90 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
     private void checkTrusted(X509Certificate[] chain,
             String authType, Socket socket,
             boolean checkClientTrusted) throws CertificateException {
-        Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
-        X509Certificate[] trustedChain;
-        if ((socket != null) && socket.isConnected() &&
-                (socket instanceof SSLSocket sslSocket)) {
+        SSLSession session = null;
+        AlgorithmConstraints constraints = null;
+        String identityAlg = null;
 
-            SSLSession session = sslSocket.getHandshakeSession();
-            if (session == null) {
-                throw new CertificateException("No handshake session");
-            }
-
-            // create the algorithm constraints
-            boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints;
-            if (isExtSession &&
-                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[] localSupportedSignAlgs =
-                        extSession.getLocalSupportedSignatureAlgorithms();
-
-                constraints = SSLAlgorithmConstraints.forSocket(
-                                sslSocket, localSupportedSignAlgs, false);
-            } else {
-                constraints = SSLAlgorithmConstraints.forSocket(sslSocket, false);
-            }
-
-            // Grab any stapled OCSP responses for use in validation
-            List<byte[]> responseList = Collections.emptyList();
-            if (!checkClientTrusted && isExtSession) {
-                responseList =
-                        ((ExtendedSSLSession)session).getStatusResponses();
-            }
-            trustedChain = v.validate(chain, null, responseList,
-                    constraints, checkClientTrusted ? null : authType);
-
-            // check endpoint identity
-            String identityAlg = sslSocket.getSSLParameters().
+        if (socket instanceof SSLSocket sslSocket && sslSocket.isConnected()) {
+            session = sslSocket.getHandshakeSession();
+            constraints = SSLAlgorithmConstraints.forSocket(
+                    sslSocket, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
+            identityAlg = sslSocket.getSSLParameters().
                     getEndpointIdentificationAlgorithm();
-            if (identityAlg != null && !identityAlg.isEmpty()) {
-                checkIdentity(session,
-                        trustedChain, identityAlg, checkClientTrusted);
-            }
-        } else {
-            trustedChain = v.validate(chain, null, Collections.emptyList(),
-                    null, checkClientTrusted ? null : authType);
         }
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
-            SSLLogger.fine("Found trusted certificate",
-                    trustedChain[trustedChain.length - 1]);
-        }
+        findTrustedCertificate(chain, authType,
+                session, constraints, identityAlg, checkClientTrusted);
     }
 
     private void checkTrusted(X509Certificate[] chain,
             String authType, SSLEngine engine,
             boolean checkClientTrusted) throws CertificateException {
+
+        SSLSession session = null;
+        AlgorithmConstraints constraints = null;
+        String identityAlg = null;
+
+        if (engine != null) {
+            session = engine.getHandshakeSession();
+            constraints = SSLAlgorithmConstraints.forEngine(
+                    engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
+            identityAlg = engine.getSSLParameters().
+                    getEndpointIdentificationAlgorithm();
+        }
+
+        findTrustedCertificate(chain, authType,
+                session, constraints, identityAlg, checkClientTrusted);
+    }
+
+    private void checkTrusted(X509Certificate[] chain,
+            String authType, QuicTLSEngineImpl quicTLSEngine,
+            boolean checkClientTrusted) throws CertificateException {
+
+        SSLSession session = null;
+        AlgorithmConstraints constraints = null;
+        String identityAlg = null;
+
+        if (quicTLSEngine != null) {
+            session = quicTLSEngine.getHandshakeSession();
+            constraints = SSLAlgorithmConstraints.forQUIC(
+                    quicTLSEngine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, false);
+            identityAlg = quicTLSEngine.getSSLParameters().
+                    getEndpointIdentificationAlgorithm();
+        }
+
+        findTrustedCertificate(chain, authType,
+                session, constraints, identityAlg, checkClientTrusted);
+    }
+
+    private void findTrustedCertificate(X509Certificate[] chain,
+            String authType, SSLSession session,
+            AlgorithmConstraints constraints, String identityAlg,
+            boolean checkClientTrusted) throws CertificateException {
+
+        final X509Certificate[] trustedChain;
         Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
-        X509Certificate[] trustedChain;
-        if (engine != null) {
-            SSLSession session = engine.getHandshakeSession();
+        if (constraints != null) {
             if (session == null) {
                 throw new CertificateException("No handshake session");
             }
 
-            // create the algorithm constraints
-            boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints;
-            if (isExtSession &&
-                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                String[] localSupportedSignAlgs =
-                        extSession.getLocalSupportedSignatureAlgorithms();
-
-                constraints = SSLAlgorithmConstraints.forEngine(
-                                engine, localSupportedSignAlgs, false);
-            } else {
-                constraints = SSLAlgorithmConstraints.forEngine(engine, false);
-            }
-
             // Grab any stapled OCSP responses for use in validation
-            List<byte[]> responseList = Collections.emptyList();
-            if (!checkClientTrusted && isExtSession) {
-                responseList =
-                        ((ExtendedSSLSession)session).getStatusResponses();
+            final List<byte[]> responseList;
+            if (!checkClientTrusted &&
+                    session instanceof ExtendedSSLSession extSession) {
+                responseList = extSession.getStatusResponses();
+            } else {
+                responseList = Collections.emptyList();
             }
+
+            // Certificate chain validation
             trustedChain = v.validate(chain, null, responseList,
                     constraints, checkClientTrusted ? null : authType);
 
-            // check endpoint identity
-            String identityAlg = engine.getSSLParameters().
-                    getEndpointIdentificationAlgorithm();
+            // Check endpoint identity
             if (identityAlg != null && !identityAlg.isEmpty()) {
                 checkIdentity(session, trustedChain,
                         identityAlg, checkClientTrusted);
@@ -296,7 +294,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     null, checkClientTrusted ? null : authType);
         }
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
             SSLLogger.fine("Found trusted certificate",
                     trustedChain[trustedChain.length - 1]);
         }
@@ -330,7 +328,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     hostname = new SNIHostName(sniName.getEncoded());
                 } catch (IllegalArgumentException iae) {
                     // unlikely to happen, just in case ...
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,trustmanager")) {
                         SSLLogger.fine("Illegal server name: " + sniName);
                     }
                 }
@@ -364,6 +362,13 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             return getRequestedServerNames(engine.getHandshakeSession());
         }
 
+        return Collections.emptyList();
+    }
+
+    static List<SNIServerName> getRequestedServerNames(QuicTLSEngineImpl engine) {
+        if (engine != null) {
+            return getRequestedServerNames(engine.getHandshakeSession());
+        }
         return Collections.emptyList();
     }
 

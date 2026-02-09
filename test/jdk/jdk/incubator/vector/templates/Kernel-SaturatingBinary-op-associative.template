@@ -1,0 +1,15 @@
+        $type$[] a = fa.apply(SPECIES.length());
+        $type$[] b = fb.apply(SPECIES.length());
+        $type$[] c = fc.apply(SPECIES.length());
+        $type$[] rl = fr.apply(SPECIES.length());
+        $type$[] rr = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                $Type$Vector av = $Type$Vector.fromArray(SPECIES, a, i);
+                $Type$Vector bv = $Type$Vector.fromArray(SPECIES, b, i);
+                $Type$Vector cv = $Type$Vector.fromArray(SPECIES, c, i);
+                av.lanewise(VectorOperators.SUADD, bv).lanewise(VectorOperators.SUADD, cv).intoArray(rl, i);
+                av.lanewise(VectorOperators.SUADD, bv.lanewise(VectorOperators.SUADD, cv)).intoArray(rr, i);
+            }
+        }

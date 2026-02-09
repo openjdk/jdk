@@ -30,11 +30,11 @@
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/nonJavaThread.hpp"
-#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
@@ -275,7 +275,7 @@ public:
   }
 
   // The following functions translate between a u4 offset and an address in the
-  // the range of the mapped CDS archive (e.g., Metaspace::is_in_shared_metaspace()).
+  // the range of the mapped CDS archive (e.g., Metaspace::in_aot_cache()).
   // Since the first 16 bytes in this range are dummy data (see ArchiveBuilder::reserve_buffer()),
   // we know that offset 0 never represents a valid object. As a result, an offset of 0
   // is used to encode a nullptr.
@@ -287,7 +287,7 @@ public:
   template <typename T> T static offset_to_archived_address(u4 offset) {
     assert(offset != 0, "sanity");
     T p = (T)(SharedBaseAddress + offset);
-    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(Metaspace::in_aot_cache(p), "must be");
     return p;
   }
 
@@ -303,7 +303,7 @@ public:
   template <typename T> static u4 archived_address_to_offset(T p) {
     uintx pn = (uintx)p;
     uintx base = (uintx)SharedBaseAddress;
-    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(Metaspace::in_aot_cache(p), "must be");
     assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
     uintx offset = pn - base;
     assert(offset <= MAX_SHARED_DELTA, "range check");
@@ -324,14 +324,14 @@ private:
   size_t _base_offset;
   size_t _count;
   int _roots_count;
-  int _max_size_in_bytes;
+  size_t _max_size_in_bytes;
   int _max_size_in_elems;
 
 public:
   size_t base_offset() { return _base_offset; }
   size_t count() { return _count; }
   int roots_count() { return _roots_count; }
-  int max_size_in_bytes() { return _max_size_in_bytes; }
+  size_t max_size_in_bytes() { return _max_size_in_bytes; }
   int max_size_in_elems() { return _max_size_in_elems; }
 
   size_t size_in_bytes(size_t seg_idx);

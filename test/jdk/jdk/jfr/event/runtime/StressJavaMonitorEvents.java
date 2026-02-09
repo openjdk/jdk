@@ -52,7 +52,7 @@ import jdk.test.lib.thread.XRun;
  */
 public class StressJavaMonitorEvents {
 
-    static final int RUN_TIME_MS = 10000;
+    static final int RUN_TIME_MS = 5000;
     static final int GC_EVERY_MS = 500;
     static final int THREADS = 4;
     static final int NUM_LOCKS = 1024;

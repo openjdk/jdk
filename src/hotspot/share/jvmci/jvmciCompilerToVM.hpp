@@ -124,12 +124,15 @@ class CompilerToVM {
     static address dsin;
     static address dcos;
     static address dtan;
+    static address dsinh;
     static address dtanh;
     static address dcbrt;
     static address dexp;
     static address dlog;
     static address dlog10;
     static address dpow;
+
+    static address crc_table_addr;
 
     static address symbol_init;
     static address symbol_clinit;

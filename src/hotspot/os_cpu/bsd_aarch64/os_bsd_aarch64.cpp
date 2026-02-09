@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,6 +29,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -49,10 +50,15 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/events.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/vmError.hpp"
+#include "compiler/disassembler.hpp"
 
 // put OS-includes here
 # include <sys/types.h>
@@ -61,7 +67,6 @@
 # include <signal.h>
 # include <errno.h>
 # include <dlfcn.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
@@ -83,6 +88,8 @@
 #define SPELL_REG_SP "sp"
 
 #ifdef __APPLE__
+WXMode DefaultWXWriteMode;
+
 // see darwin-xnu/osfmk/mach/arm/_structs.h
 
 // 10.5 UNIX03 member name prefixes
@@ -231,18 +238,55 @@ NOINLINE frame os::current_frame() {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-  // Enable WXWrite: this function is called by the signal handler at arbitrary
-  // point of execution.
-  ThreadWXEnable wx(WXWrite, thread);
-
   // decide if this trap can be handled by a stub
   address stub = nullptr;
-
-  address pc          = nullptr;
+  address pc   = nullptr;
 
   //%note os_trap_1
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
+
+#ifdef MACOS_AARCH64
+    // If we got a SIGBUS because we tried to write into the code
+    // cache, try enabling WXWrite mode.
+    if (sig == SIGBUS
+        && pc != info->si_addr
+        && CodeCache::contains(info->si_addr)
+        && os::address_is_in_vm(pc)) {
+      WXMode *entry_mode = thread->_cur_wx_mode;
+      if (entry_mode != nullptr && *entry_mode == WXArmedForWrite) {
+        if (TraceWXHealing) {
+          static const char *mode_names[3] = {"WXWrite", "WXExec", "WXArmedForWrite"};
+          tty->print("Healing WXMode %s at %p to WXWrite",
+                        mode_names[*entry_mode], entry_mode);
+          char name[128];
+          int offset = 0;
+          if (os::dll_address_to_function_name(pc, name, sizeof name, &offset)) {
+            tty->print_cr("  (%s+0x%x)", name, offset);
+          } else {
+            tty->cr();
+          }
+          if (Verbose) {
+            char buf[O_BUFLEN];
+            NativeStackPrinter nsp(thread);
+            nsp.print_stack(tty, buf, sizeof(buf), pc,
+                            true /* print_source_info */, -1 /* max stack */);
+          }
+        }
+#ifndef PRODUCT
+        guarantee(StressWXHealing,
+                  "We should not reach here unless StressWXHealing");
+#endif
+        *(thread->_cur_wx_mode) = WXWrite;
+        return thread->wx_enable_write();
+      }
+    }
+
+    // There may be cases where code after this point that we call
+    // from the signal handler changes WX state, so we protect against
+    // that by saving and restoring the state.
+    ThreadWXEnable wx(thread->get_wx_state(), thread);
+#endif
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -271,14 +315,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
 
-      // Handle signal from NativeJump::patch_verified_entry().
-      if ((sig == SIGILL)
-          && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        stub = SharedRuntime::get_handle_wrong_method_stub();
-      } else if ((sig == SIGSEGV || sig == SIGBUS) && SafepointMechanism::is_poll_address((address)info->si_addr)) {
+      if ((sig == SIGSEGV || sig == SIGBUS) && SafepointMechanism::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
 #if defined(__APPLE__)
       // 32-bit Darwin reports a SIGBUS for nearly all memory access exceptions.
@@ -520,51 +557,74 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-#ifdef __APPLE__
+#ifdef MACOS_AARCH64
+THREAD_LOCAL bool os::_jit_exec_enabled;
+
+// This is a wrapper around the standard library function
+// pthread_jit_write_protect_np(3). We keep track of the state of
+// per-thread write protection on the MAP_JIT region in the
+// thread-local variable os::_jit_exec_enabled
 void os::current_thread_enable_wx(WXMode mode) {
-  pthread_jit_write_protect_np(mode == WXExec);
+  bool exec_enabled = mode != WXWrite;
+  if (exec_enabled != _jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == WXWrite)) {
+    permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
+    _jit_exec_enabled = exec_enabled;
+  }
 }
-#endif
+
+// If the current thread is in the WX state WXArmedForWrite, change
+// the state to WXWrite.
+bool Thread::wx_enable_write() {
+  if (_wx_state == WXArmedForWrite) {
+    _wx_state = WXWrite;
+    os::current_thread_enable_wx(WXWrite);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// A wrapper around wx_enable_write() for when the current thread is
+// not known.
+void os::thread_wx_enable_write_impl() {
+  if (!StressWXHealing) {
+    Thread::current()->wx_enable_write();
+  }
+}
+
+#endif // MACOS_AARCH64
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;
 }
 
 extern "C" {
-  // needs local assembler label '1:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
     // We should return 1 if SpinPause is implemented, and since there
-    // will be a sequence of 11 instructions for NONE and YIELD and 12
-    // instructions for NOP and ISB, SpinPause will always return 1.
-    uint64_t br_dst;
-    const int instructions_per_case = 2;
-    int64_t off = VM_Version::spin_wait_desc().inst() * instructions_per_case * Assembler::instruction_size;
-
-    assert(VM_Version::spin_wait_desc().inst() >= SpinWait::NONE &&
-           VM_Version::spin_wait_desc().inst() <= SpinWait::YIELD, "must be");
-    assert(-1 == SpinWait::NONE,  "must be");
-    assert( 0 == SpinWait::NOP,   "must be");
-    assert( 1 == SpinWait::ISB,   "must be");
-    assert( 2 == SpinWait::YIELD, "must be");
-
-    asm volatile(
-        "  adr  %[d], 20          \n" // 20 == PC here + 5 instructions => address
-                                      // to entry for case SpinWait::NOP
-        "  add  %[d], %[d], %[o]  \n"
-        "  br   %[d]              \n"
-        "  b    1f                \n" // case SpinWait::NONE  (-1)
-        "  nop                    \n" // padding
-        "  nop                    \n" // case SpinWait::NOP   ( 0)
-        "  b    1f                \n"
-        "  isb                    \n" // case SpinWait::ISB   ( 1)
-        "  b    1f                \n"
-        "  yield                  \n" // case SpinWait::YIELD ( 2)
-        "1:        \n"
-        : [d]"=&r"(br_dst)
-        : [o]"r"(off)
-        : "memory");
+    // will be always a sequence of instructions, SpinPause will always return 1.
+    switch (VM_Version::spin_wait_desc().inst()) {
+    case SpinWait::NONE:
+      break;
+    case SpinWait::NOP:
+      asm volatile("nop" : : : "memory");
+      break;
+    case SpinWait::ISB:
+      asm volatile("isb" : : : "memory");
+      break;
+    case SpinWait::YIELD:
+      asm volatile("yield" : : : "memory");
+      break;
+    case SpinWait::SB:
+      assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
+      asm volatile(".inst 0xd50330ff" : : : "memory");
+      break;
+#ifdef ASSERT
+    default:
+      ShouldNotReachHere();
+#endif
+    }
     return 1;
   }
 

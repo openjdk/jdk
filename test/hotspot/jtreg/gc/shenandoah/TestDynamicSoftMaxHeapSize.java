@@ -23,7 +23,63 @@
  *
  */
 
-/*
+/**
+ * @test id=satb-adaptive
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=adaptive
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
+ * @test id=satb-aggressive
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=aggressive
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
+ * @test id=satb-compact
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=compact
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
+ * @test id=satb-static
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=static
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
  * @test id=passive
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -41,87 +97,101 @@
  *      TestDynamicSoftMaxHeapSize
  */
 
-/*
- * @test id=aggressive
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -Dtarget=1000
- *      TestDynamicSoftMaxHeapSize
- */
-
-/*
- * @test id=adaptive
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
- *      -Dtarget=10000
- *      TestDynamicSoftMaxHeapSize
- */
-
-/*
+/**
  * @test id=generational
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
- *      -Dtarget=10000
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahGCHeuristics=adaptive
  *      TestDynamicSoftMaxHeapSize
+ *
  */
 
-/*
- * @test id=static
+/**
+ * @test id=generational-softMaxHeapSizeValidation
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
- *      -Dtarget=10000
+ * @run main/othervm -DvalidateSoftMaxHeap=true
  *      TestDynamicSoftMaxHeapSize
+ *      -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000 -DverifySoftMaxHeapValue=true
+ *      -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahGCHeuristics=adaptive
  */
-
-/*
- * @test id=compact
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
- *      -Dtarget=1000
- *     TestDynamicSoftMaxHeapSize
- */
-
-import java.util.Random;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
 public class TestDynamicSoftMaxHeapSize {
-
-    static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation
-    static final long STRIDE = 10_000_000;
-
-    static volatile Object sink;
+    static final int K = 1024;
+    static final int XMS_MB = 100;
+    static final int XMX_MB = 512;
 
     public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 16;
-        Random r = Utils.getRandomInstance();
-        PidJcmdExecutor jcmd = new PidJcmdExecutor();
+        if ("true".equals(System.getProperty("validateSoftMaxHeap"))) {
+            List<String> flagArgs = new ArrayList<>(Arrays.asList(args));
 
-        for (long c = 0; c < count; c += STRIDE) {
-            // Sizes specifically include heaps below Xms and above Xmx to test saturation code.
-            jcmd.execute("VM.set_flag SoftMaxHeapSize " + r.nextInt(768*1024*1024), true);
-            for (long s = 0; s < STRIDE; s++) {
-                sink = new Object();
-            }
-            Thread.sleep(1);
+            int softMaxInMb = Utils.getRandomInstance().nextInt(XMS_MB, XMX_MB);
+            flagArgs.add("-DsoftMaxCapacity=" + softMaxInMb * K * K);
+            flagArgs.add("-Dtest.jdk=" + System.getProperty("test.jdk"));
+            flagArgs.add("-Dcompile.jdk=" + System.getProperty("compile.jdk"));
+
+            flagArgs.add(SoftMaxWithExpectationTest.class.getName());
+
+            ProcessBuilder genShenPbValidateFlag = ProcessTools.createLimitedTestJavaProcessBuilder(flagArgs);
+            OutputAnalyzer output = new OutputAnalyzer(genShenPbValidateFlag.start());
+            output.shouldHaveExitValue(0);
+            output.shouldContain(String.format("Soft Max Heap Size: %dM -> %dM", XMX_MB, softMaxInMb)); // By default, the soft max heap size is Xmx
+        } else {
+            SoftMaxSetFlagOnlyTest.test();
         }
     }
 
+    public static class SoftMaxSetFlagOnlyTest {
+        static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation
+        static final long STRIDE = 10_000_000;
+
+        static volatile Object sink;
+
+        public static void test() throws Exception {
+            long count = TARGET_MB * 1024 * 1024 / 16;
+            Random r = Utils.getRandomInstance();
+            PidJcmdExecutor jcmd = new PidJcmdExecutor();
+
+            for (long c = 0; c < count; c += STRIDE) {
+                // Sizes specifically include heaps below Xms and above Xmx to test saturation code.
+                jcmd.execute("VM.set_flag SoftMaxHeapSize " + r.nextInt(768*1024*1024), true);
+                for (long s = 0; s < STRIDE; s++) {
+                    sink = new Object();
+                }
+                Thread.sleep(1);
+            }
+        }
+    }
+
+    public static class SoftMaxWithExpectationTest {
+        static final long TOTAL = 100_000_000;
+
+        static volatile Object sink;
+
+        public static void main(String[] args) throws Exception {
+            int expectedSoftMaxHeapSize = Integer.getInteger("softMaxCapacity", 0);
+            PidJcmdExecutor jcmd = new PidJcmdExecutor();
+            jcmd.execute("VM.set_flag SoftMaxHeapSize " + expectedSoftMaxHeapSize, false);
+
+            for (long s = 0; s < TOTAL; s++) {
+                sink = new Object();
+            }
+        }
+    }
 }

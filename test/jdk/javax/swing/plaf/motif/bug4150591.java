@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import com.sun.java.swing.plaf.motif.MotifInternalFrameTitlePane;
 import javax.swing.JInternalFrame;
+import javax.swing.UIManager;
 
 /*
  * @test
@@ -36,7 +37,8 @@ import javax.swing.JInternalFrame;
  */
 
 public class bug4150591 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
         MotifInternalFrameTitlePane mtp = new MotifInternalFrameTitlePane(new JInternalFrame());
     }
 }

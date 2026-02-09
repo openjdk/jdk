@@ -26,7 +26,7 @@
 #ifndef CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
 #define CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
 
-#include "asm/assembler.inline.hpp"
+#include "asm/assembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/vm_version.hpp"
@@ -923,6 +923,10 @@ inline void Assembler::xxmrghw( VectorSRegister d, VectorSRegister a, VectorSReg
 inline void Assembler::xxmrglw( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXMRGHW_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxsel(   VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c) { emit_int32( XXSEL_OPCODE | vsrt(d) | vsra(a) | vsrb(b) | vsrc(c)); }
 
+inline void Assembler::xscmpeqdp(VectorSRegister t, VectorSRegister a, VectorSRegister b) { emit_int32( XSCMPEQDP_OPCODE | vsrt(t) | vsra(a) | vsrb(b) );}
+inline void Assembler::xscmpgedp(VectorSRegister t, VectorSRegister a, VectorSRegister b) { emit_int32( XSCMPGEDP_OPCODE | vsrt(t) | vsra(a) | vsrb(b) );}
+inline void Assembler::xscmpgtdp(VectorSRegister t, VectorSRegister a, VectorSRegister b) { emit_int32( XSCMPGTDP_OPCODE | vsrt(t) | vsra(a) | vsrb(b) );}
+
 // VSX Extended Mnemonics
 inline void Assembler::xxspltd( VectorSRegister d, VectorSRegister a, int x)             { xxpermdi(d, a, a, x ? 3 : 0); }
 inline void Assembler::xxmrghd( VectorSRegister d, VectorSRegister a, VectorSRegister b) { xxpermdi(d, a, b, 0); }
@@ -1091,6 +1095,9 @@ inline void Assembler::vctzw(   VectorRegister d, VectorRegister b)             
 inline void Assembler::vctzd(   VectorRegister d, VectorRegister b)                   { emit_int32( VCTZD_OPCODE    | vrt(d) | vrb(b)); }
 inline void Assembler::mtvscr(  VectorRegister b)                                     { emit_int32( MTVSCR_OPCODE   | vrb(b)); }
 inline void Assembler::mfvscr(  VectorRegister d)                                     { emit_int32( MFVSCR_OPCODE   | vrt(d)); }
+
+// Vector Negate Word (introduced with Power 9)
+inline void Assembler::vnegw(   VectorRegister d, VectorRegister b)                   { emit_int32( VNEGW_OPCODE    | vrt(d) | vrb(b)); }
 
 // AES (introduced with Power 8)
 inline void Assembler::vcipher(     VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCIPHER_OPCODE      | vrt(d) | vra(a) | vrb(b)); }

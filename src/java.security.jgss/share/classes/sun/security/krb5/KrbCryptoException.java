@@ -30,6 +30,8 @@
 
 package sun.security.krb5;
 
+import java.io.Serial;
+
 /**
  * KrbCryptoException is a wrapper exception for exceptions thrown by JCE.
  *
@@ -37,6 +39,7 @@ package sun.security.krb5;
  */
 public class KrbCryptoException extends KrbException {
 
+    @Serial
     private static final long serialVersionUID = -1657367919979982250L;
 
     public KrbCryptoException(String s) {

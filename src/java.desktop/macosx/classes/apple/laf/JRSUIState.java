@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class JRSUIState {
         return Long.hashCode(encodedState) ^ getClass().hashCode();
     }
 
-    public static class AnimationFrameState extends JRSUIState {
+    public static final class AnimationFrameState extends JRSUIState {
         final int animationFrame;
         int derivedAnimationFrame;
 
@@ -187,7 +187,7 @@ public class JRSUIState {
         }
     }
 
-    public static class TitleBarHeightState extends ValueState {
+    public static final class TitleBarHeightState extends ValueState {
         TitleBarHeightState(final long encodedState, final double value) {
             super(encodedState, value);
         }
@@ -204,7 +204,7 @@ public class JRSUIState {
         }
     }
 
-    public static class ScrollBarState extends ValueState {
+    public static final class ScrollBarState extends ValueState {
         final double thumbProportion;
         double derivedThumbProportion;
         final double thumbStart;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,15 @@ public interface CodeCacheProvider {
      * @param installedCode a predefined {@link InstalledCode} object to use as a reference to the
      *            installed code. If {@code null}, a new {@link InstalledCode} object will be
      *            created.
+     * @param profileDeopt specifies if HotSpot should profile deoptimizations for the
+     *            {@code nmethod} associated with this object.
      * @return a reference to the ready-to-run code
      * @throws BailoutException if the code installation failed
      * @throws IllegalArgumentException if {@code installedCode != null} and this object does not
      *             support a predefined {@link InstalledCode} object
      */
-    default InstalledCode addCode(ResolvedJavaMethod method, CompiledCode compiledCode, SpeculationLog log, InstalledCode installedCode) {
-        return installCode(method, compiledCode, installedCode, log, false);
+    default InstalledCode addCode(ResolvedJavaMethod method, CompiledCode compiledCode, SpeculationLog log, InstalledCode installedCode, boolean profileDeopt) {
+        return installCode(method, compiledCode, installedCode, log, false, profileDeopt);
     }
 
     /**
@@ -64,7 +66,7 @@ public interface CodeCacheProvider {
      *             support a predefined {@link InstalledCode} object
      */
     default InstalledCode setDefaultCode(ResolvedJavaMethod method, CompiledCode compiledCode) {
-        return installCode(method, compiledCode, null, null, true);
+        return installCode(method, compiledCode, null, null, true, true);
     }
 
     /**
@@ -81,10 +83,12 @@ public interface CodeCacheProvider {
      *            {@code compRequest.getMethod()}. The default implementation for a method is the
      *            code executed for standard calls to the method. This argument is ignored if
      *            {@code compRequest == null}.
+     * @param profileDeopt specifies if HotSpot should profile deoptimizations for the
+     *            {@code nmethod} associated with this object.
      * @return a reference to the compiled and ready-to-run installed code
      * @throws BailoutException if the code installation failed
      */
-    InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault);
+    InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault, boolean profileDeopt);
 
     /**
      * Invalidates {@code installedCode} such that {@link InvalidInstalledCodeException} will be

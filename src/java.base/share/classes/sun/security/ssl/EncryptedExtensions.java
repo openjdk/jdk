@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ final class EncryptedExtensions {
                             SSLHandshake.ENCRYPTED_EXTENSIONS,
                             shc.negotiatedProtocol);
             eem.extensions.produce(shc, extTypes);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced EncryptedExtensions message", eem);
             }
 
@@ -168,7 +168,7 @@ final class EncryptedExtensions {
 
             EncryptedExtensionsMessage eem =
                     new EncryptedExtensionsMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming EncryptedExtensions handshake message", eem);
             }

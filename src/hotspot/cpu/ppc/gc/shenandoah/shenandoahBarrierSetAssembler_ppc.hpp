@@ -45,15 +45,15 @@ class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
 
   /* ==== Actual barrier implementations ==== */
-  void satb_write_barrier_impl(MacroAssembler* masm, DecoratorSet decorators,
-                               Register base, RegisterOrConstant ind_or_offs,
-                               Register pre_val,
-                               Register tmp1, Register tmp2,
-                               MacroAssembler::PreservationLevel preservation_level);
+  void satb_barrier_impl(MacroAssembler* masm, DecoratorSet decorators,
+                         Register base, RegisterOrConstant ind_or_offs,
+                         Register pre_val,
+                         Register tmp1, Register tmp2,
+                         MacroAssembler::PreservationLevel preservation_level);
 
-  void store_check(MacroAssembler* masm,
-                   Register base, RegisterOrConstant ind_or_offs,
-                   Register tmp);
+  void card_barrier(MacroAssembler* masm,
+                    Register base, RegisterOrConstant ind_or_offs,
+                    Register tmp);
 
   void load_reference_barrier_impl(MacroAssembler* masm, DecoratorSet decorators,
                                    Register base, RegisterOrConstant ind_or_offs,
@@ -69,7 +69,7 @@ private:
                                         Register preserve);
 
 public:
-  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_instruction_and_data_patch; }
 
   /* ==== C1 stubs ==== */
 #ifdef COMPILER1
@@ -85,10 +85,10 @@ public:
 #endif
 
   /* ==== Available barriers (facades of the actual implementations) ==== */
-  void satb_write_barrier(MacroAssembler* masm,
-                          Register base, RegisterOrConstant ind_or_offs,
-                          Register tmp1, Register tmp2, Register tmp3,
-                          MacroAssembler::PreservationLevel preservation_level);
+  void satb_barrier(MacroAssembler* masm,
+                    Register base, RegisterOrConstant ind_or_offs,
+                    Register tmp1, Register tmp2, Register tmp3,
+                    MacroAssembler::PreservationLevel preservation_level);
 
   void load_reference_barrier(MacroAssembler* masm, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs,

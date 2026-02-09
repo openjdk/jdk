@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,6 @@ static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle, JNIEnv *en
 static jfieldID ntlm_ctxHandleID;
 static jfieldID ntlm_crdHandleID;
 static jfieldID status_seqCompleteID;
-
-static HINSTANCE lib = NULL;
 
 JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_initFirst
 (JNIEnv *env, jclass authseq_clazz, jclass status_clazz)
@@ -232,6 +230,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     }
 
     if (ss < 0) {
+        SetLastError(ss);
+        JNU_ThrowIOExceptionWithLastError(env, "InitializeSecurityContext");
         endSequence (pCred, pCtx, env, status);
         return 0;
     }
@@ -240,6 +240,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
         ss = CompleteAuthToken( pCtx, &OutBuffDesc );
 
         if (ss < 0) {
+            SetLastError(ss);
+            JNU_ThrowIOExceptionWithLastError(env, "CompleteAuthToken");
             endSequence (pCred, pCtx, env, status);
             return 0;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,49 +26,63 @@
  * @bug 6568874
  * @key printer
  * @summary Verify the native dialog works with attribute sets.
- * @run main/manual=yesno DialogType
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame
+ * @run main/manual DialogType
  */
 
-import java.awt.print.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
+import java.awt.print.PrinterJob;
+
+import javax.print.attribute.Attribute;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.DialogTypeSelection;
+
+import jtreg.SkippedException;
 
 public class DialogType {
+    private static PrinterJob job;
 
-  static String[] instructions = {
-     "This test assumes and requires that you have a printer installed",
-     "It verifies that the dialogs behave properly when using new API",
-     "to optionally select a native dialog where one is present.",
-     "Two dialogs are shown in succession.",
-     "The test passes as long as no exceptions are thrown, *AND*",
-     "if running on Windows only, the first dialog is a native windows",
-     "control which differs in appearance from the second dialog",
-     ""
-  };
+    private static final String INSTRUCTIONS = """
+        Two print dialogs are shown in succession.
+        Click Cancel in the dialogs to close them.
 
-  public static void main(String[] args) {
+        On macOS & on Windows, the first dialog is a native
+        dialog provided by the OS, the second dialog is
+        implemented in Swing, the dialogs differ in appearance.
 
-      for (int i=0;i<instructions.length;i++) {
-         System.out.println(instructions[i]);
-      }
+        The test passes as long as no exceptions are thrown.
+        (If there's an exception, the test will fail automatically.)
 
-      PrinterJob job = PrinterJob.getPrinterJob();
-      if (job.getPrintService() == null) {
-         return;
-      }
+        The test verifies that the dialogs behave properly when using new API
+        to optionally select a native dialog where one is present.
+    """;
 
-      PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
-      aset.add(DialogTypeSelection.NATIVE);
-      job.printDialog(aset);
-      Attribute[] attrs = aset.toArray();
-      for (int i=0;i<attrs.length;i++) {
-          System.out.println(attrs[i]);
-      }
-      aset.add(DialogTypeSelection.COMMON);
-      job.printDialog(aset);
-      attrs = aset.toArray();
-      for (int i=0;i<attrs.length;i++) {
-          System.out.println(attrs[i]);
-      }
-   }
+    public static void main(String[] args) throws Exception {
+        job = PrinterJob.getPrinterJob();
+        if (job.getPrintService() == null) {
+            throw new SkippedException("Test skipped, printer is unavailable");
+        }
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+            .instructions(INSTRUCTIONS)
+            .columns(40)
+            .build();
+        testDialogType();
+        passFailJFrame.awaitAndCheck();
+    }
+
+    private static void testDialogType() {
+        setPrintDialogAttributes(DialogTypeSelection.NATIVE);
+        setPrintDialogAttributes(DialogTypeSelection.COMMON);
+    }
+
+    private static void setPrintDialogAttributes(DialogTypeSelection selection) {
+        PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
+        aset.add(selection);
+        job.printDialog(aset);
+        Attribute[] attrs = aset.toArray();
+        for (int i = 0; i < attrs.length; i++) {
+            System.out.println(attrs[i]);
+        }
+    }
 }

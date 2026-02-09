@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -238,9 +239,9 @@ class Thread: public ThreadShadow {
 
   // Support for GlobalCounter
  private:
-  volatile uintx _rcu_counter;
+  Atomic<uintx> _rcu_counter;
  public:
-  volatile uintx* get_rcu_counter() {
+  Atomic<uintx>* get_rcu_counter() {
     return &_rcu_counter;
   }
 
@@ -313,6 +314,7 @@ class Thread: public ThreadShadow {
   virtual bool is_JfrRecorder_thread() const         { return false; }
   virtual bool is_AttachListener_thread() const      { return false; }
   virtual bool is_monitor_deflation_thread() const   { return false; }
+  virtual bool is_aot_thread() const                 { return false; }
 
   // Convenience cast functions
   CompilerThread* as_Compiler_thread() const {
@@ -408,7 +410,6 @@ class Thread: public ThreadShadow {
   void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
   jlong allocated_bytes()               { return _allocated_bytes; }
-  void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
   inline jlong cooked_allocated_bytes();
 
@@ -522,7 +523,6 @@ protected:
   // Support for stack overflow handling, get_thread, etc.
   address          _stack_base;
   size_t           _stack_size;
-  int              _lgrp_id;
 
  public:
   // Stack overflow support
@@ -536,9 +536,6 @@ protected:
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT();
   void    unregister_thread_stack_with_NMT();
-
-  int     lgrp_id() const        { return _lgrp_id; }
-  void    set_lgrp_id(int value) { _lgrp_id = value; }
 
   // Printing
   void print_on(outputStream* st, bool print_extended_info) const;
@@ -598,30 +595,28 @@ protected:
   // Termination indicator used by the signal handler.
   // _ParkEvent is just a convenient field we can null out after setting the JavaThread termination state
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
-  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == nullptr; };
+  bool has_terminated()                       { return AtomicAccess::load(&_ParkEvent) == nullptr; };
 
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
   jint _hashStateZ;
 
-  // Low-level leaf-lock primitives used to implement synchronization.
-  // Not for general synchronization use.
-  static void SpinAcquire(volatile int * Lock);
-  static void SpinRelease(volatile int * Lock);
-
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_AARCH64
  private:
   DEBUG_ONLY(bool _wx_init);
   WXMode _wx_state;
  public:
   void init_wx();
   WXMode enable_wx(WXMode new_state);
-
+  bool wx_enable_write();
   void assert_wx_state(WXMode expected) {
     assert(_wx_state == expected, "wrong state");
   }
-#endif // __APPLE__ && AARCH64
+  WXMode get_wx_state() {
+    return _wx_state;
+  }
+#endif // MACOS_AARCH64
 
  private:
   bool _in_asgct = false;

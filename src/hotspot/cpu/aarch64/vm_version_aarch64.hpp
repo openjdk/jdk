@@ -30,6 +30,12 @@
 #include "runtime/abstract_vm_version.hpp"
 #include "utilities/sizes.hpp"
 
+#include <initializer_list>
+
+class stringStream;
+
+#define BIT_MASK(flag) (1ULL<<(flag))
+
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -66,6 +72,8 @@ public:
   static void initialize();
   static void check_virtualizations();
 
+  static void insert_features_names(uint64_t features, stringStream& ss);
+
   static void print_platform_virtualization_info(outputStream*);
 
   // Asserts
@@ -100,20 +108,32 @@ public:
     CPU_MOTOROLA  = 'M',
     CPU_NVIDIA    = 'N',
     CPU_AMCC      = 'P',
-    CPU_QUALCOM   = 'Q',
+    CPU_QUALCOMM  = 'Q',
     CPU_MARVELL   = 'V',
     CPU_INTEL     = 'i',
     CPU_APPLE     = 'a',
   };
 
-enum Ampere_CPU_Model {
+  enum Ampere_CPU_Model {
     CPU_MODEL_EMAG      = 0x0,   /* CPU implementer is CPU_AMCC */
     CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
     CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
     CPU_MODEL_AMPERE_1A = 0xac4, /* CPU implementer is CPU_AMPERE */
     CPU_MODEL_AMPERE_1B = 0xac5  /* AMPERE_1B core Implements ARMv8.7 with CSSC, MTE, SM3/SM4 extensions */
-};
+  };
+
+  enum ARM_CPU_Model {
+    CPU_MODEL_ARM_CORTEX_A53    = 0xd03,
+    CPU_MODEL_ARM_CORTEX_A73    = 0xd09,
+    CPU_MODEL_ARM_NEOVERSE_N1   = 0xd0c,
+    CPU_MODEL_ARM_NEOVERSE_V1   = 0xd40,
+    CPU_MODEL_ARM_NEOVERSE_N2   = 0xd49,
+    CPU_MODEL_ARM_NEOVERSE_V2   = 0xd4f,
+    CPU_MODEL_ARM_NEOVERSE_V3AE = 0xd83,
+    CPU_MODEL_ARM_NEOVERSE_V3   = 0xd84,
+    CPU_MODEL_ARM_NEOVERSE_N3   = 0xd8e,
+  };
 
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(FP,            fp,            0)     \
@@ -131,6 +151,7 @@ enum Ampere_CPU_Model {
     decl(SHA3,          sha3,          17)    \
     decl(SHA512,        sha512,        21)    \
     decl(SVE,           sve,           22)    \
+    decl(SB,            sb,            29)    \
     decl(PACA,          paca,          30)    \
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \
@@ -138,16 +159,31 @@ enum Ampere_CPU_Model {
     decl(A53MAC,        a53mac,        31)
 
   enum Feature_Flag {
-#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
+#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = bit,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
+    MAX_CPU_FEATURES
   };
+
+  STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
+
+  static const char* _features_names[MAX_CPU_FEATURES];
 
   // Feature identification
 #define CPU_FEATURE_DETECTION(id, name, bit) \
-  static bool supports_##name() { return (_features & CPU_##id) != 0; };
+  static bool supports_##name() { return supports_feature(CPU_##id); }
   CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
 #undef CPU_FEATURE_DETECTION
+
+  static void set_feature(Feature_Flag flag) {
+    _features |= BIT_MASK(flag);
+  }
+  static void clear_feature(Feature_Flag flag) {
+    _features &= (~BIT_MASK(flag));
+  }
+  static bool supports_feature(Feature_Flag flag) {
+    return (_features & BIT_MASK(flag)) != 0;
+  }
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
@@ -157,6 +193,15 @@ enum Ampere_CPU_Model {
 
   static bool model_is(int cpu_model) {
     return _model == cpu_model || _model2 == cpu_model;
+  }
+
+  static bool model_is_in(std::initializer_list<int> cpu_models) {
+    for (const int& cpu_model : cpu_models) {
+      if (_model == cpu_model || _model2 == cpu_model) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static bool is_zva_enabled() { return 0 <= _zva_length; }
@@ -173,7 +218,7 @@ enum Ampere_CPU_Model {
   // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
-  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+  constexpr static bool supports_recursive_fast_locking() { return true; }
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 

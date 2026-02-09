@@ -28,30 +28,28 @@
  * @summary Tests *FormatSymbols class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
- * @run testng SymbolsTests
+ * @run junit SymbolsTests
  */
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test *FormatSymbols classes with BCP47 U extensions
  */
-@Test
 public class SymbolsTests {
 
     private static final Locale RG_GB = Locale.forLanguageTag("en-US-u-rg-gbzzzz");
     private static final Locale RG_IE = Locale.forLanguageTag("en-US-u-rg-iezzzz");
     private static final Locale RG_AT = Locale.forLanguageTag("en-US-u-rg-atzzzz");
 
-    @DataProvider(name="dateFormatSymbolsData")
-    Object[][] dateFormatSymbolsData() {
+    static Object[][] dateFormatSymbolsData() {
         return new Object[][] {
             // Locale, expected AM string, expected PM string
 
@@ -61,8 +59,7 @@ public class SymbolsTests {
         };
     }
 
-    @DataProvider(name="decimalFormatSymbolsData")
-    Object[][] decimalFormatSymbolsData() {
+    static Object[][] decimalFormatSymbolsData() {
         return new Object[][] {
             // Locale, expected decimal separator, expected grouping separator
 
@@ -74,18 +71,20 @@ public class SymbolsTests {
         };
     }
 
-    @Test(dataProvider="dateFormatSymbolsData")
-    public void test_DateFormatSymbols(Locale locale, String amExpected, String pmExpected) {
+    @MethodSource("dateFormatSymbolsData")
+    @ParameterizedTest
+    void test_DateFormatSymbols(Locale locale, String amExpected, String pmExpected) {
         DateFormatSymbols dfs = DateFormatSymbols.getInstance(locale);
         String[] ampm = dfs.getAmPmStrings();
-        assertEquals(ampm[0], amExpected);
-        assertEquals(ampm[1], pmExpected);
+        assertEquals(amExpected, ampm[0]);
+        assertEquals(pmExpected, ampm[1]);
     }
 
-    @Test(dataProvider="decimalFormatSymbolsData")
-    public void test_DecimalFormatSymbols(Locale locale, char decimal, char grouping) {
+    @MethodSource("decimalFormatSymbolsData")
+    @ParameterizedTest
+    void test_DecimalFormatSymbols(Locale locale, char decimal, char grouping) {
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(locale);
-        assertEquals(dfs.getDecimalSeparator(), decimal);
-        assertEquals(dfs.getGroupingSeparator(), grouping);
+        assertEquals(decimal, dfs.getDecimalSeparator());
+        assertEquals(grouping, dfs.getGroupingSeparator());
     }
 }

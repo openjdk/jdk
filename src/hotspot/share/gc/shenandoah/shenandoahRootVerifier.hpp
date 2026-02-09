@@ -43,8 +43,10 @@ public:
 class ShenandoahRootVerifier : public AllStatic {
 public:
   // Used to seed ShenandoahVerifier, do not honor root type filter
-  static void roots_do(OopIterateClosure* cl);
-  static void strong_roots_do(OopIterateClosure* cl);
+  // The generation parameter here may be young or global. If it is young,
+  // then the roots will include the remembered set.
+  static void roots_do(OopIterateClosure* cl, ShenandoahGeneration* generation);
+  static void strong_roots_do(OopIterateClosure* cl, ShenandoahGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP

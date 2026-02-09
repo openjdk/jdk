@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestVarArgsSuperDefault
+ * @run junit MethodReferenceTestVarArgsSuperDefault
  */
 
-import org.testng.annotations.Test;
 import java.lang.reflect.Array;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
@@ -95,7 +95,6 @@ interface MethodReferenceTestVarArgsSuperDefault_I {
     }
 }
 
-@Test
 public class MethodReferenceTestVarArgsSuperDefault implements MethodReferenceTestVarArgsSuperDefault_I {
 
     interface DSPRII { String m(Integer a, Integer b); }
@@ -112,75 +111,81 @@ public class MethodReferenceTestVarArgsSuperDefault implements MethodReferenceTe
 
     // These should be processed as var args
 
+    @Test
     public void testVarArgsSPRSuperclass() {
         DSPRII q;
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvO;
-        assertEquals(q.m(55,66), "xvO:55*66*");
+        assertEquals("xvO:55*66*", q.m(55,66));
     }
 
+    @Test
     public void testVarArgsSPRArray() {
         DSPRai q;
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvO;
-        assertEquals(q.m(new int[] { 55,66 } ), "xvO:[55,66,]*");
+        assertEquals("xvO:[55,66,]*", q.m(new int[] { 55,66 } ));
     }
 
+    @Test
     public void testVarArgsSPRII() {
         DSPRII q;
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvI;
-        assertEquals(q.m(33,7), "xvI:33-7-");
+        assertEquals("xvI:33-7-", q.m(33,7));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xIvI;
-        assertEquals(q.m(50,40), "xIvI:5040-");
+        assertEquals("xIvI:5040-", q.m(50,40));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvi;
-        assertEquals(q.m(100,23), "xvi:123");
+        assertEquals("xvi:123", q.m(100,23));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xIvi;
-        assertEquals(q.m(9,21), "xIvi:(9)21");
+        assertEquals("xIvi:(9)21", q.m(9,21));
     }
 
+    @Test
     public void testVarArgsSPRiii() {
         DSPRiii q;
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvI;
-        assertEquals(q.m(3, 2, 1), "xvI:3-2-1-");
+        assertEquals("xvI:3-2-1-", q.m(3, 2, 1));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xIvI;
-        assertEquals(q.m(888, 99, 2), "xIvI:88899-2-");
+        assertEquals("xIvI:88899-2-", q.m(888, 99, 2));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvi;
-        assertEquals(q.m(900,80,7), "xvi:987");
+        assertEquals("xvi:987", q.m(900,80,7));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xIvi;
-        assertEquals(q.m(333,27, 72), "xIvi:(333)99");
+        assertEquals("xIvi:(333)99", q.m(333,27, 72));
     }
 
+    @Test
     public void testVarArgsSPRi() {
         DSPRi q;
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvI;
-        assertEquals(q.m(3), "xvI:3-");
+        assertEquals("xvI:3-", q.m(3));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xIvI;
-        assertEquals(q.m(888), "xIvI:888");
+        assertEquals("xIvI:888", q.m(888));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvi;
-        assertEquals(q.m(900), "xvi:900");
+        assertEquals("xvi:900", q.m(900));
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xIvi;
-        assertEquals(q.m(333), "xIvi:(333)0");
+        assertEquals("xIvi:(333)0", q.m(333));
     }
 
     // These should NOT be processed as var args
 
+    @Test
     public void testVarArgsSPRaO() {
         DSPRaO q;
 
         q = MethodReferenceTestVarArgsSuperDefault_I.super::xvO;
-        assertEquals(q.m(new String[] { "yo", "there", "dude" }), "xvO:yo*there*dude*");
+        assertEquals("xvO:yo*there*dude*", q.m(new String[] { "yo", "there", "dude" }));
     }
 
 

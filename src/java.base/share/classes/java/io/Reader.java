@@ -27,8 +27,11 @@ package java.io;
 
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Abstract class for reading character streams.  The only methods that a
@@ -397,16 +400,6 @@ public abstract class Reader implements Readable, Closeable {
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
-    private String readAllCharsAsString() throws IOException {
-        StringBuilder result = new StringBuilder();
-        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
-        int nread;
-        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
-            result.append(cbuf, 0, nread);
-        }
-        return result.toString();
-    }
-
     /**
      * Reads all remaining characters as lines of text. This method blocks until
      * all remaining characters have been read and end of stream is detected,
@@ -457,7 +450,57 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public List<String> readAllLines() throws IOException {
-        return readAllCharsAsString().lines().toList();
+        List<String> lines = new ArrayList<>();
+        char[] cb = new char[1024];
+
+        int start = 0;
+        int pos = 0;
+        int limit = 0;
+        boolean skipLF = false;
+        int n;
+        while ((n = read(cb, pos, cb.length - pos)) != -1) {
+            limit = pos + n;
+            while (pos < limit) {
+                if (skipLF) {
+                    if (cb[pos] == '\n') {
+                        pos++;
+                        start++;
+                    }
+                    skipLF = false;
+                }
+                while (pos < limit) {
+                    char c = cb[pos++];
+                    if (c == '\n' || c == '\r') {
+                        lines.add(new String(cb, start, pos - 1 - start));
+                        skipLF = (c == '\r');
+                        start = pos;
+                        break;
+                    }
+                }
+                if (pos == limit) {
+                    int len = limit - start;
+                    if (len >= cb.length/2) {
+                        // allocate larger buffer and copy chars to beginning
+                        int newLength = ArraysSupport.newLength(cb.length,
+                                            TRANSFER_BUFFER_SIZE, cb.length);
+                        char[] tmp = new char[newLength];
+                        System.arraycopy(cb, start, tmp, 0, len);
+                        cb = tmp;
+                    } else if (start != 0 && len != 0) {
+                        // move fragment to beginning of buffer
+                        System.arraycopy(cb, start, cb, 0, len);
+                    }
+                    pos = limit = len;
+                    start = 0;
+                    break;
+                }
+            }
+        }
+        // add a string if EOS terminates the last line
+        if (limit > start)
+            lines.add(new String(cb, start, limit - start));
+
+        return Collections.unmodifiableList(lines);
     }
 
     /**
@@ -499,7 +542,13 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public String readAllAsString() throws IOException {
-        return readAllCharsAsString();
+        StringBuilder result = new StringBuilder();
+        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
+        int nread;
+        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
+            result.append(cbuf, 0, nread);
+        }
+        return result.toString();
     }
 
     /** Maximum skip-buffer size */

@@ -336,55 +336,6 @@ void NativeJump::insert(address code_pos, address entry) {
   ICache::invalidate_range(code_pos, instruction_size);
 }
 
-void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-  // Patching to not_entrant can happen while activations of the method are
-  // in use. The patching in that instance must happen only when certain
-  // alignment restrictions are true. These guarantees check those
-  // conditions.
-  const int linesize = 64;
-
-  // Must be wordSize aligned
-  guarantee(((uintptr_t) verified_entry & (wordSize -1)) == 0,
-            "illegal address for code patching 2");
-  // First 5 bytes must be within the same cache line - 4827828
-  guarantee((uintptr_t) verified_entry / linesize ==
-            ((uintptr_t) verified_entry + 4) / linesize,
-            "illegal address for code patching 3");
-}
-
-
-// MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::make_not_entrant)
-// The problem: jmp <dest> is a 5-byte instruction. Atomic write can be only with 4 bytes.
-// First patches the first word atomically to be a jump to itself.
-// Then patches the last byte  and then atomically patches the first word (4-bytes),
-// thus inserting the desired jump
-// This code is mt-safe with the following conditions: entry point is 4 byte aligned,
-// entry point is in same cache line as unverified entry point, and the instruction being
-// patched is >= 5 byte (size of patch).
-//
-// In C2 the 5+ byte sized instruction is enforced by code in MachPrologNode::emit.
-// In C1 the restriction is enforced by CodeEmitter::method_entry
-// In JVMCI, the restriction is enforced by HotSpotFrameContext.enter(...)
-//
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  // complete jump instruction (to be inserted) is in code_buffer;
-  union {
-    jlong cb_long;
-    unsigned char code_buffer[8];
-  } u;
-
-  u.cb_long = *(jlong *)verified_entry;
-
-  intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
-  guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-
-  u.code_buffer[0] = instruction_code;
-  *(int32_t*)(u.code_buffer + 1) = (int32_t)disp;
-
-  Atomic::store((jlong *) verified_entry, u.cb_long);
-  ICache::invalidate_range(verified_entry, 8);
-}
-
 void NativeIllegalInstruction::insert(address code_pos) {
   assert(NativeIllegalInstruction::instruction_size == sizeof(short), "right address unit for update");
   *(short *)code_pos = instruction_code;

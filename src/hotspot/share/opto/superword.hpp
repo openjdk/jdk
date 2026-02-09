@@ -55,6 +55,8 @@
 // Definition 3.3 A Pair is a Pack of size two, where the
 // first statement is considered the left element, and the
 // second statement is considered the right element.
+//
+// For more documentation, see: SuperWord::SLP_extract
 
 // The PairSet is a set of pairs. These are later combined to packs,
 // and stored in the PackSet.
@@ -408,9 +410,9 @@ class SuperWord : public ResourceObj {
   PairSet _pairset;
   PackSet _packset;
 
-  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // VPointer, and the alignment width (aw) for which we align the main-loop,
   // by adjusting the pre-loop limit.
-  MemNode const* _mem_ref_for_main_loop_alignment;
+  VPointer const* _vpointer_for_main_loop_alignment;
   int _aw_for_main_loop_alignment;
 
  public:
@@ -547,8 +549,6 @@ class SuperWord : public ResourceObj {
 
  private:
   bool           _do_vector_loop;  // whether to do vectorization/simd style
-  int            _num_work_vecs;   // Number of non memory vector operations
-  int            _num_reductions;  // Number of reduction expressions applied
 
   // Accessors
   Arena* arena()                   { return &_arena; }
@@ -655,7 +655,7 @@ private:
 
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
-  bool schedule_and_apply() const;
+  bool do_vtransform() const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

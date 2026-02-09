@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
 /*
  * @test
  * @bug 8087112 8178699 8338569
- * @modules java.net.http
+ * @modules java.net.http/jdk.internal.net.http.common
  *          java.logging
  *          jdk.httpserver
- * @library /test/lib /
+ * @library /test/lib /test/jdk/java/net/httpclient/lib /
  * @build jdk.test.lib.net.SimpleSSLContext ProxyServer
+ *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm
@@ -92,6 +93,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -118,7 +121,7 @@ import java.util.logging.Logger;
  * in docs directory.
  */
 public class SmokeTest {
-    static SSLContext ctx;
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
     static SSLParameters sslparams;
     static HttpServer s1 ;
     static HttpsServer s2;
@@ -805,10 +808,9 @@ public class SmokeTest {
         executor = Executors.newCachedThreadPool();
         s1.setExecutor(executor);
         s2.setExecutor(executor);
-        ctx = new SimpleSSLContext().get();
         sslparams = ctx.getDefaultSSLParameters();
         //sslparams.setProtocols(new String[]{"TLSv1.2"});
-        s2.setHttpsConfigurator(new Configurator(ctx));
+        s2.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));
         s1.start();
         s2.start();
 
@@ -935,14 +937,19 @@ public class SmokeTest {
     }
 
     static class Configurator extends HttpsConfigurator {
-        public Configurator(SSLContext ctx) {
+        private final InetAddress serverAddr;
+
+        public Configurator(InetAddress serverAddr, SSLContext ctx) {
             super(ctx);
+            this.serverAddr = serverAddr;
         }
 
-        public void configure (HttpsParameters params) {
-            SSLParameters p = getSSLContext().getDefaultSSLParameters();
+        @Override
+        public void configure(final HttpsParameters params) {
+            final SSLParameters p = getSSLContext().getDefaultSSLParameters();
+            TestServerConfigurator.addSNIMatcher(this.serverAddr, p);
             //p.setProtocols(new String[]{"TLSv1.2"});
-            params.setSSLParameters (p);
+            params.setSSLParameters(p);
         }
     }
 

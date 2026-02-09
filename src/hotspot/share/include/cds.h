@@ -35,7 +35,7 @@
 //
 // Also, this is a C header file. Do not use C++ here.
 
-#define NUM_CDS_REGIONS 5 // this must be the same as MetaspaceShared::n_regions
+#define NUM_CDS_REGIONS 5 // this must be the same as AOTMetaspace::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CDS_PREIMAGE_ARCHIVE_MAGIC 0xcafea07c
@@ -72,7 +72,7 @@ typedef struct CDSFileMapRegion {
   size_t  _ptrmap_size_in_bits;
   char*   _mapped_base;       // Actually mapped address used for mapping the core regions. At that address the
                               // zero nklass protection zone is established; following that (at offset
-                              // MetaspaceShared::protection_zone_size()) the lowest core region (rw for the
+                              // AOTMetaspace::protection_zone_size()) the lowest core region (rw for the
                               // static archive) is is mapped.
   bool    _in_reserved_space; // Is this region in a ReservedSpace
 } CDSFileMapRegion;

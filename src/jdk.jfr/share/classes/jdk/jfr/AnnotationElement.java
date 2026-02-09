@@ -69,7 +69,7 @@ public final class AnnotationElement {
             }
             StringJoiner values = new StringJoiner(",", "[", "]");
             for (Object object : objects) {
-                descriptors.add(String.valueOf(object));
+                values.add(String.valueOf(object));
             }
             throw new IllegalArgumentException("Annotation " + descriptors + " for " + type.getName() + " doesn't match number of values " + values);
         }

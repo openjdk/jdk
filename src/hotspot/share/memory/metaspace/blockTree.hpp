@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,17 +32,18 @@
 #include "memory/metaspace/metablock.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/rbTree.inline.hpp"
 
 namespace metaspace {
 
-// BlockTree is a rather simple binary search tree. It is used to
-//  manage medium to large free memory blocks.
+// BlockTree is tree built on an intrusive red-black tree.
+//  It is used to manage medium to large free memory blocks.
 //
 // There is no separation between payload (managed blocks) and nodes: the
 //  memory blocks themselves are the nodes, with the block size being the key.
 //
 // We store node pointer information in these blocks when storing them. That
-//  imposes a minimum size to the managed memory blocks (1 word)
+//  imposes a minimum size to the managed memory blocks (1 MinWordSize)
 //
 // We want to manage many memory blocks of the same size, but we want
 //  to prevent the tree from blowing up and degenerating into a list. Therefore
@@ -53,9 +54,9 @@ namespace metaspace {
 //                   | 100 |
 //                   +-----+
 //                  /       \
-//           +-----+
-//           | 80  |
-//           +-----+
+//           +-----+         +-----+
+//           | 80  |         | 120 |
+//           +-----+         +-----+
 //          /   |   \
 //         / +-----+ \
 //  +-----+  | 80  |  +-----+
@@ -65,15 +66,10 @@ namespace metaspace {
 //           | 80  |
 //           +-----+
 //
-//
-// Todo: This tree is unbalanced. It would be a good fit for a red-black tree.
-//  In order to make this a red-black tree, we need an algorithm which can deal
-//  with nodes which are their own payload (most red-black tree implementations
-//  swap payloads of their nodes at some point, see e.g. j.u.TreeSet).
-// A good example is the Linux kernel rbtree, which is a clean, easy-to-read
-//  implementation.
 
 class BlockTree: public CHeapObj<mtMetaspace> {
+
+  using TreeNode = IntrusiveRBNode;
 
   struct Node {
 
@@ -86,28 +82,26 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     //  in debug.
     const intptr_t _canary;
 
-    // Normal tree node stuff...
-    //  (Note: all null if this is a stacked node)
-    Node* _parent;
-    Node* _left;
-    Node* _right;
+    // Tree node for linking blocks in the intrusive tree.
+    TreeNode _tree_node;
 
     // Blocks with the same size are put in a list with this node as head.
     Node* _next;
 
     // Word size of node. Note that size cannot be larger than max metaspace size,
-    // so this could be very well a 32bit value (in case we ever make this a balancing
-    // tree and need additional space for weighting information).
+    // so this could very well be a 32bit value.
     const size_t _word_size;
 
     Node(size_t word_size) :
       _canary(_canary_value),
-      _parent(nullptr),
-      _left(nullptr),
-      _right(nullptr),
+      _tree_node{},
       _next(nullptr),
       _word_size(word_size)
     {}
+
+    static Node* cast_to_node(const TreeNode* tree_node) {
+      return (Node*)((uintptr_t)tree_node - offset_of(Node, _tree_node));
+    }
 
 #ifdef ASSERT
     bool valid() const {
@@ -118,8 +112,23 @@ class BlockTree: public CHeapObj<mtMetaspace> {
 #endif
   };
 
-  // Needed for verify() and print_tree()
-  struct walkinfo;
+  struct TreeComparator {
+    static RBTreeOrdering cmp(const size_t a, const TreeNode* b) {
+      const size_t node_word_size = Node::cast_to_node(b)->_word_size;
+
+      if (a < node_word_size) { return RBTreeOrdering::LT; }
+      if (a > node_word_size) { return RBTreeOrdering::GT; }
+      return RBTreeOrdering::EQ;
+    }
+
+    static bool less_than(const TreeNode* a, const TreeNode* b) {
+      const size_t a_word_size = Node::cast_to_node(a)->_word_size;
+      const size_t b_word_size = Node::cast_to_node(b)->_word_size;
+
+      if (a_word_size < b_word_size) { return true; }
+      return false;
+    }
+  };
 
 #ifdef ASSERT
   // Run a quick check on a node; upon suspicion dive into a full tree check.
@@ -134,7 +143,7 @@ public:
 
 private:
 
-  Node* _root;
+  IntrusiveRBTree<const size_t, TreeComparator> _tree;
 
   MemRangeCounter _counter;
 
@@ -143,7 +152,7 @@ private:
     assert(head->_word_size == n->_word_size, "sanity");
     n->_next = head->_next;
     head->_next = n;
-    DEBUG_ONLY(n->_left = n->_right = n->_parent = nullptr;)
+    DEBUG_ONLY(n->_tree_node = TreeNode());
   }
 
   // Given a node list starting at head, remove one of the follow up nodes from
@@ -157,183 +166,6 @@ private:
     return n;
   }
 
-  // Given a node c and a node p, wire up c as left child of p.
-  static void set_left_child(Node* p, Node* c) {
-    p->_left = c;
-    if (c != nullptr) {
-      assert(c->_word_size < p->_word_size, "sanity");
-      c->_parent = p;
-    }
-  }
-
-  // Given a node c and a node p, wire up c as right child of p.
-  static void set_right_child(Node* p, Node* c) {
-    p->_right = c;
-    if (c != nullptr) {
-      assert(c->_word_size > p->_word_size, "sanity");
-      c->_parent = p;
-    }
-  }
-
-  // Given a node n, return its successor in the tree
-  // (node with the next-larger size).
-  static Node* successor(Node* n) {
-    Node* succ = nullptr;
-    if (n->_right != nullptr) {
-      // If there is a right child, search the left-most
-      // child of that child.
-      succ = n->_right;
-      while (succ->_left != nullptr) {
-        succ = succ->_left;
-      }
-    } else {
-      succ = n->_parent;
-      Node* n2 = n;
-      // As long as I am the right child of my parent, search upward
-      while (succ != nullptr && n2 == succ->_right) {
-        n2 = succ;
-        succ = succ->_parent;
-      }
-    }
-    return succ;
-  }
-
-  // Given a node, replace it with a replacement node as a child for its parent.
-  // If the node is root and has no parent, sets it as root.
-  void replace_node_in_parent(Node* child, Node* replace) {
-    Node* parent = child->_parent;
-    if (parent != nullptr) {
-      if (parent->_left == child) { // Child is left child
-        set_left_child(parent, replace);
-      } else {
-        set_right_child(parent, replace);
-      }
-    } else {
-      assert(child == _root, "must be root");
-      _root = replace;
-      if (replace != nullptr) {
-        replace->_parent = nullptr;
-      }
-    }
-    return;
-  }
-
-  // Given a node n and an insertion point, insert n under insertion point.
-  void insert(Node* insertion_point, Node* n) {
-    assert(n->_parent == nullptr, "Sanity");
-    for (;;) {
-      DEBUG_ONLY(check_node(insertion_point);)
-      if (n->_word_size == insertion_point->_word_size) {
-        add_to_list(n, insertion_point); // parent stays null in this case.
-        break;
-      } else if (n->_word_size > insertion_point->_word_size) {
-        if (insertion_point->_right == nullptr) {
-          set_right_child(insertion_point, n);
-          break;
-        } else {
-          insertion_point = insertion_point->_right;
-        }
-      } else {
-        if (insertion_point->_left == nullptr) {
-          set_left_child(insertion_point, n);
-          break;
-        } else {
-          insertion_point = insertion_point->_left;
-        }
-      }
-    }
-  }
-
-  // Given a node and a wish size, search this node and all children for
-  // the node closest (equal or larger sized) to the size s.
-  Node* find_closest_fit(Node* n, size_t s) {
-    Node* best_match = nullptr;
-    while (n != nullptr) {
-      DEBUG_ONLY(check_node(n);)
-      if (n->_word_size >= s) {
-        best_match = n;
-        if (n->_word_size == s) {
-          break; // perfect match or max depth reached
-        }
-        n = n->_left;
-      } else {
-        n = n->_right;
-      }
-    }
-    return best_match;
-  }
-
-  // Given a wish size, search the whole tree for a
-  // node closest (equal or larger sized) to the size s.
-  Node* find_closest_fit(size_t s) {
-    if (_root != nullptr) {
-      return find_closest_fit(_root, s);
-    }
-    return nullptr;
-  }
-
-  // Given a node n, remove it from the tree and repair tree.
-  void remove_node_from_tree(Node* n) {
-    assert(n->_next == nullptr, "do not delete a node which has a non-empty list");
-
-    if (n->_left == nullptr && n->_right == nullptr) {
-      replace_node_in_parent(n, nullptr);
-
-    } else if (n->_left == nullptr && n->_right != nullptr) {
-      replace_node_in_parent(n, n->_right);
-
-    } else if (n->_left != nullptr && n->_right == nullptr) {
-      replace_node_in_parent(n, n->_left);
-
-    } else {
-      // Node has two children.
-
-      // 1) Find direct successor (the next larger node).
-      Node* succ = successor(n);
-
-      // There has to be a successor since n->right was != null...
-      assert(succ != nullptr, "must be");
-
-      // ... and it should not have a left child since successor
-      //     is supposed to be the next larger node, so it must be the mostleft node
-      //     in the sub tree rooted at n->right
-      assert(succ->_left == nullptr, "must be");
-      assert(succ->_word_size > n->_word_size, "sanity");
-
-      Node* successor_parent = succ->_parent;
-      Node* successor_right_child = succ->_right;
-
-      // Remove successor from its parent.
-      if (successor_parent == n) {
-
-        // special case: successor is a direct child of n. Has to be the right child then.
-        assert(n->_right == succ, "sanity");
-
-        // Just replace n with this successor.
-        replace_node_in_parent(n, succ);
-
-        // Take over n's old left child, too.
-        // We keep the successor's right child.
-        set_left_child(succ, n->_left);
-      } else {
-        // If the successors parent is not n, we are deeper in the tree,
-        //  the successor has to be the left child of its parent.
-        assert(successor_parent->_left == succ, "sanity");
-
-        // The right child of the successor (if there was one) replaces
-        //  the successor at its parent's left child.
-        set_left_child(successor_parent, succ->_right);
-
-        // and the successor replaces n at its parent
-        replace_node_in_parent(n, succ);
-
-        // and takes over n's old children
-        set_left_child(succ, n->_left);
-        set_right_child(succ, n->_right);
-      }
-    }
-  }
-
 #ifdef ASSERT
   void zap_block(MetaBlock block);
   // Helper for verify()
@@ -342,7 +174,7 @@ private:
 
 public:
 
-  BlockTree() : _root(nullptr) {}
+  BlockTree() {}
 
   // Add a memory block to the tree. Its content will be overwritten.
   void add_block(MetaBlock block) {
@@ -350,10 +182,12 @@ public:
     const size_t word_size = block.word_size();
     assert(word_size >= MinWordSize, "invalid block size %zu", word_size);
     Node* n = new(block.base()) Node(word_size);
-    if (_root == nullptr) {
-      _root = n;
-    } else {
-      insert(_root, n);
+    IntrusiveRBTree<const size_t, TreeComparator>::Cursor cursor = _tree.cursor(word_size);
+    if (cursor.found()) {
+      add_to_list(n, Node::cast_to_node(cursor.node()));
+    }
+    else {
+      _tree.insert_at_cursor(&n->_tree_node, cursor);
     }
     _counter.add(word_size);
   }
@@ -364,9 +198,10 @@ public:
     assert(word_size >= MinWordSize, "invalid block size %zu", word_size);
 
     MetaBlock result;
-    Node* n = find_closest_fit(word_size);
+    TreeNode* tree_node = _tree.closest_ge(word_size);
 
-    if (n != nullptr) {
+    if (tree_node != nullptr) {
+      Node* n = Node::cast_to_node(tree_node);
       DEBUG_ONLY(check_node(n);)
       assert(n->_word_size >= word_size, "sanity");
 
@@ -377,7 +212,7 @@ public:
         //  node into its place in the tree).
         n = remove_from_list(n);
       } else {
-        remove_node_from_tree(n);
+        _tree.remove(tree_node);
       }
 
       result = MetaBlock((MetaWord*)n, n->_word_size);
@@ -395,7 +230,7 @@ public:
   // Returns total size, in words, of all elements.
   size_t total_size() const { return _counter.total_size(); }
 
-  bool is_empty() const { return _root == nullptr; }
+  bool is_empty() const { return _tree.size() == 0; }
 
   DEBUG_ONLY(void print_tree(outputStream* st) const;)
   DEBUG_ONLY(void verify() const;)

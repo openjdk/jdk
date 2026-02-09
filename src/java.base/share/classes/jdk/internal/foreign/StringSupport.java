@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,14 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Array;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -58,6 +62,27 @@ public final class StringSupport {
     }
 
     @ForceInline
+    public static String read(AbstractMemorySegmentImpl segment, long offset, Charset charset, long length) {
+        return readBytes(segment, offset, charset, length);
+    }
+
+    @ForceInline
+    public static String readBytes(AbstractMemorySegmentImpl segment, long offset, Charset charset, long length) {
+        if (length > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Required length exceeds implementation limit");
+        }
+        final int lengthBytes = (int) length;
+        final byte[] bytes = new byte[lengthBytes];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, lengthBytes);
+        try {
+            return JAVA_LANG_ACCESS.uncheckedNewStringOrThrow(bytes, charset);
+        } catch (CharacterCodingException _) {
+            // use replacement characters for malformed input
+            return new String(bytes, charset);
+        }
+    }
+
+    @ForceInline
     public static void write(AbstractMemorySegmentImpl segment, long offset, Charset charset, String string) {
         switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> writeByte(segment, offset, charset, string);
@@ -69,9 +94,7 @@ public final class StringSupport {
     @ForceInline
     private static String readByte(AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         final int len = strlenByte(segment, offset, segment.byteSize());
-        final byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        return new String(bytes, charset);
+        return readBytes(segment, offset, charset, len);
     }
 
     @ForceInline
@@ -83,9 +106,7 @@ public final class StringSupport {
     @ForceInline
     private static String readShort(AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         int len = strlenShort(segment, offset, segment.byteSize());
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        return new String(bytes, charset);
+        return readBytes(segment, offset, charset, len);
     }
 
     @ForceInline
@@ -97,9 +118,7 @@ public final class StringSupport {
     @ForceInline
     private static String readInt(AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         int len = strlenInt(segment, offset, segment.byteSize());
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        return new String(bytes, charset);
+        return readBytes(segment, offset, charset, len);
     }
 
     @ForceInline
@@ -129,7 +148,7 @@ public final class StringSupport {
                                  final long fromOffset,
                                  final long toOffset) {
         final long length = toOffset - fromOffset;
-        segment.checkBounds(fromOffset, length);
+        segment.checkSliceBounds(fromOffset, length);
         if (length < Byte.BYTES) {
             // There can be no null terminator present
             segment.scope.checkValidState();
@@ -163,7 +182,7 @@ public final class StringSupport {
                                   final long fromOffset,
                                   final long toOffset) {
         final long length = toOffset - fromOffset;
-        segment.checkBounds(fromOffset, length);
+        segment.checkSliceBounds(fromOffset, length);
         if (length < Short.BYTES) {
             // There can be no null terminator present
             segment.scope.checkValidState();
@@ -199,7 +218,7 @@ public final class StringSupport {
                                 final long fromOffset,
                                 final long toOffset) {
         final long length = toOffset - fromOffset;
-        segment.checkBounds(fromOffset, length);
+        segment.checkSliceBounds(fromOffset, length);
         if (length < Integer.BYTES) {
             // There can be no null terminator present
             segment.scope.checkValidState();
@@ -329,22 +348,26 @@ public final class StringSupport {
         }
     }
 
-    public static boolean bytesCompatible(String string, Charset charset) {
-        return JAVA_LANG_ACCESS.bytesCompatible(string, charset);
+    public static boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
+        return JAVA_LANG_ACCESS.bytesCompatible(string, charset, srcIndex, numChars);
     }
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset) {
-        if (bytesCompatible(string, charset)) {
-            copyToSegmentRaw(string, segment, offset);
-            return string.length();
+        return copyBytes(string, segment, charset, offset, 0, string.length());
+    }
+
+    public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset, int srcIndex, int numChars) {
+        if (bytesCompatible(string, charset, srcIndex, numChars)) {
+            copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
+            return numChars;
         } else {
-            byte[] bytes = string.getBytes(charset);
+            byte[] bytes = string.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
             return bytes.length;
         }
     }
 
-    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
-        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset);
+    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
+        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, srcLength);
     }
 }

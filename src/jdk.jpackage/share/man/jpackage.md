@@ -190,6 +190,12 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
     This option can be used more than once.
 
+    macOS note: The value should be a directory with the "Resources"
+                subdirectory (or any other directory that is valid in the
+                "Contents" directory of the application bundle). Otherwise,
+                jpackage may produce invalid application bundle which may fail
+                code signing and/or notarization.
+
 ### Options for creating the application launcher(s):
 
 

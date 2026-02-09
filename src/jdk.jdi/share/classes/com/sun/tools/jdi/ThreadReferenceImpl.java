@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,10 +597,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
-                if (isVirtual() && !meth.isNative()) {
-                    throw new OpaqueFrameException();
-                } else {
+                if (meth.isNative()) {
                     throw new NativeMethodException();
+                } else {
+                    throw new OpaqueFrameException();
                 }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(
