@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -82,6 +83,8 @@ public class IncorrectEndTot {
         createZip(file, actual, reported);
         try (ZipFile zf = new ZipFile(file)) {
             assertEquals(actual, zf.size());
+            assertEquals(actual, Collections.list(zf.entries()).size());
+            assertEquals(actual, zf.stream().count());
         }
     }
 
