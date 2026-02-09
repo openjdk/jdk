@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @requires vm.flagless
  * @requires vm.compiler2.enabled
  * @requires test.thread.factory == null
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @summary Test that abstract machine code is dumped for the top frames in a hs-err log
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
