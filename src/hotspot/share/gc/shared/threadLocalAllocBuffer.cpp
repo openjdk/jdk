@@ -461,7 +461,7 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
 size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
   HeapWord* start = AtomicAccess::load(&_start);
   HeapWord* top = AtomicAccess::load(&_top);
-  // There has been a race when retrieving _top and _start. Return 0.
+  // If there has been a race when retrieving _top and _start. Return 0.
   if (top < start) {
     return 0;
   }
