@@ -1041,8 +1041,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
-void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md, ciProfileData *data,
-                                        Register recv) {
+void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md,
+                                        ciProfileData *data, Register recv) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
   __ profile_receiver_type(recv, mdo, mdp_offset);
 }
