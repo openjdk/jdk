@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
 #include "memory/reservedSpace.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -594,7 +595,7 @@ void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
 // these spaces.
 // The old space is divided into fixed-size blocks.
 class HeapBlockClaimer : public StackObj {
-  size_t _claimed_index;
+  Atomic<size_t> _claimed_index;
 
 public:
   static const size_t InvalidIndex = SIZE_MAX;
@@ -606,7 +607,7 @@ public:
   // Claim the block and get the block index.
   size_t claim_and_get_block() {
     size_t block_index;
-    block_index = AtomicAccess::fetch_then_add(&_claimed_index, 1u);
+    block_index = _claimed_index.fetch_then_add(1u);
 
     PSOldGen* old_gen = ParallelScavengeHeap::heap()->old_gen();
     size_t num_claims = old_gen->num_iterable_blocks() + NumNonOldGenClaims;
