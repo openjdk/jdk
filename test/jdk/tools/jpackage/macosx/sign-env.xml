@@ -1,0 +1,327 @@
+<?xml version="1.0" ?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><!--
+This is an automatically generated file.
+
+It contains self-signed certificates for testing signing in jpackage collected from a local test environment.
+It doesn't contan sensitive or private information.
+-->
+  <dict>
+    <key>certificates</key>
+    <array>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Application: ACME Technologies Limited (ABC12345)</string>
+        <key>type</key>
+        <string>CODE_SIGN</string>
+        <key>days</key>
+        <integer>100</integer>
+        <key>expired</key>
+        <false/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDdzCCAl+gAwIBAgIURn1jlYZttKq5v4VBYPPY8MHcJvcwDQYJKoZIhvcNAQEL
+BQAwSTFHMEUGA1UEAww+RGV2ZWxvcGVyIElEIEFwcGxpY2F0aW9uOiBBQ01FIFRl
+Y2hub2xvZ2llcyBMaW1pdGVkIChBQkMxMjM0NSkwHhcNMjUxMjAzMDA0NTUwWhcN
+MjYwMzEzMDA0NTUwWjBJMUcwRQYDVQQDDD5EZXZlbG9wZXIgSUQgQXBwbGljYXRp
+b246IEFDTUUgVGVjaG5vbG9naWVzIExpbWl0ZWQgKEFCQzEyMzQ1KTCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBALbKzpI77LbBbEbcyMUiupeUbJcwEtI2
+Q2LDI3aeKoHuDtec/Ic0/ti5Ye/NT9nDnGdT/ElfXde0/GLJOAUEj38Na2mqTT4w
+1OxJxxSRI950fozxNNpgyB/5fvdtJdbHwkmfVpNbLwgqwVjEMLc9FN2bQEZRWOxt
+djegJJDnrRifsXYbkV8s/L4oZsiUNiE/etPaVBCXgrMJsCzHfTNvLpaXIBlt7bx+
+lKx/ag7hEU6sSMSn6lV/4VM25LyjcQRdUftikU4UgpNjdyLJnSqDFR1ROvjs7OYC
+JPWqM8BLrnlKNnBvKeoRQMwFzixjnerWYqgwK5TqeH0d2/61HW/cBOMCAwEAAaNX
+MFUwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwFgYDVR0lAQH/BAwwCgYI
+KwYBBQUHAwMwHQYDVR0OBBYEFKQ/EDZzkGLEdsLNGCtsQL48IlTLMA0GCSqGSIb3
+DQEBCwUAA4IBAQCUmISrCGg8clJGslcs0nijP6x8idSZsptY+t7KbLPl4vIlccq5
+FZJPeqtKkPtTD4EW39MmW6vKhwnUhUCnOkYD6QVwsjIGmmkf1QBSE30AJqQSZYZ7
+qxRbXs3TZefV2qt9CIEtQcEytm+Qa23P7UGZ276dVasQdKu1lE/FjOsz30oPyu8a
+Q/NbenhF9iEqgzvlpycMVCtGHPcM8F8YQG9EjiALZ16HIzaex348wHKAZg3KJXBX
++Y613WFq3sAWoGIzVs8XzbFoE9mJuUvbM3YSz3siBJgFiEmm9awCw1ZGT0QIhqvm
+jW2JuG+rwcaTwoKRSnNpbyJCpnjNpAEf7xVx
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Application: expired jpackage test</string>
+        <key>type</key>
+        <string>CODE_SIGN</string>
+        <key>days</key>
+        <integer>365</integer>
+        <key>expired</key>
+        <true/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDWTCCAkGgAwIBAgIUIH2VTm8jNOABpppSksc4XgbX6x8wDQYJKoZIhvcNAQEL
+BQAwOjE4MDYGA1UEAwwvRGV2ZWxvcGVyIElEIEFwcGxpY2F0aW9uOiBleHBpcmVk
+IGpwYWNrYWdlIHRlc3QwHhcNMjQxMjAyMDA0NTUwWhcNMjUxMjAyMDA0NTUwWjA6
+MTgwNgYDVQQDDC9EZXZlbG9wZXIgSUQgQXBwbGljYXRpb246IGV4cGlyZWQganBh
+Y2thZ2UgdGVzdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALbKzpI7
+7LbBbEbcyMUiupeUbJcwEtI2Q2LDI3aeKoHuDtec/Ic0/ti5Ye/NT9nDnGdT/Elf
+Xde0/GLJOAUEj38Na2mqTT4w1OxJxxSRI950fozxNNpgyB/5fvdtJdbHwkmfVpNb
+LwgqwVjEMLc9FN2bQEZRWOxtdjegJJDnrRifsXYbkV8s/L4oZsiUNiE/etPaVBCX
+grMJsCzHfTNvLpaXIBlt7bx+lKx/ag7hEU6sSMSn6lV/4VM25LyjcQRdUftikU4U
+gpNjdyLJnSqDFR1ROvjs7OYCJPWqM8BLrnlKNnBvKeoRQMwFzixjnerWYqgwK5Tq
+eH0d2/61HW/cBOMCAwEAAaNXMFUwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMC
+B4AwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwMwHQYDVR0OBBYEFKQ/EDZzkGLEdsLN
+GCtsQL48IlTLMA0GCSqGSIb3DQEBCwUAA4IBAQAgTcSKh3RXMN2AVM7PPUsFz/H8
+gscHZ7qtJCPGV6i/SUTZT+aRHen6xHokzjRXTmJew5YLDiFJ2DloZUc2xq+2KjSc
+nLAbN523/kecRcxwfzKzfEn9Olg4eofdg9eTGSipqt2rWKaEqivNe7GO6MJbAUfT
+W62QEJV5bRGsET51B+kn9Da7MlJwpS9CJPzlbkaQQlSZ+h+hHjCGAeyfWgwitoOy
+5qAwxSsfGbgh0OpJ8LPZvzIs9N9CM2XCg5201ZqFPlrdla44H1toH3K8/uDKA05U
+tm9sSx6rCf8efK6gwBQE0UF+kU21xBwx5PJnMeof2n5nMHDsBcUPb9kNwyMw
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Application: jpackage.openjdk.java.net</string>
+        <key>type</key>
+        <string>CODE_SIGN</string>
+        <key>days</key>
+        <integer>100</integer>
+        <key>expired</key>
+        <false/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDYTCCAkmgAwIBAgIUMsMoKhiVPEovig2a3mFBRqIKn0UwDQYJKoZIhvcNAQEL
+BQAwPjE8MDoGA1UEAwwzRGV2ZWxvcGVyIElEIEFwcGxpY2F0aW9uOiBqcGFja2Fn
+ZS5vcGVuamRrLmphdmEubmV0MB4XDTI1MTIwMzAwNDU1MFoXDTI2MDMxMzAwNDU1
+MFowPjE8MDoGA1UEAwwzRGV2ZWxvcGVyIElEIEFwcGxpY2F0aW9uOiBqcGFja2Fn
+ZS5vcGVuamRrLmphdmEubmV0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+AQEAtsrOkjvstsFsRtzIxSK6l5RslzAS0jZDYsMjdp4qge4O15z8hzT+2Llh781P
+2cOcZ1P8SV9d17T8Ysk4BQSPfw1raapNPjDU7EnHFJEj3nR+jPE02mDIH/l+920l
+1sfCSZ9Wk1svCCrBWMQwtz0U3ZtARlFY7G12N6AkkOetGJ+xdhuRXyz8vihmyJQ2
+IT9609pUEJeCswmwLMd9M28ulpcgGW3tvH6UrH9qDuERTqxIxKfqVX/hUzbkvKNx
+BF1R+2KRThSCk2N3IsmdKoMVHVE6+Ozs5gIk9aozwEuueUo2cG8p6hFAzAXOLGOd
+6tZiqDArlOp4fR3b/rUdb9wE4wIDAQABo1cwVTAMBgNVHRMBAf8EAjAAMA4GA1Ud
+DwEB/wQEAwIHgDAWBgNVHSUBAf8EDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQUpD8Q
+NnOQYsR2ws0YK2xAvjwiVMswDQYJKoZIhvcNAQELBQADggEBAGDMWii23OikuqMu
+F4saTudBHiWF0izOhubfP2Xar40Mx1Z5GZ7ttMM9YkxKvGmZcw7YcF1ZFxaVoC9/
+RRueUAQf5ZXOw6MUCxuRhHS7ySMsNhO8NRFrHuWkqPhSgY9zBdSI+oDTB/Hw31T/
+R5APQxQnZ1WhWRI/5CcUY4AELTAbA7qO/i5vxw557Uf2+EHuIVYHcUC2Q4jdCX8F
+q41eAIEcsOSyd3K+9idRHD2HwyV0HZ4GeBexJQddf/xFU6AMS5ohtWY2R/m44wj7
+rLbeozHyok/e64wcs6JVoLCj2pDeA/rL1ZgQ0GgUKihlaBlwKGb1AX09/KAe7hUg
+pFC0EyU=
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Application: jpackage.openjdk.java.net</string>
+        <key>type</key>
+        <string>CODE_SIGN</string>
+        <key>days</key>
+        <integer>365</integer>
+        <key>expired</key>
+        <false/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDYTCCAkmgAwIBAgIUYCfRiDbseWSc1vclYBWpmNpW7XYwDQYJKoZIhvcNAQEL
+BQAwPjE8MDoGA1UEAwwzRGV2ZWxvcGVyIElEIEFwcGxpY2F0aW9uOiBqcGFja2Fn
+ZS5vcGVuamRrLmphdmEubmV0MB4XDTI1MTIwMzAwNDU1MFoXDTI2MTIwMzAwNDU1
+MFowPjE8MDoGA1UEAwwzRGV2ZWxvcGVyIElEIEFwcGxpY2F0aW9uOiBqcGFja2Fn
+ZS5vcGVuamRrLmphdmEubmV0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+AQEAtsrOkjvstsFsRtzIxSK6l5RslzAS0jZDYsMjdp4qge4O15z8hzT+2Llh781P
+2cOcZ1P8SV9d17T8Ysk4BQSPfw1raapNPjDU7EnHFJEj3nR+jPE02mDIH/l+920l
+1sfCSZ9Wk1svCCrBWMQwtz0U3ZtARlFY7G12N6AkkOetGJ+xdhuRXyz8vihmyJQ2
+IT9609pUEJeCswmwLMd9M28ulpcgGW3tvH6UrH9qDuERTqxIxKfqVX/hUzbkvKNx
+BF1R+2KRThSCk2N3IsmdKoMVHVE6+Ozs5gIk9aozwEuueUo2cG8p6hFAzAXOLGOd
+6tZiqDArlOp4fR3b/rUdb9wE4wIDAQABo1cwVTAMBgNVHRMBAf8EAjAAMA4GA1Ud
+DwEB/wQEAwIHgDAWBgNVHSUBAf8EDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQUpD8Q
+NnOQYsR2ws0YK2xAvjwiVMswDQYJKoZIhvcNAQELBQADggEBAHvoLMTXZY8LD4ay
+tz5xE1RNxmRfDHFfxKIOTgmHQjwq/+IqQZ2lDNe9KWOvSM6ByJD73yvwD6ji2ZH9
+kNiXGlgSgUJj+QUworlaWK3XXZmEQHWkET92dNtRqbxqiTEvj6/vsXfbFIh0YfST
+bLY3SJPNjV44pJehjsDHX1lN77rJkpeUzcizN4eqlEirk9LVqp7rW3Cnw1QUsM2K
+z+ECX/DEYLUIb+CivN3mYciI+iob/1+nNqrS4B1o5MTIXWrOdaAD2/kTGoS770BZ
+AsvhM1cPgrM9ZLtZsHnmrirIpzu2NYA76hcJ2pLYFeRai64rimQvyz26ZUD9c3TW
+m9Uru8c=
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Application: jpackage.openjdk.java.net (ö)</string>
+        <key>type</key>
+        <string>CODE_SIGN</string>
+        <key>days</key>
+        <integer>365</integer>
+        <key>expired</key>
+        <false/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDazCCAlOgAwIBAgIUCRmYRKNZJTSSVC5SKWDdjkXxywAwDQYJKoZIhvcNAQEL
+BQAwQzFBMD8GA1UEAww4RGV2ZWxvcGVyIElEIEFwcGxpY2F0aW9uOiBqcGFja2Fn
+ZS5vcGVuamRrLmphdmEubmV0ICjDtikwHhcNMjUxMjAzMDA0NTUwWhcNMjYxMjAz
+MDA0NTUwWjBDMUEwPwYDVQQDDDhEZXZlbG9wZXIgSUQgQXBwbGljYXRpb246IGpw
+YWNrYWdlLm9wZW5qZGsuamF2YS5uZXQgKMO2KTCCASIwDQYJKoZIhvcNAQEBBQAD
+ggEPADCCAQoCggEBALbKzpI77LbBbEbcyMUiupeUbJcwEtI2Q2LDI3aeKoHuDtec
+/Ic0/ti5Ye/NT9nDnGdT/ElfXde0/GLJOAUEj38Na2mqTT4w1OxJxxSRI950fozx
+NNpgyB/5fvdtJdbHwkmfVpNbLwgqwVjEMLc9FN2bQEZRWOxtdjegJJDnrRifsXYb
+kV8s/L4oZsiUNiE/etPaVBCXgrMJsCzHfTNvLpaXIBlt7bx+lKx/ag7hEU6sSMSn
+6lV/4VM25LyjcQRdUftikU4UgpNjdyLJnSqDFR1ROvjs7OYCJPWqM8BLrnlKNnBv
+KeoRQMwFzixjnerWYqgwK5TqeH0d2/61HW/cBOMCAwEAAaNXMFUwDAYDVR0TAQH/
+BAIwADAOBgNVHQ8BAf8EBAMCB4AwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwMwHQYD
+VR0OBBYEFKQ/EDZzkGLEdsLNGCtsQL48IlTLMA0GCSqGSIb3DQEBCwUAA4IBAQBN
+WuDNiLdg5zEYJ2c2cO7haAqZVGMVE8kshZHDWR5FEwegWllM5O9iINb4CRTw0oz9
+B7rlg4Muc5HklDSMXI/cv1Y5wRv4AtXhdMiIe+sZwEr2PkqQdVO6knc0VvR1LKPs
+cekj8dJ30PUBsTul/39nYdShUpqNc8wm/DcjkoaVG8W2Z8dFOJqM4F3iR+jS/1Ut
+F29Src2ZLruizrA2hMq4OCfgNWSw57cu4cnwLbmTMOzt9ii837eTmL+rL2wzCSRF
+UQAqSmmp0Zej3qgpNs8g/5y+UiQXwZS8B3qh6t7qmFpc+Notie3z5wWjxFpt5vSd
+bwL/SXQ5cswj4FmUo7N2
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Installer: expired jpackage test</string>
+        <key>type</key>
+        <string>INSTALLER</string>
+        <key>days</key>
+        <integer>365</integer>
+        <key>expired</key>
+        <true/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDazCCAlOgAwIBAgIUWgGX6qi0Mrxd4rzbWgA8nrhkE4IwDQYJKoZIhvcNAQEL
+BQAwODE2MDQGA1UEAwwtRGV2ZWxvcGVyIElEIEluc3RhbGxlcjogZXhwaXJlZCBq
+cGFja2FnZSB0ZXN0MB4XDTI0MTIwMjAwNDU1MFoXDTI1MTIwMjAwNDU1MFowODE2
+MDQGA1UEAwwtRGV2ZWxvcGVyIElEIEluc3RhbGxlcjogZXhwaXJlZCBqcGFja2Fn
+ZSB0ZXN0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtsrOkjvstsFs
+RtzIxSK6l5RslzAS0jZDYsMjdp4qge4O15z8hzT+2Llh781P2cOcZ1P8SV9d17T8
+Ysk4BQSPfw1raapNPjDU7EnHFJEj3nR+jPE02mDIH/l+920l1sfCSZ9Wk1svCCrB
+WMQwtz0U3ZtARlFY7G12N6AkkOetGJ+xdhuRXyz8vihmyJQ2IT9609pUEJeCswmw
+LMd9M28ulpcgGW3tvH6UrH9qDuERTqxIxKfqVX/hUzbkvKNxBF1R+2KRThSCk2N3
+IsmdKoMVHVE6+Ozs5gIk9aozwEuueUo2cG8p6hFAzAXOLGOd6tZiqDArlOp4fR3b
+/rUdb9wE4wIDAQABo20wazAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIHgDAT
+BgoqhkiG92NkBgEOAQH/BAIFADAXBgNVHSUBAf8EDTALBgkqhkiG92NkBA0wHQYD
+VR0OBBYEFKQ/EDZzkGLEdsLNGCtsQL48IlTLMA0GCSqGSIb3DQEBCwUAA4IBAQAO
+0hsfTpEgklelGEtKv88wfwT2s7BYSM43cyMtQt0kmJfINvXFFRXJIDmXAtjF1RIZ
+IqpW2Sk532FpLQrZ08fHQL7YDcud6dLsbZcE+6tsIT7esItjaMePoarO0S+0SqMC
+coMlV6f+eOJscO1txzBWjU7G16WbEs7B2W5WR3MiVE+PvLAoMQkU2SQrLCHTNM70
+d2CfPuo3UpYvTAHFvYin2V3a/Kf4tMCjua1uWaf9M22Iilqpx+kJjyA670EOTJZ5
+IyHAmwsP4tUMm5yUkzLPZVSkDcGMT8hz0f/Tb8uy6DQNHWXFtqvVE04hw0FERsqx
+rjeTTd+W27gaDk2KpDE+
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Installer: jpackage.openjdk.java.net</string>
+        <key>type</key>
+        <string>INSTALLER</string>
+        <key>days</key>
+        <integer>100</integer>
+        <key>expired</key>
+        <false/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDczCCAlugAwIBAgIUT3RbmO/g+lyQiQJgJTP9H2Uw6+cwDQYJKoZIhvcNAQEL
+BQAwPDE6MDgGA1UEAwwxRGV2ZWxvcGVyIElEIEluc3RhbGxlcjoganBhY2thZ2Uu
+b3Blbmpkay5qYXZhLm5ldDAeFw0yNTEyMDMwMDQ1NTBaFw0yNjAzMTMwMDQ1NTBa
+MDwxOjA4BgNVBAMMMURldmVsb3BlciBJRCBJbnN0YWxsZXI6IGpwYWNrYWdlLm9w
+ZW5qZGsuamF2YS5uZXQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC2
+ys6SO+y2wWxG3MjFIrqXlGyXMBLSNkNiwyN2niqB7g7XnPyHNP7YuWHvzU/Zw5xn
+U/xJX13XtPxiyTgFBI9/DWtpqk0+MNTsSccUkSPedH6M8TTaYMgf+X73bSXWx8JJ
+n1aTWy8IKsFYxDC3PRTdm0BGUVjsbXY3oCSQ560Yn7F2G5FfLPy+KGbIlDYhP3rT
+2lQQl4KzCbAsx30zby6WlyAZbe28fpSsf2oO4RFOrEjEp+pVf+FTNuS8o3EEXVH7
+YpFOFIKTY3ciyZ0qgxUdUTr47OzmAiT1qjPAS655SjZwbynqEUDMBc4sY53q1mKo
+MCuU6nh9Hdv+tR1v3ATjAgMBAAGjbTBrMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/
+BAQDAgeAMBMGCiqGSIb3Y2QGAQ4BAf8EAgUAMBcGA1UdJQEB/wQNMAsGCSqGSIb3
+Y2QEDTAdBgNVHQ4EFgQUpD8QNnOQYsR2ws0YK2xAvjwiVMswDQYJKoZIhvcNAQEL
+BQADggEBAHlnwd4paqr//QgQaB4lPDUxbDe+w7HjiYTHYt9e15enxrKgSdpgIShC
+qs8RS3SIgw4pM5pg4NCwh5NRRKnP156/Pxet1oUyDYbjeT9wmEQ0mCO5IjnwAPsY
+lLhSREgiP4GN9gcte6r97MC7F1SQDi1+txztK41yUSu+AFF5uwI26rmXoxqnBa8U
+7lZ9m/w1JhF09f4aZwtm6LfaAJ2TcGMfi8HgHqxzifQm8OiCr80dOn5pG7eR4sOS
+JmeaIgjKxbF+IcrlREb+RUVF6jsqEsf1J9qripN0Twyz2As6Dx6Uv+Z+r1MpnPUf
+lNirjfSG/BB/3XgY0Q8NRnw4jy8knvM=
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Installer: jpackage.openjdk.java.net</string>
+        <key>type</key>
+        <string>INSTALLER</string>
+        <key>days</key>
+        <integer>365</integer>
+        <key>expired</key>
+        <false/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDczCCAlugAwIBAgIUeTS42JOnQt+kFHOe88DN58zN9ggwDQYJKoZIhvcNAQEL
+BQAwPDE6MDgGA1UEAwwxRGV2ZWxvcGVyIElEIEluc3RhbGxlcjoganBhY2thZ2Uu
+b3Blbmpkay5qYXZhLm5ldDAeFw0yNTEyMDMwMDQ1NTBaFw0yNjEyMDMwMDQ1NTBa
+MDwxOjA4BgNVBAMMMURldmVsb3BlciBJRCBJbnN0YWxsZXI6IGpwYWNrYWdlLm9w
+ZW5qZGsuamF2YS5uZXQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC2
+ys6SO+y2wWxG3MjFIrqXlGyXMBLSNkNiwyN2niqB7g7XnPyHNP7YuWHvzU/Zw5xn
+U/xJX13XtPxiyTgFBI9/DWtpqk0+MNTsSccUkSPedH6M8TTaYMgf+X73bSXWx8JJ
+n1aTWy8IKsFYxDC3PRTdm0BGUVjsbXY3oCSQ560Yn7F2G5FfLPy+KGbIlDYhP3rT
+2lQQl4KzCbAsx30zby6WlyAZbe28fpSsf2oO4RFOrEjEp+pVf+FTNuS8o3EEXVH7
+YpFOFIKTY3ciyZ0qgxUdUTr47OzmAiT1qjPAS655SjZwbynqEUDMBc4sY53q1mKo
+MCuU6nh9Hdv+tR1v3ATjAgMBAAGjbTBrMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/
+BAQDAgeAMBMGCiqGSIb3Y2QGAQ4BAf8EAgUAMBcGA1UdJQEB/wQNMAsGCSqGSIb3
+Y2QEDTAdBgNVHQ4EFgQUpD8QNnOQYsR2ws0YK2xAvjwiVMswDQYJKoZIhvcNAQEL
+BQADggEBAB5HrklvbMRj1dqgyO6L7aZA37rjtGMflMkmGmIQF2JQJ8iIsb+q457w
+kF4heMhM+sIVldIhvN/RWbLTQQymkLI3yBQJH+csCMqbGIkNHjF2qsbzkFlgZnlq
+1Et9Lomz+2MlWuWo6PFzsW5dZ8doTn3zA/EcJIgJE3fN2W2RU4KtH2gXmf8PlREB
+VqxhfkNF0zPk2lF2R6bOiaTUSfyoh0hS4nHMSkkJ9Uvvp5l6892hsEe5kZDMs6q+
+SEygXOPTkc/y7SdaM2bzKnTQenOflTQkB3UnYO9sIk3LT73s8CvjxEx9z3WPhLL4
+HnOYBbyyHVmifVV/YP2pQetRj/09Fh4=
+-----END CERTIFICATE-----
+</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>Developer ID Installer: jpackage.openjdk.java.net (ö)</string>
+        <key>type</key>
+        <string>INSTALLER</string>
+        <key>days</key>
+        <integer>365</integer>
+        <key>expired</key>
+        <false/>
+        <key>trusted</key>
+        <true/>
+        <key>data</key>
+        <string>-----BEGIN CERTIFICATE-----
+MIIDfTCCAmWgAwIBAgIURwFKhGHaujE+gQDb2g4kuFwBZxswDQYJKoZIhvcNAQEL
+BQAwQTE/MD0GA1UEAww2RGV2ZWxvcGVyIElEIEluc3RhbGxlcjoganBhY2thZ2Uu
+b3Blbmpkay5qYXZhLm5ldCAow7YpMB4XDTI1MTIwMzAwNDU1MFoXDTI2MTIwMzAw
+NDU1MFowQTE/MD0GA1UEAww2RGV2ZWxvcGVyIElEIEluc3RhbGxlcjoganBhY2th
+Z2Uub3Blbmpkay5qYXZhLm5ldCAow7YpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+MIIBCgKCAQEAtsrOkjvstsFsRtzIxSK6l5RslzAS0jZDYsMjdp4qge4O15z8hzT+
+2Llh781P2cOcZ1P8SV9d17T8Ysk4BQSPfw1raapNPjDU7EnHFJEj3nR+jPE02mDI
+H/l+920l1sfCSZ9Wk1svCCrBWMQwtz0U3ZtARlFY7G12N6AkkOetGJ+xdhuRXyz8
+vihmyJQ2IT9609pUEJeCswmwLMd9M28ulpcgGW3tvH6UrH9qDuERTqxIxKfqVX/h
+UzbkvKNxBF1R+2KRThSCk2N3IsmdKoMVHVE6+Ozs5gIk9aozwEuueUo2cG8p6hFA
+zAXOLGOd6tZiqDArlOp4fR3b/rUdb9wE4wIDAQABo20wazAMBgNVHRMBAf8EAjAA
+MA4GA1UdDwEB/wQEAwIHgDATBgoqhkiG92NkBgEOAQH/BAIFADAXBgNVHSUBAf8E
+DTALBgkqhkiG92NkBA0wHQYDVR0OBBYEFKQ/EDZzkGLEdsLNGCtsQL48IlTLMA0G
+CSqGSIb3DQEBCwUAA4IBAQBVmkrBl5WFj7nCQJbGjTdMf2bMnWSrATBd31J/Tmpz
+enRny1tdm3WKEOAwSVCJO37Dd12mazcCDEo63bGUSp/SIEzdwbtmTSM+YO11QCG0
+80ahCnMsQrtDVUO4fWNc9Zu0XkeSk/OIxjiRGpU3LNCYZEINNmi68Y3dFF5MD9z8
+zJDlViaNVKzX7f2HSxsm0PSQsBha3yckdcMRlgRjXwhmn4fQVRkuLckMvBr/Fwg/
+e5SRGvB16tRs2gcOUVNcDHh7jS4h5Qaab2T5GGZrrRyUJNqXG6GaRkL17aIHRUgM
+E5n40gEbHQCu+6tuKofvsd93MQxnuvD2Q3Ae9Tu75xgk
+-----END CERTIFICATE-----
+</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

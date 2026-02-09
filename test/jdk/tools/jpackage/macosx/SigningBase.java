@@ -21,9 +21,14 @@
  * questions.
  */
 
+import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.MacHelper.NamedCertificateRequestSupplier;
 import jdk.jpackage.test.MacSign;
@@ -32,15 +37,17 @@ import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
 import jdk.jpackage.test.MacSign.ResolvedKeychain;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.stdmock.MacSignMockUtils;
 
 
 /*
  * @test
  * @summary Setup the environment for jpackage macos signing tests.
  *          Creates required keychains and signing identities.
- *          Does NOT run any jpackag tests.
+ *          Does NOT run any jpackage tests.
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.stdmock.*
  * @compile -Xlint:all -Werror SigningBase.java
  * @requires (jpackage.test.MacSignTests == "setup")
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
@@ -51,13 +58,28 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary Tear down the environment for jpackage macos signing tests.
  *          Deletes required keychains and signing identities.
- *          Does NOT run any jpackag tests.
+ *          Does NOT run any jpackage tests.
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.stdmock.*
  * @compile -Xlint:all -Werror SigningBase.java
  * @requires (jpackage.test.MacSignTests == "teardown")
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningBase.tearDown
+ */
+
+/*
+ * @test
+ * @summary Updates $JDK/test/jdk/tools/jpackage/macosx/sign-env.xml file.
+ *          The real signing environment (keychains and signing identities) must be properly set up.
+ *          Does NOT run any jpackage tests.
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.stdmock.*
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @requires (jpackage.test.MacSignTests == "update-sign-env-file")
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningBase.updateSignEnvFile
  */
 
 public class SigningBase {
@@ -138,8 +160,23 @@ public class SigningBase {
             this.keychain = new ResolvedKeychain(builder.create());
         }
 
-        public ResolvedKeychain keychain() {
+        public ResolvedKeychain realKeychain() {
             return keychain;
+        }
+
+        public ResolvedKeychain keychainMock() {
+            return keychain.toMock(SignEnvMock.VALUE);
+        }
+
+        public ResolvedKeychain keychain() {
+            switch (Optional.ofNullable(System.getProperty("jpackage.test.MacSignTests")).orElse("")) {
+                case "run-mock" -> {
+                    return keychainMock();
+                }
+                default -> {
+                    return realKeychain();
+                }
+            }
         }
 
         public X509Certificate mapCertificateRequest(CertificateRequest certRequest) {
@@ -151,11 +188,11 @@ public class SigningBase {
         }
 
         private static KeychainWithCertsSpec.Builder keychain(String name) {
-            return new KeychainWithCertsSpec.Builder().name(name);
+            return KeychainWithCertsSpec.build().name(name);
         }
 
         private static List<KeychainWithCertsSpec> signingEnv() {
-            return Stream.of(values()).map(StandardKeychain::keychain).map(ResolvedKeychain::spec).toList();
+            return Stream.of(values()).map(StandardKeychain::realKeychain).map(ResolvedKeychain::spec).toList();
         }
 
         private final ResolvedKeychain keychain;
@@ -169,16 +206,36 @@ public class SigningBase {
         MacSign.tearDown(StandardKeychain.signingEnv());
     }
 
+    public static void updateSignEnvFile() {
+        verifySignTestEnvReady();
+
+        Map<CertificateRequest, X509Certificate> certs = Stream.of(StandardKeychain.values())
+                .map(StandardKeychain::realKeychain)
+                .map(ResolvedKeychain::mapCertificateRequests)
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .distinct()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        MacSignMockUtils.save(certs, SIGN_ENV_FILE);
+    }
+
     public static void verifySignTestEnvReady() {
-        if (!Inner.SIGN_ENV_READY) {
+        if (!SignEnvReady.VALUE) {
             TKit.throwSkippedException(new IllegalStateException("Misconfigured signing test environment"));
         }
     }
 
-    private final class Inner {
-        private static final boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
+    private final class SignEnvReady {
+        static final boolean VALUE = MacSign.isDeployed(StandardKeychain.signingEnv());
+    }
+
+    private final class SignEnvMock {
+        static final Map<CertificateRequest, X509Certificate> VALUE = MacSignMockUtils.load(SIGN_ENV_FILE);
     }
 
     private static final String NAME_ASCII = "jpackage.openjdk.java.net";
     private static final String NAME_UNICODE = "jpackage.openjdk.java.net (ö)";
+
+    private static final Path SIGN_ENV_FILE = TKit.TEST_SRC_ROOT.resolve("macosx/sign-env.xml");
 }
