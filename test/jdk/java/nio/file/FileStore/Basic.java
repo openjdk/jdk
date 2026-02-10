@@ -96,7 +96,7 @@ public class Basic {
      */
     @ParameterizedTest
     @MethodSource("factory")
-    public void testDirectoryWritable(Path dir) throws IOException {
+    void testDirectoryWritable(Path dir) throws IOException {
         assertFalse(Files.getFileStore(dir).isReadOnly());
     }
 
@@ -105,7 +105,7 @@ public class Basic {
      */
     @ParameterizedTest
     @MethodSource("factory")
-    public void testFileStoreEquality(Path dir) throws IOException {
+    void testFileStoreEquality(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
         FileStore store1 = Files.getFileStore(file1);
@@ -121,7 +121,7 @@ public class Basic {
     @ParameterizedTest
     @MethodSource("factory")
     @EnabledOnOs({OS.WINDOWS})
-    public void testFileStoreCaseSensitivity(Path dir) throws IOException {
+    void testFileStoreCaseSensitivity(Path dir) throws IOException {
         FileStore upper = Files.getFileStore(Path.of("C:\\"));
         FileStore lower = Files.getFileStore(Path.of("c:\\"));
         assertSame(lower, upper);
@@ -132,7 +132,7 @@ public class Basic {
      */
     @ParameterizedTest
     @MethodSource("factory")
-    public void testAttributes(Path dir) throws IOException {
+    void testAttributes(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
         FileStore store1 = Files.getFileStore(file1);
@@ -150,7 +150,7 @@ public class Basic {
      */
     @ParameterizedTest
     @MethodSource("factory")
-    public void testSpaceAttributes(Path dir) throws IOException {
+    void testSpaceAttributes(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
         FileStore store1 = Files.getFileStore(file1);
@@ -176,7 +176,7 @@ public class Basic {
      */
     @ParameterizedTest
     @MethodSource("factory")
-    public void testEnumerateFileStores(Path dir) throws IOException {
+    void testEnumerateFileStores(Path dir) throws IOException {
         assumeTrue(FileUtils.areMountPointsAccessibleAndUnique());
         List<FileStore> stores = StreamSupport.stream(FileSystems.getDefault()
                                  .getFileStores().spliterator(), false)
