@@ -194,7 +194,10 @@ unpack = $(foreach pair,$2,$1$(call unquoteAppendIndex,$(pair),1) += $(call unqu
 # The result will be a quoted string that can be unpacked to a list of
 # variable appendings (see macro unpack above). You do not need to take
 # care of unpacking, it is done in NamedParamsMacroTemplate.
-
+#
+# This feature should only be used for warnings that we want to
+# incrementally add to the rest of the code base.
+#
 # $(call extendingFlags,dir,%.cpp,_CXXFLAGS,-Wconversion) -> file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion
 extendingFlags = $(foreach file,$(call filterFiles,$1,$2,),$(call quoteAppend,$(file)$3,$4))
 
