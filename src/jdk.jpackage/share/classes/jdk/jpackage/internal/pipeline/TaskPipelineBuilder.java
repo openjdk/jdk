@@ -168,7 +168,7 @@ public final class TaskPipelineBuilder {
 
             final var rootFutures = getNoOutgoingEdges(taskGraph.edgeMatrix()).mapToObj(taskIndex -> {
                 return taskFutures[taskIndex];
-            }).toArray(CompletableFuture[]::new);
+            }).toArray(CompletableFuture<?>[]::new);
 
             final CompletableFuture <?> rootFuture;
             if (rootFutures.length == 1) {

@@ -56,7 +56,7 @@ sealed interface OptionSpecMapperOptionScope<T, U> extends OptionScope {
 
     Class<? extends U> contextType();
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     static <T, U> OptionSpec<T> mapOptionSpec(OptionSpec<T> optionSpec, U context) {
         var mappedOptionSpec = optionSpec.scope().stream()
                 .filter(OptionSpecMapperOptionScope.class::isInstance)

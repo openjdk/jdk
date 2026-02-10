@@ -1152,7 +1152,7 @@ class ConsoleIOContext extends IOContext {
                 return code;
             }
         };
-        ctx.put(DiagnosticListener.class, d -> {});
+        ctx.put(DiagnosticListener.class, (DiagnosticListener<?>) d -> {});
         com.sun.tools.javac.util.Log.instance(ctx).useSource(source);
         com.sun.tools.javac.parser.ScannerFactory scannerFactory =
                 com.sun.tools.javac.parser.ScannerFactory.instance(ctx);

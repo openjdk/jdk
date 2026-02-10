@@ -816,7 +816,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             SourcePositions sp = trees.getSourcePositions();
             List<Token> tokens = new ArrayList<>();
             Context ctx = new Context();
-            ctx.put(DiagnosticListener.class, (DiagnosticListener) d -> {});
+            ctx.put(DiagnosticListener.class, (DiagnosticListener<?>) d -> {});
             Scanner scanner = ScannerFactory.instance(ctx).newScanner(wrappedCode, false);
             Log.instance(ctx).useSource(cut.getSourceFile());
             scanner.nextToken();
