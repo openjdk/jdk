@@ -433,10 +433,7 @@ typedef unsigned char u_char;
 typedef u_char*       address;
 typedef const u_char* const_address;
 
-// Checked pointer difference calculation.
-//
-// Calculates the difference between the given high and low addresses, asserting
-// on underflow.
+// Pointer subtraction, calculating high - low. Asserts on underflow.
 //
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
 // the range we might need to find differences from one end of the heap
