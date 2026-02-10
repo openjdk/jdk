@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -889,10 +889,11 @@ The following options are provided by the standard doclet.
 :   Specifies a custom tag with the given *name*, allowed *locations* and *header*.
 
     The tag outputs *header* as its heading, followed by the tag body, which may
-    contain HTML elements and inline JavaDoc tags. Omitting a *header* value
-    causes the *name* to be the heading. *locations* is a list of characters
-    specifying the kinds of declarations in which the tag may be used. The
-    following characters may be used, in either uppercase or lowercase:
+    contain HTML elements and inline JavaDoc tags, which are also interpreted.
+    Omitting a *header* value causes the *name* to be the heading. *locations*
+    is a list of characters specifying the kinds of declarations in which the
+    tag may be used. The following characters may be used, in either uppercase
+    or lowercase:
 
     * `A`: all declarations
     * `C`: constructors
