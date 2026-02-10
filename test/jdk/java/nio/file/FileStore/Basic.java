@@ -105,7 +105,7 @@ public class Basic {
      */
     @ParameterizedTest
     @MethodSource("factory")
-    void testFileStoreEquality(Path dir) throws IOException {
+    void testEquality(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
         FileStore store1 = Files.getFileStore(file1);
@@ -121,7 +121,7 @@ public class Basic {
     @ParameterizedTest
     @MethodSource("factory")
     @EnabledOnOs({OS.WINDOWS})
-    void testFileStoreCaseSensitivity(Path dir) throws IOException {
+    void testCaseSensitivity(Path dir) throws IOException {
         FileStore upper = Files.getFileStore(Path.of("C:\\"));
         FileStore lower = Files.getFileStore(Path.of("c:\\"));
         assertSame(lower, upper);
