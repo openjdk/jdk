@@ -10,7 +10,7 @@ jobs:
       steps:
         - name: get jtreg
           commands:
-            - wget -O jtreg.tar.gz "https://luban-source.byted.org/repository/scm/sys.byteopenjdk.jtreg_1.0.0.20.tar.gz"
+            - wget -O jtreg.tar.gz "https://luban-source.byted.org/repository/scm/sys.byteopenjdk.jtreg_1.0.0.23.tar.gz"
             - mkdir -p jtreg
             - tar -xzvf jtreg.tar.gz -C jtreg
         - name: get gtest
