@@ -34,8 +34,6 @@ import java.util.*;
 import java.util.jar.*;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
-import java.security.CodeSigner;
-import java.security.cert.Certificate;
 import sun.net.www.ParseUtil;
 
 /* URL jar file is a common JarFile subtype used for JarURLConnection */
