@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,10 @@ public class JarEntry extends ZipEntry {
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
-     * @return the {@code Certificate} objects for this entry, or
-     * {@code null} if none.
+     * @implSpec If non-null, this implementation returns a new array each time
+     *           this method is invoked.
+     *
+     * @return the {@code Certificate} objects for this entry, or {@code null} if none.
      *
      */
     public Certificate[] getCertificates() {
@@ -139,8 +141,10 @@ public class JarEntry extends ZipEntry {
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
-     * @return the {@code CodeSigner} objects for this entry, or
-     * {@code null} if none.
+     * @implSpec If non-null, this implementation returns a new array each time
+     *           this method is invoked.
+     *
+     * @return the {@code CodeSigner} objects for this entry, or {@code null} if none.
      *
      * @since 1.5
      */

@@ -67,7 +67,7 @@ class AccessFlags {
   void set_flags(u2 flags)            { _flags = flags; }
 
  private:
-  friend class Klass;
+  friend class InstanceKlass;
   friend class ClassFileParser;
   // the functions below should only be called on the _access_flags inst var directly,
   // otherwise they are just changing a copy of the flags

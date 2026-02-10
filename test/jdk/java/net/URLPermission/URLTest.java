@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,7 +223,7 @@ public class URLTest {
     static HttpsServer httpsServer;
     static HttpContext c, cs;
     static ExecutorService e, es;
-    static SSLContext ctx;
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
     static int httpPort;
     static int httpsPort;
     static String httpAuth;
@@ -243,8 +243,6 @@ public class URLTest {
         es = Executors.newCachedThreadPool();
         httpServer.setExecutor(e);
         httpsServer.setExecutor(es);
-
-        ctx = new SimpleSSLContext().get();
         httpsServer.setHttpsConfigurator(new HttpsConfigurator (ctx));
 
         httpServer.start();

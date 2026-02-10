@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,13 +132,13 @@ public class CastNullCheckDroppingsTest {
         t.runTest(methodClassCastNull, false, svalue);
         t.runTest(methodNullClassCast, false, svalue);
         t.runTest(methodClassCastObj,  false, svalue);
-        t.runTest(methodObjClassCast,  false,  svalue);
+        t.runTest(methodObjClassCast,  false, svalue);
         t.runTest(methodClassCastInt,  false, svalue);
-        t.runTest(methodIntClassCast,  true,  svalue);
+        t.runTest(methodIntClassCast,  false, svalue);
         t.runTest(methodClassCastint,  false, svalue);
         t.runTest(methodintClassCast,  false, svalue);
         t.runTest(methodClassCastPrim, false, svalue);
-        t.runTest(methodPrimClassCast, true,  svalue);
+        t.runTest(methodPrimClassCast, false, svalue);
         t.runTest(methodVarClassCast,  true,  objClass);
     }
 

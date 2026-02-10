@@ -192,7 +192,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      bool should_delay = C->should_delay_inlining();
+      bool should_delay = C->should_delay_inlining() || C->directive()->should_delay_inline(callee);
       if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
         // For optimized virtual calls assert at runtime that receiver object
@@ -1059,14 +1059,19 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   assert(!stopped(), "you should return if you finish the chain");
 
   // Oops, need to call into the VM to resolve the klasses at runtime.
-  // Note:  This call must not deoptimize, since it is not a real at this bci!
   kill_dead_locals();
 
-  make_runtime_call(RC_NO_LEAF | RC_MUST_THROW,
-                    OptoRuntime::rethrow_Type(),
-                    OptoRuntime::rethrow_stub(),
-                    nullptr, nullptr,
-                    ex_node);
+  { PreserveReexecuteState preexecs(this);
+    // When throwing an exception, set the reexecute flag for deoptimization.
+    // This is mostly needed to pass -XX:+VerifyStack sanity checks.
+    jvms()->set_should_reexecute(true);
+
+    make_runtime_call(RC_NO_LEAF | RC_MUST_THROW,
+                      OptoRuntime::rethrow_Type(),
+                      OptoRuntime::rethrow_stub(),
+                      nullptr, nullptr,
+                      ex_node);
+  }
 
   // Rethrow is a pure call, no side effects, only a result.
   // The result cannot be allocated, so we use I_O

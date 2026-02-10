@@ -266,6 +266,7 @@ public:
   int  operand_index(uint operand) const;
   int  operand_index(const MachOper *oper) const;
   int  operand_index(Node* m) const;
+  int  operand_num_edges(uint operand) const;
 
   // Register class input is expected in
   virtual const RegMask &in_RegMask(uint) const;

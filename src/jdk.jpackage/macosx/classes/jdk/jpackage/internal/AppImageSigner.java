@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -40,14 +39,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
@@ -61,9 +61,10 @@ final class AppImageSigner {
                 throw handleCodesignException(app, ex);
             } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof CodesignException codesignEx) {
-                    handleCodesignException(app, codesignEx);
+                    throw handleCodesignException(app, codesignEx);
+                } else {
+                    throw ex;
                 }
-                throw ex;
             }
         });
     }
@@ -163,13 +164,9 @@ final class AppImageSigner {
         }
     }
 
-    private static CodesignException handleCodesignException(MacApplication app, CodesignException ex) {
-        // Log output of "codesign" in case of error. It should help
-        // user to diagnose issues when using --mac-app-image-sign-identity.
-        // In addition add possible reason for failure. For example
-        // "--app-content" can fail "codesign".
-
-        if (!app.contentDirs().isEmpty()) {
+    private static IOException handleCodesignException(MacApplication app, CodesignException ex) {
+        if (!app.contentDirSources().isEmpty()) {
+            // Additional content may cause signing error.
             Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 
@@ -180,19 +177,13 @@ final class AppImageSigner {
             Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
         }
 
-        // Log "codesign" output
-        Log.info(I18N.format("error.tool.failed.with.output", "codesign"));
-        Log.info(Stream.of(ex.getOutput()).collect(joining("\n")).strip());
-
-        return ex;
+        return ex.getCause();
     }
 
     private static boolean isXcodeDevToolsInstalled() {
-        try {
-            return Executor.of("/usr/bin/xcrun", "--help").setQuiet(true).execute() == 0;
-        } catch (IOException ex) {
-            return false;
-        }
+        return Result.of(
+                Executor.of("/usr/bin/xcrun", "--help").setQuiet(true)::executeExpectSuccess,
+                IOException.class).hasValue();
     }
 
     private static void unsign(Path path) throws IOException {

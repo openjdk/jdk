@@ -543,6 +543,160 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   BLOCK_COMMENT("} verify_oop");
 }
 
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  assert_different_registers(recv, mdp, t0, t1);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset  == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    increment(Address(mdp, poly_count_offset), DataLayout::counter_increment);
+    return;
+  }
+
+  Register offset = t1;
+
+  Label L_loop_search_receiver, L_loop_search_empty;
+  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  mv(offset, base_receiver_offset);
+  bind(L_loop_search_receiver);
+    add(t0, mdp, offset);
+    ld(t0, Address(t0));
+    beq(recv, t0, L_found_recv);
+  add(offset, offset, receiver_step);
+  sub(t0, offset, end_receiver_offset);
+  bnez(t0, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is full
+  mv(offset, base_receiver_offset);
+  bind(L_loop_search_empty);
+    add(t0, mdp, offset);
+    ld(t0, Address(t0));
+    beqz(t0, L_found_empty);
+  add(offset, offset, receiver_step);
+  sub(t0, offset, end_receiver_offset);
+  bnez(t0, L_loop_search_empty);
+  j(L_polymorphic);
+
+  // Slow: try to install receiver
+  bind(L_found_empty);
+
+  // Atomically swing receiver slot: null -> recv.
+  //
+  // The update uses CAS, which clobbers t0. Therefore, t1
+  // is used to hold the destination address. This is safe because the
+  // offset is no longer needed after the address is computed.
+  add(t1, mdp, offset);
+  weak_cmpxchg(/*addr*/ t1, /*expected*/ zr, /*new*/ recv, Assembler::int64,
+               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::relaxed, /*result*/ t0);
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  j(L_restart);
+
+  // Counter updates:
+  // Increment polymorphic counter instead of receiver slot.
+  bind(L_polymorphic);
+  mv(offset, poly_count_offset);
+  j(L_count_update);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  add(offset, offset, receiver_to_count_step);
+
+  bind(L_count_update);
+  add(t1, mdp, offset);
+  increment(Address(t1), DataLayout::counter_increment);
+}
+
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) {
     return;
@@ -1233,7 +1387,119 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
   bind(no_set);
 }
 
-// ----------- cmove, compare float -----------
+// ----------- cmove float/double -----------
+
+void MacroAssembler::cmov_fp_eq(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  bne(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_ne(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  beq(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_le(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  bgt(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_leu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  bgtu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_ge(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  blt(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_geu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  bltu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_lt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  bge(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_ltu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  bgeu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_gt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  ble(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_gtu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
+  Label no_set;
+  bleu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// ----------- cmove, compare float/double -----------
 //
 // For CmpF/D + CMoveI/L, ordered ones are quite straight and simple,
 // so, just list behaviour of unordered ones as follow.
@@ -1388,6 +1654,148 @@ void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Regi
     double_ble(cmp1, cmp2, no_set, false, true);
   }
   mv(dst, src);
+  bind(no_set);
+}
+
+// ----------- cmove float/double, compare float/double -----------
+
+// Move src to dst only if cmp1 == cmp2,
+// otherwise leave dst unchanged, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 != cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 != cmp2, including the case of NaN
+    // not jump (i.e. move src to dst) if cmp1 == cmp2
+    float_bne(cmp1, cmp2, no_set);
+  } else {
+    double_bne(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// Keep dst unchanged only if cmp1 == cmp2,
+// otherwise move src to dst, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 == cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 == cmp2
+    // not jump (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
+    float_beq(cmp1, cmp2, no_set);
+  } else {
+    double_beq(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 < cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 > cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 > cmp2
+    // not jump (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
+    float_bgt(cmp1, cmp2, no_set);
+  } else {
+    double_bgt(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 < cmp2 or either is NaN
+    // not jump (i.e. move src to dst) if cmp1 >= cmp2
+    float_blt(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_blt(cmp1, cmp2, no_set, false, true);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 <= cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 >= cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 >= cmp2
+    // not jump (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
+    float_bge(cmp1, cmp2, no_set);
+  } else {
+    double_bge(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 <= cmp2 or either is NaN
+    // not jump (i.e. move src to dst) if cmp1 > cmp2
+    float_ble(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_ble(cmp1, cmp2, no_set, false, true);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
   bind(no_set);
 }
 
@@ -4856,9 +5264,8 @@ void MacroAssembler::get_thread(Register thread) {
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  CardTable::CardValue* byte_map_base =
-    ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
-  mv(reg, (uint64_t)byte_map_base);
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
+  mv(reg, (uint64_t)ctbs->card_table_base_const());
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -4933,7 +5340,6 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
   assert (oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int index = oop_recorder()->find_index(k);
-  assert(!Universe::heap()->is_in(k), "should not be an oop");
 
   narrowKlass nk = CompressedKlassPointers::encode(k);
   relocate(metadata_Relocation::spec(index), [&] {

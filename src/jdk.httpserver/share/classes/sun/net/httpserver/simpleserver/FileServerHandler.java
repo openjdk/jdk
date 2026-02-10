@@ -367,7 +367,7 @@ public final class FileServerHandler implements HttpHandler {
 
     // A non-exhaustive map of reserved-HTML and special characters to their
     // equivalent entity.
-    private static final Map<Integer,String> RESERVED_CHARS = Map.of(
+    private static final Map<Integer, String> RESERVED_CHARS = Map.of(
             (int) '&'  , "&amp;"   ,
             (int) '<'  , "&lt;"    ,
             (int) '>'  , "&gt;"    ,

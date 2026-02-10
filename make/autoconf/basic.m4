@@ -353,7 +353,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       [set up toolchain on Mac OS using a path to an Xcode installation])])
 
   UTIL_DEPRECATED_ARG_WITH(sys-root)
-  UTIL_DEPRECATED_ARG_WITH(tools-dir)
+
+  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
+      [Point to a nonstandard Visual Studio installation location on Windows by
+      specifying any existing directory 2 or 3 levels below the installation
+      root.])]
+  )
 
   if test "x$with_xcode_path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then

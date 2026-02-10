@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.MacSign.DigestAlgorithm.SHA256;
 
 import java.nio.file.Path;
@@ -30,12 +29,11 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateHash;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 
@@ -44,12 +42,10 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
  */
 public final class MacSignVerify {
 
-    public static void verifyAppImageSigned(
-            JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyAppImageSigned(JPackageCommand cmd, ResolvableCertificateRequest certRequest) {
 
-        cmd.verifyIsOfType(PackageType.MAC);
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
         Objects.requireNonNull(certRequest);
-        Objects.requireNonNull(keychain);
 
         final Path bundleRoot;
         if (cmd.isImagePackageType()) {
@@ -66,20 +62,19 @@ public final class MacSignVerify {
         });
 
         // Set to "null" if the sign origin is not found, instead of bailing out with an exception.
-        // Let is fail in the following TKit.assertEquals() call with a proper log message.
+        // Let it fail in the following TKit.assertEquals() call with a proper log message.
         var signOrigin = findSpctlSignOrigin(SpctlType.EXEC, bundleRoot).orElse(null);
 
         TKit.assertEquals(certRequest.name(), signOrigin,
                 String.format("Check [%s] has sign origin as expected", bundleRoot));
     }
 
-    public static void verifyPkgSigned(JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyPkgSigned(JPackageCommand cmd, ResolvableCertificateRequest certRequest) {
         cmd.verifyIsOfType(PackageType.MAC_PKG);
-        assertPkgSigned(cmd.outputBundle(), certRequest,
-                Objects.requireNonNull(keychain.mapCertificateRequests().get(certRequest)));
+        assertPkgSigned(cmd.outputBundle(), certRequest);
     }
 
-    public static void assertSigned(Path path, CertificateRequest certRequest) {
+    public static void assertSigned(Path path, ResolvableCertificateRequest certRequest) {
         assertSigned(path);
         TKit.assertEquals(certRequest.name(), findCodesignSignOrigin(path).orElse(null),
                 String.format("Check [%s] signed with certificate", path));
@@ -92,10 +87,14 @@ public final class MacSignVerify {
     }
 
     public static Optional<PListReader> findEntitlements(Path path) {
-        final var exec = Executor.of("/usr/bin/codesign", "-d", "--entitlements", "-", "--xml", path.toString()).saveOutput().dumpOutput();
+        final var exec = Executor.of(
+                "/usr/bin/codesign",
+                "-d",
+                "--entitlements", "-",
+                "--xml", path.toString()).saveOutput().dumpOutput().binaryOutput();
         final var result = exec.execute();
-        var xml = result.stdout().getOutput();
-        if (xml.isEmpty()) {
+        var xml = result.byteStdout();
+        if (xml.length == 0) {
             return Optional.empty();
         } else {
             return Optional.of(MacHelper.readPList(xml));
@@ -105,6 +104,10 @@ public final class MacSignVerify {
     public static void assertUnsigned(Path path) {
         TKit.assertTrue(findSpctlSignOrigin(SpctlType.EXEC, path).isEmpty(),
                 String.format("Check [%s] unsigned", path));
+    }
+
+    public static void assertPkgSigned(Path path, ResolvableCertificateRequest certRequest) {
+        assertPkgSigned(path, certRequest.certRequest(), certRequest.cert());
     }
 
     public static void assertPkgSigned(Path path, CertificateRequest certRequest, X509Certificate cert) {
@@ -135,17 +138,33 @@ public final class MacSignVerify {
     public static final String ADHOC_SIGN_ORIGIN = "-";
 
     public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path) {
-        final var exec = Executor.of("/usr/sbin/spctl", "-vv", "--raw", "--assess", "--type", type.value(), path.toString()).saveOutput().discardStderr();
-        final var result = exec.executeWithoutExitCodeCheck();
-        TKit.assertTrue(Set.of(0, 3).contains(result.exitCode()),
-                String.format("Check exit code of command %s is either 0 or 3", exec.getPrintableCommandLine()));
-        return toSupplier(() -> {
-            try {
-                return Optional.of(new PListReader(String.join("", result.getOutput()).getBytes()).queryValue("assessment:originator"));
-            } catch (NoSuchElementException ex) {
-                return Optional.<String>empty();
+        return findSpctlSignOrigin(type, path, false);
+    }
+
+    public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path, boolean acceptBrokenSignature) {
+        final var exec = Executor.of(
+                "/usr/sbin/spctl",
+                "-vv",
+                "--raw",
+                "--assess",
+                "--type", type.value(),
+                path.toString()).saveOutput().discardStderr().binaryOutput();
+        Executor.Result result;
+        if (acceptBrokenSignature) {
+            result = exec.executeWithoutExitCodeCheck();
+            switch (result.getExitCode()) {
+                case 0, 3 -> {
+                    // NOP
+                }
+                default -> {
+                    // No plist XML to process.
+                    return Optional.empty();
+                }
             }
-        }).get();
+        } else {
+            result = exec.execute(0, 3);
+        }
+        return MacHelper.readPList(result.byteStdout()).findValue("assessment:originator");
     }
 
     public static Optional<String> findCodesignSignOrigin(Path path) {
@@ -173,7 +192,7 @@ public final class MacSignVerify {
         } else if (result.getExitCode() == 1 && result.getFirstLineOfOutput().endsWith("code object is not signed at all")) {
             return Optional.empty();
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
             return null; // Unreachable
         }
     }
@@ -205,7 +224,7 @@ public final class MacSignVerify {
                 TKit.trace("Try /usr/bin/codesign again with `sudo`");
                 assertSigned(path, true);
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
         }
     }
 
@@ -262,15 +281,15 @@ public final class MacSignVerify {
                     signIdentities.add(new SignIdentity(name, fingerprint));
                 } while (lineIt.hasNext());
                 return signIdentities;
-            } catch (Throwable t) {
-                t.printStackTrace();
-                reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                reportUnexpectedCommandOutcome(result);
                 return null; // Unreachable
             }
         } else if (result.getExitCode() == 1 && result.getOutput().getLast().endsWith("Status: no signature")) {
             return List.of();
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
             return null; // Unreachable
         }
     }
@@ -282,14 +301,13 @@ public final class MacSignVerify {
         }
     }
 
-    private static void reportUnexpectedCommandOutcome(String printableCommandLine, Executor.Result result) {
-        Objects.requireNonNull(printableCommandLine);
+    private static void reportUnexpectedCommandOutcome(Executor.Result result) {
         Objects.requireNonNull(result);
         TKit.trace(String.format("Command %s exited with exit code %d and the following output:",
-                printableCommandLine, result.getExitCode()));
+                result.getPrintableCommandLine(), result.getExitCode()));
         result.getOutput().forEach(TKit::trace);
         TKit.trace("Done");
-        TKit.assertUnexpected(String.format("Outcome of command %s", printableCommandLine));
+        TKit.assertUnexpected(String.format("Outcome of command %s", result.getPrintableCommandLine()));
     }
 
     private static final Pattern SIGN_IDENTITY_NAME_REGEXP = Pattern.compile("^\\s+\\d+\\.\\s+(.*)$");

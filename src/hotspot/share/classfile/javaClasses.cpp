@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1091,10 +1091,6 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Set the modifiers flag.
   u2 computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
-  // Set the raw access_flags, this is used by reflection instead of modifier flags.
-  // The Java code for array classes gets the access flags from the element type.
-  assert(!k->is_array_klass() || k->access_flags().as_unsigned_short() == 0, "access flags are not set for arrays");
-  set_raw_access_flags(mirror(), k->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1103,6 +1099,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
 
   // It might also have a component mirror.  This mirror must already exist.
   if (k->is_array_klass()) {
+    // The Java code for array classes gets the access flags from the element type.
+    set_raw_access_flags(mirror(), 0);
     if (k->is_typeArray_klass()) {
       BasicType type = TypeArrayKlass::cast(k)->element_type();
       if (is_scratch) {
@@ -1129,6 +1127,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
     // and java_mirror in this klass.
   } else {
     assert(k->is_instance_klass(), "Must be");
+    // Set the raw access_flags, this is used by reflection instead of modifier flags.
+    set_raw_access_flags(mirror(), InstanceKlass::cast(k)->access_flags().as_unsigned_short());
     initialize_mirror_fields(InstanceKlass::cast(k), mirror, protection_domain, classData, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If any of the fields throws an exception like OOM remove the klass field
@@ -1261,6 +1261,10 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
     ResourceMark rm(THREAD);
     log_trace(aot, heap, mirror)(
         "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
+  }
+
+  if (CDSConfig::is_dumping_heap()) {
+    create_scratch_mirror(k, CHECK_(false));
   }
 
   return true;
@@ -1684,8 +1688,8 @@ int java_lang_Thread::_name_offset;
 int java_lang_Thread::_contextClassLoader_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
-int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
-int java_lang_Thread::_jvmti_is_in_VTMS_transition_offset;
+int java_lang_Thread::_vthread_transition_disable_count_offset;
+int java_lang_Thread::_is_in_vthread_transition_offset;
 int java_lang_Thread::_interrupted_offset;
 int java_lang_Thread::_interruptLock_offset;
 int java_lang_Thread::_tid_offset;
@@ -1745,34 +1749,34 @@ void java_lang_Thread::set_jvmti_thread_state(oop java_thread, JvmtiThreadState*
   java_thread->address_field_put(_jvmti_thread_state_offset, (address)state);
 }
 
-int java_lang_Thread::VTMS_transition_disable_count(oop java_thread) {
-  return java_thread->int_field(_jvmti_VTMS_transition_disable_count_offset);
+int java_lang_Thread::vthread_transition_disable_count(oop java_thread) {
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
+  return AtomicAccess::load(addr);
 }
 
-void java_lang_Thread::inc_VTMS_transition_disable_count(oop java_thread) {
-  assert(JvmtiVTMSTransition_lock->owned_by_self(), "Must be locked");
-  int val = VTMS_transition_disable_count(java_thread);
-  java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val + 1);
+void java_lang_Thread::inc_vthread_transition_disable_count(oop java_thread) {
+  assert(VThreadTransition_lock->owned_by_self(), "Must be locked");
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
+  int val = AtomicAccess::load(addr);
+  AtomicAccess::store(addr, val + 1);
 }
 
-void java_lang_Thread::dec_VTMS_transition_disable_count(oop java_thread) {
-  assert(JvmtiVTMSTransition_lock->owned_by_self(), "Must be locked");
-  int val = VTMS_transition_disable_count(java_thread);
-  assert(val > 0, "VTMS_transition_disable_count should never be negative");
-  java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val - 1);
+void java_lang_Thread::dec_vthread_transition_disable_count(oop java_thread) {
+  assert(VThreadTransition_lock->owned_by_self(), "Must be locked");
+  jint* addr = java_thread->field_addr<jint>(_vthread_transition_disable_count_offset);
+  int val = AtomicAccess::load(addr);
+  AtomicAccess::store(addr, val - 1);
 }
 
-bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
-  return java_thread->bool_field_volatile(_jvmti_is_in_VTMS_transition_offset);
+bool java_lang_Thread::is_in_vthread_transition(oop java_thread) {
+  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_vthread_transition_offset);
+  return AtomicAccess::load(addr);
 }
 
-void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
-  assert(is_in_VTMS_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
-  java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
-}
-
-int java_lang_Thread::is_in_VTMS_transition_offset() {
-  return _jvmti_is_in_VTMS_transition_offset;
+void java_lang_Thread::set_is_in_vthread_transition(oop java_thread, bool val) {
+  assert(is_in_vthread_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
+  jboolean* addr = java_thread->field_addr<jboolean>(_is_in_vthread_transition_offset);
+  AtomicAccess::store(addr, (jboolean)val);
 }
 
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
@@ -1904,16 +1908,16 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
   return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
-// Obtain stack trace for platform or mounted virtual thread.
-// If jthread is a virtual thread and it has been unmounted (or remounted to different carrier) the method returns null.
-// The caller (java.lang.VirtualThread) handles returned nulls via retry.
+// Obtain stack trace for a platform or virtual thread.
 oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
   JavaThread* java_thread = nullptr;
-  oop thread_oop;
+  oop thread_oop = nullptr;
 
   bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
-  if (!has_java_thread) {
+  assert(thread_oop != nullptr, "Missing Thread oop");
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+  if (!has_java_thread && !is_virtual) {
     return nullptr;
   }
 
@@ -1921,12 +1925,11 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   public:
     const Handle _thread_h;
     int _depth;
-    bool _retry_handshake;
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
     GetStackTraceHandshakeClosure(Handle thread_h) :
-        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0), _retry_handshake(false),
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0),
         _methods(nullptr), _bcis(nullptr) {
     }
     ~GetStackTraceHandshakeClosure() {
@@ -1934,37 +1937,15 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       delete _bcis;
     }
 
-    bool read_reset_retry() {
-      bool ret = _retry_handshake;
-      // If we re-execute the handshake this method need to return false
-      // when the handshake cannot be performed. (E.g. thread terminating)
-      _retry_handshake = false;
-      return ret;
-    }
-
     void do_thread(Thread* th) {
-      if (!Thread::current()->is_Java_thread()) {
-        _retry_handshake = true;
+      JavaThread* java_thread = th != nullptr ? JavaThread::cast(th) : nullptr;
+      if (java_thread != nullptr && !java_thread->has_last_Java_frame()) {
+        // stack trace is empty
         return;
       }
 
-      JavaThread* java_thread = JavaThread::cast(th);
-
-      if (!java_thread->has_last_Java_frame()) {
-        return;
-      }
-
-      bool carrier = false;
-      if (java_lang_VirtualThread::is_instance(_thread_h())) {
-        // Ensure _thread_h is still mounted to java_thread.
-        const ContinuationEntry* ce = java_thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_h())) {
-          // Target thread has been unmounted.
-          return;
-        }
-      } else {
-        carrier = (java_thread->vthread_continuation() != nullptr);
-      }
+      bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
+      bool vthread_carrier = !is_virtual && (java_thread->vthread_continuation() != nullptr);
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
@@ -1975,7 +1956,10 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
-      for (vframeStream vfst(java_thread, false, false, carrier); // we don't process frames as we don't care about oops
+      vframeStream vfst(java_thread != nullptr
+        ? vframeStream(java_thread, false, false, vthread_carrier)  // we don't process frames as we don't care about oops
+        : vframeStream(java_lang_VirtualThread::continuation(_thread_h())));
+      for (;
            !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
            vfst.next()) {
 
@@ -1997,9 +1981,11 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
   GetStackTraceHandshakeClosure gsthc(Handle(THREAD, thread_oop));
-  do {
-   Handshake::execute(&gsthc, &tlh, java_thread);
-  } while (gsthc.read_reset_retry());
+  if (is_virtual) {
+    Handshake::execute(&gsthc, thread_oop);
+  } else {
+    Handshake::execute(&gsthc, &tlh, java_thread);
+  }
 
   // Stop if no stack trace is found.
   if (gsthc._depth == 0) {
@@ -2196,7 +2182,7 @@ void java_lang_VirtualThread::set_timeout(oop vthread, jlong value) {
 
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
-  switch (state & ~SUSPENDED) {
+  switch (state) {
     case NEW:
       status = JavaThreadStatus::NEW;
       break;
@@ -4297,10 +4283,6 @@ int jdk_internal_foreign_abi_NativeEntryPoint::_downcall_stub_address_offset;
   macro(_method_type_offset,           k, "methodType",          java_lang_invoke_MethodType_signature, false); \
   macro(_downcall_stub_address_offset, k, "downcallStubAddress", long_signature, false);
 
-bool jdk_internal_foreign_abi_NativeEntryPoint::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
-
 void jdk_internal_foreign_abi_NativeEntryPoint::compute_offsets() {
   InstanceKlass* k = vmClasses::NativeEntryPoint_klass();
   NEP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
@@ -4336,10 +4318,6 @@ int jdk_internal_foreign_abi_ABIDescriptor::_scratch2_offset;
   macro(_shadowSpace_offset,     k, "shadowSpace",     int_signature, false); \
   macro(_scratch1_offset,        k, "scratch1",        jdk_internal_foreign_abi_VMStorage_signature, false); \
   macro(_scratch2_offset,        k, "scratch2",        jdk_internal_foreign_abi_VMStorage_signature, false);
-
-bool jdk_internal_foreign_abi_ABIDescriptor::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
 
 void jdk_internal_foreign_abi_ABIDescriptor::compute_offsets() {
   InstanceKlass* k = vmClasses::ABIDescriptor_klass();

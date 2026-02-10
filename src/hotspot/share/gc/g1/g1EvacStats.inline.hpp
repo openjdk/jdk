@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,28 +27,54 @@
 
 #include "gc/g1/g1EvacStats.hpp"
 
-#include "runtime/atomicAccess.hpp"
+inline uint G1EvacStats::regions_filled() const {
+  return _regions_filled.load_relaxed();
+}
+
+inline size_t G1EvacStats::num_plab_filled() const {
+  return _num_plab_filled.load_relaxed();
+}
+
+inline size_t G1EvacStats::region_end_waste() const {
+  return _region_end_waste.load_relaxed();
+}
+
+inline size_t G1EvacStats::direct_allocated() const {
+  return _direct_allocated.load_relaxed();
+}
+
+inline size_t G1EvacStats::num_direct_allocated() const {
+  return _num_direct_allocated.load_relaxed();
+}
+
+inline size_t G1EvacStats::failure_used() const {
+  return _failure_used.load_relaxed();
+}
+
+inline size_t G1EvacStats::failure_waste() const {
+  return _failure_waste.load_relaxed();
+}
 
 inline void G1EvacStats::add_direct_allocated(size_t value) {
-  AtomicAccess::add(&_direct_allocated, value, memory_order_relaxed);
+  _direct_allocated.add_then_fetch(value, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_num_plab_filled(size_t value) {
-  AtomicAccess::add(&_num_plab_filled, value, memory_order_relaxed);
+  _num_plab_filled.add_then_fetch(value, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_num_direct_allocated(size_t value) {
-  AtomicAccess::add(&_num_direct_allocated, value, memory_order_relaxed);
+  _num_direct_allocated.add_then_fetch(value, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_region_end_waste(size_t value) {
-  AtomicAccess::add(&_region_end_waste, value, memory_order_relaxed);
-  AtomicAccess::inc(&_regions_filled, memory_order_relaxed);
+  _region_end_waste.add_then_fetch(value, memory_order_relaxed);
+  _regions_filled.add_then_fetch(1u, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_failure_used_and_waste(size_t used, size_t waste) {
-  AtomicAccess::add(&_failure_used, used, memory_order_relaxed);
-  AtomicAccess::add(&_failure_waste, waste, memory_order_relaxed);
+  _failure_used.add_then_fetch(used, memory_order_relaxed);
+  _failure_waste.add_then_fetch(waste, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_G1_G1EVACSTATS_INLINE_HPP

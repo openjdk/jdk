@@ -145,7 +145,7 @@ void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRe
       // triggers the load-reference barrier (LRB) to copy on reference fetch.
       //
       // Aged humongous continuation regions are handled with their start region.  If an aged regular region has
-      // more garbage than ShenandoahOldGarbageThreshold, we'll promote by evacuation.  If there is room for evacuation
+      // more garbage than the old garbage threshold, we'll promote by evacuation.  If there is room for evacuation
       // in this cycle, the region will be in the collection set.  If there is not room, the region will be promoted
       // by evacuation in some future GC cycle.
 
@@ -177,7 +177,8 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   {
-    const size_t old_garbage_threshold = (region_size_bytes * ShenandoahOldGarbageThreshold) / 100;
+    const size_t old_garbage_threshold =
+      (region_size_bytes * _heap->old_generation()->heuristics()->get_old_garbage_threshold()) / 100;
     assert(!_heap->is_concurrent_old_mark_in_progress(), "Cannot promote in place during old marking");
     assert(region->garbage_before_padded_for_promote() < old_garbage_threshold,
            "Region %zu has too much garbage for promotion", region->index());
@@ -222,7 +223,6 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   // We do not need to scan above TAMS because restored top equals tams
   assert(obj_addr == tams, "Expect loop to terminate when obj_addr equals tams");
 
-
   {
     ShenandoahHeapLocker locker(_heap->lock());
 
@@ -250,6 +250,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     // Transfer this region from young to old, increasing promoted_reserve if available space exceeds plab_min_size()
     _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
     region->set_affiliation(OLD_GENERATION);
+    region->set_promoted_in_place();
   }
 }
 
@@ -288,6 +289,7 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
               r->index(), p2i(r->bottom()), p2i(r->top()));
       // We mark the entire humongous object's range as dirty after loop terminates, so no need to dirty the range here
       r->set_affiliation(OLD_GENERATION);
+      r->set_promoted_in_place();
     }
 
     ShenandoahFreeSet* freeset = _heap->free_set();

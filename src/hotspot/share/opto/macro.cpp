@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1198,8 +1198,8 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 }
 
 
-Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
-  Node* adr = basic_plus_adr(base, offset);
+Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
+  Node* adr = basic_plus_adr(top(), base, offset);
   const TypePtr* adr_type = adr->bottom_type()->is_ptr();
   Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt, MemNode::unordered);
   transform_later(value);
@@ -1207,8 +1207,8 @@ Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, 
 }
 
 
-Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
-  Node* adr = basic_plus_adr(base, offset);
+Node* PhaseMacroExpand::make_store_raw(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
+  Node* adr = basic_plus_adr(top(), base, offset);
   mem = StoreNode::make(_igvn, ctl, mem, adr, nullptr, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
@@ -1753,20 +1753,20 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
                                     Node* size_in_bytes) {
   InitializeNode* init = alloc->initialization();
   // Store the klass & mark bits
-  Node* mark_node = alloc->make_ideal_mark(&_igvn, object, control, rawmem);
+  Node* mark_node = alloc->make_ideal_mark(&_igvn, control, rawmem);
   if (!mark_node->is_Con()) {
     transform_later(mark_node);
   }
-  rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
+  rawmem = make_store_raw(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
 
   if (!UseCompactObjectHeaders) {
-    rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+    rawmem = make_store_raw(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
   }
   int header_size = alloc->minimum_header_size();  // conservatively small
 
   // Array length
   if (length != nullptr) {         // Arrays need length field
-    rawmem = make_store(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
+    rawmem = make_store_raw(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
@@ -1792,6 +1792,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     if (!(UseTLAB && ZeroTLAB)) {
       rawmem = ClearArrayNode::clear_memory(control, rawmem, object,
                                             header_size, size_in_bytes,
+                                            true,
                                             &_igvn);
     }
   } else {
@@ -1914,7 +1915,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
       transform_later(cache_adr);
-      // Address is aligned to execute prefetch to the beginning of cache line size.
+      // Address is aligned to execute prefetch to the beginning of cache line size
+      // (it is important when BIS instruction is used on SPARC as prefetch).
       Node* mask = _igvn.MakeConX(~(intptr_t)(step_size-1));
       cache_adr = new AndXNode(cache_adr, mask);
       transform_later(cache_adr);
@@ -1945,7 +1947,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for ( intx i = 0; i < lines; i++ ) {
-        prefetch_adr = new AddPNode( old_eden_top, new_eden_top,
+        prefetch_adr = new AddPNode( top(), new_eden_top,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode( i_o, prefetch_adr );
@@ -2320,12 +2322,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   // No need for a null check on unlock
 
   // Make the merge point
-  Node *region;
-  Node *mem_phi;
-
-  region  = new RegionNode(3);
-  // create a Phi for the memory state
-  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+  Node* region = new RegionNode(3);
 
   FastUnlockNode *funlock = new FastUnlockNode( ctrl, obj, box );
   funlock = transform_later( funlock )->as_FastUnlock();
@@ -2354,12 +2351,15 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   transform_later(region);
   _igvn.replace_node(_callprojs.fallthrough_proj, region);
 
-  Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory) );
-  mem_phi->init_req(1, memproj );
-  mem_phi->init_req(2, mem);
-  transform_later(mem_phi);
-
-  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
+  if (_callprojs.fallthrough_memproj != nullptr) {
+    // create a Phi for the memory state
+    Node* mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+    Node* memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
+    mem_phi->init_req(1, memproj);
+    mem_phi->init_req(2, mem);
+    transform_later(mem_phi);
+    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
+  }
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
@@ -2378,8 +2378,8 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
       continue;
     }
 
-    Node* iftrue = iff->as_If()->proj_out(1);
-    Node* iffalse = iff->as_If()->proj_out(0);
+    IfTrueNode* iftrue = iff->as_If()->true_proj();
+    IfFalseNode* iffalse = iff->as_If()->false_proj();
     Node* ctrl = iff->in(0);
 
     Node* subklass = nullptr;
@@ -2499,7 +2499,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_ModD ||
                n->Opcode() == Op_ModF ||
-               n->is_OpaqueNotNull()       ||
+               n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
@@ -2547,14 +2547,14 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
       } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
-      } else if (n->is_OpaqueNotNull()) {
-        // Tests with OpaqueNotNull nodes are implicitly known to be true. Replace the node with true. In debug builds,
+      } else if (n->is_OpaqueConstantBool()) {
+        // Tests with OpaqueConstantBool nodes are implicitly known. Replace the node with true/false. In debug builds,
         // we leave the test in the graph to have an additional sanity check at runtime. If the test fails (i.e. a bug),
         // we will execute a Halt node.
 #ifdef ASSERT
         _igvn.replace_node(n, n->in(1));
 #else
-        _igvn.replace_node(n, _igvn.intcon(1));
+        _igvn.replace_node(n, _igvn.intcon(n->as_OpaqueConstantBool()->constant()));
 #endif
         success = true;
       } else if (n->is_OpaqueInitializedAssertionPredicate()) {
@@ -2576,11 +2576,11 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
         // a CMoveL construct now. At least until here, the type could be computed
         // precisely. CMoveL is not so smart, but we can give it at least the best
         // type we know abouot n now.
-        Node* repl = MaxNode::signed_max(n->in(1), n->in(2), _igvn.type(n), _igvn);
+        Node* repl = MinMaxNode::signed_max(n->in(1), n->in(2), _igvn.type(n), _igvn);
         _igvn.replace_node(n, repl);
         success = true;
       } else if (n->Opcode() == Op_MinL) {
-        Node* repl = MaxNode::signed_min(n->in(1), n->in(2), _igvn.type(n), _igvn);
+        Node* repl = MinMaxNode::signed_min(n->in(1), n->in(2), _igvn.type(n), _igvn);
         _igvn.replace_node(n, repl);
         success = true;
       }
@@ -2657,8 +2657,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       case Op_ModD:
       case Op_ModF: {
         CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(),
-                                              mod_macro->_name, TypeRawPtr::BOTTOM);
+        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(), mod_macro->_name);
         call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
         call->init_req(TypeFunc::I_O, C->top());
         call->init_req(TypeFunc::Memory, C->top());

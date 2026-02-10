@@ -222,12 +222,6 @@ public final class CStrike extends PhysicalStrike {
         return getNativeGlyphOutline(getNativeStrikePtr(), glyphCode, x, y);
     }
 
-    // should implement, however not called though any path that is publicly exposed
-    @Override
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        throw new Error("not implemented yet");
-    }
-
     // called from the Sun2D renderer
     @Override
     long getGlyphImagePtr(int glyphCode) {

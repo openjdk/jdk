@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.time.Instant;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -214,16 +215,32 @@ abstract class DomainKeyStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
+        final Instant instant = this.engineGetCreationInstant(alias);
+        return (instant == null) ? null : Date.from(instant);
+    }
+
+    /**
+     * Returns the instant that the entry identified by the given alias was
+     * created.
+     *
+     * @param alias the alias name
+     *
+     * @return the instant that the entry identified by the given alias
+     * was created, or {@code null} if the given alias does not exist
+     *
+     * @since 27
+     */
+    public Instant engineGetCreationInstant(String alias) {
 
         AbstractMap.SimpleEntry<String, Collection<KeyStore>> pair =
             getKeystoresForReading(alias);
-        Date date = null;
+        Instant instant = null;
 
         try {
             String entryAlias = pair.getKey();
             for (KeyStore keystore : pair.getValue()) {
-                date = keystore.getCreationDate(entryAlias);
-                if (date != null) {
+                instant = keystore.getCreationInstant(entryAlias);
+                if (instant != null) {
                     break;
                 }
             }
@@ -231,7 +248,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
             throw new IllegalStateException(e);
         }
 
-        return date;
+        return instant;
     }
 
     @Override
