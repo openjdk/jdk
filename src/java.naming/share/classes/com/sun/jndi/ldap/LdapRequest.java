@@ -62,6 +62,10 @@ final class LdapRequest {
         replies.offer(CANCELLED_MARKER);
     }
 
+    /*
+     * Invoked when the connection on which this (pending) request was made
+     * is closed.
+     */
     void connectionClosed() {
         connectionClosed = true;
         replies.offer(CONN_CLOSED_MARKER);
