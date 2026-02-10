@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3506,6 +3506,59 @@ final class FdLibm {
                 iz = (hz >> 20) - 1023;
             }
             return iz;
+        }
+    }
+
+    /**
+     * Return the Inverse Hyperbolic Sine of x
+     *
+     * Method :
+     *
+     *
+     *      asinh(x) is defined so that asinh(sinh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
+     *      and sinh(asinh(x)) = x, -&infin; &lt; x &lt; &infin;
+     *      It can be written as asinh(x) = sign(x) * ln(|x| + sqrt(x^2 + 1)), -&infin; &lt; x &lt; &infin;
+     *      1. Replace x by |x| as the function is odd.
+     *      2.
+     *          asinh(x) := x, if 1+x^2 = 1,
+     *                   := sign(x)*(log(x)+ln2)) for large |x|, else
+     *                   := sign(x)*log(2|x|+1/(|x|+sqrt(x*x+1))) if|x|>2, else
+     *                   := sign(x)*log1p(|x| + x^2/(1 + sqrt(1+x^2)))
+     *
+     *
+     *
+     * Special cases:
+     *      only asinh(&plusmn;0)=&plusmn;0 is exact for finite x.
+     *      asinh(NaN) is NaN
+     *      asinh(&plusmn;&infin;) is &plusmn;&infin;
+     */
+    static final class Asinh {
+        private static final double ln2 = 6.93147180559945286227e-01;
+        private static final double huge = 1.0e300;
+
+        static double compute(double x) {
+            double t, w;
+            int hx, ix;
+            hx = __HI(x);
+            ix = hx & 0x7fff_ffff;
+            if (ix >= 0x7ff0_0000) {
+                return x + x;                       // x is inf or NaN
+            }
+            if (ix < 0x3e30_0000) {                 // |x| < 2**-28
+                if (huge + x > 1.0) {
+                    return x;                       // return x inexact except 0
+                }
+            }
+            if (ix > 0x41b0_0000) {                 // |x| > 2**28
+                w = Log.compute(Math.abs(x)) + ln2;
+            } else if (ix > 0x4000_0000) {          // 2**28 > |x| > 2.0
+                t = Math.abs(x);
+                w = Log.compute(2.0 * t + 1.0 / (Sqrt.compute(x * x + 1.0) + t));
+            } else {                                // 2.0 > |x| > 2**-28
+                t = x * x;
+                w = Log1p.compute(Math.abs(x) + t / (1.0 + Sqrt.compute(1.0 + t)));
+            }
+            return hx > 0 ? w : -w;
         }
     }
 }
