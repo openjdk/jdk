@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ class oopDesc;
 #define CAN_SHOW_REGISTERS_ON_ASSERT
 extern char* g_assert_poison;
 extern const char* g_assert_poison_read_only;
-#define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X';
+#define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X'
 void initialize_assert_poison();
 void disarm_assert_poison();
 bool handle_assert_poison_fault(const void* ucVoid);
 #else
-#define TOUCH_ASSERT_POISON
+#define TOUCH_ASSERT_POISON ((void)0)
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
 // The DebuggingContext class provides a mechanism for temporarily disabling
@@ -141,6 +141,7 @@ public:
 // assertions
 #ifndef ASSERT
 #define vmassert_with_file_and_line(p, file, line, ...)
+#define vmassert_with_file_and_line_expr(p, file, line, ...) ((void)0)
 #define vmassert(p, ...)
 #else
 // Note: message says "assert" rather than "vmassert" for backward
@@ -154,6 +155,14 @@ do {                                                                   \
     report_vm_error(file, line, "assert(" #p ") failed", __VA_ARGS__); \
   }                                                                    \
 } while (0)
+// A version of vmassert_with_file_and_line thon consists only of expressions
+// and can be used in conjuction with the comma operator.
+#define vmassert_with_file_and_line_expr(p, file, line, ...)           \
+(VMASSERT_CHECK_PASSED(p) ?                                            \
+  ((void)0) :                                                          \
+  TOUCH_ASSERT_POISON,                                                 \
+  report_vm_error(file, line, "assert(" #p ") failed", __VA_ARGS__)    \
+)
 #define vmassert(p, ...) vmassert_with_file_and_line(p, __FILE__, __LINE__, __VA_ARGS__)
 #endif
 
