@@ -133,7 +133,7 @@ public class TestVectorBroadcastReassociations {
      * LONG
      * ======================= */
 
-    static final VectorSpecies<Long> LSP = LongVector.SPECIES_256;
+    static final VectorSpecies<Long> LSP = LongVector.SPECIES_PREFERRED;
     static long la = 42L, lb = 13L;
 
     @Test
@@ -180,7 +180,7 @@ public class TestVectorBroadcastReassociations {
      * FLOAT
      * ======================= */
 
-    static final VectorSpecies<Float> FSP = FloatVector.SPECIES_256;
+    static final VectorSpecies<Float> FSP = FloatVector.SPECIES_PREFERRED;
     static float fa = 9.0f, fb = 4.0f;
 
     @Test
@@ -268,7 +268,7 @@ public class TestVectorBroadcastReassociations {
      * DOUBLE
      * ======================= */
 
-    static final VectorSpecies<Double> DSP = DoubleVector.SPECIES_256;
+    static final VectorSpecies<Double> DSP = DoubleVector.SPECIES_PREFERRED;
     static double da = 16.0, db = 3.0;
 
     @Test
@@ -387,6 +387,90 @@ public class TestVectorBroadcastReassociations {
                            IntVector.fromArray(ISP, intIn, 0)
                                     .lanewise(VectorOperators.ADD,
                                               IntVector.broadcast(ISP, ib)))
+                 .intoArray(intOut, 0);
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        counts = { IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.ADD_I, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    @Warmup(value = 10000)
+    static void test_reassociation3() {
+        IntVector.broadcast(ISP, ia)
+                 .lanewise(VectorOperators.ADD,
+                           IntVector.fromArray(ISP, intIn, 0))
+                 .lanewise(VectorOperators.ADD,
+                           IntVector.broadcast(ISP, ib))
+                 .intoArray(intOut, 0);
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        counts = { IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.ADD_I, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    @Warmup(value = 10000)
+    static void test_reassociation4() {
+        IntVector.fromArray(ISP, intIn, 0)
+                 .lanewise(VectorOperators.ADD,
+                           IntVector.broadcast(ISP, ia))
+                 .lanewise(VectorOperators.ADD,
+                           IntVector.broadcast(ISP, ib))
+                 .intoArray(intOut, 0);
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    @Warmup(value = 10000)
+    static void test_reassociation5() {
+        IntVector.broadcast(ISP, ia)
+                 .lanewise(VectorOperators.MUL,
+                           IntVector.broadcast(ISP, ib)
+                                    .lanewise(VectorOperators.MUL,
+                                              IntVector.fromArray(ISP, intIn, 0)))
+                 .intoArray(intOut, 0);
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    @Warmup(value = 10000)
+    static void test_reassociation6() {
+        IntVector.broadcast(ISP, ia)
+                 .lanewise(VectorOperators.MUL,
+                           IntVector.fromArray(ISP, intIn, 0)
+                                    .lanewise(VectorOperators.MUL,
+                                              IntVector.broadcast(ISP, ib)))
+                 .intoArray(intOut, 0);
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    @Warmup(value = 10000)
+    static void test_reassociation7() {
+        IntVector.broadcast(ISP, ia)
+                 .lanewise(VectorOperators.MUL,
+                           IntVector.fromArray(ISP, intIn, 0))
+                 .lanewise(VectorOperators.MUL,
+                           IntVector.broadcast(ISP, ib))
+                 .intoArray(intOut, 0);
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    @Warmup(value = 10000)
+    static void test_reassociation8() {
+        IntVector.fromArray(ISP, intIn, 0)
+                 .lanewise(VectorOperators.MUL,
+                           IntVector.broadcast(ISP, ia))
+                 .lanewise(VectorOperators.MUL,
+                           IntVector.broadcast(ISP, ib))
                  .intoArray(intOut, 0);
     }
 }

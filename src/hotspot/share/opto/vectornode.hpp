@@ -157,6 +157,7 @@ class VectorNode : public TypeNode {
   static Node* scalar_node_factory(Compile* c, int sopc, Node* control, Node* in1, Node* in2, Node* in3);
 
   bool can_push_broadcasts_across_vector_operation(BasicType bt);
+  Node* push_broadcast_across_vector_operation(PhaseGVN* phase);
 
   static int shift_count_opcode(int opc);
 

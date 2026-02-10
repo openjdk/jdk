@@ -387,7 +387,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
       switch (bt) {
         case T_BOOLEAN:
         case T_CHAR:
-          assert(!enable_assertions, "boolean and char are signed, not implemented for Min");
+          assert(!enable_assertions, "boolean and char are unsigned, not implemented for Min");
           return 0;
         case T_BYTE:
         case T_SHORT:
@@ -408,7 +408,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
       switch (bt) {
         case T_BOOLEAN:
         case T_CHAR:
-          assert(!enable_assertions, "boolean and char are signed, not implemented for Max");
+          assert(!enable_assertions, "boolean and char are unsigned, not implemented for Max");
           return 0;
         case T_BYTE:
         case T_SHORT:
@@ -1292,8 +1292,15 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
   return cloned_parent;
 }
 
+// Try to reassociate commutative vector operations using following ideal transformation,
+// this will facilitate strength reducing vector operation with all broadcasted inputs to
+// scalar operation.
+//
+// VectorOperation (VectorBroadcast INP1) (VectorOperation (VectorBroadcast INP2) INP3) =>
+//    VectorOperation (VectorOperation (VectorBroadcast INP1) (VectorBroadcast INP2)) INP3
+//
 Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
-  if (is_commutative_vector_operation(Opcode())) {
+  if (is_commutative_vector_operation(Opcode()) && is_integral_type(vect_type()->element_basic_type())) {
     if (in(1)->Opcode() == Op_Replicate && in(2)->Opcode() == Opcode()) {
       Node* in2_1 = in(2)->in(1);
       Node* in2_2 = in(2)->in(2);
@@ -1316,20 +1323,13 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
   return nullptr;
 }
 
-
-Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* n = ideal_partial_operations(phase, this, vect_type());
-  if (n != nullptr) {
-    return n;
-  }
-
-  // Sort inputs of commutative non-predicated vector operations to help value numbering.
-  if (should_swap_inputs_to_help_global_value_numbering()) {
-    swap_edges(1, 2);
-  }
-
-  // VectorOperation (VectorBroadcast INP1,  VectorBroadcast INP2) =>
-  //   VectorBroadcast (ScalarOperation INP1, INP2)
+// Convert vector operation with all broadcasted inputs to scalar operation using following
+// ideal transformation.
+//
+// VectorOperation (VectorBroadcast INP1,  VectorBroadcast INP2) =>
+//   VectorBroadcast (ScalarOperation INP1, INP2)
+//
+Node* VectorNode::push_broadcast_across_vector_operation(PhaseGVN* phase) {
   BasicType bt = vect_type()->element_basic_type();
   if (can_push_broadcasts_across_vector_operation(bt)) {
 
@@ -1356,10 +1356,25 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new ReplicateNode(sop, vect_type());
     }
   }
+  return nullptr;
+}
 
-  // Reassociate commutative vector operations
-  // VectorOperation (VectorBroadcast INP1) (VectorOperation (VectorBroadcast INP2) INP3) =>
-  //    VectorOperation (VectorOperation (VectorBroadcast INP1) (VectorBroadcast INP2)) INP3
+Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
+  }
+
+  // Sort inputs of commutative non-predicated vector operations to help value numbering.
+  if (should_swap_inputs_to_help_global_value_numbering()) {
+    swap_edges(1, 2);
+  }
+
+  n = push_broadcast_across_vector_operation(phase);
+  if (n != nullptr) {
+    return n;
+  }
+
   return reassociate_vector_operation(phase);
 }
 
