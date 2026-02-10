@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,19 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
-
-/*
+/**
  * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutWithProxyAsync
+ * @bug 8374516
+ * @summary Regression test for -XX:+UseAESCTRIntrinsics -XX:-UseAES crash
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires vm.debug
+ * @run main/othervm -XX:+UseAESCTRIntrinsics -XX:-UseAES compiler.cpuflags.TestUseAESCTRIntrinsicsWithUseAESDisabled
  */
+package compiler.cpuflags;
 
-public class ConnectTimeoutWithProxyAsync extends AbstractConnectTimeout {
+public class TestUseAESCTRIntrinsicsWithUseAESDisabled {
 
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutWithProxyAsync(Version requestVersion,
-                                      String scheme,
-                                      String method,
-                                      Duration connectTimeout,
-                                      Duration requestTimeout)
-    {
-        super.timeoutWithProxyAsync(requestVersion, scheme, method, connectTimeout, requestTimeout);
+    public static void main(String[] args) {
+        System.out.println("passed");
     }
 }
