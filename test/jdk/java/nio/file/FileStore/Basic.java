@@ -56,7 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
@@ -94,17 +93,20 @@ public class Basic {
         }
     }
 
-
+    /*
+     * Test: Directory should be on FileStore that is writable
+     */
     @ParameterizedTest
     @MethodSource("factory")
-    @DisplayName("Test: Directory should be on FileStore that is writable")
     public void testDirectoryWritable(Path dir) throws IOException {
         assertTrue(!Files.getFileStore(dir).isReadOnly());
     }
 
+    /*
+     * Test: Two files should have the same FileStore
+     */
     @ParameterizedTest
     @MethodSource("factory")
-    @DisplayName("Test: Two files should have the same FileStore")
     public void testFileStoreEquality(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
@@ -115,9 +117,11 @@ public class Basic {
         assertTrue(store1.hashCode() == store2.hashCode());
     }
 
+    /*
+     * Test: FileStore.equals() should not be case sensitive
+     */
     @ParameterizedTest
     @MethodSource("factory")
-    @DisplayName("Test: FileStore.equals() should not be case sensitive")
     @EnabledOnOs({OS.WINDOWS})
     public void testFileStoreCaseSensitivity(Path dir) throws IOException {
         FileStore upper = Files.getFileStore(Path.of("C:\\"));
@@ -125,9 +129,11 @@ public class Basic {
         assertTrue(lower.equals(upper));
     }
 
+    /*
+     * Test: File and FileStore attributes
+     */
     @ParameterizedTest
     @MethodSource("factory")
-    @DisplayName("Test: File and FileStore attributes")
     public void testAttributes(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
@@ -141,9 +147,11 @@ public class Basic {
         testFileAttributes(dir, UserDefinedFileAttributeView.class, "user");
     }
 
+    /*
+     * Test: Space attributes
+     */
     @ParameterizedTest
     @MethodSource("factory")
-    @DisplayName("Test: Space attributes")
     public void testSpaceAttributes(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
         Path file2 = Files.createFile(dir.resolve("bar"));
@@ -165,9 +173,11 @@ public class Basic {
                        (Long)store1.getAttribute("usableSpace"));
     }
 
+    /*
+     * Test: Enumerate all FileStores
+     */
     @ParameterizedTest
     @MethodSource("factory")
-    @DisplayName("Test: Enumerate all FileStores")
     public void testEnumerateFileStores(Path dir) throws IOException {
         assumeTrue(FileUtils.areMountPointsAccessibleAndUnique());
         List<FileStore> stores = StreamSupport.stream(FileSystems.getDefault()
