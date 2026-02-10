@@ -1822,7 +1822,7 @@ void AOTRuntimeConstants::initialize_from_runtime() {
       _aot_runtime_constants._card_table_address = nullptr;
     } else
 #endif
-    _aot_runtime_constants._card_table_address = ci_card_table_address_as<address>());
+    _aot_runtime_constants._card_table_address = ci_card_table_address_as<address>();
     _aot_runtime_constants._grain_shift = ctbs->grain_shift();
   }
 }
