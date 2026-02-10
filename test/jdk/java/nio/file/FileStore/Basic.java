@@ -52,9 +52,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -85,7 +83,7 @@ public class Basic {
                                                                  String viewName) throws IOException {
         FileStore store = Files.getFileStore(file);
         boolean supported = store.supportsFileAttributeView(viewClass);
-        assertTrue(store.supportsFileAttributeView(viewName) == supported);
+        assertEquals(store.supportsFileAttributeView(viewName), supported);
         // If the file attribute view is supported by the FileStore then
         // Files.getFileAttributeView should return that view
         if (supported) {
@@ -99,7 +97,7 @@ public class Basic {
     @ParameterizedTest
     @MethodSource("factory")
     public void testDirectoryWritable(Path dir) throws IOException {
-        assertTrue(!Files.getFileStore(dir).isReadOnly());
+        assertFalse(Files.getFileStore(dir).isReadOnly());
     }
 
     /*
@@ -112,13 +110,13 @@ public class Basic {
         Path file2 = Files.createFile(dir.resolve("bar"));
         FileStore store1 = Files.getFileStore(file1);
         FileStore store2 = Files.getFileStore(file2);
-        assertTrue(store1.equals(store2));
-        assertTrue(store2.equals(store1));
-        assertTrue(store1.hashCode() == store2.hashCode());
+        assertEquals(store1, store2);
+        assertEquals(store2, store1);
+        assertEquals(store1.hashCode(), store2.hashCode());
     }
 
     /*
-     * Test: FileStore.equals() should not be case sensitive
+     * Test: FileStore should not be case sensitive
      */
     @ParameterizedTest
     @MethodSource("factory")
@@ -126,7 +124,7 @@ public class Basic {
     public void testFileStoreCaseSensitivity(Path dir) throws IOException {
         FileStore upper = Files.getFileStore(Path.of("C:\\"));
         FileStore lower = Files.getFileStore(Path.of("c:\\"));
-        assertTrue(lower.equals(upper));
+        assertSame(lower, upper);
     }
 
     /*
