@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,12 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.zip.ZipException;
 
-/**
- * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
- */
 public class ZipFileSystemProvider extends FileSystemProvider {
     private final Map<Path, ZipFileSystem> filesystems = new HashMap<>();
 
@@ -121,10 +119,19 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         try {
             return new ZipFileSystem(this, path, env);
         } catch (ZipException ze) {
-            String pname = path.toString();
-            if (pname.endsWith(".zip") || pname.endsWith(".jar"))
+            // propagate the ZipException if the Path corresponds to a ZIP, JAR or a JMOD
+            // file. for others, raise a UnsupportedOperationException.
+            String fname = path.getFileName().toString();
+            // JMOD files are expected to have (case sensitive) .jmod extension
+            if (fname.endsWith(".jmod")) {
                 throw ze;
-            throw new UnsupportedOperationException();
+            }
+            // ZIP and JAR files can be case insensitive
+            fname = fname.toLowerCase(Locale.ROOT);
+            if (fname.endsWith(".zip") || fname.endsWith(".jar")) {
+                throw ze;
+            }
+            throw new UnsupportedOperationException(ze);
         }
     }
 

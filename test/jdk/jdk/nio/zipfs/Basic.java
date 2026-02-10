@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,18 +37,22 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.net.URI;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipException;
+
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-/**
+
+/*
  * @test
- * @bug 8038500 8040059 8150366 8150496 8147539 8290047
+ * @bug 8038500 8040059 8150366 8150496 8147539 8290047 8377049
  * @summary Basic test for zip provider
  *
  * @modules jdk.zipfs
  * @run main Basic
  */
-
 public class Basic {
     public static void main(String[] args) throws Exception {
         // Test: zip should be returned in provider list
@@ -73,6 +77,50 @@ public class Basic {
         // Test: FileSystems#newFileSystem(URI)
         URI uri = new URI("jar", jarFile.toUri().toString(), null);
         FileSystem fs = FileSystems.newFileSystem(uri, env, null);
+
+        // Test: verify that ZipFileSystemProvider.newFileSystem(...) throws
+        // the expected UnsupportedOperationException or ZipException
+        // for non-ZIP files
+        record FileExtension(String extension, boolean expectZipException) {}
+        Collection<FileExtension> fileExtensions = List.of(
+                new FileExtension(".txt", false), // expect UnsupportedOperationException
+                new FileExtension(".jmod", true), // expect ZipException
+                new FileExtension(".JMOD", false), // expect UnsupportedOperationException
+                new FileExtension(".JMOd", false), // expect UnsupportedOperationException
+                new FileExtension(".zip", true), // expect ZipException
+                new FileExtension(".ZIP", true), // expect ZipException
+                new FileExtension(".ziP", true), // expect ZipException
+                new FileExtension(".jar", true), // expect ZipException
+                new FileExtension(".JAR", true), // expect ZipException
+                new FileExtension(".jAR", true) // expect ZipException
+        );
+        for (FileExtension fe : fileExtensions) {
+            Path nonZipFile = Files.createTempFile(Path.of("."), "zipfs-", fe.extension);
+            // expect ZipFileSystemProvider.newFileSystem(Path, ...) to throw
+            // UnsupportedOperationException or ZipException for non-ZIP files
+            try {
+                System.out.println("testing ZipFileSystemProvider.newFileSystem(Path, ...) for "
+                        + nonZipFile);
+                fs.provider().newFileSystem(nonZipFile, Map.of());
+                throw new AssertionError("ZipFileSystemProvider.newFileSystem() was" +
+                        " expected to thrown an exception for " + nonZipFile + " but didn't");
+            } catch (UnsupportedOperationException | ZipException e) {
+                assertUOEOrZipException(e, fe.expectZipException);
+            }
+            // expect ZipFileSystemProvider.newFileSystem(URI, ...) to throw
+            // UnsupportedOperationException or ZipException for non-ZIP files
+            try {
+                URI nonZipFileURI = new URI("jar", nonZipFile.toUri().toString(), null);
+                System.out.println("testing ZipFileSystemProvider.newFileSystem(URI, ...) for "
+                        + nonZipFileURI);
+                fs.provider().newFileSystem(nonZipFileURI, Map.of());
+                throw new AssertionError("ZipFileSystemProvider.newFileSystem() was" +
+                        " expected to thrown an exception for " + nonZipFileURI + " but didn't");
+            } catch (UnsupportedOperationException | ZipException e) {
+                assertUOEOrZipException(e, fe.expectZipException);
+            }
+            Files.delete(nonZipFile);
+        }
 
         // Test: exercise toUri method
         String expected = uri.toString() + "!/foo";
@@ -134,6 +182,33 @@ public class Basic {
         } catch (ClosedFileSystemException x) { }
 
         Files.deleteIfExists(jarFile);
+    }
+
+    private static void assertUOEOrZipException(Exception exception, boolean expectZipException)
+            throws Exception {
+        if (exception instanceof ZipException ze) {
+            if (!expectZipException) {
+                // propagate this unexpected exception
+                throw ze;
+            }
+            // got the expected ZipException
+            return;
+        } else if (exception instanceof UnsupportedOperationException uoe) {
+            if (expectZipException) {
+                // propagate this unexpected exception
+                throw uoe;
+            }
+            // got the expected UnsupportedOperationException, now verify
+            // that the cause is a ZipException
+            if (!(uoe.getCause() instanceof ZipException)) {
+                // unexpected cause, propagate the original exception
+                throw uoe;
+            }
+            // got the expected UnsupportedOperationException with a ZipException as cause
+            return;
+        }
+        // rethrow the original (unexpected) exception
+        throw exception;
     }
 
     // FileVisitor that pretty prints a file tree
