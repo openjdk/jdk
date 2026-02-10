@@ -25,6 +25,7 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "runtime/globals.hpp"
 #include "runtime/stubInfo.hpp"
 
 /*
