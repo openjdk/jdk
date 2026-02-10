@@ -582,6 +582,16 @@ public interface JavaLangAccess {
     Object scopedValueBindings();
 
     /**
+     * Returns the native thread ID for the given platform thread or 0 if not set.
+     */
+    long nativeThreadID(Thread thread);
+
+    /**
+     * Sets the native thread ID for the current platform thread.
+     */
+    void setThreadNativeID(long id);
+
+    /**
      * Returns the innermost mounted continuation
      */
     Continuation getContinuation(Thread thread);

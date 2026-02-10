@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,28 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+import java.io.*;
+import jdk.jshell.tool.*;
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutWithProxySync
- */
+public class WXHealing {
 
-public class ConnectTimeoutWithProxySync extends AbstractConnectTimeout {
-
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutWithProxySync(Version requestVersion,
-                                     String scheme,
-                                     String method,
-                                     Duration connectTimeout,
-                                     Duration requestTimeout)
-        throws Exception
-    {
-        super.timeoutWithProxySync(requestVersion, scheme, method, connectTimeout, requestTimeout);
+    // There's nothing special about jshell here: we just need an
+    // application that does a lot of compilation and class loading.
+    public static void main(String[] args) throws Throwable {
+        JavaShellToolBuilder
+            .builder()
+            .in(new ByteArrayInputStream
+                ("""
+                 void main() {
+                     System.out.println("Hello, World!");
+                 }
+                 main()
+                 2+2
+                 Math.sqrt(2)
+                 4 * Math.atan(1)
+                 Math.exp(1)
+                 """
+                 .getBytes()), null)
+            .start();
     }
 }

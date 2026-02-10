@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #ifndef SHARE_CDS_FILEMAP_HPP
 #define SHARE_CDS_FILEMAP_HPP
 
+#include "cds/aotMappedHeap.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/heapShared.hpp"
 #include "include/cds.h"
@@ -144,8 +146,8 @@ private:
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
 
-  ArchiveMappedHeapHeader _mapped_heap_header;
-  ArchiveStreamedHeapHeader _streamed_heap_header;
+  AOTMappedHeapHeader _mapped_heap_header;
+  AOTStreamedHeapHeader _streamed_heap_header;
 
   // The following are parameters that affect MethodData layout.
   u1      _compiler_type;
@@ -209,11 +211,11 @@ public:
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
 
   // Heap archiving
-  const ArchiveMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
-  const ArchiveStreamedHeapHeader* streamed_heap() const { return &_streamed_heap_header; }
+  const AOTMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
+  const AOTStreamedHeapHeader* streamed_heap() const { return &_streamed_heap_header; }
 
-  void set_streamed_heap_header(ArchiveStreamedHeapHeader header) { _streamed_heap_header = header; }
-  void set_mapped_heap_header(ArchiveMappedHeapHeader header) { _mapped_heap_header = header; }
+  void set_streamed_heap_header(AOTStreamedHeapHeader header) { _streamed_heap_header = header; }
+  void set_mapped_heap_header(AOTMappedHeapHeader header) { _mapped_heap_header = header; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
@@ -309,8 +311,8 @@ public:
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
-  const ArchiveMappedHeapHeader*   mapped_heap()   const { return header()->mapped_heap(); }
-  const ArchiveStreamedHeapHeader* streamed_heap() const { return header()->streamed_heap(); }
+  const AOTMappedHeapHeader*   mapped_heap()   const { return header()->mapped_heap(); }
+  const AOTStreamedHeapHeader* streamed_heap() const { return header()->streamed_heap(); }
 
   bool object_streaming_mode()                const { return header()->object_streaming_mode(); }
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
@@ -372,11 +374,11 @@ public:
   size_t remove_bitmap_zeros(CHeapBitMap* map);
   char* write_bitmap_region(CHeapBitMap* rw_ptrmap,
                             CHeapBitMap* ro_ptrmap,
-                            ArchiveMappedHeapInfo* mapped_heap_info,
-                            ArchiveStreamedHeapInfo* streamed_heap_info,
+                            AOTMappedHeapInfo* mapped_heap_info,
+                            AOTStreamedHeapInfo* streamed_heap_info,
                             size_t &size_in_bytes);
-  size_t write_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
-  size_t write_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
+  size_t write_mapped_heap_region(AOTMappedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
+  size_t write_streamed_heap_region(AOTStreamedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
