@@ -1511,7 +1511,6 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(uint, CodeEntryAlignment, EXPERIMENTAL,                        \
           "Code entry alignment for generated code"                         \
           " (in bytes, power of two)")                                      \
-          range(16, 1024)                                                   \
           constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
