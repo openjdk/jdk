@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build EventProducer
@@ -73,9 +74,7 @@ public class TestJFRWithJMX {
     static final AtomicReference<String> ipAddr = new AtomicReference();
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            throw new SkippedException("Docker is not supported on this host");
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         if (DockerTestUtils.isPodman() & !Platform.isRoot()) {
             throw new SkippedException("test cannot be run under rootless podman configuration");

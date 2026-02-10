@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -60,8 +61,8 @@ class PartialArrayState {
   oop _source;
   oop _destination;
   size_t _length;
-  volatile size_t _index;
-  volatile size_t _refcount;
+  Atomic<size_t> _index;
+  Atomic<size_t> _refcount;
 
   friend class PartialArrayStateAllocator;
 
@@ -90,7 +91,7 @@ public:
 
   // A pointer to the start index for the next segment to process, for atomic
   // update.
-  volatile size_t* index_addr() { return &_index; }
+  Atomic<size_t>* index_addr() { return &_index; }
 };
 
 // This class provides memory management for PartialArrayStates.
@@ -178,8 +179,8 @@ class PartialArrayStateManager : public CHeapObj<mtGC> {
   // The number of allocators that have been registered/released.
   // Atomic to support concurrent registration, and concurrent release.
   // Phasing restriction forbids registration concurrent with release.
-  volatile uint _registered_allocators;
-  DEBUG_ONLY(volatile uint _released_allocators;)
+  Atomic<uint> _registered_allocators;
+  DEBUG_ONLY(Atomic<uint> _released_allocators;)
 
   // These are all for sole use of the befriended allocator class.
   Arena* register_allocator();

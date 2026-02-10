@@ -284,14 +284,14 @@ abstract class HandshakeContext implements ConnectionContext {
                         found = true;
                         break;
                     }
-                } else if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                } else if (SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
                     SSLLogger.fine(
                         "Ignore unsupported cipher suite: " + suite +
                              " for " + protocol.name);
                 }
             }
 
-            if (!found && (SSLLogger.isOn) && SSLLogger.isOn("handshake")) {
+            if (!found && (SSLLogger.isOn()) && SSLLogger.isOn("handshake")) {
                 SSLLogger.fine(
                     "No available cipher suite for " + protocol.name);
             }
@@ -335,7 +335,7 @@ abstract class HandshakeContext implements ConnectionContext {
                 }
 
                 if (!isSupported &&
-                        SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                        SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
                     SSLLogger.finest(
                             "Ignore unsupported cipher suite: " + suite);
                 }
@@ -556,7 +556,7 @@ abstract class HandshakeContext implements ConnectionContext {
                         cachedStatus.put(groupType, groupAvailable);
 
                         if (!groupAvailable &&
-                                SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                                SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
                             SSLLogger.fine(
                                     "No activated named group in " + groupType);
                         }
@@ -570,13 +570,13 @@ abstract class HandshakeContext implements ConnectionContext {
                 }
             }
 
-            if (!retval && SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+            if (!retval && SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
                 SSLLogger.fine("No active named group(s), ignore " + suite);
             }
 
             return retval;
 
-        } else if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+        } else if (SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
             SSLLogger.fine("Ignore disabled cipher suite: " + suite);
         }
 

@@ -1372,12 +1372,20 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V>[] t;
             int f = (t = table) == null ? 0 : t.length;
             Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f);
-            for (Node<K,V> p; (p = it.advance()) != null; ) {
-                V val = p.val;
-                Object v = m.get(p.key);
-                if (v == null || (v != val && !v.equals(val)))
-                    return false;
+
+            try {
+                for (Node<K,V> p; (p = it.advance()) != null; ) {
+                    V val = p.val;
+                    Object v = m.get(p.key);
+                    if (v == null || (v != val && !v.equals(val)))
+                        return false;
+                }
+            } catch (ClassCastException | NullPointerException _) {
+                // m.get(p.key) is contractually allowed to throw CCE or NPE
+                // but CHM doesn't allow null keys, so NPE shouldn't occur in practice
+                return false;
             }
+
             for (Map.Entry<?,?> e : m.entrySet()) {
                 Object mk, mv, v;
                 if ((mk = e.getKey()) == null ||

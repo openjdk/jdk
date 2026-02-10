@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.PackagerException;
 
 final class Packager<T extends Package> {
 
@@ -69,7 +68,7 @@ final class Packager<T extends Package> {
         return Objects.requireNonNull(env);
     }
 
-    Path execute(PackagingPipeline.Builder pipelineBuilder) throws PackagerException {
+    Path execute(PackagingPipeline.Builder pipelineBuilder) {
         Objects.requireNonNull(pkg);
         Objects.requireNonNull(env);
         Objects.requireNonNull(outputDir);

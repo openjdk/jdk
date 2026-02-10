@@ -88,8 +88,11 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type   = db.lookupType("ConstantPool");
     tags        = type.getAddressField("_tags");
-    operands    = type.getAddressField("_operands");
     cache       = type.getAddressField("_cache");
+    bsm_entries = type.getField("_bsm_entries").getOffset();
+    Type bsmae_type = db.lookupType("BSMAttributeEntries");
+    bsm_entries_offsets = bsmae_type.getAddressField("_offsets");
+    bsm_entries_bootstrap_methods = bsmae_type.getAddressField("_bootstrap_methods");
     poolHolder  = new MetadataField(type.getAddressField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
     resolved_klasses = type.getAddressField("_resolved_klasses");
@@ -112,9 +115,11 @@ public class ConstantPool extends Metadata implements ClassConstants {
   public boolean isConstantPool()      { return true; }
 
   private static AddressField tags;
-  private static AddressField operands;
   private static AddressField cache;
   private static AddressField resolved_klasses;
+  private static long bsm_entries; // Offset in the constantpool where the Bsm_Entries are found
+  private static AddressField bsm_entries_offsets;
+  private static AddressField bsm_entries_bootstrap_methods;
   private static MetadataField poolHolder;
   private static CIntField length; // number of elements in oop
   private static CIntField majorVersion;
@@ -130,10 +135,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static int INDY_ARGV_OFFSET;
 
   public U1Array           getTags()       { return new U1Array(tags.getValue(getAddress())); }
-  public U2Array           getOperands()   {
-    Address addr = operands.getValue(getAddress());
-    return VMObjectFactory.newObject(U2Array.class, addr);
-  }
   public ConstantPoolCache getCache()      {
     Address addr = cache.getValue(getAddress());
     return VMObjectFactory.newObject(ConstantPoolCache.class, addr);
@@ -435,26 +436,23 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return res;
   }
 
+  private U4Array getOffsets() {
+     Address a =  getAddress().addOffsetTo(bsm_entries);
+     if (a == null) return null;
+     a = bsm_entries_offsets.getValue(a);
+     return VMObjectFactory.newObject(U4Array.class, a);
+  }
+  private U2Array getBootstrapMethods() {
+    Address a =  getAddress().addOffsetTo(bsm_entries);
+    if (a == null) return null;
+    return VMObjectFactory.newObject(U2Array.class, bsm_entries_bootstrap_methods.getValue(a));
+  }
+
   public int getBootstrapMethodsCount() {
-    U2Array operands = getOperands();
+    U4Array offsets = getOffsets();
     int count = 0;
-    if (operands != null) {
-      // Operands array consists of two parts. First part is an array of 32-bit values which denote
-      // index of the bootstrap method data in the operands array. Note that elements of operands array are of type short.
-      // So each element of first part occupies two slots in the array.
-      // Second part is the bootstrap methods data.
-      // This layout allows us to get BSM count by getting the index of first BSM and dividing it by 2.
-      //
-      // The example below shows layout of operands array with 3 bootstrap methods.
-      // First part has 3 32-bit values indicating the index of the respective bootstrap methods in
-      // the operands array.
-      // The first BSM is at index 6. So the count in this case is 6/2=3.
-      //
-      //            <-----first part----><-------second part------->
-      // index:     0     2      4      6        i2       i3
-      // operands:  |  6  |  i2  |  i3  |  bsm1  |  bsm2  |  bsm3  |
-      //
-      count = getOperandOffsetAt(operands, 0) / 2;
+    if (offsets != null) {
+      count = offsets.length();
     }
     if (DEBUG) {
       System.err.println("ConstantPool.getBootstrapMethodsCount: count = " + count);
@@ -463,12 +461,12 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   public int getBootstrapMethodArgsCount(int bsmIndex) {
-    U2Array operands = getOperands();
+    U4Array offs = getOffsets();
+    U2Array bsms = getBootstrapMethods();
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(operands != null, "Operands is not present");
+      Assert.that(offs != null && bsms != null, "BSM attribute is not present");
     }
-    int bsmOffset = getOperandOffsetAt(operands, bsmIndex);
-    int argc = operands.at(bsmOffset + INDY_ARGC_OFFSET);
+    int argc = bsms.at(offs.at(bsmIndex) + INDY_ARGC_OFFSET);
     if (DEBUG) {
       System.err.println("ConstantPool.getBootstrapMethodArgsCount: bsm index = " + bsmIndex + ", args count = " + argc);
     }
@@ -476,15 +474,16 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   public short[] getBootstrapMethodAt(int bsmIndex) {
-    U2Array operands = getOperands();
-    if (operands == null)  return null;  // safety first
-    int basePos = getOperandOffsetAt(operands, bsmIndex);
+    U4Array offs = getOffsets();
+    U2Array bsms = getBootstrapMethods();
+    if (offs == null || bsms == null) return null; // safety first
+    int basePos = offs.at(bsmIndex);
     int argv = basePos + INDY_ARGV_OFFSET;
-    int argc = operands.at(basePos + INDY_ARGC_OFFSET);
+    int argc = getBootstrapMethodArgsCount(bsmIndex);
     int endPos = argv + argc;
     short[] values = new short[endPos - basePos];
     for (int j = 0; j < values.length; j++) {
-        values[j] = operands.at(basePos+j);
+      values[j] = bsms.at(basePos+j);
     }
     return values;
   }
@@ -773,8 +772,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   // Return the offset of the requested Bootstrap Method in the operands array
   private int getOperandOffsetAt(U2Array operands, int bsmIndex) {
-    return VM.getVM().buildIntFromShorts(operands.at(bsmIndex * 2),
-                                         operands.at(bsmIndex * 2 + 1));
+      return 0;
   }
 
 }

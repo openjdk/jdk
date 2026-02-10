@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -872,6 +872,17 @@ public class HostLocaleProviderAdapterImpl {
             sb.append('\'');
             sb.append(cldrLetter);
             sb.append('\'');
+            break;
+
+        case 'B':
+            // 'B' character (day period) is not supported by SimpleDateFormat,
+            // this is a workaround in which 'B' character
+            // appearing in macos' pattern string (based on LDML) is replaced
+            // with 'a' character and hence resolved with am/pm strings.
+            // This workaround is based on the fallback mechanism
+            // specified in LDML spec for 'B' character, when a locale
+            // does not have data for day period ('B')
+            appendN('a', count, sb);
             break;
 
         default:

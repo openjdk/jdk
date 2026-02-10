@@ -114,6 +114,11 @@ ElfFile* ElfDecoder::get_elf_file(const char* filepath) {
 
   file = new (std::nothrow)ElfFile(filepath);
   if (file != nullptr) {
+    _decoder_status = file->get_status();
+    if (has_error()) {
+      delete file;
+      return nullptr;
+    }
     if (_opened_elf_files != nullptr) {
       file->set_next(_opened_elf_files);
     }

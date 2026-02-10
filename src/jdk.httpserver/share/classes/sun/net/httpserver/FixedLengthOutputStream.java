@@ -42,7 +42,7 @@ class FixedLengthOutputStream extends FilterOutputStream
     private boolean closed = false;
     ExchangeImpl t;
 
-    FixedLengthOutputStream (ExchangeImpl t, OutputStream src, long len) {
+    FixedLengthOutputStream(ExchangeImpl t, OutputStream src, long len) {
         super (src);
         if (len < 0) {
             throw new IllegalArgumentException("Content-Length: " + len);
@@ -51,9 +51,9 @@ class FixedLengthOutputStream extends FilterOutputStream
         this.remaining = len;
     }
 
-    public void write (int b) throws IOException {
+    public void write(int b) throws IOException {
         if (closed) {
-            throw new IOException ("stream closed");
+            throw new IOException("stream closed");
         }
         if (remaining == 0) {
             throw new StreamClosedException();
@@ -62,30 +62,30 @@ class FixedLengthOutputStream extends FilterOutputStream
         remaining --;
     }
 
-    public void write (byte[]b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return;
         }
         if (closed) {
-            throw new IOException ("stream closed");
+            throw new IOException("stream closed");
         }
         if (len > remaining) {
             // stream is still open, caller can retry
-            throw new IOException ("too many bytes to write to stream");
+            throw new IOException("too many bytes to write to stream");
         }
         out.write(b, off, len);
         remaining -= len;
     }
 
-    public void close () throws IOException {
+    public void close() throws IOException {
         if (closed) {
             return;
         }
         closed = true;
         if (remaining > 0) {
             t.close();
-            throw new IOException ("insufficient bytes written to stream");
+            throw new IOException("insufficient bytes written to stream");
         }
         flush();
         LeftOverInputStream is = t.getOriginalInputStream();
@@ -95,7 +95,7 @@ class FixedLengthOutputStream extends FilterOutputStream
             } catch (IOException e) {}
         }
         Event e = new Event.WriteFinished(t);
-        t.getHttpContext().getServerImpl().addEvent (e);
+        t.getHttpContext().getServerImpl().addEvent(e);
     }
 
     // flush is a pass-through

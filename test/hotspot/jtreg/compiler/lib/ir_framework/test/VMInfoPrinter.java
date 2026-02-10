@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.shared.TestFrameworkSocket;
 import jdk.test.whitebox.WhiteBox;
 
 /**
- * Prints some test VM info to the socket.
+ * Prints some Test VM info to the socket.
  */
 public class VMInfoPrinter {
     public static final String START_VM_INFO = "##### IRMatchingVMInfo - used by TestFramework #####";

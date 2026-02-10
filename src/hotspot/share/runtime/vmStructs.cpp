@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
@@ -78,6 +79,7 @@
 #include "oops/typeArrayOop.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -166,10 +168,12 @@
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
+  nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
+  nonstatic_field(BSMAttributeEntries,         _bootstrap_methods,                            Array<u2>*)                            \
+  nonstatic_field(ConstantPool,                _bsm_entries,                                  BSMAttributeEntries)                   \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
-  nonstatic_field(ConstantPool,                _operands,                                     Array<u2>*)                            \
   nonstatic_field(ConstantPool,                _resolved_klasses,                             Array<Klass*>*)                        \
   nonstatic_field(ConstantPool,                _length,                                       int)                                   \
   nonstatic_field(ConstantPool,                _minor_version,                                u2)                                    \
@@ -213,6 +217,7 @@
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
+  nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -222,7 +227,6 @@
   volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
-  nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _next_link,                                    Klass*)                                \
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
@@ -535,7 +539,7 @@
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
-  nonstatic_field(nmethod,                     _deopt_handler_offset,                         int)                                   \
+  nonstatic_field(nmethod,                     _deopt_handler_entry_offset,                   int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
   nonstatic_field(nmethod,                     _immutable_data_ref_count_offset,              int)                                   \
@@ -734,6 +738,7 @@
   unchecked_nonstatic_field(Array<int>,                _data,                                 sizeof(int))                           \
   unchecked_nonstatic_field(Array<u1>,                 _data,                                 sizeof(u1))                            \
   unchecked_nonstatic_field(Array<u2>,                 _data,                                 sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<u4>,                 _data,                                 sizeof(u4))                            \
   unchecked_nonstatic_field(Array<Method*>,            _data,                                 sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,             _data,                                 sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedFieldEntry>, _data,                                 sizeof(ResolvedFieldEntry))            \
@@ -884,6 +889,7 @@
   declare_unsigned_integer_type(unsigned short)                           \
   declare_unsigned_integer_type(jushort)                                  \
   declare_unsigned_integer_type(unsigned long)                            \
+  declare_unsigned_integer_type(Atomic<size_t>)                           \
   /* The compiler thinks this is a different type than */                 \
   /* unsigned short on Win32 */                                           \
   declare_unsigned_integer_type(u1)                                       \
@@ -897,6 +903,7 @@
   /*****************************/                                         \
                                                                           \
   declare_toplevel_type(void*)                                            \
+  declare_toplevel_type(Atomic<HeapWord*>)                                \
   declare_toplevel_type(int*)                                             \
   declare_toplevel_type(char*)                                            \
   declare_toplevel_type(char**)                                           \
@@ -965,6 +972,7 @@
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
   declare_toplevel_type(DataLayout)                                       \
+  declare_toplevel_type(BSMAttributeEntries)                              \
                                                                           \
   /********/                                                              \
   /* Oops */                                                              \

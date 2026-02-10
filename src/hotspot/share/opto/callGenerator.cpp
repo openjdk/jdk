@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,9 +418,9 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
       C->inline_printer()->record(cg->method(), call_node()->jvms(), InliningResult::FAILURE,
                                   "late method handle call resolution");
     }
-    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
+    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || cg->is_virtual_late_inline() ||
+           AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
     _inline_cg = cg;
-    C->dec_number_of_mh_late_inlines();
     return true;
   } else {
     // Method handle call which has a constant appendix argument should be either inlined or replaced with a direct call
@@ -432,7 +432,7 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
 
 CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* callee, bool input_not_const) {
   assert(IncrementalInlineMH, "required");
-  Compile::current()->inc_number_of_mh_late_inlines();
+  Compile::current()->mark_has_mh_late_inlines();
   CallGenerator* cg = new LateInlineMHCallGenerator(caller, callee, input_not_const);
   return cg;
 }

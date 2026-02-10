@@ -89,11 +89,12 @@ class VM_Version : public Abstract_VM_Version {
           FLAG_SET_DEFAULT(flag, true);                                                                     \
         } else {                                                                                            \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
         }                                                                                                   \
       } else {                                                                                              \
         /* Sync CPU features with flags */                                                                  \
@@ -101,11 +102,12 @@ class VM_Version : public Abstract_VM_Version {
           disable_feature();                                                                                \
         } else if (!deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
         }                                                                                                   \
       }                                                                                                     \
   }                                                                                                         \
@@ -136,6 +138,7 @@ class VM_Version : public Abstract_VM_Version {
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
     void log_enabled();
+    void log_disabled(const char* reason);
 
    protected:
     bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
@@ -286,6 +289,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_v, &ext_Zfh, nullptr)) \
   /* Shorthand for Zvkned + Zvknhb + Zvkb + Zvkt */                                                    \
   decl(Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_v, nullptr))           \
+  /* Zvkg crypto extension for ghash and gcm */                                                        \
+  decl(Zvkg        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkg, &ext_v, nullptr))           \
 
   #define DECLARE_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)                             \
   struct ext_##PRETTY##RVExtFeatureValue : public RVExtFeatureValue {                           \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,37 @@
 
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
+
+  // Helper functions for min/max reduction operations
+
+  void decode_minmax_reduction_opc(int opc, bool* is_min, bool* is_unsigned, Condition* cond);
+
+  void neon_minmaxp(bool is_unsigned, bool is_min, FloatRegister dst,
+                    SIMD_Arrangement size, FloatRegister src1, FloatRegister src2) {
+    auto m = is_unsigned ? (is_min ? &Assembler::uminp : &Assembler::umaxp)
+                         : (is_min ? &Assembler::sminp : &Assembler::smaxp);
+    (this->*m)(dst, size, src1, src2);
+  }
+
+  // Typedefs used to disambiguate overloaded member functions.
+  typedef void (Assembler::*neon_reduction2)
+    (FloatRegister, SIMD_Arrangement, FloatRegister);
+
+  void neon_minmaxv(bool is_unsigned, bool is_min, FloatRegister dst,
+                    SIMD_Arrangement size, FloatRegister src) {
+    auto m = is_unsigned ? (is_min ? (neon_reduction2)&Assembler::uminv
+                                   : (neon_reduction2)&Assembler::umaxv)
+                         : (is_min ? &Assembler::sminv
+                                   : &Assembler::smaxv);
+    (this->*m)(dst, size, src);
+  }
+
+  void sve_minmaxv(bool is_unsigned, bool is_min, FloatRegister dst,
+                   SIMD_RegVariant size, PRegister pg, FloatRegister src) {
+    auto m = is_unsigned ? (is_min ? &Assembler::sve_uminv : &Assembler::sve_umaxv)
+                         : (is_min ? &Assembler::sve_sminv : &Assembler::sve_smaxv);
+    (this->*m)(dst, size, pg, src);
+  }
 
   void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                     FloatRegister src2, FloatRegister index,
@@ -85,15 +116,19 @@
   // the higher garbage bits.
   void bytemask_compress(Register dst);
 
-  // Pack the lowest-numbered bit of each mask element in src into a long value
-  // in dst, at most the first 64 lane elements.
-  void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                        FloatRegister vtmp1, FloatRegister vtmp2);
+  // Pack the value of each mask element in "src" into a long value in "dst", at most the
+  // first 64 lane elements. The input "src" is a vector of boolean represented as bytes
+  // with 0x00/0x01 as element values. Each lane value from "src" is packed into one bit in
+  // "dst".
+  void sve_vmask_tolong(Register dst, FloatRegister src, FloatRegister vtmp, int lane_cnt);
 
-  // Unpack the mask, a long value in src, into predicate register dst based on the
-  // corresponding data type. Note that dst can support at most 64 lanes.
-  void sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
-                          FloatRegister vtmp1, FloatRegister vtmp2);
+  void sve2_vmask_tolong(Register dst, FloatRegister src, FloatRegister vtmp1,
+                         FloatRegister vtmp2, int lane_cnt);
+
+  // Unpack the mask, a long value in "src", into vector register "dst" with boolean type.
+  // Each bit in "src" is unpacked into one byte lane in "dst". Note that "dst" can support
+  // at most 64 lanes.
+  void sve_vmask_fromlong(FloatRegister dst, Register src, FloatRegister vtmp, int lane_cnt);
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,

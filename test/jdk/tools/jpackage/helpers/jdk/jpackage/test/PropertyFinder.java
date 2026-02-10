@@ -30,7 +30,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 
 final class PropertyFinder {
 
@@ -107,7 +106,11 @@ final class PropertyFinder {
 
     static Finder<JPackageCommand> cmdlineBooleanOption(String optionName) {
         return target -> {
-            return Optional.of(target.hasArgument(optionName)).map(Boolean::valueOf).map(Object::toString);
+            if (target.hasArgument(optionName)) {
+                return Optional.of(Boolean.TRUE.toString());
+            } else {
+                return Optional.empty();
+            }
         };
     }
 

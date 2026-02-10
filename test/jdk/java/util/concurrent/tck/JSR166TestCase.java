@@ -1169,7 +1169,6 @@ public class JSR166TestCase extends TestCase {
      * A debugging tool to print stack traces of most threads, as jstack does.
      * Uninteresting threads are filtered out.
      */
-    @SuppressWarnings("removal")
     static void dumpTestThreads() {
         System.err.println("------ stacktrace dump start ------");
         for (ThreadInfo info : THREAD_MXBEAN.dumpAllThreads(true, true))

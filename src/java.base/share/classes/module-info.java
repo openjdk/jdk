@@ -262,7 +262,6 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util to
         java.desktop,
-        java.net.http,
         java.prefs,
         java.security.jgss,
         java.smartcardio,
@@ -275,7 +274,8 @@ module java.base {
         jdk.httpserver,
         jdk.jlink,
         jdk.jpackage,
-        jdk.net;
+        jdk.net,
+        jdk.security.auth;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;

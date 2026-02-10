@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 
 public class InvalidSSLContextTest {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     volatile SSLServerSocket sslServerSocket;
     volatile String uri;
 
@@ -147,10 +147,6 @@ public class InvalidSSLContextTest {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         // server-side uses a different context to that of the client-side
         sslServerSocket = (SSLServerSocket)sslContext
                 .getServerSocketFactory()

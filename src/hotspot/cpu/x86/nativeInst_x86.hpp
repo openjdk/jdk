@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ class NativeInstruction {
   s_char sbyte_at(int offset) const    { return *(s_char*) addr_at(offset); }
   u_char ubyte_at(int offset) const    { return *(u_char*) addr_at(offset); }
 
+  jshort short_at(int offset) const    { return *(jshort*) addr_at(offset); }
   jint int_at(int offset) const         { return *(jint*) addr_at(offset); }
 
   intptr_t ptr_at(int offset) const    { return *(intptr_t*) addr_at(offset); }
@@ -578,10 +579,15 @@ public:
     instruction_code = 0x0f,
     instruction_size = 8,
     instruction_offset = 0,
-    displacement_offset = 4
+    displacement_offset = 4,
+
+    // The two parts should be checked separately to prevent out of bounds access in case
+    // the return address points to the deopt handler stub code entry point which could be
+    // at the end of page.
+    first_check_size = 2
   };
 
-  bool check() const { return int_at(0) == 0x841f0f; }
+  bool check() const { return short_at(0) == 0x1f0f && short_at(first_check_size) == 0x0084; }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
     int32_t data = int_at(displacement_offset);
     if (data == 0) {

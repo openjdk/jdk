@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import jdk.test.lib.jvmti.DebugeeClass;
  *       and save JNIEnv pointer now passed as argument.
  *
  * @requires vm.continuations
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @compile monitorwaited01.java
  * @run main/othervm/native -agentlib:monitorwaited01 monitorwaited01 platform

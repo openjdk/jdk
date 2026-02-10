@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -50,24 +52,23 @@ import jdk.jpackage.test.TKit;
  */
 public class PkgScriptsTest {
 
-    public static Collection<?> input() {
-        return List.of(new Object[][]{
-            { new PkgInstallScript[]{
-                    PkgInstallScript.PREINSTALL,
-                    PkgInstallScript.POSTINSTALL },
-            },
-            { new PkgInstallScript[]{
-                    PkgInstallScript.PREINSTALL },
-            },
-            { new PkgInstallScript[]{
-                    PkgInstallScript.POSTINSTALL },
-            },
-        });
+    public static Collection<Object[]> input() {
+        List<Object[]> data = new ArrayList<>();
+        for (var appStore : List.of(true, false)) {
+            for (var scriptRoles : List.of(
+                    List.of(PkgInstallScript.PREINSTALL, PkgInstallScript.POSTINSTALL),
+                    List.of(PkgInstallScript.PREINSTALL),
+                    List.of(PkgInstallScript.POSTINSTALL)
+            )) {
+                data.add(new Object[] {scriptRoles.toArray(PkgInstallScript[]::new), appStore});
+            }
+        }
+        return data;
     }
 
     @Test
     @ParameterSupplier("input")
-    public void test(PkgInstallScript[] customScriptRoles) {
+    public void test(PkgInstallScript[] customScriptRoles, boolean appStore) {
         var responseDir = TKit.createTempDirectory("response");
 
         var customScripts = Stream.of(customScriptRoles).map(role -> {
@@ -80,6 +81,9 @@ public class PkgScriptsTest {
             .forTypes(PackageType.MAC_PKG)
             .configureHelloApp()
             .addInitializer(cmd -> {
+                if (appStore) {
+                    cmd.addArgument("--mac-app-store");
+                }
                 cmd.addArguments("--resource-dir", TKit.createTempDirectory("resources"));
                 customScripts.forEach(customScript -> {
                     customScript.createFor(cmd);
@@ -156,10 +160,13 @@ public class PkgScriptsTest {
         }
 
         void verify(JPackageCommand cmd) {
+            var scriptsEnabled = !MacHelper.isForAppStore(cmd);
             if (cmd.isPackageUnpacked()) {
-                role.verifyExists(cmd, true);
-            } else {
+                role.verifyExists(cmd, scriptsEnabled);
+            } else if (scriptsEnabled) {
                 TKit.assertFileExists(responseFilePath(cmd));
+            } else {
+                TKit.assertPathExists(responseFilePath(cmd), false);
             }
         }
 

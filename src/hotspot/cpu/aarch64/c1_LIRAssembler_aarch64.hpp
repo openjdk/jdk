@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,9 +50,8 @@ friend class ArrayCopyStub;
   Address stack_slot_address(int index, uint shift, Register tmp, int adjust = 0);
 
   // Record the type of the receiver in ReceiverTypeData
-  void type_profile_helper(Register mdo,
-                           ciMethodData *md, ciProfileData *data,
-                           Register recv, Label* update_done);
+  void type_profile_helper(Register mdo, ciMethodData *md,
+                           ciProfileData *data, Register recv);
   void add_debug_info_for_branch(address adr, CodeEmitInfo* info);
 
   void casw(Register addr, Register newval, Register cmpval);
@@ -71,7 +70,7 @@ friend class ArrayCopyStub;
     //            CompiledDirectCall::to_trampoline_stub_size()
     _call_stub_size = 13 * NativeInstruction::instruction_size,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
-    _deopt_handler_size = 7 * NativeInstruction::instruction_size
+    _deopt_handler_size = 4 * NativeInstruction::instruction_size
   };
 
 public:

@@ -62,11 +62,6 @@ private:
 
 public:
   virtual void SetUp() {
-    // Only run test on supported Windows versions
-    if (!is_os_supported()) {
-      GTEST_SKIP() << "OS not supported";
-    }
-
     _zaddress_reserver.SetUp(ReservationSize);
     _reserver = _zaddress_reserver.reserver();
     _registry = _zaddress_reserver.registry();
@@ -78,11 +73,6 @@ public:
   }
 
   virtual void TearDown() {
-    if (!is_os_supported()) {
-      // Test skipped, nothing to cleanup
-      return;
-    }
-
     _registry = nullptr;
     _reserver = nullptr;
     _zaddress_reserver.TearDown();

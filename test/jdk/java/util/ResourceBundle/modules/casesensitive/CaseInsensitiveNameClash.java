@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.process.ProcessTools CaseInsensitiveNameClash
- * @run testng CaseInsensitiveNameClash
+ * @run junit CaseInsensitiveNameClash
  */
 
 import java.nio.file.Files;
@@ -37,10 +37,12 @@ import java.nio.file.Paths;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.compiler.CompilerUtils;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CaseInsensitiveNameClash {
 
     private static final String TEST_SRC = System.getProperty("test.src");
@@ -54,7 +56,7 @@ public class CaseInsensitiveNameClash {
     /**
      * Compiles the module used by the test
      */
-    @BeforeTest
+    @BeforeAll
     public void compileAll() throws Exception {
         Path msrc = SRC_DIR.resolve(MODULE);
         assertTrue(CompilerUtils.compile(msrc, MODS_DIR,

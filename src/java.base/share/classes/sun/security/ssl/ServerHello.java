@@ -365,7 +365,7 @@ final class ServerHello {
                 shc.sslConfig.getEnabledExtensions(
                         SSLHandshake.SERVER_HELLO, shc.negotiatedProtocol);
             shm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced ServerHello handshake message", shm);
             }
 
@@ -440,7 +440,7 @@ final class ServerHello {
                 }
 
                 // The cipher suite has been negotiated.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("use cipher suite " + cs.name);
                 }
 
@@ -453,7 +453,7 @@ final class ServerHello {
                 if (ke != null) {
                     SSLPossession[] hcds = ke.createPossessions(shc);
                     if ((hcds != null) && (hcds.length != 0)) {
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.warning(
                                 "use legacy cipher suite " + cs.name);
                         }
@@ -565,12 +565,40 @@ final class ServerHello {
                     clientHello);
             shc.serverHelloRandom = shm.serverRandom;
 
+            // For key derivation, we will either use the traditional Key
+            // Agreement (KA) model or the Key Encapsulation Mechanism (KEM)
+            // model, depending on what key exchange group is used.
+            //
+            // For KA flows, the server first receives the client's share,
+            // then generates its key share, and finally comes here.
+            // However, this is changed for KEM: the server
+            // must perform both actions — derive the secret and generate
+            // the key encapsulation message at the same time during
+            // encapsulation in SHKeyShareProducer.
+            //
+            // Traditional Key Agreement (KA):
+            //   - Both peers generate a key share and exchange it.
+            //   - Each peer computes a shared secret sometime after
+            //     receiving the other's key share.
+            //
+            // Key Encapsulation Mechanism (KEM):
+            //  The client publishes a public key via a KeyShareExtension,
+            //  which the server uses to:
+            //
+            //  - generate the shared secret
+            //  - encapsulate the message which is sent to the client in
+            //    another KeyShareExtension
+            //
+            //  The derived shared secret must be stored in a
+            //  KEMSenderPossession so it can be retrieved for handshake
+            //  traffic secret derivation later.
+
             // Produce extensions for ServerHello handshake message.
             SSLExtension[] serverHelloExtensions =
                     shc.sslConfig.getEnabledExtensions(
                         SSLHandshake.SERVER_HELLO, shc.negotiatedProtocol);
             shm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced ServerHello handshake message", shm);
             }
 
@@ -590,9 +618,26 @@ final class ServerHello {
                         "Not negotiated key shares");
             }
 
-            SSLKeyDerivation handshakeKD = ke.createKeyDerivation(shc);
-            SecretKey handshakeSecret = handshakeKD.deriveKey(
-                    "TlsHandshakeSecret");
+            SecretKey handshakeSecret = null;
+
+            // For KEM, the shared secret has already been generated and
+            // stored in the server’s possession (KEMSenderPossession)
+            // during encapsulation in SHKeyShareProducer.
+            //
+            // Only one key share is selected by the server, so at most one
+            // possession will contain the pre-derived shared secret.
+            for (var pos : shc.handshakePossessions) {
+                if (pos instanceof KEMKeyExchange.KEMSenderPossession xp) {
+                    handshakeSecret = xp.getKey();
+                    break;
+                }
+            }
+
+            if (handshakeSecret == null) {
+                SSLKeyDerivation handshakeKD = ke.createKeyDerivation(shc);
+                handshakeSecret = handshakeKD.deriveKey(
+                        "TlsHandshakeSecret");
+            }
 
             SSLTrafficKeyDerivation kdg =
                 SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
@@ -723,14 +768,14 @@ final class ServerHello {
                 }
 
                 // The cipher suite has been negotiated.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("use cipher suite " + cs.name);
                 }
                 return cs;
             }
 
             if (legacySuite != null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "use legacy cipher suite " + legacySuite.name);
                 }
@@ -783,7 +828,7 @@ final class ServerHello {
                 shc.sslConfig.getEnabledExtensions(
                     SSLHandshake.HELLO_RETRY_REQUEST, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Produced HelloRetryRequest handshake message", hhrm);
             }
@@ -845,7 +890,7 @@ final class ServerHello {
                     shc.sslConfig.getEnabledExtensions(
                     SSLHandshake.MESSAGE_HASH, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Reproduced HelloRetryRequest handshake message", hhrm);
             }
@@ -886,7 +931,7 @@ final class ServerHello {
             }
 
             ServerHelloMessage shm = new ServerHelloMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Consuming ServerHello handshake message", shm);
             }
 
@@ -931,7 +976,7 @@ final class ServerHello {
             }
 
             chc.negotiatedProtocol = serverVersion;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Negotiated protocol version: " + serverVersion.name);
             }
@@ -986,7 +1031,7 @@ final class ServerHello {
                 chc.conContext.protocolVersion = chc.negotiatedProtocol;
                 chc.conContext.outputRecord.setVersion(chc.negotiatedProtocol);
             }
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Negotiated protocol version: " + serverVersion.name);
             }
@@ -1132,7 +1177,7 @@ final class ServerHello {
                     chc.handshakeSession = new SSLSessionImpl(chc,
                             chc.negotiatedCipherSuite, newId);
 
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Locally assigned Session Id: " +
                                 newId.toString());
                     }
@@ -1204,7 +1249,7 @@ final class ServerHello {
     private static void setUpPskKD(HandshakeContext hc,
             SecretKey psk) throws SSLHandshakeException {
 
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
             SSLLogger.fine("Using PSK to derive early secret");
         }
 

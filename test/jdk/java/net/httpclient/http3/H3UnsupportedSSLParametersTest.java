@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
+ * @bug 8371887
  * @summary Tests that a HttpClient configured with SSLParameters that doesn't include TLSv1.3
  *          cannot be used for HTTP3
  * @library /test/lib /test/jdk/java/net/httpclient/lib
@@ -69,6 +70,20 @@ public class H3UnsupportedSSLParametersTest {
     public void testExplicitTLSv13() throws Exception {
         final SSLParameters params = new SSLParameters();
         params.setProtocols(new String[]{"TLSv1.2", "TLSv1.3"});
+        final HttpClient client = HttpServerAdapters.createClientBuilderForH3()
+                .proxy(HttpClient.Builder.NO_PROXY)
+                .sslParameters(params)
+                .version(HttpClient.Version.HTTP_3).build();
+        assertNotNull(client, "HttpClient is null");
+    }
+
+    /**
+     * Builds a HttpClient with SSLParameters without protocol versions
+     * and expects the build() to succeed and return a HttpClient instance
+     */
+    @Test
+    public void testDefault() throws Exception {
+        final SSLParameters params = new SSLParameters();
         final HttpClient client = HttpServerAdapters.createClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslParameters(params)

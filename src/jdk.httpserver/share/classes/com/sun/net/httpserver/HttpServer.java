@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.concurrent.Executor;
  * a root URI path which represents the location of the application or service
  * on this server. The mapping of a handler to a {@code HttpServer} is
  * encapsulated by a {@link HttpContext} object. HttpContexts are created by
- * calling {@link #createContext(String,HttpHandler)}.
+ * calling {@link #createContext(String, HttpHandler)}.
  * Any request for which no handler can be found is rejected with a 404 response.
  * Management of threads can be done external to this object by providing a
  * {@link java.util.concurrent.Executor} object. If none is provided a default
@@ -117,13 +117,13 @@ public abstract class HttpServer {
      * Creates a {@code HttpServer} instance which is initially not bound to any
      * local address/port. The {@code HttpServer} is acquired from the currently
      * installed {@link HttpServerProvider}. The server must be bound using
-     * {@link #bind(InetSocketAddress,int)} before it can be used.
+     * {@link #bind(InetSocketAddress, int)} before it can be used.
      *
      * @throws IOException if an I/O error occurs
      * @return an instance of {@code HttpServer}
      */
     public static HttpServer create() throws IOException {
-        return create (null, 0);
+        return create(null, 0);
     }
 
     /**
@@ -149,7 +149,7 @@ public abstract class HttpServer {
 
     public static HttpServer create(InetSocketAddress addr, int backlog) throws IOException {
         HttpServerProvider provider = HttpServerProvider.provider();
-        return provider.createHttpServer (addr, backlog);
+        return provider.createHttpServer(addr, backlog);
     }
 
     /**

@@ -224,7 +224,13 @@ public:
 // 3) NodeHash table, to find identical nodes (and remove/update the hash of a node on modification).
 class PhaseValues : public PhaseTransform {
 protected:
-  bool      _iterGVN;
+  enum class PhaseValuesType {
+    gvn,
+    iter_gvn,
+    ccp
+  };
+
+  PhaseValuesType _phase;
 
   // Hash table for value-numbering. Reference to "C->node_hash()",
   NodeHash &_table;
@@ -247,7 +253,7 @@ protected:
   void init_con_caches();
 
 public:
-  PhaseValues() : PhaseTransform(GVN), _iterGVN(false),
+  PhaseValues() : PhaseTransform(GVN), _phase(PhaseValuesType::gvn),
                   _table(*C->node_hash()), _types(*C->types())
   {
     NOT_PRODUCT( clear_new_values(); )
@@ -256,7 +262,7 @@ public:
     init_con_caches();
   }
   NOT_PRODUCT(~PhaseValues();)
-  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : nullptr; }
+  PhaseIterGVN* is_IterGVN();
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
@@ -490,9 +496,10 @@ public:
   void optimize();
 #ifdef ASSERT
   void verify_optimize();
-  bool verify_Value_for(Node* n);
-  bool verify_Ideal_for(Node* n, bool can_reshape);
-  bool verify_Identity_for(Node* n);
+  void verify_Value_for(const Node* n, bool strict = false);
+  void verify_Ideal_for(Node* n, bool can_reshape);
+  void verify_Identity_for(Node* n);
+  void verify_node_invariants_for(const Node* n);
   void verify_empty_worklist(Node* n);
 #endif
 
@@ -616,6 +623,10 @@ public:
     // '-XX:VerifyIterativeGVN=1000'
     return ((VerifyIterativeGVN % 10000) / 1000) == 1;
   }
+  static bool is_verify_invariants() {
+    // '-XX:VerifyIterativeGVN=10000'
+    return ((VerifyIterativeGVN % 100000) / 10000) == 1;
+  }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
@@ -659,6 +670,8 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
+  void analyze_step(Unique_Node_List& worklist, Node* n);
+  bool needs_revisit(Node* n) const;
 #ifdef ASSERT
   void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()

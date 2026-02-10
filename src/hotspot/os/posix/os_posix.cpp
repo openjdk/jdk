@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -108,41 +109,60 @@ size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
+  stringStream buf(buffer, bufferSize);
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
-    jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
-    VMError::record_coredump_status(buffer, false);
+    buf.print("CreateCoredumpOnCrash is disabled from command line");
+    VMError::record_coredump_status(buf.freeze(), false);
   } else {
     struct rlimit rlim;
     bool success = true;
     bool warn = true;
     char core_path[PATH_MAX];
     if (get_core_path(core_path, PATH_MAX) <= 0) {
-      jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
+      // In the warning message, let the user know.
+      if (check_only) {
+        buf.print("the core path couldn't be determined. It commonly defaults to ");
+      }
+      buf.print("core.%d%s", current_process_id(), check_only ? "" : " (may not exist)");
 #ifdef LINUX
     } else if (core_path[0] == '"') { // redirect to user process
-      jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
+      if (check_only) {
+        buf.print("core dumps may be further processed by the following: ");
+      } else {
+        buf.print("Determined by the following: ");
+      }
+      buf.print("%s", core_path);
 #endif
     } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
-      jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
+      if (check_only) {
+        buf.print("the rlimit couldn't be determined. If resource limits permit, the core dump will be located at ");
+      }
+      buf.print("%s%s", core_path, check_only ? "" : " (may not exist)");
     } else {
       switch(rlim.rlim_cur) {
         case RLIM_INFINITY:
-          jio_snprintf(buffer, bufferSize, "%s", core_path);
+          buf.print("%s", core_path);
           warn = false;
           break;
         case 0:
-          jio_snprintf(buffer, bufferSize, "Core dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again");
+          buf.print("%s dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again", check_only ? "core" : "Core");
           success = false;
           break;
         default:
-          jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
+          if (check_only) {
+            buf.print("core dumps are constrained ");
+          } else {
+             buf.print( "%s ", core_path);
+          }
+          buf.print( "(max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", uint64_t(rlim.rlim_cur) / K);
           break;
       }
     }
+    const char* result = buf.freeze();
     if (!check_only) {
-      VMError::record_coredump_status(buffer, success);
+      VMError::record_coredump_status(result, success);
     } else if (warn) {
-      warning("CreateCoredumpOnCrash specified, but %s", buffer);
+      warning("CreateCoredumpOnCrash specified, but %s", result);
     }
   }
 }
@@ -438,12 +458,10 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
-  if (base != nullptr && addr != base) {
-    if (!os::release_memory(addr, size)) {
-      warning("Could not release memory on unsuccessful file mapping");
-    }
-    return nullptr;
-  }
+
+  // The requested address should be the same as the returned address when using MAP_FIXED
+  // as per POSIX.
+  assert(base == nullptr || addr == base, "base should equal addr when using MAP_FIXED");
   return addr;
 }
 
@@ -1009,6 +1027,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
@@ -1330,6 +1349,10 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
 
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
+}
+
+bool os::Posix::is_current_user_root(){
+    return is_root(geteuid());
 }
 
 bool os::Posix::matches_effective_uid_or_root(uid_t uid) {

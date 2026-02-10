@@ -272,9 +272,7 @@ public class AARCH64Frame extends Frame {
     if (cb != null) {
       if (cb.isUpcallStub()) {
         return senderForUpcallStub(map, (UpcallStub)cb);
-      } else if (cb.isContinuationStub()) {
-        return senderForContinuationStub(map, cb);
-      } else {
+      } else if (cb.getFrameSize() > 0) {
         return senderForCompiledFrame(map, cb);
       }
     }
@@ -389,7 +387,11 @@ public class AARCH64Frame extends Frame {
     if (Assert.ASSERTS_ENABLED) {
         Assert.that(cb.getFrameSize() > 0, "must have non-zero frame size");
     }
-    Address senderSP = getUnextendedSP().addOffsetTo(cb.getFrameSize());
+
+    // TODO: senderSP should consider not only PreserveFramePointer but also _sp_is_trusted.
+    Address senderSP = !VM.getVM().getCommandLineBooleanFlag("PreserveFramePointer")
+                           ? getUnextendedSP().addOffsetTo(cb.getFrameSize())
+                           : getSenderSP();
 
     // The return_address is always the word on the stack
     Address senderPC = stripPAC(senderSP.getAddressAt(-1 * VM.getVM().getAddressSize()));

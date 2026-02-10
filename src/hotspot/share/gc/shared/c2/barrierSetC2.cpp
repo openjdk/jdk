@@ -771,7 +771,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   //       this will require extensive changes to the loop optimization in order to
   //       prevent a degradation of the optimization.
   //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node* tlab_end = macro->make_load(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node* tlab_end = macro->make_load_raw(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
 
   // Load the TLAB top.
   Node* old_tlab_top = new LoadPNode(toobig_false, mem, tlab_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered);

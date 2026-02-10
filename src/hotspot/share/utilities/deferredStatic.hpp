@@ -25,10 +25,9 @@
 #ifndef SHARE_UTILITIES_DEFERREDSTATIC_HPP
 #define SHARE_UTILITIES_DEFERREDSTATIC_HPP
 
+#include "cppstdlib/new.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <new>
 
 // The purpose of this class is to provide control over the initialization
 // time for an object of type T with static storage duration. An instance of
@@ -36,7 +35,7 @@
 // object must be explicitly initialized before use. This avoids problems
 // resulting from the unspecified initialization time and ordering between
 // different objects that comes from using undeferred objects (the so-called
-// "Static Initialization Order Fiasco).
+// "Static Initialization Order Fiasco").
 //
 // Once initialized, the object is never destroyed. This avoids similar issues
 // with the timing and ordering of destruction on normal program exit.
@@ -54,7 +53,7 @@ class DeferredStatic {
 public:
   NONCOPYABLE(DeferredStatic);
 
-  DeferredStatic()
+  constexpr DeferredStatic()
   DEBUG_ONLY(: _initialized(false)) {
     // Do not construct value, on purpose.
   }
