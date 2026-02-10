@@ -110,7 +110,7 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool clear_soft_refs,
                                  bool do_maximal_compaction,
-                                 G1FullGCTracer* tracer) :
+                                 GCTracer* tracer) :
     _heap(heap),
     _scope(heap->monitoring_support(), clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
