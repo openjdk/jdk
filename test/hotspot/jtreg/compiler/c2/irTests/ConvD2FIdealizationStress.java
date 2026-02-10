@@ -46,7 +46,8 @@ public class ConvD2FIdealizationStress {
     // Pattern: ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x)
     // When ConvF2D changes inside SqrtD, ConvD2F users of SqrtD should be notified.
     @Test
-    @IR(counts = {IRNode.SQRT_F, ">=1"})
+    @IR(counts = {IRNode.SQRT_F, ">=1"},
+        failOn = {IRNode.CONV_D2F, IRNode.SQRT_D, IRNode.CONV_F2D})
     public static float testSqrtConversion(float x) {
         return (float) Math.sqrt((double) x);
     }
