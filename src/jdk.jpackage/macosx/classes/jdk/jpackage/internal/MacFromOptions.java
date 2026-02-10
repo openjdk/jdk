@@ -248,15 +248,13 @@ final class MacFromOptions {
         MAC_BUNDLE_IDENTIFIER.ifPresentIn(options, appBuilder::bundleIdentifier);
         MAC_APP_CATEGORY.ifPresentIn(options, appBuilder::category);
 
-        final boolean sign;
+        final boolean sign = MAC_SIGN.getFrom(options);
         final boolean appStore;
 
-        if (PREDEFINED_APP_IMAGE.containsIn(options) && isBundlingOperation(options, SIGN_MAC_APP_IMAGE)) {
+        if (PREDEFINED_APP_IMAGE.containsIn(options)) {
             final var appImageFileOptions = superAppBuilder.externalApplication().orElseThrow().extra();
-            sign = MAC_SIGN.getFrom(appImageFileOptions);
             appStore = MAC_APP_STORE.getFrom(appImageFileOptions);
         } else {
-            sign = MAC_SIGN.getFrom(options);
             appStore = MAC_APP_STORE.getFrom(options);
         }
 
