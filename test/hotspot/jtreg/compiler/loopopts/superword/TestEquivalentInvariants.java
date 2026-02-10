@@ -522,8 +522,10 @@ public class TestEquivalentInvariants {
     @IR(failOn = {IRNode.RANGE_CHECK_TRAP},
         applyIfPlatform = {"64-bit", "true"})
     // Scaled iv plus offset inside ConvI2L: ConvI2L(iv * K + E)
-    // Tests the short_scale code path in RCE (range check elimination).
-    // Not expected to vectorize due to stride-2 access pattern.
+    // Tests the short_offset code path in RCE (range check elimination).
+    // Vectorization depends on backing store type (heap byte[] segments vectorize,
+    // native/other types don't), so no vectorization IR rule since we can't
+    // distinguish provider types in IR framework conditions.
     static Object[] testMemorySegmentBInvarIMulAdd(MemorySegment m, int invar, int size) {
         for (int i = 0; i < size; i++) {
             long adr = i * 2 + invar;

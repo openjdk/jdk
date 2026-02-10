@@ -613,9 +613,17 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    // 8356184: Vectorization depends on backing store type - heap byte[] segments (ByteArray, ByteBuffer)
-    // vectorize due to RCE handling ConvI2L(iv + invar), while native/other segment types don't.
-    // No IR rule since we can't distinguish provider types in IR framework conditions.
+    // 8356184: RCE eliminates range checks for ConvI2L(iv + invar). IR rules split on
+    // ShortRunningLongLoop: short-running emits no range_check traps, full nest keeps
+    // one as the hoisted predicate's deoptimization target (unrelated to ConvI2L).
+    // Cannot assert on vectorization, as it depends on backing store type (heap byte[] segments
+    // vectorize, native/other types don't) which can't be distinguished in IR conditions.
+    @IR(failOn = {IRNode.RANGE_CHECK_TRAP},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"ShortRunningLongLoop", "true"})
+    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "<= 1"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"ShortRunningLongLoop", "false"})
     static Object[] testIntLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             int int_index = i + invar;
@@ -801,9 +809,17 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    // 8356184: Vectorization depends on backing store type - heap byte[] segments (ByteArray, ByteBuffer)
-    // vectorize due to RCE handling ConvI2L(iv + invar), while native/other segment types don't.
-    // No IR rule since we can't distinguish provider types in IR framework conditions.
+    // 8356184: RCE eliminates range checks for ConvI2L(iv + invar). IR rules split on
+    // ShortRunningLongLoop: short-running emits no range_check traps, full nest keeps
+    // one as the hoisted predicate's deoptimization target (unrelated to ConvI2L).
+    // Cannot assert on vectorization, as it depends on backing store type (heap byte[] segments
+    // vectorize, native/other types don't) which can't be distinguished in IR conditions.
+    @IR(failOn = {IRNode.RANGE_CHECK_TRAP},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"ShortRunningLongLoop", "true"})
+    @IR(counts = {IRNode.RANGE_CHECK_TRAP, "<= 1"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"ShortRunningLongLoop", "false"})
     static Object[] testLongLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             int int_index = (int)(i + invar);
