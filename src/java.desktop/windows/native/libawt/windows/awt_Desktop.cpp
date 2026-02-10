@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,12 @@
 #include <float.h>
 #include <shlobj.h>
 #include "awt_Toolkit.h"
+#include <Windows.h>
+#include <shlwapi.h>  // for AssocQueryStringW
+#include <wchar.h>
+#include <cwchar>
+#include <string.h>
+#include <winsafer.h> // for SaferiIsExecutableFileType
 
 #define BUFFER_LIMIT   MAX_PATH+1
 
@@ -78,14 +84,23 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
     LPCWSTR fileOrUri_c = JNU_GetStringPlatformChars(env, fileOrUri_j, NULL);
     CHECK_NULL_RETURN(fileOrUri_c, NULL);
     LPCWSTR verb_c = JNU_GetStringPlatformChars(env, verb_j, NULL);
+
     if (verb_c == NULL) {
         JNU_ReleaseStringPlatformChars(env, fileOrUri_j, fileOrUri_c);
         return NULL;
     }
+    if (wcscmp(verb_c, L"open") == 0) {
+        BOOL isExecutable = SaferiIsExecutableFileType(fileOrUri_c, FALSE);
+        if (isExecutable) {
+            return env->NewStringUTF("Unsupported URI content");
+        }
+    }
+    // set action verb for mail() to open before calling ShellExecute
+    LPCWSTR actionVerb = wcscmp(verb_c, L"mail") == 0 ? L"open" : verb_c;
 
     // 6457572: ShellExecute possibly changes FPU control word - saving it here
     unsigned oldcontrol87 = _control87(0, 0);
-    HINSTANCE retval = ::ShellExecute(NULL, verb_c, fileOrUri_c, NULL, NULL,
+    HINSTANCE retval = ::ShellExecute(NULL, actionVerb, fileOrUri_c, NULL, NULL,
                                       SW_SHOWNORMAL);
     DWORD error = ::GetLastError();
     _control87(oldcontrol87, 0xffffffff);
@@ -113,8 +128,36 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
             return errmsg;
         }
     }
-
     return NULL;
+}
+
+/*
+ * Class:     sun_awt_windows_WDesktopPeer
+ * Method:    getDefaultBrowser
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_getDefaultBrowser
+(JNIEnv *env, jclass cls)
+{
+    LPCWSTR fileExtension = L"https";
+    WCHAR defaultBrowser_c [MAX_PATH];
+    DWORD cchBuffer = MAX_PATH;
+
+    // Use AssocQueryString to get the default browser
+    HRESULT hr = AssocQueryStringW(
+        ASSOCF_NONE,            // No special flags
+        ASSOCSTR_COMMAND,       // Request the command string
+        fileExtension,          // File extension
+        NULL,                   // pszExtra (optional)
+        defaultBrowser_c,       // Output buffer - result
+        &cchBuffer              // Size of the output buffer
+    );
+
+    if (FAILED(hr)) {
+        return NULL;
+    }
+
+    return JNU_NewStringPlatform(env, defaultBrowser_c);
 }
 
 /*

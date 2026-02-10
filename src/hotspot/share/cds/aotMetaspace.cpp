@@ -698,6 +698,9 @@ public:
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
     TrainingData::iterate_roots(it);
+    if (CDSConfig::is_dumping_full_module_graph()) {
+      ClassLoaderDataShared::iterate_roots(it);
+    }
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -794,6 +797,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   log_info(aot)("Make classes shareable");
   _builder.make_klasses_shareable();
   AOTMetaspace::make_method_handle_intrinsics_shareable();
+
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    ClassLoaderDataShared::remove_unshareable_info();
+  }
 
   dump_java_heap_objects();
   dump_shared_symbol_table(_builder.symbols());
@@ -1097,7 +1104,12 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    if (!CDSConfig::is_dumping_preimage_static_archive()) {
+      // A single thread is required for Reference handling and deterministic CDS archive.
+      // Its's not required for dumping preimage, where References won't be archived and
+      // determinism is not needed.
+      assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    }
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       report_loading_error("archivedBootLayer not available, disabling full module graph");
       CDSConfig::stop_dumping_full_module_graph();
@@ -1135,6 +1147,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     HeapShared::init_heap_writer();
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
+      ClassLoaderDataShared::build_tables(CHECK);
       HeapShared::reset_archived_object_states(CHECK);
     }
 
@@ -1153,12 +1166,6 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
       // Perhaps there is a way to avoid hard-coding these names here.
       // See discussion in JDK-8342481.
-    }
-
-    if (HeapShared::is_writing_mapping_mode()) {
-      // Do this at the very end, when no Java code will be executed. Otherwise
-      // some new strings may be added to the intern table.
-      StringTable::allocate_shared_strings_array(CHECK);
     }
   } else {
     log_info(aot)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");

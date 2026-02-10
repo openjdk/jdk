@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import jdk.jpackage.internal.util.RootedPath;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
@@ -143,15 +146,17 @@ final class MacApplicationBuilder {
     }
 
     private static void validateAppContentDirs(Application app) {
-        for (var contentDir : app.contentDirs()) {
+        app.contentDirSources().stream().filter(rootedPath -> {
+            return rootedPath.branch().getNameCount() == 1;
+        }).map(RootedPath::fullPath).forEach(contentDir -> {
             if (!Files.isDirectory(contentDir)) {
                 Log.info(I18N.format("warning.app.content.is.not.dir",
                         contentDir));
-            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName().toString())) {
+            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName())) {
                 Log.info(I18N.format("warning.non.standard.contents.sub.dir",
                         contentDir));
             }
-        }
+        });
     }
 
     private MacApplicationBuilder createCopyForExternalInfoPlistFile() {
@@ -258,6 +263,11 @@ final class MacApplicationBuilder {
     private static final int MAX_BUNDLE_NAME_LENGTH = 16;
 
     // List of standard subdirectories of the "Contents" directory
-    private static final Set<String> CONTENTS_SUB_DIRS = Set.of("MacOS",
-            "Resources", "Frameworks", "PlugIns", "SharedSupport");
+    private static final Set<Path> CONTENTS_SUB_DIRS = Stream.of(
+            "MacOS",
+            "Resources",
+            "Frameworks",
+            "PlugIns",
+            "SharedSupport"
+    ).map(Path::of).collect(Collectors.toUnmodifiableSet());
 }

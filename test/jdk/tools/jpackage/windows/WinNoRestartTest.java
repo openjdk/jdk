@@ -95,11 +95,14 @@ public class WinNoRestartTest {
             // Save updated main launcher .cfg file
             cfgFile.save(cmd.appLauncherCfgPath(null));
 
+            var state = TKit.state();
             var f = new CompletableFuture<Process>();
 
             // Launch the app in a separate thread
             new Thread(() -> {
-                HelloApp.assertMainLauncher(cmd).get().processListener(f::complete).execute();
+                TKit.withState(() -> {
+                    HelloApp.assertMainLauncher(cmd).get().processListener(f::complete).execute();
+                }, state);
             }).start();
 
             var mainLauncherProcess = f.get();
