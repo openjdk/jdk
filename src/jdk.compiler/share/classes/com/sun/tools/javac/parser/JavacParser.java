@@ -5405,7 +5405,7 @@ public class JavacParser implements Parser {
      *  LastFormalParameter = { FINAL | '@' Annotation } Type '...' Ident | FormalParameter
      */
     protected JCVariableDecl formalParameter(boolean lambdaParameter, boolean recordComponent) {
-        JCModifiers mods; 
+        JCModifiers mods;
 
         if (recordComponent) {
             mods = modifiersOpt();
