@@ -57,7 +57,8 @@ public class IncorrectEndTot {
                 Arguments.of(10, 10), // CEN agrees with ENDTOT
                 Arguments.of(10, 11), // CEN has one less than ENDTOT
                 Arguments.of(11, 10), // CEN has one more than ENDTOT
-                Arguments.of(0, 10)   // No CEN entries (empty ZIP)
+                Arguments.of(0, 0),   // Empty ZIP, correct ENDTOT
+                Arguments.of(0, 10)   // Empty ZIP, incorrect ENDTOT
         );
     }
 
