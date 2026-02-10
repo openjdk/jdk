@@ -152,9 +152,7 @@ public class Basic {
     @MethodSource("factory")
     void testSpaceAttributes(Path dir) throws IOException {
         Path file1 = Files.createFile(dir.resolve("foo"));
-        Path file2 = Files.createFile(dir.resolve("bar"));
         FileStore store1 = Files.getFileStore(file1);
-        FileStore store2 = Files.getFileStore(file2);
         File f = file1.toFile();
 
         // check values are "close"
