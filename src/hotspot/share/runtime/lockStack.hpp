@@ -139,7 +139,6 @@ class OMCache {
     oop _oop = nullptr;
     ObjectMonitor* _monitor = nullptr;
   } _entries[CAPACITY];
-  const oop _null_sentinel = nullptr;
 
  public:
   static ByteSize entries_offset() { return byte_offset_of(OMCache, _entries); }
