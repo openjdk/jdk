@@ -1537,7 +1537,7 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     int lshl_con = 0;
     if( lshl->Opcode() == Op_LShiftI &&
         const_shift_count(phase, lshl, &lshl_con) &&
-        (lshl_con & (BitsPerJavaInteger - 1)) == con ) {
+        (lshl_con & (BitsPerJavaInteger - 1)) == con) {
       Node *y_z = phase->transform( new URShiftINode(add->in(2),in(2)) );
       Node *sum = phase->transform( new AddINode( lshl->in(1), y_z ) );
       return new AndINode( sum, phase->intcon(mask) );
@@ -1696,7 +1696,7 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     int lshl_con = 0;
     if( lshl->Opcode() == Op_LShiftL &&
         const_shift_count(phase, lshl, &lshl_con) &&
-        (lshl_con & (BitsPerJavaLong - 1)) == con ) {
+        (lshl_con & (BitsPerJavaLong - 1)) == con) {
       Node *y_z = phase->transform( new URShiftLNode(add->in(2),in(2)) );
       Node *sum = phase->transform( new AddLNode( lshl->in(1), y_z ) );
       return new AndLNode( sum, phase->longcon(mask) );
@@ -1724,7 +1724,7 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int shl_con = 0;
   if( shl->Opcode() == Op_LShiftL &&
       const_shift_count(phase, shl, &shl_con) &&
-      (shl_con & (BitsPerJavaLong - 1)) == con )
+      (shl_con & (BitsPerJavaLong - 1)) == con)
     return new AndLNode( shl->in(1), phase->longcon(mask) );
 
   // Check for (x >> n) >>> 63. Replace with (x >>> 63)

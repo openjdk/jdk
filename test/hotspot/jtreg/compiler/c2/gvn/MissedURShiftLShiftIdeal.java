@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.c2.gvn;
 
 /*
  * @test
@@ -28,8 +29,10 @@
  *          when LShift inputs change, its URShift users were not re-queued for the
  *          (X << C) >>> C -> X & mask optimization.
  *
- * @run main/othervm -XX:+StressIGVN -XX:+StressCCP -XX:VerifyIterativeGVN=0100 -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,*MissedURShiftLShiftIdeal*::test* MissedURShiftLShiftIdeal
+ * @run main ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressIGVN -XX:+StressCCP -XX:VerifyIterativeGVN=0100 -Xbatch -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test* ${test.main.class}
  */
 
 public class MissedURShiftLShiftIdeal {

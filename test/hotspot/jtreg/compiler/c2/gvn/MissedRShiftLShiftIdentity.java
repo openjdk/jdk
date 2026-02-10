@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.c2.gvn;
 
 /*
  * @test
@@ -28,8 +29,10 @@
  *          constant nodes for the same effective count (e.g. -1 vs 31) due to
  *          mask_and_replace_shift_amount normalizing them at different times.
  *
- * @run main/othervm -XX:+StressIGVN -XX:+StressCCP -XX:VerifyIterativeGVN=1000 -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,*MissedRShiftLShiftIdentity*::test* MissedRShiftLShiftIdentity
+ * @run main ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressIGVN -XX:+StressCCP -XX:VerifyIterativeGVN=1000 -Xbatch -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test* ${test.main.class}
  */
 
 public class MissedRShiftLShiftIdentity {
