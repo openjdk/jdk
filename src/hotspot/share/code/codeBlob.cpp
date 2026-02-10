@@ -520,6 +520,8 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
       // eventually.
       return nullptr;
     }
+
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
     blob = new (size) VtableBlob(name, size);
     CodeCache_lock->unlock();
   }
