@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Button;
 import java.awt.Canvas;
 import java.awt.Choice;
 import java.awt.Color;
@@ -28,6 +29,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Helper;
 import java.awt.List;
 import java.awt.Point;
 import java.awt.Robot;
@@ -42,6 +44,7 @@ import java.awt.peer.ComponentPeer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.Override;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -235,7 +238,7 @@ public abstract class OverlappingTestBase {
         try {
             Class definition = Class.forName("java.awt." + className);
             Constructor constructor = definition.getConstructor(new Class[]{String.class});
-            java.awt.Component component = (java.awt.Component) constructor.newInstance(new Object[]{"AWT Component " + className});
+            Component component = (Component) constructor.newInstance(new Object[]{"AWT Component " + className});
             addAwtControl(container, component);
         } catch (Exception ex) {
             System.err.println(ex.getMessage());
@@ -269,16 +272,16 @@ public abstract class OverlappingTestBase {
                 String getWindowMethodName = null;
                 String eframeClassName = null;
                 if (Toolkit.getDefaultToolkit().getClass().getName().contains("XToolkit")) {
-                    java.awt.Helper.addExports("sun.awt.X11", OverlappingTestBase.class.getModule());
+                    Helper.addExports("sun.awt.X11", OverlappingTestBase.class.getModule());
                     getWindowMethodName = "getWindow";
                     eframeClassName = "sun.awt.X11.XEmbeddedFrame";
                 }else if (Toolkit.getDefaultToolkit().getClass().getName().contains(".WToolkit")) {
-                    java.awt.Helper.addExports("sun.awt.windows", OverlappingTestBase.class.getModule());
+                    Helper.addExports("sun.awt.windows", OverlappingTestBase.class.getModule());
                     getWindowMethodName = "getHWnd";
                     eframeClassName = "sun.awt.windows.WEmbeddedFrame";
                 }else if (isMac) {
-                    java.awt.Helper.addExports("sun.lwawt", OverlappingTestBase.class.getModule());
-                    java.awt.Helper.addExports("sun.lwawt.macosx", OverlappingTestBase.class.getModule());
+                    Helper.addExports("sun.lwawt", OverlappingTestBase.class.getModule());
+                    Helper.addExports("sun.lwawt.macosx", OverlappingTestBase.class.getModule());
                     eframeClassName = "sun.lwawt.macosx.CViewEmbeddedFrame";
                 }
 
@@ -382,8 +385,8 @@ public abstract class OverlappingTestBase {
 
     private static boolean isValidForPixelCheck(Component component) {
         return !(component == null ||
-                 (component instanceof java.awt.Scrollbar) ||
-                 (isMac && (component instanceof java.awt.Button)));
+                 (component instanceof Scrollbar) ||
+                 (isMac && (component instanceof Button)));
     }
 
     /**
