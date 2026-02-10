@@ -67,7 +67,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * from the Unicode Consortium at
  * <a href="http://www.unicode.org">http://www.unicode.org</a>.
  * <p>
- * Character information is based on the Unicode Standard, version 17.0.
+ * Character information is based on the Unicode Standard, version 18.0.
  * <p>
  * The Java platform has supported different versions of the Unicode
  * Standard over time. The following tables list the version of Unicode used
@@ -83,6 +83,8 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  *     <th scope="col">Unicode version</th></tr>
  * </thead>
  * <tbody>
+ * <tr><th scope="row" style="text-align:left">Java SE 28</th>
+ *     <td>Unicode 18.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 26</th>
  *     <td>Unicode 17.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 25</th>
@@ -797,7 +799,7 @@ public final /*value*/ class Character
          * It should be adjusted whenever the Unicode Character Database
          * is upgraded.
          */
-        private static final int NUM_ENTITIES = 804;
+        private static final int NUM_ENTITIES = 819;
         private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
@@ -3845,6 +3847,69 @@ public final /*value*/ class Character
                 "CJK UNIFIED IDEOGRAPHS EXTENSION J",
                 "CJKUNIFIEDIDEOGRAPHSEXTENSIONJ");
 
+        /**
+         * Constant for the "Archaic Cuneiform Numerals" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock ARCHAIC_CUNEIFORM_NUMERALS =
+            new UnicodeBlock("ARCHAIC_CUNEIFORM_NUMERALS",
+                "ARCHAIC CUNEIFORM NUMERALS",
+                "ARCHAICCUNEIFORMNUMERALS");
+
+        /**
+         * Constant for the "Chisoi" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock CHISOI =
+            new UnicodeBlock("CHISOI");
+
+        /**
+         * Constant for the "Jurchen" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock JURCHEN =
+            new UnicodeBlock("JURCHEN");
+
+        /**
+         * Constant for the "Jurchen Radicals" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock JURCHEN_RADICALS =
+            new UnicodeBlock("JURCHEN_RADICALS",
+                "JURCHEN RADICALS",
+                "JURCHENRADICALS");
+
+        /**
+         * Constant for the "Musical Symbols Supplement" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock MUSICAL_SYMBOLS_SUPPLEMENT =
+            new UnicodeBlock("MUSICAL_SYMBOLS_SUPPLEMENT",
+                "MUSICAL SYMBOLS SUPPLEMENT",
+                "MUSICALSYMBOLSSUPPLEMENT");
+
+        /**
+         * Constant for the "Miscellaneous Symbols and Arrows Extended" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock MISCELLANEOUS_SYMBOLS_AND_ARROWS_EXTENDED =
+            new UnicodeBlock("MISCELLANEOUS_SYMBOLS_AND_ARROWS_EXTENDED",
+                "MISCELLANEOUS SYMBOLS AND ARROWS EXTENDED",
+                "MISCELLANEOUSSYMBOLSANDARROWSEXTENDED");
+
+        /**
+         * Constant for the "Seal" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock SEAL =
+            new UnicodeBlock("SEAL");
 
         private static final int[] blockStarts = {
             0x0000,   // 0000..007F; Basic Latin
@@ -4127,7 +4192,8 @@ public final /*value*/ class Character
             0x12000,  // 12000..123FF; Cuneiform
             0x12400,  // 12400..1247F; Cuneiform Numbers and Punctuation
             0x12480,  // 12480..1254F; Early Dynastic Cuneiform
-            0x12550,  //               unassigned
+            0x12550,  // 12550..1268F; Archaic Cuneiform Numerals
+            0x12690,  //               unassigned
             0x12F90,  // 12F90..12FFF; Cypro-Minoan
             0x13000,  // 13000..1342F; Egyptian Hieroglyphs
             0x13430,  // 13430..1345F; Egyptian Hieroglyph Format Controls
@@ -4143,7 +4209,8 @@ public final /*value*/ class Character
             0x16B00,  // 16B00..16B8F; Pahawh Hmong
             0x16B90,  //               unassigned
             0x16D40,  // 16D40..16D7F; Kirat Rai
-            0x16D80,  //               unassigned
+            0x16D80,  // 16D80..16DAF; Chisoi
+            0x16DB0,  //               unassigned
             0x16E40,  // 16E40..16E9F; Medefaidrin
             0x16EA0,  // 16EA0..16EDF; Beria Erfe
             0x16EE0,  //               unassigned
@@ -4155,7 +4222,9 @@ public final /*value*/ class Character
             0x18B00,  // 18B00..18CFF; Khitan Small Script
             0x18D00,  // 18D00..18D7F; Tangut Supplement
             0x18D80,  // 18D80..18DFF; Tangut Components Supplement
-            0x18E00,  //               unassigned
+            0x18E00,  // 18E00..1919F; Jurchen
+            0x191A0,  // 191A0..191DF; Jurchen Radicals
+            0x191E0,  //               unassigned
             0x1AFF0,  // 1AFF0..1AFFF; Kana Extended-B
             0x1B000,  // 1B000..1B0FF; Kana Supplement
             0x1B100,  // 1B100..1B12F; Kana Extended-A
@@ -4172,7 +4241,8 @@ public final /*value*/ class Character
             0x1D000,  // 1D000..1D0FF; Byzantine Musical Symbols
             0x1D100,  // 1D100..1D1FF; Musical Symbols
             0x1D200,  // 1D200..1D24F; Ancient Greek Musical Notation
-            0x1D250,  //               unassigned
+            0x1D250,  // 1D250..1D28F; Musical Symbols Supplement
+            0x1D290,  //               unassigned
             0x1D2C0,  // 1D2C0..1D2DF; Kaktovik Numerals
             0x1D2E0,  // 1D2E0..1D2FF; Mayan Numerals
             0x1D300,  // 1D300..1D35F; Tai Xuan Jing Symbols
@@ -4181,6 +4251,8 @@ public final /*value*/ class Character
             0x1D400,  // 1D400..1D7FF; Mathematical Alphanumeric Symbols
             0x1D800,  // 1D800..1DAAF; Sutton SignWriting
             0x1DAB0,  //               unassigned
+            0x1DB00,  // 1DB00..1DBFF; Miscellaneous Symbols and Arrows Extended
+            0x1DC00,  //               unassigned
             0x1DF00,  // 1DF00..1DFFF; Latin Extended-G
             0x1E000,  // 1E000..1E02F; Glagolitic Supplement
             0x1E030,  // 1E030..1E08F; Cyrillic Extended-D
@@ -4238,6 +4310,8 @@ public final /*value*/ class Character
             0x31350,  // 31350..323AF; CJK Unified Ideographs Extension H
             0x323B0,  // 323B0..3347F; CJK Unified Ideographs Extension J
             0x33480,  //               unassigned
+            0x3D000,  // 3D000..3FC3F; Seal
+            0x3FC40,  //               unassigned
             0xE0000,  // E0000..E007F; Tags
             0xE0080,  //               unassigned
             0xE0100,  // E0100..E01EF; Variation Selectors Supplement
@@ -4527,6 +4601,7 @@ public final /*value*/ class Character
             CUNEIFORM,
             CUNEIFORM_NUMBERS_AND_PUNCTUATION,
             EARLY_DYNASTIC_CUNEIFORM,
+            ARCHAIC_CUNEIFORM_NUMERALS,
             null,
             CYPRO_MINOAN,
             EGYPTIAN_HIEROGLYPHS,
@@ -4543,6 +4618,7 @@ public final /*value*/ class Character
             PAHAWH_HMONG,
             null,
             KIRAT_RAI,
+            CHISOI,
             null,
             MEDEFAIDRIN,
             BERIA_ERFE,
@@ -4555,6 +4631,8 @@ public final /*value*/ class Character
             KHITAN_SMALL_SCRIPT,
             TANGUT_SUPPLEMENT,
             TANGUT_COMPONENTS_SUPPLEMENT,
+            JURCHEN,
+            JURCHEN_RADICALS,
             null,
             KANA_EXTENDED_B,
             KANA_SUPPLEMENT,
@@ -4572,6 +4650,7 @@ public final /*value*/ class Character
             BYZANTINE_MUSICAL_SYMBOLS,
             MUSICAL_SYMBOLS,
             ANCIENT_GREEK_MUSICAL_NOTATION,
+            MUSICAL_SYMBOLS_SUPPLEMENT,
             null,
             KAKTOVIK_NUMERALS,
             MAYAN_NUMERALS,
@@ -4580,6 +4659,8 @@ public final /*value*/ class Character
             null,
             MATHEMATICAL_ALPHANUMERIC_SYMBOLS,
             SUTTON_SIGNWRITING,
+            null,
+            MISCELLANEOUS_SYMBOLS_AND_ARROWS_EXTENDED,
             null,
             LATIN_EXTENDED_G,
             GLAGOLITIC_SUPPLEMENT,
@@ -4637,6 +4718,8 @@ public final /*value*/ class Character
             CJK_UNIFIED_IDEOGRAPHS_EXTENSION_G,
             CJK_UNIFIED_IDEOGRAPHS_EXTENSION_H,
             CJK_UNIFIED_IDEOGRAPHS_EXTENSION_J,
+            null,
+            SEAL,
             null,
             TAGS,
             null,
@@ -5719,6 +5802,30 @@ public final /*value*/ class Character
         TAI_YO,
 
         /**
+         * Unicode script "Proto Cuneiform".
+         * @since 28
+         */
+        PROTO_CUNEIFORM,
+
+        /**
+         * Unicode script "Chisoi".
+         * @since 28
+         */
+        CHISOI,
+
+        /**
+         * Unicode script "Jurchen".
+         * @since 28
+         */
+        JURCHEN,
+
+        /**
+         * Unicode script "Seal".
+         * @since 28
+         */
+        SEAL,
+
+        /**
          * Unicode script "Unknown".
          */
         UNKNOWN; // must be the last enum constant for calculating the size of "aliases" hash map.
@@ -5770,13 +5877,11 @@ public final /*value*/ class Character
             0x0487,   // 0487..052F; CYRILLIC
             0x0530,   // 0530      ; UNKNOWN
             0x0531,   // 0531..0556; ARMENIAN
-            0x0557,   // 0557..0558; UNKNOWN
-            0x0559,   // 0559..058A; ARMENIAN
-            0x058B,   // 058B..058C; UNKNOWN
-            0x058D,   // 058D..058F; ARMENIAN
+            0x0557,   // 0557      ; UNKNOWN
+            0x0558,   // 0558..058F; ARMENIAN
             0x0590,   // 0590      ; UNKNOWN
-            0x0591,   // 0591..05C7; HEBREW
-            0x05C8,   // 05C8..05CF; UNKNOWN
+            0x0591,   // 0591..05C9; HEBREW
+            0x05CA,   // 05CA..05CF; UNKNOWN
             0x05D0,   // 05D0..05EA; HEBREW
             0x05EB,   // 05EB..05EE; UNKNOWN
             0x05EF,   // 05EF..05F4; HEBREW
@@ -5829,9 +5934,7 @@ public final /*value*/ class Character
             0x0955,   // 0955..0963; DEVANAGARI
             0x0964,   // 0964..0965; COMMON
             0x0966,   // 0966..097F; DEVANAGARI
-            0x0980,   // 0980..0983; BENGALI
-            0x0984,   // 0984      ; UNKNOWN
-            0x0985,   // 0985..098C; BENGALI
+            0x0980,   // 0980..098C; BENGALI
             0x098D,   // 098D..098E; UNKNOWN
             0x098F,   // 098F..0990; BENGALI
             0x0991,   // 0991..0992; UNKNOWN
@@ -5855,8 +5958,8 @@ public final /*value*/ class Character
             0x09DE,   // 09DE      ; UNKNOWN
             0x09DF,   // 09DF..09E3; BENGALI
             0x09E4,   // 09E4..09E5; UNKNOWN
-            0x09E6,   // 09E6..09FE; BENGALI
-            0x09FF,   // 09FF..0A00; UNKNOWN
+            0x09E6,   // 09E6..09FF; BENGALI
+            0x0A00,   // 0A00      ; UNKNOWN
             0x0A01,   // 0A01..0A03; GURMUKHI
             0x0A04,   // 0A04      ; UNKNOWN
             0x0A05,   // 0A05..0A0A; GURMUKHI
@@ -5936,8 +6039,8 @@ public final /*value*/ class Character
             0x0B47,   // 0B47..0B48; ORIYA
             0x0B49,   // 0B49..0B4A; UNKNOWN
             0x0B4B,   // 0B4B..0B4D; ORIYA
-            0x0B4E,   // 0B4E..0B54; UNKNOWN
-            0x0B55,   // 0B55..0B57; ORIYA
+            0x0B4E,   // 0B4E..0B52; UNKNOWN
+            0x0B53,   // 0B53..0B57; ORIYA
             0x0B58,   // 0B58..0B5B; UNKNOWN
             0x0B5C,   // 0B5C..0B5D; ORIYA
             0x0B5E,   // 0B5E      ; UNKNOWN
@@ -6191,8 +6294,8 @@ public final /*value*/ class Character
             0x1805,   // 1805      ; COMMON
             0x1806,   // 1806..1819; MONGOLIAN
             0x181A,   // 181A..181F; UNKNOWN
-            0x1820,   // 1820..1878; MONGOLIAN
-            0x1879,   // 1879..187F; UNKNOWN
+            0x1820,   // 1820..1879; MONGOLIAN
+            0x187A,   // 187A..187F; UNKNOWN
             0x1880,   // 1880..18AA; MONGOLIAN
             0x18AB,   // 18AB..18AF; UNKNOWN
             0x18B0,   // 18B0..18F5; CANADIAN_ABORIGINAL
@@ -6231,10 +6334,8 @@ public final /*value*/ class Character
             0x1A9A,   // 1A9A..1A9F; UNKNOWN
             0x1AA0,   // 1AA0..1AAD; TAI_THAM
             0x1AAE,   // 1AAE..1AAF; UNKNOWN
-            0x1AB0,   // 1AB0..1ADD; INHERITED
-            0x1ADE,   // 1ADE..1ADF; UNKNOWN
-            0x1AE0,   // 1AE0..1AEB; INHERITED
-            0x1AEC,   // 1AEC..1AFF; UNKNOWN
+            0x1AB0,   // 1AB0..1AF0; INHERITED
+            0x1AF1,   // 1AF1..1AFF; UNKNOWN
             0x1B00,   // 1B00..1B4C; BALINESE
             0x1B4D,   // 1B4D      ; UNKNOWN
             0x1B4E,   // 1B4E..1B7F; BALINESE
@@ -6322,12 +6423,10 @@ public final /*value*/ class Character
             0x2072,   // 2072..2073; UNKNOWN
             0x2074,   // 2074..207E; COMMON
             0x207F,   // 207F      ; LATIN
-            0x2080,   // 2080..208E; COMMON
-            0x208F,   // 208F      ; UNKNOWN
-            0x2090,   // 2090..209C; LATIN
-            0x209D,   // 209D..209F; UNKNOWN
-            0x20A0,   // 20A0..20C1; COMMON
-            0x20C2,   // 20C2..20CF; UNKNOWN
+            0x2080,   // 2080..208F; COMMON
+            0x2090,   // 2090..209F; LATIN
+            0x20A0,   // 20A0..20C4; COMMON
+            0x20C5,   // 20C5..20CF; UNKNOWN
             0x20D0,   // 20D0..20F0; INHERITED
             0x20F1,   // 20F1..20FF; UNKNOWN
             0x2100,   // 2100..2125; COMMON
@@ -6387,7 +6486,9 @@ public final /*value*/ class Character
             0x2DDF,   // 2DDF      ; UNKNOWN
             0x2DE0,   // 2DE0..2DFF; CYRILLIC
             0x2E00,   // 2E00..2E5D; COMMON
-            0x2E5E,   // 2E5E..2E7F; UNKNOWN
+            0x2E5E,   // 2E5E..2E5F; UNKNOWN
+            0x2E60,   // 2E60..2E63; COMMON
+            0x2E64,   // 2E64..2E7F; UNKNOWN
             0x2E80,   // 2E80..2E99; HAN
             0x2E9A,   // 2E9A      ; UNKNOWN
             0x2E9B,   // 2E9B..2EF3; HAN
@@ -6451,8 +6552,10 @@ public final /*value*/ class Character
             0xA700,   // A700..A721; COMMON
             0xA722,   // A722..A787; LATIN
             0xA788,   // A788..A78A; COMMON
-            0xA78B,   // A78B..A7DC; LATIN
-            0xA7DD,   // A7DD..A7F0; UNKNOWN
+            0xA78B,   // A78B..A7DD; LATIN
+            0xA7DE,   // A7DE..A7E1; UNKNOWN
+            0xA7E2,   // A7E2      ; LATIN
+            0xA7E3,   // A7E3..A7F0; UNKNOWN
             0xA7F1,   // A7F1..A7FF; LATIN
             0xA800,   // A800..A82C; SYLOTI_NAGRI
             0xA82D,   // A82D..A82F; UNKNOWN
@@ -6510,7 +6613,8 @@ public final /*value*/ class Character
             0xAB65,   // AB65      ; GREEK
             0xAB66,   // AB66..AB69; LATIN
             0xAB6A,   // AB6A..AB6B; COMMON
-            0xAB6C,   // AB6C..AB6F; UNKNOWN
+            0xAB6C,   // AB6C..AB6D; LATIN
+            0xAB6E,   // AB6E..AB6F; UNKNOWN
             0xAB70,   // AB70..ABBF; CHEROKEE
             0xABC0,   // ABC0..ABED; MEETEI_MAYEK
             0xABEE,   // ABEE..ABEF; UNKNOWN
@@ -6680,8 +6784,8 @@ public final /*value*/ class Character
             0x10786,  // 10786       ; UNKNOWN
             0x10787,  // 10787..107B0; LATIN
             0x107B1,  // 107B1       ; UNKNOWN
-            0x107B2,  // 107B2..107BA; LATIN
-            0x107BB,  // 107BB..107FF; UNKNOWN
+            0x107B2,  // 107B2..107BF; LATIN
+            0x107C0,  // 107C0..107FF; UNKNOWN
             0x10800,  // 10800..10805; CYPRIOT
             0x10806,  // 10806..10807; UNKNOWN
             0x10808,  // 10808       ; CYPRIOT
@@ -6784,10 +6888,10 @@ public final /*value*/ class Character
             0x10EB0,  // 10EB0..10EB1; YEZIDI
             0x10EB2,  // 10EB2..10EC1; UNKNOWN
             0x10EC2,  // 10EC2..10EC7; ARABIC
-            0x10EC8,  // 10EC8..10ECF; UNKNOWN
-            0x10ED0,  // 10ED0..10ED8; ARABIC
-            0x10ED9,  // 10ED9..10EF9; UNKNOWN
-            0x10EFA,  // 10EFA..10EFF; ARABIC
+            0x10EC8,  // 10EC8       ; UNKNOWN
+            0x10EC9,  // 10EC9..10EEE; ARABIC
+            0x10EEF,  // 10EEF       ; UNKNOWN
+            0x10EF0,  // 10EF0..10EFF; ARABIC
             0x10F00,  // 10F00..10F27; OLD_SOGDIAN
             0x10F28,  // 10F28..10F2F; UNKNOWN
             0x10F30,  // 10F30..10F59; SOGDIAN
@@ -6956,8 +7060,8 @@ public final /*value*/ class Character
             0x11AB0,  // 11AB0..11ABF; CANADIAN_ABORIGINAL
             0x11AC0,  // 11AC0..11AF8; PAU_CIN_HAU
             0x11AF9,  // 11AF9..11AFF; UNKNOWN
-            0x11B00,  // 11B00..11B09; DEVANAGARI
-            0x11B0A,  // 11B0A..11B5F; UNKNOWN
+            0x11B00,  // 11B00..11B0A; DEVANAGARI
+            0x11B0B,  // 11B0B..11B5F; UNKNOWN
             0x11B60,  // 11B60..11B67; SHARADA
             0x11B68,  // 11B68..11BBF; UNKNOWN
             0x11BC0,  // 11BC0..11BE1; SUNUWAR
@@ -7023,12 +7127,12 @@ public final /*value*/ class Character
             0x11FFF,  // 11FFF       ; TAMIL
             0x12000,  // 12000..12399; CUNEIFORM
             0x1239A,  // 1239A..123FF; UNKNOWN
-            0x12400,  // 12400..1246E; CUNEIFORM
-            0x1246F,  // 1246F       ; UNKNOWN
-            0x12470,  // 12470..12474; CUNEIFORM
-            0x12475,  // 12475..1247F; UNKNOWN
-            0x12480,  // 12480..12543; CUNEIFORM
-            0x12544,  // 12544..12F8F; UNKNOWN
+            0x12400,  // 12400..12543; CUNEIFORM
+            0x12544,  // 12544..1254F; UNKNOWN
+            0x12550,  // 12550..125A7; CUNEIFORM
+            0x125A8,  // 125A8..1264B; PROTO_CUNEIFORM
+            0x1264C,  // 1264C..12686; CUNEIFORM
+            0x12687,  // 12687..12F8F; UNKNOWN
             0x12F90,  // 12F90..12FF2; CYPRO_MINOAN
             0x12FF3,  // 12FF3..12FFF; UNKNOWN
             0x13000,  // 13000..13455; EGYPTIAN_HIEROGLYPHS
@@ -7065,7 +7169,11 @@ public final /*value*/ class Character
             0x16B7D,  // 16B7D..16B8F; PAHAWH_HMONG
             0x16B90,  // 16B90..16D3F; UNKNOWN
             0x16D40,  // 16D40..16D79; KIRAT_RAI
-            0x16D7A,  // 16D7A..16E3F; UNKNOWN
+            0x16D7A,  // 16D7A..16D7F; UNKNOWN
+            0x16D80,  // 16D80..16D9D; CHISOI
+            0x16D9E,  // 16D9E..16D9F; UNKNOWN
+            0x16DA0,  // 16DA0..16DA9; CHISOI
+            0x16DAA,  // 16DAA..16E3F; UNKNOWN
             0x16E40,  // 16E40..16E9A; MEDEFAIDRIN
             0x16E9B,  // 16E9B..16E9F; UNKNOWN
             0x16EA0,  // 16EA0..16EB8; BERIA_ERFE
@@ -7086,13 +7194,17 @@ public final /*value*/ class Character
             0x16FF0,  // 16FF0..16FF6; HAN
             0x16FF7,  // 16FF7..16FFF; UNKNOWN
             0x17000,  // 17000..18AFF; TANGUT
-            0x18B00,  // 18B00..18CD5; KHITAN_SMALL_SCRIPT
-            0x18CD6,  // 18CD6..18CFE; UNKNOWN
+            0x18B00,  // 18B00..18CDA; KHITAN_SMALL_SCRIPT
+            0x18CDB,  // 18CDB..18CFE; UNKNOWN
             0x18CFF,  // 18CFF       ; KHITAN_SMALL_SCRIPT
-            0x18D00,  // 18D00..18D1E; TANGUT
-            0x18D1F,  // 18D1F..18D7F; UNKNOWN
+            0x18D00,  // 18D00..18D20; TANGUT
+            0x18D21,  // 18D21..18D7F; UNKNOWN
             0x18D80,  // 18D80..18DF2; TANGUT
-            0x18DF3,  // 18DF3..1AFEF; UNKNOWN
+            0x18DF3,  // 18DF3..18DFF; UNKNOWN
+            0x18E00,  // 18E00..19191; JURCHEN
+            0x19192,  // 19192..1919F; UNKNOWN
+            0x191A0,  // 191A0..191D2; JURCHEN
+            0x191D3,  // 191D3..1AFEF; UNKNOWN
             0x1AFF0,  // 1AFF0..1AFF3; KATAKANA
             0x1AFF4,  // 1AFF4       ; UNKNOWN
             0x1AFF5,  // 1AFF5..1AFFB; KATAKANA
@@ -7102,15 +7214,17 @@ public final /*value*/ class Character
             0x1B000,  // 1B000       ; KATAKANA
             0x1B001,  // 1B001..1B11F; HIRAGANA
             0x1B120,  // 1B120..1B122; KATAKANA
-            0x1B123,  // 1B123..1B131; UNKNOWN
+            0x1B123,  // 1B123       ; HIRAGANA
+            0x1B124,  // 1B124..1B128; KATAKANA
+            0x1B129,  // 1B129..1B131; UNKNOWN
             0x1B132,  // 1B132       ; HIRAGANA
             0x1B133,  // 1B133..1B14F; UNKNOWN
             0x1B150,  // 1B150..1B152; HIRAGANA
             0x1B153,  // 1B153..1B154; UNKNOWN
             0x1B155,  // 1B155       ; KATAKANA
             0x1B156,  // 1B156..1B163; UNKNOWN
-            0x1B164,  // 1B164..1B167; KATAKANA
-            0x1B168,  // 1B168..1B16F; UNKNOWN
+            0x1B164,  // 1B164..1B168; KATAKANA
+            0x1B169,  // 1B169..1B16F; UNKNOWN
             0x1B170,  // 1B170..1B2FB; NUSHU
             0x1B2FC,  // 1B2FC..1BBFF; UNKNOWN
             0x1BC00,  // 1BC00..1BC6A; DUPLOYAN
@@ -7129,9 +7243,11 @@ public final /*value*/ class Character
             0x1CD00,  // 1CD00..1CEB3; COMMON
             0x1CEB4,  // 1CEB4..1CEB9; UNKNOWN
             0x1CEBA,  // 1CEBA..1CED0; COMMON
-            0x1CED1,  // 1CED1..1CEDF; UNKNOWN
-            0x1CEE0,  // 1CEE0..1CEF0; COMMON
-            0x1CEF1,  // 1CEF1..1CEFF; UNKNOWN
+            0x1CED1,  // 1CED1       ; UNKNOWN
+            0x1CED2,  // 1CED2..1CED4; COMMON
+            0x1CED5,  // 1CED5..1CEDC; UNKNOWN
+            0x1CEDD,  // 1CEDD..1CEFD; COMMON
+            0x1CEFE,  // 1CEFE..1CEFF; UNKNOWN
             0x1CF00,  // 1CF00..1CF2D; INHERITED
             0x1CF2E,  // 1CF2E..1CF2F; UNKNOWN
             0x1CF30,  // 1CF30..1CF46; INHERITED
@@ -7141,7 +7257,7 @@ public final /*value*/ class Character
             0x1D000,  // 1D000..1D0F5; COMMON
             0x1D0F6,  // 1D0F6..1D0FF; UNKNOWN
             0x1D100,  // 1D100..1D126; COMMON
-            0x1D127,  // 1D127..1D128; UNKNOWN
+            0x1D127,  // 1D127..1D128; INHERITED
             0x1D129,  // 1D129..1D166; COMMON
             0x1D167,  // 1D167..1D169; INHERITED
             0x1D16A,  // 1D16A..1D17A; COMMON
@@ -7150,10 +7266,13 @@ public final /*value*/ class Character
             0x1D185,  // 1D185..1D18B; INHERITED
             0x1D18C,  // 1D18C..1D1A9; COMMON
             0x1D1AA,  // 1D1AA..1D1AD; INHERITED
-            0x1D1AE,  // 1D1AE..1D1EA; COMMON
-            0x1D1EB,  // 1D1EB..1D1FF; UNKNOWN
+            0x1D1AE,  // 1D1AE..1D1FF; COMMON
             0x1D200,  // 1D200..1D245; GREEK
-            0x1D246,  // 1D246..1D2BF; UNKNOWN
+            0x1D246,  // 1D246..1D24F; UNKNOWN
+            0x1D250,  // 1D250..1D25A; COMMON
+            0x1D25B,  // 1D25B..1D25C; INHERITED
+            0x1D25D,  // 1D25D..1D281; COMMON
+            0x1D282,  // 1D282..1D2BF; UNKNOWN
             0x1D2C0,  // 1D2C0..1D2D3; COMMON
             0x1D2D4,  // 1D2D4..1D2DF; UNKNOWN
             0x1D2E0,  // 1D2E0..1D2F3; COMMON
@@ -7198,8 +7317,8 @@ public final /*value*/ class Character
             0x1D547,  // 1D547..1D549; UNKNOWN
             0x1D54A,  // 1D54A..1D550; COMMON
             0x1D551,  // 1D551       ; UNKNOWN
-            0x1D552,  // 1D552..1D6A5; COMMON
-            0x1D6A6,  // 1D6A6..1D6A7; UNKNOWN
+            0x1D552,  // 1D552..1D6A6; COMMON
+            0x1D6A7,  // 1D6A7       ; UNKNOWN
             0x1D6A8,  // 1D6A8..1D7CB; COMMON
             0x1D7CC,  // 1D7CC..1D7CD; UNKNOWN
             0x1D7CE,  // 1D7CE..1D7FF; COMMON
@@ -7208,11 +7327,16 @@ public final /*value*/ class Character
             0x1DA9B,  // 1DA9B..1DA9F; SIGNWRITING
             0x1DAA0,  // 1DAA0       ; UNKNOWN
             0x1DAA1,  // 1DAA1..1DAAF; SIGNWRITING
-            0x1DAB0,  // 1DAB0..1DEFF; UNKNOWN
-            0x1DF00,  // 1DF00..1DF1E; LATIN
-            0x1DF1F,  // 1DF1F..1DF24; UNKNOWN
-            0x1DF25,  // 1DF25..1DF2A; LATIN
-            0x1DF2B,  // 1DF2B..1DFFF; UNKNOWN
+            0x1DAB0,  // 1DAB0..1DAFF; UNKNOWN
+            0x1DB00,  // 1DB00..1DB1C; COMMON
+            0x1DB1D,  // 1DB1D..1DEFF; UNKNOWN
+            0x1DF00,  // 1DF00..1DF81; LATIN
+            0x1DF82,  // 1DF82..1DF8F; UNKNOWN
+            0x1DF90,  // 1DF90..1DF96; LATIN
+            0x1DF97,  // 1DF97..1DFCC; UNKNOWN
+            0x1DFCD,  // 1DFCD..1DFF2; LATIN
+            0x1DFF3,  // 1DFF3..1DFF4; GREEK
+            0x1DFF5,  // 1DFF5..1DFFF; LATIN
             0x1E000,  // 1E000..1E006; GLAGOLITIC
             0x1E007,  // 1E007       ; UNKNOWN
             0x1E008,  // 1E008..1E018; GLAGOLITIC
@@ -7355,8 +7479,8 @@ public final /*value*/ class Character
             0x1F0D0,  // 1F0D0       ; UNKNOWN
             0x1F0D1,  // 1F0D1..1F0F5; COMMON
             0x1F0F6,  // 1F0F6..1F0FF; UNKNOWN
-            0x1F100,  // 1F100..1F1AD; COMMON
-            0x1F1AE,  // 1F1AE..1F1E5; UNKNOWN
+            0x1F100,  // 1F100..1F1AE; COMMON
+            0x1F1AF,  // 1F1AF..1F1E5; UNKNOWN
             0x1F1E6,  // 1F1E6..1F1FF; COMMON
             0x1F200,  // 1F200       ; HIRAGANA
             0x1F201,  // 1F201..1F202; COMMON
@@ -7369,19 +7493,17 @@ public final /*value*/ class Character
             0x1F252,  // 1F252..1F25F; UNKNOWN
             0x1F260,  // 1F260..1F265; COMMON
             0x1F266,  // 1F266..1F2FF; UNKNOWN
-            0x1F300,  // 1F300..1F6D8; COMMON
-            0x1F6D9,  // 1F6D9..1F6DB; UNKNOWN
+            0x1F300,  // 1F300..1F6D9; COMMON
+            0x1F6DA,  // 1F6DA..1F6DB; UNKNOWN
             0x1F6DC,  // 1F6DC..1F6EC; COMMON
             0x1F6ED,  // 1F6ED..1F6EF; UNKNOWN
             0x1F6F0,  // 1F6F0..1F6FC; COMMON
             0x1F6FD,  // 1F6FD..1F6FF; UNKNOWN
-            0x1F700,  // 1F700..1F7D9; COMMON
-            0x1F7DA,  // 1F7DA..1F7DF; UNKNOWN
+            0x1F700,  // 1F700..1F7DB; COMMON
+            0x1F7DC,  // 1F7DC..1F7DF; UNKNOWN
             0x1F7E0,  // 1F7E0..1F7EB; COMMON
             0x1F7EC,  // 1F7EC..1F7EF; UNKNOWN
-            0x1F7F0,  // 1F7F0       ; COMMON
-            0x1F7F1,  // 1F7F1..1F7FF; UNKNOWN
-            0x1F800,  // 1F800..1F80B; COMMON
+            0x1F7F0,  // 1F7F0..1F80B; COMMON
             0x1F80C,  // 1F80C..1F80F; UNKNOWN
             0x1F810,  // 1F810..1F847; COMMON
             0x1F848,  // 1F848..1F84F; UNKNOWN
@@ -7403,26 +7525,24 @@ public final /*value*/ class Character
             0x1FA6E,  // 1FA6E..1FA6F; UNKNOWN
             0x1FA70,  // 1FA70..1FA7C; COMMON
             0x1FA7D,  // 1FA7D..1FA7F; UNKNOWN
-            0x1FA80,  // 1FA80..1FA8A; COMMON
-            0x1FA8B,  // 1FA8B..1FA8D; UNKNOWN
-            0x1FA8E,  // 1FA8E..1FAC6; COMMON
+            0x1FA80,  // 1FA80..1FAC6; COMMON
             0x1FAC7,  // 1FAC7       ; UNKNOWN
             0x1FAC8,  // 1FAC8       ; COMMON
-            0x1FAC9,  // 1FAC9..1FACC; UNKNOWN
-            0x1FACD,  // 1FACD..1FADC; COMMON
-            0x1FADD,  // 1FADD..1FADE; UNKNOWN
-            0x1FADF,  // 1FADF..1FAEA; COMMON
-            0x1FAEB,  // 1FAEB..1FAEE; UNKNOWN
-            0x1FAEF,  // 1FAEF..1FAF8; COMMON
-            0x1FAF9,  // 1FAF9..1FAFF; UNKNOWN
+            0x1FAC9,  // 1FAC9..1FACB; UNKNOWN
+            0x1FACC,  // 1FACC..1FADD; COMMON
+            0x1FADE,  // 1FADE       ; UNKNOWN
+            0x1FADF,  // 1FADF..1FAEB; COMMON
+            0x1FAEC,  // 1FAEC..1FAEE; UNKNOWN
+            0x1FAEF,  // 1FAEF..1FAFA; COMMON
+            0x1FAFB,  // 1FAFB..1FAFF; UNKNOWN
             0x1FB00,  // 1FB00..1FB92; COMMON
             0x1FB93,  // 1FB93       ; UNKNOWN
             0x1FB94,  // 1FB94..1FBFA; COMMON
             0x1FBFB,  // 1FBFB..1FFFF; UNKNOWN
             0x20000,  // 20000..2A6DF; HAN
             0x2A6E0,  // 2A6E0..2A6FF; UNKNOWN
-            0x2A700,  // 2A700..2B81D; HAN
-            0x2B81E,  // 2B81E..2B81F; UNKNOWN
+            0x2A700,  // 2A700..2B81E; HAN
+            0x2B81F,  // 2B81F       ; UNKNOWN
             0x2B820,  // 2B820..2CEAD; HAN
             0x2CEAE,  // 2CEAE..2CEAF; UNKNOWN
             0x2CEB0,  // 2CEB0..2EBE0; HAN
@@ -7434,7 +7554,9 @@ public final /*value*/ class Character
             0x30000,  // 30000..3134A; HAN
             0x3134B,  // 3134B..3134F; UNKNOWN
             0x31350,  // 31350..33479; HAN
-            0x3347A,  // 3347A..E0000; UNKNOWN
+            0x3347A,  // 3347A..3CFFF; UNKNOWN
+            0x3D000,  // 3D000..3FC3F; SEAL
+            0x3FC40,  // 3FC40..E0000; UNKNOWN
             0xE0001,  // E0001       ; COMMON
             0xE0002,  // E0002..E001F; UNKNOWN
             0xE0020,  // E0020..E007F; COMMON
@@ -7490,13 +7612,11 @@ public final /*value*/ class Character
             CYRILLIC,                 // 0487..052F
             UNKNOWN,                  // 0530
             ARMENIAN,                 // 0531..0556
-            UNKNOWN,                  // 0557..0558
-            ARMENIAN,                 // 0559..058A
-            UNKNOWN,                  // 058B..058C
-            ARMENIAN,                 // 058D..058F
+            UNKNOWN,                  // 0557
+            ARMENIAN,                 // 0558..058F
             UNKNOWN,                  // 0590
-            HEBREW,                   // 0591..05C7
-            UNKNOWN,                  // 05C8..05CF
+            HEBREW,                   // 0591..05C9
+            UNKNOWN,                  // 05CA..05CF
             HEBREW,                   // 05D0..05EA
             UNKNOWN,                  // 05EB..05EE
             HEBREW,                   // 05EF..05F4
@@ -7549,9 +7669,7 @@ public final /*value*/ class Character
             DEVANAGARI,               // 0955..0963
             COMMON,                   // 0964..0965
             DEVANAGARI,               // 0966..097F
-            BENGALI,                  // 0980..0983
-            UNKNOWN,                  // 0984
-            BENGALI,                  // 0985..098C
+            BENGALI,                  // 0980..098C
             UNKNOWN,                  // 098D..098E
             BENGALI,                  // 098F..0990
             UNKNOWN,                  // 0991..0992
@@ -7575,8 +7693,8 @@ public final /*value*/ class Character
             UNKNOWN,                  // 09DE
             BENGALI,                  // 09DF..09E3
             UNKNOWN,                  // 09E4..09E5
-            BENGALI,                  // 09E6..09FE
-            UNKNOWN,                  // 09FF..0A00
+            BENGALI,                  // 09E6..09FF
+            UNKNOWN,                  // 0A00
             GURMUKHI,                 // 0A01..0A03
             UNKNOWN,                  // 0A04
             GURMUKHI,                 // 0A05..0A0A
@@ -7656,8 +7774,8 @@ public final /*value*/ class Character
             ORIYA,                    // 0B47..0B48
             UNKNOWN,                  // 0B49..0B4A
             ORIYA,                    // 0B4B..0B4D
-            UNKNOWN,                  // 0B4E..0B54
-            ORIYA,                    // 0B55..0B57
+            UNKNOWN,                  // 0B4E..0B52
+            ORIYA,                    // 0B53..0B57
             UNKNOWN,                  // 0B58..0B5B
             ORIYA,                    // 0B5C..0B5D
             UNKNOWN,                  // 0B5E
@@ -7911,8 +8029,8 @@ public final /*value*/ class Character
             COMMON,                   // 1805
             MONGOLIAN,                // 1806..1819
             UNKNOWN,                  // 181A..181F
-            MONGOLIAN,                // 1820..1878
-            UNKNOWN,                  // 1879..187F
+            MONGOLIAN,                // 1820..1879
+            UNKNOWN,                  // 187A..187F
             MONGOLIAN,                // 1880..18AA
             UNKNOWN,                  // 18AB..18AF
             CANADIAN_ABORIGINAL,      // 18B0..18F5
@@ -7951,10 +8069,8 @@ public final /*value*/ class Character
             UNKNOWN,                  // 1A9A..1A9F
             TAI_THAM,                 // 1AA0..1AAD
             UNKNOWN,                  // 1AAE..1AAF
-            INHERITED,                // 1AB0..1ADD
-            UNKNOWN,                  // 1ADE..1ADF
-            INHERITED,                // 1AE0..1AEB
-            UNKNOWN,                  // 1AEC..1AFF
+            INHERITED,                // 1AB0..1AF0
+            UNKNOWN,                  // 1AF1..1AFF
             BALINESE,                 // 1B00..1B4C
             UNKNOWN,                  // 1B4D
             BALINESE,                 // 1B4E..1B7F
@@ -8042,12 +8158,10 @@ public final /*value*/ class Character
             UNKNOWN,                  // 2072..2073
             COMMON,                   // 2074..207E
             LATIN,                    // 207F
-            COMMON,                   // 2080..208E
-            UNKNOWN,                  // 208F
-            LATIN,                    // 2090..209C
-            UNKNOWN,                  // 209D..209F
-            COMMON,                   // 20A0..20C1
-            UNKNOWN,                  // 20C2..20CF
+            COMMON,                   // 2080..208F
+            LATIN,                    // 2090..209F
+            COMMON,                   // 20A0..20C4
+            UNKNOWN,                  // 20C5..20CF
             INHERITED,                // 20D0..20F0
             UNKNOWN,                  // 20F1..20FF
             COMMON,                   // 2100..2125
@@ -8107,7 +8221,9 @@ public final /*value*/ class Character
             UNKNOWN,                  // 2DDF
             CYRILLIC,                 // 2DE0..2DFF
             COMMON,                   // 2E00..2E5D
-            UNKNOWN,                  // 2E5E..2E7F
+            UNKNOWN,                  // 2E5E..2E5F
+            COMMON,                   // 2E60..2E63
+            UNKNOWN,                  // 2E64..2E7F
             HAN,                      // 2E80..2E99
             UNKNOWN,                  // 2E9A
             HAN,                      // 2E9B..2EF3
@@ -8171,8 +8287,10 @@ public final /*value*/ class Character
             COMMON,                   // A700..A721
             LATIN,                    // A722..A787
             COMMON,                   // A788..A78A
-            LATIN,                    // A78B..A7DC
-            UNKNOWN,                  // A7DD..A7F0
+            LATIN,                    // A78B..A7DD
+            UNKNOWN,                  // A7DE..A7E1
+            LATIN,                    // A7E2
+            UNKNOWN,                  // A7E3..A7F0
             LATIN,                    // A7F1..A7FF
             SYLOTI_NAGRI,             // A800..A82C
             UNKNOWN,                  // A82D..A82F
@@ -8230,7 +8348,8 @@ public final /*value*/ class Character
             GREEK,                    // AB65
             LATIN,                    // AB66..AB69
             COMMON,                   // AB6A..AB6B
-            UNKNOWN,                  // AB6C..AB6F
+            LATIN,                    // AB6C..AB6D
+            UNKNOWN,                  // AB6E..AB6F
             CHEROKEE,                 // AB70..ABBF
             MEETEI_MAYEK,             // ABC0..ABED
             UNKNOWN,                  // ABEE..ABEF
@@ -8400,8 +8519,8 @@ public final /*value*/ class Character
             UNKNOWN,                  // 10786
             LATIN,                    // 10787..107B0
             UNKNOWN,                  // 107B1
-            LATIN,                    // 107B2..107BA
-            UNKNOWN,                  // 107BB..107FF
+            LATIN,                    // 107B2..107BF
+            UNKNOWN,                  // 107C0..107FF
             CYPRIOT,                  // 10800..10805
             UNKNOWN,                  // 10806..10807
             CYPRIOT,                  // 10808
@@ -8504,10 +8623,10 @@ public final /*value*/ class Character
             YEZIDI,                   // 10EB0..10EB1
             UNKNOWN,                  // 10EB2..10EC1
             ARABIC,                   // 10EC2..10EC7
-            UNKNOWN,                  // 10EC8..10ECF
-            ARABIC,                   // 10ED0..10ED8
-            UNKNOWN,                  // 10ED9..10EF9
-            ARABIC,                   // 10EFA..10EFF
+            UNKNOWN,                  // 10EC8
+            ARABIC,                   // 10EC9..10EEE
+            UNKNOWN,                  // 10EEF
+            ARABIC,                   // 10EF0..10EFF
             OLD_SOGDIAN,              // 10F00..10F27
             UNKNOWN,                  // 10F28..10F2F
             SOGDIAN,                  // 10F30..10F59
@@ -8676,8 +8795,8 @@ public final /*value*/ class Character
             CANADIAN_ABORIGINAL,      // 11AB0..11ABF
             PAU_CIN_HAU,              // 11AC0..11AF8
             UNKNOWN,                  // 11AF9..11AFF
-            DEVANAGARI,               // 11B00..11B09
-            UNKNOWN,                  // 11B0A..11B5F
+            DEVANAGARI,               // 11B00..11B0A
+            UNKNOWN,                  // 11B0B..11B5F
             SHARADA,                  // 11B60..11B67
             UNKNOWN,                  // 11B68..11BBF
             SUNUWAR,                  // 11BC0..11BE1
@@ -8743,12 +8862,12 @@ public final /*value*/ class Character
             TAMIL,                    // 11FFF
             CUNEIFORM,                // 12000..12399
             UNKNOWN,                  // 1239A..123FF
-            CUNEIFORM,                // 12400..1246E
-            UNKNOWN,                  // 1246F
-            CUNEIFORM,                // 12470..12474
-            UNKNOWN,                  // 12475..1247F
-            CUNEIFORM,                // 12480..12543
-            UNKNOWN,                  // 12544..12F8F
+            CUNEIFORM,                // 12400..12543
+            UNKNOWN,                  // 12544..1254F
+            CUNEIFORM,                // 12550..125A7
+            PROTO_CUNEIFORM,          // 125A8..1264B
+            CUNEIFORM,                // 1264C..12686
+            UNKNOWN,                  // 12687..12F8F
             CYPRO_MINOAN,             // 12F90..12FF2
             UNKNOWN,                  // 12FF3..12FFF
             EGYPTIAN_HIEROGLYPHS,     // 13000..13455
@@ -8785,7 +8904,11 @@ public final /*value*/ class Character
             PAHAWH_HMONG,             // 16B7D..16B8F
             UNKNOWN,                  // 16B90..16D3F
             KIRAT_RAI,                // 16D40..16D79
-            UNKNOWN,                  // 16D7A..16E3F
+            UNKNOWN,                  // 16D7A..16D7F
+            CHISOI,                   // 16D80..16D9D
+            UNKNOWN,                  // 16D9E..16D9F
+            CHISOI,                   // 16DA0..16DA9
+            UNKNOWN,                  // 16DAA..16E3F
             MEDEFAIDRIN,              // 16E40..16E9A
             UNKNOWN,                  // 16E9B..16E9F
             BERIA_ERFE,               // 16EA0..16EB8
@@ -8806,13 +8929,17 @@ public final /*value*/ class Character
             HAN,                      // 16FF0..16FF6
             UNKNOWN,                  // 16FF7..16FFF
             TANGUT,                   // 17000..18AFF
-            KHITAN_SMALL_SCRIPT,      // 18B00..18CD5
-            UNKNOWN,                  // 18CD6..18CFE
+            KHITAN_SMALL_SCRIPT,      // 18B00..18CDA
+            UNKNOWN,                  // 18CDB..18CFE
             KHITAN_SMALL_SCRIPT,      // 18CFF
-            TANGUT,                   // 18D00..18D1E
-            UNKNOWN,                  // 18D1F..18D7F
+            TANGUT,                   // 18D00..18D20
+            UNKNOWN,                  // 18D21..18D7F
             TANGUT,                   // 18D80..18DF2
-            UNKNOWN,                  // 18DF3..1AFEF
+            UNKNOWN,                  // 18DF3..18DFF
+            JURCHEN,                  // 18E00..19191
+            UNKNOWN,                  // 19192..1919F
+            JURCHEN,                  // 191A0..191D2
+            UNKNOWN,                  // 191D3..1AFEF
             KATAKANA,                 // 1AFF0..1AFF3
             UNKNOWN,                  // 1AFF4
             KATAKANA,                 // 1AFF5..1AFFB
@@ -8822,15 +8949,17 @@ public final /*value*/ class Character
             KATAKANA,                 // 1B000
             HIRAGANA,                 // 1B001..1B11F
             KATAKANA,                 // 1B120..1B122
-            UNKNOWN,                  // 1B123..1B131
+            HIRAGANA,                 // 1B123
+            KATAKANA,                 // 1B124..1B128
+            UNKNOWN,                  // 1B129..1B131
             HIRAGANA,                 // 1B132
             UNKNOWN,                  // 1B133..1B14F
             HIRAGANA,                 // 1B150..1B152
             UNKNOWN,                  // 1B153..1B154
             KATAKANA,                 // 1B155
             UNKNOWN,                  // 1B156..1B163
-            KATAKANA,                 // 1B164..1B167
-            UNKNOWN,                  // 1B168..1B16F
+            KATAKANA,                 // 1B164..1B168
+            UNKNOWN,                  // 1B169..1B16F
             NUSHU,                    // 1B170..1B2FB
             UNKNOWN,                  // 1B2FC..1BBFF
             DUPLOYAN,                 // 1BC00..1BC6A
@@ -8849,9 +8978,11 @@ public final /*value*/ class Character
             COMMON,                   // 1CD00..1CEB3
             UNKNOWN,                  // 1CEB4..1CEB9
             COMMON,                   // 1CEBA..1CED0
-            UNKNOWN,                  // 1CED1..1CEDF
-            COMMON,                   // 1CEE0..1CEF0
-            UNKNOWN,                  // 1CEF1..1CEFF
+            UNKNOWN,                  // 1CED1
+            COMMON,                   // 1CED2..1CED4
+            UNKNOWN,                  // 1CED5..1CEDC
+            COMMON,                   // 1CEDD..1CEFD
+            UNKNOWN,                  // 1CEFE..1CEFF
             INHERITED,                // 1CF00..1CF2D
             UNKNOWN,                  // 1CF2E..1CF2F
             INHERITED,                // 1CF30..1CF46
@@ -8861,7 +8992,7 @@ public final /*value*/ class Character
             COMMON,                   // 1D000..1D0F5
             UNKNOWN,                  // 1D0F6..1D0FF
             COMMON,                   // 1D100..1D126
-            UNKNOWN,                  // 1D127..1D128
+            INHERITED,                // 1D127..1D128
             COMMON,                   // 1D129..1D166
             INHERITED,                // 1D167..1D169
             COMMON,                   // 1D16A..1D17A
@@ -8870,10 +9001,13 @@ public final /*value*/ class Character
             INHERITED,                // 1D185..1D18B
             COMMON,                   // 1D18C..1D1A9
             INHERITED,                // 1D1AA..1D1AD
-            COMMON,                   // 1D1AE..1D1EA
-            UNKNOWN,                  // 1D1EB..1D1FF
+            COMMON,                   // 1D1AE..1D1FF
             GREEK,                    // 1D200..1D245
-            UNKNOWN,                  // 1D246..1D2BF
+            UNKNOWN,                  // 1D246..1D24F
+            COMMON,                   // 1D250..1D25A
+            INHERITED,                // 1D25B..1D25C
+            COMMON,                   // 1D25D..1D281
+            UNKNOWN,                  // 1D282..1D2BF
             COMMON,                   // 1D2C0..1D2D3
             UNKNOWN,                  // 1D2D4..1D2DF
             COMMON,                   // 1D2E0..1D2F3
@@ -8918,8 +9052,8 @@ public final /*value*/ class Character
             UNKNOWN,                  // 1D547..1D549
             COMMON,                   // 1D54A..1D550
             UNKNOWN,                  // 1D551
-            COMMON,                   // 1D552..1D6A5
-            UNKNOWN,                  // 1D6A6..1D6A7
+            COMMON,                   // 1D552..1D6A6
+            UNKNOWN,                  // 1D6A7
             COMMON,                   // 1D6A8..1D7CB
             UNKNOWN,                  // 1D7CC..1D7CD
             COMMON,                   // 1D7CE..1D7FF
@@ -8928,11 +9062,16 @@ public final /*value*/ class Character
             SIGNWRITING,              // 1DA9B..1DA9F
             UNKNOWN,                  // 1DAA0
             SIGNWRITING,              // 1DAA1..1DAAF
-            UNKNOWN,                  // 1DAB0..1DEFF
-            LATIN,                    // 1DF00..1DF1E
-            UNKNOWN,                  // 1DF1F..1DF24
-            LATIN,                    // 1DF25..1DF2A
-            UNKNOWN,                  // 1DF2B..1DFFF
+            UNKNOWN,                  // 1DAB0..1DAFF
+            COMMON,                   // 1DB00..1DB1C
+            UNKNOWN,                  // 1DB1D..1DEFF
+            LATIN,                    // 1DF00..1DF81
+            UNKNOWN,                  // 1DF82..1DF8F
+            LATIN,                    // 1DF90..1DF96
+            UNKNOWN,                  // 1DF97..1DFCC
+            LATIN,                    // 1DFCD..1DFF2
+            GREEK,                    // 1DFF3..1DFF4
+            LATIN,                    // 1DFF5..1DFFF
             GLAGOLITIC,               // 1E000..1E006
             UNKNOWN,                  // 1E007
             GLAGOLITIC,               // 1E008..1E018
@@ -9075,8 +9214,8 @@ public final /*value*/ class Character
             UNKNOWN,                  // 1F0D0
             COMMON,                   // 1F0D1..1F0F5
             UNKNOWN,                  // 1F0F6..1F0FF
-            COMMON,                   // 1F100..1F1AD
-            UNKNOWN,                  // 1F1AE..1F1E5
+            COMMON,                   // 1F100..1F1AE
+            UNKNOWN,                  // 1F1AF..1F1E5
             COMMON,                   // 1F1E6..1F1FF
             HIRAGANA,                 // 1F200
             COMMON,                   // 1F201..1F202
@@ -9089,19 +9228,17 @@ public final /*value*/ class Character
             UNKNOWN,                  // 1F252..1F25F
             COMMON,                   // 1F260..1F265
             UNKNOWN,                  // 1F266..1F2FF
-            COMMON,                   // 1F300..1F6D8
-            UNKNOWN,                  // 1F6D9..1F6DB
+            COMMON,                   // 1F300..1F6D9
+            UNKNOWN,                  // 1F6DA..1F6DB
             COMMON,                   // 1F6DC..1F6EC
             UNKNOWN,                  // 1F6ED..1F6EF
             COMMON,                   // 1F6F0..1F6FC
             UNKNOWN,                  // 1F6FD..1F6FF
-            COMMON,                   // 1F700..1F7D9
-            UNKNOWN,                  // 1F7DA..1F7DF
+            COMMON,                   // 1F700..1F7DB
+            UNKNOWN,                  // 1F7DC..1F7DF
             COMMON,                   // 1F7E0..1F7EB
             UNKNOWN,                  // 1F7EC..1F7EF
-            COMMON,                   // 1F7F0
-            UNKNOWN,                  // 1F7F1..1F7FF
-            COMMON,                   // 1F800..1F80B
+            COMMON,                   // 1F7F0..1F80B
             UNKNOWN,                  // 1F80C..1F80F
             COMMON,                   // 1F810..1F847
             UNKNOWN,                  // 1F848..1F84F
@@ -9123,26 +9260,24 @@ public final /*value*/ class Character
             UNKNOWN,                  // 1FA6E..1FA6F
             COMMON,                   // 1FA70..1FA7C
             UNKNOWN,                  // 1FA7D..1FA7F
-            COMMON,                   // 1FA80..1FA8A
-            UNKNOWN,                  // 1FA8B..1FA8D
-            COMMON,                   // 1FA8E..1FAC6
+            COMMON,                   // 1FA80..1FAC6
             UNKNOWN,                  // 1FAC7
             COMMON,                   // 1FAC8
-            UNKNOWN,                  // 1FAC9..1FACC
-            COMMON,                   // 1FACD..1FADC
-            UNKNOWN,                  // 1FADD..1FADE
-            COMMON,                   // 1FADF..1FAEA
-            UNKNOWN,                  // 1FAEB..1FAEE
-            COMMON,                   // 1FAEF..1FAF8
-            UNKNOWN,                  // 1FAF9..1FAFF
+            UNKNOWN,                  // 1FAC9..1FACB
+            COMMON,                   // 1FACC..1FADD
+            UNKNOWN,                  // 1FADE
+            COMMON,                   // 1FADF..1FAEB
+            UNKNOWN,                  // 1FAEC..1FAEE
+            COMMON,                   // 1FAEF..1FAFA
+            UNKNOWN,                  // 1FAFB..1FAFF
             COMMON,                   // 1FB00..1FB92
             UNKNOWN,                  // 1FB93
             COMMON,                   // 1FB94..1FBFA
             UNKNOWN,                  // 1FBFB..1FFFF
             HAN,                      // 20000..2A6DF
             UNKNOWN,                  // 2A6E0..2A6FF
-            HAN,                      // 2A700..2B81D
-            UNKNOWN,                  // 2B81E..2B81F
+            HAN,                      // 2A700..2B81E
+            UNKNOWN,                  // 2B81F
             HAN,                      // 2B820..2CEAD
             UNKNOWN,                  // 2CEAE..2CEAF
             HAN,                      // 2CEB0..2EBE0
@@ -9154,7 +9289,9 @@ public final /*value*/ class Character
             HAN,                      // 30000..3134A
             UNKNOWN,                  // 3134B..3134F
             HAN,                      // 31350..33479
-            UNKNOWN,                  // 3347A..E0000
+            UNKNOWN,                  // 3347A..3CFFF
+            SEAL,                     // 3D000..3FC3F
+            UNKNOWN,                  // 3FC40..E0000
             COMMON,                   // E0001
             UNKNOWN,                  // E0002..E001F
             COMMON,                   // E0020..E007F
@@ -9190,6 +9327,7 @@ public final /*value*/ class Character
             aliases.put("CARI", CARIAN);
             aliases.put("CHAM", CHAM);
             aliases.put("CHER", CHEROKEE);
+            aliases.put("CHIS", CHISOI);
             aliases.put("CHRS", CHORASMIAN);
             aliases.put("COPT", COPTIC);
             aliases.put("CPMN", CYPRO_MINOAN);
@@ -9227,6 +9365,7 @@ public final /*value*/ class Character
             aliases.put("HUNG", OLD_HUNGARIAN);
             aliases.put("ITAL", OLD_ITALIC);
             aliases.put("JAVA", JAVANESE);
+            aliases.put("JURC", JURCHEN);
             aliases.put("KALI", KAYAH_LI);
             aliases.put("KANA", KATAKANA);
             aliases.put("KAWI", KAWI);
@@ -9280,6 +9419,7 @@ public final /*value*/ class Character
             aliases.put("OUGR", OLD_UYGHUR);
             aliases.put("PALM", PALMYRENE);
             aliases.put("PAUC", PAU_CIN_HAU);
+            aliases.put("PCUN", PROTO_CUNEIFORM);
             aliases.put("PERM", OLD_PERMIC);
             aliases.put("PHAG", PHAGS_PA);
             aliases.put("PHLI", INSCRIPTIONAL_PAHLAVI);
@@ -9293,6 +9433,7 @@ public final /*value*/ class Character
             aliases.put("SAMR", SAMARITAN);
             aliases.put("SARB", OLD_SOUTH_ARABIAN);
             aliases.put("SAUR", SAURASHTRA);
+            aliases.put("SEAL", SEAL);
             aliases.put("SGNW", SIGNWRITING);
             aliases.put("SHAW", SHAVIAN);
             aliases.put("SHRD", SHARADA);
@@ -12293,8 +12434,7 @@ public final /*value*/ class Character
      * @since 1.4
      */
     static char[] toUpperCaseCharArray(int codePoint) {
-        // As of Unicode 6.0, 1:M uppercasings only happen in the BMP.
-        assert isBmpCodePoint(codePoint);
+        assert isValidCodePoint(codePoint);
         return CharacterData.of(codePoint).toUpperCaseCharArray(codePoint);
     }
 

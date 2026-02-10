@@ -90,7 +90,8 @@ public class GenerateCaseFolding {
     private static long foldingToLong(String[] folding) {
         int cp = Integer.parseInt(folding[0], 16);
         long value = (long)Integer.parseInt(folding[1], 16);
-        if (!Character.isSupplementaryCodePoint(cp) && folding.length != 2) {
+//        if (!Character.isSupplementaryCodePoint(cp) && folding.length != 2) {
+        if (folding.length != 2) {
             var shift = 16;
             for (int j = 2; j < folding.length; j++) {
                 value |= (long)Integer.parseInt(folding[j], 16) << shift;

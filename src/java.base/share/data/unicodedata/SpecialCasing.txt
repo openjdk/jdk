@@ -1,6 +1,6 @@
-# SpecialCasing-17.0.0.txt
-# Date: 2025-07-31, 22:11:55 GMT
-# © 2025 Unicode®, Inc.
+# SpecialCasing-18.0.0.txt
+# Date: 2026-02-03, 23:10:25 GMT
+# © 2026 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
 #
@@ -81,6 +81,7 @@ FB03; FB03; 0046 0066 0069; 0046 0046 0049; # LATIN SMALL LIGATURE FFI
 FB04; FB04; 0046 0066 006C; 0046 0046 004C; # LATIN SMALL LIGATURE FFL
 FB05; FB05; 0053 0074; 0053 0054; # LATIN SMALL LIGATURE LONG S T
 FB06; FB06; 0053 0074; 0053 0054; # LATIN SMALL LIGATURE ST
+1DF95; 1DF95; 0053 0073; 0053 0053; # LATIN SMALL LIGATURE LONG S WITH DESCENDER S
 
 0587; 0587; 0535 0582; 0535 0552; # ARMENIAN SMALL LIGATURE ECH YIWN
 FB13; FB13; 0544 0576; 0544 0546; # ARMENIAN SMALL LIGATURE MEN NOW

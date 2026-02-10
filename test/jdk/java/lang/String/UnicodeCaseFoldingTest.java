@@ -42,6 +42,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jdk.internal.lang.CaseFolding;
 
@@ -97,12 +98,16 @@ public class UnicodeCaseFoldingTest {
                     var expected = new String(folding, 0, folding.length);
 
                     // (1) Verify compareToFoldCase() result
-                    assertEquals(0, source.compareToFoldCase(expected), "source.compareToFoldCase(expected)");
-                    assertEquals(0, expected.compareToFoldCase(source), "expected.compareToFoldCase(source)");
+                    assertEquals(0, source.compareToFoldCase(expected),
+                        "source.compareToFoldCase(expected). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
+                    assertEquals(0, expected.compareToFoldCase(source),
+                        "expected.compareToFoldCase(source). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
 
                     // (2) Verify equalsFoldCase() result
-                    assertEquals(true, source.equalsFoldCase(expected), "source.equalsFoldCase(expected)");
-                    assertEquals(true, expected.equalsFoldCase(source), "expected.equalsFoldCase(source)");
+                    assertTrue(source.equalsFoldCase(expected),
+                        "source.equalsForldCase(expected). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
+                    assertTrue(expected.equalsFoldCase(source),
+                        "expected.equalsForldCase(source). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
                     return null;
                 })
                 .filter(error -> error != null)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package build.tools.generatecharacter;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.lang.*;
 
@@ -54,27 +55,17 @@ public class SpecialCaseMap implements Comparable<SpecialCaseMap> {
      *          special case map data file that could be successfully parsed
      */
 
-    public static SpecialCaseMap[] readSpecFile(File file, int plane) throws FileNotFoundException {
+    public static SpecialCaseMap[] readSpecFile(File file, int plane) throws IOException {
         ArrayList<SpecialCaseMap> caseMaps = new ArrayList<>(150);
-        int count = 0;
-        BufferedReader f = new BufferedReader(new FileReader(file));
-                String line = null;
-        loop:
-        while(true) {
-            try {
-                line = f.readLine();
-            }
-            catch (IOException e) { break loop; }
-                if (line == null) break loop;
-                SpecialCaseMap item = parse(line.trim());
-                if (item != null) {
-                                if(item.getCharSource() >> 16 < plane) continue;
-                                if(item.getCharSource() >> 16 > plane) break;
-                                caseMaps.add(item);
-                ++count;
-            }
 
-        }
+        Files.lines(file.toPath()).forEach(line -> {
+            SpecialCaseMap item = parse(line.trim());
+            if (item != null &&
+                item.getCharSource() >> 16 == plane) {
+                caseMaps.add(item);
+            }
+        });
+
         caseMaps.trimToSize();
         SpecialCaseMap[] result = new SpecialCaseMap[caseMaps.size()];
         caseMaps.toArray(result);
