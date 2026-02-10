@@ -3902,7 +3902,7 @@ public class JavacParser implements Parser {
         if (allowThisIdent ||
             !lambdaParameter ||
             LAX_IDENTIFIER.test(token.kind) ||
-            (mods.flags & Flags.PARAMETER) != Flags.PARAMETER ||
+            (mods.flags & ~(Flags.PARAMETER | Flags.LAMBDA_PARAMETER)) != 0 ||
             mods.annotations.nonEmpty()) {
             JCExpression pn;
             if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
