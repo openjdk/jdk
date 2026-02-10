@@ -1,0 +1,28 @@
+name: ByteOpenJDK mainline Update Pipeline
+trigger: change
+jobs:
+  release_build:
+      name: Release Build
+      runs-on:
+        spec: m1.2xlarge
+      image: hub.byted.org/compile/olinux7.compile.byteopenjdk25:4f6bc99f73bf78d260aabf244f93cbbb
+      timeout: 300
+      steps:
+        - name: get jtreg
+          commands:
+            - wget -O jtreg.tar.gz "https://luban-source.byted.org/repository/scm/sys.byteopenjdk.jtreg_1.0.0.20.tar.gz"
+            - mkdir -p jtreg
+            - tar -xzvf jtreg.tar.gz -C jtreg
+        - name: get gtest
+          commands:
+            - git -c http.sslVerify=false clone https://github.com/google/googletest.git gtest
+            - cd gtest && git checkout v1.14.0
+        - name: configure
+          commands:
+            - source scl_source enable devtoolset-10 && bash -x configure --with-debug-level=release --disable-warnings-as-errors --with-jtreg=`pwd`/jtreg --with-gtest=`pwd`/gtest
+        - name: make
+          commands:
+            - make images JOBS=8
+        - name: regression test
+          commands:
+            - ulimit -c unlimited && make run-test TEST=tier1 JOBS=8

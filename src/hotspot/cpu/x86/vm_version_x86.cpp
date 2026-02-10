@@ -986,8 +986,10 @@ void VM_Version::get_processor_features() {
     }
   }
   if (FLAG_IS_DEFAULT(UseAVX)) {
-    // Don't use AVX-512 on older Skylakes unless explicitly requested.
-    if (use_avx_limit > 2 && is_intel_skylake() && _stepping < 5) {
+    // Don't use AVX-512 on older IceLakes unless explicitly requested.
+    // Skylake and Cascadelake have the same model number 0x55, only _steping is differnt.
+    if ( use_avx_limit > 2 &&
+        (is_intel_skylake() || is_intel_icelake())) {
       FLAG_SET_DEFAULT(UseAVX, 2);
     } else {
       FLAG_SET_DEFAULT(UseAVX, use_avx_limit);

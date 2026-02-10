@@ -1565,7 +1565,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
                                                                             \
-  product(double, SweeperThreshold, 15.0,                                   \
+  product(double, SweeperThreshold, 80.0,                                   \
           "Threshold when a code cache unloading GC is invoked."            \
           "Value is percentage of ReservedCodeCacheSize.")                  \
           range(0.0, 100.0)                                                 \
