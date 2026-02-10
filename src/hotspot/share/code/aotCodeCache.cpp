@@ -1819,7 +1819,7 @@ void AOTRuntimeConstants::initialize_from_runtime() {
     // any attempt to look it up using ci_card_table_address_as will
     // assert. So will an attempt to read this field.
     if (UseG1GC) {
-      _aot_runtime_constants._card_table_address = nullptr
+      _aot_runtime_constants._card_table_address = nullptr;
     } else
 #endif
     _aot_runtime_constants._card_table_address = ci_card_table_address_as<address>());
