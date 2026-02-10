@@ -2303,7 +2303,7 @@ void ConstantPool::print_value_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
   st->print("constant pool [%d]", length());
   if (has_preresolution()) st->print("/preresolution");
-  if (!bsm_entries().is_empty())  st->print("/BSMs[%d]", bsm_entries().bootstrap_methods()->length());
+  if (!bsm_entries().is_empty())  st->print("/BSMs[%d]", bsm_entries().array_length());
   print_address_on(st);
   if (pool_holder() != nullptr) {
     st->print(" for ");
@@ -2383,7 +2383,6 @@ BSMAttributeEntries::start_extension(int number_of_entries, int array_length,
   deallocate_contents(loader_data);
   _offsets = new_offsets;
   _bootstrap_methods = new_array;
-  assert((_offsets == nullptr) == (_bootstrap_methods == nullptr), "inconsistent state");
   return extension_iterator;
 }
 
@@ -2422,5 +2421,4 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
   deallocate_contents(loader_data);
   _offsets = new_offsets;
   _bootstrap_methods = new_array;
-  assert((_offsets == nullptr) == (_bootstrap_methods == nullptr), "inconsistent state");
 }
