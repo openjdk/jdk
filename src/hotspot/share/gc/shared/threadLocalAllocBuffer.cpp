@@ -464,7 +464,7 @@ size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
   // guarantees, so use AtomicAccess directly.
   HeapWord* start = AtomicAccess::load(&_start);
   HeapWord* top = AtomicAccess::load(&_top);
-  // If there has been a race when retrieving _top and _start. Return 0.
+  // If there has been a race when retrieving _top and _start return 0.
   if (top < start) {
     return 0;
   }
