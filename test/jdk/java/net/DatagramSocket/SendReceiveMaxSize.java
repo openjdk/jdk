@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ import java.net.MulticastSocket;
 import java.nio.channels.DatagramChannel;
 import java.util.Random;
 
+import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.expectThrows;
 
@@ -102,6 +104,10 @@ public class SendReceiveMaxSize {
                                        DatagramSocketSupplier supplier,
                                        Class<? extends Exception> exception) throws IOException {
         try (var receiver = new DatagramSocket(new InetSocketAddress(HOST_ADDR, 0))) {
+            assertTrue(receiver.getOption(SO_RCVBUF) >= capacity,
+                       receiver.getOption(SO_RCVBUF) +
+                       " for UDP receive buffer too small to hold capacity " +
+                       capacity);
             var port = receiver.getLocalPort();
             var addr = new InetSocketAddress(HOST_ADDR, port);
             try (var sender = supplier.open()) {

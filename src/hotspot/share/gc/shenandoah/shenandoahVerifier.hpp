@@ -52,7 +52,7 @@ private:
 };
 
 typedef Stack<ShenandoahVerifierTask, mtGC> ShenandoahVerifierStack;
-typedef volatile juint ShenandoahLivenessData;
+typedef Atomic<juint> ShenandoahLivenessData;
 
 class ShenandoahVerifier : public CHeapObj<mtGC> {
 private:
