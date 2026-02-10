@@ -26,6 +26,7 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.Override;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
@@ -95,12 +96,11 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
         // run robot
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY);
+        robot.mouseMove(0, 0);
 
         loc.translate(75, 75);
 
         pixelPreCheck(robot, loc, currentAwtControl);
-
-        loc.translate(-15, -15);
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 

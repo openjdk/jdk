@@ -26,10 +26,13 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.Override;
+
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 
@@ -101,6 +104,7 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
         }
 
         loc2.translate(75, 75);
+        robot.mouseMove(0, 0);
         pixelPreCheck(robot, loc2, currentAwtControl);
 
         loc.translate(3, 3);

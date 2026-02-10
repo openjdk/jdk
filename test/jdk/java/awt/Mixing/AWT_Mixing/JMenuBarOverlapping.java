@@ -29,6 +29,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.Override;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -122,6 +123,7 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         // run robot
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY);
+        robot.mouseMove(0, 0);
 
         loc2.translate(75, 75);
         pixelPreCheck(robot, loc2, currentAwtControl);
