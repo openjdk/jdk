@@ -258,6 +258,9 @@ void AOTCodeCache::init2() {
     return;
   }
 
+  // initialize aot runtime constants as appropriate to this runtime
+  AOTRuntimeConstants::initialize_from_runtime();
+
   // initialize the table of external routines so we can save
   // generated code blobs that reference them
   AOTCodeAddressTable* table = opened_cache->_table;
@@ -1447,6 +1450,12 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 #endif // ZERO
 
+  // addresses of fields in AOT runtime constants area
+  address* p = AOTRuntimeConstants::field_addresses_list();
+  while (*p != nullptr) {
+    SET_ADDRESS(_extrs, *p++);
+  }
+
   _extrs_complete = true;
   log_debug(aot, codecache, init)("External addresses recorded");
 }
@@ -1797,6 +1806,26 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   }
   return id;
 }
+
+AOTRuntimeConstants AOTRuntimeConstants::_aot_runtime_constants;
+
+void AOTRuntimeConstants::initialize_from_runtime() {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+    // G1 uses a thread local to access the cardtable bytemap base and
+    // any attempt to look it up using ci_card_table_address_as will
+    // assert. So will an attempt to read this field.
+    _aot_runtime_constants._card_table_address = (UseG1GC ? nullptr : ci_card_table_address_as<address>());
+    _aot_runtime_constants._grain_shift = ctbs->grain_shift();
+  }
+}
+
+address AOTRuntimeConstants::_field_addresses_list[] = {
+  card_table_address(),
+  grain_shift_address(),
+  nullptr
+};
 
 // This is called after initialize() but before init2()
 // and _cache is not set yet.

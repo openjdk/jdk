@@ -4535,6 +4535,18 @@ operand immP_1()
   interface(CONST_INTER);
 %}
 
+// AOT Runtime Constants Address
+operand immAOTRuntimeConstantsAddress()
+%{
+  // Check if the address is in the range of AOT Runtime Constants
+  predicate(AOTRuntimeConstants::contains((address)(n->get_ptr())));
+  match(ConP);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Float and Double operands
 // Double Immediate
 operand immD()
@@ -6894,6 +6906,20 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   format %{ "mov  $dst, $con\t# nullptr ptr" %}
 
   ins_encode(aarch64_enc_mov_p1(dst, con));
+
+  ins_pipe(ialu_imm);
+%}
+
+instruct loadAOTRCAddress(iRegPNoSp dst, immAOTRuntimeConstantsAddress con)
+%{
+  match(Set dst con);
+
+  ins_cost(INSN_COST);
+  format %{ "adr  $dst, $con\t# AOT Runtime Constants Address" %}
+
+  ins_encode %{
+    __ load_aotrc_address($dst$$Register, (address)$con$$constant);
+  %}
 
   ins_pipe(ialu_imm);
 %}

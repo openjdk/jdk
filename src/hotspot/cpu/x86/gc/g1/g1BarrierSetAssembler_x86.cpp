@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
@@ -268,6 +269,14 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   __ bind(done);
 }
 
+// return a register that differs from reg1, reg2, reg3 and is not rcx
+
+static Register pick_different_reg(Register reg1, Register reg2 = noreg, Register reg3= noreg, Register reg4 = noreg) {
+  RegSet available = (RegSet::of(rscratch1, rscratch2, rax, rbx) + rdx -
+                      RegSet::of(reg1, reg2, reg3, reg4));
+  return *(available.begin());
+}
+
 static void generate_post_barrier(MacroAssembler* masm,
                                   const Register store_addr,
                                   const Register new_val,
@@ -280,10 +289,33 @@ static void generate_post_barrier(MacroAssembler* masm,
 
   Label L_done;
   // Does store cross heap regions?
-  __ movptr(tmp1, store_addr);                                    // tmp1 := store address
-  __ xorptr(tmp1, new_val);                                       // tmp1 := store address ^ new value
-  __ shrptr(tmp1, G1HeapRegion::LogOfHRGrainBytes);               // ((store address ^ new value) >> LogOfHRGrainBytes) == 0?
-  __ jccb(Assembler::equal, L_done);
+#if INCLUDE_CDS
+  // AOT code needs to load the barrier grain shift from the aot
+  // runtime constants area in the code cache otherwise we can compile
+  // it as an immediate operand
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    address grain_shift_addr = AOTRuntimeConstants::grain_shift_address();
+    Register save = pick_different_reg(rcx, tmp1, new_val, store_addr);
+    __ push(save);
+    __ movptr(save, store_addr);
+    __ xorptr(save, new_val);
+    __ push(rcx);
+    __ lea(rcx, ExternalAddress(grain_shift_addr));
+    __ movptr(rcx, Address(rcx, 0));
+    __ shrptr(save);
+    __ pop(rcx);
+    __ mov(tmp1, save);
+    __ pop(save);
+    __ jcc(Assembler::equal, L_done);
+  } else
+#endif // INCLUDE_CDS
+  {
+    __ movptr(tmp1, store_addr);                                    // tmp1 := store address
+    __ xorptr(tmp1, new_val);                                       // tmp1 := store address ^ new value
+    __ shrptr(tmp1, G1HeapRegion::LogOfHRGrainBytes);               // ((store address ^ new value) >> LogOfHRGrainBytes) == 0?
+    __ jccb(Assembler::equal, L_done);
+  }
 
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
