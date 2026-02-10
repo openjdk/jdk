@@ -188,7 +188,7 @@ static bool fill_addr_info(lib_info* lib) {
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
     if (ph->p_type == PT_LOAD) {
       uintptr_t aligned_start = lib->base + align_down(ph->p_vaddr, ph->p_align);
-      uintptr_t aligned_end = align_up(aligned_start + ph->p_memsz, ph->p_align);
+      uintptr_t aligned_end = aligned_start + align_up(ph->p_memsz, ph->p_align);
       if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
         lib->end = aligned_end;
       }
