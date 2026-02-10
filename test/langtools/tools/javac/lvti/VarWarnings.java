@@ -104,6 +104,7 @@ public class VarWarnings {
 
         var out = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
+                         "-Werror",
                          "-Xlint:deprecation")
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
@@ -111,16 +112,7 @@ public class VarWarnings {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        var expectedOut = List.of(
-                "Test.java:5:9: compiler.warn.has.been.deprecated: p1.DeprOutter, p1",
-                "Test.java:5:9: compiler.warn.has.been.deprecated: p1.DeprInner, p1",
-                "Test.java:6:17: compiler.warn.has.been.deprecated: p1.DeprOutter, p1",
-                "Test.java:6:17: compiler.warn.has.been.deprecated: p1.DeprInner, p1",
-                "Test.java:7:18: compiler.warn.has.been.deprecated: p1.DeprOutter, p1",
-                "Test.java:7:18: compiler.warn.has.been.deprecated: p1.DeprInner, p1",
-                "Test.java:8:14: compiler.warn.has.been.deprecated: p1.DeprOutter, p1",
-                "Test.java:8:14: compiler.warn.has.been.deprecated: p1.DeprInner, p1",
-                "8 warnings");
+        var expectedOut = List.of("");
 
         if (!Objects.equals(expectedOut, out)) {
             throw new AssertionError("Incorrect Output, expected: " + expectedOut +
@@ -181,6 +173,7 @@ public class VarWarnings {
 
         var out = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
+                         "-Werror",
                          "-Xlint:rawtypes")
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
@@ -188,12 +181,7 @@ public class VarWarnings {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        var expectedOut = List.of(
-            "Test.java:5:9: compiler.warn.raw.class.use: p1.RawInner, p1.RawInner<T>",
-            "Test.java:6:17: compiler.warn.raw.class.use: p1.RawInner, p1.RawInner<T>",
-            "Test.java:7:18: compiler.warn.raw.class.use: p1.RawInner, p1.RawInner<T>",
-            "Test.java:8:14: compiler.warn.raw.class.use: p1.RawInner, p1.RawInner<T>",
-            "4 warnings");
+        var expectedOut = List.of("");
 
         if (!Objects.equals(expectedOut, out)) {
             throw new AssertionError("Incorrect Output, expected: " + expectedOut +

@@ -426,7 +426,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      */
     protected final boolean hasAnyStateful() {
          var result = false;
-         for (@SuppressWarnings("rawtypes") var u = sourceStage.nextStage;
+         for (var u = sourceStage.nextStage;
               u != null && !(result = u.opIsStateful()) && u != this;
               u = u.nextStage) {
          }
@@ -440,7 +440,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      *         {@code false} if not.
      */
     protected final boolean isShortCircuitingPipeline() {
-        for (@SuppressWarnings("rawtypes") var u = sourceStage.nextStage; u != null; u = u.nextStage) {
+        for (var u = sourceStage.nextStage; u != null; u = u.nextStage) {
             if (StreamOpFlag.SHORT_CIRCUIT.isKnown(u.combinedFlags))
                 return true;
         }

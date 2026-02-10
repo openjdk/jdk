@@ -5737,16 +5737,7 @@ public class Attr extends JCTree.Visitor {
     private void setupImplicitlyTypedVariable(JCVariableDecl tree, Type type) {
         Assert.check(tree.isImplicitlyTyped());
 
-        DiagnosticPosition pos = tree.vartype != null ? tree.vartype.pos()
-                                                      : tree.pos();
-        new StructuralTypeMapping<Object>() {
-            @Override
-            public Type visitClassType(ClassType t, Object s) {
-                checkSymbol(pos, null, t.tsym);
-                chk.checkRaw(pos, t, env);
-                return super.visitClassType(t, s);
-            }
-        }.apply(type);
+        type.complete();
 
         if (tree.vartype == null) {
             return ;
