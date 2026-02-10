@@ -886,10 +886,21 @@ The following options are provided by the standard doclet.
     formats supported by this option are Java, Properties, JSON, HTML and XML.
 
 <span id="option-tag">`-tag` *name*:*locations*:*header*</span>
-:   Specifies a custom tag with the given *name*, allowed *locations* and *header*.
+:   Specifies a custom [note tag] with the given tag *name*, allowed *locations*
+    and *header*. For example, the option below creates a `@warning` tag that
+    uses "Warning:" as header and can be used in all locations:
 
-    The tag outputs *header* as its heading, followed by the tag body, which may
-    contain HTML elements and inline JavaDoc tags, which are also interpreted.
+    ```
+    -tag 'warning:a:Warning:'
+    ```
+
+    The tag outputs *header* as its heading, followed by the body of the tag.
+    The tag body may contain HTML elements and inline JavaDoc tags, which are
+    also interpreted. A note tag can be used both as a block tag and as an
+    inline tag, and may optionally specify attributes to modify the appearance
+    of the generated output as described in the [specification of the note
+    tag][note tag].
+
     Omitting a *header* value causes the *name* to be the heading. *locations*
     is a list of characters specifying the kinds of declarations in which the
     tag may be used. The following characters may be used, in either uppercase
@@ -905,10 +916,11 @@ The following options are provided by the standard doclet.
     * `T`: types (classes and interfaces)
     * `X`: nowhere: the tag is disabled, and will be ignored
 
-    A custom tag is an aliased [note tag]. It can be used both as a block tag and
-    as an inline tag, and it supports attributes to modify its output. Its *name*
-    is also added as CSS class to the generated HTML element, prefixed by note-tag-,
-    to allow for custom styles.
+    The *name* of the tag, prefixed by `note-tag-`, is also added as `class`
+    attribute to the generated HTML element to enable the application of
+    styles through user-defined stylesheets. For example, a tag with *name*
+    "warning" will generate an HTML element with a `class` attribute with value
+    `note-tag-warning`.
 
     For the `javadoc` tool to spell-check tag names, it is important to include
     a `-tag` option for every custom tag that is present in the source code,
