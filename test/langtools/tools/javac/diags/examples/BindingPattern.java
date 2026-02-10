@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,13 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+// key: compiler.err.not.exhaustive.details
+// key: compiler.misc.binding.pattern
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutWithProxySync
- */
-
-public class ConnectTimeoutWithProxySync extends AbstractConnectTimeout {
-
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutWithProxySync(Version requestVersion,
-                                     String scheme,
-                                     String method,
-                                     Duration connectTimeout,
-                                     Duration requestTimeout)
-        throws Exception
-    {
-        super.timeoutWithProxySync(requestVersion, scheme, method, connectTimeout, requestTimeout);
+class BindingPattern {
+    int t(Object o) {
+        return switch (o) {
+            case String s -> 0;
+        };
     }
 }

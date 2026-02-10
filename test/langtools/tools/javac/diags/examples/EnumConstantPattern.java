@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,17 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+// key: compiler.err.not.exhaustive.details
+// key: compiler.misc.enum.constant.pattern
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutNoProxySync
- */
-
-public class ConnectTimeoutNoProxySync extends AbstractConnectTimeout {
-
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutNoProxySync(Version requestVersion,
-                                   String scheme,
-                                   String method,
-                                   Duration connectTimeout,
-                                   Duration requestTimeout)
-        throws Exception
-    {
-        super.timeoutNoProxySync(requestVersion, scheme, method, connectTimeout, requestTimeout);
+class NotExhaustiveDetails {
+    int t(I i) {
+        return switch (i) {
+            case R r -> -1;
+            case E.A -> -1;
+        };
     }
+    sealed interface I {}
+    enum E implements I {A, B}
+    record R(E e) implements I {}
 }

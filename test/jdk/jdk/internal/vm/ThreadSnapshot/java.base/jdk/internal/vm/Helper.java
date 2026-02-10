@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,18 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+package jdk.internal.vm;
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutNoProxyAsync
+/**
+ * Defines methods that use package-private methods on ThreadSnapshot.
  */
+public class Helper {
 
-public class ConnectTimeoutNoProxyAsync extends AbstractConnectTimeout {
-
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutNoProxyAsync(Version requestVersion,
-                                    String scheme,
-                                    String method,
-                                    Duration connectTimeout,
-                                    Duration requestduration)
-    {
-        super.timeoutNoProxyAsync(requestVersion, scheme, method, connectTimeout, requestduration);
+    /**
+     * Uses ThreadSnapshot.of(Thread) to take a snapshot of the given thread, returning
+     * {@code true} if the thread is alive.
+     */
+    public static boolean isAlive(Thread thread) {
+        return ThreadSnapshot.of(thread) != null;
     }
 }
