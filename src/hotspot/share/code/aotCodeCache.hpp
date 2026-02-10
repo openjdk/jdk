@@ -442,7 +442,12 @@ class AOTRuntimeConstants {
     address hi = base + sizeof(AOTRuntimeConstants);
     return (base <= adr && adr < hi);
   }
-  static address card_table_address() { assert(!UseG1GC, "should not be called when using G1"); return (address)&_aot_runtime_constants._card_table_address; }
+  static address card_table_address() {
+#if INCLUDE_G1GC
+    assert(!UseG1GC, "should not be called when using G1");
+#endif
+    return (address)&_aot_runtime_constants._card_table_address;
+  }
   static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
   static address* field_addresses_list() {
     return _field_addresses_list;

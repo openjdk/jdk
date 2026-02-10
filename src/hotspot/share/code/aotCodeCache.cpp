@@ -32,7 +32,7 @@
 #include "classfile/javaAssertions.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
-#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
@@ -1814,10 +1814,15 @@ void AOTRuntimeConstants::initialize_from_runtime() {
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+#if INCLUDE_G1GC
     // G1 uses a thread local to access the cardtable bytemap base and
     // any attempt to look it up using ci_card_table_address_as will
     // assert. So will an attempt to read this field.
-    _aot_runtime_constants._card_table_address = (UseG1GC ? nullptr : ci_card_table_address_as<address>());
+    if (UseG1GC) {
+      _aot_runtime_constants._card_table_address = nullptr
+    } else
+#endif
+    _aot_runtime_constants._card_table_address = ci_card_table_address_as<address>());
     _aot_runtime_constants._grain_shift = ctbs->grain_shift();
   }
 }
