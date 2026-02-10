@@ -51,7 +51,7 @@ public class TestStressLongCountedLoopLimitChecks {
     private static void test(Class launcher, int limitChecks, String... flags) throws IOException {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 Stream.concat(Arrays.stream(flags), Stream.of(
-                        "-XX:+IgnoreUnrecognizedVMOptions"
+                        "-XX:+IgnoreUnrecognizedVMOptions",
                         "-XX:+TraceLoopLimitCheck",
                         "-XX:CompileOnly=" + launcher.getName() + "::test*",
                         "-Xcomp",
