@@ -735,6 +735,18 @@ public:
 };
 
 class ClassesDCmd : public DCmdWithParser {
+private:
+  static constexpr const char *desc = R"(
+Print all loaded classes, classes are annotated with flags:
+  F = has, or inherits, a non-empty finalize method,
+  f = has final method,
+  W = methods rewritten,
+  C = marked with @Contended annotation,
+  R = has been redefined,
+  S = is an (App)CDS shared class,
+      (if -location is also specified, (either) 's' indicating static (or) 'd' indicating dynamic AOT cache locations, is appended)
+  )";
+
 protected:
   DCmdArgument<bool> _verbose;
   DCmdArgument<bool> _location;
@@ -745,7 +757,7 @@ public:
     return "VM.classes";
   }
   static const char* description() {
-    return "Print all loaded classes";
+    return desc;
   }
   static const char* impact() {
       return "Medium: Depends on number of loaded classes.";
