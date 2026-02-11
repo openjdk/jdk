@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,12 @@ public class LingeredApp {
 
     public void setForceCrash(boolean forceCrash) {
         this.forceCrash = forceCrash;
+    }
+
+    private static Runnable crasher;
+
+    public static void setCrasher(Runnable runnable) {
+        crasher = runnable;
     }
 
     native private static int crash();
@@ -628,8 +634,12 @@ public class LingeredApp {
             synchronized(steadyStateObj) {
                 startSteadyStateThread(steadyStateObj);
                 if (forceCrash) {
-                    System.loadLibrary("LingeredApp"); // location of native crash() method
-                    crash();
+                    if (crasher == null) {
+                        System.loadLibrary("LingeredApp"); // location of native crash() method
+                        crash();
+                    } else {
+                        crasher.run();
+                    }
                 }
                 while (Files.exists(path)) {
                     // Touch the lock to indicate our readiness
