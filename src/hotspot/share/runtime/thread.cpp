@@ -485,7 +485,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
               (double)_statistical_info.getElapsedTime() / 1000.0
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
-      size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
+      size_t allocated_bytes = checked_cast<size_t>(cooked_allocated_bytes());
       st->print("allocated=%zu%s ",
                 byte_size_in_proper_unit(allocated_bytes),
                 proper_unit_for_byte_size(allocated_bytes)
