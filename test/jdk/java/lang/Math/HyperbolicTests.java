@@ -1919,8 +1919,7 @@ public class HyperbolicTests {
         };
 
 
-        for (int i = 0; i < testCases.length; i++) {
-            double [] testCase = testCases[i];
+        for (double [] testCase : testCases) {
             failures += testAcoshCaseWithUlpDiff(testCase[0],
                     testCase[1],
                     3.0);
@@ -1944,9 +1943,9 @@ public class HyperbolicTests {
 
 
 
-        for (int i = 0; i < specialTestCases.length; i++) {
-            failures += testAcoshCaseWithUlpDiff(specialTestCases[i][0],
-                    specialTestCases[i][1],
+        for (double [] specialTestCase : specialTestCases) {
+            failures += testAcoshCaseWithUlpDiff(specialTestCase[0],
+                    specialTestCase[1],
                     0.0);
         }
 
@@ -2076,8 +2075,7 @@ public class HyperbolicTests {
                 {+8.26450413110590460519233602099120617e+01    , +5.10766540264697663339669119714720544e+00    },
         };
 
-        for (int i = 0; i < testCases.length; i++) {
-            double[] testCase = testCases[i];
+        for (double[] testCase : testCases) {
             failures += testAcoshCaseWithUlpDiff(testCase[0],
                     testCase[1],
                     3.0);

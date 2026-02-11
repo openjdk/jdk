@@ -3568,9 +3568,9 @@ final class FdLibm {
      * Method :
      *
      *
-     *      acosh(x) is defined so that acosh(cosh(alpha)) = alpha, -INF < alpha < < INF
-     *      and cosh(acosh(x)) = x, 1 <= x  < INF.
-     *      It can be written as acosh(x) = ln(x + sqrt(x^2 - 1)), 1 <= x  < INF.
+     *      acosh(x) is defined so that acosh(cosh(alpha)) = alpha, -&infin; &lt; alpha < &infin
+     *      and cosh(acosh(x)) = x, 1 <= x  < &infin.
+     *      It can be written as acosh(x) = ln(x + sqrt(x^2 - 1)), 1 <= x  < &infin.
      *      acosh(x) := log(x)+ln2, if x is large; else
      *               := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
      *               := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
@@ -3588,17 +3588,17 @@ final class FdLibm {
             double t;
             int hx;
             hx = __HI(x);
-            if(hx < 0x3ff00000) {                           // x < 1 */
+            if(hx < 0x3ff0_0000) {                           // x < 1 */
                 return (x - x) / (x - x);
-            } else if (hx >= 0x41b00000) {                  // x > 2**28
-                if(hx >= 0x7ff00000) {                      // x is inf of NaN
+            } else if (hx >= 0x41b0_0000) {                  // x > 2**28
+                if(hx >= 0x7ff0_0000) {                      // x is inf of NaN
                     return x + x;
                 } else {
                     return Log.compute(x) + ln2;            // acosh(huge) = log(2x)
                 }
-            } else if (((hx - 0x3ff00000) | __LO(x)) == 0) {
+            } else if (((hx - 0x3ff0_0000) | __LO(x)) == 0) {
                 return 0.0;                                 // acosh(1) = 0
-            } else if (hx > 0x40000000) {                   // 2**28 > x > 2
+            } else if (hx > 0x4000_0000) {                   // 2**28 > x > 2
                 t = x * x;
                 return Log.compute(2.0 * x - 1.0 / (x + Sqrt.compute(t - 1.0)));
             } else {                                        // 1< x <2

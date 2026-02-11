@@ -2801,20 +2801,20 @@ public class FdlibmTranslit {
         }
     }
 
-    /**
-     * Return the Inverse Hyperbolic Cosine of x
+    /*
+     *  Return the Inverse Hyperbolic Cosine of x
      *
-     * Method :
-     * Based on
-     *  acosh(x) = log [ x + sqrt(x*x-1) ]
-     *  we have
-     *   acosh(x) := log(x)+ln2,    if x is large; else
-     *            := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
-     *            := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
+     *  Method :
+     *  Based on
+     *   acosh(x) = log [ x + sqrt(x*x-1) ]
+     *   we have
+     *    acosh(x) := log(x)+ln2,    if x is large; else
+     *             := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
+     *             := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
      *
-     * Special cases:
-     *  acosh(x) is NaN with signal if x<1.
-     *  acosh(NaN) is NaN without signal.
+     *  Special cases:
+     *   acosh(x) is NaN with signal if x<1.
+     *   acosh(NaN) is NaN without signal.
      */
     private static final class Acosh {
         private static final double one = 1.0;
