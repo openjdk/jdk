@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,12 @@ import java.util.zip.ZipFile;
 /*
  * @test
  * @bug 8342442 8345057
- * @summary Test default implementation. Use othervm because
- *      ML_DSA_Impls.version might be modified
+ * @summary Test default implementation.
  * @library /test/lib
  * @modules java.base/sun.security.provider
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
- * @run main/othervm/timeout=480 Launcher
+ * @run main/timeout=480 Launcher
  */
 
 /*

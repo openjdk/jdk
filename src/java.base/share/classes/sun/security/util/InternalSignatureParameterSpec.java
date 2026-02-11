@@ -60,13 +60,13 @@ import java.util.List;
  * to configure parameters before calling {@link java.security.Signature#initSign(PrivateKey)}
  * or {@link java.security.Signature#initVerify(PublicKey)}.
  */
-public final class SignatureParameterSpec implements AlgorithmParameterSpec {
+public final class InternalSignatureParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * The "pure" parameters with no preHash or context string.
      */
-    public static final SignatureParameterSpec PURE
-            = new SignatureParameterSpec(null, null);
+    public static final InternalSignatureParameterSpec PURE
+            = new InternalSignatureParameterSpec(null, null);
 
     private final String preHash;
     private final byte[] context;
@@ -86,7 +86,7 @@ public final class SignatureParameterSpec implements AlgorithmParameterSpec {
      *      not {@code null};
      * @throws NullPointerException if any of {@code features} is {@code null}
      */
-    public SignatureParameterSpec(String preHash, byte[] context, String... features) {
+    public InternalSignatureParameterSpec(String preHash, byte[] context, String... features) {
         if (context != null && context.length > 255) {
             throw new IllegalArgumentException(
                     "Illegal context length: " + context.length);

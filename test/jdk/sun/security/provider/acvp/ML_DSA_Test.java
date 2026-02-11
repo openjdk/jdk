@@ -25,7 +25,7 @@ import jdk.test.lib.json.JSONValue;
 import jdk.test.lib.security.FixedSecureRandom;
 import sun.security.provider.ML_DSA_Impls;
 import sun.security.util.DerOutputStream;
-import sun.security.util.SignatureParameterSpec;
+import sun.security.util.InternalSignatureParameterSpec;
 
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
@@ -120,7 +120,7 @@ public class ML_DSA_Test {
                 var hashAlg = c.get("hashAlg").asString();
                 var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
                 System.out.print(Integer.parseInt(c.get("tcId").asString()) + " ");
-                var sps = new SignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
+                var sps = new InternalSignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
                 var sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
@@ -163,7 +163,7 @@ public class ML_DSA_Test {
                 var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
                 var hashAlg = c.get("hashAlg").asString();
                 var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
-                var sps = new SignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
+                var sps = new InternalSignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
                 var pk = new PublicKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }

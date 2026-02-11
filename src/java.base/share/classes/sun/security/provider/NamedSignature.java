@@ -26,7 +26,7 @@
 package sun.security.provider;
 
 import sun.security.pkcs.NamedPKCS8Key;
-import sun.security.util.SignatureParameterSpec;
+import sun.security.util.InternalSignatureParameterSpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.AlgorithmParameters;
@@ -53,7 +53,7 @@ public abstract class NamedSignature extends SignatureSpi {
     private final NamedKeyFactory fac;
 
     // Default value; never null
-    protected SignatureParameterSpec sps = SignatureParameterSpec.PURE;
+    protected InternalSignatureParameterSpec sps = InternalSignatureParameterSpec.PURE;
 
     // Default no preHash
     private SignatureMessageAccumulator accu = new SignatureMessageAccumulator();
@@ -147,7 +147,7 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
-        if (params instanceof SignatureParameterSpec sps) {
+        if (params instanceof InternalSignatureParameterSpec sps) {
             this.sps = sps;
             var hash = sps.preHash();
             if (hash == null) {
