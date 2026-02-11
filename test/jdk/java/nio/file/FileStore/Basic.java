@@ -176,7 +176,7 @@ public class Basic {
         assumeTrue(FileUtils.areMountPointsAccessibleAndUnique());
         List<FileStore> stores = StreamSupport.stream(FileSystems.getDefault()
                                  .getFileStores().spliterator(), false)
-                                 .collect(Collectors.toList());
+                                 .toList();
         Set<FileStore> uniqueStores = new HashSet<>(stores);
         assertEquals(stores.size(), uniqueStores.size(), "FileStores should be unique");
         for (FileStore store: stores) {
