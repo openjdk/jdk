@@ -30,6 +30,8 @@
  * @summary Tests for {Math, StrictMath}.sqrt
  */
 
+import java.util.Random;
+
 public class SinCosTests {
     private SinCosTests(){}
 
@@ -38,6 +40,7 @@ public class SinCosTests {
 
         failures += testSin();
         failures += testCos();
+        failures += testSinCos();
 
         if (failures > 0) {
             System.err.println("Testing sin and cos incurred "
@@ -126,4 +129,30 @@ public class SinCosTests {
 
         return failures;
     }
+
+    /**
+     * "Special cases:
+     *
+     * If the argument is NaN or an infinity, then the result is NaN.
+     * If the argument is zero, then the result is 1.0."
+     */
+    private static int testSinCos() {
+        int failures = 0;
+
+        final int N = 1000;
+
+        Random rand = new Random();
+        double [] X = new double [N];
+
+        // FIXME Add nand and inf cases, edit the comment
+
+        for (int i = 0; i < N; ++i) {
+            X[i] = rand.nextDouble(0.0, 2 * Math.PI);
+            failures+=Tests.test("StrictMath.sin",        X[i], (x)->Math.sincos(x)[0],        StrictMath.sin(X[i]));
+            failures+=Tests.test("StrictMath.cos",        X[i], (x)->Math.sincos(x)[1],        StrictMath.cos(X[i]));
+        }
+
+        return failures;
+    }
+
 }

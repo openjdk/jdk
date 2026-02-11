@@ -772,8 +772,8 @@ public final class Math {
      * @param   a   a floating-point value to be rounded to an integer.
      * @return  the value of the argument rounded to the nearest
      *          {@code int} value.
-     * @see     java.lang.Integer#MAX_VALUE
-     * @see     java.lang.Integer#MIN_VALUE
+     * @see     Integer#MAX_VALUE
+     * @see     Integer#MIN_VALUE
      */
     @IntrinsicCandidate
     public static int round(float a) {
@@ -3714,4 +3714,54 @@ public final class Math {
         return unsignedMultiplyExact(p, x);
     }
 
+    /**
+     * Returns the pair of [sine,cosine] of an angle. Special cases:
+     * <ul><li>If the argument is NaN or an infinity, then the
+     * result is NaN.</ul>
+     *
+     * @param a an angle, in radians.
+     * @return  the [sine,cosine] pair for the argument.
+     */
+    public static double [] sincos(double a) {
+        double theSin;
+        double theCos;
+
+        // High word of x.
+        final long transducer = doubleToRawLongBits(a);
+        int ix = (int)(transducer >> 32);
+
+        // |x| ~< pi/4
+        ix &= 0x7fff_ffff;
+        if (ix <= 0x3fe9_21fb) {
+            theSin = FdLibm.Sin.__kernel_sin(a, 0.0, 0);
+            theCos =FdLibm.Cos.__kernel_cos(a, 0.0);
+        } else if (ix >= 0x7ff0_0000) { // cos(Inf or NaN) is NaN
+            theSin = a - a;
+            theCos = theSin;
+        } else { // argument reduction needed
+            final double[] y = new double[2];
+            final int n = FdLibm.RemPio2.__ieee754_rem_pio2(a, y);
+            final double kernSin = FdLibm.Sin.__kernel_sin(y[0], y[1], 1);
+            final double kernCos = FdLibm.Cos.__kernel_cos(y[0], y[1]);
+            switch (n & 3) {
+                case 0:
+                    theSin = kernSin;
+                    theCos = kernCos;
+                    break;
+                case 1:
+                    theSin = kernCos;
+                    theCos = -kernSin;
+                    break;
+                case 2:
+                    theSin = -kernSin;
+                    theCos = -kernCos;
+                    break;
+                default:
+                    theSin = -kernCos;
+                    theCos = kernSin;
+                    break;
+            }
+        }
+        return new double[] { theSin, theCos };
+    }
 }
