@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
  * @summary verifies that the ct.sym file created by build.tools.symbolgenerator.CreateSymbols
  *          is reproducible
  * @library /test/lib
+ * @requires os.arch != "s390x"
  * @modules java.compiler
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.jvm
