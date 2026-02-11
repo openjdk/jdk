@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 #include "runtime/semaphore.hpp"
-#include "runtime/os.inline.hpp"
 #include "unittest.hpp"
 
 static void test_semaphore_single_separate(uint count) {
@@ -97,13 +96,6 @@ TEST(Semaphore, many) {
 }
 
 TEST(Semaphore, trywait) {
-#ifdef __APPLE__
-  // On __APPLE__ semaphore trywait uses os::javaTimeNanos() which requires the
-  // clock to be initialized. os::Bsd::clock_init() currently allows for multiple
-  // invocations, so this test is fine to run either before or after another VM
-  // gtest.
-  os::Bsd::clock_init();
-#endif // __APPLE__
   for (uint max = 0; max < 10; max++) {
     for (uint value = 0; value < max; value++) {
       test_semaphore_trywait(value, max);
