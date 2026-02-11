@@ -281,7 +281,7 @@ class ExchangeImpl {
                     o.setWrappedStream(new UndefLengthOutputStream(this, ros));
                     close = true;
                 } else if (upgrade && rCode == 101) {
-                    o.setWrappedStream (new UpgradeOutputStream (this, ros));
+                    o.setWrappedStream (new UpgradeOutputStream(this, ros));
                     close = true;
                 } else {
                     rspHdrs.set("Transfer-encoding", "chunked");

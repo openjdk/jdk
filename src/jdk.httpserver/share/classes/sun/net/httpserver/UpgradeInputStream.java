@@ -62,7 +62,9 @@ class UpgradeInputStream extends LeftOverInputStream {
     @Override
     public void close() throws IOException {
         closed = true;
-        t.getServerImpl().requestCompleted(t.getConnection());
+        if(t.getConnection().state == State.REQUEST) {
+          t.getServerImpl().requestCompleted(t.getConnection());
+        }
     }
 
     @Override
