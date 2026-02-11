@@ -617,16 +617,16 @@ presumption that third-party software is unaffected by the copyleft
 requirements of the license of GCC.
 ```
 
-### GNU GPL v2
+### GNU GENERAL PUBLIC LICENSE v2
 
 ```
-		    GNU GENERAL PUBLIC LICENSE
-		       Version 2, June 1991
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 2, June 1991
  Copyright (C) 1989, 1991 Free Software Foundation, Inc.
      51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
-			    Preamble
+                            Preamble
   The licenses for most software are designed to take away your
 freedom to share and change it.  By contrast, the GNU General Public
 License is intended to guarantee your freedom to share and change free
@@ -668,7 +668,7 @@ patent must be licensed for everyone's free use or not licensed at all.
   The precise terms and conditions for copying, distribution and
 modification follow.
 
-		    GNU GENERAL PUBLIC LICENSE
+                    GNU GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
   0. This License applies to any program or other work which contains
 a notice placed by the copyright holder saying it may be distributed
@@ -838,7 +838,7 @@ Software Foundation, write to the Free Software Foundation; we sometimes
 make exceptions for this.  Our decision will be guided by the two goals
 of preserving the free status of all derivatives of our free software and
 of promoting the sharing and reuse of software generally.
-			    NO WARRANTY
+                            NO WARRANTY
   11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
 FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN
 OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
@@ -857,9 +857,9 @@ TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY
 YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
 PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES.
-		     END OF TERMS AND CONDITIONS
+                     END OF TERMS AND CONDITIONS
 
-	    How to Apply These Terms to Your New Programs
+            How to Apply These Terms to Your New Programs
   If you develop a new program, and you want it to be of the greatest
 possible use to the public, the best way to achieve this is to make it
 free software which everyone can redistribute and change under these terms.
@@ -908,7 +908,7 @@ Public License instead of this License.
 ### GNU LESSER GENERAL PUBLIC LICENSE v3
 
 ```
-		   GNU LESSER GENERAL PUBLIC LICENSE
+                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
  Everyone is permitted to copy and distribute verbatim copies
@@ -916,7 +916,7 @@ Public License instead of this License.
   This version of the GNU Lesser General Public License incorporates
 the terms and conditions of version 3 of the GNU General Public
 License, supplemented by the additional permissions listed below.
-  0. Additional Definitions. 
+  0. Additional Definitions.
   As used herein, "this License" refers to version 3 of the GNU Lesser
 General Public License, and the "GNU GPL" refers to version 3 of the GNU
 General Public License.
@@ -993,7 +993,7 @@ the following:
        a copy of the Library already present on the user's computer
        system, and (b) will operate properly with a modified version
        of the Library that is interface-compatible with the Linked
-       Version. 
+       Version.
    e) Provide Installation Information, but only if you would otherwise
    be required to provide such information under section 6 of the
    GNU GPL, and only to the extent that such information is
@@ -1044,7 +1044,7 @@ Library.
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
  Copyright (C) 1991, 1999 Free Software Foundation, Inc.
-	51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+        51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 [This is the first released version of the Lesser GPL.  It also counts
@@ -1806,17 +1806,17 @@ provides prominent facilities for anybody to edit those works.  A
 public wiki that anybody can edit is an example of such a server.  A
 "Massive Multiauthor Collaboration" (or "MMC") contained in the site
 means any set of copyrightable works thus published on the MMC site.
-"CC-BY-SA" means the Creative Commons Attribution-Share Alike 3.0 
-license published by Creative Commons Corporation, a not-for-profit 
-corporation with a principal place of business in San Francisco, 
-California, as well as future copyleft versions of that license 
+"CC-BY-SA" means the Creative Commons Attribution-Share Alike 3.0
+license published by Creative Commons Corporation, a not-for-profit
+corporation with a principal place of business in San Francisco,
+California, as well as future copyleft versions of that license
 published by that same organization.
-"Incorporate" means to publish or republish a Document, in whole or in 
+"Incorporate" means to publish or republish a Document, in whole or in
 part, as part of another Document.
-An MMC is "eligible for relicensing" if it is licensed under this 
-License, and if all works that were first published under this License 
-somewhere other than this MMC, and subsequently incorporated in whole or 
-in part into the MMC, (1) had no cover texts or invariant sections, and 
+An MMC is "eligible for relicensing" if it is licensed under this
+License, and if all works that were first published under this License
+somewhere other than this MMC, and subsequently incorporated in whole or
+in part into the MMC, (1) had no cover texts or invariant sections, and
 (2) were thus incorporated prior to November 1, 2008.
 The operator of an MMC Site may republish an MMC contained in the site
 under CC-BY-SA on the same site at any time before August 1, 2009,
