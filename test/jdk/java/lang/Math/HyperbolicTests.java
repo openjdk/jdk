@@ -1411,9 +1411,7 @@ public class HyperbolicTests {
      *
      * Therefore,
      *
-     * 1. For large values of x asinh(x) ~= signum(x)
-     *
-     * 2. For small values of x, asinh(x) ~= x.
+     * 1. For small values of x, asinh(x) ~= x.
      *
      * Additionally, asinh is an odd function; asinh(-x) = -asinh(x).
      *
@@ -1533,8 +1531,7 @@ public class HyperbolicTests {
         };
 
 
-        for (int i = 0; i < testCases.length; i++) {
-            double [] testCase = testCases[i];
+        for (double [] testCase : testCases) {
             failures += testAsinhCaseWithUlpDiff(testCase[0],
                     testCase[1],
                     3.0);
@@ -1557,9 +1554,9 @@ public class HyperbolicTests {
 
 
 
-        for (int i = 0; i < specialTestCases.length; i++) {
-            failures += testAsinhCaseWithUlpDiff(specialTestCases[i][0],
-                    specialTestCases[i][1],
+        for (double [] specialTestCase : specialTestCases) {
+            failures += testAsinhCaseWithUlpDiff(specialTestCase[0],
+                    specialTestCase[1],
                     0.0);
         }
 

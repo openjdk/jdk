@@ -110,9 +110,9 @@ import static java.lang.Double.*;
  * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
  * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link asinh asinh},
  * {@link acosh acosh}, {@link hypot hypot}, and {@link pow pow}.
- * (The {@link sqrt sqrt} operation is a required part of IEEE 754 from a
- * different section of the standard.) The special case behavior of the recommended
- * operations generally follows the guidance of the IEEE 754
+ * (The {@link sqrt sqrt} operation is a required part of IEEE 754
+* from a different section of the standard.) The special case behavior
+ * of the recommended operations generally follows the guidance of the IEEE 754
  * standard. However, the {@code pow} method defines different
  * behavior for some arguments, as noted in its {@linkplain pow
  * specification}. The IEEE 754 standard defines its operations to be
@@ -2760,26 +2760,23 @@ public final class Math {
 
     /**
      * Returns the inverse hyperbolic sine of a {@code double} value.
-     * The inverse hyperbolic sine of <i>x</i> is defined to be a function such that
-     *  asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
-     *  Note that range of the exact asinh is not limited.
+     * The inverse hyperbolic sine of <i>x</i> is defined to be the function such that
+     * asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that both domain and range of the exact asinh are unrestricted.
      * <p>Special cases:
      * <ul>
      *
      * <li>If the argument is zero, then the result is a zero with the
      * same sign as the argument.
      *
-     * <li>If the argument is positive infinity, then the result is
-     * positive infinity.
-     *
-     * <li>If the argument is negative infinity, then the result is
-     * negative infinity.
+     * <li>If the argument is infinity, then the result is
+     * infinity with the same sign as the argument.
      *
      * <li>If the argument is NaN, then the result is NaN.
      *
-     * <p>The computed result must be within 2.5 ulps of the exact result.
      *
      * </ul>
+     * <p>The computed result must be within 2.5 ulps of the exact result.
      * @param   x The number whose inverse hyperbolic sine is to be returned.
      * @return  The inverse hyperbolic sine of {@code x}.
      * @since 27
@@ -2787,6 +2784,8 @@ public final class Math {
     public static double asinh(double x) {
         return StrictMath.asinh(x);
     }
+
+
 
     /**
      * Returns the inverse hyperbolic cosine of a {@code double} value.
@@ -2805,9 +2804,8 @@ public final class Math {
      *
      * <li>If the argument is {@code 1.0}, then the result is positive zero.
      *
-     * <p>The computed result must be within 2.5 ulps of the exact result.
-     *
      * </ul>
+     * <p>The computed result must be within 2.5 ulps of the exact result.
      * @param   x The number whose inverse hyperbolic cosine is to be returned.
      * @return  The inverse hyperbolic cosine of {@code x}.
      * @since 27
