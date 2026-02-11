@@ -1,4 +1,4 @@
-## GCC - libgcc and libstdc++
+## GCC - libgcc and libstdc++ 14.2.0
 
 ### GNU GENERAL PUBLIC LICENSE v3
 
