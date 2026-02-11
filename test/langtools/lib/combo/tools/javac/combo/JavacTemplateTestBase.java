@@ -25,7 +25,6 @@ package tools.javac.combo;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
