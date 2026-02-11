@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,17 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+// key: compiler.err.not.exhaustive.statement.details
+// key: compiler.misc.record.pattern
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutWithProxyAsync
- */
-
-public class ConnectTimeoutWithProxyAsync extends AbstractConnectTimeout {
-
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutWithProxyAsync(Version requestVersion,
-                                      String scheme,
-                                      String method,
-                                      Duration connectTimeout,
-                                      Duration requestTimeout)
-    {
-        super.timeoutWithProxyAsync(requestVersion, scheme, method, connectTimeout, requestTimeout);
+class RecordPattern {
+    void t(R r) {
+        switch (r) {
+            case R(C1 _) -> {}
+        };
     }
+    sealed interface I {}
+    record C1() implements I {}
+    record C2() implements I {}
+    record R(I i) {}
 }

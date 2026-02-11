@@ -48,6 +48,7 @@
 #if INCLUDE_ZGC
 #include "gc/z/vmStructs_z.hpp"
 #endif
+#include "runtime/atomic.hpp"
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
                       volatile_static_field,                                                                                         \
@@ -88,7 +89,7 @@
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                 \
   nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                 \
-  nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
+  nonstatic_field(CardTableBarrierSet,         _card_table,                                   Atomic<CardTable*>)                    \
                                                                                                                                      \
      static_field(CollectedHeap,               _lab_alignment_reserve,                        size_t)                                \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
@@ -149,6 +150,7 @@
                                                                           \
   declare_toplevel_type(BarrierSet*)                                      \
   declare_toplevel_type(CardTable*)                                       \
+  declare_toplevel_type(Atomic<CardTable*>)                               \
   declare_toplevel_type(CardTable*const)                                  \
   declare_toplevel_type(CardTableBarrierSet*)                             \
   declare_toplevel_type(CardTableBarrierSet**)                            \
