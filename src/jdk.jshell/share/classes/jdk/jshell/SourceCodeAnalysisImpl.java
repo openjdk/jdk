@@ -932,7 +932,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 @Override
                 public Void visitVariable(VariableTree node, Void p) {
                     int pos = ((JCTree) node).pos;
-                    if (sp.getEndPosition(cut, node.getType()) == (-1)) {
+                    if (node.getType() != null && node.getType().getKind() == Kind.VAR_TYPE) {
                         Token varCandidate = findTokensBefore(pos, TokenKind.IDENTIFIER);
                         if (varCandidate != null && "var".equals(varCandidate.name().toString())) {
                             addKeyword.accept(varCandidate);
