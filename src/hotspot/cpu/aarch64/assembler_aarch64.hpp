@@ -3158,8 +3158,8 @@ private:
     int q = (Tb == T4H || Tb == T2S) ? 0 : 1;
     int h = (size == 0b01) ? ((lane >> 2) & 1) : ((lane >> 1) & 1);
     int l = (size == 0b01) ? ((lane >> 1) & 1) : (lane & 1);
-    assert(size == 0b10 ? lane < 4 : lane < 8, "umullv assumes lane < 4 when using half-words and lane < 8 otherwise");
-    assert(Ts == H ? Vm->encoding() < 16 : Vm->encoding() < 32, "umullv requires Vm to be in range V0..V15 when Ts is H");
+    assert(size == 0b10 ? lane < 4 : lane < 8, "umull{2}v assumes lane < 4 when using half-words and lane < 8 otherwise");
+    assert(Ts == H ? Vm->encoding() < 16 : Vm->encoding() < 32, "umull{2}v requires Vm to be in range V0..V15 when Ts is H");
     f(0, 31), f(q, 30), f(0b101111, 29, 24), f(size, 23, 22), f(l, 21); //f(m, 20);
     rf(Vm, 16), f(0b1010, 15, 12), f(h, 11), f(0, 10), rf(Vn, 5), rf(Vd, 0);
   }
@@ -3185,8 +3185,8 @@ public:
 
   void umull2v(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,
                SIMD_Arrangement Tb, FloatRegister Vm, SIMD_RegVariant Ts, int lane) {
-    assert(Ta == T4S || Ta == T2D, "umullv destination register must have arrangement T4S or T2D");
-    assert(Ta == T4S ? (Tb == T8H && Ts == H) : (Tb == T4S && Ts == S), "umullv register arrangements must adhere to spec");
+    assert(Ta == T4S || Ta == T2D, "umull2v destination register must have arrangement T4S or T2D");
+    assert(Ta == T4S ? (Tb == T8H && Ts == H) : (Tb == T4S && Ts == S), "umull2v register arrangements must adhere to spec");
     _umullv(Vd, Ta, Vn, Tb, Vm, Ts, lane);
   }
 

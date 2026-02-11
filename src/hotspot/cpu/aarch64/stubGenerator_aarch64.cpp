@@ -7189,8 +7189,13 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Multiply each 32-bit value in bs by the 32-bit values in as[lane_lo] and as[lane_lo + 2]
-  // and store in vs.
+  // Subroutine used by the 64 bit multiplication algorithm in generate_intpoly_montgomeryMult_P256().
+  // This function computes partial results of eight 52 x 52 bit multiplications where the
+  // multiplicands are stored as 64-bit values, specifically (b_0, b_1, b_2, b_3) * (a_3, a_4).
+  // In a call to this function, either the high or low 32 bits of the b_i values are multiplied
+  // by either the high or low 32 bits of the a_j values, so four calls with the appropriate
+  // parameters will produce the 64-bit low32 * low32, low32 * high32, high32 * low32, high32 * high32
+  // values in the output register sequences.
   void neon_partial_mult_64(const VSeq<4>& vs, FloatRegister bs, FloatRegister as, int lane_lo) {
 
     __ umullv(vs[0], __ T2D, bs, __ T2S, as, __ S, lane_lo);
@@ -7200,6 +7205,12 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  // This assembly follows the Java code in MontgomeryIntegerPolynomial256.mult() quite closely.
+  // The main difference is that the computations done with the last two limbs of `a` are
+  // done using Neon registers. This allows us to take advantage of both the Neon registers and
+  // GPRs simultaneously. It is also worth noting that since Neon does not support 64 bit multiplication
+  // we split each 64 bit value into lower and upper halves and use the "schoolbook" multiplication
+  // algorithm.
   address generate_intpoly_montgomeryMult_P256() {
 
     __ align(CodeEntryAlignment);
