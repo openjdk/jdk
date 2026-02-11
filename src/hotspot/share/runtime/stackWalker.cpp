@@ -31,10 +31,12 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWalker.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/spinYield.hpp"
 
@@ -267,6 +269,136 @@ bool StackWalkerThreadLocal::is_vthread(JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   return AtomicAccess::load_acquire(&jt->stackwalker_thread_local()._vthread) && jt->last_continuation() != nullptr;
 }
+
+/**
+ * When a stack-trace is requested from a thread that is currently in native
+ * state, we can not walk the thread immediately, because that would not be
+ * signal-safe. We can also not rely on walking the thread at a safepoint/handshake
+ * because native threads do not participate in handshaking as long as they
+ * are in native state - they might actually never get out of native.
+ *
+ * For these reasons, we use a separate thread to walk stacks of threads that
+ * are in-native state. This thread periodically checks for native stack-walk
+ * requests, and walk stacks of in-native-threads.
+ */
+class NativeStackWalkerThread : public NonJavaThread {
+  Semaphore _sample;
+  volatile bool _disenrolled;
+  volatile bool _is_async_processing_of_stackwalk_requests_triggered;
+  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled = true;)
+public:
+  NativeStackWalkerThread() :
+    _disenrolled(true),
+    _is_async_processing_of_stackwalk_requests_triggered(false) {
+  }
+
+  void start_thread() {
+    if (os::create_thread(this, os::os_thread)) {
+      os::start_thread(this);
+    } else {
+      log_error(jfr)("Failed to create thread for thread sampling");
+    }
+  }
+
+  void enroll() {
+    if (AtomicAccess::cmpxchg(&_disenrolled, true, false)) {
+      _sample.signal();
+      log_trace(jfr)("Enrolled Native stack walker");
+    }
+  }
+
+  void disenroll() {
+    if (!AtomicAccess::cmpxchg(&_disenrolled, false, true)) {
+      _sample.wait();
+      log_trace(jfr)("Disenrolled CPU thread sampler");
+    }
+  }
+
+  // process the queues for all threads that are in native state (and requested to be processed)
+  void stackwalk_threads_in_native()  {
+    ResourceMark rm;
+    // Prevent native stack walker from running through an ongoing safepoint.
+    MutexLocker tlock(Threads_lock);
+    ThreadsListHandle tlh;
+    Thread* current = Thread::current();
+    for (size_t i = 0; i < tlh.list()->length(); i++) {
+      JavaThread* jt = tlh.list()->thread_at(i);
+      StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+      // First check if the thread has requested native stack walking.
+      if (tl.wants_async_processing_of_requests()) {
+        // Only consider threads that are in_native - if it isn't, then it must have
+        // gone over a safepoint and has already done the stackwalk.
+        // If we can't acquire the dequeue-lock, then the thread itself must have
+        // acquired the dequeue-lock and will process the stackwalk by itself.
+        // In both cases, we don't need to do it here.
+        if (jt->thread_state() != _thread_in_native || !tl.try_acquire_dequeue_lock()) {
+          tl.set_do_async_processing_of_requests(false);
+          continue;
+        }
+        // We start stack-walking only at the last Java frame. It would not be
+        // safe to walk the native frames from a foreign thread. Note that if
+        // the foreign thread would get to mess with Java frame, it would first
+        // have to cross a safepoint, which we prevent by holding the Threads_lock
+        // above. Therefore it's safe to walk the stack from the last Java frame
+        // downwards.
+        // NOTE: we could walk the top native frames if we could do that
+        // in the request-routine, and that would have to be made signal-safe
+        // (e.g. no blocking, no allocation, etc), which seems very difficult.
+        if (jt->has_last_Java_frame()) {
+          StackWalker::process_requests(current, jt, false);
+        } else {
+          tl.set_do_async_processing_of_requests(false);
+        }
+        tl.release_queue_lock();
+      }
+    }
+  }
+
+
+protected:
+  virtual void post_run() {
+    this->NonJavaThread::post_run();
+    delete this;
+  }
+
+public:
+  virtual const char* name() const { return "Native Stack-Walker Thread"; }
+  virtual const char* type_name() const { return "NativeStackWalker"; }
+  void run() {
+    while (true) {
+      if (!_sample.trywait()) {
+        // disenrolled
+        _sample.wait();
+      }
+      _sample.signal();
+
+      DEBUG_ONLY(if (AtomicAccess::load_acquire(&_out_of_stack_walking_enabled)) {)
+        if (AtomicAccess::cmpxchg(&_is_async_processing_of_stackwalk_requests_triggered, true, false)) {
+          stackwalk_threads_in_native();
+        }
+      DEBUG_ONLY(})
+      os::naked_sleep(100);
+    }
+  }
+
+  virtual void print_on(outputStream* st) const {
+    st->print("\"%s\" ", name());
+    Thread::print_on(st);
+    st->cr();
+  }
+
+  void trigger_async_processing_of_stackwalk_requests() {
+    AtomicAccess::release_store(&_is_async_processing_of_stackwalk_requests_triggered, true);
+  }
+
+  #ifdef ASSERT
+  void set_out_of_stack_walking_enabled(bool runnable) {
+    AtomicAccess::release_store(&_out_of_stack_walking_enabled, runnable);
+  }
+  #endif
+};
+
+NativeStackWalkerThread* StackWalker::_native_stackwalker_thread = nullptr;
 
 static bool is_entry_frame(address pc) {
   return StubRoutines::returns_to_call_stub(pc);
@@ -502,7 +634,7 @@ void StackWalker::request_stack_trace(StackWalkerCallback* callback, JavaThread*
 }
 
 void StackWalker::trigger_async_processing_of_requests() {
-  // TODO: Implement this.
+  _native_stackwalker_thread->trigger_async_processing_of_stackwalk_requests();
 }
 
 static bool is_in_continuation(const frame& frame, JavaThread* jt) {
@@ -525,7 +657,7 @@ static bool is_in_continuation(const frame& frame, JavaThread* jt) {
 // If it is not a valid interpreter frame, then the StackWalkRequest is invalidated, and the current frame is returned per the sender frame.
 //
 static bool compute_sender_frame(StackWalkRequest& request, frame& sender_frame, bool& in_continuation, JavaThread* jt) {
-  assert(is_interpreter(request), "invariant");
+  assert(request._sample_bcp != nullptr /*is_interpreter(request)*/, "invariant");
   assert(jt != nullptr, "invariant");
   assert(jt->has_last_Java_frame(), "invariant");
 
@@ -601,7 +733,7 @@ static bool compute_top_frame(StackWalkRequest& request, frame& top_frame, bool&
     return false;
   }
 
-  if (is_interpreter(request)) {
+  if (request._sample_bcp != nullptr /*is_interpreter(request)*/) {
     return compute_sender_frame(request, top_frame, in_continuation, jt);
   }
 
@@ -773,7 +905,7 @@ static bool report(StackWalkState& state, JavaThread* jt, const frame& frame, bo
 }
 
 static bool report(StackWalkState& state, JavaThread* jt, const frame& frame, bool in_continuation, const StackWalkRequest& request) {
-  if (is_interpreter(request)) {
+  if (request._sample_bcp != nullptr /* is_interpreter(request) */) {
     report_interpreter_top_frame(state, request);
     if (frame.pc() == nullptr) {
       // No sender frame. Done.
@@ -796,6 +928,8 @@ static void report_thread(StackWalkRequest& request, const StackWalkerThreadLoca
     return;
   }
 
+  // The callback might be resource-allocating stuff, e.g. in JfrStackTrace.
+  ResourceMark rm;
   request.callback()->begin_stacktrace(jt, in_continuation, biased);
   StackWalkState state(request);
   if (!report(state, jt, top_frame, in_continuation, request)) {
@@ -809,7 +943,7 @@ static void report_thread(StackWalkRequest& request, const StackWalkerThreadLoca
 void StackWalker::process_requests(const Thread* current, JavaThread* jt, bool lock) {
   assert(current != nullptr, "current should not be null");
   assert(current != nullptr, "Java thread should not be null");
-  assert(jt->thread_state() == _thread_in_vm || jt->thread_state() == _thread_in_Java, "invariant");
+  //assert(jt->thread_state() == _thread_in_vm || jt->thread_state() == _thread_in_Java, "invariant");
 
   StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
 #ifdef LINUX
@@ -859,4 +993,11 @@ void StackWalkerThreadLocal::on_set_current_thread(JavaThread* jt, oop thread) {
   //   AtomicAccess::store(&tl->_vthread_epoch, static_cast<u2>(epoch_raw & epoch_mask));
   // }
   AtomicAccess::release_store(&tl._vthread, true);
+}
+
+void StackWalker::initialize() {
+  assert(_native_stackwalker_thread == nullptr, "must not initialize twice");
+  _native_stackwalker_thread = new NativeStackWalkerThread();
+  _native_stackwalker_thread->start_thread();
+  _native_stackwalker_thread->enroll();
 }

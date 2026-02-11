@@ -552,6 +552,7 @@ void JfrCPUTimeThreadSampling::create_sampler(JfrCPUSamplerThrottle& throttle) {
   _sampler = new JfrCPUSamplerThread(throttle);
   _sampler->start_thread();
   _sampler->enroll();
+  StackWalker::initialize();
 }
 
 void JfrCPUTimeThreadSampling::update_run_state(JfrCPUSamplerThrottle& throttle) {
@@ -732,9 +733,10 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   Tickspan cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
 
   JfrCPUTimeStackWalkerCallback* callback = new JfrCPUTimeStackWalkerCallback(now, cpu_time_period);
-  JavaThread* current = JavaThread::current();
-  StackWalker::request_stack_trace(callback, current, context, JfrOptionSet::stackdepth());
-
+  JavaThread* current = get_java_thread_if_valid();
+  if (current != nullptr) {
+   StackWalker::request_stack_trace(callback, current, context, JfrOptionSet::stackdepth());
+  }
   _sampler->decrement_signal_handler_count();
 }
 

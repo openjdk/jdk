@@ -29,6 +29,7 @@
 #include "memory/allStatic.hpp"
 
 class JavaThread;
+class NativeStackWalkerThread;
 
 enum class StackWalkerFrameType {
   FRAME_INTERPRETER,
@@ -201,13 +202,19 @@ public:
  * thread.
  */
 class StackWalker : public AllStatic {
+  friend class NativeStackWalkerThread;
+
+  static NativeStackWalkerThread* _native_stackwalker_thread;
+
   static void build_stack_walk_request(StackWalkRequest& request, const void* ucontext, JavaThread* java_thread);
   static void trigger_async_processing_of_requests();
   static void process_requests(const Thread* current, JavaThread* jt, bool lock);
-public:
 
+public:
+  static void initialize();
   static void request_stack_trace(StackWalkerCallback* callback, JavaThread* jt, const void* context, u4 max_frames);
 
+  // Entry point for the runtime to trigger stack-walk processing.
   static inline void check_and_process_requests(JavaThread* jt);
 };
 
