@@ -44,6 +44,7 @@
 #include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/hashTable.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -781,5 +782,71 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
                                      requested_shift,
                                      info->mapped_heap()->root_segments().count());
 }
+
+#ifdef ASSERT
+class RootOopsScanner : public BasicOopIterateClosure {
+  static unsigned oop_hash(oop const& p) {
+    return primitive_hash(cast_from_oop<intptr_t>(p));
+  }
+
+  ResizeableHashTable<oop, bool,
+                      AnyObj::C_HEAP,
+                      mtClassShared,
+                      oop_hash,
+                      primitive_equals<oop>> _table;
+  int _current_root_index;
+public:
+  RootOopsScanner() : _table(15889, 1000000), _current_root_index(-1) {}
+  void do_oop(narrowOop *p) { do_oop_work(CompressedOops::decode(*p)); }
+  void do_oop(      oop *p) { do_oop_work(*p); }
+  void set_current_root_index(int i) { _current_root_index = i;}
+
+  int number_of_reachable_oops() {
+    return _table.number_of_entries();
+  }
+
+private:
+  void do_oop_work(oop obj) {
+    if (obj != nullptr && !_table.contains(obj)) {
+      _table.put_when_absent(obj, true);
+      Klass* k = obj->klass();
+      if (k->class_loader_data() == nullptr) {
+        ResourceMark rm;
+        fatal("Klass %s must have been loaded (reachable from root %d)",
+              k->external_name(), _current_root_index);
+      }
+      obj->oop_iterate(this);
+      _table.maybe_grow();
+    }
+  }
+};
+
+// Leave some traces so that we can check inside a debugger to see if this
+// function has been called.
+static bool _verify_roots_ready_for_gc_entered = false;
+static bool _verify_roots_ready_for_gc_exited = false;
+
+// This function is called just before the VM becomes capable of running the garbage collector.
+// Verify that the classes of all oops reachable from the roots have already been loaded.
+// This is required by the collectors.
+void AOTMappedHeapLoader::verify_roots_ready_for_gc() {
+  _verify_roots_ready_for_gc_entered = true;
+  RootOopsScanner scanner;
+  HeapRootSegments segments = FileMapInfo::current_info()->mapped_heap()->root_segments();
+  for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
+    objArrayOop segment = root_segment(checked_cast<int>(seg_idx));
+    for (int i = 0; i < segment->length(); i++) {
+      oop root = segment->obj_at(i);
+      if (root != nullptr) {
+        scanner.set_current_root_index(i);
+        root->oop_iterate(&scanner);
+      }
+    }
+  }
+  log_info(aot, heap)("Verified %d objects in %zu root segment(s)",
+                      scanner.number_of_reachable_oops(), segments.count());
+  _verify_roots_ready_for_gc_exited = true;
+}
+#endif // ASSERT
 
 #endif // INCLUDE_CDS_JAVA_HEAP

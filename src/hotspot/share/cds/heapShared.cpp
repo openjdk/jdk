@@ -350,6 +350,9 @@ void HeapShared::initialize_streaming() {
 }
 
 void HeapShared::enable_gc() {
+  if (AOTMappedHeapLoader::is_in_use()) {
+    AOTMappedHeapLoader::verify_roots_ready_for_gc();
+  }
   if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::enable_gc();
   }
