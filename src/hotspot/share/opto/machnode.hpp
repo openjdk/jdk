@@ -960,16 +960,17 @@ protected:
 public:
   ciMethod* _method;                 // Method being direct called
   bool      _override_symbolic_info; // Override symbolic call site info from bytecode
+  bool      _implicit_exception_init; // Call is <init> for an implicitly created exception
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
   bool      _arg_escape;             // ArgEscape in parameter list
-  MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
+  MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false), _implicit_exception_init(false) {
     init_class_id(Class_MachCallJava);
   }
 
   virtual const RegMask &in_RegMask(uint) const;
 
   int resolved_method_index(C2_MacroAssembler *masm) const {
-    if (_override_symbolic_info) {
+    if (_override_symbolic_info || _implicit_exception_init) {
       // Attach corresponding Method* to the call site, so VM can use it during resolution
       // instead of querying symbolic info from bytecode.
       assert(_method != nullptr, "method should be set");

@@ -778,7 +778,8 @@ uint MachCallJavaNode::size_of() const { return sizeof(*this); }
 bool MachCallJavaNode::cmp( const Node &n ) const {
   MachCallJavaNode &call = (MachCallJavaNode&)n;
   return MachCallNode::cmp(call) && _method->equals(call._method) &&
-         _override_symbolic_info == call._override_symbolic_info;
+         _override_symbolic_info == call._override_symbolic_info &&
+         _implicit_exception_init == call._implicit_exception_init;
 }
 #ifndef PRODUCT
 void MachCallJavaNode::dump_spec(outputStream *st) const {
@@ -786,6 +787,7 @@ void MachCallJavaNode::dump_spec(outputStream *st) const {
     _method->print_short_name(st);
     st->print(" ");
   }
+  if (_implicit_exception_init) st->print("(implicit_exception_init) ");
   MachCallNode::dump_spec(st);
 }
 #endif

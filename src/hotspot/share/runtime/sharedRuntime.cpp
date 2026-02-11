@@ -1227,12 +1227,23 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     return receiver;
   }
 
-  Bytecode_invoke bytecode(caller, bci);
-  int bytecode_index = bytecode.index();
-  bc = bytecode.invoke_code();
+  Bytecode_invoke bytecode = Bytecode_invoke_check(caller, bci);
+  int bytecode_index = -1;
+  if (bytecode.is_valid()) {
+    // This is the normal case for invoke* bytecodes
+    bytecode_index = bytecode.index();
+    bc = bytecode.invoke_code();
+  } else {
+    // This is for implicit exceptions with -XX:+OptimizeImplicitExceptions
+    // where we create an artificial call to *Exception::<init>().
+    // Notice that we don't catch the case here where we've created an
+    // implicit exception (e.g. NPE) for a regular invoke* bytecode.
+    // This special case is handled further down.
+    bc = Bytecodes::_invokespecial;
+  }
 
   methodHandle attached_method(current, extract_attached_method(vfst));
-  if (attached_method.not_null()) {
+  if (attached_method.not_null() && bytecode.is_valid()) {
     Method* callee = bytecode.static_target(CHECK_NH);
     vmIntrinsics::ID id = callee->intrinsic_id();
     // When VM replaces MH.invokeBasic/linkTo* call with a direct/virtual call,
@@ -1263,6 +1274,15 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
           break;
       }
     }
+  }
+  if (attached_method.not_null() &&
+      attached_method->name() == vmSymbols::object_initializer_name() &&
+      attached_method->method_holder()->is_subclass_of(vmClasses::Throwable_klass())) {
+    // If we've created an implicit exception (e.g. NPE) for an invoke* bytecode
+    // due to -XX:+OptimizeImplicitExceptions we have to adjust the bytecode to
+    // invokespecial here because we're actually invoking the exception's
+    // constructor.
+    bc = Bytecodes::_invokespecial;
   }
 
   assert(bc != Bytecodes::_illegal, "not initialized");
