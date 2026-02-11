@@ -170,8 +170,7 @@ public class TestVectorMaskToLongStress {
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
-        testFramework.setDefaultWarmup(10000)
-                     .addFlags("--add-modules=jdk.incubator.vector",
+        testFramework.addFlags("--add-modules=jdk.incubator.vector",
                                "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UnlockDiagnosticVMOptions",
                                "-XX:-TieredCompilation",
