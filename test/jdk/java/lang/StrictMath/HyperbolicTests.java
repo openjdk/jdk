@@ -81,7 +81,6 @@ public class HyperbolicTests {
         SINH(HyperbolicTests::testSinhCase, FdlibmTranslit::sinh),
         COSH(HyperbolicTests::testCoshCase, FdlibmTranslit::cosh),
         TANH(HyperbolicTests::testTanhCase, FdlibmTranslit::tanh),
-        TANH(HyperbolicTests::testTanhCase, FdlibmTranslit::tanh),
         ASINH(HyperbolicTests::testAsinhCase, FdlibmTranslit::asinh),
         ACOSH(HyperbolicTests::testAcoshCase, FdlibmTranslit::acosh);
 
