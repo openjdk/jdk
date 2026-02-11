@@ -133,11 +133,9 @@ public class Basic {
     @ParameterizedTest
     @MethodSource("factory")
     void testAttributes(Path dir) throws IOException {
-        Path file1 = Files.createFile(dir.resolve("foo"));
-        Path file2 = Files.createFile(dir.resolve("bar"));
-        FileStore store1 = Files.getFileStore(file1);
-        FileStore store2 = Files.getFileStore(file2);
-        assertTrue(store1.supportsFileAttributeView("basic"));
+        Path file = Files.createFile(dir.resolve("foo"));
+        FileStore store = Files.getFileStore(file);
+        assertTrue(store.supportsFileAttributeView("basic"));
         testFileAttributes(dir, BasicFileAttributeView.class, "basic");
         testFileAttributes(dir, PosixFileAttributeView.class, "posix");
         testFileAttributes(dir, DosFileAttributeView.class, "dos");
@@ -151,22 +149,22 @@ public class Basic {
     @ParameterizedTest
     @MethodSource("factory")
     void testSpaceAttributes(Path dir) throws IOException {
-        Path file1 = Files.createFile(dir.resolve("foo"));
-        FileStore store1 = Files.getFileStore(file1);
-        File f = file1.toFile();
+        Path file = Files.createFile(dir.resolve("foo"));
+        FileStore store = Files.getFileStore(file);
+        File f = file.toFile();
 
         // check values are "close"
-        checkWithin1GB("total",  f.getTotalSpace(),  store1.getTotalSpace());
-        checkWithin1GB("free",   f.getFreeSpace(),   store1.getUnallocatedSpace());
-        checkWithin1GB("usable", f.getUsableSpace(), store1.getUsableSpace());
+        checkWithin1GB("total",  f.getTotalSpace(),  store.getTotalSpace());
+        checkWithin1GB("free",   f.getFreeSpace(),   store.getUnallocatedSpace());
+        checkWithin1GB("usable", f.getUsableSpace(), store.getUsableSpace());
 
         // get values by name
         checkWithin1GB("total",  f.getTotalSpace(),
-                       (Long)store1.getAttribute("totalSpace"));
+                       (Long)store.getAttribute("totalSpace"));
         checkWithin1GB("free",   f.getFreeSpace(),
-                       (Long)store1.getAttribute("unallocatedSpace"));
+                       (Long)store.getAttribute("unallocatedSpace"));
         checkWithin1GB("usable", f.getUsableSpace(),
-                       (Long)store1.getAttribute("usableSpace"));
+                       (Long)store.getAttribute("usableSpace"));
     }
 
     /*
