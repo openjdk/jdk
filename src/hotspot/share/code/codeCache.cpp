@@ -1139,7 +1139,7 @@ size_t CodeCache::freelists_length() {
 void icache_init();
 
 void CodeCache::initialize() {
-  assert(CodeCacheSegmentSize >= (size_t)CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
+  assert(CodeCacheSegmentSize >= CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
 #ifdef COMPILER2
   assert(CodeCacheSegmentSize >= (size_t)OptoLoopAlignment,  "CodeCacheSegmentSize must be large enough to align inner loops");
 #endif
