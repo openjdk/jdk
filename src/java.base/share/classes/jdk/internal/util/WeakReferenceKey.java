@@ -88,4 +88,16 @@ final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey
     public String toString() {
         return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
     }
+
+    // The line (obj instanceof ReferenceKey<?> key) in the equals() method is usually
+    // executed in the AOT assembly phase. However, in some rare occasions, this
+    // line is not execute (due to peculiarity of hash code and memory addressing??).
+    // As a result, the constant pool entry to ReferenceKey<?> is not resolved.
+    //
+    // The JVM calls this method during the AOT assembly phase to ensure that the
+    // constant pool entry is always resolved, so that the contents in the JDK's
+    // default CDS archives have deterministic contents.
+    private static boolean ensureDeterministicAOTCache(Object obj) {
+        return (obj instanceof ReferenceKey<?>);
+    }
 }
