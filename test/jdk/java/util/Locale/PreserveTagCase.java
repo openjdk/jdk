@@ -53,7 +53,7 @@ public class PreserveTagCase {
      */
     @ParameterizedTest
     @MethodSource("filterProvider")
-    public static void testFilterTags(String ranges, List<String> tags,
+    public void testFilterTags(String ranges, List<String> tags,
                                   List<String> expected, FilteringMode mode) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<String> actual = Locale.filterTags(priorityList, tags, mode);
@@ -67,7 +67,7 @@ public class PreserveTagCase {
      */
     @ParameterizedTest
     @MethodSource("lookupProvider")
-    public static void testLookupTag(String ranges, List<String> tags,
+    public void testLookupTag(String ranges, List<String> tags,
                                   String expected) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         String actual = Locale.lookupTag(priorityList, tags);
