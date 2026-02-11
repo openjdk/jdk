@@ -104,6 +104,11 @@ bool JfrRecorder::on_create_vm_1() {
     }
   }
 
+  // Symbol table needs to be setup for early class unloading
+  if (!create_symbol_table()) {
+    return false;
+  }
+
   // fast time initialization
   return JfrTime::initialize();
 }
@@ -314,9 +319,6 @@ bool JfrRecorder::create_components() {
     return false;
   }
   if (!create_thread_group_manager()) {
-    return false;
-  }
-  if (!create_symbol_table()) {
     return false;
   }
   return true;
