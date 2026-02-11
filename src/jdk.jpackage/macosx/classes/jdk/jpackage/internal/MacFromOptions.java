@@ -57,7 +57,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
-import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
+import jdk.jpackage.internal.SigningIdentityBuilder.SigningConfigException;
 import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
 import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
@@ -75,8 +75,8 @@ import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.MacBundle;
-import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
@@ -118,21 +118,9 @@ final class MacFromOptions {
         final boolean sign = MAC_SIGN.findIn(options).orElse(false);
         final boolean appStore = MAC_APP_STORE.findIn(options).orElse(false);
 
-        final var appResult = Result.of(() -> createMacApplicationInternal(options));
+        final Optional<SigningIdentityBuilder> pkgSigningIdentityBuilder;
 
-        final Optional<MacPkgPackageBuilder> pkgBuilder;
-        if (appResult.hasValue()) {
-            final var superPkgBuilder = createMacPackageBuilder(options, appResult.orElseThrow(), MAC_PKG);
-            pkgBuilder = Optional.of(new MacPkgPackageBuilder(superPkgBuilder));
-        } else {
-            // Failed to create an app. Is it because of the expired certificate?
-            rethrowIfNotExpiredCertificateException(appResult);
-            // Yes, the certificate for signing the app image has expired.
-            // Keep going, try to create a signing config for the package.
-            pkgBuilder = Optional.empty();
-        }
-
-        if (sign) {
+        if (sign && (MAC_INSTALLER_SIGN_IDENTITY.containsIn(options) || MAC_SIGNING_KEY_NAME.containsIn(options))) {
             final var signingIdentityBuilder = createSigningIdentityBuilder(options);
             MAC_INSTALLER_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
             MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
@@ -146,34 +134,43 @@ final class MacFromOptions {
                 signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
             });
 
-            if (pkgBuilder.isPresent()) {
-                pkgBuilder.orElseThrow().signingBuilder(signingIdentityBuilder);
-            } else {
-                //
-                // The certificate for signing the app image has expired. Can not create a
-                // package because there is no app.
-                // Try to create a signing config for the package and see if the certificate for
-                // signing the package is also expired.
-                //
-
-                final var expiredAppCertException = appResult.firstError().orElseThrow();
-
-                final var pkgSignConfigResult = Result.of(signingIdentityBuilder::create);
-                try {
-                    rethrowIfNotExpiredCertificateException(pkgSignConfigResult);
-                    // The certificate for the package signing config is also expired!
-                } catch (RuntimeException ex) {
-                    // Some error occurred trying to configure the signing config for the package.
-                    // Ignore it, bail out with the first error.
-                    throw toUnchecked(expiredAppCertException);
-                }
-
-                Log.error(pkgSignConfigResult.firstError().orElseThrow().getMessage());
-                throw toUnchecked(expiredAppCertException);
-            }
+            pkgSigningIdentityBuilder = Optional.of(signingIdentityBuilder);
+        } else {
+            pkgSigningIdentityBuilder = Optional.empty();
         }
 
-        return pkgBuilder.orElseThrow().create();
+        ApplicationWithDetails app = null;
+        try {
+            app = createMacApplicationInternal(options);
+        } catch (RuntimeException appEx) {
+            rethrowIfNotSigningConfigException(appEx);
+            try {
+                pkgSigningIdentityBuilder.ifPresent(SigningIdentityBuilder::create);
+            } catch (RuntimeException pkgEx) {
+
+                if (Objects.equals(appEx.getMessage(), pkgEx.getMessage())) {
+                    // Don't report the same error twice.
+                    throw appEx;
+                }
+
+                // Use suppressed exceptions to communicate multiple exceptions to the caller.
+                // The top-level error handling code assumes there is a causal connection
+                // between the exception and its suppressed exceptions.
+                // Based on this assumption and following the principle "Present cause before consequence",
+                // it will report the suppressed exceptions before reporting the caught exception.
+                pkgEx.addSuppressed(appEx);
+                throw pkgEx;
+            }
+
+            throw appEx;
+        }
+
+        final var superPkgBuilder = createMacPackageBuilder(options, app, MAC_PKG);
+        final var pkgBuilder = new MacPkgPackageBuilder(superPkgBuilder);
+
+        pkgSigningIdentityBuilder.ifPresent(pkgBuilder::signingBuilder);
+
+        return pkgBuilder.create();
     }
 
     private record ApplicationWithDetails(MacApplication app, Optional<ExternalApplication> externalApp) {
@@ -247,7 +244,7 @@ final class MacFromOptions {
 
         appBuilder.appStore(appStore);
 
-        if (sign) {
+        if (sign && (MAC_APP_IMAGE_SIGN_IDENTITY.containsIn(options) || MAC_SIGNING_KEY_NAME.containsIn(options))) {
             final var signingIdentityBuilder = createSigningIdentityBuilder(options);
             MAC_APP_IMAGE_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
             MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
@@ -298,20 +295,18 @@ final class MacFromOptions {
         return builder;
     }
 
-    private static void rethrowIfNotExpiredCertificateException(Result<?> result) {
-        final var ex = result.firstError().orElseThrow();
+    private static void rethrowIfNotSigningConfigException(Exception ex) {
+        var signingConfigExceptionFound = Slot.<Boolean>createEmpty();
 
-        if (ex instanceof ExpiredCertificateException) {
-            return;
-        }
-
-        if (ex instanceof ExceptionBox box) {
-            if (box.getCause() instanceof Exception cause) {
-                rethrowIfNotExpiredCertificateException(Result.ofError(cause));
+        ExceptionBox.visitUnboxedExceptionsRecursively(ex, visited -> {
+            if (visited instanceof SigningConfigException) {
+                signingConfigExceptionFound.set(true);
             }
-        }
+        });
 
-        throw toUnchecked(ex);
+        if (!signingConfigExceptionFound.find().orElse(false)) {
+            throw toUnchecked(ex);
+        }
     }
 
     private static SigningIdentityBuilder createSigningIdentityBuilder(Options options) {

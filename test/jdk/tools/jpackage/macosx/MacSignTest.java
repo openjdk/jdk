@@ -22,22 +22,23 @@
  */
 
 import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_IDENTITY;
-import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE;
 import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_USER_FULL_NAME;
 import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.FailedCommandErrorValidator;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
@@ -47,7 +48,6 @@ import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
 import jdk.jpackage.test.MacHelper.SignKeyOptionWithKeychain;
 import jdk.jpackage.test.MacSign;
-import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -94,11 +94,7 @@ public class MacSignTest {
                 SigningBase.StandardCertificateRequest.CODESIGN,
                 keychain);
 
-        new FailedCommandErrorValidator(Pattern.compile(String.format(
-                "/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s --entitlements \\S+ \\S+",
-                Pattern.quote(String.format("'%s'", signingKeyOption.certRequest().name())),
-                Pattern.quote(keychain.name())
-        ))).exitCode(1).createGroup().mutate(group::add);
+        buildSignCommandErrorValidator(signingKeyOption).createGroup().mutate(group::add);
 
         MacSign.withKeychain(_ -> {
 
@@ -107,7 +103,7 @@ public class MacSignTest {
             // This is not a fatal error, just a warning.
             // To make jpackage fail, specify bad additional content.
             JPackageCommand.helloAppImage()
-                    .ignoreDefaultVerbose(true)
+                    .mutate(MacSignTest::init)
                     .validateOutput(group.create())
                     .addArguments("--app-content", appContent)
                     .mutate(signingKeyOption::addTo)
@@ -136,11 +132,9 @@ public class MacSignTest {
         MacSign.withKeychain(keychain -> {
 
             // Build a matcher for jpackage's failed command output.
-            var errorValidator = new FailedCommandErrorValidator(Pattern.compile(String.format(
-                    "/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s",
-                    Pattern.quote(String.format("'%s'", signingKeyOption.certRequest().name())),
-                    Pattern.quote(keychain.name())
-            ))).exitCode(1).output(String.format("%s: no identity found", signingKeyOption.certRequest().name())).createGroup();
+            var errorValidator = buildSignCommandErrorValidator(signingKeyOption, keychain)
+                    .output(String.format("%s: no identity found", signingKeyOption.certRequest().name()))
+                    .createGroup();
 
             JPackageCommand.helloAppImage()
                     .setFakeRuntime()
@@ -157,9 +151,12 @@ public class MacSignTest {
     @Parameter({"IMAGE", "EXPIRED_SIGNING_KEY_USER_NAME"})
     @Parameter({"MAC_DMG", "EXPIRED_SIGNING_KEY_USER_NAME"})
     @Parameter({"MAC_PKG", "EXPIRED_SIGNING_KEY_USER_NAME", "EXPIRED_SIGNING_KEY_USER_NAME_PKG"})
+    @Parameter({"MAC_PKG", "EXPIRED_SIGNING_KEY_USER_NAME_PKG", "EXPIRED_SIGNING_KEY_USER_NAME"})
 
     @Parameter({"IMAGE", "EXPIRED_SIGN_IDENTITY"})
     @Parameter({"MAC_DMG", "EXPIRED_SIGN_IDENTITY"})
+
+    // Test that jpackage doesn't print duplicated error messages.
     @Parameter({"MAC_PKG", "EXPIRED_SIGN_IDENTITY"})
 
     @Parameter({"IMAGE", "EXPIRED_CODESIGN_SIGN_IDENTITY"})
@@ -168,16 +165,41 @@ public class MacSignTest {
 
     @Parameter({"MAC_PKG", "GOOD_CODESIGN_SIGN_IDENTITY", "EXPIRED_PKG_SIGN_IDENTITY"})
     @Parameter({"MAC_PKG", "EXPIRED_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
-    public static void testExpiredCertificate(PackageType type, SignOption... options) {
+    public static void testExpiredCertificate(PackageType type, SignOption... optionIds) {
+
+        var options = Stream.of(optionIds).map(SignOption::option).toList();
+
+        var badOptions = options.stream().filter(option -> {
+            return option.certRequest().expired();
+        }).toList();
 
         MacSign.withKeychain(keychain -> {
+
             final var cmd = MacHelper.useKeychain(JPackageCommand.helloAppImage(), keychain)
-                    .ignoreDefaultVerbose(true)
-                    .addArguments(Stream.of(options).map(SignOption::args).flatMap(List::stream).toList())
+                    .mutate(MacSignTest::init)
+                    .addArguments(options.stream().map(SignKeyOption::asCmdlineArgs).flatMap(List::stream).toList())
                     .setPackageType(type);
 
-            SignOption.configureOutputValidation(cmd, Stream.of(options).filter(SignOption::expired).toList(), opt -> {
-                return JPackageStringBundle.MAIN.cannedFormattedString("error.certificate.expired", opt.identityName());
+            configureOutputValidation(cmd, expectFailures(badOptions), opt -> {
+                if (!opt.passThrough().orElse(false)) {
+                    return expectConfigurationError("error.certificate.outside-validity-period", opt.certRequest().name());
+                } else {
+                    var builder = buildSignCommandErrorValidator(opt, keychain);
+                    switch (opt.optionName().orElseThrow()) {
+                        case KEY_IDENTITY_APP_IMAGE, KEY_USER_NAME -> {
+                            builder.output(String.format("%s: no identity found", opt.certRequest().name()));
+                        }
+                        case KEY_IDENTITY_INSTALLER -> {
+                            var regexp = Pattern.compile(String.format(
+                                    "^productbuild: error: Cannot write product to \\S+ \\(Could not find appropriate signing identity for “%s” in keychain at “%s”\\.\\)",
+                                    Pattern.quote(opt.certRequest().name()),
+                                    Pattern.quote(keychain.name())
+                            ));
+                            builder.validators(TKit.assertTextStream(regexp));
+                        }
+                    }
+                    return builder.createGroup();
+                }
             }).execute(1);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.EXPIRED.keychain());
     }
@@ -185,30 +207,60 @@ public class MacSignTest {
     @Test
     @Parameter({"IMAGE", "GOOD_SIGNING_KEY_USER_NAME"})
     @Parameter({"MAC_DMG", "GOOD_SIGNING_KEY_USER_NAME"})
+    @Parameter({"MAC_PKG", "GOOD_SIGNING_KEY_USER_NAME", "GOOD_SIGNING_KEY_USER_NAME_PKG"})
     @Parameter({"MAC_PKG", "GOOD_SIGNING_KEY_USER_NAME_PKG", "GOOD_SIGNING_KEY_USER_NAME"})
     @Parameter({"IMAGE", "GOOD_CODESIGN_SIGN_IDENTITY"})
     @Parameter({"MAC_PKG", "GOOD_CODESIGN_SIGN_IDENTITY", "GOOD_PKG_SIGN_IDENTITY"})
     @Parameter({"MAC_PKG", "GOOD_PKG_SIGN_IDENTITY"})
-    public static void testMultipleCertificates(PackageType type, SignOption... options) {
+    public static void testMultipleCertificates(PackageType type, SignOption... optionIds) {
+
+        var options = Stream.of(optionIds).map(SignOption::option).toList();
 
         MacSign.withKeychain(keychain -> {
+
             final var cmd = MacHelper.useKeychain(JPackageCommand.helloAppImage(), keychain)
-                    .ignoreDefaultVerbose(true)
-                    .addArguments(Stream.of(options).map(SignOption::args).flatMap(List::stream).toList())
+                    .mutate(MacSignTest::init)
+                    .addArguments(options.stream().map(SignKeyOption::asCmdlineArgs).flatMap(List::stream).toList())
                     .setPackageType(type);
 
-            Predicate<SignOption> filter = opt -> {
-                if (type == PackageType.MAC_PKG && options.length > 1) {
-                    // Only the first error will be reported and it should always be
-                    // for the app image signing, not for the PKG signing.
-                    return opt.identityType() == CertificateType.CODE_SIGN;
-                } else {
-                    return true;
-                }
-            };
+            if (List.of(optionIds).equals(List.of(SignOption.GOOD_PKG_SIGN_IDENTITY))) {
+                /**
+                 * Normally, if multiple signing identities share the same name, signing should
+                 * fail. However, in pass-through signing, when jpackage passes signing
+                 * identities without validation to signing commands, signing a .pkg installer
+                 * with a name matching two signing identities succeeds.
+                 */
+                var group = TKit.TextStreamVerifier.group();
 
-            SignOption.configureOutputValidation(cmd, Stream.of(options).filter(filter).toList(), opt -> {
-                return JPackageStringBundle.MAIN.cannedFormattedString("error.multiple.certs.found", opt.identityName(), keychain.name());
+                group.add(TKit.assertTextStream(JPackageStringBundle.MAIN.cannedFormattedString(
+                        "warning.unsigned.app.image", "pkg").getValue()));
+
+                cmd.validateOutput(group.create().andThen(TKit.assertEndOfTextStream()));
+
+                cmd.execute();
+                return;
+            }
+
+            configureOutputValidation(cmd, expectFailures(options), opt -> {
+                if (!opt.passThrough().orElse(false)) {
+                    return expectConfigurationError("error.multiple.certs.found", opt.certRequest().name(), keychain.name());
+                } else {
+                    var builder = buildSignCommandErrorValidator(opt, keychain);
+                    switch (opt.optionName().orElseThrow()) {
+                        case KEY_IDENTITY_APP_IMAGE, KEY_USER_NAME -> {
+                            builder.output(String.format("%s: ambiguous", opt.certRequest().name()));
+                        }
+                        case KEY_IDENTITY_INSTALLER -> {
+                            var regexp = Pattern.compile(String.format(
+                                    "^productbuild: error: Cannot write product to \\S+ \\(Could not find appropriate signing identity for “%s” in keychain at “%s”\\.\\)",
+                                    Pattern.quote(opt.certRequest().name()),
+                                    Pattern.quote(keychain.name())
+                            ));
+                            builder.validators(TKit.assertTextStream(regexp));
+                        }
+                    }
+                    return builder.createGroup();
+                }
             }).execute(1);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.DUPLICATE.keychain());
     }
@@ -262,7 +314,7 @@ public class MacSignTest {
         GOOD_SIGNING_KEY_USER_NAME(SIGN_KEY_USER_SHORT_NAME, SigningBase.StandardCertificateRequest.CODESIGN),
         GOOD_SIGNING_KEY_USER_NAME_PKG(SIGN_KEY_USER_SHORT_NAME, SigningBase.StandardCertificateRequest.PKG),
         GOOD_CODESIGN_SIGN_IDENTITY(SIGN_KEY_IDENTITY, SigningBase.StandardCertificateRequest.CODESIGN),
-        GOOD_PKG_SIGN_IDENTITY(SIGN_KEY_IDENTITY_APP_IMAGE, SigningBase.StandardCertificateRequest.PKG);
+        GOOD_PKG_SIGN_IDENTITY(SIGN_KEY_IDENTITY, SigningBase.StandardCertificateRequest.PKG);
 
         SignOption(SignKeyOption.Type optionType, NamedCertificateRequestSupplier certRequestSupplier) {
             this.option = new SignKeyOption(optionType, new ResolvableCertificateRequest(certRequestSupplier.certRequest(), _ -> {
@@ -270,44 +322,111 @@ public class MacSignTest {
             }, certRequestSupplier.name()));
         }
 
-        boolean passThrough() {
-            return option.type().mapOptionName(option.certRequest().type()).orElseThrow().passThrough();
-        }
-
-        boolean expired() {
-            return option.certRequest().expired();
-        }
-
-        String identityName() {
-            return option.certRequest().name();
-        }
-
-        CertificateType identityType() {
-            return option.certRequest().type();
-        }
-
-        List<String> args() {
-            return option.asCmdlineArgs();
-        }
-
-        static JPackageCommand configureOutputValidation(JPackageCommand cmd, List<SignOption> options,
-                Function<SignOption, CannedFormattedString> conv) {
-            options.stream().filter(SignOption::passThrough)
-                    .map(conv)
-                    .map(CannedFormattedString::getValue)
-                    .map(TKit::assertTextStream)
-                    .map(TKit.TextStreamVerifier::negate)
-                    .forEach(cmd::validateOutput);
-
-            options.stream().filter(Predicate.not(SignOption::passThrough))
-                    .map(conv)
-                    .map(CannedFormattedString::getValue)
-                    .map(TKit::assertTextStream)
-                    .forEach(cmd::validateOutput);
-
-            return cmd;
+        SignKeyOption option() {
+            return option;
         }
 
         private final SignKeyOption option;
+    }
+
+    private static JPackageCommand configureOutputValidation(JPackageCommand cmd, Stream<SignKeyOption> options,
+            Function<SignKeyOption, TKit.TextStreamVerifier.Group> conv) {
+
+        // Validate jpackage's output matches expected output.
+
+        var outputValidator = options.sorted(Comparator.comparing(option -> {
+            return option.certRequest().type();
+        })).map(conv).reduce(
+                TKit.TextStreamVerifier.group(),
+                TKit.TextStreamVerifier.Group::add,
+                TKit.TextStreamVerifier.Group::add).tryCreate().map(consumer -> {
+                    return consumer.andThen(TKit.assertEndOfTextStream());
+                }).orElseGet(TKit::assertEndOfTextStream);
+
+        cmd.validateOutput(outputValidator);
+
+        return cmd;
+    }
+
+    private static Stream<SignKeyOption> expectFailures(Collection<SignKeyOption> options) {
+
+        if (!options.stream().map(option -> {
+            return option.passThrough().orElse(false);
+        }).distinct().reduce((x, y) -> {
+            throw new IllegalArgumentException();
+        }).get()) {
+            // No pass-through signing options.
+            // This means jpackage will validate them at the configuration phase and report all detected errors.
+            return options.stream();
+        }
+
+        // Pass-through signing options.
+        // jpackage will not validate them and will report only one error at the packaging phase.
+
+        Function<MacSign.CertificateType, Predicate<SignKeyOption>> filterType = type -> {
+            return option -> {
+                return option.certRequest().type() == type;
+            };
+        };
+
+        var appImageSignOption = options.stream()
+                .filter(filterType.apply(MacSign.CertificateType.CODE_SIGN)).findFirst();
+        var pkgSignOption = options.stream()
+                .filter(filterType.apply(MacSign.CertificateType.INSTALLER)).findFirst();
+
+        if (appImageSignOption.isPresent() && pkgSignOption.isPresent()) {
+            return options.stream().filter(option -> {
+                return appImageSignOption.get() == option;
+            });
+        } else {
+            return options.stream();
+        }
+    }
+
+    private static TKit.TextStreamVerifier.Group expectConfigurationError(String key, Object ... args) {
+        var str = JPackageStringBundle.MAIN.cannedFormattedString(key, args);
+        str = JPackageCommand.makeError(str);
+        return TKit.TextStreamVerifier.group().add(TKit.assertTextStream(str.getValue()).predicate(String::equals));
+    }
+
+    private static FailedCommandErrorValidator buildSignCommandErrorValidator(SignKeyOptionWithKeychain option) {
+        return buildSignCommandErrorValidator(option.signKeyOption(), option.keychain());
+    }
+
+    private static FailedCommandErrorValidator buildSignCommandErrorValidator(SignKeyOption option, MacSign.ResolvedKeychain keychain) {
+
+        Objects.requireNonNull(option);
+        Objects.requireNonNull(keychain);
+
+        String cmdlinePatternFormat;
+        String signIdentity;
+
+        switch (option.optionName().orElseThrow()) {
+            case KEY_IDENTITY_APP_IMAGE, KEY_USER_NAME -> {
+                cmdlinePatternFormat = "^/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s";
+                if (option.passThrough().orElse(false)) {
+                    signIdentity = String.format("'%s'", option.asCmdlineArgs().getLast());
+                } else {
+                    signIdentity = MacSign.CertificateHash.of(option.certRequest().cert()).toString();
+                }
+            }
+            case KEY_IDENTITY_INSTALLER -> {
+                cmdlinePatternFormat = "^/usr/bin/productbuild --resources \\S+ --sign %s --keychain %s";
+                signIdentity = String.format("'%s'", option.asCmdlineArgs().getLast());
+            }
+            default -> {
+                throw ExceptionBox.reachedUnreachable();
+            }
+        }
+
+        return new FailedCommandErrorValidator(Pattern.compile(String.format(
+                cmdlinePatternFormat,
+                Pattern.quote(signIdentity),
+                Pattern.quote(keychain.name())
+        ))).exitCode(1);
+    }
+
+    private static void init(JPackageCommand cmd) {
+        cmd.setFakeRuntime().ignoreDefaultVerbose(true);
     }
 }
