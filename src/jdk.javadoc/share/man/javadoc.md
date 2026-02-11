@@ -896,15 +896,15 @@ The following options are provided by the standard doclet.
 
     The tag outputs *header* as its heading, followed by the body of the tag.
     The tag body may contain HTML elements and inline JavaDoc tags, which are
-    also interpreted. A note tag can be used both as a block tag and as an
-    inline tag, and may optionally specify attributes to modify the appearance
-    of the generated output as described in the [specification of the note
-    tag][note tag].
+    also interpreted. Depending on its allowed *locations*, the tag may be
+    used as block, inline tag, or both. The tag may also use attributes as
+    described in the [specification of the note tag][note tag].
 
     Omitting a *header* value causes the *name* to be the heading. *locations*
     is a list of characters specifying the kinds of declarations in which the
-    tag may be used. The following characters may be used, in either uppercase
-    or lowercase:
+    tag may be used, and whether to restrict its use to block tag or inline tag
+    (both uses are allowed by default). The following characters may be used,
+    in either uppercase or lowercase:
 
     * `A`: all declarations
     * `C`: constructors
@@ -914,7 +914,12 @@ The following options are provided by the standard doclet.
     * `P`: packages
     * `S`: modules
     * `T`: types (classes and interfaces)
+    * `B`: block tag only, disallow use as inline tag
+    * `I`: inline tag only, disallow use as block tag
     * `X`: nowhere: the tag is disabled, and will be ignored
+
+    As an example, specifying `CMI` as *locations* allows a tag to be used as
+    inline tag in constructor and method declarations.
 
     The *name* of the tag, prefixed by `note-tag-`, is also added as `class`
     attribute to the generated HTML element to enable the application of
