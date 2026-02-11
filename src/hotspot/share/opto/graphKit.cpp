@@ -508,7 +508,7 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 
     // first must access the should_post_on_exceptions_flag in this thread's JavaThread
     Node* jthread = _gvn.transform(new ThreadLocalNode());
-    Node* adr = basic_plus_adr(top(), jthread, in_bytes(JavaThread::should_post_on_exceptions_flag_offset()));
+    Node* adr = off_heap_plus_addr(jthread, in_bytes(JavaThread::should_post_on_exceptions_flag_offset()));
     Node* should_post_flag = make_load(control(), adr, TypeInt::INT, T_INT, MemNode::unordered);
 
     // Test the should_post_on_exceptions_flag vs. 0
@@ -1179,6 +1179,12 @@ Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   // short-circuit a common case
   if (offset == intcon(0))  return ptr;
   return _gvn.transform( new AddPNode(base, ptr, offset) );
+}
+
+Node* GraphKit::off_heap_plus_addr(Node* ptr, Node* offset) {
+  // short-circuit a common case
+  if (offset == intcon(0))  return ptr;
+  return _gvn.transform(AddPNode::make_off_heap(ptr, offset));
 }
 
 Node* GraphKit::ConvI2L(Node* offset) {
@@ -3002,7 +3008,7 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
 
 void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
-  Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  Node* adr = off_heap_plus_addr(klass, init_state_off);
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     adr->bottom_type()->is_ptr(), TypeInt::BYTE,
                                     T_BYTE, MemNode::acquire);
@@ -3020,7 +3026,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
 
 void GraphKit::guard_init_thread(Node* klass) {
   int init_thread_off = in_bytes(InstanceKlass::init_thread_offset());
-  Node* adr = basic_plus_adr(top(), klass, init_thread_off);
+  Node* adr = off_heap_plus_addr(klass, init_thread_off);
 
   Node* init_thread = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                      adr->bottom_type()->is_ptr(), TypePtr::NOTNULL,
@@ -3598,7 +3604,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
   }
   constant_value = Klass::_lh_neutral_value;  // put in a known value
-  Node* lhp = basic_plus_adr(top(), klass_node, in_bytes(Klass::layout_helper_offset()));
+  Node* lhp = off_heap_plus_addr(klass_node, in_bytes(Klass::layout_helper_offset()));
   return make_load(nullptr, lhp, TypeInt::INT, T_INT, MemNode::unordered);
 }
 

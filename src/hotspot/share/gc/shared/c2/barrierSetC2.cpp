@@ -758,8 +758,8 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   assert(UseTLAB, "Only for TLAB enabled allocations");
 
   Node* thread = macro->transform_later(new ThreadLocalNode());
-  Node* tlab_top_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
-  Node* tlab_end_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
+  Node* tlab_top_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_top_offset()));
+  Node* tlab_end_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_end_offset()));
 
   // Load TLAB end.
   //

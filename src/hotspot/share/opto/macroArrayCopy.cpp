@@ -638,7 +638,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
 
         // (At this point we can assume disjoint_bases, since types differ.)
         int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-        Node* p1 = basic_plus_adr(top(), dest_klass, ek_offset);
+        Node* p1 = off_heap_plus_addr(dest_klass, ek_offset);
         Node* n1 = LoadKlassNode::make(_igvn, C->immutable_memory(), p1, TypeRawPtr::BOTTOM);
         Node* dest_elem_klass = transform_later(n1);
         Node* cv = generate_checkcast_arraycopy(&local_ctrl, &local_mem,
@@ -1129,7 +1129,7 @@ Node* PhaseMacroExpand::generate_checkcast_arraycopy(Node** ctrl, MergeMemNode**
   // look in each non-null element's class, at the desired klass's
   // super_check_offset, for the desired klass.
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
-  Node* p3 = basic_plus_adr(top(), dest_elem_klass, sco_offset);
+  Node* p3 = off_heap_plus_addr(dest_elem_klass, sco_offset);
   Node* n3 = new LoadINode(nullptr, *mem /*memory(p3)*/, p3, _igvn.type(p3)->is_ptr(), TypeInt::INT, MemNode::unordered);
   Node* check_offset = ConvI2X(transform_later(n3));
   Node* check_value  = dest_elem_klass;

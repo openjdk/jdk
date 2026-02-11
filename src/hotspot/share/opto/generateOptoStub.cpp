@@ -88,17 +88,16 @@ void GraphKit::gen_stub(address C_function,
 
   const int NoAlias = Compile::AliasIdxBot;
 
-  Node* adr_last_Java_pc = basic_plus_adr(top(),
-                                            thread,
-                                            in_bytes(JavaThread::frame_anchor_offset()) +
-                                            in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
+  Node* adr_last_Java_pc = off_heap_plus_addr(thread,
+                                              in_bytes(JavaThread::frame_anchor_offset()) +
+                                              in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
 
   // Drop in the last_Java_sp.  last_Java_fp is not touched.
   // Always do this after the other "last_Java_frame" fields are set since
   // as soon as last_Java_sp != nullptr the has_last_Java_frame is true and
   // users will look at the other fields.
   //
-  Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));
+  Node *adr_sp = off_heap_plus_addr(thread, in_bytes(JavaThread::last_Java_sp_offset()));
   Node *last_sp = frameptr();
   store_to_memory(control(), adr_sp, last_sp, T_ADDRESS, MemNode::unordered);
 
@@ -228,7 +227,7 @@ void GraphKit::gen_stub(address C_function,
   Node* target = map()->in(TypeFunc::Parms);
   // Runtime call returning oop in TLS?  Fetch it out
   if( pass_tls ) {
-    Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_oop_offset()));
+    Node* adr = off_heap_plus_addr(thread, in_bytes(JavaThread::vm_result_oop_offset()));
     Node* vm_result = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, MemNode::unordered);
     map()->set_req(TypeFunc::Parms, vm_result); // vm_result passed as result
     // clear thread-local-storage(tls)
@@ -237,7 +236,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // check exception
-  Node* adr = basic_plus_adr(top(), thread, in_bytes(Thread::pending_exception_offset()));
+  Node* adr = off_heap_plus_addr(thread, in_bytes(Thread::pending_exception_offset()));
   Node* pending = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, MemNode::unordered);
 
   Node* exit_memory = reset_memory();
