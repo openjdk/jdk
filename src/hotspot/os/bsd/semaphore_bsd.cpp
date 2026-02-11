@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,24 @@ void OSXSemaphore::wait() {
 }
 
 bool OSXSemaphore::trywait() {
-  return timedwait(0);
+  kern_return_t kr = KERN_ABORTED;
+
+  // kernel semaphores take a relative timeout
+  mach_timespec_t waitspec;
+  waitspec.tv_sec = 0;
+  waitspec.tv_nsec = 0;
+
+  // Perform a semaphore_timedwait with a zero mach_timespec_t until we receive
+  // a result other than KERN_ABORTED.
+  while (kr == KERN_ABORTED) {
+    kr = semaphore_timedwait(_semaphore, waitspec);
+  }
+
+  assert(kr == KERN_SUCCESS || kr == KERN_OPERATION_TIMED_OUT,
+         "Failed to trywait on semaphore: %s (0x%x)",
+         sem_strerror(kr), (uint)kr);
+
+  return kr == KERN_SUCCESS;
 }
 
 bool OSXSemaphore::timedwait(int64_t millis) {
