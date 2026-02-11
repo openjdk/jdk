@@ -237,27 +237,18 @@ public abstract class JavacTemplateTestBase {
         try (StandardJavaFileManager fm = systemJavaCompiler.getStandardFileManager(null, null, null)) {
             if (classpaths.size() > 0)
                 fm.setLocation(StandardLocation.CLASS_PATH, classpaths);
-            StringWriter err = new StringWriter();
-            JavacTask ct = (JavacTask) systemJavaCompiler.getTask(err, fm, diags, compileOptions, null, files);
+            JavacTask ct = (JavacTask) systemJavaCompiler.getTask(null, fm, diags, compileOptions, null, files);
+            File destDir;
             if (generate) {
-                File destDir = new File(root, Integer.toString(counter.incrementAndGet()));
+                destDir = new File(root, Integer.toString(counter.incrementAndGet()));
                 // @@@ Assert that this directory didn't exist, or start counter at max+1
                 destDir.mkdirs();
                 fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
-                ct.generate();
-                if (!err.getBuffer().isEmpty()) {
-                    fail(err.toString());
-                }
-                return destDir;
+            } else {
+                destDir = nullDir;
             }
-            else {
-                ct.call();
-                if (!err.getBuffer().isEmpty()) {
-                    fail(err.toString());
-                }
-                // Failed result will show up in diags
-                return nullDir;
-            }
+            ct.generate(); // throws ISE if javac crashes
+            return destDir;
         }
     }
 
