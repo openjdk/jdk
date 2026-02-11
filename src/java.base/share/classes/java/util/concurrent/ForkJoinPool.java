@@ -1042,10 +1042,16 @@ public class ForkJoinPool extends AbstractExecutorService
     static final int DEFAULT_COMMON_MAX_SPARES = 256;
 
     /**
-     * Initial capacity of work-stealing queue array.
+     * Initial capacity of work-stealing queue array for workers.
      * Must be a power of two, at least 2. See above.
      */
     static final int INITIAL_QUEUE_CAPACITY = 1 << 6;
+
+    /**
+     * Initial capacity of work-stealing queue array for external queues.
+     * Must be a power of two, at least 2. See above.
+     */
+    static final int INITIAL_EXTERNAL_QUEUE_CAPACITY = 1 << 9;
 
     // conversions among short, int, long
     static final int  SMASK           = 0xffff;      // (unsigned) short bits
@@ -1055,6 +1061,7 @@ public class ForkJoinPool extends AbstractExecutorService
     // masks and sentinels for queue indices
     static final int MAX_CAP          = 0x7fff;   // max # workers
     static final int EXTERNAL_ID_MASK = 0x3ffe;   // max external queue id
+    static final int INVALID_ID       = 0x4000;   // unused external queue id
 
     // pool.runState bits
     static final long STOP            = 1L <<  0;   // terminating
@@ -1186,13 +1193,11 @@ public class ForkJoinPool extends AbstractExecutorService
         @jdk.internal.vm.annotation.Contended("w")
         int stackPred;             // pool stack (ctl) predecessor link
         @jdk.internal.vm.annotation.Contended("w")
-        volatile int parking;      // nonzero if parked in awaitWork
-        @jdk.internal.vm.annotation.Contended("w")
         volatile int source;       // source queue id (or DROPPED)
         @jdk.internal.vm.annotation.Contended("w")
         int nsteals;               // number of steals from other queues
         @jdk.internal.vm.annotation.Contended("w")
-        int trimStatus;            // <0: drop on empty scan; >0 dropped, else 0
+        volatile int parking;      // nonzero if parked in awaitWork
 
         // Support for atomic operations
         private static final Unsafe U;
@@ -1221,7 +1226,7 @@ public class ForkJoinPool extends AbstractExecutorService
                   boolean clearThreadLocals) {
             this.config = (clearThreadLocals) ? cfg | CLEAR_TLS : cfg;
             if ((this.owner = owner) == null) {
-                array = new ForkJoinTask<?>[INITIAL_QUEUE_CAPACITY];
+                array = new ForkJoinTask<?>[INITIAL_EXTERNAL_QUEUE_CAPACITY];
                 phase = id | IDLE;
             }
         }
@@ -1256,13 +1261,13 @@ public class ForkJoinPool extends AbstractExecutorService
                 growAndPush(task, pool, unlock);
             else {
                 U.putReferenceVolatile(a, slotOffset(m & s), task);
-                Object pred = (s == b) ? null :
-                    U.getReferenceAcquire(a, slotOffset(m & (s - 1)));
+                boolean empty = (s == b) ||
+                    (U.getReferenceVolatile(a, slotOffset(m & (s - 1))) == null);
                 if (unlock != 1) {            // release external lock
                     U.putInt(this, PHASE, unlock);
                     U.storeFence();
                 }
-                if (pred == null && pool != null)
+                if (empty && pool != null)
                     pool.signalWork(this, s); // may have appeared empty
             }
         }
@@ -1787,7 +1792,7 @@ public class ForkJoinPool extends AbstractExecutorService
         if (wt != null && (w = wt.workQueue) != null &&
             (phase = w.phase) != 0 && (phase & IDLE) != 0)
             releaseWaiters();              // ensure released
-        if (w == null || w.trimStatus <= 0) {
+        if (w == null || w.source != DROPPED) {
             long c = ctl;                  // decrement counts
             do {} while (c != (c = U.compareAndExchangeLong(this, CTL,
                                    c, ((RC_MASK & (c - RC_UNIT)) |
@@ -1808,7 +1813,7 @@ public class ForkJoinPool extends AbstractExecutorService
             }
         }
         if ((tryTerminate(false, false) & STOP) == 0L &&
-            phase != 0 && w != null && w.trimStatus <= 0) {
+            phase != 0 && w != null && w.source != DROPPED) {
             w.cancelTasks();               // clean queue
             signalWork(null, 0);           // possibly replace
         }
@@ -1933,36 +1938,34 @@ public class ForkJoinPool extends AbstractExecutorService
             int r = w.stackPred;                          // seed from registerWorker
             int fifo = (int)config & FIFO;
             rescan: for (int idle = 0, taken = 0, src = -1;;) {
-                WorkQueue[] qs; int n, j;
+                WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 long e = runState;
-                if ((qs = queues) == null ||
-                    (j = ((n = qs.length) << 1)) <= 0 ||  // 2 sweeps per scan
-                    (e & STOP) != 0L) {
+                int n = (qs = queues) == null ? 0 : qs.length;
+                int j = (idle != 0) ? n : n << 1;
+                if (j <= 0 || (e & STOP) != 0L) {
                     w.nsteals += taken;
-                    break;
+                    return;
                 }
                 scan: for (int i = r, step = (r >>> 16) | 1; ; i += step) {
                     WorkQueue q; int qid;
                     if ((q = qs[qid = i & (n - 1)]) != null) {
                         ForkJoinTask<?>[] a; int pb = -1, ran = 0, cap;
                         while ((a = q.array) != null && (cap = a.length) > 0) {
-                            int b, nb; long bp, np; ForkJoinTask<?> t;
+                            int b, nb; long bp, np, sd; ForkJoinTask<?> t;
                             t = (ForkJoinTask<?>)U.getReferenceAcquire(
                                 a, bp = slotOffset((cap - 1) & (b = q.base)));
                             Object nt = U.getReference(
                                 a, np = slotOffset((cap - 1) & (nb = b + 1)));
-                            int qb = q.base;              // reread
-                            if (idle != 0) {
-                                if (t == null && nt == null && q.top - qb <= 0)
+                            if (q.base != b || U.getReference(a, bp) != t) {
+                                if ((ran | idle) == 0)
+                                    break scan;           // reduce interference
+                            }
+                            else if (idle != 0) {
+                                if (t == null && nt == null && q.top - b <= 0)
                                     break;
                                 if ((idle = tryReactivate(w, q)) != 0)
                                     break scan;           // can't take yet
-                            }
-                            else if (qb != b || U.getReference(a, bp) != t) {
-                                if (ran == 0)
-                                    break scan;           // reduce interference
-                                pb = qb;
                             }
                             else if (t == null) {
                                 if (nt == null) {         // probably empty
@@ -1976,16 +1979,14 @@ public class ForkJoinPool extends AbstractExecutorService
                             else if (!U.compareAndSetReference(a, bp, t, null))
                                 pb = nb;                  // miss
                             else {
-                                int prevSrc;
-                                Object nxt = U.getReference(a, np); // reread
                                 q.base = pb = nb;
-                                if (qid != (prevSrc = src))
-                                    w.source = src = qid;
-                                U.storeFence();
+                                Object nxt = U.getReferenceVolatile(a, np); // reread
                                 ran = 1;
                                 ++taken;
-                                if (nxt != null && (fifo != 0 || prevSrc < 0) &&
-                                    U.getReferenceAcquire(a, np) != null)
+                                if ((sd = qid - src) != 0)
+                                    w.source = src = qid; // source changed
+                                if ((sd | fifo) != 0 && nxt != null &&
+                                    U.getReference(a, np) != null)
                                     signalWork(q, nb);
                                 w.topLevelExec(t, fifo);
                             }
@@ -1993,11 +1994,13 @@ public class ForkJoinPool extends AbstractExecutorService
                     }
                     if (--j == 0) {                       // empty scan
                         if (idle == 0) {
-                            idle = tryDeactivate(w);
-                            src = -1;
+                            if ((idle = tryDeactivate(w)) != 0) {
+                                idle = w.phase & IDLE;
+                                src = -1;
+                            }
                         }
                         else if ((idle = awaitWork(w, taken)) != 0)
-                            break rescan;                 // trimmed or terminated
+                            return;                       // trimmed or terminated
                         else
                             taken = 0;
                         break;
@@ -2025,7 +2028,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (pc == (pc = U.compareAndExchangeLong(this, CTL, pc, c))) {
                     if (ac == 0L && (runState & (SHUTDOWN|STOP)) == SHUTDOWN)
                         quiescent();           // check quiescent termination
-                    idle = w.phase & IDLE;
+                    idle = IDLE;
                     break;
                 }
                 else if (ac < (pc & RC_MASK)) {
@@ -2071,17 +2074,17 @@ public class ForkJoinPool extends AbstractExecutorService
      * @return 0 if now active
      */
     private int awaitWork(WorkQueue w, int taken) {
-        int idle = 0, phase, trim;
+        int idle = 0, phase;
         if (w != null) {                   // always true; hoist checks
-            if ((trim = w.trimStatus) != 0)
-                w.trimStatus = 0;
+            boolean trim = false;
             if (taken != 0) {
-                trim = 0;
                 w.nsteals += taken;
                 if ((w.config & CLEAR_TLS) != 0 &&
                     (Thread.currentThread() instanceof ForkJoinWorkerThread f))
                     f.resetThreadLocals(); // (instanceof check always true)
             }
+            else if (w.source == INVALID_ID)
+                trim = true;
             if ((idle = (phase = w.phase) & IDLE) != 0) {
                 int activePhase = phase + IDLE;
                 for (long deadline = 0L;;) {
@@ -2096,10 +2099,10 @@ public class ForkJoinPool extends AbstractExecutorService
                             if (deadline == 0L)
                                 d = deadline = now + keepAlive;
                             else if ((d = deadline) - now <= TIMEOUT_SLOP)
-                                trim = 1;
-                            if (trim != 0 && tryTrim(w, c, activePhase))
+                                trim = true;
+                            if (trim && tryTrim(w, c, activePhase))
                                 break;
-                            trim = 0;
+                            trim = false;
                             trimmable = true;
                         }
                         int tc = ((short)(c >>> TC_SHIFT) | 1) & SMASK;
@@ -2136,14 +2139,14 @@ public class ForkJoinPool extends AbstractExecutorService
             long nc = ((w.stackPred & LMASK) |
                        ((RC_MASK & c) | (TC_MASK & (c - TC_UNIT))));
             if (U.compareAndSetLong(this, CTL, c, nc)) {
-                w.trimStatus = 1;
+                w.source = DROPPED;
                 w.phase = activePhase;
                 if ((vp = (int)nc) != 0 && (vs = queues) != null &&
                     vs.length > (i = vp & SMASK) && (v = vs[i]) != null &&
                     U.compareAndSetLong(this, CTL, // try to wake up next waiter
                         nc, ((v.stackPred & LMASK) |
                              ((UMASK & (nc + RC_UNIT)) | (nc & TC_MASK))))) {
-                    v.trimStatus = -1;
+                    v.source = INVALID_ID;
                     v.phase = vp;
                     U.unpark(v.owner);
                 }
