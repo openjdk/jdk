@@ -29,6 +29,7 @@
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "ci/ciUtilities.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
