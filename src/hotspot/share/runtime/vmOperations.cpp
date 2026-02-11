@@ -287,11 +287,11 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   }
 
  private:
-  using OMList = GrowableArrayCHeap<ObjectMonitor*, mtThread>;
+  using ObjectMonitorList = GrowableArrayCHeap<ObjectMonitor*, mtThread>;
 
   // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef HashTable<int64_t, OMList, 1031, AnyObj::C_HEAP, mtThread,
+  typedef HashTable<int64_t, ObjectMonitorList, 1031, AnyObj::C_HEAP, mtThread,
                             &ObjectMonitorsDump::ptr_hash> PtrTable;
   PtrTable* _ptrs;
   size_t _key_count;
@@ -301,7 +301,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
     int64_t key = monitor->owner();
 
     bool created = false;
-    OMList* list = _ptrs->put_if_absent(key, &created);
+    ObjectMonitorList* list = _ptrs->put_if_absent(key, &created);
     if (created) {
       _key_count++;
     }
@@ -344,7 +344,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   // Implements the ObjectMonitorsView interface
   void visit(MonitorClosure* closure, JavaThread* thread) override {
     int64_t key = ObjectMonitor::owner_id_from(thread);
-    OMList* list = _ptrs->get(key);
+    ObjectMonitorList* list = _ptrs->get(key);
     if (list == nullptr) {
       return;
     }
