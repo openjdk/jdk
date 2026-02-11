@@ -1717,6 +1717,26 @@ void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegis
         default:            assert(false, "wrong type");
       }
       break;
+    case Op_UMinReductionV:
+      switch (typ) {
+        case T_BYTE:        vpminub(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_SHORT:       vpminuw(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_INT:         vpminud(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_LONG:        assert(UseAVX > 2, "required");
+                            evpminuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
+    case Op_UMaxReductionV:
+      switch (typ) {
+        case T_BYTE:        vpmaxub(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_SHORT:       vpmaxuw(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_INT:         vpmaxud(dst, dst, src, Assembler::AVX_128bit); break;
+        case T_LONG:        assert(UseAVX > 2, "required");
+                            evpmaxuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
     case Op_AddReductionVF: addss(dst, src); break;
     case Op_AddReductionVD: addsd(dst, src); break;
     case Op_AddReductionVI:
@@ -1777,6 +1797,26 @@ void C2_MacroAssembler::reduce_operation_256(BasicType typ, int opcode, XMMRegis
         case T_INT:         vpmaxsd(dst, src1, src2, vector_len); break;
         case T_LONG:        assert(UseAVX > 2, "required");
                             vpmaxsq(dst, src1, src2, vector_len); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
+    case Op_UMinReductionV:
+      switch (typ) {
+        case T_BYTE:        vpminub(dst, src1, src2, vector_len); break;
+        case T_SHORT:       vpminuw(dst, src1, src2, vector_len); break;
+        case T_INT:         vpminud(dst, src1, src2, vector_len); break;
+        case T_LONG:        assert(UseAVX > 2, "required");
+                            evpminuq(dst, k0, src1, src2, true, vector_len); break;
+        default:            assert(false, "wrong type");
+      }
+      break;
+    case Op_UMaxReductionV:
+      switch (typ) {
+        case T_BYTE:        vpmaxub(dst, src1, src2, vector_len); break;
+        case T_SHORT:       vpmaxuw(dst, src1, src2, vector_len); break;
+        case T_INT:         vpmaxud(dst, src1, src2, vector_len); break;
+        case T_LONG:        assert(UseAVX > 2, "required");
+                            evpmaxuq(dst, k0, src1, src2, true, vector_len); break;
         default:            assert(false, "wrong type");
       }
       break;
@@ -2046,7 +2086,11 @@ void C2_MacroAssembler::reduce8B(int opcode, Register dst, Register src1, XMMReg
   psrldq(vtmp2, 1);
   reduce_operation_128(T_BYTE, opcode, vtmp1, vtmp2);
   movdl(vtmp2, src1);
-  pmovsxbd(vtmp1, vtmp1);
+  if (opcode == Op_UMinReductionV || opcode == Op_UMaxReductionV) {
+    pmovzxbd(vtmp1, vtmp1);
+  } else {
+    pmovsxbd(vtmp1, vtmp1);
+  }
   reduce_operation_128(T_INT, opcode, vtmp1, vtmp2);
   pextrb(dst, vtmp1, 0x0);
   movsbl(dst, dst);
@@ -2123,7 +2167,11 @@ void C2_MacroAssembler::reduce4S(int opcode, Register dst, Register src1, XMMReg
     reduce_operation_128(T_SHORT, opcode, vtmp1, vtmp2);
   }
   movdl(vtmp2, src1);
-  pmovsxwd(vtmp1, vtmp1);
+  if (opcode == Op_UMinReductionV || opcode == Op_UMaxReductionV) {
+    pmovzxwd(vtmp1, vtmp1);
+  } else {
+    pmovsxwd(vtmp1, vtmp1);
+  }
   reduce_operation_128(T_INT, opcode, vtmp1, vtmp2);
   pextrw(dst, vtmp1, 0x0);
   movswl(dst, dst);
