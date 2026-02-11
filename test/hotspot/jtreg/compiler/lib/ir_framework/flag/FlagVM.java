@@ -128,6 +128,7 @@ public class FlagVM {
         cmds.addAll(compilerDirectivesFlagBuilder.build());
         // Always trap for exception throwing to not confuse IR verification
         cmds.add("-XX:-OmitStackTraceInFastThrow");
+        cmds.add("-XX:-OptimizeImplicitExceptions");
         cmds.add("-DShouldDoIRVerification=true");
     }
 
