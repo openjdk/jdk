@@ -180,7 +180,7 @@ public class Basic {
         Set<FileStore> uniqueStores = new HashSet<>(stores);
         assertEquals(stores.size(), uniqueStores.size(), "FileStores should be unique");
         for (FileStore store: stores) {
-            System.out.format("%s (name=%s type=%s)\n", store, store.name(),
+            System.err.format("%s (name=%s type=%s)\n", store, store.name(),
                 store.type());
 
             // check space attributes are accessible
