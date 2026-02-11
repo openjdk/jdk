@@ -797,8 +797,9 @@ class RootOopsScanner : public BasicOopIterateClosure {
   int _current_root_index;
 public:
   RootOopsScanner() : _table(15889, 1000000), _current_root_index(-1) {}
-  void do_oop(narrowOop *p) { do_oop_work(CompressedOops::decode(*p)); }
-  void do_oop(      oop *p) { do_oop_work(*p); }
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
+  virtual void do_oop(narrowOop *p) { do_oop_work(p); }
+  virtual void do_oop(      oop *p) { do_oop_work(p); }
   void set_current_root_index(int i) { _current_root_index = i;}
 
   int number_of_reachable_oops() {
@@ -806,7 +807,8 @@ public:
   }
 
 private:
-  void do_oop_work(oop obj) {
+  template <class T> void do_oop_work(T* p) {
+    oop obj = do_oop_work(HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load(p)
     if (obj != nullptr && !_table.contains(obj)) {
       _table.put_when_absent(obj, true);
       Klass* k = obj->klass();
