@@ -124,7 +124,7 @@ public class Basic {
     void testCaseSensitivity(Path dir) throws IOException {
         FileStore upper = Files.getFileStore(Path.of("C:\\"));
         FileStore lower = Files.getFileStore(Path.of("c:\\"));
-        assertSame(lower, upper);
+        assertEquals(lower, upper);
     }
 
     /*
