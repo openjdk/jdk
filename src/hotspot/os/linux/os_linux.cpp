@@ -349,11 +349,20 @@ julong os::physical_memory() {
   return phys_mem;
 }
 
+// Returns the resident set size (RSS) of the process.
+// Falls back to using VmRSS from /proc/self/status if /proc/self/smaps_rollup is unavailable.
+// Note: On kernels with memory cgroups or shared memory, VmRSS may underreport RSS.
+// Users requiring accurate RSS values should be aware of this limitation.
 size_t os::rss() {
   size_t size = 0;
-  os::Linux::meminfo_t info;
-  if (os::Linux::query_process_memory_info(&info)) {
-    size = info.vmrss * K;
+  os::Linux::accurate_meminfo_t accurate_info;
+  if (os::Linux::query_accurate_process_memory_info(&accurate_info) && accurate_info.rss != -1) {
+    size = accurate_info.rss * K;
+  } else {
+    os::Linux::meminfo_t info;
+    if (os::Linux::query_process_memory_info(&info)) {
+      size = info.vmrss * K;
+    }
   }
   return size;
 }
@@ -2344,6 +2353,37 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
     return true;
   }
   return false;
+}
+
+// Accurate memory information need Linux 4.14 or newer
+bool os::Linux::query_accurate_process_memory_info(os::Linux::accurate_meminfo_t* info) {
+  FILE* f = os::fopen("/proc/self/smaps_rollup", "r");
+  if (f == nullptr) {
+    return false;
+  }
+
+  const size_t num_values = sizeof(os::Linux::accurate_meminfo_t) / sizeof(size_t);
+  size_t num_found = 0;
+  char buf[256];
+  info->rss = info->pss = info->pssdirty = info->pssanon =
+      info->pssfile = info->pssshmem = info->swap = info->swappss = -1;
+
+  while (::fgets(buf, sizeof(buf), f) != nullptr && num_found < num_values) {
+    if ( (info->rss == -1        && sscanf(buf, "Rss: %zd kB", &info->rss) == 1) ||
+         (info->pss == -1        && sscanf(buf, "Pss: %zd kB", &info->pss) == 1) ||
+         (info->pssdirty == -1   && sscanf(buf, "Pss_Dirty: %zd kB", &info->pssdirty) == 1) ||
+         (info->pssanon == -1    && sscanf(buf, "Pss_Anon: %zd kB", &info->pssanon) == 1) ||
+         (info->pssfile == -1    && sscanf(buf, "Pss_File: %zd kB", &info->pssfile) == 1) ||
+         (info->pssshmem == -1   && sscanf(buf, "Pss_Shmem: %zd kB", &info->pssshmem) == 1) ||
+         (info->swap == -1       && sscanf(buf, "Swap: %zd kB", &info->swap) == 1) ||
+         (info->swappss == -1    && sscanf(buf, "SwapPss: %zd kB", &info->swappss) == 1)
+         )
+    {
+      num_found ++;
+    }
+  }
+  fclose(f);
+  return true;
 }
 
 #ifdef __GLIBC__

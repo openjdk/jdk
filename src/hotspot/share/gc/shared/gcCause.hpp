@@ -106,6 +106,11 @@ class GCCause : public AllStatic {
             cause == GCCause::_heap_dump);
   }
 
+  inline static bool is_codecache_requested_gc(GCCause::Cause cause) {
+      return (cause == _codecache_GC_threshold  ||
+              cause == _codecache_GC_aggressive);
+  }
+
   // Causes for collection of the tenured gernation
   inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
     // _allocation_failure is the generic cause a collection which could result

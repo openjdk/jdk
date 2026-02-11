@@ -716,11 +716,10 @@ public class BasicMenuItemUI extends MenuItemUI
 
     private void paintAccText(Graphics g, MenuItemLayoutHelper lh,
                               MenuItemLayoutHelper.LayoutResult lr) {
-        SwingUtilities3.setDisabledForeground(disabledForeground);
-        SwingUtilities3.setAcceleratorSelectionForeground(
-                        acceleratorSelectionForeground);
-        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
-        SwingUtilities3.paintAccText(g, lh, lr);
+        SwingUtilities3.paintAccText(g, lh, lr,
+                                     disabledForeground,
+                                     acceleratorSelectionForeground,
+                                     acceleratorForeground);
     }
 
     private void paintText(Graphics g, MenuItemLayoutHelper lh,

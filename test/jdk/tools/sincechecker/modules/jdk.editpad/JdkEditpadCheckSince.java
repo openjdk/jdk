@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,45 +21,10 @@
  * questions.
  */
 
-
-function readMsi(msiPath, callback) {
-    var installer = new ActiveXObject('WindowsInstaller.Installer')
-    var database = installer.OpenDatabase(msiPath, 0 /* msiOpenDatabaseModeReadOnly */)
-
-    return callback(database)
-}
-
-
-function queryAllProperties(db) {
-    var reply = {}
-
-    var view = db.OpenView("SELECT `Property`, `Value` FROM Property")
-    view.Execute()
-
-    try {
-        while(true) {
-            var record = view.Fetch()
-            if (!record) {
-                break
-            }
-
-            var name = record.StringData(1)
-            var value = record.StringData(2)
-
-            reply[name] = value
-        }
-    } finally {
-        view.Close()
-    }
-
-    return reply
-}
-
-
-(function () {
-    var msi = WScript.arguments(0)
-    var propName = WScript.arguments(1)
-
-    var props = readMsi(msi, queryAllProperties)
-    WScript.Echo(props[propName])
-})()
+/*
+ * @test
+ * @bug 8346884
+ * @summary Test for `@since` in jdk.editpad module
+ * @library /test/lib /test/jdk/tools/sincechecker
+ * @run main SinceChecker jdk.editpad
+ */

@@ -1824,3 +1824,14 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
   add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
 }
+
+#ifdef ASSERT
+void InterpreterMacroAssembler::verify_field_offset(Register reg) {
+  // Verify the field offset is not in the header, implicitly checks for 0
+  Label L;
+  subs(zr, reg, oopDesc::base_offset_in_bytes());
+  br(Assembler::GE, L);
+  stop("bad field offset");
+  bind(L);
+}
+#endif

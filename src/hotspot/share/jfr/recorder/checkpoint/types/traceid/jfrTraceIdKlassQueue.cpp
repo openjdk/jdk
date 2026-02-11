@@ -29,6 +29,7 @@
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrEpochQueue.inline.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "memory/metaspace.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -73,14 +74,13 @@ static size_t element_size(bool compressed) {
   return compressed ? NARROW_ELEMENT_SIZE : ELEMENT_SIZE;
 }
 
-static bool can_compress_element(const Klass* klass) {
-  return CompressedKlassPointers::is_encodable(klass) &&
-         JfrTraceId::load_raw(klass) < uncompressed_threshold;
+static bool can_compress_element(traceid id) {
+  return Metaspace::using_class_space() && id < uncompressed_threshold;
 }
 
 static size_t element_size(const Klass* klass) {
   assert(klass != nullptr, "invariant");
-  return element_size(can_compress_element(klass));
+  return element_size(can_compress_element(JfrTraceId::load_raw(klass)));
 }
 
 static bool is_unloaded(traceid id, bool previous_epoch) {
@@ -136,8 +136,7 @@ static inline void store_traceid(JfrEpochQueueNarrowKlassElement* element, trace
 }
 
 static void store_compressed_element(traceid id, const Klass* klass, u1* pos) {
-  assert(can_compress_element(klass), "invariant");
-  assert(id == JfrTraceId::load_raw(klass), "invariant");
+  assert(can_compress_element(id), "invariant");
   JfrEpochQueueNarrowKlassElement* const element = new (pos) JfrEpochQueueNarrowKlassElement();
   store_traceid(element, id);
   element->compressed_klass = encode(klass);
@@ -153,7 +152,7 @@ static void store_element(const Klass* klass, u1* pos) {
   assert(pos != nullptr, "invariant");
   assert(klass != nullptr, "invariant");
   const traceid id = JfrTraceId::load_raw(klass);
-  if (can_compress_element(klass)) {
+  if (can_compress_element(id)) {
     store_compressed_element(id, klass, pos);
     return;
   }

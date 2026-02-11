@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 8343191
  * @requires os.family == "linux"
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox

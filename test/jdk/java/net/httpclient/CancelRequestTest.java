@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,8 +273,12 @@ public class CancelRequestTest implements HttpServerAdapters {
     //     rewrap in "Request Cancelled" when the multi exchange was aborted...
     private static boolean isCancelled(Throwable t) {
         while (t instanceof ExecutionException) t = t.getCause();
-        if (t instanceof CancellationException) return true;
-        if (t instanceof IOException) return String.valueOf(t).contains("Request cancelled");
+        Throwable cause = t;
+        while (cause != null) {
+            if (cause instanceof CancellationException) return true;
+            if (cause instanceof IOException && String.valueOf(cause).contains("Request cancelled")) return true;
+            cause = cause.getCause();
+        }
         out.println("Not a cancellation exception: " + t);
         t.printStackTrace(out);
         return false;

@@ -46,38 +46,41 @@ void InstanceMirrorKlass::oop_oop_iterate_statics(oop obj, OopClosureType* closu
   }
 }
 
+template <class OopClosureType>
+void InstanceMirrorKlass::do_metadata(oop obj, OopClosureType* closure) {
+  Klass* klass = java_lang_Class::as_Klass(obj);
+  if (klass != nullptr) {
+    if (klass->class_loader_data() == nullptr) {
+      // This is a mirror that belongs to a shared class that has not been loaded yet.
+      assert(klass->is_shared(), "Must be");
+    } else if (klass->is_instance_klass() && klass->class_loader_data()->has_class_mirror_holder()) {
+      // A non-strong hidden class doesn't have its own class loader,
+      // so when handling the java mirror for the class we need to make sure its class
+      // loader data is claimed, this is done by calling do_cld explicitly.
+      // For non-strong hidden classes the call to do_cld is made when the class
+      // loader itself is handled.
+      Devirtualizer::do_cld(closure, klass->class_loader_data());
+    } else {
+      Devirtualizer::do_klass(closure, klass);
+    }
+  } else {
+    // Java mirror -> Klass* "nullptr" backlink means either:
+    // 1. This is a Java mirror for a primitive class. We do not need to follow it,
+    //    these mirrors are always strong roots.
+    // 2. This is a Java mirror for a newly allocated non-primitive class, and we
+    //    somehow managed to reach the newly allocated Java mirror with not yet
+    //    installed backlink. We cannot do anything here, this case would be handled
+    //    separately by GC, e.g. by keeping the relevant metadata alive during the GC.
+    // Unfortunately, the existence of corner case (2) prevents us from asserting (1).
+  }
+}
+
 template <typename T, class OopClosureType>
 void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate<T>(obj, closure);
 
   if (Devirtualizer::do_metadata(closure)) {
-    Klass* klass = java_lang_Class::as_Klass(obj);
-    // We'll get null for primitive mirrors.
-    if (klass != nullptr) {
-      if (klass->class_loader_data() == nullptr) {
-        // This is a mirror that belongs to a shared class that has not be loaded yet.
-        assert(klass->is_shared(), "must be");
-      } else if (klass->is_instance_klass() && klass->class_loader_data()->has_class_mirror_holder()) {
-        // A non-strong hidden class doesn't have its own class loader,
-        // so when handling the java mirror for the class we need to make sure its class
-        // loader data is claimed, this is done by calling do_cld explicitly.
-        // For non-strong hidden classes the call to do_cld is made when the class
-        // loader itself is handled.
-        Devirtualizer::do_cld(closure, klass->class_loader_data());
-      } else {
-        Devirtualizer::do_klass(closure, klass);
-      }
-    } else {
-      // We would like to assert here (as below) that if klass has been null, then
-      // this has been a mirror for a primitive type that we do not need to follow
-      // as they are always strong roots.
-      // However, we might get across a klass that just changed during CMS concurrent
-      // marking if allocation occurred in the old generation.
-      // This is benign here, as we keep alive all CLDs that were loaded during the
-      // CMS concurrent phase in the class loading, i.e. they will be iterated over
-      // and kept alive during remark.
-      // assert(java_lang_Class::is_primitive(obj), "Sanity check");
-    }
+    do_metadata<OopClosureType>(obj, closure);
   }
 
   oop_oop_iterate_statics<T>(obj, closure);
@@ -121,11 +124,7 @@ void InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closu
 
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      Klass* klass = java_lang_Class::as_Klass(obj);
-      // We'll get null for primitive mirrors.
-      if (klass != nullptr) {
-        Devirtualizer::do_klass(closure, klass);
-      }
+      do_metadata<OopClosureType>(obj, closure);
     }
   }
 

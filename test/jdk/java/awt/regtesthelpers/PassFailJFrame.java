@@ -72,6 +72,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.Border;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -98,7 +99,8 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * tester. The instructions can be either plain text or HTML. If the
  * text of the instructions starts with {@code "<html>"}, the
  * instructions are displayed as HTML, as supported by Swing, which
- * provides richer formatting options.
+ * provides richer formatting options. To handle navigating links in the
+ * instructions, call {@link Builder#hyperlinkListener} to install a listener.
  * <p>
  * The instructions are displayed in a text component with word-wrapping
  * so that there's no horizontal scroll bar. If the text doesn't fit, a
@@ -592,6 +594,7 @@ public final class PassFailJFrame {
         frame.add(createInstructionUIPanel(instructions,
                                            testTimeOut,
                                            rows, columns,
+                                           null,
                                            false,
                                            false, 0),
                   BorderLayout.CENTER);
@@ -610,6 +613,7 @@ public final class PassFailJFrame {
                 createInstructionUIPanel(builder.instructions,
                                          builder.testTimeOut,
                                          builder.rows, builder.columns,
+                                         builder.hyperlinkListener,
                                          builder.screenCapture,
                                          builder.addLogArea,
                                          builder.logAreaRows);
@@ -631,6 +635,7 @@ public final class PassFailJFrame {
     private static JComponent createInstructionUIPanel(String instructions,
                                                        long testTimeOut,
                                                        int rows, int columns,
+                                                       HyperlinkListener hyperlinkListener,
                                                        boolean enableScreenCapture,
                                                        boolean addLogArea,
                                                        int logAreaRows) {
@@ -643,6 +648,9 @@ public final class PassFailJFrame {
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
+        if (hyperlinkListener != null && text instanceof JEditorPane ep) {
+            ep.addHyperlinkListener(hyperlinkListener);
+        }
         text.setEditable(false);
         text.setBorder(createTextBorder());
         text.setCaretPosition(0);
@@ -716,7 +724,7 @@ public final class PassFailJFrame {
         // Reduce the list default margins
         styles.addRule("ol, ul { margin-left-ltr: 30; margin-left-rtl: 30 }");
         // Make the size of code (and other elements) the same as other text
-        styles.addRule("code, kbd, samp, pre { font-size: inherit }");
+        styles.addRule("code, kbd, samp, pre { font-size: inherit; background: #DDD; }");
 
         return text;
     }
@@ -1398,6 +1406,7 @@ public final class PassFailJFrame {
         private int rows;
         private int columns;
         private boolean screenCapture;
+        private HyperlinkListener hyperlinkListener;
         private boolean addLogArea;
         private int logAreaRows = 10;
 
@@ -1475,6 +1484,18 @@ public final class PassFailJFrame {
          */
         public Builder columns(int columns) {
             this.columns = columns;
+            return this;
+        }
+
+        /**
+         * Sets a {@link HyperlinkListener} for navigating links inside
+         * the instructions pane.
+         *
+         * @param hyperlinkListener the listener
+         * @return this builder
+         */
+        public Builder hyperlinkListener(HyperlinkListener hyperlinkListener) {
+            this.hyperlinkListener = hyperlinkListener;
             return this;
         }
 

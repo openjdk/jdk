@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6762191 8222334
  * @summary Setting stack size to 16K causes segmentation fault
  * @compile TooSmallStackSize.java
+ * @comment VM fails to launch with minimum allowed stack size of 136k when asan is enabled
+ * @requires !vm.asan
  * @run main TooSmallStackSize
  */
 

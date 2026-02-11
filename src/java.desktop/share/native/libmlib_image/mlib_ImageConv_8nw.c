@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "mlib_image.h"
 #include "mlib_ImageConv.h"
 #include "mlib_c_ImageConv.h"
+#include "safe_math.h"
 
 /*
   This define switches between functions of different data types
@@ -467,6 +468,10 @@ mlib_status CONV_FUNC(MxN)(mlib_image       *dst,
     FREE_AND_RETURN_STATUS;
   }
 
+  if (!SAFE_TO_MULT((n + 3), wid)) {
+    status = MLIB_FAILURE;
+    FREE_AND_RETURN_STATUS;
+  }
   bsize = (n + 3)*wid;
 
   if ((bsize > BUFF_SIZE) || (n > MAX_N)) {

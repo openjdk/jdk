@@ -1270,7 +1270,7 @@ void MetaspaceShared::unrecoverable_loading_error(const char* message) {
   } else if (CDSConfig::new_aot_flags_used()) {
     vm_exit_during_initialization("Unable to use AOT cache.", nullptr);
   } else {
-    vm_exit_during_initialization("Unable to use shared archive.", nullptr);
+    vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details)", message);
   }
 }
 
@@ -1394,6 +1394,7 @@ FileMapInfo* MetaspaceShared::open_static_archive() {
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
+    log_info(cds)("Opening of static archive %s failed", static_archive);
     return nullptr;
   }
   return mapinfo;

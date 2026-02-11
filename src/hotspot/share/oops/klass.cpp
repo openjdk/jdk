@@ -279,16 +279,17 @@ static markWord make_prototype(const Klass* kls) {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     // With compact object headers, the narrow Klass ID is part of the mark word.
-    // We therfore seed the mark word with the narrow Klass ID.
-    // Note that only those Klass that can be instantiated have a narrow Klass ID.
-    // For those who don't, we leave the klass bits empty and assert if someone
-    // tries to use those.
-    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
-        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    // We therefore seed the mark word with the narrow Klass ID.
+    precond(CompressedKlassPointers::is_encodable(kls));
+    const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
     prototype = prototype.set_narrow_klass(nk);
   }
 #endif
   return prototype;
+}
+
+void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
 Klass::Klass() : _kind(UnknownKlassKind) {
@@ -1063,7 +1064,7 @@ void Klass::verify_on(outputStream* st) {
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
 #ifdef ASSERT
-  if (UseCompressedClassPointers && needs_narrow_id()) {
+  if (UseCompressedClassPointers) {
     // Stricter checks for both correct alignment and placement
     CompressedKlassPointers::check_encodable(this);
   } else {

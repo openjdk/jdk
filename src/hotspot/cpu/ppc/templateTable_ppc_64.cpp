@@ -148,7 +148,9 @@ void TemplateTable::patch_bytecode(Bytecodes::Code new_bc, Register Rnew_bc, Reg
     __ bind(L_fast_patch);
   }
 
-  // Patch bytecode.
+  // Patch bytecode with release store to coordinate with ResolvedFieldEntry
+  // and ResolvedMethodEntry loads in fast bytecode codelets.
+  __ release();
   __ stb(Rnew_bc, 0, R14_bcp);
 
   __ bind(L_patch_done);
@@ -312,6 +314,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.)
   __ get_cache_index_at_bcp(R31, 1, index_size);  // Load index.
+  // Only rewritten during link time. So, no need for memory barriers for accessing resolved info.
   __ load_resolved_reference_at_index(R17_tos, R31, R11_scratch1, R12_scratch2, &is_null);
 
   // Convert null sentinel to null
@@ -3109,7 +3112,7 @@ void TemplateTable::fast_storefield(TosState state) {
   const ConditionRegister CR_is_vol = CR2; // Non-volatile condition register (survives runtime call in do_oop_store).
 
   // Constant pool already resolved => Load flags and offset of field.
-  __ load_field_entry(Rcache, Rscratch);
+  __ load_field_entry(Rcache, Rscratch, 1, /* for_fast_bytecode */ true);
   jvmti_post_field_mod(Rcache, Rscratch, false /* not static */);
   load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
@@ -3190,7 +3193,7 @@ void TemplateTable::fast_accessfield(TosState state) {
                  // R12_scratch2 used by load_field_cp_cache_entry
 
   // Constant pool already resolved. Get the field offset.
-  __ load_field_entry(Rcache, Rscratch);
+  __ load_field_entry(Rcache, Rscratch, 1, /* for_fast_bytecode */ true);
   load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support
@@ -3329,7 +3332,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ ld(Rclass_or_obj, 0, R18_locals);
 
   // Constant pool already resolved. Get the field offset.
-  __ load_field_entry(Rcache, Rscratch, 2);
+  __ load_field_entry(Rcache, Rscratch, 2, /* for_fast_bytecode */ true);
   load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support not needed, since we switch back to single bytecode as soon as debugger attaches.
@@ -3490,7 +3493,7 @@ void TemplateTable::fast_invokevfinal(int byte_no) {
 
   assert(byte_no == f2_byte, "use this argument");
   Register Rcache  = R31;
-  __ load_method_entry(Rcache, R11_scratch1);
+  __ load_method_entry(Rcache, R11_scratch1, 1, /* for_fast_bytecode */ true);
   invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, R22_tmp2, R23_tmp3);
 }
 

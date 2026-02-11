@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,13 +59,18 @@ public final class CfgFile {
         }
     }
 
-    public void addValue(String sectionName, String key, String value) {
+    public CfgFile addValue(String sectionName, String key, String value) {
         var section = getSection(sectionName);
         if (section == null) {
             section = new Section(sectionName, new ArrayList<>());
             data.add(section);
         }
         section.data.add(Map.entry(key, value));
+        return this;
+    }
+
+    public CfgFile add(CfgFile other) {
+        return combine(this, other);
     }
 
     public CfgFile() {
@@ -89,7 +94,7 @@ public final class CfgFile {
         this.id = id;
     }
 
-    public void save(Path path) {
+    public CfgFile save(Path path) {
         var lines = data.stream().flatMap(section -> {
             return Stream.concat(
                     Stream.of(String.format("[%s]", section.name)),
@@ -98,6 +103,7 @@ public final class CfgFile {
                     }));
         });
         TKit.createTextFile(path, lines);
+        return this;
     }
 
     private Section getSection(String name) {

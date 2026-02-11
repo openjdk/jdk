@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -246,8 +247,10 @@ public class TestIOTopFrame {
                 r.enable(EVENT_SOCKET_READ).withStackTrace();
                 r.enable(EVENT_SOCKET_WRITE).withStackTrace();
                 r.start();
-                Thread readerThread = Thread.ofPlatform().start(() -> readSocketChannel(ssc));
+                CountDownLatch latch = new CountDownLatch(1);
+                Thread readerThread = Thread.ofPlatform().start(() -> readSocketChannel(ssc, latch));
                 writeSocketChannel(ssc);
+                latch.countDown();
                 readerThread.join();
                 r.stop();
                 assertTopFrames(r, "readSocket", 6, "readSocketChannel", 2, "writeSocket", 3, "writeSocketChannel", 2);
@@ -255,13 +258,14 @@ public class TestIOTopFrame {
         }
     }
 
-    private static void readSocketChannel(ServerSocketChannel ssc) {
+    private static void readSocketChannel(ServerSocketChannel ssc, CountDownLatch latch) {
         ByteBuffer[] buffers = createBuffers();
         try (SocketChannel sc = ssc.accept()) {
             sc.read(buffers[0]); // 1
             sc.read(buffers); // 2
             try (InputStream is = sc.socket().getInputStream()) {
                 readSocket(is);
+                latch.await();
             }
         } catch (Exception ioe) {
             throw new RuntimeException(ioe);

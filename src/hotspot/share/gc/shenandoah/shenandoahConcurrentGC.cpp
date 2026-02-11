@@ -831,7 +831,6 @@ bool ShenandoahConcurrentGC::has_in_place_promotions(ShenandoahHeap* heap) {
   return heap->mode()->is_generational() && heap->old_generation()->has_in_place_promotions();
 }
 
-template<bool GENERATIONAL>
 class ShenandoahConcurrentEvacThreadClosure : public ThreadClosure {
 private:
   OopClosure* const _oops;
@@ -841,13 +840,9 @@ public:
   void do_thread(Thread* thread) override {
     JavaThread* const jt = JavaThread::cast(thread);
     StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
-    if (GENERATIONAL) {
-      ShenandoahThreadLocalData::enable_plab_promotions(thread);
-    }
   }
 };
 
-template<bool GENERATIONAL>
 class ShenandoahConcurrentEvacUpdateThreadTask : public WorkerTask {
 private:
   ShenandoahJavaThreadsIterator _java_threads;
@@ -859,30 +854,20 @@ public:
   }
 
   void work(uint worker_id) override {
-    if (GENERATIONAL) {
-      Thread* worker_thread = Thread::current();
-      ShenandoahThreadLocalData::enable_plab_promotions(worker_thread);
-    }
-
     // ShenandoahEvacOOMScope has to be setup by ShenandoahContextEvacuateUpdateRootsClosure.
     // Otherwise, may deadlock with watermark lock
     ShenandoahContextEvacuateUpdateRootsClosure oops_cl;
-    ShenandoahConcurrentEvacThreadClosure<GENERATIONAL> thr_cl(&oops_cl);
+    ShenandoahConcurrentEvacThreadClosure thr_cl(&oops_cl);
     _java_threads.threads_do(&thr_cl, worker_id);
   }
 };
 
 void ShenandoahConcurrentGC::op_thread_roots() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  const ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_evacuation_in_progress(), "Checked by caller");
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_thread_roots);
-  if (heap->mode()->is_generational()) {
-    ShenandoahConcurrentEvacUpdateThreadTask<true> task(heap->workers()->active_workers());
-    heap->workers()->run_task(&task);
-  } else {
-    ShenandoahConcurrentEvacUpdateThreadTask<false> task(heap->workers()->active_workers());
-    heap->workers()->run_task(&task);
-  }
+  ShenandoahConcurrentEvacUpdateThreadTask task(heap->workers()->active_workers());
+  heap->workers()->run_task(&task);
 }
 
 void ShenandoahConcurrentGC::op_weak_refs() {
@@ -1213,6 +1198,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     // We are not concerned about skipping this step in abbreviated cycles because regions
     // with no live objects cannot have been written to and so cannot have entries in the SATB
     // buffers.
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
     heap->old_generation()->transfer_pointers_from_satb();
 
     // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for

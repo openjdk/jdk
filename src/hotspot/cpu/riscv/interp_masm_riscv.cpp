@@ -645,7 +645,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // the stack, will call InterpreterRuntime::at_unwind.
   Label slow_path;
   Label fast_path;
-  safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
   j(fast_path);
 
   bind(slow_path);
@@ -1937,6 +1937,15 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
 }
 
 #ifdef ASSERT
+void InterpreterMacroAssembler::verify_field_offset(Register reg) {
+  // Verify the field offset is not in the header, implicitly checks for 0
+  Label L;
+  mv(t0, oopDesc::base_offset_in_bytes());
+  bge(reg, t0, L);
+  stop("bad field offset");
+  bind(L);
+}
+
 void InterpreterMacroAssembler::verify_access_flags(Register access_flags, uint32_t flag,
                                                     const char* msg, bool stop_by_hit) {
   Label L;

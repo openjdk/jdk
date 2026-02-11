@@ -97,6 +97,10 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
+  if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+    FLAG_SET_ERGO(UsePopCountInstruction, true);
+  }
+
   if (PowerArchitecturePPC64 >= 9) {
     // Performance is good since Power9.
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {

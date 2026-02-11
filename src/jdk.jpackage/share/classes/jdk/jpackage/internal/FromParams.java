@@ -52,6 +52,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,8 +195,14 @@ final class FromParams {
 //                    mainParams), APP_NAME.fetchFrom(launcherParams)));
             launcherParams.put(DESCRIPTION.getID(), DESCRIPTION.fetchFrom(mainParams));
         }
-        return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(), ADD_LAUNCHERS
-                .getID(), FILE_ASSOCIATIONS.getID());
+
+        var excludes = new ArrayList<String>(List.of(ICON.getID(), ADD_LAUNCHERS.getID()));
+        if (!NAME.findIn(mainParams).equals(NAME.findIn(launcherParams))) {
+            // This is the additional launcher. It shouldn't have FA.
+            excludes.add(FILE_ASSOCIATIONS.getID());
+        }
+
+        return AddLauncherArguments.merge(mainParams, launcherParams, excludes.toArray(String[]::new));
     }
 
     static final BundlerParamInfo<Application> APPLICATION = createApplicationBundlerParam(null);

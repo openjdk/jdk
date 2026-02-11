@@ -98,6 +98,7 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 
 # :hotspot_runtime
 
+runtime/cds/DeterministicDump.java 8363986 macosx-x64,macosx-aarch64
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
@@ -182,3 +183,13 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
 
 vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/TestDescription.java 8310144 macosx-aarch64
+
+# Mechanically added:
+runtime/Thread/TestThreadDumpMonitorContention.java 8361370 windows-x64
+runtime/Thread/StopAtExit.java 8365835 linux-x64
+runtime/Thread/SetPriorityAtExit.java 8365835 linux-x64
+runtime/Thread/SuspendAtExit.java 8365835 linux-x64
+runtime/Thread/SetNameAtExit.java 8365835 linux-x64
+runtime/8176717/TestInheritFD.java 8347001 linux-x64
+vmTestbase/nsk/jdi/stress/serial/mixed002/TestDescription.java 8291514 macosx-aarch64
+serviceability/jvmti/RedefineClasses/ClassVersionAfterRedefine.java 8369953 linux-aarch64,linux-x64,macosx-aarch64,windows-x64

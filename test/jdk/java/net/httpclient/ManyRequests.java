@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8087112 8180044 8256459
+ * @key intermittent
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver

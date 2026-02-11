@@ -25,12 +25,14 @@ import static jdk.jpackage.test.JPackageStringBundle.MAIN;
 
 import java.nio.file.Path;
 import java.util.Map;
+import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -64,7 +66,7 @@ import jdk.jpackage.test.TKit;
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror FileAssociationsTest.java
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1080 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
  */
 
@@ -85,7 +87,7 @@ public class FileAssociationsTest {
     @Parameter("true")
     @Parameter("false")
     public static void test(boolean includeDescription) {
-        PackageTest packageTest = new PackageTest();
+        PackageTest packageTest = new PackageTest().configureHelloApp();
 
         // Not supported
         packageTest.excludeTypes(PackageType.MAC_DMG);
@@ -142,6 +144,34 @@ public class FileAssociationsTest {
                     MAIN.cannedFormattedString("error.too-many-content-types-for-file-association", 1),
                     MAIN.cannedFormattedString("error.too-many-content-types-for-file-association.advice", 1));
         }).run();
+    }
+
+    @Test
+    @Parameter("true")
+    @Parameter("false")
+    public static void testFromAppImage(boolean withAdditionalLauncher) {
+
+        var appImageCmd = JPackageCommand.helloAppImage();
+
+        if (RunnablePackageTest.hasAction(RunnablePackageTest.Action.INSTALL)) {
+            // Ensure launchers are executable.
+            appImageCmd.ignoreFakeRuntime();
+        }
+
+        if (withAdditionalLauncher) {
+            new AdditionalLauncher("foo").applyTo(appImageCmd);
+        }
+
+        var test = new PackageTest().excludeTypes(PackageType.MAC_DMG)
+        .addRunOnceInitializer(appImageCmd::execute)
+        .addInitializer(cmd -> {
+            cmd.removeArgumentWithValue("--input");
+            cmd.setArgumentValue("--app-image", appImageCmd.outputBundle());
+        });
+
+        new FileAssociations("jptest3").applyTo(test);
+
+        test.run();
     }
 
     private static PackageTest initPackageTest() {

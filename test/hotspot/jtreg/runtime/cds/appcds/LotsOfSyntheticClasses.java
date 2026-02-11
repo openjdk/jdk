@@ -120,9 +120,9 @@ public class LotsOfSyntheticClasses {
             OutputAnalyzer output = TestCommon.createArchive(
                 APP_JAR.toString(),
                 listAppClasses(),
-                MAIN_CLASS_NAME,
                 // Verification for lots of classes slows down the test.
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-VerifyDependencies",
                 "-XX:-VerifyBeforeExit"
             );
@@ -134,6 +134,7 @@ public class LotsOfSyntheticClasses {
             TestCommon.run(
                 // Verification for lots of classes slows down the test.
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-VerifyDependencies",
                 "-XX:-VerifyBeforeExit",
                 "-cp", APP_JAR.toString(),

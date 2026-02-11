@@ -1574,3 +1574,48 @@ jdk.tls.alpnCharset=ISO_8859_1
 # withEncryption method.
 #
 jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128
+
+#
+# X.509 AuthorityInfoAccess caIssuer URI Filtering
+#
+# This property defines a whitespace-separated list of filters that
+# are applied to URIs found in the authorityInfoAccess extension in
+# X.509 certificates. Any caIssuers URIs in X.509 certificates are only
+# followed when the com.sun.security.enableAIAcaIssuers System property is
+# enabled and the filter allows the URI. By default this property imposes a
+# deny-all ruleset.  This property may be overridden by a System property
+# of the same name.
+#
+# The filters must take the form of absolute, hierarchical URIs as defined by
+# the java.net.URI class. Additionally, only the following protocols are
+# allowed as filters: http, https, ldap and ftp.
+# See RFC 5280, section 4.2.2.1 for details about the types of URIs allowed for
+# the extension and their specific requirements.
+# The filter matching rules are applied to each CA issuer URI as follows:
+# 1. The scheme must match (case-insensitive).
+# 2. A hostname or address must be specified in the filter URI.  It must match
+#    the host or address in the caIssuers URI (case-insensitive).  No name
+#    resolution is performed on hostnames to match IP addresses.
+# 3. The port number must match.  For filter and caIssuer URIs, when a port
+#    number is omitted, the well-known port for that scheme will be used in the
+#    comparison.
+# 4. For hierarchical filesystem schemes (e.g. http[s], ftp):
+#    a. The normalized path portion of the filter URI is matched in a
+#       case-sensitive manner.  If the final component of the path does not end
+#       in a slash (/), it is considered to be a file path component and must
+#       be an exact match of the caIssuer's URI file path component.  If the
+#       final filter component ends in a slash, then it must either match or be
+#       a prefix of the caIssuer's URI path component (e.g. a filter path of
+#       /ab/cd/ will match a caIssuer path of /ab/cd/, /ab/cd/ef and
+#       /ab/cd/ef/ghi).
+#    b. Query strings will be ignored in filter rules and caIssuer URIs.
+#    c. Fragments will be ignored in filter rules and caIssuer URIs.
+# 5. For ldap URIs:
+#    a. The base DN must be an exact match (case-insensitive).
+#    b. Any query string in the rule, if specified, is ignored.
+# 6. A single value "any" (case-insensitive) will create an allow-all rule.
+#
+# As an example, here is a valid filter policy consisting of two rules:
+#    com.sun.security.allowedAIALocations=http://some.company.com/cacert \
+#          ldap://ldap.company.com/dc=company,dc=com?caCertificate;binary
+com.sun.security.allowedAIALocations=

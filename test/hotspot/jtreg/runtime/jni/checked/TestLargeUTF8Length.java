@@ -44,9 +44,14 @@ public class TestLargeUTF8Length {
     static native void checkUTF8Length(String s, long utf8Length);
 
     static void test() {
-        int length = Integer.MAX_VALUE/2 + 1;
-        char character = (char)0XD1; // N with tilde
-        long utf8Length = 2L * length;
+        // We want a string whose UTF-8 length is > Integer.MAX_VALUE, but
+        // whose "natural" length is < Integer.MAX_VALUE/2 so it can be
+        // created regardless of whether compact-strings are enabled or not.
+        // So we use a character that encodes as 3-bytes in UTF-8.
+        //   U+08A0 : e0 a2 a0 : ARABIC LETTER BEH WITH SMALL V BELOW
+        char character = '\u08A0';
+        int length = Integer.MAX_VALUE/2 - 1;
+        long utf8Length = 3L * length;
         char[] chrs = new char[length];
         Arrays.fill(chrs, character);
         String s = new String(chrs);

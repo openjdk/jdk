@@ -21,15 +21,16 @@
  * questions.
  */
 
+import static java.util.Map.entry;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import static java.util.Map.entry;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.TKit;
 
 /**
  * Tests generation of app image with --file-associations and mac additional file
@@ -80,21 +81,26 @@ public class MacFileAssociationsTest {
                 "Check value of %s plist key", key));
     }
 
-    private static void checkBoolValue(PListReader plist, String key, Boolean value) {
-        Boolean result = plist.queryBoolValue(key);
-        TKit.assertEquals(value.toString(), result.toString(), String.format(
+    private static void checkBoolValue(PListReader plist, String key, boolean value) {
+        boolean result = plist.queryBoolValue(key);
+        TKit.assertEquals(value, result, String.format(
                 "Check value of %s plist key", key));
     }
 
     private static void checkArrayValue(PListReader plist, String key,
             List<String> values) {
-        List<String> result = plist.queryArrayValue(key);
+        List<String> result = plist.queryStringArrayValue(key);
         TKit.assertStringListEquals(values, result, String.format(
                 "Check value of %s plist key", key));
     }
 
     private static void verifyPList(Path appImage) throws Exception {
-        var plist = MacHelper.readPListFromAppImage(appImage);
+        final var rootPlist = MacHelper.readPListFromAppImage(appImage);
+
+        TKit.traceFileContents(appImage.resolve("Contents/Info.plist"), "Info.plist");
+
+        var plist = rootPlist.queryArrayValue("CFBundleDocumentTypes", false).findFirst().map(PListReader.class::cast).orElseThrow();
+
         checkStringValue(plist, "CFBundleTypeRole", "Viewer");
         checkStringValue(plist, "LSHandlerRank", "Default");
         checkStringValue(plist, "NSDocumentClass", "SomeClass");
@@ -103,10 +109,13 @@ public class MacFileAssociationsTest {
         checkBoolValue(plist, "LSSupportsOpeningDocumentsInPlace", false);
         checkBoolValue(plist, "UISupportsDocumentBrowser", false);
 
-        checkArrayValue(plist, "NSExportableTypes", List.of("public.png",
-                                                            "public.jpg"));
+        plist = rootPlist.queryArrayValue("UTExportedTypeDeclarations", false).findFirst().map(PListReader.class::cast).orElseThrow();
 
-        checkArrayValue(plist, "UTTypeConformsTo", List.of("public.image",
-                                                           "public.data"));
+        checkArrayValue(plist, "UTTypeConformsTo", List.of("public.image", "public.data"));
+
+        plist = plist.queryDictValue("UTTypeTagSpecification");
+
+        checkArrayValue(plist, "NSExportableTypes", List.of("public.png", "public.jpg"));
+
     }
 }

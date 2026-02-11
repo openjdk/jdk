@@ -40,6 +40,10 @@ on:
       xcode-toolset-version:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
       debug-suffix:
         required: false
         type: string
@@ -147,6 +151,7 @@ jobs:
           platform: ${{ inputs.platform }}
           debug-suffix: ${{ matrix.debug-suffix }}
           static-suffix: ${{ inputs.static-suffix }}
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Install dependencies'
         run: |
@@ -199,6 +204,7 @@ jobs:
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
+        if: ${{ inputs.dry-run == false }}
 
         # This is a separate step, since if the markdown from a step gets bigger than
         # 1024 kB it is skipped, but then the short summary above is still generated

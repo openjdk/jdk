@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4927640
+ * @library /test/lib
  * @summary Tests the SCTP protocol implementation
  * @author chegar
  */
@@ -41,6 +42,8 @@ import com.sun.nio.sctp.SctpServerChannel;
 import static java.lang.System.out;
 import static java.lang.System.err;
 
+import jtreg.SkippedException;
+
 public class Accept {
     static CountDownLatch acceptLatch = new CountDownLatch(1);
     static CountDownLatch closeByIntLatch = new CountDownLatch(1);
@@ -49,12 +52,6 @@ public class Accept {
 
     void test(String[] args) {
         SocketAddress address = null;
-
-        if (!Util.isSCTPSupported()) {
-            out.println("SCTP protocol is not supported");
-            out.println("Test cannot be run");
-            return;
-        }
 
         if (args.length == 2) {
             /* requested to connecct to a specific address */
@@ -262,6 +259,10 @@ public class Accept {
     void join(Thread thread, long millis) { try { thread.join(millis); }
                           catch(InterruptedException ie) { unexpected(ie); }}
     public static void main(String[] args) throws Throwable {
+        if (!Util.isSCTPSupported()) {
+            throw new SkippedException("SCTP protocol is not supported");
+        }
+
         Class<?> k = new Object(){}.getClass().getEnclosingClass();
         try {k.getMethod("instanceMain",String[].class)
                 .invoke( k.newInstance(), (Object) args);}

@@ -151,9 +151,9 @@ void Jfr::on_resolution(const Method* caller, const Method* target, TRAPS) {
 }
 #endif
 
-void Jfr::on_vm_shutdown(bool exception_handler, bool halt) {
+void Jfr::on_vm_shutdown(bool emit_old_object_samples, bool emit_event_shutdown, bool halt) {
   if (!halt && JfrRecorder::is_recording()) {
-    JfrEmergencyDump::on_vm_shutdown(exception_handler);
+    JfrEmergencyDump::on_vm_shutdown(emit_old_object_samples, emit_event_shutdown);
   }
 }
 

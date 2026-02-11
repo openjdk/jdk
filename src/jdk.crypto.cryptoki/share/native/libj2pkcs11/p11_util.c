@@ -481,6 +481,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
             // CK_GCM_PARAMS => CK_GCM_PARAMS_NO_IVBITS
             pParams = (CK_GCM_PARAMS*) mechPtr->pParameter;
             pParamsNoIvBits = calloc(1, sizeof(CK_GCM_PARAMS_NO_IVBITS));
+            if (pParamsNoIvBits == NULL) {
+                p11ThrowOutOfMemoryError(env, 0);
+                return NULL;
+            }
             pParamsNoIvBits->pIv = pParams->pIv;
             pParamsNoIvBits->ulIvLen = pParams->ulIvLen;
             pParamsNoIvBits->pAAD = pParams->pAAD;
@@ -495,6 +499,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
             // CK_GCM_PARAMS_NO_IVBITS => CK_GCM_PARAMS
             pParamsNoIvBits = (CK_GCM_PARAMS_NO_IVBITS*) mechPtr->pParameter;
             pParams = calloc(1, sizeof(CK_GCM_PARAMS));
+            if (pParams == NULL) {
+                p11ThrowOutOfMemoryError(env, 0);
+                return NULL;
+            }
             pParams->pIv = pParamsNoIvBits->pIv;
             pParams->ulIvLen = pParamsNoIvBits->ulIvLen;
             pParams->ulIvBits = pParamsNoIvBits->ulIvLen << 3;
@@ -1201,7 +1209,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     jclass jBooleanArrayClass, jIntArrayClass, jLongArrayClass;
     jclass jStringClass;
     jclass jObjectClass, jClassClass;
-    CK_VOID_PTR ckpObject;
+    CK_VOID_PTR ckpObject = NULL;
     jmethodID jMethod;
     jobject jClassObject;
     jstring jClassNameString;

@@ -28,3 +28,7 @@ struct S_PDI { void* p0; double p1; int p2; };
 EXPORT void do_upcall(void (*cb)(struct S_PDI), struct S_PDI a0) {
     cb(a0);
 }
+
+EXPORT void do_upcall_ptr(void (*cb)(struct S_PDI, void*), struct S_PDI a0, void* ptr) {
+    cb(a0, ptr);
+}

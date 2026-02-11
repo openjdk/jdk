@@ -1,7 +1,7 @@
 [general]
 project=jdk-updates
 jbs=JDK
-version=25.0.1
+version=25.0.2
 
 [checks]
 error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists,copyright

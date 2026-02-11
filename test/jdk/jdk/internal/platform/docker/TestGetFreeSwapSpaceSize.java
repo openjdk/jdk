@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2020, 2022, Tencent. All rights reserved.
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
  * @key cgroups
  * @bug 8242480
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @build GetFreeSwapSpaceSize
  * @run driver TestGetFreeSwapSpaceSize

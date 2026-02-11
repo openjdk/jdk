@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,15 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
+import static sun.java2d.pipe.Region.clipRound;
+
 /*
  * @test
- * @bug 8282958
+ * @bug 8282958 8349188
  * @summary Verify all the borders are rendered consistently for a JTextField
  *          in Windows LaF which uses LineBorder
  * @requires (os.family == "windows")
+ * @modules java.desktop/sun.java2d.pipe
  * @run main ScaledTextFieldBorderTest
  */
 public class ScaledTextFieldBorderTest {
@@ -92,7 +95,7 @@ public class ScaledTextFieldBorderTest {
             BufferedImage img = images.get(i);
             double scaling = scales[i];
             try {
-                int thickness = (int) Math.floor(scaling);
+                int thickness = clipRound(scaling);
 
                 checkVerticalBorders(textFieldSize.width / 2, thickness, img);
 

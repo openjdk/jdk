@@ -25,6 +25,8 @@
  * @test
  * @bug 8357601
  * @requires vm.flagless
+ * @comment The check of the array allocated with raw malloc triggers ASAN as we peek into the malloc header space.
+ * @requires !vm.asan
  * @library /test/lib
  * @run main/othervm/native TestCharArrayReleasing 0 0
  * @run main/othervm/native TestCharArrayReleasing 1 0

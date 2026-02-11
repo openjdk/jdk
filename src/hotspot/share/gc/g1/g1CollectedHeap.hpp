@@ -274,6 +274,14 @@ private:
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
+  // Wait until a full mark (either currently in progress or one that completed
+  // after the current request) has finished. Returns whether that full mark started
+  // after this request. If so, we typically do not need another one.
+  bool wait_full_mark_finished(GCCause::Cause cause,
+                               uint old_marking_started_before,
+                               uint old_marking_started_after,
+                               uint old_marking_completed_after);
+
   // Attempt to start a concurrent cycle with the indicated cause.
   // precondition: should_do_concurrent_full_gc(cause)
   bool try_collect_concurrently(GCCause::Cause cause,

@@ -210,9 +210,11 @@ void vmClasses::resolve_all(TRAPS) {
 #endif
 
   InstanceStackChunkKlass::init_offset_of_stack();
+#if INCLUDE_CDS
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::load_javabase_classes(THREAD);
   }
+#endif
 }
 
 #if INCLUDE_CDS

@@ -683,10 +683,11 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     if (UseBlockZeroing) {
-      // Ensure count >= 2*CacheLineSize so that it still deserves a cbo.zero
-      // after alignment.
+      int zicboz_block_size = VM_Version::zicboz_block_size.value();
+      // Ensure count >= 2 * zicboz_block_size so that it still deserves
+      // a cbo.zero after alignment.
       Label small;
-      int low_limit = MAX2(2 * CacheLineSize, BlockZeroingLowLimit) / wordSize;
+      int low_limit = MAX2(2 * zicboz_block_size, (int)BlockZeroingLowLimit) / wordSize;
       __ mv(tmp1, low_limit);
       __ blt(cnt, tmp1, small);
       __ zero_dcache_blocks(base, cnt, tmp1, tmp2);
@@ -6354,18 +6355,8 @@ class StubGenerator: public StubCodeGenerator {
     __ ret();
 
     __ bind(NaN_SLOW);
-    __ fmv_x_w(dst, src);
 
-    // preserve the payloads of non-canonical NaNs.
-    __ srai(dst, dst, 13);
-    // preserve the sign bit.
-    __ srai(t1, dst, 13);
-    __ slli(t1, t1, 10);
-    __ mv(t0, 0x3ff);
-    __ orr(t1, t1, t0);
-
-    // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
-    __ andr(dst, dst, t1);
+    __ float_to_float16_NaN(dst, src, t0, t1);
 
     __ ret();
     return entry;

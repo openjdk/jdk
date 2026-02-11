@@ -129,7 +129,7 @@ final class SettingsManager {
         }
     }
 
-   private Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
+    private volatile Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
 
     void setSettings(List<Map<String, String>> activeSettings, boolean writeSettingEvents) {
         // store settings so they are available if a new event class is loaded
@@ -194,7 +194,7 @@ final class SettingsManager {
             String key = entry.getKey();
             String value = entry.getValue();
             int index = key.indexOf("#");
-            if (index > 1 && index < key.length() - 2) {
+            if (index > 0 && index < key.length() - 1) {
                 String eventName = key.substring(0, index);
                 eventName = Utils.upgradeLegacyJDKEvent(eventName);
                 InternalSetting s = internals.get(eventName);

@@ -50,7 +50,7 @@ public final class MethodTracer {
     public static void traceObjectInit(long startTime, long methodId) {
         long endTime = JVM.counterTime();
         long duration = endTime - startTime;
-        if (MethodTraceEvent.enabled() && JVM.getEventWriter() != null) {
+        if (MethodTraceEvent.shouldCommit(duration) && JVM.getEventWriter() != null) {
             MethodTraceEvent.commit(startTime, duration, methodId);
         }
     }
@@ -66,7 +66,7 @@ public final class MethodTracer {
     public static void traceTimingObjectInit(long startTime, long methodId) {
         long endTime = JVM.counterTime();
         long duration = endTime - startTime;
-        if (MethodTraceEvent.enabled() && JVM.getEventWriter() != null) {
+        if (MethodTraceEvent.shouldCommit(duration) && JVM.getEventWriter() != null) {
             MethodTraceEvent.commit(startTime, duration, methodId);
         }
         if (MethodTimingEvent.enabled()) {
@@ -77,7 +77,7 @@ public final class MethodTracer {
     public static void trace(long startTime, long methodId) {
         long endTime = JVM.counterTime();
         long duration = endTime - startTime;
-        if (MethodTraceEvent.enabled()) {
+        if (MethodTraceEvent.shouldCommit(duration)) {
             MethodTraceEvent.commit(startTime, duration, methodId);
         }
     }
@@ -96,7 +96,7 @@ public final class MethodTracer {
         if (MethodTimingEvent.enabled()) {
             PlatformTracer.addTiming(methodId, duration);
         }
-        if (MethodTraceEvent.enabled()) {
+        if (MethodTraceEvent.shouldCommit(duration)) {
             MethodTraceEvent.commit(startTime, duration, methodId);
         }
     }

@@ -249,6 +249,7 @@ public:
   void handle_timer_signal(siginfo_t* info, void* context);
   bool init_timers();
   void stop_timer();
+  virtual void print_on(outputStream* st) const;
 
   void trigger_async_processing_of_cpu_time_jfr_requests();
 };
@@ -730,6 +731,12 @@ class VM_JFRTerminateCPUTimeSampler : public VM_Operation {
 void JfrCPUSamplerThread::stop_timer() {
   VM_JFRTerminateCPUTimeSampler op(this);
   VMThread::execute(&op);
+}
+
+void JfrCPUSamplerThread::print_on(outputStream* st) const {
+  st->print("\"%s\" ", name());
+  Thread::print_on(st);
+  st->cr();
 }
 
 void JfrCPUSamplerThread::recompute_period_if_needed() {

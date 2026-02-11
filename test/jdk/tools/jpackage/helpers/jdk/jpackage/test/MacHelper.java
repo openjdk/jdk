@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -74,9 +75,23 @@ public final class MacHelper {
 
         Path mountPoint = null;
         try {
-            var plist = readPList(attachExecutor.getOutput());
-            mountPoint = Path.of(plist.queryValue("mount-point"));
+            // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
+            mountPoint = readPList(attachExecutor.getOutput()).queryArrayValue("system-entities", false).map(PListReader.class::cast).map(dict -> {
+                try {
+                    return dict.queryValue("mount-point");
+                } catch (NoSuchElementException ex) {
+                    return (String)null;
+                }
+            }).filter(Objects::nonNull).map(Path::of).findFirst().orElseThrow();
+        } finally {
+            if (mountPoint == null) {
+                TKit.trace("Unexpected plist file missing `system-entities` array:");
+                attachExecutor.getOutput().forEach(TKit::trace);
+                TKit.trace("Done");
+            }
+        }
 
+        try {
             // code here used to copy just <runtime name> or <app name>.app
             // We now have option to include arbitrary content, so we copy
             // everything in the mounted image.

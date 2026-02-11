@@ -39,6 +39,14 @@ JVMFlag::Error AOTCacheConstraintFunc(ccstr value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error AOTCacheOutputConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTCacheOutput cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error AOTConfigurationConstraintFunc(ccstr value, bool verbose) {
   if (value == nullptr) {
     JVMFlag::printError(verbose, "AOTConfiguration cannot be empty\n");
@@ -137,5 +145,15 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error LargePageSizeInBytesConstraintFunc(size_t value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    JVMFlag::printError(verbose, "LargePageSizeInBytes ( %zu ) must be "
+                        "a power of 2\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   return JVMFlag::SUCCESS;
 }

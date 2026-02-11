@@ -416,6 +416,11 @@ childProcess(void *arg)
     if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
         goto WhyCantJohnnyExec;
 
+    // Children should be started with default signal disposition for SIGPIPE
+    if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {
+        goto WhyCantJohnnyExec;
+    }
+
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
 
  WhyCantJohnnyExec:

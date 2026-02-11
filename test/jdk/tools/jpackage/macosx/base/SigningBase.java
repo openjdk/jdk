@@ -68,6 +68,7 @@ public class SigningBase {
     public enum StandardCertificateRequest {
         CODESIGN(cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
         CODESIGN_COPY(cert().days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        CODESIGN_ACME_TECH_LTD(cert().days(100).userName("ACME Technologies Limited (ABC12345)")),
         PKG(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
         PKG_COPY(cert().type(CertificateType.INSTALLER).days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
         CODESIGN_UNICODE(cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
@@ -95,7 +96,8 @@ public class SigningBase {
                 StandardCertificateRequest.CODESIGN,
                 StandardCertificateRequest.PKG,
                 StandardCertificateRequest.CODESIGN_UNICODE,
-                StandardCertificateRequest.PKG_UNICODE),
+                StandardCertificateRequest.PKG_UNICODE,
+                StandardCertificateRequest.CODESIGN_ACME_TECH_LTD),
         EXPIRED("jpackagerTest-expired.keychain",
                 StandardCertificateRequest.CODESIGN,
                 StandardCertificateRequest.PKG,

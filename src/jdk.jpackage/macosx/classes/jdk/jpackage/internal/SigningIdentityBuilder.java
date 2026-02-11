@@ -113,14 +113,16 @@ final class SigningIdentityBuilder {
 
         final var signingIdentityNames = certificateSelector.signingIdentities();
 
+        // Look up for the exact match.
         var matchingCertificates = mappedCertficates.stream().filter(e -> {
             return signingIdentityNames.contains(e.getKey());
         }).map(Map.Entry::getValue).toList();
 
         if (matchingCertificates.isEmpty()) {
+            // No exact matches found, look up for substrings.
             matchingCertificates = mappedCertficates.stream().filter(e -> {
                 return signingIdentityNames.stream().anyMatch(filter -> {
-                    return filter.startsWith(e.getKey());
+                    return e.getKey().startsWith(filter);
                 });
             }).map(Map.Entry::getValue).toList();
         }

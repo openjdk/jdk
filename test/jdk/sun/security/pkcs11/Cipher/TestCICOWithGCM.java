@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,21 @@
  * @key randomness
  */
 
-import java.security.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import java.math.*;
-import java.io.*;
+import jtreg.SkippedException;
 
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
+import java.security.GeneralSecurityException;
+import java.security.Provider;
+import java.util.Arrays;
+import java.util.Random;
+
 
 public class TestCICOWithGCM extends PKCS11Test {
     public static void main(String[] args) throws Exception {
@@ -55,9 +63,8 @@ public class TestCICOWithGCM extends PKCS11Test {
             String transformation = "AES/" + mode + "/NoPadding";
             c = Cipher.getInstance(transformation, p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Skip testing " + p.getName() +
-                    ", no support for " + mode);
-            return;
+            throw new SkippedException("Skip testing " + p.getName() +
+                                       ", no support for " + mode);
         }
 
         SecretKey key = new SecretKeySpec(new byte[16], "AES");

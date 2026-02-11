@@ -209,8 +209,16 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 }
 
 intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
-  Unimplemented();
-  return nullptr;
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+#if (FP_REG_NUM == 11)
+  assert(Rbcp == R7, "expected FP=R11, Rbcp=R7");
+  return (intptr_t*)uc->uc_mcontext.arm_r7;
+#else
+  assert(Rbcp == R11, "expected FP=R7, Rbcp=R11");
+  return (intptr_t*)uc->uc_mcontext.arm_fp; // r11
+#endif
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {

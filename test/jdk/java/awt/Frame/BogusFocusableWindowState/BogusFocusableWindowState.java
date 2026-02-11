@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,30 @@
  * questions.
  */
 
+import java.awt.Window;
 
-/*
+/**
  * @test
- * @requires os.family != "windows" & os.family != "aix"
- *
- * @summary converted from VM testbase runtime/signal/sigusr201.
- * VM testbase keywords: [signal, runtime, linux, macosx]
- *
- * @library /test/lib
- * @run main/native SigTestDriver SIGUSR2
+ * @bug 8346952
+ * @summary Verifies no exception occurs when triggering updateCG()
+ * for an ownerless window.
+ * @key headful
  */
+public final class BogusFocusableWindowState {
 
+    public static void main(String[] args) {
+        Window frame = new Window(null) {
+            @Override
+            public boolean getFocusableWindowState() {
+                removeNotify();
+                return true;
+            }
+        };
+        try {
+            frame.pack();
+            frame.setVisible(true);
+        } finally {
+            frame.dispose();
+        }
+    }
+}

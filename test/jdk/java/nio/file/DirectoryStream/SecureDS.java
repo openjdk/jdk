@@ -24,7 +24,7 @@
 /* @test
  * @bug 4313887 6838333 8343020 8357425
  * @summary Unit test for java.nio.file.SecureDirectoryStream
- * @requires (os.family == "linux" | os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
  * @run main SecureDS

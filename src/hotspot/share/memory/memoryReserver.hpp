@@ -34,6 +34,7 @@ class MemoryReserver : AllStatic {
   static ReservedSpace reserve_memory(char* requested_address,
                                       size_t size,
                                       size_t alignment,
+                                      size_t page_size,
                                       bool exec,
                                       MemTag mem_tag);
 
