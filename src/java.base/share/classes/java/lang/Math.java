@@ -111,7 +111,7 @@ import static java.lang.Double.*;
  * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link asinh asinh},
  * {@link acosh acosh}, {@link hypot hypot}, and {@link pow pow}.
  * (The {@link sqrt sqrt} operation is a required part of IEEE 754
-* from a different section of the standard.) The special case behavior
+ * from a different section of the standard.) The special case behavior
  * of the recommended operations generally follows the guidance of the IEEE 754
  * standard. However, the {@code pow} method defines different
  * behavior for some arguments, as noted in its {@linkplain pow
