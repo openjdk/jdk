@@ -493,7 +493,6 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         putMapEntries(m, false);
     }
 
-    @SuppressWarnings({"unchecked"})
     private void putMapEntries(HashMap<? extends K, ? extends V> src, boolean evict) {
         if (src.table != null) {
             for (Node<? extends K, ? extends V> node : src.table) {
@@ -535,15 +534,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
 
             if (m.getClass() == HashMap.class) {
-                @SuppressWarnings("unchecked")
-                HashMap<K, V> hashMap = (HashMap<K, V>) m;
+                HashMap<? extends K, ? extends V> hashMap = (HashMap<? extends K, ? extends V>) m;
                 putMapEntries(hashMap, evict);
-            } else {
-                for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
-                    K key = e.getKey();
-                    V value = e.getValue();
-                    putVal(hash(key), key, value, false, evict);
-                }
+                return;
+            }
+            for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
+                K key = e.getKey();
+                V value = e.getValue();
+                putVal(hash(key), key, value, false, evict);
             }
         }
     }
