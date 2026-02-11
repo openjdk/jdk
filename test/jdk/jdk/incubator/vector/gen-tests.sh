@@ -58,7 +58,6 @@ do
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
   args="-K$type -Dtype=$type -DType=$Type -DTYPE=$TYPE"
 
-  VectorPrefix=$Type
   Boxtype=$Type
   Wideboxtype=$Boxtype
   MaxValue=MAX_VALUE
@@ -122,9 +121,8 @@ do
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
 
-  abstractvectortype=${typeprefix}${VectorPrefix}Vector
-  abstractvectorteststype=${typeprefix}${VectorPrefix}VectorTests
-  abstractbitsvectortype=${typeprefix}${VectorPrefixe}Vector
+  abstractvectortype=${typeprefix}${Type}Vector
+  abstractvectorteststype=${typeprefix}${Type}VectorTests
   abstractfpvectortype=${typeprefix}${Fptype}Vector
   args="$args -Dabstractvectortype=$abstractvectortype -Dabstractvectorteststype=$abstractvectorteststype -Dabstractbitsvectortype=$abstractbitsvectortype -Dabstractfpvectortype=$abstractfpvectortype"
 
@@ -134,9 +132,9 @@ do
 
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${VectorPrefix}$Vector{bits}
-    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}Tests
-    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}
+    vectortype=${typeprefix}${Type}$Vector{bits}
+    vectorteststype=${typeprefix}${Type}Vector${bits}Tests
+    vectorbenchtype=${typeprefix}${Type}Vector${bits}
     masktype=${typeprefix}${Type}$Mask{bits}
     bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
     fpvectortype=${typeprefix}${Fptype}Vector${bits}
@@ -209,9 +207,9 @@ do
   # For each size
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${VectorPrefix}Vector${bits}
-    vectorteststype=${typeprefix}${VectorPrefix}Vector${bits}LoadStoreTests
-    vectorbenchtype=${typeprefix}${VectorPrefix}Vector${bits}LoadStore
+    vectortype=${typeprefix}${Type}Vector${bits}
+    vectorteststype=${typeprefix}${Type}Vector${bits}LoadStoreTests
+    vectorbenchtype=${typeprefix}${Type}Vector${bits}LoadStore
     masktype=${typeprefix}${Type}Mask${bits}
     bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
     fpvectortype=${typeprefix}${Fptype}Vector${bits}
