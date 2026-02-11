@@ -1698,8 +1698,8 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         const_shift_count(phase, lshl, &lshl_con) &&
         (lshl_con & (BitsPerJavaLong - 1)) == con) {
       Node* y_z = phase->transform(new URShiftLNode(add->in(2), in(2)));
-      Node *sum = phase->transform( new AddLNode( lshl->in(1), y_z ) );
-      return new AndLNode( sum, phase->longcon(mask) );
+      Node* sum = phase->transform(new AddLNode(lshl->in(1), y_z));
+      return new AndLNode(sum, phase->longcon(mask));
     }
   }
 
