@@ -279,7 +279,9 @@ public class MemberEnter extends JCTree.Visitor {
         Type vartype = switch (tree.declKind) {
             case IMPLICIT -> tree.type;
             case EXPLICIT -> tree.vartype.type;
-            case VAR -> tree.type != null ? tree.type : env.info.scope.owner.kind == MTH ? Type.noType : syms.errType;
+            case VAR -> tree.type != null ? tree.type
+                                          : env.info.scope.owner.kind == MTH ? Type.noType
+                                                                             : syms.errType;
         };
         Name name = tree.name;
         VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);

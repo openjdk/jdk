@@ -1000,7 +1000,7 @@ public class JavacParser implements Parser {
                     nextToken();
                 }
                 accept(RPAREN);
-                pattern = toP(F.at(pos).RecordPattern(e, nested.toList())); //TODO: verify var(var v) is rejected properly
+                pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
                 if (mods.annotations.nonEmpty()) {
                     log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
                 }

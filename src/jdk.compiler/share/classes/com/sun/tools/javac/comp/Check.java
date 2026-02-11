@@ -1467,16 +1467,11 @@ public class Check {
     }
 
     void checkRaw(JCTree tree, Env<AttrContext> env) {
-        if (!TreeInfo.isDiamond(tree)) {
-            checkRaw(tree.pos(), tree.type, env);
-        }
-    }
-
-    void checkRaw(DiagnosticPosition pos, Type type, Env<AttrContext> env) {
-        if (type.hasTag(CLASS) &&
+        if (tree.type.hasTag(CLASS) &&
+            !TreeInfo.isDiamond(tree) &&
             !withinAnonConstr(env) &&
-            type.isRaw()) {
-            log.warning(pos, LintWarnings.RawClassUse(type, type.tsym.type));
+            tree.type.isRaw()) {
+            log.warning(tree.pos(), LintWarnings.RawClassUse(tree.type, tree.type.tsym.type));
         }
     }
     //where
@@ -5643,7 +5638,10 @@ public class Check {
                      * a canonical record constructor, we don't want to issue a warning as we will warn the
                      * corresponding compiler generated private record field anyways
                      */
-                    checkIfIdentityIsExpected(variableDecl.vartype != null ? variableDecl.vartype.pos() : variableDecl.pos(), variableDecl.type, lint);
+                    DiagnosticPosition pos =
+                            variableDecl.vartype != null ? variableDecl.vartype.pos()
+                                                         : variableDecl.pos();
+                    checkIfIdentityIsExpected(pos, variableDecl.type, lint);
                 }
             }
             case JCTypeCast typeCast -> checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);

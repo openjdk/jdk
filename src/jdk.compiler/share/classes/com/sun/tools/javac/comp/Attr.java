@@ -4763,7 +4763,10 @@ public class Attr extends JCTree.Visitor {
             // was given when the constructor was resolved)
 
             if (sym.name != names.init || tree.hasTag(REFERENCE)) {
-                checkSymbol(tree.pos(), site, sym);
+                chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
+                chk.checkSunAPI(tree.pos(), sym);
+                chk.checkProfile(tree.pos(), sym);
+                chk.checkPreview(tree.pos(), env.info.scope.owner, site, sym);
             }
 
             if (pt.isErroneous()) {
@@ -4899,15 +4902,6 @@ public class Attr extends JCTree.Visitor {
                    !Flags.isConstant(v) &&
                    v.name != names._class;
         }
-
-    private void checkSymbol(DiagnosticPosition pos, Type site, Symbol sym) {
-        Assert.check(site != null || sym.kind != MTH || sym.kind != VAR);
-
-        chk.checkDeprecated(pos, env.info.scope.owner, sym);
-        chk.checkSunAPI(pos, sym);
-        chk.checkProfile(pos, sym);
-        chk.checkPreview(pos, env.info.scope.owner, site, sym);
-    }
 
     /**
      * Check that method arguments conform to its instantiation.
