@@ -48,11 +48,8 @@ public class TestZAllocationStallEvent {
             recording.start();
 
             // Allocate many large objects quickly, to outrun the GC
-            try {
-                for (int i = 0; i < 1000; i++) {
-                    blackHole(new byte[4 * 1024 * 1024]);
-                }
-            } catch (java.lang.OutOfMemoryError e) {
+            for (int i = 0; i < 1000; i++) {
+                blackHole(new byte[4 * 1024 * 1024]);
             }
 
             recording.stop();
