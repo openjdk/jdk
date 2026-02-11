@@ -1741,7 +1741,7 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem) {
   Node* mark_node = nullptr;
   if (UseCompactObjectHeaders) {
     Node* klass_node = in(AllocateNode::KlassNode);
-    Node* proto_adr = phase->transform(new AddPNode(phase->C->top(), klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
+    Node* proto_adr = phase->transform(AddPNode::make_off_heap(klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
     mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
   } else {
     // For now only enable fast locking for non-array types

@@ -242,7 +242,12 @@ public:
   static Node* Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
                                      // second return value:
                                      intptr_t& offset);
-
+  static AddPNode* make_with_base(Node* base, Node* ptr, Node* offset){
+    return new AddPNode(base, ptr, offset);
+  }
+  static AddPNode* make_off_heap(Node* ptr, Node* offset){
+    return make_with_base(Compile::current()->top(), ptr, offset);
+  }
   // Collect the AddP offset values into the elements array, giving up
   // if there are more than length.
   int unpack_offsets(Node* elements[], int length) const;

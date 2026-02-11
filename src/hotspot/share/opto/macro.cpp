@@ -1832,7 +1832,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node *thread = new ThreadLocalNode();
       transform_later(thread);
 
-      Node *eden_pf_adr = new AddPNode( top()/*not oop*/, thread,
+      Node *eden_pf_adr = AddPNode::make_off_heap(thread,
                    _igvn.MakeConX(in_bytes(JavaThread::tlab_pf_top_offset())) );
       transform_later(eden_pf_adr);
 
@@ -1858,7 +1858,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node *need_pf_false = new IfFalseNode( need_pf_iff );
       transform_later(need_pf_false);
 
-      Node *new_pf_wmt = new AddPNode( top(), old_pf_wm,
+      Node *new_pf_wmt = AddPNode::make_off_heap(old_pf_wm,
                                     _igvn.MakeConX(AllocatePrefetchDistance) );
       transform_later(new_pf_wmt );
       new_pf_wmt->set_req(0, need_pf_true);
@@ -1947,7 +1947,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for ( intx i = 0; i < lines; i++ ) {
-        prefetch_adr = new AddPNode( top(), new_eden_top,
+        prefetch_adr = AddPNode::make_off_heap(new_eden_top,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode( i_o, prefetch_adr );

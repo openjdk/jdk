@@ -4933,7 +4933,7 @@ Node* InitializeNode::make_raw_address(intptr_t offset,
   Node* addr = in(RawAddress);
   if (offset != 0) {
     Compile* C = phase->C;
-    addr = phase->transform( new AddPNode(C->top(), addr,
+    addr = phase->transform(AddPNode::make_off_heap(addr,
                                                  phase->MakeConX(offset)) );
   }
   return addr;

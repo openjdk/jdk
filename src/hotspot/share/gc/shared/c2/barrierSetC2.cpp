@@ -778,7 +778,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   macro->transform_later(old_tlab_top);
 
   // Add to heap top to get a new TLAB top
-  Node* new_tlab_top = new AddPNode(macro->top(), old_tlab_top, size_in_bytes);
+  Node* new_tlab_top = AddPNode::make_off_heap(old_tlab_top, size_in_bytes);
   macro->transform_later(new_tlab_top);
 
   // Check against TLAB end
