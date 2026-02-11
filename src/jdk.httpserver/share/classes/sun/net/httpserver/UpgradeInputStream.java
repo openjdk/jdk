@@ -27,6 +27,7 @@ package sun.net.httpserver;
 
 import java.io.IOException;
 import java.io.InputStream;
+import sun.net.httpserver.HttpConnection.State;
 
 /**
  * A class which allows the caller to read the underlying stream for an upgrade request.
