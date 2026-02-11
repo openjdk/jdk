@@ -39,6 +39,7 @@
  * @summary Conformance testing variant of JSR-166 tck tests.
  * @library /test/lib
  * @build *
+ * @build jdk.test.lib.Platform
  * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000 JSR166TestCase
  */
@@ -49,6 +50,7 @@
  *          tck tests with ForkJoinPool common parallelism.
  * @library /test/lib
  * @build *
+ * @build jdk.test.lib.Platform
  * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
@@ -72,6 +74,7 @@
  *          parallelism.
  * @library /test/lib
  * @build *
+ * @build jdk.test.lib.Platform
  * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
