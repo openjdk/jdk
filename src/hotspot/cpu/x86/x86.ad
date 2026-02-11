@@ -25837,6 +25837,54 @@ peephole
   peepprocedure (test_may_remove);
 %}
 
+peephole
+%{
+  peepmatch (compI_rReg);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
+peephole
+%{
+  peepmatch (compI_rReg_imm);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
+peephole
+%{
+  peepmatch (compU_rReg);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
+peephole
+%{
+  peepmatch (compU_rReg_imm);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
+peephole
+%{
+  peepmatch (compL_rReg);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
+peephole
+%{
+  peepmatch (compL_rReg_imm);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
+peephole
+%{
+  peepmatch (compUL_rReg);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
+peephole
+%{
+  peepmatch (compUL_rReg_imm);
+  peepprocedure (inter_block_redundant_flag_ops);
+%}
+
 
 //----------SMARTSPILL RULES---------------------------------------------------
 // These must follow all instruction definitions as they use the names
