@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2404,14 +2405,14 @@ class EARelockingValueBased extends EATestCaseBaseDebugger {
         BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
         printStack(bpe.thread());
         @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), Integer.class.getName(), "l1");
+        ObjectReference o = getLocalRef(bpe.thread().frame(1), Object.class.getName(), "l1");
     }
 }
 
 class EARelockingValueBasedTarget extends EATestCaseBaseTarget {
 
     public void dontinline_testMethod() {
-        Integer l1 = new Integer(255);
+        Object l1 = new Object();
         synchronized (l1) {
             dontinline_brkpt();
         }
