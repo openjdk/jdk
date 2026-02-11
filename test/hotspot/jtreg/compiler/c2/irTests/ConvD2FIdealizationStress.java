@@ -27,10 +27,11 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8375633
- * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Test that ConvD2F::Ideal optimization is not missed with StressIncrementalInlining.
+ * @summary Test that ConvD2F::Ideal optimization is not missed with incremental inlining.
+ *          AlwaysIncrementalInline is not required but deterministically defers even
+ *          small methods, making this test reliable.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ConvD2FIdealizationStress
+ * @run driver ${test.main.class}
  */
 public class ConvD2FIdealizationStress {
 
@@ -38,18 +39,24 @@ public class ConvD2FIdealizationStress {
         TestFramework testFramework = new TestFramework();
         testFramework.addFlags("-XX:-TieredCompilation",
                                "-XX:+UnlockDiagnosticVMOptions",
-                               "-XX:+StressIncrementalInlining",
+                               "-XX:+IgnoreUnrecognizedVMOptions",
+                               "-XX:+AlwaysIncrementalInline",
                                "-XX:VerifyIterativeGVN=1110");
         testFramework.start();
     }
 
-    // Pattern: ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x)
-    // When ConvF2D changes inside SqrtD, ConvD2F users of SqrtD should be notified.
+    // Deferred by AlwaysIncrementalInline; ConvF2D appears only after inlining.
+    static double toDouble(float x) {
+        return (double) x;
+    }
+
+    // ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x)
+    // Math.sqrt (intrinsic) is expanded at parse time; toDouble is deferred.
     @Test
     @IR(counts = {IRNode.SQRT_F, ">=1"},
         failOn = {IRNode.CONV_D2F, IRNode.SQRT_D, IRNode.CONV_F2D})
     public static float testSqrtConversion(float x) {
-        return (float) Math.sqrt((double) x);
+        return (float) Math.sqrt(toDouble(x));
     }
 
     @Run(test = "testSqrtConversion")

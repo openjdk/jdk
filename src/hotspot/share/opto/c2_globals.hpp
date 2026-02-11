@@ -52,6 +52,9 @@
   product(bool, StressCCP, false, DIAGNOSTIC,                               \
           "Randomize worklist traversal in CCP")                            \
                                                                             \
+  product(bool, Fix2F, true, DIAGNOSTIC,                                    \
+          "Temp: enable ConvD2F/ConvF2HF IGVN notification fix")           \
+                                                                            \
   product(bool, StressIncrementalInlining, false, DIAGNOSTIC,               \
           "Randomize the incremental inlining decision")                    \
                                                                             \

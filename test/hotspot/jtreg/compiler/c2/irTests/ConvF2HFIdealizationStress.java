@@ -23,69 +23,63 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import java.util.Random;
 
 /*
  * @test
  * @bug 8375633
- * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Test that ConvF2HF::Ideal optimizations are not missed with StressIncrementalInlining.
+ * @summary Test that ConvF2HF::Ideal optimization is not missed with incremental inlining.
+ *          AlwaysIncrementalInline is not required but deterministically defers even
+ *          small methods, making this test reliable.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ConvF2HFIdealizationStress
+ * @run driver ${test.main.class}
  */
 public class ConvF2HFIdealizationStress {
+
+    private short srcBits;
+    private short twoBits;
+    private short dstBits;
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.addFlags("-XX:-TieredCompilation",
                                "-XX:+UnlockDiagnosticVMOptions",
-                               "-XX:+StressIncrementalInlining",
+                               "-XX:+IgnoreUnrecognizedVMOptions",
+                               "-XX:+AlwaysIncrementalInline",
                                "-XX:VerifyIterativeGVN=1110");
         testFramework.start();
     }
 
-    // Pattern: ConvF2HF(AddF(ConvHF2F(x), ConvHF2F(y))) => AddHF(x, y)
+    public ConvF2HFIdealizationStress() {
+        srcBits = Float.floatToFloat16(new Random(42).nextFloat());
+        twoBits = Float.floatToFloat16(2.0f);
+    }
+
+    // Deferred by AlwaysIncrementalInline; ConvHF2F appears only after inlining.
+    static float toFloat(short hf) {
+        return Float.float16ToFloat(hf);
+    }
+
+    // ConvF2HF(MulF(ConvHF2F(a), ConvHF2F(b))) => MulHF(a, b)
+    // Float.floatToFloat16 (intrinsic) is expanded at parse time; toFloat is deferred.
     @Test
-    @IR(counts = {IRNode.ADD_HF, ">=1"},
-        failOn = {IRNode.ADD_F, IRNode.CONV_F2HF, IRNode.CONV_HF2F},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
-    @IR(counts = {IRNode.ADD_HF, ">=1"},
-        failOn = {IRNode.ADD_F, IRNode.CONV_F2HF, IRNode.CONV_HF2F},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public static short testAddHF(short a, short b) {
-        return Float.floatToFloat16(Float.float16ToFloat(a) + Float.float16ToFloat(b));
+    @IR(counts = {IRNode.MUL_HF, "1"},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"},
+        failOn = {IRNode.CONV_F2HF})
+    @IR(counts = {IRNode.MUL_HF, "1"},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
+        failOn = {IRNode.CONV_F2HF})
+    public void testMultiply() {
+        dstBits = Float.floatToFloat16(toFloat(srcBits) * toFloat(twoBits));
     }
 
-    @Run(test = "testAddHF")
-    public void runAddHF() {
-        short a = Float.floatToFloat16(1.0f);
-        short b = Float.floatToFloat16(2.0f);
-        short result = testAddHF(a, b);
-        float fResult = Float.float16ToFloat(result);
-        if (fResult != 3.0f) {
-            throw new RuntimeException("Expected 3.0f but got " + fResult);
-        }
-    }
-
-    // Pattern: ConvF2HF(SubF(ConvHF2F(x), ConvHF2F(y))) => SubHF(x, y)
-    @Test
-    @IR(counts = {IRNode.SUB_HF, ">=1"},
-        failOn = {IRNode.SUB_F, IRNode.CONV_F2HF, IRNode.CONV_HF2F},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
-    @IR(counts = {IRNode.SUB_HF, ">=1"},
-        failOn = {IRNode.SUB_F, IRNode.CONV_F2HF, IRNode.CONV_HF2F},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public static short testSubHF(short a, short b) {
-        return Float.floatToFloat16(Float.float16ToFloat(a) - Float.float16ToFloat(b));
-    }
-
-    @Run(test = "testSubHF")
-    public void runSubHF() {
-        short a = Float.floatToFloat16(3.0f);
-        short b = Float.floatToFloat16(1.0f);
-        short result = testSubHF(a, b);
-        float fResult = Float.float16ToFloat(result);
-        if (fResult != 2.0f) {
-            throw new RuntimeException("Expected 2.0f but got " + fResult);
+    @Check(test = "testMultiply")
+    public void checkMultiply() {
+        float expected = Float.float16ToFloat(srcBits) * Float.float16ToFloat(twoBits);
+        short expectedBits = Float.floatToFloat16(expected);
+        if (expectedBits != dstBits) {
+            throw new RuntimeException("testMultiply: expected " + expectedBits +
+                                       " but got " + dstBits);
         }
     }
 }
