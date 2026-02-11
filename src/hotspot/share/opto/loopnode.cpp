@@ -1591,9 +1591,20 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       // where i, K, and E are all ints (see is_scaled_iv_plus_offset).
       // The decomposition has already widened them to long (K=longcon, L=ConvI2L(E)), so the downstream code
       // will compute: i*(long)K + (long)E <u64 R.
-      // Since the original int expression is bounded by max_jint, we clamp R at max_jint + 1.
-      // Unlike short_scale where L is added in long after ConvI2L, here the offset is part of
-      // the int computation, so we don't add L.
+      //
+      // We will prove that:
+      //   if ConvI2L(i) * K + ConvI2L(E) u< UMin(R, max_jint + 1),
+      //   then ConvI2L(i * K + E) u< R.
+      // We have:
+      //   1. If x is an int, then ConvL2I(ConvI2L(x)) == x
+      //   2. If x is a long, x u< max_jint + 1, then x == ConvI2L(ConvL2I(x))
+      //   3. For x, y, z are longs, then ConvL2I(x * y + z) == ConvL2I(x) * ConvL2I(y) + ConvL2I(z)
+      // As a result, we can deduce that:
+      //   ConvI2L(i) * K + ConvI2L(E) u< max_jint + 1 =>
+      //   ConvI2L(ConvL2I(ConvI2L(i) * K + ConvI2L(E)))                   == ConvI2L(i) * K + ConvI2L(E) =>
+      //   ConvI2L(ConvL2I(ConvI2L(i)) * ConvL2I(K) + ConvL2I(ConvI2L(E))) == ConvI2L(i) * K + ConvI2L(E) =>
+      //   ConvI2L(i * K + E)                                              == ConvI2L(i) * K + ConvI2L(E)
+      // and since ConvI2L(i) * K + ConvI2L(E) u< R, we also have that ConvI2L(i * K + E) u< R
       Node* max_jint_plus_one_long = longcon((jlong)max_jint + 1);
       R = MinMaxNode::unsigned_min(R, max_jint_plus_one_long, TypeLong::POS, _igvn);
       set_subtree_ctrl(R, true);
