@@ -140,7 +140,6 @@ serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
-serviceability/sa/TestJhsdbJstackMixedCore.java   8377395 linux-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
