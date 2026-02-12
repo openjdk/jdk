@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,17 @@
  * questions.
  */
 
-// key: compiler.err.not.exhaustive.statement
-// options: -XDexhaustivityMaxBaseChecks=0
+// key: compiler.err.not.exhaustive.statement.details
+// key: compiler.misc.record.pattern
 
-class NotExhaustive {
-    void t(Object o) {
-        switch (o) {
-            case String s -> System.err.println("String of length: " + s.length());
+class RecordPattern {
+    void t(R r) {
+        switch (r) {
+            case R(C1 _) -> {}
         };
     }
+    sealed interface I {}
+    record C1() implements I {}
+    record C2() implements I {}
+    record R(I i) {}
 }
