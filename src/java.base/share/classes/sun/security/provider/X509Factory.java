@@ -139,23 +139,28 @@ public class X509Factory extends CertificateFactorySpi {
     }
 
     /**
-     * Return an interned X509CertImpl for the given certificate.
-     * If the given X509Certificate or X509CertImpl is already present
-     * in the cert cache, the cached object is returned. Otherwise,
-     * if it is a X509Certificate, it is first converted to a X509CertImpl.
-     * Then the X509CertImpl is added to the cache and returned.
+     * Returns an X509CertImpl for the given certificate, using the internal
+     * cache when possible.
      *
-     * Note that all certificates created via generateCertificate(InputStream)
-     * are already interned and this method does not need to be called.
-     * It is useful for certificates that cannot be created via
-     * generateCertificate() and for converting other X509Certificate
-     * implementations to an X509CertImpl.
+     * If the given {@code X509Certificate} (or {@code X509CertImpl}) is already
+     * present in the cert cache, the cached object is returned. Otherwise, the
+     * certificate is converted to an {@code X509CertImpl} (if needed), cached,
+     * and returned.
      *
-     * @param c The source X509Certificate
-     * @return An X509CertImpl object that is either a cached certificate or a
-     *      newly built X509CertImpl from the provided X509Certificate
-     * @throws CertificateException if failures occur while obtaining the DER
-     *      encoding for certificate data.
+     * <p>This is best-effort canonicalization only. The cache is soft and entries
+     * may be cleared at any time, so callers must not rely on reference identity
+     * ({@code ==}). Semantic equivalence should be determined using {@code equals()}.
+     *
+     * <p>Note that all certificates created via {@code generateCertificate(InputStream)}
+     * are already cached and this method does not need to be called. It is useful for
+     * certificates that cannot be created via {@code generateCertificate()}, and for
+     * converting other {@code X509Certificate} implementations to an {@code X509CertImpl}.
+     *
+     * @param c The source {@code X509Certificate}
+     * @return An {@code X509CertImpl} that is either a cached certificate or a newly
+     *         built {@code X509CertImpl} from the provided X509Certificate
+     * @throws CertificateException if failures occur while obtaining the DER encoding
+     *         for certificate data
      */
     public static X509CertImpl intern(X509Certificate c)
             throws CertificateException {
@@ -189,14 +194,24 @@ public class X509Factory extends CertificateFactorySpi {
     }
 
     /**
-     * Return an interned X509CRLImpl for the given certificate.
-     * For more information, see intern(X509Certificate).
+     * Returns an {@code X509CRLImpl} for the given CRL, using the internal
+     * cache when possible.
      *
-     * @param c The source X509CRL
-     * @return An X509CRLImpl object that is either a cached CRL or a
-     *      newly built X509CRLImpl from the provided X509CRL
-     * @throws CRLException if failures occur while obtaining the DER
-     *      encoding for CRL data.
+     * If the given {@code X509CRL} (or {@code X509CRLImpl}) is already present
+     * in the CRL cache, the cached object is returned. Otherwise, the CRL is
+     * converted to an {@code X509CRLImpl} (if needed), cached, and returned.
+     *
+     * <p>This is best-effort canonicalization only. The cache is soft and entries
+     * may be cleared at any time, so callers must not rely on reference identity
+     * ({@code ==}). Semantic equivalence should be determined using {@code equals()}.
+     *
+     * <p>For behavior and rationale, see {@link #intern(X509Certificate)}.
+     *
+     * @param c the source {@code X509CRL}
+     * @return an {@code X509CRLImpl} that is either a cached CRL or a newly built
+     *         {@code X509CRLImpl} from the provided CRL
+     * @throws CRLException if failures occur while obtaining the DER encoding
+     *         for CRL data
      */
     public static X509CRLImpl intern(X509CRL c)
             throws CRLException {
@@ -241,15 +256,11 @@ public class X509Factory extends CertificateFactorySpi {
         if (encoding.length > ENC_MAX_LENGTH) {
             return value;
         }
-        synchronized (cache) {
-            Object key = new Cache.EqualByteArray(encoding);
-            V existing = cache.get(key);
-            if (existing != null) {
-                return existing;
-            }
-            cache.put(key, value);
-            return value;
-        }
+        // Cache implementations are thread-safe for concurrent use. Under
+        // contention, duplicates may be constructed/inserted; callers must not
+        // rely on reference identity.
+        cache.put(new Cache.EqualByteArray(encoding), value);
+        return value;
     }
 
     /**
