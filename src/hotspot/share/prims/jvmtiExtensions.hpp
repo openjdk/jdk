@@ -29,6 +29,20 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/allStatic.hpp"
 
+enum jvmtiFrameType {
+  JVMTI_JAVA_FRAME,
+  JVMTI_NATIVE_FRAME
+};
+
+typedef void (JNICALL *jvmtiBeginStackTraceCallback)
+    (jboolean failed, jboolean biased, const void* user_data);
+
+typedef void (JNICALL *jvmtiEndStackTraceCallback)
+    (const void* user_data);
+
+typedef jvmtiIterationControl (JNICALL *jvmtiStackFrameCallback)
+    (jvmtiFrameType frame_type, jmethodID method, jlocation location, const void* user_data);
+
 // JvmtiExtensions
 //
 // Maintains the list of extension functions and events in this JVMTI

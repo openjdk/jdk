@@ -1017,6 +1017,16 @@ void StackWalker::initialize() {
   }
 }
 
+#ifdef ASSERT
+bool StackWalker::set_out_of_stack_walking_enabled(bool enabled) {
+  if (_native_stackwalker_thread != nullptr) {
+    _native_stackwalker_thread->set_out_of_stack_walking_enabled(enabled);
+    return true;
+  }
+  return false;
+}
+#endif
+
 void StackWalker::on_javathread_create(JavaThread* thread) {
   if (AtomicAccess::load_acquire(&_stackwalker_initialized) == 0) {
     return;  // StackWalker not initialized yet
