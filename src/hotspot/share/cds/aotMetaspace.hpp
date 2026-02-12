@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@
 #include "utilities/macros.hpp"
 
 class ArchiveBuilder;
-class ArchiveMappedHeapInfo;
-class ArchiveStreamedHeapInfo;
+class AOTMappedHeapInfo;
+class AOTStreamedHeapInfo;
 class FileMapInfo;
 class Method;
 class outputStream;
@@ -192,8 +192,8 @@ private:
   static void open_output_mapinfo();
   static bool write_static_archive(ArchiveBuilder* builder,
                                    FileMapInfo* map_info,
-                                   ArchiveMappedHeapInfo* mapped_heap_info,
-                                   ArchiveStreamedHeapInfo* streamed_heap_info);
+                                   AOTMappedHeapInfo* mapped_heap_info,
+                                   AOTStreamedHeapInfo* streamed_heap_info);
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the
