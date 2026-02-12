@@ -1013,7 +1013,6 @@ public sealed interface MemoryLayout
          * @param type the type of the associated value
          * @param <T> the type of the associated value
          * @return a new attribute key
-         * @throws NullPointerException if {@code type} is {@code null}
          */
         public static <T> AttributeKey<T> of(Class<T> type) {
             Objects.requireNonNull(type);
@@ -1026,8 +1025,6 @@ public sealed interface MemoryLayout
      *
      * @param key the attribute key
      * @param <T> the type of the associated value
-     * @throws NullPointerException if {@code key} is {@code null}
-     * @since 22
      */
     <T> Optional<T> attribute(AttributeKey<T> key);
 
@@ -1040,9 +1037,7 @@ public sealed interface MemoryLayout
      * @param key the attribute key
      * @param value the attribute value
      * @param <T> the type of the associated value
-     * @throws NullPointerException if {@code key} or {@code value} are {@code null}
      * @throws IllegalArgumentException if {@code value} is not an instance of the type associated with {@code key}
-     * @since 22
      */
     <T> MemoryLayout withAttribute(AttributeKey<T> key, T value);
 
@@ -1053,8 +1048,6 @@ public sealed interface MemoryLayout
      * If no attribute is associated with the given key, this layout is returned.
      *
      * @param key the attribute key
-     * @throws NullPointerException if {@code key} is {@code null}
-     * @since 22
      */
     MemoryLayout withoutAttribute(AttributeKey<?> key);
 
