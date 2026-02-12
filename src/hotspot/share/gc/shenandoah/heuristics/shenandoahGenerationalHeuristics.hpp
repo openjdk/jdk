@@ -27,6 +27,7 @@
 
 
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
+#include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 
 class ShenandoahGeneration;
 class ShenandoahHeap;
@@ -82,6 +83,9 @@ protected:
   ShenandoahGeneration* _generation;
 
   size_t _add_regions_to_old;
+
+private:
+  ShenandoahInPlacePromotionPlanner _in_place_promotions;
 };
 
 

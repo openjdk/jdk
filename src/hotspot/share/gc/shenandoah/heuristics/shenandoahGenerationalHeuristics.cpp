@@ -65,7 +65,8 @@ inline void assert_no_in_place_promotions() {
 }
 
 ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGeneration* generation)
-        : ShenandoahAdaptiveHeuristics(generation), _generation(generation), _add_regions_to_old(0) {
+        : ShenandoahAdaptiveHeuristics(generation), _generation(generation), _add_regions_to_old(0),
+          _in_place_promotions(ShenandoahGenerationalHeap::heap()) {
 }
 
 void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
@@ -74,6 +75,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
   assert(heap->collection_set()->is_empty(), "Collection set must be empty here");
 
   _add_regions_to_old = 0;
+  _in_place_promotions.reset();
 
   // Find the amount that will be promoted, regions that will be promoted in
   // place, and preselected older regions that will be promoted by evacuation.
@@ -316,13 +318,12 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
 
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 
-  // TODO: Pull PIP planner into field are pass around so we can get these stats.
   ShenandoahTracer::report_evacuation_info(collection_set,
                                            free_regions,
-                                           humongous_regions_promoted,
-                                           regular_regions_promoted_in_place,
-                                           regular_regions_promoted_garbage,
-                                           regular_regions_promoted_free,
+                                           _in_place_promotions.humongous_region_stats().count,
+                                           _in_place_promotions.regular_region_stats().count,
+                                           _in_place_promotions.regular_region_stats().garbage,
+                                           _in_place_promotions.regular_region_stats().free,
                                            immediate_regions,
                                            immediate_garbage);
 }
@@ -361,8 +362,6 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(const size_t old_pr
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, num_regions);
 
-  ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
-
   for (idx_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young()) {
@@ -372,18 +371,18 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(const size_t old_pr
 
     if (!r->is_regular()) {
       if (r->is_humongous() && heap->is_tenurable(r)) {
-        in_place_promotions.prepare(r);
+        _in_place_promotions.prepare(r);
       }
       // Nothing else to be done for humongous regions
       continue;
     }
 
     if (heap->is_tenurable(r)) {
-      if (in_place_promotions.is_eligible(r)) {
+      if (_in_place_promotions.is_eligible(r)) {
         // We prefer to promote this region in place because it has a small amount of garbage and a large usage.
         // Note that if this region has been used recently for allocation, it will not be promoted and it will
         // not be selected for promotion by evacuation.
-        in_place_promotions.prepare(r);
+        _in_place_promotions.prepare(r);
       } else {
         // Record this promotion-eligible candidate region. After sorting and selecting the best candidates below,
         // we may still decide to exclude this promotion-eligible region from the current collection set.  If this
@@ -410,7 +409,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(const size_t old_pr
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
       if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
-        if (r->garbage() >= in_place_promotions.old_garbage_threshold()) {
+        if (r->garbage() >= _in_place_promotions.old_garbage_threshold()) {
           promo_potential += r->get_live_data_bytes();
         }
       }
@@ -419,7 +418,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(const size_t old_pr
     // Subsequent regions may be selected if they have smaller live data.
   }
 
-  in_place_promotions.complete_planning();
+  _in_place_promotions.complete_planning();
 
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.

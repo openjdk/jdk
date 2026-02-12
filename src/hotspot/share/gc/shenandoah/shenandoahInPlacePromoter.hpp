@@ -44,6 +44,7 @@ class ShenandoahInPlacePromotionPlanner {
     ShenandoahFreeSet* _free_set;
 
     explicit RegionPromotions(ShenandoahFreeSet* free_set);
+    void reset();
     void increment(idx_t region_index, size_t remnant_bytes);
     void update_free_set(ShenandoahFreeSetPartitionId partition_id) const;
   };
@@ -55,6 +56,7 @@ class ShenandoahInPlacePromotionPlanner {
     size_t garbage;
 
     RegionPromotionStats() : count(0), usage(0), free(0), garbage(0) {}
+    void reset();
     void update(ShenandoahHeapRegion* region);
   };
 
@@ -73,7 +75,7 @@ class ShenandoahInPlacePromotionPlanner {
   size_t _pip_padding_bytes;
 
   // Tracks stats for in place promotions
-  RegionPromotionStats _pip_region_stats;
+  RegionPromotionStats _pip_regular_stats;
   RegionPromotionStats _pip_humongous_stats;
 
 public:
@@ -85,10 +87,15 @@ public:
   // Prepares the region for promotion by moving top to the end to prevent allocations
   void prepare(ShenandoahHeapRegion* region);
 
-  // Notifies the free set of in place promotions
+  // Notifies the free set and old generation of in place promotions
   void complete_planning() const;
 
+  const RegionPromotionStats& regular_region_stats() const   { return _pip_regular_stats; }
+  const RegionPromotionStats& humongous_region_stats() const { return _pip_humongous_stats; }
+
   size_t old_garbage_threshold() const { return _old_garbage_threshold; }
+
+  void reset();
 };
 
 class ShenandoahInPlacePromoter {

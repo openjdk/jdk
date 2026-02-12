@@ -41,6 +41,13 @@ ShenandoahInPlacePromotionPlanner::RegionPromotions::RegionPromotions(Shenandoah
 {
 }
 
+void ShenandoahInPlacePromotionPlanner::RegionPromotions::reset() {
+  _low_idx = _free_set->max_regions();
+  _high_idx = -1;
+  _regions = 0;
+  _bytes = 0;
+}
+
 void ShenandoahInPlacePromotionPlanner::RegionPromotions::increment(idx_t region_index, size_t remnant_bytes) {
   if (region_index < _low_idx) {
     _low_idx = region_index;
@@ -63,6 +70,10 @@ void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::update(ShenandoahH
   usage += region->used();
   free += region->free();
   garbage += region->garbage();
+}
+
+void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::reset() {
+  count = usage = free = garbage = 0;
 }
 
 ShenandoahInPlacePromotionPlanner::ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap)
@@ -94,12 +105,13 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
   }
 
   if (r->is_humongous()) {
-    // Nothing else to do for humongous, we just update the stats and move on
+    // Nothing else to do for humongous, we just update the stats and move on. The humongous regions
+    // themselves will be discovered and promoted by gc workers during evacuation.
     _pip_humongous_stats.update(r);
     return;
   }
 
-  _pip_region_stats.update(r);
+  _pip_regular_stats.update(r);
   // No allocations from this region have been made during concurrent mark. It meets all the criteria
   // for in-place-promotion. Though we only need the value of top when we fill the end of the region,
   // we use this field to indicate that this region should be promoted in place during the evacuation
@@ -145,13 +157,11 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
 void ShenandoahInPlacePromotionPlanner::complete_planning() const {
   _heap->old_generation()->set_pad_for_promote_in_place(_pip_padding_bytes);
   _heap->old_generation()->set_expected_humongous_region_promotions(_pip_humongous_stats.count);
-  _heap->old_generation()->set_expected_regular_region_promotions(_pip_region_stats.count);
+  _heap->old_generation()->set_expected_regular_region_promotions(_pip_regular_stats.count);
   log_info(gc, ergo)("Planning to promote in place %zu humongous regions and %zu"
                      " regular regions, spanning a total of %zu used bytes",
-                     _pip_humongous_stats.count, _pip_region_stats.count,
-                     _pip_humongous_stats.usage + _pip_region_stats.usage);
-
-
+                     _pip_humongous_stats.count, _pip_regular_stats.count,
+                     _pip_humongous_stats.usage + _pip_regular_stats.usage);
 
   if (_mutator_regions._regions + _collector_regions._regions > 0) {
     _free_set->account_for_pip_regions(_mutator_regions._regions, _mutator_regions._bytes,
@@ -161,6 +171,14 @@ void ShenandoahInPlacePromotionPlanner::complete_planning() const {
   // Retire any regions that have been selected for promote in place
   _mutator_regions.update_free_set(ShenandoahFreeSetPartitionId::Mutator);
   _collector_regions.update_free_set(ShenandoahFreeSetPartitionId::Collector);
+}
+
+void ShenandoahInPlacePromotionPlanner::reset() {
+  _mutator_regions.reset();
+  _collector_regions.reset();
+  _pip_regular_stats.reset();
+  _pip_humongous_stats.reset();
+  _pip_padding_bytes = 0;
 }
 
 void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
