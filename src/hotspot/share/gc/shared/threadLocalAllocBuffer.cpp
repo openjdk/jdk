@@ -459,13 +459,16 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
 }
 
 size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
+  // Data races due to unsynchronized access like the following reads to _start
+  // and _top are undefined behavior. Atomic<T> would not provide any additional
+  // guarantees, so use AtomicAccess directly.
   HeapWord* start = AtomicAccess::load(&_start);
   HeapWord* top = AtomicAccess::load(&_top);
-  // There has been a race when retrieving _top and _start. Return 0.
-  if (_top < _start) {
+  // If there has been a race when retrieving _top and _start, return 0.
+  if (top < start) {
     return 0;
   }
-  size_t used_bytes = pointer_delta(_top, _start, 1);
+  size_t used_bytes = pointer_delta(top, start, 1);
   // Comparing diff with the maximum allowed size will ensure that we don't add
   // the used bytes from a semi-initialized TLAB ending up with implausible values.
   // In this case also just return 0.
