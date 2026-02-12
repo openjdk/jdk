@@ -153,7 +153,6 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
-
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 }
 

@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"
@@ -38,6 +39,7 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
@@ -229,16 +231,11 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
   return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary null check
 }
 
-inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
-  Klass* k = obj->klass_without_asserts();
-  return k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass();
-}
-
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const G1HeapRegion* hr) const {
   assert(!hr->is_free(), "looking up obj " PTR_FORMAT " in Free region %u", p2i(obj), hr->hrm_index());
   if (hr->is_in_parsable_area(obj)) {
     // This object is in the parsable part of the heap, live unless scrubbed.
-    return is_obj_filler(obj);
+    return is_filler_object(obj);
   } else {
     // From Remark until a region has been concurrently scrubbed, parts of the
     // region is not guaranteed to be parsable. Use the bitmap for liveness.

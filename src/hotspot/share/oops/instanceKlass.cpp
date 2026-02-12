@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2693,6 +2693,10 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_nest_members);
   it->push(&_permitted_subclasses);
   it->push(&_record_components);
+
+  if (CDSConfig::is_dumping_full_module_graph() && !defined_by_other_loaders()) {
+    it->push(&_package_entry);
+  }
 }
 
 #if INCLUDE_CDS
@@ -2791,24 +2795,9 @@ void InstanceKlass::remove_java_mirror() {
 
 void InstanceKlass::init_shared_package_entry() {
   assert(CDSConfig::is_dumping_archive(), "must be");
-#if !INCLUDE_CDS_JAVA_HEAP
-  _package_entry = nullptr;
-#else
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    if (defined_by_other_loaders()) {
-      _package_entry = nullptr;
-    } else {
-      _package_entry = PackageEntry::get_archived_entry(_package_entry);
-    }
-  } else if (CDSConfig::is_dumping_dynamic_archive() &&
-             CDSConfig::is_using_full_module_graph() &&
-             AOTMetaspace::in_aot_cache(_package_entry)) {
-    // _package_entry is an archived package in the base archive. Leave it as is.
-  } else {
+  if (!CDSConfig::is_dumping_full_module_graph() || defined_by_other_loaders()) {
     _package_entry = nullptr;
   }
-  ArchivePtrMarker::mark_pointer((address**)&_package_entry);
-#endif
 }
 
 void InstanceKlass::compute_has_loops_flag_for_methods() {

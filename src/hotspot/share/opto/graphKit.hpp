@@ -709,6 +709,8 @@ class GraphKit : public Phase {
   void increment_counter(address counter_addr);   // increment a debug counter
   void increment_counter(Node*   counter_addr);   // increment a debug counter
 
+  void halt(Node* ctrl, Node* frameptr, const char* reason, bool generate_code_in_product = true);
+
   // Bail out to the interpreter right now
   // The optional klass is the one causing the trap.
   // The optional reason is debug information written to the compile log.
