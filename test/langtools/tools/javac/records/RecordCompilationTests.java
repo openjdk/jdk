@@ -2172,36 +2172,6 @@ class RecordCompilationTests extends CompilationTestCase {
 
     @Test
     void testDeprecatedJavadoc() {
-        assertOK(
-                """
-                record R(
-                    /**
-                     * @deprecated
-                     */
-                    @Deprecated
-                    int i
-                ) {}
-                """
-        );
-        assertOK(
-                """
-                record R(
-                    @Deprecated
-                    int i
-                ) {}
-                """
-        );
-        // here the javadoc tag is ignored
-        assertOK(
-                """
-                record R(
-                    /**
-                     * @deprecated
-                     */
-                    int i
-                ) {}
-                """
-        );
         String[] previousOptions = getCompileOptions();
         try {
             setCompileOptions(new String[] {"-Xlint:deprecation"});
@@ -2211,6 +2181,18 @@ class RecordCompilationTests extends CompilationTestCase {
                     /**
                      * @deprecated
                      */
+                    @Deprecated
+                    int i
+                ) {}
+                class Client {
+                    R r;
+                    int j = r.i();
+                }
+                """
+            );
+            assertOKWithWarning("compiler.warn.has.been.deprecated",
+                """
+                record R(
                     @Deprecated
                     int i
                 ) {}
