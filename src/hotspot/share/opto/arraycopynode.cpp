@@ -355,7 +355,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
       return false;
     }
 
-    adr_src  = phase->transform(AddPNode::make_with_base(base_src, base_src, src_offset));
+    adr_src = phase->transform(AddPNode::make_with_base(base_src, base_src, src_offset));
     adr_dest = phase->transform(AddPNode::make_with_base(base_dest, base_dest, dest_offset));
 
     // The address is offsetted to an aligned address where a raw copy would start.
