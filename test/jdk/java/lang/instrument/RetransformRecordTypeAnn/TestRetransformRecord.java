@@ -39,11 +39,11 @@
  */
 
 /*
- * This test is loading a record with type annotation first, then by 
+ * This test is loading a record with type annotation first, then by
  * calling retransformClasses, we inject a slightly different record classfile
- * where just some constants from the constant pools were swapped.
+ * where just some constants from the constant pools were swapped.  
  * It triggers, during the retransformation, a rewrite of the constant pool
- * calling VM_RedefineClasses::rewrite_cp_refs_in_record_attribute method 
+ * calling VM_RedefineClasses::rewrite_cp_refs_in_record_attribute method.
  */
 import java.io.File;
 import java.io.FileInputStream;
