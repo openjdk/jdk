@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "opto/callnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
@@ -65,7 +66,9 @@ class StringConcat : public ResourceObj {
     IntMode,
     CharMode,
     StringNullCheckMode,
-    NegativeIntCheckMode
+    NegativeIntCheckMode,
+    CharPairMode,       // Two consecutive chars merged for append(char, char)
+    CharQuadMode        // Four consecutive chars merged for append(char, char, char, char)
   };
 
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
@@ -114,6 +117,24 @@ class StringConcat : public ResourceObj {
   void push_char(Node* value) {
     push(value, CharMode);
   }
+
+  void push_char_pair(Node* c1, Node* c2) {
+    push(c2, CharPairMode);
+    push(c1, CharPairMode);
+  }
+
+  void push_char_quad(Node* c1, Node* c2, Node* c3, Node* c4) {
+    push(c4, CharQuadMode);
+    push(c3, CharQuadMode);
+    push(c2, CharQuadMode);
+    push(c1, CharQuadMode);
+  }
+
+  // Process arguments to merge consecutive CharMode entries and convert
+  // constant StringMode entries with length 2 or 4 to CharPairMode/CharQuadMode.
+  // This optimization enables the JIT to generate more efficient code using
+  // append(char, char) and append(char, char, char, char) methods.
+  void optimize_char_appends(PhaseStringOpts* stringopts);
 
   static bool is_SB_toString(Node* call) {
     if (call->is_CallStaticJava()) {
@@ -239,6 +260,114 @@ class StringConcat : public ResourceObj {
     _arguments->disconnect_inputs(_stringopts->C);
   }
 };
+
+
+void StringConcat::optimize_char_appends(PhaseStringOpts* stringopts) {
+  // Process arguments to merge consecutive CharMode entries and convert
+  // constant StringMode entries with length 2 or 4 to CharPairMode/CharQuadMode.
+  // This allows the code generator to produce more efficient code by using
+  // append(char, char) and append(char, char, char, char) methods which
+  // enable MergeStore optimization.
+
+  if (num_arguments() < 2) {
+    return;  // Not enough arguments to optimize
+  }
+
+  GrowableArray<Node*> new_arguments;
+  GrowableArray<int> new_modes;
+
+  int i = 0;
+  while (i < num_arguments()) {
+    int mode = _mode.at(i);
+
+    // Try to convert constant String with length 2 or 4 to CharPair/CharQuad
+    if (mode == StringMode) {
+      Node* arg = _arguments->in(i);
+      if (arg->is_Con()) {
+        int len = stringopts->get_constant_length_dummy(arg);
+        if (len == 2 || len == 4) {
+          ciTypeArray* src_array = stringopts->get_constant_value_dummy(arg);
+          if (stringopts->get_constant_coder_dummy(arg) == java_lang_String::CODER_LATIN1) {
+            // Extract characters from the constant string
+            if (len == 2) {
+              // Convert to CharPairMode
+              char c1 = (char) src_array->element_value(0).as_byte();
+              char c2 = (char) src_array->element_value(1).as_byte();
+              new_arguments.push(stringopts->gvn()->intcon(c1));
+              new_modes.push(CharPairMode);
+              new_arguments.push(stringopts->gvn()->intcon(c2));
+              new_modes.push(CharPairMode);
+              i++;
+              continue;
+            } else if (len == 4) {
+              // Convert to CharQuadMode
+              char c1 = (char) src_array->element_value(0).as_byte();
+              char c2 = (char) src_array->element_value(1).as_byte();
+              char c3 = (char) src_array->element_value(2).as_byte();
+              char c4 = (char) src_array->element_value(3).as_byte();
+              new_arguments.push(stringopts->gvn()->intcon(c1));
+              new_modes.push(CharQuadMode);
+              new_arguments.push(stringopts->gvn()->intcon(c2));
+              new_modes.push(CharQuadMode);
+              new_arguments.push(stringopts->gvn()->intcon(c3));
+              new_modes.push(CharQuadMode);
+              new_arguments.push(stringopts->gvn()->intcon(c4));
+              new_modes.push(CharQuadMode);
+              i++;
+              continue;
+            }
+          }
+        }
+      }
+    }
+
+    // Try to merge consecutive CharMode entries (2 or 4 at a time)
+    if (mode == CharMode) {
+      // Check for 4 consecutive chars
+      if (i + 3 < num_arguments() &&
+          _mode.at(i + 1) == CharMode &&
+          _mode.at(i + 2) == CharMode &&
+          _mode.at(i + 3) == CharMode) {
+        // Merge 4 chars into CharQuadMode
+        new_arguments.push(_arguments->in(i));
+        new_modes.push(CharQuadMode);
+        new_arguments.push(_arguments->in(i + 1));
+        new_modes.push(CharQuadMode);
+        new_arguments.push(_arguments->in(i + 2));
+        new_modes.push(CharQuadMode);
+        new_arguments.push(_arguments->in(i + 3));
+        new_modes.push(CharQuadMode);
+        i += 4;
+        continue;
+      }
+      // Check for 2 consecutive chars
+      if (i + 1 < num_arguments() &&
+          _mode.at(i + 1) == CharMode) {
+        // Merge 2 chars into CharPairMode
+        new_arguments.push(_arguments->in(i));
+        new_modes.push(CharPairMode);
+        new_arguments.push(_arguments->in(i + 1));
+        new_modes.push(CharPairMode);
+        i += 2;
+        continue;
+      }
+    }
+
+    // Keep the original argument and mode
+    new_arguments.push(_arguments->in(i));
+    new_modes.push(mode);
+    i++;
+  }
+
+  // Replace the old arguments and modes with the new ones
+  _arguments = new Node(1);
+  _arguments->del_req(0);
+  _mode.clear();
+  for (int j = 0; j < new_arguments.length(); j++) {
+    _arguments->add_req(new_arguments.at(j));
+    _mode.append(new_modes.at(j));
+  }
+}
 
 
 void StringConcat::eliminate_unneeded_control() {
@@ -673,6 +802,9 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   while (toStrings.size() > 0) {
     StringConcat* sc = build_candidate(toStrings.pop()->as_CallStaticJava());
     if (sc != nullptr) {
+      // Optimize by merging consecutive char appends and converting
+      // short constant strings to char pairs/quads
+      sc->optimize_char_appends(this);
       concats.push(sc);
     }
   }
@@ -1694,6 +1826,91 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
   return __ value(end);
 }
 
+// Compress copy two chars into dst_array at index start (enables MergeStore optimization).
+Node* PhaseStringOpts::copy_char_pair(GraphKit& kit, Node* c1, Node* c2, Node* dst_array, Node* dst_coder, Node* start) {
+  bool dcon = (dst_coder != nullptr) && dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+
+  IdealKit ideal(&kit, true, true);
+  IdealVariable end(ideal); __ declarations_done();
+  Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
+  Node* adr2 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(1)), T_BYTE);
+
+  if (!dcon){
+    __ if_then(dst_coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1));
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1. Store two bytes (enables short store MergeStore).
+    __ store(__ ctrl(), adr1, c1, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ store(__ ctrl(), adr2, c2, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ set(end, __ AddI(start, __ ConI(2)));
+  }
+  if (!dcon) {
+    __ else_();
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16. Store two chars.
+    __ store(__ ctrl(), adr1, c1, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ store(__ ctrl(), adr2, c2, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ set(end, __ AddI(start, __ ConI(4)));
+  }
+  if (!dcon) {
+    __ end_if();
+  }
+  // Finally sync IdealKit and GraphKit.
+  kit.sync_kit(ideal);
+  return __ value(end);
+}
+
+// Compress copy four chars into dst_array at index start (enables MergeStore optimization).
+Node* PhaseStringOpts::copy_char_quad(GraphKit& kit, Node* c1, Node* c2, Node* c3, Node* c4,
+                                       Node* dst_array, Node* dst_coder, Node* start) {
+  bool dcon = (dst_coder != nullptr) && dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+
+  IdealKit ideal(&kit, true, true);
+  IdealVariable end(ideal); __ declarations_done();
+  Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
+  Node* adr2 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(1)), T_BYTE);
+  Node* adr3 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(2)), T_BYTE);
+  Node* adr4 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(3)), T_BYTE);
+
+  if (!dcon){
+    __ if_then(dst_coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1));
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1. Store four bytes (enables int store MergeStore).
+    __ store(__ ctrl(), adr1, c1, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ store(__ ctrl(), adr2, c2, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ store(__ ctrl(), adr3, c3, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ store(__ ctrl(), adr4, c4, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ set(end, __ AddI(start, __ ConI(4)));
+  }
+  if (!dcon) {
+    __ else_();
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16. Store four chars.
+    __ store(__ ctrl(), adr1, c1, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ store(__ ctrl(), adr2, c2, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ store(__ ctrl(), adr3, c3, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ store(__ ctrl(), adr4, c4, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ set(end, __ AddI(start, __ ConI(8)));
+  }
+  if (!dcon) {
+    __ end_if();
+  }
+  // Finally sync IdealKit and GraphKit.
+  kit.sync_kit(ideal);
+  return __ value(end);
+}
+
 #undef __
 #define __ kit.
 
@@ -1744,6 +1961,29 @@ int PhaseStringOpts::get_constant_length(GraphKit& kit, Node* str) {
 ciTypeArray* PhaseStringOpts::get_constant_value(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
   const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
+  ciInstance* str_instance = str_type->const_oop()->as_instance();
+  ciObject* src_array = str_instance->field_value_by_offset(java_lang_String::value_offset()).as_object();
+  return src_array->as_type_array();
+}
+
+// Dummy versions for use without GraphKit (for optimization phase)
+jbyte PhaseStringOpts::get_constant_coder_dummy(Node* str) {
+  assert(str->is_Con(), "String must be constant");
+  const TypeOopPtr* str_type = _gvn->type(str)->isa_oopptr();
+  ciInstance* str_instance = str_type->const_oop()->as_instance();
+  jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset()).as_byte();
+  assert(CompactStrings || (coder == java_lang_String::CODER_UTF16), "Strings must be UTF16 encoded");
+  return coder;
+}
+
+int PhaseStringOpts::get_constant_length_dummy(Node* str) {
+  assert(str->is_Con(), "String must be constant");
+  return get_constant_value_dummy(str)->length();
+}
+
+ciTypeArray* PhaseStringOpts::get_constant_value_dummy(Node* str) {
+  assert(str->is_Con(), "String must be constant");
+  const TypeOopPtr* str_type = _gvn->type(str)->isa_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
   ciObject* src_array = str_instance->field_value_by_offset(java_lang_String::value_offset()).as_object();
   return src_array->as_type_array();
@@ -1965,6 +2205,78 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         length = __ AddI(length, __ intcon(1));
         break;
       }
+      case StringConcat::CharPairMode: {
+        // First of two characters - consume both in this case
+        // The mode is set for both chars, but we only process once (for the pair)
+        // by checking if the previous argument was also CharPairMode
+        if (argi == 0 || sc->mode(argi - 1) != StringConcat::CharPairMode) {
+          // This is the first char of a pair, process both
+          Node* c1 = arg;
+          Node* c2 = sc->argument(argi + 1);
+          const TypeInt* t1 = kit.gvn().type(c1)->is_int();
+          const TypeInt* t2 = kit.gvn().type(c2)->is_int();
+          if (!coder_fixed && t1->is_con() && t2->is_con()) {
+            // Both constant chars
+            if (t1->get_con() <= 255 && t2->get_con() <= 255) {
+              // Can be latin1 encoded
+              coder = __ OrI(coder, __ intcon(java_lang_String::CODER_LATIN1));
+            } else {
+              // Must be UTF16 encoded
+              coder_fixed = true;
+              coder = __ intcon(java_lang_String::CODER_UTF16);
+            }
+          } else if (!coder_fixed) {
+            // Not constant - check max of both using MaxI
+            Node* max_char = __ MaxI(c1, c2);
+            Node* cmp = kit.gvn().transform(new CmpINode(max_char, __ intcon(0xFF)));
+            Node* bol = kit.gvn().transform(new BoolNode(cmp, BoolTest::le));
+            coder = __ OrI(coder, kit.gvn().transform(
+                new CMoveINode(bol, kit.gvn().intcon(java_lang_String::CODER_LATIN1),
+                               kit.gvn().intcon(java_lang_String::CODER_UTF16), TypeInt::INT)));
+          }
+          length = __ AddI(length, __ intcon(2));
+        }
+        break;
+      }
+      case StringConcat::CharQuadMode: {
+        // First of four characters - consume all four in this case
+        // The mode is set for all four chars, but we only process once
+        if (argi == 0 || sc->mode(argi - 1) != StringConcat::CharQuadMode) {
+          // This is the first char of a quad, process all four
+          Node* c1 = arg;
+          Node* c2 = sc->argument(argi + 1);
+          Node* c3 = sc->argument(argi + 2);
+          Node* c4 = sc->argument(argi + 3);
+          const TypeInt* t1 = kit.gvn().type(c1)->is_int();
+          const TypeInt* t2 = kit.gvn().type(c2)->is_int();
+          const TypeInt* t3 = kit.gvn().type(c3)->is_int();
+          const TypeInt* t4 = kit.gvn().type(c4)->is_int();
+          if (!coder_fixed && t1->is_con() && t2->is_con() && t3->is_con() && t4->is_con()) {
+            // All constant chars
+            if (t1->get_con() <= 255 && t2->get_con() <= 255 &&
+                t3->get_con() <= 255 && t4->get_con() <= 255) {
+              // Can be latin1 encoded
+              coder = __ OrI(coder, __ intcon(java_lang_String::CODER_LATIN1));
+            } else {
+              // Must be UTF16 encoded
+              coder_fixed = true;
+              coder = __ intcon(java_lang_String::CODER_UTF16);
+            }
+          } else if (!coder_fixed) {
+            // Not constant - check max of all four using MaxI
+            Node* max12 = __ MaxI(c1, c2);
+            Node* max34 = __ MaxI(c3, c4);
+            Node* max_char = __ MaxI(max12, max34);
+            Node* cmp = kit.gvn().transform(new CmpINode(max_char, __ intcon(0xFF)));
+            Node* bol = kit.gvn().transform(new BoolNode(cmp, BoolTest::le));
+            coder = __ OrI(coder, kit.gvn().transform(
+                new CMoveINode(bol, kit.gvn().intcon(java_lang_String::CODER_LATIN1),
+                               kit.gvn().intcon(java_lang_String::CODER_UTF16), TypeInt::INT)));
+          }
+          length = __ AddI(length, __ intcon(4));
+        }
+        break;
+      }
       default:
         ShouldNotReachHere();
     }
@@ -2022,6 +2334,24 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           case StringConcat::CharMode: {
             start = copy_char(kit, arg, dst_array, coder, start);
           break;
+          }
+          case StringConcat::CharPairMode: {
+            // First of two characters - skip if not first
+            if (argi == 0 || sc->mode(argi - 1) != StringConcat::CharPairMode) {
+              Node* c2 = sc->argument(argi + 1);
+              start = copy_char_pair(kit, arg, c2, dst_array, coder, start);
+            }
+            break;
+          }
+          case StringConcat::CharQuadMode: {
+            // First of four characters - skip if not first
+            if (argi == 0 || sc->mode(argi - 1) != StringConcat::CharQuadMode) {
+              Node* c2 = sc->argument(argi + 1);
+              Node* c3 = sc->argument(argi + 2);
+              Node* c4 = sc->argument(argi + 3);
+              start = copy_char_quad(kit, arg, c2, c3, c4, dst_array, coder, start);
+            }
+            break;
           }
           default:
             ShouldNotReachHere();

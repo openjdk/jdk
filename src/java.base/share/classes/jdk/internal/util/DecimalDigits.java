@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package jdk.internal.util;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
@@ -38,7 +36,6 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  * @since 21
  */
 public final class DecimalDigits {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
@@ -463,12 +460,10 @@ public final class DecimalDigits {
         // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
         // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packed = DIGITS[v & 0x7f];
-        // The temporary String and byte[] objects created here are typically eliminated
-        // by the JVM's escape analysis and scalar replacement optimizations during
-        // runtime compilation, avoiding actual heap allocations in optimized code.
-        buf.append(
-                JLA.uncheckedNewStringWithLatin1Bytes(
-                        new byte[] {(byte) packed, (byte) (packed >> 8)}));
+        // Use two append(char) calls which the JVM optimizer will merge into
+        // a single append(char, char) call, enabling MergeStore optimization.
+        buf.append((char) (packed & 0xFF))
+           .append((char) (packed >> 8));
     }
 
     /**
@@ -490,12 +485,11 @@ public final class DecimalDigits {
         // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packedHigh = DIGITS[(v / 100) & 0x7f];
         int packedLow  = DIGITS[(v % 100) & 0x7f];
-        // The temporary String and byte[] objects created here are typically eliminated
-        // by the JVM's escape analysis and scalar replacement optimizations during
-        // runtime compilation, avoiding actual heap allocations in optimized code.
-        buf.append(
-                JLA.uncheckedNewStringWithLatin1Bytes(
-                        new byte[] {(byte) packedHigh, (byte) (packedHigh >> 8),
-                                    (byte) packedLow,  (byte) (packedLow  >> 8)}));
+        // Use four append(char) calls which the JVM optimizer will merge into
+        // a single append(char, char, char, char) call, enabling MergeStore optimization.
+        buf.append((char) (packedHigh & 0xFF))
+           .append((char) (packedHigh >> 8))
+           .append((char) (packedLow & 0xFF))
+           .append((char) (packedLow >> 8));
     }
 }

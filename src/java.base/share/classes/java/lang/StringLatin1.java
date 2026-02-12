@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,14 @@ final class StringLatin1 {
 
     static byte coderFromChar(char cp) {
         return (byte)((0xff - cp) >>> (Integer.SIZE - 1));
+    }
+
+    static byte coderFromChar(char c1, char c2) {
+        return (byte)((0xff - (c1 | c2)) >>> (Integer.SIZE - 1));
+    }
+
+    static byte coderFromChar(char c1, char c2, char c3, char c4) {
+        return (byte)((0xff - (c1 | c2 | c3 | c4)) >>> (Integer.SIZE - 1));
     }
 
     static int length(byte[] value) {
