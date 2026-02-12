@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 8238756 8351889
- * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=111111 in debug builds.
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:VerifyIterativeGVN=111111 compiler.c2.TestVerifyIterativeGVN
  */
-package compiler.c2;
 
-public class TestVerifyIterativeGVN {
-    public static void main(String[] args) {
-    }
+#include "cds/aotCompressedPointers.hpp"
+#include "cds/archiveBuilder.hpp"
+
+size_t AOTCompressedPointers::compute_byte_offset(address p) {
+  return ArchiveBuilder::current()->any_to_offset(p);
 }

@@ -22,6 +22,8 @@
  * questions.
  */
 
+import java.nio.file.Path;
+
 import jtreg.SkippedException;
 
 import jdk.test.lib.JDKToolFinder;
@@ -33,17 +35,15 @@ import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.CoreUtils;
 
-import jtreg.SkippedException;
-
 /**
  * @test
- * @bug 8374482 8376264 8376284 8377395
+ * @bug 8376269
  * @requires (os.family == "linux") & (vm.hasSA)
  * @requires os.arch == "amd64"
  * @library /test/lib
- * @run driver TestJhsdbJstackMixedCore
+ * @run driver TestJhsdbJstackMixedWithVDSOCallCore
  */
-public class TestJhsdbJstackMixedCore {
+public class TestJhsdbJstackMixedWithVDSOCallCore {
 
     private static void runJstackMixed(String coreFileName) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
@@ -64,27 +64,27 @@ public class TestJhsdbJstackMixedCore {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        out.shouldContain("__restore_rt <signal trampoline>");
-        out.shouldContain("Java_jdk_test_lib_apps_LingeredApp_crash");
-        out.shouldContain("jdk.test.lib.apps.LingeredApp.crash()");
+        out.shouldContain("vdso_gettimeofday");
+    }
+
+    private static void checkVDSODebugInfo() {
+        var kernelVersion = System.getProperty("os.version");
+        var vdso = Path.of("/lib", "modules", kernelVersion, "vdso", "vdso64.so");
+        if (SATestUtils.getDebugInfo(vdso.toString()) == null) {
+            // Skip this test if debuginfo of vDSO not found because internal
+            // function of gettimeofday() would not be exported, and vDSO
+            // binary might be stripped.
+            throw new SkippedException("vDSO debuginfo not found (" + vdso.toString() + ")");
+        }
     }
 
     public static void main(String... args) throws Throwable {
         if (Platform.isMusl()) {
             throw new SkippedException("This test does not work on musl libc.");
         }
+        checkVDSODebugInfo();
 
-        // Check whether the symbol of signal trampoline is available.
-        var libc = SATestUtils.getLibCPath();
-
-        // SA distinguishes the frame is signal trampoline if the function
-        // is named "__restore_rt".
-        // SA cannot unwind problematic frame from it if the symbol not found.
-        if (!SATestUtils.isSymbolAvailable(libc, "__restore_rt")) {
-            throw new SkippedException("Signal trampoline (__restore_rt) not found in libc.");
-        }
-
-        LingeredApp app = new LingeredApp();
+        var app = new LingeredAppWithVDSOCall();
         app.setForceCrash(true);
         LingeredApp.startApp(app, CoreUtils.getAlwaysPretouchArg(true));
         app.waitAppTerminate();
