@@ -460,8 +460,10 @@ public final class DecimalDigits {
         // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
         // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packed = DIGITS[v & 0x7f];
-        // Use append(char, char) which enables JIT to optimize consecutive char appends
-        buf.append((char) (packed & 0xFF), (char) (packed >> 8));
+        // Use consecutive append(char) calls which enables JIT StringOpts to coalesce
+        // them into CharPairMode, triggering MergeStore optimization
+        buf.append((char) (packed & 0xFF))
+           .append((char) (packed >> 8));
     }
 
     /**
@@ -483,8 +485,11 @@ public final class DecimalDigits {
         // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packedHigh = DIGITS[(v / 100) & 0x7f];
         int packedLow  = DIGITS[(v % 100) & 0x7f];
-        // Use append(char, char, char, char) which enables JIT to optimize consecutive char appends
-        buf.append((char) (packedHigh & 0xFF), (char) (packedHigh >> 8),
-                   (char) (packedLow & 0xFF),  (char) (packedLow >> 8));
+        // Use consecutive append(char) calls which enables JIT StringOpts to coalesce
+        // them into CharQuadMode, triggering MergeStore optimization
+        buf.append((char) (packedHigh & 0xFF))
+           .append((char) (packedHigh >> 8))
+           .append((char) (packedLow & 0xFF))
+           .append((char) (packedLow >> 8));
     }
 }

@@ -916,7 +916,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param   c2  the second {@code char}.
      * @return  a reference to this object.
      */
-    public AbstractStringBuilder append(char c1, char c2) {
+    AbstractStringBuilder append(char c1, char c2) {
         byte coder = this.coder;
         int count = this.count;
         byte[] value = this.value;
@@ -948,7 +948,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param   c4  the fourth {@code char}.
      * @return  a reference to this object.
      */
-    public AbstractStringBuilder append(char c1, char c2, char c3, char c4) {
+    AbstractStringBuilder append(char c1, char c2, char c3, char c4) {
         byte coder = this.coder;
         int count = this.count;
         byte[] value = this.value;
