@@ -32,13 +32,19 @@
  * @modules java.compiler
  *          java.instrument
  * @compile ../NamedBuffer.java
- * @compile altered/MyRecord.jcod
- * @run shell rename.sh
+ * @run driver RunAsmTools altered/MyRecord.jcod altered
  * @compile MyRecord.java
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine*=debug TestRetransformRecord
  */
 
+/*
+ * This test is loading a record with type annotation first, then by 
+ * calling retransformClasses, we inject a slightly different record classfile
+ * where just some constants from the constant pools were swapped.
+ * It triggers, during the retransformation, a rewrite of the constant pool
+ * calling VM_RedefineClasses::rewrite_cp_refs_in_record_attribute method 
+ */
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.instrument.ClassFileTransformer;

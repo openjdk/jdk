@@ -21,6 +21,11 @@
  * questions.
  */
 
+/*
+ * This is a jcod version of the MyRecord classfile. 
+ * Generated from runnning java -jar asmtools.jar jdec MyRecord.class
+ * Then slightly modified (swapped some constants) to trigger constant pool rewrite.
+ */
 class MyRecord {
   0xCAFEBABE;
   0;                                       // minor version
