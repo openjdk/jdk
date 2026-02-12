@@ -26,8 +26,7 @@
  * @test
  * @bug 8360123
  * @summary Unit test for AbstractStringBuilder.appendLatin1(char, char)
- * @compile/module java.base java/lang/AppendLatin1TestHelper.java
- * @run testng AppendLatin1Test
+ * @run testng/othervm --add-opens java.base/java.lang=ALL-UNNAMED AppendLatin1Test
  */
 
 import java.lang.reflect.Method;
