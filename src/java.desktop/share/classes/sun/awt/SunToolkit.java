@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -537,6 +537,10 @@ public abstract class SunToolkit extends Toolkit
     public static void executeOnEventHandlerThread(PeerEvent peerEvent) {
         postEvent(targetToAppContext(peerEvent.getSource()), peerEvent);
     }
+
+     public static void invokeLater(Runnable dispatcher) {
+         invokeLaterOnAppContext(AppContext.getAppContext(), dispatcher);
+     }
 
     /*
      * Execute a chunk of code on the Java event handler thread. The

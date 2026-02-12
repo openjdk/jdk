@@ -69,7 +69,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws IOException If an error occurs creating the Zip Files
      */
     @BeforeAll
-    private static void createZip() throws IOException {
+    static void createZip() throws IOException {
         Entry e0 = Entry.of("Entry-0", ZipEntry.STORED, "Tennis Pro");
         Entry e1 = Entry.of("Entry-1", ZipEntry.STORED,
                 "United States Tennis Association");
@@ -98,7 +98,7 @@ public class ZipFileInputStreamSkipTest {
      * @throws IOException If an error occurs during cleanup
      */
     @AfterAll
-    private static void cleanUp() throws IOException {
+    static void cleanUp() throws IOException {
         Files.deleteIfExists(STORED_ZIPFILE);
         Files.deleteIfExists(DEFLATED_ZIPFILE);
     }
