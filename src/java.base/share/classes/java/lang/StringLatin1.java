@@ -60,6 +60,14 @@ final class StringLatin1 {
         return (byte)((0xff - cp) >>> (Integer.SIZE - 1));
     }
 
+    static byte coderFromChar(char c1, char c2) {
+        return (byte)((0xff - (c1 | c2)) >>> (Integer.SIZE - 1));
+    }
+
+    static byte coderFromChar(char c1, char c2, char c3, char c4) {
+        return (byte)((0xff - (c1 | c2 | c3 | c4)) >>> (Integer.SIZE - 1));
+    }
+
     static int length(byte[] value) {
         return value.length;
     }

@@ -82,6 +82,14 @@ class PhaseStringOpts : public Phase {
   // Copy the char into dst_array at index start.
   Node* copy_char(GraphKit& kit, Node* val, Node* dst_array, Node* dst_coder, Node* start);
 
+  // Copy two chars into dst_array starting at index start.
+  // Uses StoreC (short store) for Latin1 to enable MergeStore optimization.
+  Node* copy_char_pair(GraphKit& kit, Node* pair, Node* dst_array, Node* dst_coder, Node* start);
+
+  // Copy four chars into dst_array starting at index start.
+  // Uses StoreI (int store) for Latin1 to enable MergeStore optimization.
+  Node* copy_char_quad(GraphKit& kit, Node* quad, Node* dst_array, Node* dst_coder, Node* start);
+
   // Allocate a byte array of specified length.
   Node* allocate_byte_array(GraphKit& kit, IdealKit* ideal, Node* length);
 

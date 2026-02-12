@@ -65,7 +65,9 @@ class StringConcat : public ResourceObj {
     IntMode,
     CharMode,
     StringNullCheckMode,
-    NegativeIntCheckMode
+    NegativeIntCheckMode,
+    CharPairMode,    // Two consecutive chars that can be stored together
+    CharQuadMode     // Four consecutive chars that can be stored together
   };
 
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
@@ -184,6 +186,67 @@ class StringConcat : public ResourceObj {
   }
   CallStaticJavaNode* end() { return _end; }
   AllocateNode* begin() { return _begin; }
+
+  // Coalesce consecutive CharMode arguments into CharPairMode or CharQuadMode
+  // This enables more efficient stores when copying chars to the destination array
+  void coalesce_char_args() {
+    if (_mode.length() < 2) return;
+
+    GrowableArray<int> new_modes;
+    Node* new_args = new Node(1);
+    new_args->del_req(0);
+
+    int i = 0;
+    while (i < _mode.length()) {
+      // Look for consecutive CharMode arguments
+      if (_mode.at(i) == CharMode) {
+        int char_count = 1;
+        while (i + char_count < _mode.length() &&
+               _mode.at(i + char_count) == CharMode &&
+               char_count < 4) {
+          char_count++;
+        }
+
+        if (char_count == 4) {
+          // Four consecutive chars - create CharQuadMode
+          new_modes.append(CharQuadMode);
+          // Store all four chars in a single node
+          Node* quad = new Node(4);
+          quad->set_req(0, _arguments->in(i));
+          quad->set_req(1, _arguments->in(i + 1));
+          quad->set_req(2, _arguments->in(i + 2));
+          quad->set_req(3, _arguments->in(i + 3));
+          new_args->add_req(quad);
+          i += 4;
+        } else if (char_count >= 2) {
+          // Two or three consecutive chars - create CharPairMode for first two
+          new_modes.append(CharPairMode);
+          Node* pair = new Node(2);
+          pair->set_req(0, _arguments->in(i));
+          pair->set_req(1, _arguments->in(i + 1));
+          new_args->add_req(pair);
+          i += 2;
+        } else {
+          // Single char - keep as is
+          new_modes.append(CharMode);
+          new_args->add_req(_arguments->in(i));
+          i++;
+        }
+      } else {
+        // Not CharMode - keep as is
+        new_modes.append(_mode.at(i));
+        new_args->add_req(_arguments->in(i));
+        i++;
+      }
+    }
+
+    // Replace old modes and arguments with new ones
+    _mode.clear();
+    for (int j = 0; j < new_modes.length(); j++) {
+      _mode.append(new_modes.at(j));
+    }
+    _arguments = new_args;
+  }
 
   void eliminate_unneeded_control();
   void eliminate_initialize(InitializeNode* init);
@@ -673,6 +736,8 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   while (toStrings.size() > 0) {
     StringConcat* sc = build_candidate(toStrings.pop()->as_CallStaticJava());
     if (sc != nullptr) {
+      // Coalesce consecutive CharMode arguments for more efficient stores
+      sc->coalesce_char_args();
       concats.push(sc);
     }
   }
@@ -1694,6 +1759,106 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
   return __ value(end);
 }
 
+// Copy two chars into dst_array starting at index start.
+// Uses StoreC (short store) for Latin1 to enable MergeStore optimization.
+Node* PhaseStringOpts::copy_char_pair(GraphKit& kit, Node* pair, Node* dst_array, Node* dst_coder, Node* start) {
+  Node* c1 = pair->in(0);
+  Node* c2 = pair->in(1);
+
+  bool dcon = (dst_coder != nullptr) && dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+
+  IdealKit ideal(&kit, true, true);
+  IdealVariable end(ideal); __ declarations_done();
+
+  if (!dcon) {
+    __ if_then(dst_coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1));
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1. Store two bytes - use StoreC for potential MergeStore.
+    Node* adr = kit.array_element_address(dst_array, start, T_BYTE);
+    // For Latin1, we can store both bytes at once as a short if they're at an even offset
+    // This enables MergeStore to combine them into a StoreI or StoreL
+    // Store as little-endian: c1 at low byte, c2 at high byte
+    Node* combined = __ OrI(c1, __ LShiftI(c2, __ ConI(8)));
+    __ store(__ ctrl(), adr, combined, T_CHAR, byte_adr_idx, MemNode::unordered);
+    __ set(end, __ AddI(start, __ ConI(2)));
+  }
+  if (!dcon) {
+    __ else_();
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16. Store two chars.
+    Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
+    __ store(__ ctrl(), adr1, c1, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    Node* adr2 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(1)), T_BYTE);
+    __ store(__ ctrl(), adr2, c2, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ set(end, __ AddI(start, __ ConI(4)));
+  }
+  if (!dcon) {
+    __ end_if();
+  }
+  // Finally sync IdealKit and GraphKit.
+  kit.sync_kit(ideal);
+  return __ value(end);
+}
+
+// Copy four chars into dst_array starting at index start.
+// Uses StoreI (int store) for Latin1 to enable MergeStore optimization.
+Node* PhaseStringOpts::copy_char_quad(GraphKit& kit, Node* quad, Node* dst_array, Node* dst_coder, Node* start) {
+  Node* c1 = quad->in(0);
+  Node* c2 = quad->in(1);
+  Node* c3 = quad->in(2);
+  Node* c4 = quad->in(3);
+
+  bool dcon = (dst_coder != nullptr) && dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+
+  IdealKit ideal(&kit, true, true);
+  IdealVariable end(ideal); __ declarations_done();
+
+  if (!dcon) {
+    __ if_then(dst_coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1));
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1. Store four bytes - use StoreI for potential MergeStore.
+    Node* adr = kit.array_element_address(dst_array, start, T_BYTE);
+    // Combine all four bytes into an int for single store
+    // Store as little-endian: c1 at lowest byte, c4 at highest byte
+    Node* combined = __ OrI(__ OrI(c1, __ LShiftI(c2, __ ConI(8))),
+                           __ OrI(__ LShiftI(c3, __ ConI(16)), __ LShiftI(c4, __ ConI(24))));
+    __ store(__ ctrl(), adr, combined, T_INT, byte_adr_idx, MemNode::unordered);
+    __ set(end, __ AddI(start, __ ConI(4)));
+  }
+  if (!dcon) {
+    __ else_();
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16. Store four chars.
+    Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
+    __ store(__ ctrl(), adr1, c1, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    Node* adr2 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(1)), T_BYTE);
+    __ store(__ ctrl(), adr2, c2, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    Node* adr3 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(2)), T_BYTE);
+    __ store(__ ctrl(), adr3, c3, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    Node* adr4 = kit.array_element_address(dst_array, __ AddI(start, __ ConI(3)), T_BYTE);
+    __ store(__ ctrl(), adr4, c4, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
+    __ set(end, __ AddI(start, __ ConI(8)));
+  }
+  if (!dcon) {
+    __ end_if();
+  }
+  // Finally sync IdealKit and GraphKit.
+  kit.sync_kit(ideal);
+  return __ value(end);
+}
+
 #undef __
 #define __ kit.
 
@@ -1965,6 +2130,82 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         length = __ AddI(length, __ intcon(1));
         break;
       }
+      case StringConcat::CharPairMode: {
+        // Two characters - check if both can be Latin1 encoded
+        Node* c1 = arg->in(0);
+        Node* c2 = arg->in(1);
+        const TypeInt* t1 = kit.gvn().type(c1)->is_int();
+        const TypeInt* t2 = kit.gvn().type(c2)->is_int();
+        if (!coder_fixed && t1->is_con() && t2->is_con()) {
+          // Both constant chars
+          if (t1->get_con() <= 255 && t2->get_con() <= 255) {
+            // Can be latin1 encoded
+            coder = __ OrI(coder, __ intcon(java_lang_String::CODER_LATIN1));
+          } else {
+            // Must be UTF16 encoded. Fix result array encoding to UTF16.
+            coder_fixed = true;
+            coder = __ intcon(java_lang_String::CODER_UTF16);
+          }
+        } else if (!coder_fixed) {
+          // Not constant - check both chars
+#undef __
+#define __ ideal.
+          IdealKit ideal(&kit, true, true);
+          IdealVariable char_coder(ideal); __ declarations_done();
+          Node* max_char = __ OrI(c1, c2);
+          __ if_then(max_char, BoolTest::le, __ ConI(0xFF));
+            __ set(char_coder, __ ConI(java_lang_String::CODER_LATIN1));
+          __ else_();
+            __ set(char_coder, __ ConI(java_lang_String::CODER_UTF16));
+          __ end_if();
+          kit.sync_kit(ideal);
+          coder = __ OrI(coder, __ value(char_coder));
+#undef __
+#define __ kit.
+        }
+        length = __ AddI(length, __ intcon(2));
+        break;
+      }
+      case StringConcat::CharQuadMode: {
+        // Four characters - check if all can be Latin1 encoded
+        Node* c1 = arg->in(0);
+        Node* c2 = arg->in(1);
+        Node* c3 = arg->in(2);
+        Node* c4 = arg->in(3);
+        const TypeInt* t1 = kit.gvn().type(c1)->is_int();
+        const TypeInt* t2 = kit.gvn().type(c2)->is_int();
+        const TypeInt* t3 = kit.gvn().type(c3)->is_int();
+        const TypeInt* t4 = kit.gvn().type(c4)->is_int();
+        if (!coder_fixed && t1->is_con() && t2->is_con() && t3->is_con() && t4->is_con()) {
+          // All constant chars
+          if (t1->get_con() <= 255 && t2->get_con() <= 255 && t3->get_con() <= 255 && t4->get_con() <= 255) {
+            // Can be latin1 encoded
+            coder = __ OrI(coder, __ intcon(java_lang_String::CODER_LATIN1));
+          } else {
+            // Must be UTF16 encoded. Fix result array encoding to UTF16.
+            coder_fixed = true;
+            coder = __ intcon(java_lang_String::CODER_UTF16);
+          }
+        } else if (!coder_fixed) {
+          // Not constant - check all chars
+#undef __
+#define __ ideal.
+          IdealKit ideal(&kit, true, true);
+          IdealVariable char_coder(ideal); __ declarations_done();
+          Node* max_char = __ OrI(__ OrI(c1, c2), __ OrI(c3, c4));
+          __ if_then(max_char, BoolTest::le, __ ConI(0xFF));
+            __ set(char_coder, __ ConI(java_lang_String::CODER_LATIN1));
+          __ else_();
+            __ set(char_coder, __ ConI(java_lang_String::CODER_UTF16));
+          __ end_if();
+          kit.sync_kit(ideal);
+          coder = __ OrI(coder, __ value(char_coder));
+#undef __
+#define __ kit.
+        }
+        length = __ AddI(length, __ intcon(4));
+        break;
+      }
       default:
         ShouldNotReachHere();
     }
@@ -2022,6 +2263,14 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           case StringConcat::CharMode: {
             start = copy_char(kit, arg, dst_array, coder, start);
           break;
+          }
+          case StringConcat::CharPairMode: {
+            start = copy_char_pair(kit, arg, dst_array, coder, start);
+            break;
+          }
+          case StringConcat::CharQuadMode: {
+            start = copy_char_quad(kit, arg, dst_array, coder, start);
+            break;
           }
           default:
             ShouldNotReachHere();

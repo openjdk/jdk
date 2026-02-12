@@ -907,6 +907,72 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
+     * Appends two characters to this sequence.
+     * <p>
+     * The characters are appended to the contents of this sequence.
+     * The length of this sequence increases by {@code 2}.
+     *
+     * @param   c1  the first {@code char}.
+     * @param   c2  the second {@code char}.
+     * @return  a reference to this object.
+     */
+    public AbstractStringBuilder append(char c1, char c2) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
+        byte newCoder = (byte) (coder | StringLatin1.coderFromChar(c1, c2));
+        if (needsNewBuffer(value, coder, count + 2, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + 2, newCoder);
+            this.coder = coder = newCoder;
+        }
+        if (isLatin1(coder)) {
+            value[count    ] = (byte) c1;
+            value[count + 1] = (byte) c2;
+        } else {
+            StringUTF16.putChar(value, count    , c1);
+            StringUTF16.putChar(value, count + 1, c2);
+        }
+        this.count = count + 2;
+        return this;
+    }
+
+    /**
+     * Appends four characters to this sequence.
+     * <p>
+     * The characters are appended to the contents of this sequence.
+     * The length of this sequence increases by {@code 4}.
+     *
+     * @param   c1  the first {@code char}.
+     * @param   c2  the second {@code char}.
+     * @param   c3  the third {@code char}.
+     * @param   c4  the fourth {@code char}.
+     * @return  a reference to this object.
+     */
+    public AbstractStringBuilder append(char c1, char c2, char c3, char c4) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
+        byte newCoder = (byte) (coder | StringLatin1.coderFromChar(c1, c2, c3, c4));
+        if (needsNewBuffer(value, coder, count + 4, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + 4, newCoder);
+            this.coder = coder = newCoder;
+        }
+        if (isLatin1(coder)) {
+            value[count    ] = (byte) c1;
+            value[count + 1] = (byte) c2;
+            value[count + 2] = (byte) c3;
+            value[count + 3] = (byte) c4;
+        } else {
+            StringUTF16.putChar(value, count    , c1);
+            StringUTF16.putChar(value, count + 1, c2);
+            StringUTF16.putChar(value, count + 2, c3);
+            StringUTF16.putChar(value, count + 3, c4);
+        }
+        this.count = count + 4;
+        return this;
+    }
+
+    /**
      * Appends the string representation of the {@code int}
      * argument to this sequence.
      * <p>
