@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,14 @@ import java.util.Map;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.fail;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.hprof.model.Root;
 import jdk.test.lib.hprof.parser.HprofReader;
 import jtreg.SkippedException;
 
@@ -66,9 +69,22 @@ public class ClhsdbDumpheap {
         }
     }
 
+    private static void verifyLocalRefs(String file) throws IOException {
+        try (var snapshot = HprofReader.readFile(file, false, 0)) {
+            for (var root = snapshot.getRoots(); root.hasMoreElements();) {
+                if (root.nextElement().getType() == Root.JAVA_LOCAL) {
+                    // expected
+                    return;
+                }
+            }
+        }
+        fail("HPROF_GC_ROOT_JAVA_FRAME not found");
+    }
+
     private static void verifyDumpFile(File dump) throws Exception {
         assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
         printStackTraces(dump.getAbsolutePath());
+        verifyLocalRefs(dump.getAbsolutePath());
     }
 
     private static class SubTest {
