@@ -3716,8 +3716,15 @@ public final class Math {
     }
 
     /**
+     * This is a comment
+     * @param sin blablabla
+     * @param cos blablabla
+     */
+    public static record SinCosResult (double sin, double cos) {}
+
+    /**
      * Returns the pair of [sine,cosine] of an angle naively. Special cases:
-     * <ul><li>If the argument is NaN or an infinity, then the
+     * <ul><li>If the argument is NaN or an infinity, then th
      * result is NaN.</ul>
      *
      * @param a an angle, in radians.
@@ -3725,6 +3732,18 @@ public final class Math {
      */
     public static double [] sincos_naive(double a) {
         return new double[] { Math.sin(a), Math.cos(a) };
+    }
+
+    /**
+     * Returns the pair of [sine,cosine] of an angle naively. Special cases:
+     * <ul><li>If the argument is NaN or an infinity, then th
+     * result is NaN.</ul>
+     *
+     * @param a an angle, in radians.
+     * @return  the [sine,cosine] pair for the argument.
+     */
+    public static SinCosResult sincos_naive_record(double a) {
+        return new SinCosResult(Math.sin(a), Math.cos(a));
     }
 
     /**
