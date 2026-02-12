@@ -156,7 +156,7 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
 # undef ADD_EXCL
 
-  if (CDSConfig::is_initing_classes_at_dump_time()) {
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
     add_shared_secret_accessors();
   }
   ClassLoaderDataGraph::classes_do(this);

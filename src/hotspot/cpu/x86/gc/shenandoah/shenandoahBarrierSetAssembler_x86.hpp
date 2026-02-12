@@ -41,21 +41,14 @@ class StubCodeGenerator;
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
 
-  void satb_write_barrier_pre(MacroAssembler* masm,
-                              Register obj,
-                              Register pre_val,
-                              Register tmp,
-                              bool tosca_live,
-                              bool expand_call);
+  void satb_barrier(MacroAssembler* masm,
+                    Register obj,
+                    Register pre_val,
+                    Register tmp,
+                    bool tosca_live,
+                    bool expand_call);
 
-  void shenandoah_write_barrier_pre(MacroAssembler* masm,
-                                    Register obj,
-                                    Register pre_val,
-                                    Register tmp,
-                                    bool tosca_live,
-                                    bool expand_call);
-
-  void store_check(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj);
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count,

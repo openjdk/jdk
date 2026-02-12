@@ -27,9 +27,9 @@
 # 2009-05-17 by Arthur David Olson.
 
 # This file is by no means authoritative; if you think you know better,
-# go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).  For more, please see
-# the file CONTRIBUTING in the tz distribution.
+# go ahead and edit the file, and please send any changes to
+# the public mailing list tz@iana.org for general use in the future.
+# For more, please see the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (2018-05-27):
 #
@@ -138,8 +138,9 @@ Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1912 Jan 01  2:00u # Praia
 			-1:00	-	%z
 
 # Chad
+# Fort-Lamy was renamed to N’Djamena on 1973-04-06.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Ndjamena	1:00:12 -	LMT	1912 Jan  1 # N'Djamena
+Zone	Africa/Ndjamena	1:00:12 -	LMT	1912 Jan  1 # Fort-Lamy
 			1:00	-	WAT	1979 Oct 14
 			1:00	1:00	WAST	1980 Mar  8
 			1:00	-	WAT

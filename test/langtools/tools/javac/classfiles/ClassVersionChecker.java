@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7157626 8001112 8188870 8173382 8193290 8205619 8245586 8257453 8306586 8330184
- *      8342983 8355751
+ *      8342983 8355751 8370894
  * @summary Test major version for all legal combinations for -source and -target
  * @author sgoel
  *
@@ -62,6 +62,7 @@ public class ClassVersionChecker {
         TWENTY_FOUR("24", 68),
         TWENTY_FIVE("25", 69),
         TWENTY_SIX("26", 70),
+        TWENTY_SEVEN("27", 71),
         ; // Reduce code churn when appending new constants
 
         private Version(String release, int classFileVer) {

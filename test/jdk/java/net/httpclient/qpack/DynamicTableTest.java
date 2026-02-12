@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules java.net.http/jdk.internal.net.http.qpack:+open
  *          java.net.http/jdk.internal.net.http.qpack.readers
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL DynamicTableTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL DynamicTableTest
  */
 
 import jdk.internal.net.http.qpack.DynamicTable;
@@ -35,9 +35,6 @@ import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
 import jdk.internal.net.http.qpack.readers.IntegerReader;
 import jdk.test.lib.RandomFactory;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -47,7 +44,13 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DynamicTableTest {
 
     // Test for addition to the table and that indices are growing monotonically,
@@ -74,7 +77,7 @@ public class DynamicTableTest {
             long addedId = dynamicTable.insert(name, value);
 
             // Check that dynamic table put gives back monotonically increasing indexes
-            Assert.assertEquals(addedId, lastAddedId);
+            Assertions.assertEquals(lastAddedId, addedId);
 
             if (lastAddedId > maxElementsInTable) {
                 // Check that oldest element is available and not reclaimed
@@ -98,21 +101,21 @@ public class DynamicTableTest {
                 long onlyNameSearchResult = dynamicTable.search(rName, "notFoundInTable");
                 long noMatchResult = dynamicTable.search(HEADER_NAME_PREFIX, HEADER_VALUE_PREFIX);
 
-                Assert.assertEquals(fullMatchSearchResult - 1, rid);
-                Assert.assertEquals(-onlyNameSearchResult - 1, rid);
-                Assert.assertEquals(noMatchResult, 0);
+                Assertions.assertEquals(rid, fullMatchSearchResult - 1);
+                Assertions.assertEquals(rid, -onlyNameSearchResult - 1);
+                Assertions.assertEquals(0, noMatchResult);
             }
         }
     }
 
-    @Test(dataProvider = "randomTableResizeData")
+    @ParameterizedTest
+    @MethodSource("randomTableResizeData")
     public void randomTableResize(int initialSize, long tail, long head, int resizeTo)
             throws Throwable {
         HeaderField[] initial = generateHeadersArray(initialSize, tail, head);
         resizeTestRunner(initial, tail, head, resizeTo);
     }
 
-    @DataProvider
     public Object[][] randomTableResizeData() {
         return IntStream.range(0, 1000)
                 .boxed()
@@ -127,31 +130,29 @@ public class DynamicTableTest {
         var dynamicTable = new DynamicTable(QPACK.getLogger().subLogger("tableResizeTests"));
 
         // Check that the initial array length is DynamicTable.INITIAL_HOLDER_ARRAY_SIZE
-        Assert.assertEquals(getElementsArrayLength(dynamicTable),
-                INITIAL_HOLDER_ARRAY_SIZE);
+        Assertions.assertEquals(                INITIAL_HOLDER_ARRAY_SIZE, getElementsArrayLength(dynamicTable));
 
         // Update dynamic table capacity to maximum allowed value and check
         // that holder array is not changed
         dynamicTable.setMaxTableCapacity(IntegerReader.QPACK_MAX_INTEGER_VALUE);
         dynamicTable.setCapacity(IntegerReader.QPACK_MAX_INTEGER_VALUE);
-        Assert.assertEquals(getElementsArrayLength(dynamicTable),
-                INITIAL_HOLDER_ARRAY_SIZE);
+        Assertions.assertEquals(                INITIAL_HOLDER_ARRAY_SIZE, getElementsArrayLength(dynamicTable));
 
         // Add DynamicTable.INITIAL_HOLDER_ARRAY_SIZE + 1 element to the dynamic table
         // and check that its length is increased 2 times
         for (int i = 0; i <= INITIAL_HOLDER_ARRAY_SIZE; i++) {
             dynamicTable.insert("name" + i, "value" + i);
         }
-        Assert.assertEquals(getElementsArrayLength(dynamicTable), INITIAL_HOLDER_ARRAY_SIZE << 1);
+        Assertions.assertEquals(INITIAL_HOLDER_ARRAY_SIZE << 1, getElementsArrayLength(dynamicTable));
     }
 
     // Test for a simple resize that checks that unique indexes still reference the correct entry
-    @Test(dataProvider = "simpleTableResizeData")
+    @ParameterizedTest
+    @MethodSource("simpleTableResizeData")
     public void simpleTableResize(HeaderField[] array, long tail, long head, int resizeTo) throws Throwable {
         resizeTestRunner(array, tail, head, resizeTo);
     }
 
-    @DataProvider
     public Object[][] simpleTableResizeData() {
         return new Object[][]{
                 tableResizeScenario1(), tableResizeScenario2(),
@@ -270,13 +271,13 @@ public class DynamicTableTest {
     }
 
     private static void checkResizeResult(HeaderField[] initial, HeaderField[] resized, HeaderField[] expected) {
-        Assert.assertEquals(resized.length, expected.length);
+        Assertions.assertEquals(expected.length, resized.length);
         for (int index = 0; index < expected.length; index++) {
             if (!sameHeaderField(expected[index], resized[index])) {
                 System.err.println("Initial Array:" + Arrays.deepToString(initial));
                 System.err.println("Resized Array:" + Arrays.deepToString(resized));
                 System.err.println("Expected Array:" + Arrays.deepToString(expected));
-                Assert.fail("DynamicTable.resize failed");
+                Assertions.fail("DynamicTable.resize failed");
             }
         }
     }
@@ -299,7 +300,7 @@ public class DynamicTableTest {
             MethodType mt = MethodType.methodType(void.class, int.class);
             return DT_LOOKUP.findVirtual(DynamicTable.class, "resize", mt);
         } catch (Exception e) {
-            Assert.fail("Failed to initialize DynamicTable.resize MH", e);
+            Assertions.fail("Failed to initialize DynamicTable.resize MH", e);
             return null;
         }
     }
@@ -308,7 +309,7 @@ public class DynamicTableTest {
         try {
             return DT_LOOKUP.findVarHandle(DynamicTable.class, fieldName, fieldType);
         } catch (Exception e) {
-            Assert.fail("Failed to initialize DynamicTable private Lookup instance", e);
+            Assertions.fail("Failed to initialize DynamicTable private Lookup instance", e);
             return null;
         }
     }
@@ -318,7 +319,7 @@ public class DynamicTableTest {
             var vh = DT_LOOKUP.findStaticVarHandle(DynamicTable.class, fieldName, fieldType);
             return (T) vh.get();
         } catch (Exception e) {
-            Assert.fail("Failed to read DynamicTable static field value", e);
+            Assertions.fail("Failed to read DynamicTable static field value", e);
             return null;
         }
     }
@@ -327,7 +328,7 @@ public class DynamicTableTest {
         try {
             return MethodHandles.privateLookupIn(DynamicTable.class, MethodHandles.lookup());
         } catch (IllegalAccessException e) {
-            Assert.fail("Failed to initialize DynamicTable private Lookup instance", e);
+            Assertions.fail("Failed to initialize DynamicTable private Lookup instance", e);
             return null;
         }
     }

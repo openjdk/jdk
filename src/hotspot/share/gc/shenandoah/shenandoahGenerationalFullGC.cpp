@@ -55,9 +55,6 @@ void ShenandoahGenerationalFullGC::prepare() {
   // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
   heap->set_active_generation(heap->global_generation());
 
-  // No need for old_gen->increase_used() as this was done when plabs were allocated.
-  heap->reset_generation_reserves();
-
   // Full GC supersedes any marking or coalescing in old generation.
   heap->old_generation()->cancel_gc();
 }
@@ -83,7 +80,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   assert_usage_not_more_than_regions_used(young);
 
   // Establish baseline for next old-has-grown trigger.
-  old->set_live_bytes_after_last_mark(old->used());
+  old->set_live_bytes_at_last_mark(old->used());
 }
 
 void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) {
@@ -156,8 +153,11 @@ void ShenandoahGenerationalFullGC::compute_balances() {
 
   // In case this Full GC resulted from degeneration, clear the tally on anticipated promotion.
   heap->old_generation()->set_promotion_potential(0);
-  // Invoke this in case we are able to transfer memory from OLD to YOUNG.
-  heap->compute_old_generation_balance(0, 0);
+
+  // Invoke this in case we are able to transfer memory from OLD to YOUNG
+  size_t allocation_runway =
+    heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0L);
+  heap->compute_old_generation_balance(allocation_runway, 0, 0);
 }
 
 ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGenerationalCompactionObjectClosure(PreservedMarks* preserved_marks,

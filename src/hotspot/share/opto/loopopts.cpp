@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1174,7 +1174,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     if ( nn ) return nn;
   }
 
-  if (n->is_ConstraintCast()) {
+  if (n->is_ConstraintCast() && n->as_ConstraintCast()->dependency().narrows_type()) {
     Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
     // ConstraintCastNode::dominating_cast() uses node control input to determine domination.
     // Node control inputs don't necessarily agree with loop control info (due to
@@ -1321,8 +1321,8 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
     return false;
   }
   IfNode* dom_if = dom->as_If();
-  Node* proj_true = dom_if->proj_out(1);
-  Node* proj_false = dom_if->proj_out(0);
+  IfTrueNode* proj_true = dom_if->true_proj();
+  IfFalseNode* proj_false = dom_if->false_proj();
 
   for (uint i = 1; i < region->req(); i++) {
     if (is_dominator(proj_true, region->in(i))) {
@@ -1585,8 +1585,8 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
               dom_if->in(1)->in(1)->as_SubTypeCheck()->method() != nullptr), "only for subtype checks with profile data attached");
       _igvn.replace_input_of(n, 1, dom_if->in(1));
     }
-    ProjNode* dom_proj_true = dom_if->proj_out(1);
-    ProjNode* dom_proj_false = dom_if->proj_out(0);
+    IfTrueNode* dom_proj_true = dom_if->true_proj();
+    IfFalseNode* dom_proj_false = dom_if->false_proj();
 
     // Now split the IF
     RegionNode* new_false_region;
@@ -1630,10 +1630,10 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     // unrelated control dependency.
     for (uint i = 1; i < new_false_region->req(); i++) {
       if (is_dominator(dom_proj_true, new_false_region->in(i))) {
-        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
+        dominated_by(dom_proj_true, new_false_region->in(i)->in(0)->as_If());
       } else {
         assert(is_dominator(dom_proj_false, new_false_region->in(i)), "bad if");
-        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
+        dominated_by(dom_proj_false, new_false_region->in(i)->in(0)->as_If());
       }
     }
     return true;
@@ -1704,10 +1704,11 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      !n->is_OpaqueNotNull() &&
+      !n->is_OpaqueConstantBool() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
       !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      n->Opcode() != Op_CreateEx &&
       (KillPathsReachableByDeadTypeNode || !n->is_Type())
       ) {
     Node *n_ctrl = get_ctrl(n);
@@ -1837,7 +1838,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               if (in != nullptr && ctrl_is_member(n_loop, in)) {
                 const Type* in_t = _igvn.type(in);
                 cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t,
-                                                              ConstraintCastNode::UnconditionalDependency, nullptr);
+                                                              ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, nullptr);
               }
               if (cast != nullptr) {
                 Node* prev = _igvn.hash_find_insert(cast);
@@ -1921,11 +1922,6 @@ bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, I
     if (u->is_Opaque1()) {
       return false;  // Found loop limit, bugfix for 4677003
     }
-    // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to
-    // get_late_ctrl_with_anti_dep() use their own tag
-    _dom_lca_tags_round++;
-    assert(_dom_lca_tags_round != 0, "shouldn't wrap around");
-
     if (u->is_Phi()) {
       for (uint j = 1; j < u->req(); ++j) {
         if (u->in(j) == n && !ctrl_of_use_out_of_loop(n, n_ctrl, n_loop, u->in(0)->in(j))) {
@@ -1959,6 +1955,11 @@ bool PhaseIdealLoop::would_sink_below_pre_loop_exit(IdealLoopTree* n_loop, Node*
 
 bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl) {
   if (n->is_Load()) {
+    // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure each call to
+    // get_late_ctrl_with_anti_dep() uses its own tag
+    _dom_lca_tags_round++;
+    assert(_dom_lca_tags_round != 0, "shouldn't wrap around");
+
     ctrl = get_late_ctrl_with_anti_dep(n->as_Load(), n_ctrl, ctrl);
   }
   IdealLoopTree *u_loop = get_loop(ctrl);
@@ -2044,14 +2045,14 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->is_OpaqueNotNull() || b->is_OpaqueInitializedAssertionPredicate(),
-             "bool, non-null check with OpaqueNotNull or Initialized Assertion Predicate with its Opaque node");
+      assert(b->is_Bool() || b->is_OpaqueConstantBool() || b->is_OpaqueInitializedAssertionPredicate(),
+             "bool, non-null check with OpaqueConstantBool or Initialized Assertion Predicate with its Opaque node");
     }
   }
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->is_OpaqueNotNull() || n->is_OpaqueInitializedAssertionPredicate()) {
+  if (n->is_OpaqueConstantBool() || n->is_OpaqueInitializedAssertionPredicate()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
@@ -2227,7 +2228,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // split if to break.
       assert(!use->is_OpaqueTemplateAssertionPredicate(),
              "should not clone a Template Assertion Predicate which should be removed once it's useless");
-      if (use->is_If() || use->is_CMove() || use->is_OpaqueNotNull() || use->is_OpaqueInitializedAssertionPredicate() ||
+      if (use->is_If() || use->is_CMove() || use->is_OpaqueConstantBool() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
@@ -2394,7 +2395,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     CountedLoopEndNode* cle = cl->loopexit();
     CountedLoopNode* new_cl = old_new[cl->_idx]->as_CountedLoop();
     CountedLoopEndNode* new_cle = new_cl->as_CountedLoop()->loopexit_or_null();
-    Node* cle_out = cle->proj_out(false);
+    IfFalseNode* cle_out = cle->false_proj();
 
     Node* new_sfpt = nullptr;
     Node* new_cle_out = cle_out->clone();
@@ -2691,7 +2692,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           if (use->in(0) == cle) {
             IfFalseNode* cle_out = use->as_IfFalse();
             IfNode* le = cl->outer_loop_end();
-            use = le->proj_out(false);
+            use = le->false_proj();
             use_loop = get_loop(use);
             if (mode == CloneIncludesStripMined) {
               nnn = old_new[le->_idx];

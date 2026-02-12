@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@code exp}, {@code log}, {@code log10},
  * {@code cbrt}, {@code atan2}, {@code pow},
  * {@code sinh}, {@code cosh}, {@code tanh},
- * {@code hypot}, {@code expm1}, and {@code log1p}.
+ * {@code asinh}, {@code hypot}, {@code expm1},
+ * and {@code log1p}.
  *
  * <p>
  * The platform uses signed two's complement integer arithmetic with
@@ -2168,6 +2169,31 @@ public final class StrictMath {
      */
     public static double tanh(double x) {
         return FdLibm.Tanh.compute(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic sine of a {@code double} value.
+     * The inverse hyperbolic sine of <i>x</i> is defined to be the function such that
+     * asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that both domain and range of the exact asinh are unrestricted.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is infinity, then the result is
+     * infinity with the same sign as the argument.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * </ul>
+     * @param   x The number whose inverse hyperbolic sine is to be returned.
+     * @return  The inverse hyperbolic sine of {@code x}.
+     * @since 27
+     */
+    public static double asinh(double x) {
+        return FdLibm.Asinh.compute(x);
     }
 
     /**

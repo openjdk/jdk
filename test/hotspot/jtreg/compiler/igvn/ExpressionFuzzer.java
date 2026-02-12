@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 8359412
+ * @bug 8359412 8370922
+ * @key randomness
  * @summary Use the template framework library to generate random expressions.
  * @modules java.base/jdk.internal.misc
+ * @modules jdk.incubator.vector
  * @library /test/lib /
  * @compile ../lib/verify/Verify.java
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=10000 compiler.igvn.ExpressionFuzzer
@@ -54,6 +56,7 @@ import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.PRIMITIVE_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.SCALAR_NUMERIC_TYPES;
 
 // We generate random Expressions from primitive type operators.
 //
@@ -83,10 +86,14 @@ public class ExpressionFuzzer {
         comp.addJavaSourceCode("compiler.igvn.templated.ExpressionFuzzerInnerTest", generate(comp));
 
         // Compile the source file.
-        comp.compile();
+        comp.compile("--add-modules=jdk.incubator.vector");
 
         // compiler.igvn.templated.InnterTest.main(new String[] {});
-        comp.invoke("compiler.igvn.templated.ExpressionFuzzerInnerTest", "main", new Object[] {new String[] {}});
+        comp.invoke("compiler.igvn.templated.ExpressionFuzzerInnerTest", "main", new Object[] {new String[] {
+            "--add-modules=jdk.incubator.vector",
+            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+        }});
     }
 
     // Generate a Java source file as String
@@ -188,10 +195,10 @@ public class ExpressionFuzzer {
                 case "byte", "short", "char", "int", "long" ->
                     List.of("val", Collections.nCopies(20, integralCmpTemplate.asToken(expression.returnType)));
                 // Float/Double have no range, just return the value:
-                case "float", "double" -> "val";
+                case "float", "double", "Float16" -> "val";
                 // Check if the boolean constant folded:
                 case "boolean" -> "val, val == true, val == false";
-                default -> throw new RuntimeException("should only be primitive types");
+                default -> throw new RuntimeException("type not supported yet: " + expression.returnType.name());
             }
             , "};\n",
             """
@@ -223,7 +230,7 @@ public class ExpressionFuzzer {
                 // Booleans do have an int-range, but restricting it would just make it constant, which
                 // is not very useful: we would like to keep it variable here. We already mix in variable
                 // arguments and constants in the testTemplate.
-                case "boolean", "float", "double" -> "return v;\n";
+                case "boolean", "float", "double", "Float16" -> "return v;\n";
                 case "byte", "short", "char", "int", "long" -> List.of(
                     // Sometimes constrain the signed range
                     //   v = min(max(v, CON1), CON2)
@@ -240,7 +247,7 @@ public class ExpressionFuzzer {
                     : List.of(),
                     // FUTURE: we could also constrain the unsigned bounds.
                     "return v;\n");
-                default -> throw new RuntimeException("should only be primitive types");
+                default -> throw new RuntimeException("type not supported yet: " + type.name());
             },
             """
             }
@@ -324,10 +331,26 @@ public class ExpressionFuzzer {
 
         // Generate expressions with the primitive types.
         for (PrimitiveType type : PRIMITIVE_TYPES) {
+            // Prmitive expressions are most important, so let's create many expressions per output type.
             for (int i = 0; i < 10; i++) {
                 // The depth determines roughly how many operations are going to be used in the expression.
                 int depth = RANDOM.nextInt(1, 20);
                 Expression expression = Expression.nestRandomly(type, Operations.PRIMITIVE_OPERATIONS, depth);
+                tests.add(testTemplate.asToken(expression));
+            }
+        }
+
+        // Generate expressions with any scalar numeric types.
+        for (CodeGenerationDataNameType type : SCALAR_NUMERIC_TYPES) {
+            // The extended set of scalar numeric expressions (incl. special types such as Float16) are relevant
+            // but don't currently warrant the same number amount of testing time, so we only create 2 cases
+            // per type. Note: this still produces a lot of expressions, given that we have a lot of output
+            // types, and even if the output type is "float", we can still use other types in the expression,
+            // such as "float -> Float16 -> float". We can consider adjusting this arbitrary count in the future.
+            for (int i = 0; i < 2; i++) {
+                // The depth determines roughly how many operations are going to be used in the expression.
+                int depth = RANDOM.nextInt(1, 20);
+                Expression expression = Expression.nestRandomly(type, Operations.SCALAR_NUMERIC_OPERATIONS, depth);
                 tests.add(testTemplate.asToken(expression));
             }
         }
@@ -340,7 +363,8 @@ public class ExpressionFuzzer {
             Set.of("compiler.lib.verify.*",
                    "java.util.Random",
                    "jdk.test.lib.Utils",
-                   "compiler.lib.generators.*"),
+                   "compiler.lib.generators.*",
+                   "jdk.incubator.vector.Float16"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.

@@ -170,6 +170,10 @@ setThreadLocalStorage(jthread thread, ThreadNode *node)
             return;
         }
     }
+    if (error == JVMTI_ERROR_WRONG_PHASE && gdata->vmDead && isVThread(thread)) {
+        // Just return. This can happen with vthreads when the vm is exiting.
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         // The jthread object must be valid, so this must be a fatal error.
         EXIT_ERROR(error, "cannot set thread local storage");
@@ -2663,12 +2667,16 @@ threadControl_setEventMode(jvmtiEventMode mode, EventIndex ei, jthread thread)
 
 /*
  * Returns the current thread.
+ * Returns NULL on error (JVMTI_ERROR_WRONG_PHASE, JVMTI_ERROR_UNATTACHED_THREAD).
  */
 jthread
 threadControl_currentThread(void)
 {
     jthread thread = NULL;
     jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetCurrentThread)(gdata->jvmti, &thread);
+    if (error != JVMTI_ERROR_NONE) {
+        return NULL;
+    }
     return thread;
 }
 
@@ -2696,11 +2704,9 @@ threadControl_getFrameGeneration(jthread thread)
 jthread *
 threadControl_allVThreads(jint *numVThreads)
 {
-    JNIEnv *env;
     ThreadNode *node;
     jthread* vthreads;
 
-    env = getEnv();
     debugMonitorEnter(threadLock);
     *numVThreads = numRunningVThreads;
 

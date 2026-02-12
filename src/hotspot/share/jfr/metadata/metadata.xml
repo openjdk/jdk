@@ -1289,8 +1289,8 @@
     <Field type="ulong" name="inspected" label="Inspected" />
     <Field type="ulong" name="known" label="Known" />
     <Field type="ulong" name="shared" label="Shared" />
-    <Field type="ulong" name="newStrings" label="New Strings" />
-    <Field type="ulong" name="newSize" contentType="bytes" label="New Size" />
+    <Field type="ulong" name="newStrings" label="New Strings" description="New unknown strings" />
+    <Field type="ulong" name="newSize" contentType="bytes" label="New Size" description="Size of new unknown strings" />
     <Field type="ulong" name="replaced" label="Replaced" />
     <Field type="ulong" name="deleted" label="Deleted" />
     <Field type="ulong" name="deduplicated" label="Deduplicated" />

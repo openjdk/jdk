@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1371,6 +1371,7 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
 #endif
 #if INCLUDE_ZGC
+  SET_ADDRESS(_extrs, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr());
   SET_ADDRESS(_extrs, ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr());
 #if defined(AMD64)
   SET_ADDRESS(_extrs, &ZPointerLoadShift);
