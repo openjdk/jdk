@@ -21,12 +21,12 @@
  * Simple standalone benchmark to demonstrate the performance benefit
  * of combining consecutive Latin1 char appends.
  * 
- * Run with: java StringBuilderLatin1PairBenchmark.java
+ * Run with: java StringBuilderLatin1Pair.java
  */
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
-public class StringBuilderLatin1PairBenchmark {
+public class StringBuilderLatin1Pair {
 
     // Number of iterations for warmup and measurement
     private static final int WARMUP_ITERATIONS = 100_000;
@@ -55,30 +55,30 @@ public class StringBuilderLatin1PairBenchmark {
 
         // Test 1: Two char appends
         long time1 = measure("baseline: Two append(char)", 
-                             StringBuilderLatin1PairBenchmark::baselineTwoAppends);
+                             StringBuilderLatin1Pair::baselineTwoAppends);
         long time2 = measure("optimized: appendLatin1(c1,c2)", 
-                             StringBuilderLatin1PairBenchmark::optimizedAppendLatin1);
+                             StringBuilderLatin1Pair::optimizedAppendLatin1);
         printComparison(time1, time2);
 
         // Test 2: Four char appends
         long time3 = measure("baseline: Four append(char)", 
-                             StringBuilderLatin1PairBenchmark::baselineFourAppends);
+                             StringBuilderLatin1Pair::baselineFourAppends);
         long time4 = measure("optimized: Two appendLatin1", 
-                             StringBuilderLatin1PairBenchmark::optimizedTwoAppendLatin1);
+                             StringBuilderLatin1Pair::optimizedTwoAppendLatin1);
         printComparison(time3, time4);
 
         // Test 3: Eight char appends
         long time5 = measure("baseline: Eight append(char)", 
-                             StringBuilderLatin1PairBenchmark::baselineEightAppends);
+                             StringBuilderLatin1Pair::baselineEightAppends);
         long time6 = measure("optimized: Four appendLatin1", 
-                             StringBuilderLatin1PairBenchmark::optimizedFourAppendLatin1);
+                             StringBuilderLatin1Pair::optimizedFourAppendLatin1);
         printComparison(time5, time6);
 
         // Test 4: With existing content
         long time7 = measure("baseline: String + two append(char)", 
-                             StringBuilderLatin1PairBenchmark::baselineStringPlusTwoAppends);
+                             StringBuilderLatin1Pair::baselineStringPlusTwoAppends);
         long time8 = measure("optimized: String + appendLatin1", 
-                             StringBuilderLatin1PairBenchmark::optimizedStringPlusAppendLatin1);
+                             StringBuilderLatin1Pair::optimizedStringPlusAppendLatin1);
         printComparison(time7, time8);
 
         // Verify correctness

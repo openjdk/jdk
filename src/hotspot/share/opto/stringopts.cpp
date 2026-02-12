@@ -2040,16 +2040,16 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
                 // All four are Latin1 chars - store them together
                 // This enables MergeStores to combine into a single 32-bit store
                 Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
-                __ store(__ ctrl(), adr1, arg, T_BYTE, byte_adr_idx, MemNode::unordered);
+                __ store_to_memory(kit.control(), adr1, arg, T_BYTE, MemNode::unordered);
                 Node* idx2 = __ AddI(start, __ intcon(1));
                 Node* adr2 = kit.array_element_address(dst_array, idx2, T_BYTE);
-                __ store(__ ctrl(), adr2, arg2, T_BYTE, byte_adr_idx, MemNode::unordered);
+                __ store_to_memory(kit.control(), adr2, arg2, T_BYTE, MemNode::unordered);
                 Node* idx3 = __ AddI(start, __ intcon(2));
                 Node* adr3 = kit.array_element_address(dst_array, idx3, T_BYTE);
-                __ store(__ ctrl(), adr3, arg3, T_BYTE, byte_adr_idx, MemNode::unordered);
+                __ store_to_memory(kit.control(), adr3, arg3, T_BYTE, MemNode::unordered);
                 Node* idx4 = __ AddI(start, __ intcon(3));
                 Node* adr4 = kit.array_element_address(dst_array, idx4, T_BYTE);
-                __ store(__ ctrl(), adr4, arg4, T_BYTE, byte_adr_idx, MemNode::unordered);
+                __ store_to_memory(kit.control(), adr4, arg4, T_BYTE, MemNode::unordered);
                 start = __ AddI(start, __ intcon(4));
                 // Skip the next three chars since we already processed them
                 argi += 3;
@@ -2066,10 +2066,10 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
               if (t1->_hi <= 0xFF && t2->_hi <= 0xFF) {
                 // Both are Latin1 chars - store them together
                 Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
-                __ store(__ ctrl(), adr1, arg, T_BYTE, byte_adr_idx, MemNode::unordered);
+                __ store_to_memory(kit.control(), adr1, arg, T_BYTE, MemNode::unordered);
                 Node* next_idx = __ AddI(start, __ intcon(1));
                 Node* adr2 = kit.array_element_address(dst_array, next_idx, T_BYTE);
-                __ store(__ ctrl(), adr2, next_arg, T_BYTE, byte_adr_idx, MemNode::unordered);
+                __ store_to_memory(kit.control(), adr2, next_arg, T_BYTE, MemNode::unordered);
                 start = __ AddI(start, __ intcon(2));
                 // Skip the next char since we already processed it
                 argi++;
