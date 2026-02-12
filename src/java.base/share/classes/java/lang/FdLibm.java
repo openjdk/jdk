@@ -3568,11 +3568,11 @@ final class FdLibm {
      * Method :
      *
      *
-     *      acosh(x) is defined so that acosh(cosh(alpha)) = alpha, -&infin; &lt; alpha < &infin
-     *      and cosh(acosh(x)) = x, 1 <= x  < &infin.
-     *      It can be written as acosh(x) = ln(x + sqrt(x^2 - 1)), 1 <= x  < &infin.
+     *      acosh(x) is defined so that acosh(cosh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
+     *      and cosh(acosh(x)) = x, 1 <= x &lt; &infin;.
+     *      It can be written as acosh(x) = log(x + sqrt(x^2 - 1)), 1 <= x  &lt; &infin;.
      *      acosh(x) := log(x)+ln2, if x is large; else
-     *               := log(2x-1/(sqrt(x*x-1)+x)) if x>2; else
+     *               := log(2x-1/(sqrt(x*x-1)+x)) if x&gt;2; else
      *               := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
      *
      *
