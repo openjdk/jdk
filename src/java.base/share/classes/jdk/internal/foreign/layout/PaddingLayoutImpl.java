@@ -26,17 +26,20 @@
 package jdk.internal.foreign.layout;
 
 import java.lang.foreign.PaddingLayout;
+import java.lang.foreign.MemoryLayout;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> implements PaddingLayout {
 
     private PaddingLayoutImpl(long byteSize) {
-        this(byteSize, 1, Optional.empty());
+        this(byteSize, 1, Optional.empty(), Map.of());
     }
 
-    private PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name) {
-        super(byteSize, byteAlignment, name);
+    private PaddingLayoutImpl(long byteSize, long byteAlignment, Optional<String> name,
+                              Map<MemoryLayout.AttributeKey<?>, Object> attributes) {
+        super(byteSize, byteAlignment, name, attributes);
     }
 
     @Override
@@ -58,8 +61,8 @@ public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> i
     }
 
     @Override
-    PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
-        return new PaddingLayoutImpl(byteSize(), byteAlignment, name);
+    PaddingLayoutImpl dup(long byteAlignment, Optional<String> name, Map<MemoryLayout.AttributeKey<?>, Object> attributes) {
+        return new PaddingLayoutImpl(byteSize(), byteAlignment, name, attributes);
     }
 
     @Override

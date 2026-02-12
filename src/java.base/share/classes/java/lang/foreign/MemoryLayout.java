@@ -983,11 +983,86 @@ public sealed interface MemoryLayout
         }
     }
 
+
+
+    /**
+     * A key used to associate a value with a {@link MemoryLayout}.
+     * <p>
+     * Attribute keys are compared by identity.
+     *
+     * @param <T> the type of the value associated with this key
+     */
+    final class AttributeKey<T> {
+
+        private final Class<T> type;
+
+        private AttributeKey(Class<T> type) {
+            this.type = type;
+        }
+
+        /**
+         * {@return the type of values associated with this key}
+         */
+        public Class<T> type() {
+            return type;
+        }
+
+        /**
+         * Creates a new attribute key.
+         *
+         * @param type the type of the associated value
+         * @param <T> the type of the associated value
+         * @return a new attribute key
+         * @throws NullPointerException if {@code type} is {@code null}
+         */
+        public static <T> AttributeKey<T> of(Class<T> type) {
+            Objects.requireNonNull(type);
+            return new AttributeKey<>(type);
+        }
+    }
+
+    /**
+     * {@return the value (if any) associated with this layout for the given attribute key}
+     *
+     * @param key the attribute key
+     * @param <T> the type of the associated value
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @since 22
+     */
+    <T> Optional<T> attribute(AttributeKey<T> key);
+
+    /**
+     * {@return a memory layout with the same characteristics as this layout, but with
+     *          the given attribute set}
+     * <p>
+     * If this layout already has an attribute associated with the given key, it is replaced.
+     *
+     * @param key the attribute key
+     * @param value the attribute value
+     * @param <T> the type of the associated value
+     * @throws NullPointerException if {@code key} or {@code value} are {@code null}
+     * @throws IllegalArgumentException if {@code value} is not an instance of the type associated with {@code key}
+     * @since 22
+     */
+    <T> MemoryLayout withAttribute(AttributeKey<T> key, T value);
+
+    /**
+     * {@return a memory layout with the same characteristics as this layout, but without
+     *          the given attribute}
+     * <p>
+     * If no attribute is associated with the given key, this layout is returned.
+     *
+     * @param key the attribute key
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @since 22
+     */
+    MemoryLayout withoutAttribute(AttributeKey<?> key);
+
     /**
      * Compares the specified object with this layout for equality. Returns {@code true}
      * if and only if the specified object is also a layout, and it is equal to this
      * layout. Two layouts are considered equal if they are of the same kind, have the
-     * same size, name and alignment constraint. Furthermore, depending on the
+     * same size, name, alignment constraint and attributes. Furthermore, depending on the
      * layout kind, additional conditions must be satisfied:
      * <ul>
      *     <li>two value layouts are considered equal if they have the same

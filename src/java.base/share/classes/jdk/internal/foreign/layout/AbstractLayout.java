@@ -40,6 +40,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -52,28 +54,77 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     private final long byteSize;
     private final long byteAlignment;
     private final Optional<String> name;
+    private final Map<MemoryLayout.AttributeKey<?>, Object> attributes;
 
-    AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
+    AbstractLayout(long byteSize, long byteAlignment, Optional<String> name,
+                   Map<MemoryLayout.AttributeKey<?>, Object> attributes) {
         this.byteSize = MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
         this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
         this.name = Objects.requireNonNull(name);
+        this.attributes = Map.copyOf(Objects.requireNonNull(attributes));
     }
 
     public final L withName(String name) {
-        return dup(byteAlignment(), Optional.of(name));
+        return dup(byteAlignment(), Optional.of(name), attributes);
     }
 
     @SuppressWarnings("unchecked")
     public final L withoutName() {
-        return name.isPresent() ? dup(byteAlignment(), Optional.empty()) : (L) this;
+        return name.isPresent() ? dup(byteAlignment(), Optional.empty(), attributes) : (L) this;
     }
 
     public final Optional<String> name() {
         return name;
     }
 
+    public final <T> Optional<T> attribute(MemoryLayout.AttributeKey<T> key) {
+        Objects.requireNonNull(key);
+        Object value = attributes.get(key);
+        if (value == null) {
+            return Optional.empty();
+        }
+        return Optional.of(key.type().cast(value));
+    }
+
+    public final <T> MemoryLayout withAttribute(MemoryLayout.AttributeKey<T> key, T value) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+        if (!key.type().isInstance(value)) {
+            throw new IllegalArgumentException("Invalid value for key " + key + ": " + value);
+        }
+        var newAttributes = new HashMap<>(attributes);
+        newAttributes.put(key, value);
+        return dup(byteAlignment(), name, Map.copyOf(newAttributes));
+    }
+
+    @SuppressWarnings("unchecked")
+    public final MemoryLayout withoutAttribute(MemoryLayout.AttributeKey<?> key) {
+        Objects.requireNonNull(key);
+        if (!attributes.containsKey(key)) {
+            return (L) this;
+        }
+        var newAttributes = new HashMap<>(attributes);
+        newAttributes.remove(key);
+        return dup(byteAlignment(), name, Map.copyOf(newAttributes));
+    }
+
+    final Map<MemoryLayout.AttributeKey<?>, Object> attributes() {
+        return attributes;
+    }
+
+    @SuppressWarnings("unchecked")
+    final L withAttributes(Map<MemoryLayout.AttributeKey<?>, Object> attributes) {
+        Objects.requireNonNull(attributes);
+        return this.attributes.equals(attributes) ? (L) this : dup(byteAlignment(), name, Map.copyOf(attributes));
+    }
+
+    @SuppressWarnings("unchecked")
+    final L withoutAttributes() {
+        return attributes.isEmpty() ? (L) this : dup(byteAlignment(), name, Map.of());
+    }
+
     public L withByteAlignment(long byteAlignment) {
-        return dup(byteAlignment, name);
+        return dup(byteAlignment, name, attributes);
     }
 
     public final long byteAlignment() {
@@ -96,7 +147,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
      */
     @Override
     public int hashCode() {
-        return Objects.hash(name, byteSize, byteAlignment);
+        return Objects.hash(name, byteSize, byteAlignment, attributes);
     }
 
     /**
@@ -121,7 +172,8 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
         return other instanceof AbstractLayout<?> otherLayout &&
                 name.equals(otherLayout.name) &&
                 byteSize == otherLayout.byteSize &&
-                byteAlignment == otherLayout.byteAlignment;
+                byteAlignment == otherLayout.byteAlignment &&
+                attributes.equals(otherLayout.attributes);
     }
 
     /**
@@ -130,7 +182,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     @Override
     public abstract String toString();
 
-    abstract L dup(long byteAlignment, Optional<String> name);
+    abstract L dup(long byteAlignment, Optional<String> name, Map<MemoryLayout.AttributeKey<?>, Object> attributes);
 
     String decorateLayoutString(String s) {
         if (name().isPresent()) {

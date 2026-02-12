@@ -38,6 +38,7 @@ import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout.AttributeKey;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -97,6 +98,7 @@ public class TestNulls {
             GroupLayout.class,
             StructLayout.class,
             UnionLayout.class,
+            AttributeKey.class,
             Linker.class,
             Linker.Option.class,
             FunctionDescriptor.class,
@@ -174,6 +176,7 @@ public class TestNulls {
         addDefaultMapping(Supplier.class, () -> null);
         addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
         addDefaultMapping(Thread.UncaughtExceptionHandler.class, (thread, ex) -> {});
+        addDefaultMapping(AttributeKey.class, AttributeKey.of(String.class));
     }
 
     static final Map<Class<?>, Object[]> REPLACEMENT_VALUES = new HashMap<>();

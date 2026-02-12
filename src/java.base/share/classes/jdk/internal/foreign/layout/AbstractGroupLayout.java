@@ -27,6 +27,7 @@ package jdk.internal.foreign.layout;
 
 import java.lang.foreign.MemoryLayout;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -48,8 +49,9 @@ abstract sealed class AbstractGroupLayout<L extends AbstractGroupLayout<L> & Mem
     private final List<MemoryLayout> elements;
     final long minByteAlignment;
 
-    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
-        super(byteSize, byteAlignment, name); // Subclassing creates toctou problems here
+    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment,
+                        Optional<String> name, Map<MemoryLayout.AttributeKey<?>, Object> attributes) {
+        super(byteSize, byteAlignment, name, attributes); // Subclassing creates toctou problems here
         this.kind = kind;
         this.elements = List.copyOf(elements);
         this.minByteAlignment = minByteAlignment;
