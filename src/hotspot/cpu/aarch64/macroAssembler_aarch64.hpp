@@ -1215,12 +1215,6 @@ public:
   void atomic_xchgal(Register prev, Register newv, Register addr);
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 
-  void atomic_addal_barrier(Register prev, RegisterOrConstant incr, Register addr);
-  void atomic_addalw_barrier(Register prev, RegisterOrConstant incr, Register addr);
-
-  void atomic_xchgal_barrier(Register prev, Register newv, Register addr);
-  void atomic_xchgalw_barrier(Register prev, Register newv, Register addr);
-
   void orptr(Address adr, RegisterOrConstant src) {
     ldr(rscratch1, adr);
     if (src.is_register())
@@ -1235,12 +1229,8 @@ public:
   void cmpxchg(Register addr, Register expected, Register new_val,
                enum operand_size size,
                bool acquire, bool release, bool weak,
-               Register result, bool with_barrier);
-
-  void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size,
-               bool acquire, bool release, bool weak,
                Register result);
+
   void cmpxchg_barrier(Register addr, Register expected,
                        Register new_val, enum operand_size size,
                        bool acquire, bool release, bool weak,
