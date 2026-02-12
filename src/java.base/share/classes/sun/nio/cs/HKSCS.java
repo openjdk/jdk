@@ -352,37 +352,9 @@ public class HKSCS {
                 return encodeBufferLoop(src, dst);
         }
 
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        @Override
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + len;
-            while (sp < sl) {
-                char c = src[sp++];
-                int bb = encodeChar(c);
-                if (bb == UNMAPPABLE_ENCODING) {
-                    if (!Character.isHighSurrogate(c) || sp == sl ||
-                        !Character.isLowSurrogate(src[sp]) ||
-                        (bb = encodeSupp(Character.toCodePoint(c, src[sp++])))
-                        == UNMAPPABLE_ENCODING) {
-                        dst[dp++] = repl[0];
-                        if (repl.length > 1)
-                            dst[dp++] = repl[1];
-                        continue;
-                    }
-                }
-                if (bb > MAX_SINGLEBYTE) {        // DoubleByte
-                    dst[dp++] = (byte)(bb >> 8);
-                    dst[dp++] = (byte)bb;
-                } else {                          // SingleByte
-                    dst[dp++] = (byte)bb;
-                }
-            }
-            return dp;
-        }
-
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + len;
-            int dl = dst.length;
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);
                 int bb = encodeChar(c);

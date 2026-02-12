@@ -151,15 +151,17 @@ JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 # This source set is reused so save in cache.
 $(call FillFindCache, $(JVM_SRC_DIRS))
 
+ifeq ($(SHIP_DEBUG_SYMBOLS), full)
+  CFLAGS_SHIP_DEBUGINFO := -DSHIP_DEBUGINFO_FULL
+else ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+  CFLAGS_SHIP_DEBUGINFO := -DSHIP_DEBUGINFO_PUBLIC
+endif
+
 ifeq ($(call isTargetOs, windows), true)
   ifeq ($(STATIC_LIBS), true)
     WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/static-win-exports.def
   else
     WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
-  endif
-
-  ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-    CFLAGS_STRIPPED_DEBUGINFO := -DHAS_STRIPPED_DEBUGINFO
   endif
 
   JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
@@ -187,7 +189,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
-    whitebox.cpp_CXXFLAGS := $(CFLAGS_STRIPPED_DEBUGINFO), \
+    whitebox.cpp_CXXFLAGS := $(CFLAGS_SHIP_DEBUGINFO), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
     DISABLED_WARNINGS_gcc_bytecodeInterpreter.cpp := unused-label, \
@@ -234,6 +236,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
+    LINK_TIME_OPTIMIZATION := $(JVM_LTO), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/objs, \
     STRIPFLAGS := $(JVM_STRIPFLAGS), \
     EMBED_MANIFEST := true, \
@@ -337,6 +340,30 @@ TARGETS += $(BUILD_LIBJVM)
 # for the associated class.  If the class doesn't provide a more specific
 # declaration (either directly or by inheriting from a class that provides
 # one) then the global definition will be used, triggering this check.
+#
+
+# The HotSpot wrapper for <new> declares as deprecated all the allocation and
+# deallocation functions that use the global allocator. But that blocking
+# isn't a bullet-proof. Some of these functions are implicitly available in
+# every translation unit, without the need to include <new>. So even with that
+# wrapper we still need this link-time check. The implicitly declared
+# functions and their mangled names are - from C++17 6.7.4:
+#
+# void* operator new(size_t)               // _Znwm
+# void* operator new(size_t, align_val_t)  // _ZnwmSt11align_val_t
+#
+# void operator delete(void*) noexcept                      // _ZdlPv
+# void operator delete(void*, size_t) noexcept              // _ZdlPvm
+# void operator delete(void*, align_val_t) noexcept         // _ZdlPvSt11align_val_t
+# void operator delete(void*, size_t, align_val_t) noexcept // _ZdlPvmSt11align_val_t
+#
+# void* operator new[](size_t)               // _Znam
+# void* operator new[](size_t, align_val_t)  // _ZnamSt11align_val_t
+#
+# void operator delete[](void*) noexcept                      // _ZdaPv
+# void operator delete[](void*, size_t) noexcept              // _ZdaPvm
+# void operator delete[](void*, align_val_t) noexcept         // _ZdaPvSt11align_val_t
+# void operator delete[](void*, size_t, align_val_t) noexcept // _ZdaPvmSt11align_val_t
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
   ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
@@ -347,10 +374,18 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     # so use mangled names when looking for symbols.
     # Save the demangling for when something is actually found.
     MANGLED_SYMS := \
-        _ZdaPv \
-        _ZdlPv \
-        _Znam \
         _Znwm \
+        _ZnwmSt11align_val_t \
+        _ZdlPv \
+        _ZdlPvm \
+        _ZdlPvSt11align_val_t \
+        _ZdlPvmSt11align_val_t \
+        _Znam \
+        _ZnamSt11align_val_t \
+        _ZdaPv \
+        _ZdaPvm \
+        _ZdaPvSt11align_val_t \
+        _ZdaPvmSt11align_val_t \
         #
     UNDEF_PATTERN := ' U '
 

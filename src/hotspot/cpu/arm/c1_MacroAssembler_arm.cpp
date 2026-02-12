@@ -201,7 +201,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register basic_lo
   Register t2 = hdr;        // blow
   Register t3 = Rtemp;      // blow
 
-  lightweight_lock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
+  fast_lock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
   // Success: fall through
   return null_check_offset;
 }
@@ -218,7 +218,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
   Register t2 = hdr;        // blow
   Register t3 = Rtemp;      // blow
 
-  lightweight_unlock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
+  fast_unlock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
   // Success: fall through
 }
 

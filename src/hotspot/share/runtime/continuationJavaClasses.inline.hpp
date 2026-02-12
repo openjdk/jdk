@@ -194,4 +194,20 @@ inline void jdk_internal_vm_StackChunk::set_lockStackSize(oop chunk, uint8_t val
   AtomicAccess::store(chunk->field_addr<uint8_t>(_lockStackSize_offset), value);
 }
 
+inline bool jdk_internal_vm_StackChunk::atKlassInit(oop chunk) {
+  return chunk->bool_field(_atKlassInit_offset);
+}
+
+inline void jdk_internal_vm_StackChunk::set_atKlassInit(oop chunk, bool value) {
+  chunk->bool_field_put(_atKlassInit_offset, (jboolean)value);
+}
+
+inline bool jdk_internal_vm_StackChunk::hasArgsAtTop(oop chunk) {
+  return chunk->bool_field(_hasArgsAtTop_offset);
+}
+
+inline void jdk_internal_vm_StackChunk::set_hasArgsAtTop(oop chunk, bool value) {
+  chunk->bool_field_put(_hasArgsAtTop_offset, (jboolean)value);
+}
+
 #endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP

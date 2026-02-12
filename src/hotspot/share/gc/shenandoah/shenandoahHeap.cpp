@@ -25,7 +25,7 @@
  */
 
 
-#include "cds/archiveHeapWriter.hpp"
+#include "cds/aotMappedHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -201,7 +201,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  _soft_max_size = SoftMaxHeapSize;
+  _soft_max_size = clamp(SoftMaxHeapSize, min_capacity(), max_capacity());
 
   _committed = _initial_size;
 
@@ -247,6 +247,13 @@ jint ShenandoahHeap::initialize() {
 
   // Now we know the number of regions and heap sizes, initialize the heuristics.
   initialize_heuristics();
+
+  // If ShenandoahCardBarrier is enabled but it's not generational mode
+  // it means we're under passive mode and we have to initialize old gen
+  // for the purpose of having card table.
+  if (ShenandoahCardBarrier && !(mode()->is_generational())) {
+    _old_generation = new ShenandoahOldGeneration(max_workers());
+  }
 
   assert(_heap_region.byte_size() == heap_rs.size(), "Need to know reserved size for card table");
 
@@ -404,7 +411,6 @@ jint ShenandoahHeap::initialize() {
 
   {
     ShenandoahHeapLocker locker(lock());
-    _free_set = new ShenandoahFreeSet(this, _num_regions);
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
@@ -420,12 +426,28 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
 
-    size_t young_cset_regions, old_cset_regions;
+    if (mode()->is_generational()) {
+      size_t young_reserve = (soft_max_capacity() * ShenandoahEvacReserve) / 100;
+      young_generation()->set_evacuation_reserve(young_reserve);
+      old_generation()->set_evacuation_reserve((size_t) 0);
+      old_generation()->set_promoted_reserve((size_t) 0);
+    }
+
+    _free_set = new ShenandoahFreeSet(this, _num_regions);
+    post_initialize_heuristics();
 
     // We are initializing free set.  We ignore cset region tallies.
-    size_t first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
+    if (mode()->is_generational()) {
+      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+      // We cannot call
+      //  gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions)
+      // until after the heap is fully initialized.  So we make up a safe value here.
+      size_t allocation_runway = InitialHeapSize / 2;
+      gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
+    }
+    _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
   }
 
   if (AlwaysPreTouch) {
@@ -518,8 +540,12 @@ void ShenandoahHeap::initialize_mode() {
 }
 
 void ShenandoahHeap::initialize_heuristics() {
-  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity());
+  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers());
   _global_generation->initialize_heuristics(mode());
+}
+
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize(this);
 }
 
 #ifdef _MSC_VER
@@ -666,6 +692,8 @@ public:
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
+  check_soft_max_changed();
+
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
 
@@ -708,75 +736,6 @@ void ShenandoahHeap::increase_committed(size_t bytes) {
 void ShenandoahHeap::decrease_committed(size_t bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
   _committed -= bytes;
-}
-
-// For tracking usage based on allocations, it should be the case that:
-// * The sum of regions::used == heap::used
-// * The sum of a generation's regions::used == generation::used
-// * The sum of a generation's humongous regions::free == generation::humongous_waste
-// These invariants are checked by the verifier on GC safepoints.
-//
-// Additional notes:
-// * When a mutator's allocation request causes a region to be retired, the
-//   free memory left in that region is considered waste. It does not contribute
-//   to the usage, but it _does_ contribute to allocation rate.
-// * The bottom of a PLAB must be aligned on card size. In some cases this will
-//   require padding in front of the PLAB (a filler object). Because this padding
-//   is included in the region's used memory we include the padding in the usage
-//   accounting as waste.
-// * Mutator allocations are used to compute an allocation rate.
-// * There are three sources of waste:
-//  1. The padding used to align a PLAB on card size
-//  2. Region's free is less than minimum TLAB size and is retired
-//  3. The unused portion of memory in the last region of a humongous object
-void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
-  size_t actual_bytes = req.actual_size() * HeapWordSize;
-  size_t wasted_bytes = req.waste() * HeapWordSize;
-  ShenandoahGeneration* generation = generation_for(req.affiliation());
-
-  if (req.is_gc_alloc()) {
-    assert(wasted_bytes == 0 || req.type() == ShenandoahAllocRequest::_alloc_plab, "Only PLABs have waste");
-    increase_used(generation, actual_bytes + wasted_bytes);
-  } else {
-    assert(req.is_mutator_alloc(), "Expected mutator alloc here");
-    // padding and actual size both count towards allocation counter
-    generation->increase_allocated(actual_bytes + wasted_bytes);
-
-    // only actual size counts toward usage for mutator allocations
-    increase_used(generation, actual_bytes);
-
-    if (wasted_bytes > 0 && ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
-      increase_humongous_waste(generation,wasted_bytes);
-    }
-  }
-}
-
-void ShenandoahHeap::increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
-  generation->increase_humongous_waste(bytes);
-  if (!generation->is_global()) {
-    global_generation()->increase_humongous_waste(bytes);
-  }
-}
-
-void ShenandoahHeap::decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
-  generation->decrease_humongous_waste(bytes);
-  if (!generation->is_global()) {
-    global_generation()->decrease_humongous_waste(bytes);
-  }
-}
-
-void ShenandoahHeap::increase_used(ShenandoahGeneration* generation, size_t bytes) {
-  generation->increase_used(bytes);
-  if (!generation->is_global()) {
-    global_generation()->increase_used(bytes);
-  }
-}
-
-void ShenandoahHeap::decrease_used(ShenandoahGeneration* generation, size_t bytes) {
-  generation->decrease_used(bytes);
-  if (!generation->is_global()) {
-    global_generation()->decrease_used(bytes);
-  }
 }
 
 size_t ShenandoahHeap::capacity() const {
@@ -1027,17 +986,13 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     req.set_actual_size(0);
   }
 
-  // This is called regardless of the outcome of the allocation to account
-  // for any waste created by retiring regions with this request.
-  increase_used(req);
-
   if (result != nullptr) {
     size_t requested = req.size();
     size_t actual = req.actual_size();
 
     assert (req.is_lab_alloc() || (requested == actual),
             "Only LAB allocations are elastic: %s, requested = %zu, actual = %zu",
-            ShenandoahAllocRequest::alloc_type_to_string(req.type()), requested, actual);
+            req.type_string(), requested, actual);
   }
 
   return result;
@@ -1066,8 +1021,9 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 
   // Record the plab configuration for this result and register the object.
   if (result != nullptr && req.is_old()) {
-    old_generation()->configure_plab_for_current_thread(req);
-    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
+    if (req.is_lab_alloc()) {
+      old_generation()->configure_plab_for_current_thread(req);
+    } else {
       // Register the newly allocated object while we're holding the global lock since there's no synchronization
       // built in to the implementation of register_object().  There are potential races when multiple independent
       // threads are allocating objects, some of which might span the same card region.  For example, consider
@@ -1087,6 +1043,13 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
       // last-start representing object b while first-start represents object c.  This is why we need to require all
       // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
       old_generation()->card_scan()->register_object(result);
+
+      if (req.is_promotion()) {
+        // Shared promotion.
+        const size_t actual_size = req.actual_size() * HeapWordSize;
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
+        old_generation()->expend_promoted(actual_size);
+      }
     }
   }
 
@@ -1264,7 +1227,7 @@ void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation, b
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   {
-    // Java threads take this lock while they are being attached and added to the list of thread.
+    // Java threads take this lock while they are being attached and added to the list of threads.
     // If another thread holds this lock before we update the gc state, it will receive a stale
     // gc state, but they will have been added to the list of java threads and so will be corrected
     // by the following handshake.
@@ -1559,7 +1522,7 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 }
 
 // Returns size in bytes
-size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
+size_t ShenandoahHeap::unsafe_max_tlab_alloc() const {
   // Return the max allowed size, and let the allocation path
   // figure out the safe size for current allocation.
   return ShenandoahHeapRegion::max_tlab_size_bytes();
@@ -1701,8 +1664,8 @@ void ShenandoahHeap::verify(VerifyOption vo) {
     }
   }
 }
-size_t ShenandoahHeap::tlab_capacity(Thread *thr) const {
-  return _free_set->capacity();
+size_t ShenandoahHeap::tlab_capacity() const {
+  return _free_set->capacity_not_holding_lock();
 }
 
 class ObjectIterateScanRootClosure : public BasicOopIterateClosure {
@@ -2014,7 +1977,7 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
   const uint active_workers = workers()->active_workers();
   const size_t n_regions = num_regions();
-  size_t stride = ShenandoahParallelRegionStride;
+  size_t stride = blk->parallel_region_stride();
   if (stride == 0 && active_workers > 1) {
     // Automatically derive the stride to balance the work between threads
     // evenly. Do not try to split work if below the reasonable threshold.
@@ -2080,6 +2043,10 @@ void ShenandoahHeap::prepare_update_heap_references() {
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
+    // If we are only marking old, we do not need to process young pointers
+    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
+      is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
+    );
     ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
@@ -2177,8 +2144,8 @@ GCTracer* ShenandoahHeap::tracer() {
   return shenandoah_policy()->tracer();
 }
 
-size_t ShenandoahHeap::tlab_used(Thread* thread) const {
-  return _free_set->used();
+size_t ShenandoahHeap::tlab_used() const {
+  return _free_set->used_not_holding_lock();
 }
 
 bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
@@ -2340,18 +2307,16 @@ void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
   // bytes are allocated after the start of subsequent gc.
   size_t unaccounted_bytes;
+  ShenandoahFreeSet* _free_set = free_set();
+  size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
   if (mode()->is_generational()) {
-    size_t bytes_allocated = young_generation()->bytes_allocated_since_gc_start();
     unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
-    young_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
-    unaccounted_bytes = 0;
-    old_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
   } else {
-    size_t bytes_allocated = global_generation()->bytes_allocated_since_gc_start();
     // Single-gen Shenandoah uses global heuristics.
     unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
   }
-  global_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
+  ShenandoahHeapLocker locker(lock());
+  _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
@@ -2412,11 +2377,17 @@ void ShenandoahHeap::sync_pinned_region_status() {
 }
 
 #ifdef ASSERT
-void ShenandoahHeap::assert_pinned_region_status() {
+void ShenandoahHeap::assert_pinned_region_status() const {
+  assert_pinned_region_status(global_generation());
+}
+
+void ShenandoahHeap::assert_pinned_region_status(ShenandoahGeneration* generation) const {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* r = get_region(i);
-    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-           "Region %zu pinning status is inconsistent", i);
+    if (generation->contains(r)) {
+      assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+             "Region %zu pinning status is inconsistent", i);
+    }
   }
 }
 #endif
@@ -2559,14 +2530,10 @@ void ShenandoahHeap::final_update_refs_update_region_states() {
   parallel_heap_region_iterate(&cl);
 }
 
-void ShenandoahHeap::rebuild_free_set(bool concurrent) {
-  ShenandoahGCPhase phase(concurrent ?
-                          ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
-                          ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
+void ShenandoahHeap::rebuild_free_set_within_phase() {
   ShenandoahHeapLocker locker(lock());
-  size_t young_cset_regions, old_cset_regions;
-  size_t first_old_region, last_old_region, old_region_count;
-  _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
+  size_t young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count;
+  _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count);
   // If there are no old regions, first_old_region will be greater than last_old_region
   assert((first_old_region > last_old_region) ||
          ((last_old_region + 1 - first_old_region >= old_region_count) &&
@@ -2584,25 +2551,25 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
-
-    // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
-    // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular
-    // regions in place when many of these regular regions have an abundant amount of available memory within them.  Fragmentation
-    // will decrease as promote-by-copy consumes the available memory within these partially consumed regions.
-    //
-    // We consider old-gen to have excessive fragmentation if more than 12.5% of old-gen is free memory that resides
-    // within partially consumed regions of memory.
+    size_t allocation_runway =
+      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
   }
   // Rebuild free set based on adjusted generation sizes.
-  _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
+  _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, old_region_count);
 
   if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
+}
+
+void ShenandoahHeap::rebuild_free_set(bool concurrent) {
+  ShenandoahGCPhase phase(concurrent ?
+                          ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
+                          ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
+  rebuild_free_set_within_phase();
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {
@@ -2730,6 +2697,9 @@ GrowableArray<MemoryPool*> ShenandoahHeap::memory_pools() {
 }
 
 MemoryUsage ShenandoahHeap::memory_usage() {
+  assert(_initial_size <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(used() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(committed() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
   return MemoryUsage(_initial_size, used(), committed(), max_capacity());
 }
 
@@ -2748,18 +2718,6 @@ void ShenandoahRegionIterator::reset() {
 bool ShenandoahRegionIterator::has_next() const {
   return _index < _heap->num_regions();
 }
-
-char ShenandoahHeap::gc_state() const {
-  return _gc_state.raw_value();
-}
-
-bool ShenandoahHeap::is_gc_state(GCState state) const {
-  // If the global gc state has been changed, but hasn't yet been propagated to all threads, then
-  // the global gc state is the correct value. Once the gc state has been synchronized with all threads,
-  // _gc_state_changed will be toggled to false and we need to use the thread local state.
-  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
-}
-
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT
@@ -2811,7 +2769,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   //
   // CDS would guarantee no objects straddle multiple regions, as long as regions are as large
   // as MIN_GC_REGION_ALIGNMENT.
-  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
+  guarantee(ShenandoahHeapRegion::region_size_bytes() >= AOTMappedHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
 
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
   return allocate_memory(req);

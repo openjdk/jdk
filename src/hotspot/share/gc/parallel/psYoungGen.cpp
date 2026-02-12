@@ -301,8 +301,7 @@ bool PSYoungGen::try_expand_to_hold(size_t word_size) {
 }
 
 HeapWord* PSYoungGen::expand_and_allocate(size_t word_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(Heap_lock->is_locked(), "precondition");
 
   {
     size_t available_word_size = pointer_delta(virtual_space()->reserved_high_addr(),

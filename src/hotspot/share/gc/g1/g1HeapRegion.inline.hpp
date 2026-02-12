@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -131,7 +130,7 @@ inline void G1HeapRegion::prepare_for_full_gc() {
   // After marking and class unloading the heap temporarily contains dead objects
   // with unloaded klasses. Moving parsable_bottom makes some (debug) code correctly
   // skip dead objects.
-  _parsable_bottom = top();
+  _parsable_bottom.store_relaxed(top());
 }
 
 inline void G1HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
@@ -154,7 +153,7 @@ inline void G1HeapRegion::reset_after_full_gc_common() {
   // Everything above bottom() is parsable and live.
   reset_parsable_bottom();
 
-  _garbage_bytes = 0;
+  _garbage_bytes.store_relaxed(0);
 
   _incoming_refs = 0;
 
@@ -188,20 +187,22 @@ inline void G1HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMar
 inline HeapWord* G1HeapRegion::par_allocate(size_t min_word_size,
                                             size_t desired_word_size,
                                             size_t* actual_word_size) {
+  HeapWord* obj = top();
   do {
-    HeapWord* obj = top();
     size_t available = pointer_delta(end(), obj);
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
-      HeapWord* result = AtomicAccess::cmpxchg(&_top, obj, new_top);
-      // result can be one of two:
-      // the old top value: the exchange succeeded
+      HeapWord* result = _top.compare_exchange(obj, new_top);
+      // Result can be one of two:
+      // the old top value: the exchange succeeded, return.
       // otherwise: the new value of the top is returned.
       if (result == obj) {
         assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
         *actual_word_size = want_to_allocate;
         return obj;
+      } else {
+        obj = result;
       }
     } else {
       return nullptr;
@@ -254,27 +255,27 @@ inline void G1HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
 
 inline HeapWord* G1HeapRegion::parsable_bottom() const {
   assert(!is_init_completed() || SafepointSynchronize::is_at_safepoint(), "only during initialization or safepoint");
-  return _parsable_bottom;
+  return _parsable_bottom.load_relaxed();
 }
 
 inline HeapWord* G1HeapRegion::parsable_bottom_acquire() const {
-  return AtomicAccess::load_acquire(&_parsable_bottom);
+  return _parsable_bottom.load_acquire();
 }
 
 inline void G1HeapRegion::reset_parsable_bottom() {
-  AtomicAccess::release_store(&_parsable_bottom, bottom());
+  _parsable_bottom.release_store(bottom());
 }
 
 inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs) {
   assert_at_safepoint();
 
   if (top_at_mark_start != bottom()) {
-    _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
+    _garbage_bytes.store_relaxed(byte_size(bottom(), top_at_mark_start) - marked_bytes);
     _incoming_refs = incoming_refs;
   }
 
   if (needs_scrubbing()) {
-    _parsable_bottom = top_at_mark_start;
+    _parsable_bottom.store_relaxed(top_at_mark_start);
   }
 }
 
@@ -284,6 +285,14 @@ inline void G1HeapRegion::note_end_of_scrubbing() {
 
 inline bool G1HeapRegion::needs_scrubbing() const {
   return is_old();
+}
+
+inline size_t G1HeapRegion::pinned_count() const {
+  return _pinned_object_count.load_relaxed();
+}
+
+inline bool G1HeapRegion::has_pinned_objects() const {
+  return pinned_count() > 0;
 }
 
 inline bool G1HeapRegion::in_collection_set() const {
@@ -511,7 +520,7 @@ inline void G1HeapRegion::record_surv_words_in_group(size_t words_survived) {
 inline void G1HeapRegion::add_pinned_object_count(size_t value) {
   assert(value != 0, "wasted effort");
   assert(!is_free(), "trying to pin free region %u, adding %zu", hrm_index(), value);
-  AtomicAccess::add(&_pinned_object_count, value, memory_order_relaxed);
+  _pinned_object_count.add_then_fetch(value, memory_order_relaxed);
 }
 
 inline void G1HeapRegion::install_cset_group(G1CSetCandidateGroup* cset_group) {

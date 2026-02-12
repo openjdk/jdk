@@ -593,9 +593,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil" draft="provisional">calendari islamic civîl</type>
 			<type key="calendar" type="japanese" draft="contributed">calendari gjaponês</type>
 			<type key="calendar" type="roc" draft="contributed">calendari de Republiche di Cine</type>
-			<type key="collation" type="big5han" draft="contributed">ordin cinês tradizionâl - Big5</type>
 			<type key="collation" type="ducet" draft="contributed">ordenament predeterminât Unicode</type>
-			<type key="collation" type="gb2312han" draft="contributed">ordin cinês semplificât - GB2312</type>
 			<type key="collation" type="phonebook" draft="contributed">ordin elenc telefonic</type>
 			<type key="collation" type="pinyin" draft="contributed">ordin pinyin</type>
 			<type key="collation" type="search" draft="contributed">ricercje par fins gjenerâi</type>

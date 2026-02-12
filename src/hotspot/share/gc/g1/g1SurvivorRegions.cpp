@@ -32,10 +32,10 @@ G1SurvivorRegions::G1SurvivorRegions() :
   _used_bytes(0),
   _regions_on_node() {}
 
-uint G1SurvivorRegions::add(G1HeapRegion* hr) {
+void G1SurvivorRegions::add(G1HeapRegion* hr) {
   assert(hr->is_survivor(), "should be flagged as survivor region");
   _regions.append(hr);
-  return _regions_on_node.add(hr);
+  _regions_on_node.add(hr);
 }
 
 uint G1SurvivorRegions::length() const {

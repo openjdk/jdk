@@ -25,10 +25,9 @@
 #ifndef SHARE_OOPS_OBJARRAYOOP_HPP
 #define SHARE_OOPS_OBJARRAYOOP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
-
-#include <type_traits>
 
 class Klass;
 
@@ -36,7 +35,7 @@ class Klass;
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
-  friend class ArchiveHeapWriter;
+  friend class AOTMappedHeapWriter;
   friend class ObjArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;
@@ -84,9 +83,9 @@ class objArrayOopDesc : public arrayOopDesc {
   Klass* element_klass();
 
 public:
-  // special iterators for index ranges, returns size of object
+  // Special iterators for an element index range.
   template <typename OopClosureType>
-  void oop_iterate_range(OopClosureType* blk, int start, int end);
+  void oop_iterate_elements_range(OopClosureType* blk, int start, int end);
 };
 
 // See similar requirement for oopDesc.

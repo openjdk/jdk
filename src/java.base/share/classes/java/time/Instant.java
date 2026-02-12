@@ -789,6 +789,32 @@ public final class Instant
     }
 
     /**
+     * Returns a copy of this instant with the specified duration added, with
+     * saturated semantics.
+     * <p>
+     * If the result is "earlier" than {@link Instant#MIN}, this method returns
+     * {@code MIN}. If the result is "later" than {@link Instant#MAX}, it
+     * returns {@code MAX}. Otherwise it returns {@link #plus(TemporalAmount) plus(duration)}.
+     *
+     * @apiNote This method can be used to calculate a deadline from
+     * this instant and a timeout. Unlike {@code plus(duration)},
+     * this method never throws {@link ArithmeticException} or {@link DateTimeException}
+     * due to numeric overflow or {@code Instant} range violation.
+     *
+     * @param duration the duration to add, not null
+     * @return an {@code Instant} based on this instant with the addition made, not null
+     *
+     * @since 26
+     */
+    public Instant plusSaturating(Duration duration) {
+        if (duration.isNegative()) {
+            return until(Instant.MIN).compareTo(duration) >= 0 ? Instant.MIN : plus(duration);
+        } else {
+            return until(Instant.MAX).compareTo(duration) <= 0 ? Instant.MAX : plus(duration);
+        }
+    }
+
+    /**
      * Returns a copy of this instant with the specified amount added.
      * <p>
      * This returns an {@code Instant}, based on this one, with the amount

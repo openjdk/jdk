@@ -97,6 +97,7 @@ public sealed class PacketSpaceManager implements PacketSpace
 
     private final QuicCongestionController congestionController;
     private volatile boolean blockedByCC;
+    private volatile boolean blockedByPacer;
     // packet threshold for loss detection; RFC 9002 suggests 3
     private static final long kPacketThreshold = 3;
     // Multiplier for persistent congestion; RFC 9002 suggests 3
@@ -384,9 +385,10 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
             packetEmitter.checkAbort(PacketSpaceManager.this.packetNumberSpace);
             // Handle is called from within the executor
-            var nextDeadline = this.nextDeadline;
+            Deadline newDeadline;
             Deadline now = now();
             do {
+                congestionController.updatePacer(now);
                 transmitNow = false;
                 var closed = !isOpenForTransmission();
                 if (closed) {
@@ -404,6 +406,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 boolean needBackoff = isPTO(now);
                 int packetsSent = 0;
                 boolean cwndAvailable;
+                long startTime = System.nanoTime();
                 while ((cwndAvailable = congestionController.canSendPacket()) ||
                         (needBackoff && packetsSent < 2)) { // if PTO, try to send 2 packets
                     if (!isOpenForTransmission()) {
@@ -442,6 +445,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                                 + qkue.getMessage());
                     }
                     if (!sentNew) {
+                        congestionController.appLimited();
                         break;
                     } else {
                         if (needBackoff && packetsSent == 0 && Log.quicRetransmit()) {
@@ -451,12 +455,19 @@ public sealed class PacketSpaceManager implements PacketSpace
                     }
                     packetsSent++;
                 }
-                blockedByCC = !cwndAvailable;
+                if (packetsSent != 0 && Log.quicCC()) {
+                    Log.logQuic("%s OUT: sent: %s packets in %s ns, cwnd limited: %s, pacer limited: %s".formatted(
+                            packetEmitter.logTag(), packetsSent, System.nanoTime() - startTime,
+                            congestionController.isCwndLimited(), congestionController.isPacerLimited()));
+                }
+                blockedByCC = !cwndAvailable && congestionController.isCwndLimited();
+                blockedByPacer = !cwndAvailable && congestionController.isPacerLimited();
                 if (!cwndAvailable && isOpenForTransmission()) {
                     if (debug.on()) debug.log("handle: blocked by CC");
                     // CC might be available already
                     if (congestionController.canSendPacket()) {
                         if (debug.on()) debug.log("handle: unblocked immediately");
+                        blockedByCC = blockedByPacer = false;
                         transmitNow = true;
                     }
                 }
@@ -523,16 +534,17 @@ public sealed class PacketSpaceManager implements PacketSpace
                     packetEmitter.ptoBackoffIncreased(PacketSpaceManager.this, backoff);
                 }
 
-                // if nextDeadline is not Deadline.MAX the task will be
+                // if newDeadline is not Deadline.MAX the task will be
                 // automatically rescheduled.
                 if (debug.on()) debug.log("handle: refreshing deadline");
-                nextDeadline = computeNextDeadline();
-            } while(!nextDeadline.isAfter(now));
+                newDeadline = computeNextDeadline();
+                now = now();
+            } while(!newDeadline.isAfter(now));
 
-            logNoDeadline(nextDeadline, true);
-            if (Deadline.MAX.equals(nextDeadline)) return;
+            logNoDeadline(newDeadline, true);
+            if (Deadline.MAX.equals(newDeadline)) return;
             // we have a new deadline
-            packetEmitter.reschedule(this, nextDeadline);
+            packetEmitter.reschedule(this, newDeadline);
         }
 
         /**
@@ -1389,6 +1401,15 @@ public sealed class PacketSpaceManager implements PacketSpace
         Deadline ackDeadline = (ack == null || ack.sent() != null)
                 ? Deadline.MAX // if the ack frame has already been sent, getNextAck() returns null
                 : ack.deadline();
+        if (blockedByPacer) {
+            Deadline pacerDeadline = congestionController.pacerDeadline();
+            if (verbose && Log.quicTimer()) {
+                Log.logQuic(String.format("%s: [%s] pacer deadline: %s, ackDeadline: %s, deadline in %s",
+                        packetEmitter.logTag(), packetNumberSpace, pacerDeadline, ackDeadline,
+                        Utils.debugDeadline(now(), min(ackDeadline, pacerDeadline))));
+            }
+            return min(ackDeadline, pacerDeadline);
+        }
         Deadline lossDeadline = getLossTimer();
         // TODO: consider removing the debug traces in this method when integrating
         // if both loss deadline and PTO timer are set, loss deadline is always earlier

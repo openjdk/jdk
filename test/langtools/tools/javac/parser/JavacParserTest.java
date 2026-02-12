@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865 8369489
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -3074,6 +3074,81 @@ public class JavacParserTest extends TestCase {
                 null, Arrays.asList(new MyFileObject(code)));
         //no exceptions:
         ct.parse().iterator().next();
+    }
+
+    @Test //JDK-8370865
+    void testCompactSourceFileMultiField1() throws IOException {
+        String code = """
+                      int i, j, k;
+                      void main() {}
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testCompactSourceFileMultiField1: " + codes,
+                     List.of(),
+                     codes);
+    }
+
+    @Test //JDK-8370865
+    void testCompactSourceFileMultiField2() throws IOException {
+        String code = """
+                      int i, j = 0, k = 0;
+                      void main() {}
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testCompactSourceFileMultiField2: " + codes,
+                     List.of(),
+                     codes);
+    }
+
+    @Test //JDK-8369489
+    void testTypeAnnotationBrokenMethodRef() throws IOException {
+        String code = """
+                      public class Test {
+                          Object o1 = @Ann any()::test;
+                          Object o2 = @Ann any().field::test;
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                null,
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testTypeAnnotationBrokenMethodRef: " + codes,
+                     List.of("2:22:compiler.err.illegal.start.of.type",
+                             "3:22:compiler.err.illegal.start.of.type"),
+                     codes);
     }
 
     void run(String[] args) throws Exception {

@@ -45,6 +45,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type name="h23" description="Hour system using 0–23; 'H' in patterns" since="28" />
 			<type name="h11" description="Hour system using 0–11; 'K' in patterns" since="28" />
 			<type name="h24" description="Hour system using 1–24; 'k' in patterns" since="28" />
+			<type name="c12" description="Best 12-hour cycle for locale (h11 or h12)" since="48" deprecated="true" /> <!-- Technical Preview -->
+			<type name="c24" description="Best 24-hour cycle for locale (h23 or h24)" since="48" deprecated="true" /> <!-- Technical Preview -->
 		</key>
     </keyword>
 </ldmlBCP47>

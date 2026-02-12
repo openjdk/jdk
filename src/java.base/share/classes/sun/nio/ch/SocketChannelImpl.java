@@ -62,7 +62,6 @@ import static java.net.StandardProtocolFamily.UNIX;
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
 import sun.net.ConnectionResetException;
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 import jdk.internal.util.Exceptions;
 
@@ -114,9 +113,9 @@ class SocketChannelImpl
     private static final int ST_CLOSED = 4;
     private volatile int state;  // need stateLock to change
 
-    // IDs of native threads doing reads and writes, for signalling
-    private long readerThread;
-    private long writerThread;
+    // Threads doing reads and writes, for signalling
+    private Thread readerThread;
+    private Thread writerThread;
 
     // Binding
     private SocketAddress localAddress;
@@ -369,7 +368,7 @@ class SocketChannelImpl
             synchronized (stateLock) {
                 ensureOpen();
                 // record thread so it can be signalled if needed
-                readerThread = NativeThread.current();
+                readerThread = NativeThread.threadToSignal();
             }
         }
     }
@@ -385,7 +384,7 @@ class SocketChannelImpl
     {
         if (blocking) {
             synchronized (stateLock) {
-                readerThread = 0;
+                readerThread = null;
                 if (state == ST_CLOSING) {
                     tryFinishClose();
                 }
@@ -523,7 +522,7 @@ class SocketChannelImpl
                 if (isOutputClosed)
                     throw new ClosedChannelException();
                 // record thread so it can be signalled if needed
-                writerThread = NativeThread.current();
+                writerThread = NativeThread.threadToSignal();
             }
         }
     }
@@ -539,7 +538,7 @@ class SocketChannelImpl
     {
         if (blocking) {
             synchronized (stateLock) {
-                writerThread = 0;
+                writerThread = null;
                 if (state == ST_CLOSING) {
                     tryFinishClose();
                 }
@@ -674,7 +673,7 @@ class SocketChannelImpl
                 ensureOpenAndConnected();
                 if (isOutputClosed)
                     throw new ClosedChannelException();
-                writerThread = NativeThread.current();
+                writerThread = NativeThread.threadToSignal();
                 completed = true;
             }
         } finally {
@@ -690,7 +689,7 @@ class SocketChannelImpl
      */
     void afterTransferTo(boolean completed) throws AsynchronousCloseException {
         synchronized (stateLock) {
-            writerThread = 0;
+            writerThread = null;
             if (state == ST_CLOSING) {
                 tryFinishClose();
             }
@@ -828,7 +827,6 @@ class SocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
-        NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         return Net.localAddress(fd);
     }
@@ -871,13 +869,12 @@ class SocketChannelImpl
 
             if (isNetSocket() && (localAddress == null)) {
                 InetSocketAddress isa = (InetSocketAddress) sa;
-                NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
             }
             remoteAddress = sa;
 
             if (blocking) {
                 // record thread so it can be signalled if needed
-                readerThread = NativeThread.current();
+                readerThread = NativeThread.threadToSignal();
             }
         }
     }
@@ -996,7 +993,7 @@ class SocketChannelImpl
                 throw new NoConnectionPendingException();
             if (blocking) {
                 // record thread so it can be signalled if needed
-                readerThread = NativeThread.current();
+                readerThread = NativeThread.threadToSignal();
             }
         }
     }
@@ -1075,7 +1072,7 @@ class SocketChannelImpl
      */
     private boolean tryClose() throws IOException {
         assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
-        if ((readerThread == 0) && (writerThread == 0) && !isRegistered()) {
+        if ((readerThread == null) && (writerThread == null) && !isRegistered()) {
             state = ST_CLOSED;
             nd.close(fd);
             return true;
@@ -1218,11 +1215,8 @@ class SocketChannelImpl
                 throw new NotYetConnectedException();
             if (!isInputClosed) {
                 Net.shutdown(fd, Net.SHUT_RD);
-                long reader = readerThread;
-                if (NativeThread.isVirtualThread(reader)) {
-                    Poller.stopPoll(fdVal, Net.POLLIN);
-                } else if (NativeThread.isNativeThread(reader)) {
-                    NativeThread.signal(reader);
+                if (readerThread != null && readerThread.isVirtual()) {
+                    Poller.stopPoll(readerThread);
                 }
                 isInputClosed = true;
             }
@@ -1238,11 +1232,8 @@ class SocketChannelImpl
                 throw new NotYetConnectedException();
             if (!isOutputClosed) {
                 Net.shutdown(fd, Net.SHUT_WR);
-                long writer = writerThread;
-                if (NativeThread.isVirtualThread(writer)) {
-                    Poller.stopPoll(fdVal, Net.POLLOUT);
-                } else if (NativeThread.isNativeThread(writer)) {
-                    NativeThread.signal(writer);
+                if (writerThread != null && writerThread.isVirtual()) {
+                    Poller.stopPoll(writerThread);
                 }
                 isOutputClosed = true;
             }
@@ -1376,6 +1367,7 @@ class SocketChannelImpl
             // nothing to do
             return 0;
         }
+        len = Math.min(len, Streams.MAX_BUFFER_SIZE);
 
         readLock.lock();
         try {
@@ -1472,7 +1464,7 @@ class SocketChannelImpl
                 beginWrite(true);
                 configureSocketNonBlockingIfVirtualThread();
                 while (pos < end && isOpen()) {
-                    int size = end - pos;
+                    int size = Math.min(end - pos, Streams.MAX_BUFFER_SIZE);
                     int n = tryWrite(b, pos, size);
                     while (IOStatus.okayToRetry(n) && isOpen()) {
                         park(Net.POLLOUT);

@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -149,7 +150,8 @@ ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool has_clas
   // We mustn't GC until we've installed the ClassLoaderData in the Graph since the CLD
   // contains oops in _handles that must be walked.  GC doesn't walk CLD from the
   // loader oop in all collections, particularly young collections.
-  NoSafepointVerifier no_safepoints;
+  // Before is_init_completed(), GC is not allowed to run.
+  NoSafepointVerifier no_safepoints(is_init_completed());
 
   cld = new ClassLoaderData(loader, has_class_mirror_holder);
 

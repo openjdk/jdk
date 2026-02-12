@@ -293,27 +293,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1} {0}</pattern>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1} {0}</pattern>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1} {0}</pattern>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1} {0}</pattern>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -519,21 +537,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="1" draft="unconfirmed">di promé kuartal</quarter>
 							<quarter type="2" draft="unconfirmed">di dos kuartal</quarter>
 							<quarter type="3" draft="unconfirmed">di tres kuartal</quarter>
-							<quarter type="4" draft="unconfirmed">di kuanter kuartal</quarter>
+							<quarter type="4" draft="unconfirmed">di kuater kuartal</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">1 kuartal</quarter>
-							<quarter type="2" draft="unconfirmed">2 kuartal</quarter>
-							<quarter type="3" draft="unconfirmed">3 kuartal</quarter>
-							<quarter type="4" draft="unconfirmed">4 kuartal</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">di promé kuartal</quarter>
 							<quarter type="2" draft="unconfirmed">di dos kuartal</quarter>
 							<quarter type="3" draft="unconfirmed">di tres kuartal</quarter>
-							<quarter type="4" draft="unconfirmed">di kuanter kuartal</quarter>
+							<quarter type="4" draft="unconfirmed">di kuater kuartal</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -739,40 +751,371 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">aña pasá</relative>
 				<relative type="0" draft="unconfirmed">e aña akí</relative>
 				<relative type="1" draft="unconfirmed">otro aña</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} aña</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} aña</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} aña pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} aña pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">kuartal</displayName>
+				<relative type="-1" draft="unconfirmed">lastu kuartal</relative>
+				<relative type="0" draft="unconfirmed">e kuartal akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente kuartal</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} kuartal</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} kuartal</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} kuartal pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} kuartal pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">kuartal</displayName>
+				<relative type="-1" draft="unconfirmed">lastu kuartal</relative>
+				<relative type="0" draft="unconfirmed">e kuartal akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente kuartal</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} kuartal</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} kuartal</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} kuartal pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} kuartal pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">kuartal</displayName>
 			</field>
 			<field type="month">
 				<displayName draft="unconfirmed">luna</displayName>
 				<relative type="-1" draft="unconfirmed">luna pasá</relative>
 				<relative type="0" draft="unconfirmed">e luna akí</relative>
 				<relative type="1" draft="unconfirmed">otro luna</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} luna</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} luna</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} luna pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} luna pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} luna</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} luna</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} luna pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} luna pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} luna</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} luna</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} luna pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} luna pasá</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">siman</displayName>
 				<relative type="-1" draft="unconfirmed">siman pasá</relative>
 				<relative type="0" draft="unconfirmed">e siman akí</relative>
 				<relative type="1" draft="unconfirmed">otro siman</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} siman</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} siman</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} siman pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} siman pasá</relativeTimePattern>
+				</relativeTime>
 				<relativePeriod draft="unconfirmed">e siman di {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} siman</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} siman</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} siman pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} siman pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} siman</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} siman</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} siman pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} siman pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="weekOfMonth">
+				<displayName draft="unconfirmed">siman di luna</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="unconfirmed">siman di luna</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName draft="unconfirmed">siman di luna</displayName>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">dia</displayName>
 				<relative type="-1" draft="unconfirmed">ayera</relative>
 				<relative type="0" draft="unconfirmed">awe</relative>
 				<relative type="1" draft="unconfirmed">mañan</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} dia</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} dia</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} dia pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} dia pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} dia</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} dia</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} dia pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} dia pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} dia</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} dia</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} dia pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} dia pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName draft="unconfirmed">dia di aña</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="unconfirmed">dia di aña</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName draft="unconfirmed">dia di aña</displayName>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">dia di siman</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName draft="unconfirmed">dia den siman di luna</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName draft="unconfirmed">dia den siman di luna</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName draft="unconfirmed">dia den siman di luna</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1" draft="unconfirmed">djadumingu pasá</relative>
+				<relative type="0" draft="unconfirmed">djadumingu akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente djadumingu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} djadumingu</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} djadumingu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} djadumingu pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} djadumingu pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1" draft="unconfirmed">djaluna pasá</relative>
+				<relative type="0" draft="unconfirmed">djaluna akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente djaluna</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} djaluna</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} djaluna</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} djaluna pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} djaluna pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1" draft="unconfirmed">djamars pasá</relative>
+				<relative type="0" draft="unconfirmed">djamars akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente djamars</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} djamars</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} djamars</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} djamars pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} djamars pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1" draft="unconfirmed">djarason pasá</relative>
+				<relative type="0" draft="unconfirmed">djarason akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente djarason</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} djarason</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} djarason</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} djarason pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} djarason pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1" draft="unconfirmed">djaweps pasá</relative>
+				<relative type="0" draft="unconfirmed">djaweps akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente djaweps</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} djaweps</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} djaweps</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} djaweps pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} djaweps pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1" draft="unconfirmed">djabièrnè pasá</relative>
+				<relative type="0" draft="unconfirmed">djabièrnè akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente djabièrnè</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} djabièrnè</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} djabièrnè</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} djabièrnè pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} djabièrnè pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1" draft="unconfirmed">djasabra pasá</relative>
+				<relative type="0" draft="unconfirmed">djasabra akí</relative>
+				<relative type="1" draft="unconfirmed">siguiente djasabra</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} djasabra</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} djasabra</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} djasabra pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} djasabra pasá</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayperiod">
 				<displayName draft="unconfirmed">periodo di dia</displayName>
 			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">ora</displayName>
+				<relative type="0" draft="unconfirmed">orario</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} ora</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} ora</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} ora pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} ora pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<relative type="0" draft="unconfirmed">ora</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} ora</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} ora</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} ora pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} ora pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<relative type="0" draft="unconfirmed">ora</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} ora</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} ora</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} ora pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} ora pasá</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName draft="unconfirmed">minüt</displayName>
+				<relative type="0" draft="unconfirmed">minüt</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} minüt</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} minüt</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} minüt pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} minüt pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0}min.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0}min.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0}min pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0}min pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0}min.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0}min.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0}min. pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0}min. pasá</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName draft="unconfirmed">sekònde</displayName>
+				<relative type="0" draft="unconfirmed">awoki</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0} sekònde</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0} sekònde</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} sekònde pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} sekònde pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<relative type="0" draft="unconfirmed">awoki</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0}sek.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0}sek.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0}sek. pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0}sek. pasá</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">aki {0}s</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">aki {0}s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0}s pasá</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0}s pasá</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName draft="unconfirmed">zona di ora</displayName>
@@ -932,36 +1275,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="unconfirmed">¤0mil</pattern>
-					<pattern type="1000" count="other" draft="unconfirmed">¤0mil</pattern>
-					<pattern type="10000" count="one" draft="unconfirmed">¤00mil</pattern>
-					<pattern type="10000" count="other" draft="unconfirmed">¤00mil</pattern>
-					<pattern type="100000" count="one" draft="unconfirmed">¤000mil</pattern>
-					<pattern type="100000" count="other" draft="unconfirmed">¤000mil</pattern>
-					<pattern type="1000000" count="one" draft="unconfirmed">¤0mion</pattern>
-					<pattern type="1000000" count="other" draft="unconfirmed">¤0mion</pattern>
-					<pattern type="10000000" count="one" draft="unconfirmed">¤00mion</pattern>
-					<pattern type="10000000" count="other" draft="unconfirmed">¤00mion</pattern>
-					<pattern type="100000000" count="one" draft="unconfirmed">¤000mion</pattern>
-					<pattern type="100000000" count="other" draft="unconfirmed">¤000mion</pattern>
-					<pattern type="1000000000" count="one" draft="unconfirmed">¤0bion</pattern>
-					<pattern type="1000000000" count="other" draft="unconfirmed">¤0bion</pattern>
-					<pattern type="10000000000" count="one" draft="unconfirmed">¤00bion</pattern>
-					<pattern type="10000000000" count="other" draft="unconfirmed">¤00bion</pattern>
-					<pattern type="100000000000" count="one" draft="unconfirmed">¤000bion</pattern>
-					<pattern type="100000000000" count="other" draft="unconfirmed">¤000bion</pattern>
-					<pattern type="1000000000000" count="one" draft="unconfirmed">¤0trion</pattern>
-					<pattern type="1000000000000" count="other" draft="unconfirmed">¤0trion</pattern>
-					<pattern type="10000000000000" count="one" draft="unconfirmed">¤00trion</pattern>
-					<pattern type="10000000000000" count="other" draft="unconfirmed">¤00trion</pattern>
-					<pattern type="100000000000000" count="one" draft="unconfirmed">¤000trion</pattern>
-					<pattern type="100000000000000" count="other" draft="unconfirmed">¤000trion</pattern>
+					<pattern type="1000" count="one">¤ 0mil</pattern>
+					<pattern type="1000" count="other">¤ 0mil</pattern>
+					<pattern type="10000" count="one">¤ 00mil</pattern>
+					<pattern type="10000" count="other">¤ 00mil</pattern>
+					<pattern type="100000" count="one">¤ 000mil</pattern>
+					<pattern type="100000" count="other">¤ 000mil</pattern>
+					<pattern type="1000000" count="one">¤ 0mion</pattern>
+					<pattern type="1000000" count="other">¤ 0mion</pattern>
+					<pattern type="10000000" count="one">¤ 00mion</pattern>
+					<pattern type="10000000" count="other">¤ 00mion</pattern>
+					<pattern type="100000000" count="one">¤ 000mion</pattern>
+					<pattern type="100000000" count="other">¤ 000mion</pattern>
+					<pattern type="1000000000" count="one">¤ 0bion</pattern>
+					<pattern type="1000000000" count="other">¤ 0bion</pattern>
+					<pattern type="10000000000" count="one">¤ 00bion</pattern>
+					<pattern type="10000000000" count="other">¤ 00bion</pattern>
+					<pattern type="100000000000" count="one">¤ 000bion</pattern>
+					<pattern type="100000000000" count="other">¤ 000bion</pattern>
+					<pattern type="1000000000000" count="one">¤ 0trion</pattern>
+					<pattern type="1000000000000" count="other">¤ 0trion</pattern>
+					<pattern type="10000000000000" count="one">¤ 00trion</pattern>
+					<pattern type="10000000000000" count="other">¤ 00trion</pattern>
+					<pattern type="100000000000000" count="one">¤ 000trion</pattern>
+					<pattern type="100000000000000" count="other">¤ 000trion</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
 			<currency type="ANG">
-				<displayName draft="unconfirmed">Florin</displayName>
+				<displayName draft="unconfirmed">Florin Karibense</displayName>
+				<displayName count="one" draft="unconfirmed">Florin Karibense</displayName>
+				<displayName count="other" draft="unconfirmed">Florin Karibense</displayName>
+				<symbol draft="unconfirmed">XCG</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName draft="unconfirmed">Florin di Aruba</displayName>
@@ -978,10 +1324,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="USD">
 				<displayName draft="unconfirmed">Dòler merikano</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName draft="unconfirmed">Florin Karibense</displayName>
+			</currency>
 		</currencies>
 		<minimalPairs>
 			<pluralMinimalPairs count="one" draft="unconfirmed">{0} dia</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="unconfirmed">{0} dianan</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} dia</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">di {0}</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -993,24 +1342,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="times">
 				<compoundUnitPattern draft="unconfirmed">{0}-{1}</compoundUnitPattern>
 			</compoundUnit>
-			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ost</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">{0} nort</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="unconfirmed">{0} suit</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="unconfirmed">{0} wèst</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
 			<coordinateUnit>
 				<displayName draft="unconfirmed">direkshon</displayName>
-				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ost</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">{0} nort</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="unconfirmed">{0} suit</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="unconfirmed">{0} wèst</coordinateUnitPattern>
-			</coordinateUnit>
-		</unitLength>
-		<unitLength type="narrow">
-			<coordinateUnit>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ost</coordinateUnitPattern>
 				<coordinateUnitPattern type="north" draft="unconfirmed">{0} nort</coordinateUnitPattern>
 				<coordinateUnitPattern type="south" draft="unconfirmed">{0} suit</coordinateUnitPattern>
@@ -1028,17 +1363,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2" draft="unconfirmed">{0} òf {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="end" draft="unconfirmed">{0}, i {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} &amp; {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="end" draft="unconfirmed">{0}, i {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
-		</listPattern>
 	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">si</yesstr>
+			<nostr draft="unconfirmed">no</nostr>
+		</messages>
+	</posix>
 	<characterLabels>
 		<characterLabelPattern type="all" draft="unconfirmed">{0} — tur</characterLabelPattern>
 		<characterLabelPattern type="historic" draft="unconfirmed">{0} — históriko</characterLabelPattern>

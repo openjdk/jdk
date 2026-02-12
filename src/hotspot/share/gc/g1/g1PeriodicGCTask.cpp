@@ -39,7 +39,7 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   SuspendibleThreadSetJoiner sts;
 
   // If we are currently in a concurrent mark we are going to uncommit memory soon.
-  if (g1h->concurrent_mark()->cm_thread()->in_progress()) {
+  if (g1h->concurrent_mark()->in_progress()) {
     log_debug(gc, periodic)("Concurrent cycle in progress. Skipping.");
     return false;
   }
@@ -84,7 +84,7 @@ void G1PeriodicGCTask::check_for_periodic_gc() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1GCCounters counters;
   if (should_start_periodic_gc(g1h, &counters)) {
-    if (!g1h->try_collect(GCCause::_g1_periodic_collection, counters)) {
+    if (!g1h->try_collect(0 /* allocation_word_size */, GCCause::_g1_periodic_collection, counters)) {
       log_debug(gc, periodic)("GC request denied. Skipping.");
     }
   }

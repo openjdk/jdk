@@ -28,6 +28,12 @@
     <version>1.0-SNAPSHOT</version>
     <name>OpenJDK Microbenchmark of Java Compile</name>
     <properties>
+        <!--
+         the code below is being compiled with source 25, see JDK-8372023,
+         if the source version being compiled changes to 26 or 26+, then
+         some adjustments will be needed at:
+         test/benchmarks/micros-javac/src/main/java/org/openjdk/bench/langtools/javac/JavacBenchmark.java
+        -->
         <javac.benchmark.openjdk.zip.download.url>https://download.java.net/openjdk/jdk11/ri/openjdk-11+28_windows-x64_bin.zip</javac.benchmark.openjdk.zip.download.url>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jmh.version>1.36</jmh.version>

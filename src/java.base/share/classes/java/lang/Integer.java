@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package java.lang;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -41,8 +43,6 @@ import java.util.Optional;
 
 import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
-import static java.lang.String.LATIN1;
-import static java.lang.String.UTF16;
 
 /**
  * The {@code Integer} class is the {@linkplain
@@ -893,15 +893,20 @@ public final class Integer extends Number
      * with new Integer object(s) after initialization.
      */
 
+    @AOTSafeClassInitializer
     private static final class IntegerCache {
         static final int low = -128;
-        static final int high;
+        @Stable static int high;
 
-        @Stable
-        static final Integer[] cache;
+        @Stable static Integer[] cache;
         static Integer[] archivedCache;
 
         static {
+            runtimeSetup();
+        }
+
+        @AOTRuntimeSetup
+        private static void runtimeSetup() {
             // high value may be configured by property
             int h = 127;
             String integerCacheHighPropValue =
@@ -917,32 +922,48 @@ public final class Integer extends Number
             }
             high = h;
 
-            // Load IntegerCache.archivedCache from archive, if possible
-            CDS.initializeFromArchive(IntegerCache.class);
-            int size = (high - low) + 1;
-
-            // Use the archived cache if it exists and is large enough
-            if (archivedCache == null || size > archivedCache.length) {
-                Integer[] c = new Integer[size];
-                int j = low;
-                // If archive has Integer cache, we must use all instances from it.
-                // Otherwise, the identity checks between archived Integers and
-                // runtime-cached Integers would fail.
-                int archivedSize = (archivedCache == null) ? 0 : archivedCache.length;
-                for (int i = 0; i < archivedSize; i++) {
-                    c[i] = archivedCache[i];
-                    assert j == archivedCache[i];
-                    j++;
-                }
-                // Fill the rest of the cache.
-                for (int i = archivedSize; i < size; i++) {
-                    c[i] = new Integer(j++);
-                }
-                archivedCache = c;
+            Integer[] precomputed = null;
+            if (cache != null) {
+                // IntegerCache has been AOT-initialized.
+                precomputed = cache;
+            } else {
+                // Legacy CDS archive support (to be deprecated):
+                // Load IntegerCache.archivedCache from archive, if possible
+                CDS.initializeFromArchive(IntegerCache.class);
+                precomputed = archivedCache;
             }
-            cache = archivedCache;
+
+            cache = loadOrInitializeCache(precomputed);
+            archivedCache = cache; // Legacy CDS archive support (to be deprecated)
             // range [-128, 127] must be interned (JLS7 5.1.7)
             assert IntegerCache.high >= 127;
+        }
+
+        private static Integer[] loadOrInitializeCache(Integer[] precomputed) {
+            int size = (high - low) + 1;
+
+            // Use the precomputed cache if it exists and is large enough
+            if (precomputed != null && size <= precomputed.length) {
+                return precomputed;
+            }
+
+            Integer[] c = new Integer[size];
+            int j = low;
+            // If we loading a precomputed cache (from AOT cache or CDS archive),
+            // we must use all instances from it.
+            // Otherwise, the Integers from the AOT cache (or CDS archive) will not
+            // have the same object identity as items in IntegerCache.cache[].
+            int precomputedSize = (precomputed == null) ? 0 : precomputed.length;
+            for (int i = 0; i < precomputedSize; i++) {
+                c[i] = precomputed[i];
+                assert j == precomputed[i];
+                j++;
+            }
+            // Fill the rest of the cache.
+            for (int i = precomputedSize; i < size; i++) {
+                c[i] = new Integer(j++);
+            }
+            return c;
         }
 
         private IntegerCache() {}
@@ -1427,6 +1448,7 @@ public final class Integer extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned quotient of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #remainderUnsigned
      * @since 1.8
      */
@@ -1445,6 +1467,7 @@ public final class Integer extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned remainder of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #divideUnsigned
      * @since 1.8
      */

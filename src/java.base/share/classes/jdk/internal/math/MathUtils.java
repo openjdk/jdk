@@ -43,7 +43,7 @@ final class MathUtils {
      */
 
     /*
-     * N = max{n : 10^n - 1 <= 2^Long.SIZE - 1}
+     * N = max{n : 10^n - 1 ≤ 2^Long.SIZE - 1}
      * Every positive integer up to N decimal digits fits in an unsigned long,
      * but there are positive integers of N + 1 digits that do not.
      */
@@ -52,16 +52,16 @@ final class MathUtils {
     /*
      * Given integer e, let 10^e = beta 2^r for the unique integer r and
      * real beta meeting
-     *      2^125 <= beta < 2^126.
+     *      2^125 ≤ beta < 2^126.
      * The unique r and beta are
      *      r = floor(log2(10^e)) - 125,  beta = 10^e 2^(-r)
      * Let g = floor(beta) + 1.
      * Thus,
-     *      (g - 1) 2^r <= 10^e < g 2^r
+     *      (g - 1) 2^r ≤ 10^e < g 2^r
      * Further, let
      *      g1 = floor(g 2^(-63)),  g0 = g - g1 2^63
      *
-     * For e with GE_MIN <= e <= GE_MAX, the values g1 and g0 are available
+     * For e with GE_MIN ≤ e ≤ GE_MAX, the values g1 and g0 are available
      * by invoking methods g1(e) and g0(e).
      * In addition, r = flog2pow10(e) - 125.
      *
@@ -73,17 +73,27 @@ final class MathUtils {
      * discussed in [1].
      * (See DoubleToDecimal.K_MIN and DoubleToDecimal.K_MAX.)
      *
-     * Let x = f 10^ep, where integers f and ep meet 10^(n-1) <= f < 10^n
+     * Let x = f 10^ep, where integers f and ep meet 10^(n-1) ≤ f < 10^n
      * (that is, f has n digits) and E_THR_Z < ep + n < E_THR_I.
      * (See DoubleToDecimal.E_THR_Z and DoubleToDecimal.E_THR_I.)
      *
-     * The decimal->double fast paths assume n <= N.
-     * Thus, E_THR_Z - (N - 1) <= ep <= E_THR_I - 2, which means that
+     * The decimal->double fast paths assume n ≤ N.
+     * Thus, E_THR_Z - (N - 1) ≤ ep ≤ E_THR_I - 2, which means that
      * the interval [GE_MIN, GE_MAX] must include the interval
      * [E_THR_Z - (N - 1), E_THR_I - 2].
      * That is,
      *      GE_MIN = min(-K_MAX, E_THR_Z - (N - 1))
      *      GE_MAX = max(-K_MIN, E_THR_I - 2)
+     *
+     * For the record, while the definition of g allows the case g = 2^126,
+     * the maximal g1 in the lookup table is 0x7FDD_E7F4_CA72_E30FL (e = -146),
+     * the minimal g1 is 0x4000_0000_0000_0000L (for e = 0),
+     * and the minimal g0 is 1.
+     * Hence, as easily verified, we always have
+     *      2^62 < g1 + 1 < 2^31 (2^32 - 1) < 2^63
+     *      2^125 < g = g1 2^63 + g0 < (g1 + 1) 2^63 < 2^94 (2^32 - 1) < 2^126
+     * We will assume these bounds observed by glancing at the lookup table,
+     * and use them liberally when so needed.
      */
     static final int GE_MIN = -342;
     static final int GE_MAX = 324;

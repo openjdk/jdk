@@ -22,11 +22,10 @@
  *
  */
 
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/deferredStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 #include "unittest.hpp"
 

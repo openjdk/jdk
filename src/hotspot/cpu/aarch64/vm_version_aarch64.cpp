@@ -201,16 +201,14 @@ void VM_Version::initialize() {
     }
   }
 
-  // Cortex A53
-  if (_cpu == CPU_ARM && model_is(0xd03)) {
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A53)) {
     set_feature(CPU_A53MAC);
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
     }
   }
 
-  // Cortex A73
-  if (_cpu == CPU_ARM && model_is(0xd09)) {
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A73)) {
     if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance)) {
       FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, -1);
     }
@@ -220,16 +218,11 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse
-  //   N1: 0xd0c
-  //   N2: 0xd49
-  //   N3: 0xd8e
-  //   V1: 0xd40
-  //   V2: 0xd4f
-  //   V3: 0xd84
-  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
-                          model_is(0xd40) || model_is(0xd4f) ||
-                          model_is(0xd8e) || model_is(0xd84))) {
+  if (_cpu == CPU_ARM &&
+      model_is_in({ CPU_MODEL_ARM_NEOVERSE_N1, CPU_MODEL_ARM_NEOVERSE_V1,
+                    CPU_MODEL_ARM_NEOVERSE_N2, CPU_MODEL_ARM_NEOVERSE_V2,
+                    CPU_MODEL_ARM_NEOVERSE_N3, CPU_MODEL_ARM_NEOVERSE_V3,
+                    CPU_MODEL_ARM_NEOVERSE_V3AE })) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -261,12 +254,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
-  // Neoverse
-  //   V1: 0xd40
-  //   V2: 0xd4f
-  //   V3: 0xd84
   if (_cpu == CPU_ARM &&
-      (model_is(0xd40) || model_is(0xd4f) || model_is(0xd84))) {
+      model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
+                    CPU_MODEL_ARM_NEOVERSE_V3, CPU_MODEL_ARM_NEOVERSE_V3AE })) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
@@ -378,8 +368,8 @@ void VM_Version::initialize() {
   if (UseSHA && VM_Version::supports_sha3()) {
     // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
     // Note that the evaluation of UseSHA3Intrinsics shows better performance
-    // on Apple silicon but worse performance on Neoverse V1 and N2.
-    if (_cpu == CPU_APPLE) {  // Apple silicon
+    // on Apple and Qualcomm silicon but worse performance on Neoverse V1 and N2.
+    if (_cpu == CPU_APPLE || _cpu == CPU_QUALCOMM) {  // Apple or Qualcomm silicon
       if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
         FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
       }
@@ -631,6 +621,22 @@ void VM_Version::initialize() {
   _spin_wait = get_spin_wait_desc();
 
   check_virtualizations();
+
+#ifdef __APPLE__
+  DefaultWXWriteMode = UseOldWX ? WXWrite : WXArmedForWrite;
+
+  if (TraceWXHealing) {
+    if (pthread_jit_write_protect_supported_np()) {
+      tty->print_cr("### TraceWXHealing is in use");
+      if (StressWXHealing) {
+        tty->print_cr("### StressWXHealing is in use");
+      }
+    } else {
+      tty->print_cr("WX Healing is not in use because MAP_JIT write protection "
+                    "does not work on this system.");
+    }
+  }
+#endif
 
   // Sync SVE related CPU features with flags
   if (UseSVE < 2) {

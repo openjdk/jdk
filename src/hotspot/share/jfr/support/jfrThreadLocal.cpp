@@ -36,7 +36,6 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -477,11 +476,10 @@ traceid JfrThreadLocal::external_thread_id(const Thread* t) {
   return JfrRecorder::is_recording() ? thread_id(t) : jvm_thread_id(t);
 }
 
-static inline traceid load_java_thread_id(const Thread* t) {
+static inline traceid load_java_thread_id(const JavaThread* t) {
   assert(t != nullptr, "invariant");
-  assert(t->is_Java_thread(), "invariant");
-  oop threadObj = JavaThread::cast(t)->threadObj();
-  return threadObj != nullptr ? AccessThreadTraceId::id(threadObj) : 0;
+  oop threadObj = t->threadObj();
+  return threadObj != nullptr ? AccessThreadTraceId::id(threadObj) : static_cast<traceid>(t->monitor_owner_id());
 }
 
 #ifdef ASSERT
@@ -502,7 +500,7 @@ traceid JfrThreadLocal::assign_thread_id(const Thread* t, JfrThreadLocal* tl) {
   if (tid == 0) {
     assert(can_assign(t), "invariant");
     if (t->is_Java_thread()) {
-      tid = load_java_thread_id(t);
+      tid = load_java_thread_id(JavaThread::cast(t));
       tl->_jvm_thread_id = tid;
       AtomicAccess::store(&tl->_vthread_id, tid);
       return tid;

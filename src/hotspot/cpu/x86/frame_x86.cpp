@@ -536,14 +536,9 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     // then ST0 is saved before EAX/EDX. See the note in generate_native_result
     tos_addr = (intptr_t*)sp();
     if (type == T_FLOAT || type == T_DOUBLE) {
-    // QQQ seems like this code is equivalent on the two platforms
-#ifdef AMD64
       // This is times two because we do a push(ltos) after pushing XMM0
       // and that takes two interpreter stack slots.
       tos_addr += 2 * Interpreter::stackElementWords;
-#else
-      tos_addr += 2;
-#endif // AMD64
     }
   } else {
     tos_addr = (intptr_t*)interpreter_frame_tos_address();
@@ -569,19 +564,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     case T_SHORT   : value_result->s = *(jshort*)tos_addr; break;
     case T_INT     : value_result->i = *(jint*)tos_addr; break;
     case T_LONG    : value_result->j = *(jlong*)tos_addr; break;
-    case T_FLOAT   : {
-#ifdef AMD64
-        value_result->f = *(jfloat*)tos_addr;
-#else
-      if (method->is_native()) {
-        jdouble d = *(jdouble*)tos_addr;  // Result was in ST0 so need to convert to jfloat
-        value_result->f = (jfloat)d;
-      } else {
-        value_result->f = *(jfloat*)tos_addr;
-      }
-#endif // AMD64
-      break;
-    }
+    case T_FLOAT   : value_result->f = *(jfloat*)tos_addr; break;
     case T_DOUBLE  : value_result->d = *(jdouble*)tos_addr; break;
     case T_VOID    : /* Nothing to do */ break;
     default        : ShouldNotReachHere();
@@ -611,7 +594,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
     DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
-#ifdef AMD64
   } else if (is_entry_frame()) {
     // This could be more descriptive if we use the enum in
     // stubGenerator to map to real names but it's most important to
@@ -619,7 +601,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     for (int i = 0; i < entry_frame_after_call_words; i++) {
       values.describe(frame_no, fp() - i, err_msg("call_stub word fp - %d", i));
     }
-#endif // AMD64
   }
 
   if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {

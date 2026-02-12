@@ -17,7 +17,9 @@ const sortAsc = "sort-asc";
 const sortDesc = "sort-desc";
 const tableTab = "table-tab";
 const activeTableTab = "active-table-tab";
-const THEMES = Object.freeze(["theme-light", "theme-dark", "theme-os"]);
+const THEME_LIGHT = "theme-light";
+const THEME_DARK = "theme-dark";
+const THEME_OS = "theme-os";
 
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
@@ -320,12 +322,21 @@ function makeFilterWidget(sidebar, updateToc) {
     return sidebar;
 }
 
+const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
+osDarkTheme.addEventListener("change", e => {
+    if (getTheme() === THEME_OS) {
+        setTheme(THEME_OS);
+    }
+});
 function getTheme() {
-    return localStorage.getItem('theme') || THEMES[0];
+    return localStorage.getItem("theme") || THEME_LIGHT;
 }
-
+function setTheme(theme) {
+    var value = theme !== THEME_OS ? theme : osDarkTheme.matches ? THEME_DARK : THEME_LIGHT;
+    document.documentElement.setAttribute("data-theme", value);
+}
 function initTheme() {
-    document.body.classList.add(getTheme());
+    setTheme(getTheme());
 }
 
 function setTopMargin() {
@@ -347,7 +358,6 @@ document.addEventListener("readystatechange", (e) => {
 
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
-    const subnav = document.querySelector("ol.sub-nav-list");
     const keymap = new Map();
     const searchInput = document.getElementById("search-input")
                    || document.getElementById("page-search-input");
@@ -360,10 +370,9 @@ document.addEventListener("DOMContentLoaded", function(e) {
         keymap.set(".", filterInput);
     }
     // Clone TOC sidebar to header for mobile navigation
-    const navbar = document.querySelector("div#navbar-top");
     const sidebar = document.querySelector(".main-grid nav.toc");
     const main = document.querySelector(".main-grid main");
-    const mainnav = navbar.querySelector("ul.nav-list");
+    const mainnav = document.querySelector("div#navbar-top ul.nav-list");
     const toggleButton = document.querySelector("button#navbar-toggle-button");
     const tocMenu = sidebar ? sidebar.cloneNode(true) : null;
     const themeButton = document.querySelector("button#theme-button");
@@ -401,19 +410,22 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
         input.addEventListener("change", e => {
             setTheme(e.target.value);
+            localStorage.setItem("theme", e.target.value);
         })
     });
-    function setTheme(theme) {
-        THEMES.forEach(t => {
-            if (t !== theme) document.body.classList.remove(t);
-        });
-        document.body.classList.add(theme);
-        localStorage.setItem("theme", theme);
-        document.getElementById(theme).checked = true;
-    }
+    themePanel.addEventListener("focusout", e => {
+        if (e.relatedTarget && !themePanel.contains(e.relatedTarget) && !themeButton.contains(e.relatedTarget)) {
+            closeThemePanel();
+        }
+    });
+    themePanel.addEventListener("keydown", e => {
+        if (e.key === "Escape" || e.key === "Enter") {
+            closeThemePanel();
+        }
+    });
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
-        navbar.appendChild(tocMenu);
+        document.querySelector("div#navbar-top").appendChild(tocMenu);
         makeFilterWidget(tocMenu, updateToc);
         var menuInput = tocMenu.querySelector("input.filter-input");
     }
@@ -473,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         expanded = true;
         mainnav.style.display = "block";
         mainnav.style.removeProperty("height");
-        var maxHeight = window.innerHeight - subnav.offsetTop + 4;
+        var maxHeight = window.innerHeight - document.querySelector("div.sub-nav").offsetTop;
         var expandedHeight = Math.min(maxHeight, mainnav.scrollHeight + 10);
         if (tocMenu) {
             tocMenu.style.display = "flex";

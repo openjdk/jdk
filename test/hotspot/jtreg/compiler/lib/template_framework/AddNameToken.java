@@ -23,4 +23,8 @@
 
 package compiler.lib.template_framework;
 
+/**
+ * Represents the addition of the specified {@link Name} to the current scope,
+ * or an outer scope if the inner scope is transparent to {@link Name}s.
+ */
 record AddNameToken(Name name) implements Token {}

@@ -23,4 +23,8 @@
 
 package compiler.lib.template_framework;
 
-record HookInsertToken(Hook hook, TemplateToken templateToken) implements Token {}
+/**
+ * Represents the {@link Hook#insert} with the {@link ScopeToken} of the
+ * scope that is to be inserted.
+ */
+record HookInsertToken(Hook hook, ScopeToken scopeToken) implements Token {}

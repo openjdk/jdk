@@ -321,10 +321,10 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   Label done;
   if (on_oop && on_reference && L_handle_null == nullptr) { L_handle_null = &done; }
   // Load the value of the referent field.
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type,
-                                     base, ind_or_offs, dst,
-                                     tmp1, tmp2,
-                                     preservation_level, L_handle_null);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type,
+                                        base, ind_or_offs, dst,
+                                        tmp1, tmp2,
+                                        preservation_level, L_handle_null);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer. Note with

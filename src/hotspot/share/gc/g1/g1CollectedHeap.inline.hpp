@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"
@@ -38,10 +39,10 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -53,10 +54,10 @@ inline bool G1STWIsAliveClosure::do_object_b(oop p) {
 
 inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   count = 0;
-  if (AtomicAccess::load(&_cur_claim) >= _list.length()) {
+  if (_cur_claim.load_relaxed() >= _list.length()) {
     return nullptr;
   }
-  uint claim = AtomicAccess::fetch_then_add(&_cur_claim, _claim_step);
+  uint claim = _cur_claim.fetch_then_add(_claim_step);
   if (claim >= _list.length()) {
     return nullptr;
   }
@@ -191,18 +192,26 @@ void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint 
   _region_attr.set_humongous_candidate(index);
 }
 
-void G1CollectedHeap::register_new_survivor_region_with_region_attr(G1HeapRegion* r) {
-  _region_attr.set_new_survivor_region(r->hrm_index());
+void G1CollectedHeap::register_young_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
+  _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
 }
 
-void G1CollectedHeap::register_region_with_region_attr(G1HeapRegion* r) {
-  _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
+  _region_attr.set_new_survivor_region(r->hrm_index(), r->has_pinned_objects());
+}
+
+void G1CollectedHeap::update_region_attr(G1HeapRegion* r) {
+  _region_attr.set_is_remset_tracked(r->hrm_index(), r->rem_set()->is_tracked());
   _region_attr.set_is_pinned(r->hrm_index(), r->has_pinned_objects());
 }
 
-void G1CollectedHeap::register_old_region_with_region_attr(G1HeapRegion* r) {
+void G1CollectedHeap::register_old_collection_set_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
+  assert(r->is_old(), "must be");
   assert(r->rem_set()->is_complete(), "must be");
-  _region_attr.set_in_old(r->hrm_index(), true);
+  _region_attr.set_in_old(r->hrm_index(), true, r->has_pinned_objects());
   _rem_set->exclude_region_from_scan(r->hrm_index());
 }
 
@@ -222,16 +231,11 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
   return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary null check
 }
 
-inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
-  Klass* k = obj->klass_without_asserts();
-  return k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass();
-}
-
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const G1HeapRegion* hr) const {
   assert(!hr->is_free(), "looking up obj " PTR_FORMAT " in Free region %u", p2i(obj), hr->hrm_index());
   if (hr->is_in_parsable_area(obj)) {
     // This object is in the parsable part of the heap, live unless scrubbed.
-    return is_obj_filler(obj);
+    return is_filler_object(obj);
   } else {
     // From Remark until a region has been concurrently scrubbed, parts of the
     // region is not guaranteed to be parsable. Use the bitmap for liveness.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ void NativeMovConstReg::set_data(intptr_t x, address pc) {
 
     address addr = oop_addr != nullptr ? (address)oop_addr : (address)metadata_addr;
 
-    if(pc == 0) {
+    if (pc == nullptr) {
       offset = addr - instruction_address() - 8;
     } else {
       offset = addr - pc - 8;
@@ -228,7 +228,7 @@ void NativeMovConstReg::set_data(intptr_t x, address pc) {
 
 void NativeMovConstReg::set_pc_relative_offset(address addr, address pc) {
   int offset;
-  if (pc == 0) {
+  if (pc == nullptr) {
     offset = addr - instruction_address() - 8;
   } else {
     offset = addr - pc - 8;

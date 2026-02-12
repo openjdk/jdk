@@ -48,8 +48,8 @@ ifneq ($(word 2, $(wildcard $(HOTSPOT_STATIC_LIB_PATH))), )
 endif
 
 # Find all modules with static libraries
-STATIC_LIB_MODULES := $(patsubst $(SUPPORT_OUTPUTDIR)/modules_static-libs/%, \
-    %, $(wildcard $(SUPPORT_OUTPUTDIR)/modules_static-libs/*))
+STATIC_LIB_MODULES := $(sort $(patsubst $(SUPPORT_OUTPUTDIR)/modules_static-libs/%, \
+    %, $(wildcard $(SUPPORT_OUTPUTDIR)/modules_static-libs/*)))
 
 # Filter out known broken libraries. This is a temporary measure until
 # proper support for these libraries can be provided.
@@ -123,13 +123,18 @@ else
   $(error Unsupported platform)
 endif
 
+################################################################################
+# Build the java static launcher
+################################################################################
 $(eval $(call SetupBuildLauncher, java, \
     ENABLE_ARG_FILES := true, \
     EXPAND_CLASSPATH_WILDCARDS := true, \
     EXTRA_RCFLAGS := $(JAVA_RCFLAGS), \
     VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
     OPTIMIZATION := HIGH, \
+    MACOSX_PRIVILEGED := true, \
     STATIC_LAUNCHER := true, \
+    CFLAGS := -DSTATIC_BUILD, \
     LDFLAGS := $(LDFLAGS_STATIC_JDK), \
     LIBS := $(STATIC_LIBS) $(EXTERNAL_LIBS), \
     LINK_TYPE := C++, \
@@ -146,7 +151,53 @@ TARGETS += $(java)
 
 JAVA_LAUNCHER := $(BUILD_LAUNCHER_java_TARGET)
 
-static-launcher: $(java)
+static-launchers: $(java)
+
+################################################################################
+# Build relaunchers (thin wrappers calling the java binary) for all other
+# JDK launchers.
+################################################################################
+
+RELAUNCHER_SRC := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/launcher
+
+# $1: The module name
+# $2: The launcher name
+define SetupRelauncher
+  $1_$2_LAUNCHER_ARGS_LINE := $$(call ReadFile, $$(SUPPORT_OUTPUTDIR)/static-native/relaunchers/$1/$2-relauncher-arguments.txt)
+  # Restore |||| with space
+  $1_$2_LAUNCHER_ARGS := '{ $$(subst ||||,$(SPACE),$$(strip $$(foreach a, $$($1_$2_LAUNCHER_ARGS_LINE), "-J$$a"$$(COMMA) )) ) }'
+
+  $$(eval $$(call SetupJdkExecutable, BUILD_relauncher_$2, \
+      NAME := $2, \
+      EXTRA_FILES := $$(RELAUNCHER_SRC)/relauncher.c, \
+      CFLAGS := -DLAUNCHER_ARGS=$$($1_$2_LAUNCHER_ARGS), \
+      LIBS_windows := shlwapi.lib, \
+      OUTPUT_DIR := $$(STATIC_LAUNCHER_OUTPUT_DIR), \
+      OBJECT_DIR := $$(STATIC_LAUNCHER_OUTPUT_DIR)/relaunchers/$2, \
+  ))
+
+  TARGETS += $$(BUILD_relauncher_$2)
+
+  RELAUNCHERS += $$(BUILD_relauncher_$2_TARGET)
+  static-launchers: $$(BUILD_relauncher_$2)
+endef
+
+# Find all modules with launchers
+LAUNCHER_MODULES := $(sort $(patsubst $(SUPPORT_OUTPUTDIR)/modules_static-launchers/%, \
+    %, $(wildcard $(SUPPORT_OUTPUTDIR)/modules_static-launchers/*)))
+
+# Find launchers for each module
+$(foreach module, $(LAUNCHER_MODULES), \
+    $(eval LAUNCHERS_$(module) := $(if $(wildcard \
+    $(SUPPORT_OUTPUTDIR)/modules_static-launchers/$(module)/module-included-launchers.txt), \
+    $(shell cat \
+    $(SUPPORT_OUTPUTDIR)/modules_static-launchers/$(module)/module-included-launchers.txt))) \
+)
+
+# For all launchers (except java and javaw), setup a relauncher build
+$(foreach module, $(LAUNCHER_MODULES), \
+    $(foreach launcher, $(filter-out java javaw, $(LAUNCHERS_$(module))), \
+    $(eval $(call SetupRelauncher,$(module),$(launcher)))))
 
 ################################################################################
 #
@@ -188,26 +239,72 @@ TARGETS += $(copy-from-jdk-image)
 
 $(copy-from-jdk-image): | static-jdk-info
 
-$(eval $(call SetupCopyFiles, copy-static-launcher, \
-    FILES := $(JAVA_LAUNCHER), \
+$(eval $(call SetupCopyFiles, copy-static-launchers, \
+    FILES := $(JAVA_LAUNCHER) $(RELAUNCHERS), \
     DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
 ))
 
-TARGETS += $(copy-static-launcher)
+TARGETS += $(copy-static-launchers)
 
-$(eval $(call SetupCopyFiles, copy-static-launcher-debuginfo, \
+$(eval $(call SetupCopyFiles, copy-static-launchers-debuginfo, \
     SRC := $(STATIC_LAUNCHER_OUTPUT_DIR), \
     DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
     FILES := $(call FindDebuginfoFiles, $(STATIC_LAUNCHER_OUTPUT_DIR)), \
 ))
 
-TARGETS += $(copy-static-launcher-debuginfo)
+TARGETS += $(copy-static-launchers-debuginfo)
 
-static-jdk-image: $(copy-from-jdk-image) $(copy-static-launcher) $(copy-static-launcher-debuginfo)
+# Copy the microsoft runtime libraries on windows
+ifeq ($(call isTargetOs, windows), true)
+  # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
+  # Use separate macro calls in case the source files are not in the same
+  # directory.
+  $(eval $(call SetupCopyFiles, copy-windows-msvcr, \
+      DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+      FILES := $(MSVCR_DLL), \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  TARGETS += $(copy-windows-msvcr)
+
+  $(eval $(call SetupCopyFiles, copy-windows-vcruntime, \
+      DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+      FILES := $(VCRUNTIME_1_DLL), \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  TARGETS += $(copy-windows-vcruntime)
+
+  $(eval $(call SetupCopyFiles, copy-windows-msvcp, \
+      DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+      FILES := $(MSVCP_DLL), \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  TARGETS += $(copy-windows-msvcp)
+
+  copy-windows-libs := $(copy-windows-msvcr) $(copy-windows-vcruntime) $(copy-windows-msvcp)
+
+  ifneq ($(UCRT_DLL_DIR), )
+    $(eval $(call SetupCopyFiles, copy-windows-ucrt, \
+        DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+        SRC := $(UCRT_DLL_DIR), \
+        FILES := $(wildcard $(UCRT_DLL_DIR)/*.dll), \
+        MACRO := copy-and-chmod-executable, \
+    ))
+
+    TARGETS += $(copy-windows-ucrt)
+
+    copy-windows-libs += $(copy-windows-ucrt)
+  endif
+endif
+
+static-jdk-image: $(copy-from-jdk-image) $(copy-static-launchers) \
+    $(copy-static-launchers-debuginfo) $(copy-windows-libs)
 
 TARGETS += static-jdk-image
 
-.PHONY: static-launcher static-jdk-image
+.PHONY: static-launchers static-jdk-image
 
 ################################################################################
 

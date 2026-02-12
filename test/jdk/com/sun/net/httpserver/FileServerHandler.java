@@ -25,6 +25,8 @@ import java.io.*;
 import java.net.*;
 
 import com.sun.net.httpserver.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 /**
  * Implements a basic static content HTTP file server handler
@@ -65,10 +67,10 @@ public class FileServerHandler implements HttpHandler {
         String method = t.getRequestMethod();
         if (method.equals ("HEAD")) {
             rmap.set ("Content-Length", Long.toString (f.length()));
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         } else if (!method.equals("GET")) {
-            t.sendResponseHeaders (405, -1);
+            t.sendResponseHeaders (405, RSPBODY_EMPTY);
             t.close();
             return;
         }
@@ -84,7 +86,7 @@ public class FileServerHandler implements HttpHandler {
                 return;
             }
             rmap.set ("Content-Type", "text/html");
-            t.sendResponseHeaders (200, 0);
+            t.sendResponseHeaders (200, RSPBODY_CHUNKED);
             String[] list = f.list();
             try (final OutputStream os = t.getResponseBody();
                  final PrintStream p = new PrintStream (os)) {
@@ -127,13 +129,13 @@ public class FileServerHandler implements HttpHandler {
         String location = "http://"+host+uri.getPath() + "/";
         map.set ("Content-Type", "text/html");
         map.set ("Location", location);
-        t.sendResponseHeaders (301, -1);
+        t.sendResponseHeaders (301, RSPBODY_EMPTY);
         t.close();
     }
 
     void notfound (HttpExchange t, String p) throws IOException {
         t.getResponseHeaders().set ("Content-Type", "text/html");
-        t.sendResponseHeaders (404, 0);
+        t.sendResponseHeaders (404, RSPBODY_CHUNKED);
         OutputStream os = t.getResponseBody();
         String s = "<h2>File not found</h2>";
         s = s + p + "<p>";

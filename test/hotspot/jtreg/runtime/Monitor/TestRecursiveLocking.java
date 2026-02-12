@@ -202,7 +202,7 @@ public class TestRecursiveLocking {
                 assertNotInflated();
             } else {
                 // Second time we want to lock A, the lock stack
-                // looks like this [A, B]. Lightweight locking
+                // looks like this [A, B]. Fast locking
                 // doesn't allow interleaving ([A, B, A]), instead
                 // it inflates A and removes it from the lock
                 // stack. Which leaves us with only [B] on the
@@ -220,11 +220,10 @@ public class TestRecursiveLocking {
             counter++;
 
 
-            // Legacy tolerates endless recursions. While testing
-            // lightweight we don't go deeper than the size of the
-            // lock stack, which in this test case will be filled
-            // with a number of B-elements. See comment in runA()
-            // above for more info.
+            // Legacy tolerates endless recursions. While testing we
+            // don't go deeper than the size of the lock stack, which
+            // in this test case will be filled with a number of
+            // B-elements. See comment in runA() above for more info.
             assertNotInflated();
 
             if (depth == 1) {

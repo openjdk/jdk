@@ -42,7 +42,7 @@
 
 #include <math.h>
 
-ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, address addr, const char* name) : CallLeafPureNode(tf, addr, name, TypeRawPtr::BOTTOM) {
+ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, address addr, const char* name) : CallLeafPureNode(tf, addr, name) {
   add_flag(Flag_is_macro);
   C->add_macro_node(this);
 }
@@ -504,6 +504,102 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   return nullptr;
 }
 
+template<typename IntegerType>
+static const IntegerType* compute_signed_div_type(const IntegerType* i1, const IntegerType* i2) {
+  typedef typename IntegerType::NativeType NativeType;
+  assert(!i2->is_con() || i2->get_con() != 0, "Can't handle zero constant divisor");
+  int widen = MAX2(i1->_widen, i2->_widen);
+
+  // Case A: divisor range spans zero (i2->_lo < 0 < i2->_hi)
+  // We split into two subproblems to avoid division by 0:
+  //   - negative part: [i2->_lo, −1]
+  //   - positive part: [1, i2->_hi]
+  // Then we union the results by taking the min of all lower‐bounds and
+  // the max of all upper‐bounds from the two halves.
+  if (i2->_lo < 0 && i2->_hi > 0) {
+    // Handle negative part of the divisor range
+    const IntegerType* neg_part = compute_signed_div_type(i1, IntegerType::make(i2->_lo, -1, widen));
+    // Handle positive part of the divisor range
+    const IntegerType* pos_part = compute_signed_div_type(i1, IntegerType::make(1, i2->_hi, widen));
+    // Merge results
+    NativeType new_lo = MIN2(neg_part->_lo, pos_part->_lo);
+    NativeType new_hi = MAX2(neg_part->_hi, pos_part->_hi);
+    assert(new_hi >= new_lo, "sanity");
+    return IntegerType::make(new_lo, new_hi, widen);
+  }
+
+  // Case B: divisor range does NOT span zero.
+  // Here i2 is entirely negative or entirely positive.
+  // Then i1/i2 is monotonic in i1 and i2 (when i2 keeps the same sign).
+  // Therefore the extrema occur at the four “corners”:
+  //   (i1->_lo, i2->_hi), (i1->_lo, i2->_lo), (i1->_hi, i2->_lo), (i1->_hi, i2->_hi).
+  // We compute all four and take the min and max.
+  // A special case handles overflow when dividing the most‐negative value by −1.
+
+  // adjust i2 bounds to not include zero, as zero always throws
+  NativeType i2_lo = i2->_lo == 0 ? 1 : i2->_lo;
+  NativeType i2_hi = i2->_hi == 0 ? -1 : i2->_hi;
+  constexpr NativeType min_val = std::numeric_limits<NativeType>::min();
+  static_assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
+  constexpr NativeType max_val = std::numeric_limits<NativeType>::max();
+  static_assert(max_val == max_jint || max_val == max_jlong, "max has to be either max_jint or max_jlong");
+
+  // Special overflow case: min_val / (-1) == min_val (cf. JVMS§6.5 idiv/ldiv)
+  // We need to be careful that we never run min_val / (-1) in C++ code, as this overflow is UB there
+  if (i1->_lo == min_val && i2_hi == -1) {
+    NativeType new_lo = min_val;
+    NativeType new_hi;
+    // compute new_hi depending on whether divisor or dividend is non-constant.
+    // i2 is purely in the negative domain here (as i2_hi is -1)
+    // which means the maximum value this division can yield is either
+    if (!i1->is_con()) {
+      // a) non-constant dividend: i1 could be min_val + 1.
+      // -> i1 / i2 = (min_val + 1) / -1 = max_val is possible.
+      new_hi = max_val;
+      assert((min_val + 1) / -1 == new_hi, "new_hi should be max_val");
+    } else if (i2_lo != i2_hi) {
+      // b) i1 is constant min_val, i2 is non-constant.
+      //    if i2 = -1 -> i1 / i2 =  min_val / -1 = min_val
+      //    if i2 < -1 -> i1 / i2 <= min_val / -2 = (max_val / 2) + 1
+      new_hi = (max_val / 2) + 1;
+      assert(min_val / -2 == new_hi, "new_hi should be (max_val / 2) + 1)");
+    } else {
+      // c) i1 is constant min_val, i2 is constant -1.
+      //    -> i1 / i2 = min_val / -1 = min_val
+      new_hi = min_val;
+    }
+
+#ifdef ASSERT
+    // validate new_hi for non-constant divisor
+    if (i2_lo != i2_hi) {
+      assert(i2_lo != -1, "Special case not possible here, as i2_lo has to be < i2_hi");
+      NativeType result = i1->_lo / i2_lo;
+      assert(new_hi >= result, "computed wrong value for new_hi");
+    }
+
+    // validate new_hi for non-constant dividend
+    if (!i1->is_con()) {
+      assert(i2_hi > min_val, "Special case not possible here, as i1->_hi has to be > min");
+      NativeType result1 = i1->_hi / i2_lo;
+      NativeType result2 = i1->_hi / i2_hi;
+      assert(new_hi >= result1 && new_hi >= result2, "computed wrong value for new_hi");
+    }
+#endif
+
+    return IntegerType::make(new_lo, new_hi, widen);
+  }
+  assert((i1->_lo != min_val && i1->_hi != min_val) || (i2_hi != -1 && i2_lo != -1), "should have filtered out before");
+
+  // Special case not possible here, calculate all corners normally
+  NativeType corner1 = i1->_lo / i2_lo;
+  NativeType corner2 = i1->_lo / i2_hi;
+  NativeType corner3 = i1->_hi / i2_lo;
+  NativeType corner4 = i1->_hi / i2_hi;
+
+  NativeType new_lo = MIN4(corner1, corner2, corner3, corner4);
+  NativeType new_hi = MAX4(corner1, corner2, corner3, corner4);
+  return IntegerType::make(new_lo, new_hi, widen);
+}
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -549,65 +645,26 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // prevent hoisting the divide above an unsafe test.
 const Type* DivINode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  if (t2 == TypeInt::ZERO) {
+    // this division will always throw an exception
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
     return TypeInt::ONE;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const TypeInt* i1 = t1->is_int();
+  const TypeInt* i2 = t2->is_int();
 
-  // Divide the two numbers.  We approximate.
-  // If divisor is a constant and not zero
-  const TypeInt *i1 = t1->is_int();
-  const TypeInt *i2 = t2->is_int();
-  int widen = MAX2(i1->_widen, i2->_widen);
-
-  if( i2->is_con() && i2->get_con() != 0 ) {
-    int32_t d = i2->get_con(); // Divisor
-    jint lo, hi;
-    if( d >= 0 ) {
-      lo = i1->_lo/d;
-      hi = i1->_hi/d;
-    } else {
-      if( d == -1 && i1->_lo == min_jint ) {
-        // 'min_jint/-1' throws arithmetic exception during compilation
-        lo = min_jint;
-        // do not support holes, 'hi' must go to either min_jint or max_jint:
-        // [min_jint, -10]/[-1,-1] ==> [min_jint] UNION [10,max_jint]
-        hi = i1->_hi == min_jint ? min_jint : max_jint;
-      } else {
-        lo = i1->_hi/d;
-        hi = i1->_lo/d;
-      }
-    }
-    return TypeInt::make(lo, hi, widen);
-  }
-
-  // If the dividend is a constant
-  if( i1->is_con() ) {
-    int32_t d = i1->get_con();
-    if( d < 0 ) {
-      if( d == min_jint ) {
-        //  (-min_jint) == min_jint == (min_jint / -1)
-        return TypeInt::make(min_jint, max_jint/2 + 1, widen);
-      } else {
-        return TypeInt::make(d, -d, widen);
-      }
-    }
-    return TypeInt::make(-d, d, widen);
-  }
-
-  // Otherwise we give up all hope
-  return TypeInt::INT;
+  return compute_signed_div_type<TypeInt>(i1, i2);
 }
 
 
@@ -655,65 +712,26 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 // prevent hoisting the divide above an unsafe test.
 const Type* DivLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  if (t2 == TypeLong::ZERO) {
+    // this division will always throw an exception
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
     return TypeLong::ONE;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const TypeLong* i1 = t1->is_long();
+  const TypeLong* i2 = t2->is_long();
 
-  // Divide the two numbers.  We approximate.
-  // If divisor is a constant and not zero
-  const TypeLong *i1 = t1->is_long();
-  const TypeLong *i2 = t2->is_long();
-  int widen = MAX2(i1->_widen, i2->_widen);
-
-  if( i2->is_con() && i2->get_con() != 0 ) {
-    jlong d = i2->get_con();    // Divisor
-    jlong lo, hi;
-    if( d >= 0 ) {
-      lo = i1->_lo/d;
-      hi = i1->_hi/d;
-    } else {
-      if( d == CONST64(-1) && i1->_lo == min_jlong ) {
-        // 'min_jlong/-1' throws arithmetic exception during compilation
-        lo = min_jlong;
-        // do not support holes, 'hi' must go to either min_jlong or max_jlong:
-        // [min_jlong, -10]/[-1,-1] ==> [min_jlong] UNION [10,max_jlong]
-        hi = i1->_hi == min_jlong ? min_jlong : max_jlong;
-      } else {
-        lo = i1->_hi/d;
-        hi = i1->_lo/d;
-      }
-    }
-    return TypeLong::make(lo, hi, widen);
-  }
-
-  // If the dividend is a constant
-  if( i1->is_con() ) {
-    jlong d = i1->get_con();
-    if( d < 0 ) {
-      if( d == min_jlong ) {
-        //  (-min_jlong) == min_jlong == (min_jlong / -1)
-        return TypeLong::make(min_jlong, max_jlong/2 + 1, widen);
-      } else {
-        return TypeLong::make(d, -d, widen);
-      }
-    }
-    return TypeLong::make(-d, d, widen);
-  }
-
-  // Otherwise we give up all hope
-  return TypeLong::LONG;
+  return compute_signed_div_type<TypeLong>(i1, i2);
 }
 
 
@@ -1094,8 +1112,6 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !ti->is_con() ) return nullptr;
   jint con = ti->get_con();
 
-  Node *hook = new Node(1);
-
   // First, special check for modulo 2^k-1
   if( con >= 0 && con < max_jint && is_power_of_2(con+1) ) {
     uint k = exact_log2(con+1);  // Extract k
@@ -1111,7 +1127,9 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 
-      hook->init_req(0, x);       // Add a use to x to prevent him from dying
+      // Add a use to x to prevent it from dying
+      Node* hook = new Node(1);
+      hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
         Node *xl = phase->transform( new AndINode(x,divisor) );
@@ -1167,6 +1185,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Save in(1) so that it cannot be changed or deleted
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivI to MulL
@@ -1389,8 +1408,6 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !tl->is_con() ) return nullptr;
   jlong con = tl->get_con();
 
-  Node *hook = new Node(1);
-
   // Expand mod
   if(con >= 0 && con < max_jlong && is_power_of_2(con + 1)) {
     uint k = log2i_exact(con + 1);  // Extract k
@@ -1408,13 +1425,15 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 
-      hook->init_req(0, x);       // Add a use to x to prevent him from dying
+      // Add a use to x to prevent it from dying
+      Node* hook = new Node(1);
+      hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
         Node *xl = phase->transform( new AndLNode(x,divisor) );
         Node *xh = phase->transform( new RShiftLNode(x,phase->intcon(k)) ); // Must be signed
         x = phase->transform( new AddLNode(xh,xl) );
-        hook->set_req(0, x);    // Add a use to x to prevent him from dying
+        hook->set_req(0, x);    // Add a use to x to prevent it from dying
       }
 
       // Generate sign-fixup code.  Was original value positive?
@@ -1464,6 +1483,8 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Save in(1) so that it cannot be changed or deleted
+  // Add a use to x to prevent him from dying
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivL to MulL

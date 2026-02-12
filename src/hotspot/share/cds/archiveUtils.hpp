@@ -324,14 +324,14 @@ private:
   size_t _base_offset;
   size_t _count;
   int _roots_count;
-  int _max_size_in_bytes;
+  size_t _max_size_in_bytes;
   int _max_size_in_elems;
 
 public:
   size_t base_offset() { return _base_offset; }
   size_t count() { return _count; }
   int roots_count() { return _roots_count; }
-  int max_size_in_bytes() { return _max_size_in_bytes; }
+  size_t max_size_in_bytes() { return _max_size_in_bytes; }
   int max_size_in_elems() { return _max_size_in_elems; }
 
   size_t size_in_bytes(size_t seg_idx);

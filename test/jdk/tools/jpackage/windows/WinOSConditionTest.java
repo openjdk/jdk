@@ -34,11 +34,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage test that installer blocks on Windows of older version
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror WinOSConditionTest.java
  * @requires (os.family == "windows")
- * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinOSConditionTest
  */

@@ -42,7 +42,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/align.hpp"
@@ -110,15 +110,15 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      // Basic verification should happen before we touch anything else.
+      // For performance reasons, only fully verify non-marked field values.
+      // We are here when the host object for *p is already marked.
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      verify_oop_at_basic(p, obj);
+
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
       }
-      // Single threaded verification can use faster non-atomic stack and bitmap
-      // methods.
-      //
-      // For performance reasons, only fully verify non-marked field values.
-      // We are here when the host object for *p is already marked.
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
         _stack->push(ShenandoahVerifierTask(obj));
@@ -131,7 +131,7 @@ private:
     return _generation->contains(region);
   }
 
-  void verify_oop(oop obj) {
+  void verify_oop(oop obj, bool basic = false) {
     // Perform consistency checks with gradually decreasing safety level. This guarantees
     // that failure report would not try to touch something that was not yet verified to be
     // safe to process.
@@ -174,17 +174,21 @@ private:
         }
       }
 
+      check(ShenandoahAsserts::_safe_unknown, obj, obj_reg->is_active(),
+           "Object should be in active region");
+
       // ------------ obj is safe at this point --------------
 
-      check(ShenandoahAsserts::_safe_oop, obj, obj_reg->is_active(),
-            "Object should be in active region");
+      if (basic) {
+        return;
+      }
 
       switch (_options._verify_liveness) {
         case ShenandoahVerifier::_verify_liveness_disable:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          AtomicAccess::add(&_ld[obj_reg->index()], (uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
+          _ld[obj_reg->index()].add_then_fetch((uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live() ||
@@ -332,6 +336,18 @@ public:
   }
 
   /**
+   * Verify object with known interior reference, with only basic verification.
+   * @param p interior reference where the object is referenced from; can be off-heap
+   * @param obj verified object
+   */
+  template <class T>
+  void verify_oop_at_basic(T* p, oop obj) {
+    _interior_loc = p;
+    verify_oop(obj, /* basic = */ true);
+    _interior_loc = nullptr;
+  }
+
+  /**
    * Verify object without known interior reference.
    * Useful when picking up the object at known offset in heap,
    * but without knowing what objects reference it.
@@ -365,54 +381,88 @@ public:
 // a subset (e.g. the young generation or old generation) of the total heap.
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
 private:
-  size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions;
+  size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
+  size_t _region_size_bytes, _min_free_size;
 public:
   ShenandoahCalculateRegionStatsClosure() :
-      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0) {};
+     _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0)
+  {
+    _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+    // Retired regions are not necessarily filled, thouugh their remnant memory is considered used.
+    _min_free_size = PLAB::min_size() * HeapWordSize;
+  };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-    _used += r->used();
-    _garbage += r->garbage();
-    _committed += r->is_committed() ? ShenandoahHeapRegion::region_size_bytes() : 0;
-    if (r->is_humongous()) {
-      _humongous_waste += r->free();
+    if (r->is_cset() || r->is_trash()) {
+      // Count the entire cset or trashed (formerly cset) region as used
+      // Note: Immediate garbage trash regions were never in the cset.
+      _used += _region_size_bytes;
+      _garbage += _region_size_bytes - r->get_live_data_bytes();
+      if (r->is_trash()) {
+        _trashed_regions++;
+        _trashed_used += _region_size_bytes;
+      }
+    } else {
+      if (r->is_humongous()) {
+        _used += _region_size_bytes;
+        _garbage += _region_size_bytes - r->get_live_data_bytes();
+        _humongous_waste += r->free();
+      } else {
+        size_t alloc_capacity = r->free();
+        if (alloc_capacity < _min_free_size) {
+          // this region has been retired already, count it as entirely consumed
+          alloc_capacity = 0;
+        }
+        size_t bytes_used_in_region = _region_size_bytes - alloc_capacity;
+        size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes();
+        size_t waste_bytes = r->free();
+        _used += bytes_used_in_region;
+        _garbage += bytes_garbage_in_region;
+      }
     }
-    if (r->is_trash()) {
-      _trashed_regions++;
-    }
+    _committed += r->is_committed() ? _region_size_bytes : 0;
     _regions++;
     log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding %zu for %s Region %zu, yielding: %zu",
             r->used(), (r->is_humongous() ? "humongous" : "regular"), r->index(), _used);
   }
 
   size_t used() const { return _used; }
+  size_t used_after_recycle() const { return _used - _trashed_used; }
   size_t committed() const { return _committed; }
   size_t garbage() const { return _garbage; }
   size_t regions() const { return _regions; }
+  size_t trashed_regions() const { return _trashed_regions; }
   size_t waste() const { return _humongous_waste; }
 
   // span is the total memory affiliated with these stats (some of which is in use and other is available)
   size_t span() const { return _regions * ShenandoahHeapRegion::region_size_bytes(); }
-  size_t non_trashed_span() const { return (_regions - _trashed_regions) * ShenandoahHeapRegion::region_size_bytes(); }
+  size_t non_trashed_span() const {
+    assert(_regions >= _trashed_regions, "sanity");
+    return (_regions - _trashed_regions) * ShenandoahHeapRegion::region_size_bytes();
+  }
+  size_t non_trashed_committed() const {
+    assert(_committed >= _trashed_regions * ShenandoahHeapRegion::region_size_bytes(), "sanity");
+    return _committed - (_trashed_regions * ShenandoahHeapRegion::region_size_bytes());
+  }
 };
 
 class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
  public:
-  ShenandoahCalculateRegionStatsClosure old;
-  ShenandoahCalculateRegionStatsClosure young;
-  ShenandoahCalculateRegionStatsClosure global;
+  ShenandoahCalculateRegionStatsClosure _old;
+  ShenandoahCalculateRegionStatsClosure _young;
+  ShenandoahCalculateRegionStatsClosure _global;
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
     switch (r->affiliation()) {
       case FREE:
         return;
       case YOUNG_GENERATION:
-        young.heap_region_do(r);
-        global.heap_region_do(r);
+        _young.heap_region_do(r);
+        _global.heap_region_do(r);
         break;
       case OLD_GENERATION:
-        old.heap_region_do(r);
-        global.heap_region_do(r);
+        _old.heap_region_do(r);
+        _global.heap_region_do(r);
         break;
       default:
         ShouldNotReachHere();
@@ -426,23 +476,22 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
                   byte_size_in_proper_unit(stats.used()),       proper_unit_for_byte_size(stats.used()));
   }
 
-  static void validate_usage(const bool adjust_for_padding,
+  static void validate_usage(const bool adjust_for_padding, const bool adjust_for_trash,
                              const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t generation_used = generation->used();
     size_t generation_used_regions = generation->used_regions();
-    if (adjust_for_padding && (generation->is_young() || generation->is_global())) {
-      size_t pad = heap->old_generation()->get_pad_for_promote_in_place();
-      generation_used += pad;
-    }
 
-    guarantee(stats.used() == generation_used,
+    size_t stats_used = adjust_for_trash? stats.used_after_recycle(): stats.used();
+    guarantee(stats_used == generation_used,
               "%s: generation (%s) used size must be consistent: generation-used: " PROPERFMT ", regions-used: " PROPERFMT,
-              label, generation->name(), PROPERFMTARGS(generation_used), PROPERFMTARGS(stats.used()));
+              label, generation->name(), PROPERFMTARGS(generation_used), PROPERFMTARGS(stats_used));
 
-    guarantee(stats.regions() == generation_used_regions,
-              "%s: generation (%s) used regions (%zu) must equal regions that are in use (%zu)",
-              label, generation->name(), generation->used_regions(), stats.regions());
+    size_t stats_regions = adjust_for_trash? stats.regions() - stats.trashed_regions(): stats.regions();
+    guarantee(stats_regions == generation_used_regions,
+              "%s: generation (%s) used regions (%zu) must equal regions that are in use (%zu)%s",
+              label, generation->name(), generation->used_regions(), stats_regions,
+              adjust_for_trash? " (after adjusting for trash)": "");
 
     size_t generation_capacity = generation->max_capacity();
     guarantee(stats.non_trashed_span() <= generation_capacity,
@@ -463,11 +512,11 @@ private:
   ShenandoahHeap* _heap;
   const char* _phase;
   ShenandoahVerifier::VerifyRegions _regions;
-public:
+  public:
   ShenandoahVerifyHeapRegionClosure(const char* phase, ShenandoahVerifier::VerifyRegions regions) :
-    _heap(ShenandoahHeap::heap()),
-    _phase(phase),
-    _regions(regions) {};
+      _heap(ShenandoahHeap::heap()),
+      _phase(phase),
+      _regions(regions) {};
 
   void print_failure(ShenandoahHeapRegion* r, const char* label) {
     ResourceMark rm;
@@ -560,7 +609,7 @@ private:
   ShenandoahHeap* _heap;
   ShenandoahLivenessData* _ld;
   MarkBitMap* _bitmap;
-  volatile size_t _processed;
+  Atomic<size_t> _processed;
   ShenandoahGeneration* _generation;
 
 public:
@@ -579,7 +628,7 @@ public:
     _generation(generation) {};
 
   size_t processed() const {
-    return _processed;
+    return _processed.load_relaxed();
   }
 
   void work(uint worker_id) override {
@@ -615,12 +664,12 @@ public:
       }
     }
 
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 };
 
 class ShenandoahVerifyNoIncompleteSatbBuffers : public ThreadClosure {
-public:
+  public:
   void do_thread(Thread* thread) override {
     SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
     if (!queue.is_empty()) {
@@ -630,14 +679,14 @@ public:
 };
 
 class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
-private:
+  private:
   const char* _label;
   ShenandoahVerifier::VerifyOptions _options;
   ShenandoahHeap *_heap;
   MarkBitMap* _bitmap;
   ShenandoahLivenessData* _ld;
-  volatile size_t _claimed;
-  volatile size_t _processed;
+  Atomic<size_t> _claimed;
+  Atomic<size_t> _processed;
   ShenandoahGeneration* _generation;
 
 public:
@@ -657,7 +706,7 @@ public:
           _generation(generation) {}
 
   size_t processed() {
-    return AtomicAccess::load(&_processed);
+    return _processed.load_relaxed();
   }
 
   void work(uint worker_id) override {
@@ -672,7 +721,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = AtomicAccess::fetch_then_add(&_claimed, 1u, memory_order_relaxed);
+      size_t v = _claimed.fetch_then_add(1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!in_generation(r)) {
@@ -700,7 +749,7 @@ public:
     if (_generation->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
@@ -733,7 +782,7 @@ public:
       }
     }
 
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
@@ -760,7 +809,7 @@ public:
 class VerifyThreadGCState : public ThreadClosure {
 private:
   const char* const _label;
-         char const _expected;
+  char const _expected;
 
 public:
   VerifyThreadGCState(const char* label, char expected) : _label(label), _expected(expected) {}
@@ -864,16 +913,18 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
     size_t heap_used;
     if (_heap->mode()->is_generational() && (sizeness == _verify_size_adjusted_for_padding)) {
       // Prior to evacuation, regular regions that are to be evacuated in place are padded to prevent further allocations
-      heap_used = _heap->used() + _heap->old_generation()->get_pad_for_promote_in_place();
+      // but this padding is already represented in _heap->used()
+      heap_used = _heap->used();
     } else if (sizeness != _verify_size_disable) {
       heap_used = _heap->used();
     }
     if (sizeness != _verify_size_disable) {
-      guarantee(cl.used() == heap_used,
+      size_t cl_size = (sizeness == _verify_size_exact_including_trash)? cl.used(): cl.used_after_recycle();
+      guarantee(cl_size == heap_used,
                 "%s: heap used size must be consistent: heap-used = %zu%s, regions-used = %zu%s",
                 label,
                 byte_size_in_proper_unit(heap_used), proper_unit_for_byte_size(heap_used),
-                byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
+                byte_size_in_proper_unit(cl_size), proper_unit_for_byte_size(cl_size));
     }
     size_t heap_committed = _heap->committed();
     guarantee(cl.committed() == heap_committed,
@@ -911,18 +962,19 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
     _heap->heap_region_iterate(&cl);
 
     if (LogTarget(Debug, gc)::is_enabled()) {
-      ShenandoahGenerationStatsClosure::log_usage(_heap->old_generation(),    cl.old);
-      ShenandoahGenerationStatsClosure::log_usage(_heap->young_generation(),  cl.young);
-      ShenandoahGenerationStatsClosure::log_usage(_heap->global_generation(), cl.global);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->old_generation(),    cl._old);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->young_generation(),  cl._young);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->global_generation(), cl._global);
     }
     if (sizeness == _verify_size_adjusted_for_padding) {
-      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->old_generation(), cl.old);
-      ShenandoahGenerationStatsClosure::validate_usage(true, label, _heap->young_generation(), cl.young);
-      ShenandoahGenerationStatsClosure::validate_usage(true, label, _heap->global_generation(), cl.global);
-    } else if (sizeness == _verify_size_exact) {
-      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->old_generation(), cl.old);
-      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->young_generation(), cl.young);
-      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->global_generation(), cl.global);
+      ShenandoahGenerationStatsClosure::validate_usage(false, true, label, _heap->old_generation(), cl._old);
+      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->young_generation(), cl._young);
+      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->global_generation(), cl._global);
+    } else if (sizeness == _verify_size_exact || sizeness == _verify_size_exact_including_trash) {
+      bool adjust_trash = (sizeness == _verify_size_exact);
+      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->old_generation(), cl._old);
+      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->young_generation(), cl._young);
+      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->global_generation(), cl._global);
     }
     // else: sizeness must equal _verify_size_disable
   }
@@ -999,12 +1051,12 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = AtomicAccess::load(&ld[r->humongous_start_region()->index()]);
+        juint start_live = ld[r->humongous_start_region()->index()].load_relaxed();
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
       } else {
-        verf_live = AtomicAccess::load(&ld[r->index()]);
+        verf_live = ld[r->index()].load_relaxed();
       }
 
       size_t reg_live = r->get_live_data_words();
@@ -1139,7 +1191,8 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
+                                       // expect generation and heap sizes to match exactly, including trash
+          _verify_size_exact_including_trash,
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );
 }
@@ -1195,7 +1248,9 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
+
       oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (obj != fwd) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
@@ -1215,7 +1270,9 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
+
       ShenandoahHeap* heap = ShenandoahHeap::heap();
 
       if (!heap->marking_context()->is_marked_or_old(obj)) {
@@ -1269,7 +1326,9 @@ public:
   inline void work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
+
       if (_heap->is_in_young(obj) && !_scanner->is_card_dirty((HeapWord*) p)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          _message, "clean card, it should be dirty.", __FILE__, __LINE__);
@@ -1405,7 +1464,7 @@ void ShenandoahVerifier::verify_before_rebuilding_free_set() {
   ShenandoahGenerationStatsClosure cl;
   _heap->heap_region_iterate(&cl);
 
-  ShenandoahGenerationStatsClosure::validate_usage(false, "Before free set rebuild", _heap->old_generation(), cl.old);
-  ShenandoahGenerationStatsClosure::validate_usage(false, "Before free set rebuild", _heap->young_generation(), cl.young);
-  ShenandoahGenerationStatsClosure::validate_usage(false, "Before free set rebuild", _heap->global_generation(), cl.global);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->old_generation(), cl._old);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->young_generation(), cl._young);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->global_generation(), cl._global);
 }

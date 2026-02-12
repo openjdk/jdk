@@ -82,7 +82,7 @@ public class ErrorTest {
     //@Test(timeOut=5000)
     @Test
     public void test() throws Exception {
-        SSLContext sslContext = (new SimpleSSLContext()).get();
+        SSLContext sslContext = SimpleSSLContext.findSSLContext();
         ExecutorService exec = Executors.newCachedThreadPool();
         HttpClient client = HttpClient.newBuilder()
                                       .executor(exec)
@@ -93,7 +93,7 @@ public class ErrorTest {
 
         Http2TestServer httpsServer = null;
         try {
-            SSLContext serverContext = (new SimpleSSLContext()).get();
+            SSLContext serverContext = SimpleSSLContext.findSSLContext();
             SSLParameters p = serverContext.getSupportedSSLParameters();
             p.setApplicationProtocols(new String[]{"h2"});
             httpsServer = new Http2TestServer(true,

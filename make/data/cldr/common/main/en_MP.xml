@@ -13,13 +13,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<dates>
 		<timeZoneNames>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>∅∅∅</generic>
-					<standard>∅∅∅</standard>
-					<daylight>∅∅∅</daylight>
-				</short>
-			</zone>
 			<metazone type="Alaska">
 				<short>
 					<generic>∅∅∅</generic>
@@ -60,6 +53,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>∅∅∅</generic>
 					<standard>∅∅∅</standard>
 					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="Hawaii">
+				<short>
+					<standard>∅∅∅</standard>
 				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">

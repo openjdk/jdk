@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
@@ -201,8 +202,17 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
 
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
-
-            rect.x += lh.getAfterCheckIconGap();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
+                    && menuItem.getHorizontalTextPosition() != SwingConstants.LEFT) {
+                    rect.x += lh.getAfterCheckIconGap();
+                }
+            } else {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
+                    && menuItem.getHorizontalTextPosition() != SwingConstants.RIGHT) {
+                    rect.x -= lh.getAfterCheckIconGap();
+                }
+            }
 
             lr.setTextRect(rect);
         }
@@ -218,12 +228,25 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         }
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getAccRect();
-            rect.x += lh.getAfterCheckIconGap();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                rect.x += lh.getAfterCheckIconGap();
+            } else {
+                rect.x -= lh.getAfterCheckIconGap();
+            }
             lr.setAccRect(rect);
         }
         SwingUtilities3.paintAccText(g, lh, lr, disabledForeground,
                                      acceleratorSelectionForeground,
                                      acceleratorForeground);
+        if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
+            Rectangle rect = lr.getArrowRect();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                rect.x += lh.getAfterCheckIconGap();
+            } else {
+                rect.x -= lh.getAfterCheckIconGap();
+            }
+            lr.setArrowRect(rect);
+        }
         SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
 
         // Restore original graphics font and color

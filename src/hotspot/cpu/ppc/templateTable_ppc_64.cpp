@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2199,7 +2199,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register method = Rscratch;
     const Register klass  = Rscratch;
 
@@ -2214,7 +2215,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
-  __ call_VM(noreg, entry, R4_ARG2);
+  __ call_VM_preemptable(noreg, entry, R4_ARG2);
 
   // Update registers with resolved info.
   __ load_method_entry(Rcache, Rindex);
@@ -2244,8 +2245,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
   __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static fields
-  if (VM_Version::supports_fast_class_init_checks() &&
-      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register field_holder = R4_ARG2;
 
     // InterpreterRuntime::resolve_get_put sets field_holder and finally release-stores put_code.
@@ -2262,7 +2263,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
   __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
-  __ call_VM(noreg, entry, R4_ARG2);
+  __ call_VM_preemptable(noreg, entry, R4_ARG2);
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
@@ -3864,7 +3865,7 @@ void TemplateTable::_new() {
   // --------------------------------------------------------------------------
   // slow case
   __ bind(Lslow_case);
-  call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Rcpool, Rindex);
+  __ call_VM_preemptable(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Rcpool, Rindex);
 
   // continue
   __ bind(Ldone);

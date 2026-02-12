@@ -83,10 +83,10 @@ public:
   void collect_as_vm_thread(GCCause::Cause cause) override;
   void do_full_collection(bool clear_all_soft_refs) override;
 
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
   size_t max_tlab_size() const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   MemoryUsage memory_usage() override;
   GrowableArray<GCMemoryManager*> memory_managers() override;
@@ -114,6 +114,8 @@ public:
 
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
+
+  size_t bootstrap_max_memory() const override;
 
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override;

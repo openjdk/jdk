@@ -72,12 +72,10 @@ define_pd_global(size_t, CodeCacheMinBlockLength,    1);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   200*K);
 #ifndef ZERO
 define_pd_global(bool, NeverActAsServerClassMachine, true);
-define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #else
 // Zero runs without compilers. Do not let this code to force
 // the GC mode and default heap settings.
 define_pd_global(bool, NeverActAsServerClassMachine, false);
-define_pd_global(uint64_t,MaxRAM,                    128ULL*G);
 #endif
 #define CI_COMPILER_COUNT 0
 #else

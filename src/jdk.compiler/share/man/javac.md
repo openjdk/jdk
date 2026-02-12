@@ -611,7 +611,7 @@ file system locations may be directories, JAR files or JMOD files.
     -   `incubating`: Warns about the use of incubating modules.
 
     -   `lossy-conversions`: Warns about possible lossy conversions
-        in compound assignment.
+        in compound assignment and bit shift operations.
 
     -   `missing-explicit-ctor`: Warns about missing explicit constructors in
          public and protected classes in exported packages.
@@ -1310,6 +1310,12 @@ word `module`, like [`--module-path`](#option-module-path), are used to specify 
 although some module-related path options allow a package hierarchy to be
 specified on a per-module basis. All other path options are used to specify
 package hierarchies.
+
+When a JAR file in the user class path has a `Class-Path` manifest attribute,
+and the specified JAR file(s) exist, they are automatically inserted into the
+user class path after the JAR file. This rule also applies recursively to any
+new JAR files found. Consult the [JAR File Specification](../jar/jar.html#class-path-attribute)
+for details.
 
 ### Package Hierarchy
 

@@ -46,32 +46,35 @@ import java.awt.geom.Rectangle2D;
 
 import java.util.Map;
 
-/**
- * Default implementation of ExtendedTextLabel.
- */
-
 // {jbr} I made this class package-private to keep the
 // Decoration.Label API package-private.
 
-/* public */
-class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.Label {
+/**
+ * A label.
+ * Visual bounds is a rect that encompasses the entire rendered area.
+ * Logical bounds is a rect that defines how to position this next
+ * to other objects.
+ * Align bounds is a rect that defines how to align this to margins.
+ * it generally allows some overhang that logical bounds would prevent.
+ */
+class ExtendedTextSourceLabel implements TextLineComponent, Decoration.Label {
 
-  TextSource source;
-  private Decoration decorator;
+  private final TextSource source;
+  private final Decoration decorator;
 
   // caches
   private Font font;
   private AffineTransform baseTX;
   private CoreMetrics cm;
 
-  Rectangle2D lb;
-  Rectangle2D ab;
-  Rectangle2D vb;
-  Rectangle2D ib;
-  StandardGlyphVector gv;
-  float[] charinfo;
+  private Rectangle2D lb;
+  private Rectangle2D ab;
+  private Rectangle2D vb;
+  private Rectangle2D ib;
+  private StandardGlyphVector gv;
+  private float[] charinfo;
 
-  float advTracking;
+  private float advTracking;
 
   /**
    * Create from a TextSource.
@@ -116,13 +119,11 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     advTracking = font.getSize() * AttributeValues.getTracking(atts);
   }
 
-
-  // TextLabel API
-
-  public Rectangle2D getLogicalBounds() {
-    return getLogicalBounds(0, 0);
-  }
-
+  /**
+   * Return a rectangle that corresponds to the logical bounds of the text
+   * when this label is rendered at x, y.
+   * This rectangle is used when positioning text next to other text.
+   */
   public Rectangle2D getLogicalBounds(float x, float y) {
     if (lb == null) {
       lb = createLogicalBounds();
@@ -133,13 +134,16 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
                                  (float)lb.getHeight());
   }
 
-    public float getAdvance() {
-        if (lb == null) {
-            lb = createLogicalBounds();
-        }
-        return (float)lb.getWidth();
+  public float getAdvance() {
+    if (lb == null) {
+      lb = createLogicalBounds();
     }
+    return (float)lb.getWidth();
+  }
 
+  /**
+   * Return a rectangle that surrounds the text outline when this label is rendered at x, y.
+   */
   public Rectangle2D getVisualBounds(float x, float y) {
     if (vb == null) {
       vb = decorator.getVisualBounds(this);
@@ -150,6 +154,12 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
                                  (float)vb.getHeight());
   }
 
+  /**
+   * Return a rectangle that corresponds to the alignment bounds of the text
+   * when this label is rendered at x, y. This rectangle is used when positioning text next
+   * to a margin.  It differs from the logical bounds in that it does not include leading or
+   * trailing whitespace.
+   */
   public Rectangle2D getAlignBounds(float x, float y) {
     if (ab == null) {
       ab = createAlignBounds();
@@ -161,6 +171,10 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
   }
 
+  /**
+   * Return a rectangle that corresponds to the logical bounds of the text, adjusted
+   * to angle the leading and trailing edges by the italic angle.
+   */
   public Rectangle2D getItalicBounds(float x, float y) {
     if (ib == null) {
       ib = createItalicBounds();
@@ -189,6 +203,9 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     return getGV().getOutline(x, y);
   }
 
+  /**
+   * Return an outline of the characters in the label when rendered at x, y.
+   */
   public Shape getOutline(float x, float y) {
     return decorator.getOutline(this, x, y);
   }
@@ -197,8 +214,61 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     g.drawGlyphVector(getGV(), x, y);
   }
 
+  /**
+   * Render the label at x, y in the graphics.
+   */
   public void draw(Graphics2D g, float x, float y) {
     decorator.drawTextAndDecorations(this, g, x, y);
+  }
+
+  /**
+   * A convenience method that returns the visual bounds when rendered at 0, 0.
+   */
+  public Rectangle2D getVisualBounds() {
+    return getVisualBounds(0f, 0f);
+  }
+
+  /**
+   * A convenience method that returns the logical bounds when rendered at 0, 0.
+   */
+  public Rectangle2D getLogicalBounds() {
+    return getLogicalBounds(0f, 0f);
+  }
+
+  /**
+   * A convenience method that returns the align bounds when rendered at 0, 0.
+   */
+  public Rectangle2D getAlignBounds() {
+    return getAlignBounds(0f, 0f);
+  }
+
+  /**
+   * A convenience method that returns the italic bounds when rendered at 0, 0.
+   */
+  public Rectangle2D getItalicBounds() {
+    return getItalicBounds(0f, 0f);
+  }
+
+  /**
+   * A convenience method that returns the outline when rendered at 0, 0.
+   */
+  public Shape getOutline() {
+    return getOutline(0f, 0f);
+  }
+
+  /**
+   * A convenience method that renders the label at 0, 0.
+   */
+  public void draw(Graphics2D g) {
+    draw(g, 0f, 0f);
+  }
+
+  /**
+   * A convenience overload of getCharVisualBounds that defaults the label origin
+   * to 0, 0.
+   */
+  public Rectangle2D getCharVisualBounds(int logicalIndex) {
+    return getCharVisualBounds(logicalIndex, 0, 0);
   }
 
   /**
@@ -336,8 +406,6 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     return gv;
   }
 
-  // ExtendedTextLabel API
-
   private static final int posx = 0,
     posy = 1,
     advx = 2,
@@ -348,14 +416,23 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     vish = 7;
   private static final int numvals = 8;
 
+  /**
+   * Return the number of characters represented by this label.
+   */
   public int getNumCharacters() {
     return source.getLength();
   }
 
+  /**
+   * Return the line metrics for all text in this label.
+   */
   public CoreMetrics getCoreMetrics() {
     return cm;
   }
 
+  /**
+   * Return the x location of the character at the given logical index.
+   */
   public float getCharX(int index) {
     validate(index);
     float[] charinfo = getCharinfo();
@@ -367,6 +444,9 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     }
   }
 
+  /**
+   * Return the y location of the character at the given logical index.
+   */
   public float getCharY(int index) {
     validate(index);
     float[] charinfo = getCharinfo();
@@ -378,6 +458,9 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     }
   }
 
+  /**
+   * Return the advance of the character at the given logical index.
+   */
   public float getCharAdvance(int index) {
     validate(index);
     float[] charinfo = getCharinfo();
@@ -403,6 +486,11 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
                                  charinfo[index + vish]);
   }
 
+  /**
+   * Return the visual bounds of the character at the given logical index.
+   * This bounds encloses all the pixels of the character when the label is rendered
+   * at x, y.
+   */
   public Rectangle2D getCharVisualBounds(int index, float x, float y) {
 
     Rectangle2D bounds = decorator.getCharVisualBounds(this, index);
@@ -470,16 +558,28 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     }
     */
 
+  /**
+   * Return the visual index of the character at the given logical index.
+   */
   public int logicalToVisual(int logicalIndex) {
     validate(logicalIndex);
     return l2v(logicalIndex);
   }
 
+  /**
+   * Return the logical index of the character at the given visual index.
+   */
   public int visualToLogical(int visualIndex) {
     validate(visualIndex);
     return v2l(visualIndex);
   }
 
+  /**
+   * Return the logical index of the character, starting with the character at
+   * logicalStart, whose accumulated advance exceeds width.  If the advances of
+   * all characters do not exceed width, return getNumCharacters.  If width is
+   * less than zero, return logicalStart - 1.
+   */
   public int getLineBreakIndex(int start, float width) {
     final float epsilon = 0.005f;
 
@@ -504,6 +604,10 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     return start;
   }
 
+  /**
+   * Return the accumulated advances of all characters between logicalStart and
+   * logicalLimit.
+   */
   public float getAdvanceBetween(int start, int limit) {
     float a = 0f;
 
@@ -523,6 +627,11 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     return a;
   }
 
+  /**
+   * Return whether a caret can exist on the leading edge of the
+   * character at offset.  If the character is part of a ligature
+   * (for example) a caret may not be appropriate at offset.
+   */
   public boolean caretAtOffsetIsValid(int offset) {
       // REMIND: improve this implementation
 
@@ -912,15 +1021,20 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     return sb.toString();
   }
 
-  //public static ExtendedTextLabel create(TextSource source) {
-  //  return new ExtendedTextSourceLabel(source);
-  //}
-
+  /**
+   * Return the number of justification records this uses.
+   */
   public int getNumJustificationInfos() {
     return getGV().getNumGlyphs();
   }
 
-
+  /**
+   * Return GlyphJustificationInfo objects for the characters between
+   * charStart and charLimit, starting at offset infoStart.  Infos
+   * will be in visual order.  All positions between infoStart and
+   * getNumJustificationInfos will be set.  If a position corresponds
+   * to a character outside the provided range, it is set to null.
+   */
   public void getJustificationInfos(GlyphJustificationInfo[] infos, int infoStart, int charStart, int charLimit) {
     // This simple implementation only uses spaces for justification.
     // Since regular characters aren't justified, we don't need to deal with
@@ -992,6 +1106,17 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     }
   }
 
+  /**
+   * Apply deltas to the data in this component, starting at offset
+   * deltaStart, and return the new component.  There are two floats
+   * for each justification info, for a total of 2 * getNumJustificationInfos.
+   * The first delta is the left adjustment, the second is the right
+   * adjustment.
+   * <p>
+   * If flags[0] is true on entry, rejustification is allowed.  If
+   * the new component requires rejustification (ligatures were
+   * formed or split), flags[0] will be set on exit.
+   */
   public TextLineComponent applyJustificationDeltas(float[] deltas, int deltaStart, boolean[] flags) {
 
     // when we justify, we need to adjust the charinfo since spaces

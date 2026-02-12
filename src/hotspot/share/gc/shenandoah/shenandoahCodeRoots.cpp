@@ -144,13 +144,12 @@ public:
     {
       ShenandoahReentrantLocker locker(nm_data->lock());
 
-      // Heal oops and disarm
+      // Heal oops
       if (_bs->is_armed(nm)) {
         ShenandoahEvacOOMScope oom_evac_scope;
         ShenandoahNMethod::heal_nmethod_metadata(nm_data);
-        // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
-        // mark_as_maybe_on_stack() callbacks when they are used again.
-        _bs->arm(nm);
+        // Must remain armed to complete remaining work in nmethod entry barrier
+        assert(_bs->is_armed(nm), "Should remain armed");
       }
     }
 

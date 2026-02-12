@@ -33,7 +33,7 @@ import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 
 /**
  * The {@link PrimitiveType} models Java's primitive types, and provides a set
@@ -93,6 +93,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         return name();
     }
 
+    @Override
     public Object con() {
         return switch (kind) {
             case BYTE    -> "(byte)" + GEN_BYTE.next();
@@ -190,7 +191,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * @return a TemplateToken that holds all the {@code LibraryRNG} class.
      */
     public static TemplateToken generateLibraryRNG() {
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             """
             public static class LibraryRNG {
                 private static final Random RANDOM = Utils.getRandomInstance();

@@ -1375,7 +1375,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ldr(r10, Address(rmethod, Method::native_function_offset()));
     ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
     __ lea(rscratch2, unsatisfied);
-    __ ldr(rscratch2, rscratch2);
     __ cmp(r10, rscratch2);
     __ br(Assembler::NE, L);
     __ call_VM(noreg,

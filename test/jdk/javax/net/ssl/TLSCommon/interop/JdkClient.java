@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.net.ssl.SNIHostName;
@@ -86,6 +87,16 @@ public class JdkClient extends AbstractClient {
         if (builder.getAppProtocols() != null) {
             sslParams.setApplicationProtocols(builder.getAppProtocols());
         }
+
+        NamedGroup[] namedGroups = builder.getNamedGroups();
+        if (namedGroups != null
+                && namedGroups.length > 0) {
+            String[] namedGroupStrs = Arrays.stream(namedGroups)
+                    .map(NamedGroup::name)
+                    .toArray(String[]::new);
+            sslParams.setNamedGroups(namedGroupStrs);
+        }
+
         socket.setSSLParameters(sslParams);
     }
 

@@ -42,7 +42,6 @@
 #include "debug_assert.h"
 
 static void *gtk3_libhandle = NULL;
-static void *gthread_libhandle = NULL;
 
 static void transform_detail_string (const gchar *detail,
                                      GtkStyleContext *context);
@@ -73,15 +72,6 @@ static GtkWidget *gtk3_widgets[_GTK_WIDGET_TYPE_SIZE];
 static void* dl_symbol(const char* name)
 {
     void* result = dlsym(gtk3_libhandle, name);
-    if (!result)
-        longjmp(j, NO_SYMBOL_EXCEPTION);
-
-    return result;
-}
-
-static void* dl_symbol_gthread(const char* name)
-{
-    void* result = dlsym(gthread_libhandle, name);
     if (!result)
         longjmp(j, NO_SYMBOL_EXCEPTION);
 
@@ -262,13 +252,6 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
     gtk3_libhandle = dlopen(lib_name, RTLD_LAZY | RTLD_LOCAL);
     if (gtk3_libhandle == NULL) {
         return FALSE;
-    }
-
-    gthread_libhandle = dlopen(GTHREAD_LIB_VERSIONED, RTLD_LAZY | RTLD_LOCAL);
-    if (gthread_libhandle == NULL) {
-        gthread_libhandle = dlopen(GTHREAD_LIB, RTLD_LAZY | RTLD_LOCAL);
-        if (gthread_libhandle == NULL)
-            return FALSE;
     }
 
     if (setjmp(j) == 0)
@@ -619,6 +602,9 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
             fp_g_uuid_string_is_valid = //since: 2.52
                     dl_symbol("g_uuid_string_is_valid");
             fp_g_variant_print = dl_symbol("g_variant_print"); // since 2.24
+
+            fp_g_settings_new = dl_symbol("g_settings_new"); // since 2.26
+            fp_g_settings_get_string = dl_symbol("g_settings_get_string"); // since 2.26
         }
         fp_g_string_printf = dl_symbol("g_string_printf");
         fp_g_strconcat = dl_symbol("g_strconcat");
@@ -633,9 +619,6 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
     {
         dlclose(gtk3_libhandle);
         gtk3_libhandle = NULL;
-
-        dlclose(gthread_libhandle);
-        gthread_libhandle = NULL;
 
         return NULL;
     }
@@ -735,7 +718,6 @@ static int gtk3_unload()
 
     dlerror();
     dlclose(gtk3_libhandle);
-    dlclose(gthread_libhandle);
     if ((gtk3_error = dlerror()) != NULL)
     {
         return FALSE;
@@ -3008,6 +2990,37 @@ static GdkWindow* gtk3_get_window(void *widget) {
     return fp_gtk_widget_get_window((GtkWidget*)widget);
 }
 
+static gboolean apply_theme_if_needed() {
+    if (!glib_version_2_68) {
+        return FALSE;
+    }
+
+    GSettings *settings = fp_g_settings_new("org.gnome.desktop.interface");
+    if (!settings) {
+        return FALSE;
+    }
+
+    static gboolean wasDark = FALSE;
+
+    gchar *scheme = fp_g_settings_get_string(settings, "color-scheme");
+    const gboolean isDark = strcmp(scheme, "prefer-dark") == 0;
+
+    fp_g_free(scheme);
+    fp_g_object_unref(settings);
+
+    if (wasDark ^ isDark) {
+        GtkSettings* gtkSettings = fp_gtk_settings_get_default();
+        if (!gtkSettings) {
+            return FALSE;
+        }
+        fp_g_object_set(gtkSettings, "gtk-application-prefer-dark-theme", isDark, NULL);
+        wasDark = isDark;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 static void gtk3_init(GtkApi* gtk) {
     gtk->version = GTK_3;
 
@@ -3016,6 +3029,8 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->flush_event_loop = &flush_gtk_event_loop;
     gtk->gtk_check_version = fp_gtk_check_version;
     gtk->get_setting = &gtk3_get_setting;
+
+    gtk->apply_theme_if_needed = &apply_theme_if_needed;
 
     gtk->paint_arrow = &gtk3_paint_arrow;
     gtk->paint_box = &gtk3_paint_box;

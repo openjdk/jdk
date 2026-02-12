@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  *     Test scenario:
  *         - during initialization (from function Agent_OnAttach) agent starts auxiliary thread waiting on
  *         raw monitor and enables GarbageCollectionStart and GarbageCollectionFinish events
- *         - target application provokes garbage collection (calls System.gc())
+ *         - target application provokes garbage collection (calls WhiteBox.getWhiteBox().fullGC())
  *         - agent receives event GarbageCollectionStart
  *         - agent receives event GarbageCollectionFinish event and notifies waiting auxiliary thread
  *         - notified auxiliary thread notifies target application that agent finished its work
@@ -48,11 +48,13 @@
  *          /test/lib
  * @build nsk.share.aod.AODTestRunner
  *        nsk.jvmti.AttachOnDemand.attach020.attach020Target
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach020.attach020Target
- *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts} -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI"
  *      -na attach020Agent00
  */
 

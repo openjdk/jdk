@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
@@ -58,6 +59,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/ticks.hpp"
 
@@ -290,15 +292,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
-    G1MonotonicArenaMemoryStats _card_set_stats;
-
-    void sample_card_set_size(G1HeapRegion* hr) {
-      // Sample card set sizes for humongous before GC: this makes the policy to give
-      // back memory to the OS keep the most recent amount of memory for these regions.
-      if (hr->is_starts_humongous()) {
-        _card_set_stats.add(hr->rem_set()->card_set_memory_stats());
-      }
-    }
+    G1MonotonicArenaMemoryStats _humongous_card_set_stats;
 
     bool humongous_region_is_candidate(G1HeapRegion* region) const {
       assert(region->is_starts_humongous(), "Must start a humongous object");
@@ -411,7 +405,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
       _g1h(g1h),
       _parent_task(parent_task),
       _worker_humongous_total(0),
-      _worker_humongous_candidates(0) { }
+      _worker_humongous_candidates(0),
+      _humongous_card_set_stats() { }
 
     ~G1PrepareRegionsClosure() {
       _parent_task->add_humongous_candidates(_worker_humongous_candidates);
@@ -422,11 +417,9 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // First prepare the region for scanning
       _g1h->rem_set()->prepare_region_for_scan(hr);
 
-      sample_card_set_size(hr);
-
       // Now check if region is a humongous candidate
       if (!hr->is_starts_humongous()) {
-        _g1h->register_region_with_region_attr(hr);
+        _g1h->update_region_attr(hr);
         return false;
       }
 
@@ -436,8 +429,13 @@ class G1PrepareEvacuationTask : public WorkerTask {
         _worker_humongous_candidates++;
         // We will later handle the remembered sets of these regions.
       } else {
-        _g1h->register_region_with_region_attr(hr);
+        _g1h->update_region_attr(hr);
       }
+
+      // Sample card set sizes for humongous regions before GC: this makes the policy
+      // to give back memory to the OS keep the most recent amount of memory for these regions.
+      _humongous_card_set_stats.add(hr->rem_set()->card_set_memory_stats());
+
       log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
                                "marked %d pinned count %zu reclaim candidate %d type %s",
                                index,
@@ -456,15 +454,15 @@ class G1PrepareEvacuationTask : public WorkerTask {
       return false;
     }
 
-    G1MonotonicArenaMemoryStats card_set_stats() const {
-      return _card_set_stats;
+    G1MonotonicArenaMemoryStats humongous_card_set_stats() const {
+      return _humongous_card_set_stats;
     }
   };
 
   G1CollectedHeap* _g1h;
   G1HeapRegionClaimer _claimer;
-  volatile uint _humongous_total;
-  volatile uint _humongous_candidates;
+  Atomic<uint> _humongous_total;
+  Atomic<uint> _humongous_candidates;
 
   G1MonotonicArenaMemoryStats _all_card_set_stats;
 
@@ -481,23 +479,23 @@ public:
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_claimer, worker_id);
 
     MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
-    _all_card_set_stats.add(cl.card_set_stats());
+    _all_card_set_stats.add(cl.humongous_card_set_stats());
   }
 
   void add_humongous_candidates(uint candidates) {
-    AtomicAccess::add(&_humongous_candidates, candidates);
+    _humongous_candidates.add_then_fetch(candidates);
   }
 
   void add_humongous_total(uint total) {
-    AtomicAccess::add(&_humongous_total, total);
+    _humongous_total.add_then_fetch(total);
   }
 
   uint humongous_candidates() {
-    return _humongous_candidates;
+    return _humongous_candidates.load_relaxed();
   }
 
   uint humongous_total() {
-    return _humongous_total;
+    return _humongous_total.load_relaxed();
   }
 
   const G1MonotonicArenaMemoryStats all_card_set_stats() const {
@@ -702,7 +700,7 @@ protected:
   virtual void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) = 0;
 
 private:
-  volatile bool _pinned_regions_recorded;
+  Atomic<bool> _pinned_regions_recorded;
 
 public:
   G1EvacuateRegionsBaseTask(const char* name,
@@ -726,7 +724,7 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
-      if (!AtomicAccess::cmpxchg(&_pinned_regions_recorded, false, true)) {
+      if (_pinned_regions_recorded.compare_set(false, true)) {
         record_pinned_regions(pss, worker_id);
       }
       scan_roots(pss, worker_id);
@@ -1183,13 +1181,13 @@ void G1YoungCollector::collect() {
 
     // Refine the type of a concurrent mark operation now that we did the
     // evacuation, eventually aborting it.
-    _concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP");
+    _concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP", _allocation_word_size);
 
     // Need to report the collection pause now since record_collection_pause_end()
     // modifies it to the next state.
     jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
 
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed());
+    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
   }
   TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }

@@ -28,19 +28,17 @@ package jdk.internal.util;
 
 import jdk.internal.vm.annotation.ForceInline;
 
-/**
- * Helper to JDK UTF putChar and Calculate length
- *
- * @since 24
- */
-public abstract class ModifiedUtf {
-    // Maximum number of bytes allowed for a Modified UTF-8 encoded string
-    // in a ClassFile constant pool entry (CONSTANT_Utf8_info).
+/// Utilities for string encoding and decoding with the
+/// [Modified UTF-8][java.io.DataInput##modified-utf-8] format.
+public final class ModifiedUtf {
+    /// Maximum number of bytes allowed for a Modified UTF-8 encoded string
+    /// in a [java.lang.classfile.constantpool.Utf8Entry] or a hotspot `Symbol`.
     public static final int CONSTANT_POOL_UTF8_MAX_BYTES = 65535;
 
     private ModifiedUtf() {
     }
 
+    /// Writes a char to the pre-sized modified UTF buffer.
     @ForceInline
     public static int putChar(byte[] buf, int offset, char c) {
         if (c != 0 && c < 0x80) {
@@ -58,11 +56,23 @@ public abstract class ModifiedUtf {
         return offset;
     }
 
-    /**
-     * Calculate the utf length of a string
-     * @param str input string
-     * @param countNonZeroAscii the number of non-zero ascii characters in the prefix calculated by JLA.countNonZeroAscii(str)
-     */
+    /// Calculate the encoded length of an input String.
+    /// For many workloads that have fast paths for ASCII-only prefixes,
+    /// [#utfLen(String, int)] skips scanning that prefix.
+    ///
+    /// @param str input string
+    public static long utfLen(String str) {
+        return utfLen(str, 0);
+    }
+
+    /// Calculate the encoded length of trailing parts of an input String,
+    /// after [jdk.internal.access.JavaLangAccess#countNonZeroAscii(String)]
+    /// calculates the number of contiguous single-byte characters in the
+    /// beginning of the string.
+    ///
+    /// @param str input string
+    /// @param countNonZeroAscii the number of non-zero ascii characters in the
+    ///        prefix calculated by JLA.countNonZeroAscii(str)
     @ForceInline
     public static long utfLen(String str, int countNonZeroAscii) {
         long utflen = str.length();
@@ -74,11 +84,11 @@ public abstract class ModifiedUtf {
         return utflen;
     }
 
-    /**
-     * Checks whether the Modified UTF-8 encoded length of the given string
-     * fits within the ClassFile constant pool limit (u2 length = 65535 bytes).
-     * @param str the string to check
-     */
+    /// Checks whether an input String can be encoded in a
+    /// [java.lang.classfile.constantpool.Utf8Entry], or represented as a
+    /// hotspot `Symbol` (which has the same length limit).
+    ///
+    /// @param str input string
     @ForceInline
     public static boolean isValidLengthInConstantPool(String str) {
         // Quick approximation: each char can be at most 3 bytes in Modified UTF-8.
@@ -91,7 +101,7 @@ public abstract class ModifiedUtf {
             return false;
         }
         // Check exact Modified UTF-8 length.
-        long utfLen = utfLen(str, 0);
+        long utfLen = utfLen(str);
         return utfLen <= CONSTANT_POOL_UTF8_MAX_BYTES;
     }
 }

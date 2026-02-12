@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc. and/or its affiliates.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,7 @@ public:
   ProcSmapsParser(FILE* f);
   ~ProcSmapsParser();
 
-  // Starts or continues parsing. Returns true on success,
-  // false on EOF or on error.
+  // Starts or continues parsing. Returns true iff a mapping was parsed.
   bool parse_next(ProcSmapsInfo& out);
 };
 

@@ -45,7 +45,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/annotations.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/bsmAttribute.inline.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
@@ -573,9 +574,9 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_Dynamic:  // fall through
     case JVM_CONSTANT_InvokeDynamic:
     {
-      // Index of the bootstrap specifier in the operands array
+      // Index of the bootstrap specifier in the BSM array
       int old_bs_i = scratch_cp->bootstrap_methods_attribute_index(scratch_i);
-      int new_bs_i = find_or_append_operand(scratch_cp, old_bs_i, merge_cp_p,
+      int new_bs_i = find_or_append_bsm_entry(scratch_cp, old_bs_i, merge_cp_p,
                                             merge_cp_length_p);
       // The bootstrap method NameAndType_info index
       int old_ref_i = scratch_cp->bootstrap_name_and_type_ref_index_at(scratch_i);
@@ -591,10 +592,11 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
           ("Dynamic entry@%d name_and_type_index change: %d to %d", *merge_cp_length_p, old_ref_i, new_ref_i);
       }
 
-      if (scratch_cp->tag_at(scratch_i).is_dynamic_constant())
+      if (scratch_cp->tag_at(scratch_i).is_dynamic_constant()) {
         (*merge_cp_p)->dynamic_constant_at_put(*merge_cp_length_p, new_bs_i, new_ref_i);
-      else
+      } else {
         (*merge_cp_p)->invoke_dynamic_at_put(*merge_cp_length_p, new_bs_i, new_ref_i);
+      }
       if (scratch_i != *merge_cp_length_p) {
         // The new entry in *merge_cp_p is at a different index than
         // the new entry in scratch_cp so we need to map the index values.
@@ -660,10 +662,10 @@ u2 VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& s
 } // end find_or_append_indirect_entry()
 
 
-// Append a bootstrap specifier into the merge_cp operands that is semantically equal
-// to the scratch_cp operands bootstrap specifier passed by the old_bs_i index.
+// Append a bootstrap specifier into the merge_cp BSM entries that is semantically equal
+// to the scratch_cp BSM entries' bootstrap specifier passed by the old_bs_i index.
 // Recursively append new merge_cp entries referenced by the new bootstrap specifier.
-void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, const int old_bs_i,
+int VM_RedefineClasses::append_bsm_entry(const constantPoolHandle& scratch_cp, const int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
   BSMAttributeEntry* old_bsme = scratch_cp->bsm_attribute_entry(old_bs_i);
@@ -672,90 +674,82 @@ void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, co
                                                merge_cp_length_p);
   if (new_ref_i != old_ref_i) {
     log_trace(redefine, class, constantpool)
-      ("operands entry@%d bootstrap method ref_index change: %d to %d", _operands_cur_length, old_ref_i, new_ref_i);
+      ("BSM attribute entry@%d bootstrap method ref_index change: %d to %d", _bsmae_iter.current_offset() - 1, old_ref_i, new_ref_i);
   }
 
-  Array<u2>* merge_ops = (*merge_cp_p)->operands();
-  int new_bs_i = _operands_cur_length;
-  // We have _operands_cur_length == 0 when the merge_cp operands is empty yet.
-  // However, the operand_offset_at(0) was set in the extend_operands() call.
-  int new_base = (new_bs_i == 0) ? (*merge_cp_p)->operand_offset_at(0)
-                                 : (*merge_cp_p)->operand_next_offset_at(new_bs_i - 1);
-  u2 argc      = old_bsme->argument_count();
-
-  ConstantPool::operand_offset_at_put(merge_ops, _operands_cur_length, new_base);
-  merge_ops->at_put(new_base++, new_ref_i);
-  merge_ops->at_put(new_base++, argc);
-
-  for (int i = 0; i < argc; i++) {
-    u2 old_arg_ref_i = old_bsme->argument_index(i);
+  const int new_bs_i = _bsmae_iter.current_offset();
+  BSMAttributeEntry* new_bsme =
+    _bsmae_iter.reserve_new_entry(new_ref_i, old_bsme->argument_count());
+  assert(new_bsme != nullptr, "must be");
+  for (int i = 0; i < new_bsme->argument_count(); i++) {
+    u2 old_arg_ref_i = old_bsme->argument(i);
     u2 new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
                                                      merge_cp_length_p);
-    merge_ops->at_put(new_base++, new_arg_ref_i);
+    new_bsme->set_argument(i, new_arg_ref_i);
+
     if (new_arg_ref_i != old_arg_ref_i) {
       log_trace(redefine, class, constantpool)
-        ("operands entry@%d bootstrap method argument ref_index change: %d to %d",
-         _operands_cur_length, old_arg_ref_i, new_arg_ref_i);
+        ("BSM attribute entry@%d bootstrap method argument ref_index change: %d to %d",
+         _bsmae_iter.current_offset() - 1, old_arg_ref_i, new_arg_ref_i);
     }
   }
-  if (old_bs_i != _operands_cur_length) {
-    // The bootstrap specifier in *merge_cp_p is at a different index than
-    // that in scratch_cp so we need to map the index values.
-    map_operand_index(old_bs_i, new_bs_i);
-  }
-  _operands_cur_length++;
-} // end append_operand()
+  // This is only for the logging
+  map_bsm_index(old_bs_i, new_bs_i);
+  return new_bs_i;
+} // end append_bsm_entry()
 
 
-int VM_RedefineClasses::find_or_append_operand(const constantPoolHandle& scratch_cp,
+int VM_RedefineClasses::find_or_append_bsm_entry(const constantPoolHandle& scratch_cp,
       int old_bs_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
+  const int max_offset_in_merge = _bsmae_iter.current_offset();
   int new_bs_i = old_bs_i; // bootstrap specifier index
-  bool match = (old_bs_i < _operands_cur_length) &&
-               scratch_cp->compare_operand_to(old_bs_i, *merge_cp_p, old_bs_i);
+  // Has the old_bs_i index been used already? Check if it's the same so we know
+  // whether or not a remapping is required.
+  bool match = (old_bs_i < max_offset_in_merge) &&
+               scratch_cp->compare_bootstrap_entry_to(old_bs_i, *merge_cp_p, old_bs_i);
 
   if (!match) {
     // forward reference in *merge_cp_p or not a direct match
-    int found_i = scratch_cp->find_matching_operand(old_bs_i, *merge_cp_p,
-                                                    _operands_cur_length);
+    int found_i = scratch_cp->find_matching_bsm_entry(old_bs_i, *merge_cp_p,
+                                                      max_offset_in_merge);
     if (found_i != -1) {
-      guarantee(found_i != old_bs_i, "compare_operand_to() and find_matching_operand() disagree");
-      // found a matching operand somewhere else in *merge_cp_p so just need a mapping
+      guarantee(found_i != old_bs_i, "compare_bootstrap_entry_to() and find_matching_bsm_entry() disagree");
+      // found a matching BSM entry somewhere else in *merge_cp_p so just need a mapping
       new_bs_i = found_i;
-      map_operand_index(old_bs_i, found_i);
+      map_bsm_index(old_bs_i, found_i);
     } else {
       // no match found so we have to append this bootstrap specifier to *merge_cp_p
-      append_operand(scratch_cp, old_bs_i, merge_cp_p, merge_cp_length_p);
-      new_bs_i = _operands_cur_length - 1;
+      new_bs_i = append_bsm_entry(scratch_cp, old_bs_i, merge_cp_p, merge_cp_length_p);
     }
   }
   return new_bs_i;
-} // end find_or_append_operand()
+} // end find_or_append_bsm_entry()
 
 
-void VM_RedefineClasses::finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS) {
-  if (merge_cp->operands() == nullptr) {
+void VM_RedefineClasses::finalize_bsm_entries_merge(const constantPoolHandle& merge_cp, TRAPS) {
+  if (merge_cp->bsm_entries().number_of_entries() == 0) {
     return;
   }
-  // Shrink the merge_cp operands
-  merge_cp->shrink_operands(_operands_cur_length, CHECK);
+  // Finished extending the BSMAEs
+  merge_cp->end_extension(_bsmae_iter, CHECK);
 
   if (log_is_enabled(Trace, redefine, class, constantpool)) {
     // don't want to loop unless we are tracing
     int count = 0;
-    for (int i = 1; i < _operands_index_map_p->length(); i++) {
-      int value = _operands_index_map_p->at(i);
+    for (int i = 1; i < _bsm_index_map_p->length(); i++) {
+      int value = _bsm_index_map_p->at(i);
       if (value != -1) {
-        log_trace(redefine, class, constantpool)("operands_index_map[%d]: old=%d new=%d", count, i, value);
+        log_trace(redefine, class, constantpool)("bsm_index_map[%d]: old=%d new=%d", count, i, value);
         count++;
       }
     }
   }
   // Clean-up
-  _operands_index_map_p = nullptr;
-  _operands_cur_length = 0;
-  _operands_index_map_count = 0;
-} // end finalize_operands_merge()
+  _bsm_index_map_p = nullptr;
+  _bsm_index_map_count = 0;
+  _bsmae_iter = BSMAttributeEntries::InsertionIterator();
+} // end finalize_bsmentries_merge()
 
 // Symbol* comparator for qsort
 // The caller must have an active ResourceMark.
@@ -1272,26 +1266,26 @@ u2 VM_RedefineClasses::find_new_index(int old_index) {
 // Find new bootstrap specifier index value for old bootstrap specifier index
 // value by searching the index map. Returns unused index (-1) if there is
 // no mapped value for the old bootstrap specifier index.
-int VM_RedefineClasses::find_new_operand_index(int old_index) {
-  if (_operands_index_map_count == 0) {
+int VM_RedefineClasses::find_new_bsm_index(int old_index) {
+  if (_bsm_index_map_count == 0) {
     // map is empty so nothing can be found
     return -1;
   }
 
-  if (old_index == -1 || old_index >= _operands_index_map_p->length()) {
+  if (old_index == -1 || old_index >= _bsm_index_map_p->length()) {
     // The old_index is out of range so it is not mapped.
     // This should not happen in regular constant pool merging use.
     return -1;
   }
 
-  int value = _operands_index_map_p->at(old_index);
+  int value = _bsm_index_map_p->at(old_index);
   if (value == -1) {
     // the old_index is not mapped
     return -1;
   }
 
   return value;
-} // end find_new_operand_index()
+} // end find_new_bsm_index()
 
 
 // The bug 6214132 caused the verification to fail.
@@ -1560,22 +1554,15 @@ void VM_RedefineClasses::map_index(const constantPoolHandle& scratch_cp,
 
 
 // Map old_index to new_index as needed.
-void VM_RedefineClasses::map_operand_index(int old_index, int new_index) {
-  if (find_new_operand_index(old_index) != -1) {
-    // old_index is already mapped
-    return;
-  }
-
+void VM_RedefineClasses::map_bsm_index(int old_index, int new_index) {
   if (old_index == new_index) {
     // no mapping is needed
     return;
   }
-
-  _operands_index_map_p->at_put(old_index, new_index);
-  _operands_index_map_count++;
-
+  _bsm_index_map_p->at_put(old_index, new_index);
+  _bsm_index_map_count++;
   log_trace(redefine, class, constantpool)("mapped bootstrap specifier at index %d to %d", old_index, new_index);
-} // end map_index()
+} // end map_bsm_index()
 
 
 // Merge old_cp and scratch_cp and return the results of the merge via
@@ -1639,8 +1626,8 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
     } // end for each old_cp entry
 
-    ConstantPool::copy_operands(old_cp, merge_cp_p, CHECK_false);
-    merge_cp_p->extend_operands(scratch_cp, CHECK_false);
+    ConstantPool::copy_bsm_entries(old_cp, merge_cp_p, CHECK_false);
+    _bsmae_iter = merge_cp_p->start_extension(scratch_cp, CHECK_false);
 
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
@@ -1737,7 +1724,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       ("after pass 1b: merge_cp_len=%d, scratch_i=%d, index_map_len=%d",
        merge_cp_length_p, scratch_i, _index_map_count);
   }
-  finalize_operands_merge(merge_cp_p, CHECK_false);
+  finalize_bsm_entries_merge(merge_cp_p, CHECK_false);
 
   return true;
 } // end merge_constant_pools()
@@ -1807,12 +1794,11 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   _index_map_count = 0;
   _index_map_p = new intArray(scratch_cp->length(), scratch_cp->length(), -1);
 
-  _operands_cur_length = ConstantPool::operand_array_length(old_cp->operands());
-  _operands_index_map_count = 0;
-  int operands_index_map_len = ConstantPool::operand_array_length(scratch_cp->operands());
-  _operands_index_map_p = new intArray(operands_index_map_len, operands_index_map_len, -1);
+  _bsm_index_map_count = 0;
+  int bsm_data_len = scratch_cp->bsm_entries().array_length();
+  _bsm_index_map_p = new intArray(bsm_data_len, bsm_data_len, -1);
 
-  // reference to the cp holder is needed for copy_operands()
+  // reference to the cp holder is needed for reallocating the BSM attribute
   merge_cp->set_pool_holder(scratch_class);
   bool result = merge_constant_pools(old_cp, scratch_cp, merge_cp,
                   merge_cp_length, THREAD);
@@ -3500,7 +3486,7 @@ void VM_RedefineClasses::set_new_constant_pool(
   smaller_cp->set_version(version);
 
   // attach klass to new constant pool
-  // reference to the cp holder is needed for copy_operands()
+  // reference to the cp holder is needed for reallocating the BSM attribute
   smaller_cp->set_pool_holder(scratch_class);
 
   smaller_cp->copy_fields(scratch_cp());

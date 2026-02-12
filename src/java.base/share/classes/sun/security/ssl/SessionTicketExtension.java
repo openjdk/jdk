@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ final class SessionTicketExtension {
             new T12SHSessionTicketProducer();
     static final ExtensionConsumer shOnLoadConsumer =
             new T12SHSessionTicketConsumer();
+    static final HandshakeAbsence shOnLoadAbsence =
+            new T12SHSessionTicketOnLoadAbsence();
 
     static final SSLStringizer steStringizer = new SessionTicketStringizer();
     // No need to compress a ticket if it can fit in a single packet.
@@ -91,7 +93,7 @@ final class SessionTicketExtension {
                 kt = Integer.parseInt(s) * 1000;  // change to ms
                 if (kt < 0 ||
                         kt > NewSessionTicket.MAX_TICKET_LIFETIME) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                         SSLLogger.warning("Invalid timeout for " +
                                 "jdk.tls.server.statelessKeyTimeout: " +
                                 kt + ".  Set to default value " +
@@ -101,7 +103,7 @@ final class SessionTicketExtension {
                 }
             } catch (NumberFormatException e) {
                 kt = TIMEOUT_DEFAULT;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.warning("Invalid timeout for " +
                             "jdk.tls.server.statelessKeyTimeout: " + s +
                             ".  Set to default value " + TIMEOUT_DEFAULT +
@@ -176,6 +178,7 @@ final class SessionTicketExtension {
      */
     static final class SessionTicketSpec implements SSLExtensionSpec {
         private static final int GCM_TAG_LEN = 128;
+        private static final int GCM_IV_LEN = 12;
         ByteBuffer data;
         static final ByteBuffer zero = ByteBuffer.wrap(new byte[0]);
 
@@ -213,7 +216,7 @@ final class SessionTicketExtension {
 
             try {
                 StatelessKey key = KeyState.getCurrentKey(hc);
-                byte[] iv = new byte[16];
+                byte[] iv = new byte[GCM_IV_LEN];
 
                 SecureRandom random = hc.sslContext.getSecureRandom();
                 random.nextBytes(iv);
@@ -250,7 +253,7 @@ final class SessionTicketExtension {
                         Integer.BYTES + iv.length + 1, encrypted.length);
                 return result;
             } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Encryption failed." + e);
                 }
                 return new byte[0];
@@ -267,7 +270,7 @@ final class SessionTicketExtension {
                     return null;
                 }
 
-                iv = new byte[16];
+                iv = new byte[GCM_IV_LEN];
                 data.get(iv);
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
                 c.init(Cipher.DECRYPT_MODE, key.key,
@@ -292,7 +295,7 @@ final class SessionTicketExtension {
 
                 return out;
             } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Decryption failed." + e);
                 }
             }
@@ -307,7 +310,7 @@ final class SessionTicketExtension {
                 gos.write(input, 0, decompressedLen);
                 gos.finish();
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("decompressed bytes: " + decompressedLen
                             + "; compressed bytes: " + baos.size());
                 }
@@ -326,7 +329,7 @@ final class SessionTicketExtension {
                     new ByteArrayInputStream(bytes))) {
                 byte[] out = gis.readAllBytes();
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("compressed bytes: " + compressedLen
                             + "; decompressed bytes: " + out.length);
                 }
@@ -392,7 +395,7 @@ final class SessionTicketExtension {
             // If the context does not allow stateless tickets, exit
             if (!((SSLSessionContextImpl)chc.sslContext.
                     engineGetClientSessionContext()).statelessEnabled()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Stateless resumption not supported");
                 }
                 return null;
@@ -404,7 +407,7 @@ final class SessionTicketExtension {
             if (!chc.isResumption || chc.resumingSession == null
                     || chc.resumingSession.getPskIdentity() == null
                     || chc.resumingSession.getProtocolVersion().useTLS13PlusSpec()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Stateless resumption supported");
                 }
                 return new byte[0];
@@ -448,7 +451,7 @@ final class SessionTicketExtension {
             shc.statelessResumption = true;
 
             if (buffer.remaining() == 0) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Client accepts session tickets.");
                 }
                 return;
@@ -460,11 +463,11 @@ final class SessionTicketExtension {
             if (b != null) {
                 shc.resumingSession = new SSLSessionImpl(shc, b);
                 shc.isResumption = true;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Valid stateless session ticket found");
                 }
             } else {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Invalid stateless session ticket found");
                 }
             }
@@ -527,6 +530,29 @@ final class SessionTicketExtension {
 
             SessionTicketSpec spec = new SessionTicketSpec(chc, buffer);
             chc.statelessResumption = true;
+        }
+    }
+
+    /**
+     * The absence processing if a "session_ticket" extension is
+     * not present in the ServerHello handshake message.
+     */
+    private static final class T12SHSessionTicketOnLoadAbsence
+            implements HandshakeAbsence {
+
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) {
+            ClientHandshakeContext chc = (ClientHandshakeContext) context;
+
+            // Disable stateless resumption if server doesn't send the extension.
+            if (chc.statelessResumption) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.info(
+                            "Server doesn't support stateless resumption");
+                }
+                chc.statelessResumption = false;
+            }
         }
     }
 }

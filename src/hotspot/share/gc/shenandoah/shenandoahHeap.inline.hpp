@@ -344,9 +344,6 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   }
   if (w.has_monitor()) {
     w = w.monitor()->header();
-  } else if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
-    // Informs caller that we aren't able to determine the age
-    return markWord::max_age + 1; // sentinel
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
@@ -453,6 +450,17 @@ inline bool ShenandoahHeap::in_collection_set(oop p) const {
 inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   assert(collection_set() != nullptr, "Sanity");
   return collection_set()->is_in_loc(p);
+}
+
+inline char ShenandoahHeap::gc_state() const {
+  return _gc_state.raw_value();
+}
+
+inline bool ShenandoahHeap::is_gc_state(GCState state) const {
+  // If the global gc state has been changed, but hasn't yet been propagated to all threads, then
+  // the global gc state is the correct value. Once the gc state has been synchronized with all threads,
+  // _gc_state_changed will be toggled to false and we need to use the thread local state.
+  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
 }
 
 inline bool ShenandoahHeap::is_idle() const {
