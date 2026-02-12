@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ final class StringLatin1 {
     }
 
     /**
-     * Lexicographically compares two Latin-1 string sub-ranges as specified in
+     * Lexicographically compares two Latin-1 string prefixes as specified in
      * {@link String#compareTo(String) String::compareTo}.
      *
      * @param value a Latin-1 string byte array
@@ -157,9 +157,9 @@ final class StringLatin1 {
      * @param len1 the number of characters in {@code value} to compare
      * @param len2 the number of characters in {@code other} to compare
      *
-     * @return {@code 0} if the {@code value} sub-range is equal to the
-     * {@code other} sub-range, a value less than {@code 0} if the {@code value}
-     * sub-range is lexicographically less than the {@code other} sub-range; a
+     * @return {@code 0} if the {@code value} prefix is equal to the
+     * {@code other} prefix, a value less than {@code 0} if the {@code value}
+     * prefix is lexicographically less than the {@code other} prefix; a
      * value greater than {@code 0} otherwise.
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
@@ -182,10 +182,9 @@ final class StringLatin1 {
      * @param value a Latin-1 string byte array
      * @param other a UTF-16 string byte array
      *
-     * @return {@code 0} if the {@code value} sub-range is equal to the
-     * {@code other} sub-range, a value less than {@code 0} if the {@code value}
-     * sub-range is lexicographically less than the {@code other} sub-range; a
-     * value greater than {@code 0} otherwise.
+     * @return {@code 0} if the {@code value} is equal to the {@code other}, a
+     * value less than {@code 0} if the {@code value} is lexicographically less
+     * than the {@code other}; a value greater than {@code 0} otherwise.
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
      */
@@ -204,8 +203,8 @@ final class StringLatin1 {
     }
 
     /**
-     * Lexicographically compares a Latin-1 string sub-range to a UTF-16
-     * one as specified in {@link String#compareTo(String) String::compareTo}.
+     * Lexicographically compares a Latin-1 string prefix to a UTF-16 one as
+     * specified in {@link String#compareTo(String) String::compareTo}.
      *
      * @param value a Latin-1 string byte array
      * @param other a UTF-16 string byte array
@@ -1071,7 +1070,7 @@ final class StringLatin1 {
     static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
         Objects.requireNonNull(dst);
-        StringUTF16.checkBoundsOffCount(dstOff, len, dst);
+        String.checkBoundsOffCount(dstOff, len, StringUTF16.length(dst));
         inflate0(src, srcOff, dst, dstOff, len);
     }
 

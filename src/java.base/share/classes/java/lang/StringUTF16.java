@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -395,7 +395,7 @@ final class StringUTF16 {
     }
 
     /**
-     * Exhaustively copies Latin-1 characters from a {@code char} array
+     * Copies the prefix of Latin-1 characters from a {@code char} array
      * sub-range to a Latin-1 string byte array sub-range.
      * <p>
      * This effectively <em>compresses</em> the content from a 2 byte per
@@ -434,7 +434,7 @@ final class StringUTF16 {
     }
 
     /**
-     * Exhaustively copies Latin-1 characters from a UTF-16 string byte array
+     * Copies the prefix of Latin-1 characters from a UTF-16 string byte array
      * sub-range to a Latin-1 one.
      * <p>
      * This effectively <em>compresses</em> the content from a 2 byte per
@@ -453,7 +453,7 @@ final class StringUTF16 {
      */
     static int compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         Objects.requireNonNull(src);
-        checkBoundsOffCount(srcOff, len, src);
+        String.checkBoundsOffCount(srcOff, len, length(src));
         String.checkBoundsOffCount(dstOff, len, dst.length);    // Implicit null check on `dst`
         return compress0(src, srcOff, dst, dstOff, len);
     }
@@ -499,7 +499,7 @@ final class StringUTF16 {
     static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         // We need a range check here because 'getChar' has no checks
         if (srcBegin < srcEnd) {
-            checkBoundsOffCount(srcBegin, srcEnd - srcBegin, value);
+            String.checkBoundsOffCount(srcBegin, srcEnd - srcBegin, length(value));
         }
         for (int i = srcBegin; i < srcEnd; i++) {
             dst[dstBegin++] = getChar(value, i);
@@ -543,7 +543,7 @@ final class StringUTF16 {
     }
 
     /**
-     * Lexicographically compares two UTF-16 string sub-ranges as specified in
+     * Lexicographically compares two UTF-16 string prefixes as specified in
      * {@link String#compareTo(String) String::compareTo}.
      *
      * @param value a UTF-16 string byte array
@@ -600,7 +600,7 @@ final class StringUTF16 {
     }
 
     /**
-     * Lexicographically compares a UTF-16 string sub-range to a Latin-1 one as
+     * Lexicographically compares a UTF-16 string prefix to a Latin-1 one as
      * specified in {@link String#compareTo(String) String::compareTo}.
      *
      * @param value a UTF-16 string byte array
@@ -608,9 +608,9 @@ final class StringUTF16 {
      * @param len1 the number of characters from {@code value} to compare
      * @param len2 the number of characters from {@code other} to compare
      *
-     * @return {@code 0} if the {@code value} sub-range is equal to the
-     * {@code other} sub-range, a value less than {@code 0} if the {@code value}
-     * sub-range is lexicographically less than the {@code other} sub-range; a
+     * @return {@code 0} if the {@code value} prefix is equal to the
+     * {@code other} prefix, a value less than {@code 0} if the {@code value}
+     * prefix is lexicographically less than the {@code other} prefix; a
      * value greater than {@code 0} otherwise.
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
@@ -946,7 +946,6 @@ final class StringUTF16 {
         }
         return indexOfLatin1Unsafe(value, length(value), str, str.length, 0);
     }
-
 
     /**
      * Searches for the first occurrence of the given Latin-1 string byte array
@@ -1824,7 +1823,7 @@ final class StringUTF16 {
     }
 
     static boolean contentEquals(byte[] v1, byte[] v2, int len) {
-        checkBoundsOffCount(0, len, v2);
+        String.checkBoundsOffCount(0, len, length(v2));
         for (int i = 0; i < len; i++) {
             if ((char)(v1[i] & 0xff) != getChar(v2, i)) {
                 return false;
@@ -1965,10 +1964,6 @@ final class StringUTF16 {
 
     static void checkBoundsBeginEnd(int begin, int end, byte[] val) {
         String.checkBoundsBeginEnd(begin, end, length(val));
-    }
-
-    static void checkBoundsOffCount(int offset, int count, byte[] val) {
-        String.checkBoundsOffCount(offset, count, length(val));
     }
 
 }
