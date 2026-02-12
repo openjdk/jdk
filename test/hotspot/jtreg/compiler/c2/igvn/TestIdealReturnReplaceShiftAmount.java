@@ -26,7 +26,10 @@ package compiler.c2.igvn;
 /*
  * @test
  * @bug 8373251
- * @summary TODO
+ * @summary In Ideal of shift nodes, we call mask_and_replace_shift_amount to reduce the
+ *          shift amount. We need to make sure that Ideal returns something if this is
+ *          the only modification taking place. Use -XX:VerifyIterativeGVN=100000 to
+ *          verify the return value of Ideal if the hash has changed.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,${test.main.class}::test*
@@ -41,6 +44,8 @@ public class TestIdealReturnReplaceShiftAmount {
     static int iFld;
 
     static void testLShiftI() {
+        // we need the loop so that the shift amount replacement happens
+        // during IGVN and not directly at parsing
         for (int i = 0; i < 5; i++) {
             iFld <<= (i + 32);
         }

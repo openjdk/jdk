@@ -26,9 +26,19 @@ package compiler.c2.igvn;
 /*
  * @test
  * @bug 8373251
- * @summary TODO
+ * @summary In Ideal of shift nodes, we call mask_and_replace_shift_amount to reduce the
+ *          shift amount. We need to make sure that the updates are propagated if this is
+ *          the only modification taking place. Use -XX:VerifyIterativeGVN=1110 to
+ *          catch missing optimizations.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -Xcomp -XX:-TieredCompilation
+ *      -XX:+StressIGVN -XX:StressSeed=342568167
+ *      -XX:CompileCommand=compileonly,${test.main.class}::test*
+ *      -XX:VerifyIterativeGVN=1110
+ *      ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -Xcomp -XX:-TieredCompilation
+ *      -XX:+StressIGVN
  *      -XX:CompileCommand=compileonly,${test.main.class}::test*
  *      -XX:VerifyIterativeGVN=1110
  *      ${test.main.class}
