@@ -47,13 +47,13 @@
 //
 // When you want to find a monitor associated with an object, you extract the
 // hash value of the object. Then calculate an index by taking the hash value
-// and bit-wise AND it with the capacity mask of the OMT. Now use that index
-// into the OMT's array of pointers. If the pointer is non null, check if it's
-// a monitor pointer that is associated with the object. If so you're done. If
-// THE pointer is non null, but associated with another object, you start
-// looking at (index+1), (index+2) and so on, until you either find the
-// correct monitor, or a null pointer. Finding a null pointer means that the
-// monitor is simply not in the OMT.
+// and bit-wise AND it with the capacity mask (e.g. size-1) of the OMT. Now
+// use that index into the OMT's array of pointers. If the pointer is non
+// null, check if it's a monitor pointer that is associated with the object.
+// If so you're done. If the pointer is non null, but associated with another
+// object, you start looking at (index+1), (index+2) and so on, until you
+// either find the correct monitor, or a null pointer. Finding a null pointer
+// means that the monitor is simply not in the OMT.
 //
 // If the size of the pointer array is significantly larger than the number of
 // pointers in it, the chance of finding the monitor in the hash index
@@ -127,17 +127,32 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   const size_t _capacity_mask;       // One less than its power-of-two capacity
   Table* volatile _prev;             // Set while rehashing
-  ObjectMonitor* volatile* _buckets; // The payload
+  Entry volatile* _buckets;          // The payload
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(_capacity_mask) + sizeof(_prev) + sizeof(_buckets));
   volatile size_t _items_count;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(_items_count));
 
-  static ObjectMonitor* tombstone() {
-    return (ObjectMonitor*)ObjectMonitorTable::SpecialPointerValues::tombstone;
+  static Entry as_entry(ObjectMonitor *monitor) {
+    Entry entry = static_cast<Entry>((uintptr_t)monitor);
+    assert(entry >= Entry::below_is_special, "Must be! (entry: " PTR_FORMAT ")", intptr_t(entry));
+    return entry;
   }
 
-  static ObjectMonitor* removed_entry() {
-    return (ObjectMonitor*)ObjectMonitorTable::SpecialPointerValues::removed;
+  static ObjectMonitor* as_monitor(Entry entry) {
+    assert(entry >= Entry::below_is_special, "Must be! (entry: " PTR_FORMAT ")", intptr_t(entry));
+    return reinterpret_cast<ObjectMonitor *>(entry);
+  }
+
+  static Entry empty() {
+    return Entry::empty;
+  }
+
+  static Entry tombstone() {
+    return Entry::tombstone;
+  }
+
+  static Entry removed() {
+    return Entry::removed;
   }
 
   // Make sure we leave space for previous versions to relocate too.
@@ -169,16 +184,16 @@ public:
   Table(size_t capacity, Table* prev)
     : _capacity_mask(capacity - 1),
       _prev(prev),
-      _buckets(NEW_C_HEAP_ARRAY(ObjectMonitor*, capacity, mtObjectMonitor)),
+      _buckets(NEW_C_HEAP_ARRAY(Entry, capacity, mtObjectMonitor)),
       _items_count(0)
   {
     for (size_t i = 0; i < capacity; ++i) {
-      _buckets[i] = nullptr;
+      _buckets[i] = empty();
     }
   }
 
   ~Table() {
-    FREE_C_HEAP_ARRAY(ObjectMonitor*, _buckets);
+    FREE_C_HEAP_ARRAY(Entry, _buckets);
   }
 
   Table* prev() {
@@ -211,17 +226,17 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      ObjectMonitor* volatile* bucket = _buckets + index;
-      ObjectMonitor* monitor = AtomicAccess::load_acquire(bucket);
+      Entry volatile* bucket = _buckets + index;
+      Entry entry = AtomicAccess::load_acquire(bucket);
 
-      if (monitor == tombstone() || monitor == nullptr) {
+      if (entry == tombstone() || entry == empty()) {
         // Not found
         break;
       }
 
-      if (monitor != removed_entry() && monitor->object_peek() == obj) {
+      if (entry != removed() && as_monitor(entry)->object_peek() == obj) {
         // Found matching monitor.
-        return monitor;
+        return as_monitor(entry);
       }
 
       index = (index + 1) & _capacity_mask;
@@ -233,11 +248,11 @@ public:
     return nullptr;
   }
 
-  ObjectMonitor* prepare_insert(oop obj, ObjectMonitor* new_monitor, intptr_t hash) {
+  ObjectMonitor* prepare_insert(oop obj, intptr_t hash) {
     // Acquire any tomb stones and relocations if prev transitioned to null.
     Table* prev = AtomicAccess::load_acquire(&_prev);
     if (prev != nullptr) {
-      ObjectMonitor* result = prev->prepare_insert(obj, new_monitor, hash);
+      ObjectMonitor* result = prev->prepare_insert(obj, hash);
       if (result != nullptr) {
         return result;
       }
@@ -247,28 +262,28 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      ObjectMonitor* volatile* bucket = _buckets + index;
-      ObjectMonitor* monitor = AtomicAccess::load_acquire(bucket);
+      Entry volatile* bucket = _buckets + index;
+      Entry entry = AtomicAccess::load_acquire(bucket);
 
-      if (monitor == nullptr) {
+      if (entry == empty()) {
         // Found an empty slot to install the new monitor in.
         // To avoid concurrent inserts succeeding, place a tomb stone here.
-        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tombstone(), memory_order_relaxed);
-        if (result == monitor) {
+        Entry result = AtomicAccess::cmpxchg(bucket, entry, tombstone(), memory_order_relaxed);
+        if (result == entry) {
           // Success! Nobody will try to insert here again, except reinsert from rehashing.
           return nullptr;
         }
-        monitor = result;
+        entry = result;
       }
 
-      if (monitor == tombstone()) {
+      if (entry == tombstone()) {
         // Can't insert into this table.
         return nullptr;
       }
 
-      if (monitor != removed_entry() && monitor->object_peek() == obj) {
+      if (entry != removed() && as_monitor(entry)->object_peek() == obj) {
         // Found matching monitor.
-        return monitor;
+        return as_monitor(entry);
       }
 
       index = (index + 1) & _capacity_mask;
@@ -276,14 +291,14 @@ public:
     }
   }
 
-  ObjectMonitor* get_set(oop obj, ObjectMonitor* new_monitor, intptr_t hash) {
+  ObjectMonitor* get_set(oop obj, Entry new_monitor, intptr_t hash) {
     // Acquire any tombstones and relocations if prev transitioned to null.
     Table* prev = AtomicAccess::load_acquire(&_prev);
     if (prev != nullptr) {
       // Sprinkle tombstones in previous tables to force concurrent inserters
       // to the latest table. We only really want to try inserting in the
       // latest table.
-      ObjectMonitor* result = prev->prepare_insert(obj, new_monitor, hash);
+      ObjectMonitor* result = prev->prepare_insert(obj, hash);
       if (result != nullptr) {
         return result;
       }
@@ -293,42 +308,42 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      ObjectMonitor* volatile* bucket = _buckets + index;
-      ObjectMonitor* monitor = AtomicAccess::load_acquire(bucket);
+      Entry volatile* bucket = _buckets + index;
+      Entry entry = AtomicAccess::load_acquire(bucket);
 
-      if (monitor == nullptr) {
+      if (entry == empty()) {
         // Empty slot to install the new monitor
         if (try_inc_items_count()) {
           // Succeeding in claiming an item.
-          ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_release);
-          if (result == monitor) {
+          Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_release);
+          if (result == entry) {
             // Success - already incremented.
-            return new_monitor;
+            return as_monitor(new_monitor);
           }
 
           // Something else was installed in place.
           dec_items_count();
-          monitor = result;
+          entry = result;
         } else {
           // Out of allowance; leaving place for rehashing to succeed.
           // To avoid concurrent inserts succeeding, place a tombstone here.
-          ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tombstone(), memory_order_acq_rel);
-          if (result == monitor) {
+          Entry result = AtomicAccess::cmpxchg(bucket, entry, tombstone(), memory_order_acq_rel);
+          if (result == entry) {
             // Success; nobody will try to insert here again, except reinsert from rehashing.
             return nullptr;
           }
-          monitor = result;
+          entry = result;
         }
       }
 
-      if (monitor == tombstone()) {
+      if (entry == tombstone()) {
         // Can't insert into this table.
         return nullptr;
       }
 
-      if (monitor != removed_entry() && monitor->object_peek() == obj) {
+      if (entry != removed() && as_monitor(entry)->object_peek() == obj) {
         // Found matching monitor.
-        return monitor;
+        return as_monitor(entry);
       }
 
       index = (index + 1) & _capacity_mask;
@@ -336,28 +351,28 @@ public:
     }
   }
 
-  void remove(oop obj, ObjectMonitor* old_monitor, intptr_t hash) {
+  void remove(oop obj, Entry old_monitor, intptr_t hash) {
     const size_t start_index = size_t(hash) & _capacity_mask;
     size_t index = start_index;
 
     for (;;) {
-      ObjectMonitor* volatile* bucket = _buckets + index;
-      ObjectMonitor* monitor = AtomicAccess::load_acquire(bucket);
+      Entry volatile* bucket = _buckets + index;
+      Entry entry = AtomicAccess::load_acquire(bucket);
 
-      if (monitor == nullptr) {
+      if (entry == empty()) {
         // The monitor does not exist in this table.
         break;
       }
 
-      if (monitor == tombstone()) {
+      if (entry == tombstone()) {
         // Stop searching at tombstones.
         break;
       }
 
-      if (monitor == old_monitor) {
+      if (entry != removed() && entry == old_monitor) {
         // Found matching entry; remove it
-        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, removed_entry(), memory_order_relaxed);
-        assert(result == monitor, "should not fail");
+        Entry result = AtomicAccess::cmpxchg(bucket, entry, removed(), memory_order_relaxed);
+        assert(result == entry, "should not fail");
         break;
       }
 
@@ -375,60 +390,59 @@ public:
     }
   }
 
-  void reinsert(oop obj, ObjectMonitor* new_monitor) {
+  void reinsert(oop obj, Entry new_monitor) {
     intptr_t hash = obj->mark().hash();
 
     const size_t start_index = size_t(hash) & _capacity_mask;
     size_t index = start_index;
 
     for (;;) {
-      ObjectMonitor* volatile* bucket = _buckets + index;
-      ObjectMonitor* monitor = AtomicAccess::load_acquire(bucket);
+      Entry volatile* bucket = _buckets + index;
+      Entry entry = AtomicAccess::load_acquire(bucket);
 
-      if (monitor == nullptr) {
+      if (entry == empty()) {
         // Empty slot to install the new monitor.
-        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_acq_rel);
-        if (result == monitor) {
+        Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_acq_rel);
+        if (result == entry) {
           // Success - unconditionally increment.
           inc_items_count();
           return;
         }
 
         // Another monitor was installed.
-        monitor = result;
+        entry = result;
       }
 
-      if (monitor == tombstone()) {
+      if (entry == tombstone()) {
         // A concurrent inserter did not get enough allowance in the table.
         // But reinsert always succeeds - we will take the spot.
-        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_acq_rel);
-        if (result == monitor) {
+        Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_acq_rel);
+        if (result == entry) {
           // Success - unconditionally increment.
           inc_items_count();
           return;
         }
 
         // Another monitor was installed.
-        monitor = result;
+        entry = result;
       }
 
-      if (monitor == removed_entry()) {
+      if (entry == removed()) {
         // A removed entry can be flipped back with reinsertion.
-        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_release);
-        if (result == monitor) {
+        Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_release);
+        if (result == entry) {
           // Success - but don't increment; the initial entry did that for us.
           return;
         }
 
         // Another monitor was installed.
-        monitor = result;
+        entry = result;
       }
 
-      assert(monitor != nullptr, "invariant");
-      assert(monitor != tombstone(), "invariant");
-      assert(monitor != removed_entry(), "invariant");
-      assert(monitor->object_peek() != obj, "invariant");
-
+      assert(entry != empty(), "invariant");
+      assert(entry != tombstone(), "invariant");
+      assert(entry != removed(), "invariant");
+      assert(as_monitor(entry)->object_peek() != obj, "invariant");
       index = (index + 1) & _capacity_mask;
       assert(index != start_index, "invariant");
     }
@@ -453,23 +467,24 @@ public:
         ThreadBlockInVM tbivm(current);
       }
 
-      ObjectMonitor* volatile* bucket = prev->_buckets + index;
-      ObjectMonitor* monitor = AtomicAccess::load_acquire(bucket);
+      Entry volatile* bucket = prev->_buckets + index;
+      Entry entry = AtomicAccess::load_acquire(bucket);
 
-      if (monitor == nullptr) {
+      if (entry == empty()) {
         // Empty slot; put a tombstone there.
-        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tombstone(), memory_order_acq_rel);
-        if (result == nullptr) {
+        Entry result = AtomicAccess::cmpxchg(bucket, entry, tombstone(), memory_order_acq_rel);
+        if (result == empty()) {
           // Success; move to next entry.
           continue;
         }
 
         // Concurrent insert; relocate.
-        monitor = result;
+        entry = result;
       }
 
-      if (monitor != tombstone() && monitor != removed_entry()) {
+      if (entry != tombstone() && entry != removed()) {
         // A monitor
+        ObjectMonitor *monitor = as_monitor(entry);
         oop obj = monitor->object_peek();
         if (obj != nullptr) {
           // In the current implementation the deflation thread drives
@@ -477,7 +492,7 @@ public:
           // it has deflated. The assert is ony here to make sure.
           assert(!monitor->is_being_async_deflated(), "Should be");
           // Re-insert still live monitor.
-          reinsert(obj, monitor);
+          reinsert(obj, entry);
         }
       }
     }
@@ -528,7 +543,7 @@ ObjectMonitor* ObjectMonitorTable::monitor_put_get(Thread* current, ObjectMonito
 
   for (;;) {
     // Curr is the latest table and is reasonably loaded.
-    ObjectMonitor* result = curr->get_set(obj, monitor, hash);
+    ObjectMonitor* result = curr->get_set(obj, curr->as_entry(monitor), hash);
     if (result != nullptr) {
       return result;
     }
@@ -544,9 +559,8 @@ void ObjectMonitorTable::remove_monitor_entry(Thread* current, ObjectMonitor* mo
     return;
   }
   const intptr_t hash = obj->mark().hash();
-
   Table* curr = AtomicAccess::load_acquire(&_curr);
-  curr->remove(obj, monitor, hash);
+  curr->remove(obj, curr->as_entry(monitor), hash);
   assert(monitor_get(current, obj) != monitor, "should have been removed");
 }
 

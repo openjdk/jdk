@@ -47,12 +47,17 @@ private:
   static Table* volatile _curr;
   static Table* grow_table(Table* curr);
 
-public:
-  typedef enum {
+  enum class Entry : uintptr_t {
     empty = 0,
     tombstone = 1,
     removed = 2,
     below_is_special = (removed + 1)
+  };
+
+public:
+  typedef enum {
+    // Used in the platform code. See: C2_MacroAssembler::fast_lock().
+    below_is_special = (int)Entry::below_is_special
   } SpecialPointerValues;
 
   static void create();
@@ -61,7 +66,6 @@ public:
   static void rebuild(GrowableArray<Table*>* delete_list);
   static void destroy(GrowableArray<Table*>* delete_list);
   static void remove_monitor_entry(Thread* current, ObjectMonitor* monitor);
-  static void monitor_reinsert(Table* from, ObjectMonitor* monitor, oop obj);
 
   // Compiler support
   static address current_table_address();
