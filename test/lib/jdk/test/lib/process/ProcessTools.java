@@ -43,8 +43,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -448,7 +450,7 @@ public final class ProcessTools {
     private static ProcessBuilder createJavaProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
-        ArrayList<String> args = new ArrayList<>();
+        List<String> args = new ArrayList<>();
         args.add(javapath);
 
         String noCPString = System.getProperty("test.noclasspath", "false");
@@ -465,6 +467,8 @@ public final class ProcessTools {
             Collections.addAll(args, command);
         }
 
+        args = deduplicateAgentOpts(args);
+
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
         for (String cmd : args)
@@ -477,6 +481,25 @@ public final class ProcessTools {
             pb.environment().remove("CLASSPATH");
         }
         return pb;
+    }
+
+    // Deduplicate agent loading options, as an attempt to load the same agent
+    // twice may cause Agent_OnLoad VM startup failure
+    public static List<String> deduplicateAgentOpts(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            return args;
+        }
+
+        Set<String> seen = new HashSet<>();
+        return args.stream()
+                .filter(arg -> !(arg.startsWith("-agent")
+                                || arg.startsWith("-javaagent:"))
+                        || seen.add(arg))
+                .collect(Collectors.toList());
+    }
+
+    public static String[] deduplicateAgentOpts(String[] args) {
+        return deduplicateAgentOpts(Arrays.asList(args)).toArray(new String[0]);
     }
 
     private static void printStack(Thread t, StackTraceElement[] stack) {
