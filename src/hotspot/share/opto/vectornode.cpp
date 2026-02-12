@@ -1300,24 +1300,33 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
 //    VectorOperation (VectorOperation (VectorBroadcast INP1) (VectorBroadcast INP2)) INP3
 //
 Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
-  if (is_commutative_vector_operation(Opcode()) && is_integral_type(vect_type()->element_basic_type())) {
-    if (in(1)->Opcode() == Op_Replicate && in(2)->Opcode() == Opcode()) {
-      Node* in2_1 = in(2)->in(1);
-      Node* in2_2 = in(2)->in(2);
-      if (in2_1->Opcode() == Op_Replicate) {
-        return create_reassociated_node(this, in(2), in(1), in2_1, in2_2, phase);
-      } else if (in2_2->Opcode() == Op_Replicate) {
-        return create_reassociated_node(this, in(2), in(1), in2_2, in2_1, phase);
-      }
+  // Enable re-association for integral vector operations.
+  if (!is_integral_type(vect_type()->element_basic_type())) {
+    return nullptr;
+  }
+
+  // Enable re-association for commutative vector operations.
+  if (!is_commutative_vector_operation(Opcode())) {
+    return nullptr;
+  }
+
+  if (in(1)->Opcode() == Op_Replicate && in(2)->Opcode() == Opcode()) {
+    Node* in2_1 = in(2)->in(1);
+    Node* in2_2 = in(2)->in(2);
+    if (in2_1->Opcode() == Op_Replicate) {
+      return create_reassociated_node(this, in(2), in(1), in2_1, in2_2, phase);
+    } else if (in2_2->Opcode() == Op_Replicate) {
+      return create_reassociated_node(this, in(2), in(1), in2_2, in2_1, phase);
     }
-    if (in(2)->Opcode() == Op_Replicate && in(1)->Opcode() == Opcode()) {
-      Node* in1_1 = in(1)->in(1);
-      Node* in1_2 = in(1)->in(2);
-      if (in1_1->Opcode() == Op_Replicate) {
-        return create_reassociated_node(this, in(1), in(2), in1_1, in1_2, phase);
-      } else if (in1_2->Opcode() == Op_Replicate) {
-        return create_reassociated_node(this, in(1), in(2), in1_2, in1_1, phase);
-      }
+  }
+
+  if (in(2)->Opcode() == Op_Replicate && in(1)->Opcode() == Opcode()) {
+    Node* in1_1 = in(1)->in(1);
+    Node* in1_2 = in(1)->in(2);
+    if (in1_1->Opcode() == Op_Replicate) {
+      return create_reassociated_node(this, in(1), in(2), in1_1, in1_2, phase);
+    } else if (in1_2->Opcode() == Op_Replicate) {
+      return create_reassociated_node(this, in(1), in(2), in1_2, in1_1, phase);
     }
   }
   return nullptr;
