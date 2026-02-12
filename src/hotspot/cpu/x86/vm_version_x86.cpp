@@ -1659,41 +1659,40 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
-#ifdef COMPILER2
-    if (UseAVX > 2) {
-      if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
-          (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
-           ArrayOperationPartialInlineSize != 0 &&
-           ArrayOperationPartialInlineSize != 16 &&
-           ArrayOperationPartialInlineSize != 32 &&
-           ArrayOperationPartialInlineSize != 64)) {
-        int inline_size = 0;
-        if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
-          inline_size = 64;
-        } else if (MaxVectorSize >= 32) {
-          inline_size = 32;
-        } else if (MaxVectorSize >= 16) {
-          inline_size = 16;
-        }
-        if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
-          warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
-        }
-        ArrayOperationPartialInlineSize = inline_size;
-      }
-
-      if (ArrayOperationPartialInlineSize > MaxVectorSize) {
-        ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
-        if (ArrayOperationPartialInlineSize) {
-          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
-        } else {
-          warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
-        }
-      }
-    }
-#endif
   }
 
 #ifdef COMPILER2
+  if (UseAVX > 2) {
+    if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
+        (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
+         ArrayOperationPartialInlineSize != 0 &&
+         ArrayOperationPartialInlineSize != 16 &&
+         ArrayOperationPartialInlineSize != 32 &&
+         ArrayOperationPartialInlineSize != 64)) {
+      int inline_size = 0;
+      if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+        inline_size = 64;
+      } else if (MaxVectorSize >= 32) {
+        inline_size = 32;
+      } else if (MaxVectorSize >= 16) {
+        inline_size = 16;
+      }
+      if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+        warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
+      }
+      ArrayOperationPartialInlineSize = inline_size;
+    }
+
+    if (ArrayOperationPartialInlineSize > MaxVectorSize) {
+      ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+      if (ArrayOperationPartialInlineSize) {
+        warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
+      } else {
+        warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
+      }
+    }
+  }
+
   if (FLAG_IS_DEFAULT(OptimizeFill)) {
     if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
       OptimizeFill = false;
