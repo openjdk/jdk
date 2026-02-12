@@ -921,11 +921,6 @@ The following options are provided by the standard doclet.
     As an example, specifying `CMI` as *locations* allows a tag to be used as
     inline tag in constructor and method declarations.
 
-    The *name* of the tag, prefixed by `note-tag-`, is added as `class`
-    attribute to the generated HTML element to enable styling via
-    user-defined stylesheets. For example, a tag with *name* "warning" will
-    generate an HTML element with a `class="note-tag-warning"` attribute.
-
     For the `javadoc` tool to spell-check tag names, it is important to include
     a `-tag` option for every custom tag that is present in the source code,
     disabling (with `X`) those that aren't being output in the current run.
@@ -936,6 +931,11 @@ The following options are provided by the standard doclet.
     as the order in which the tags appear in the generated output.
     You can include standard tags in the order given on the command line
     by using the `-tag` option with no *locations* or *header*.
+
+    The *name* of the tag, prefixed by `note-tag-`, is also added as `class`
+    attribute to the generated HTML element to enable styling via
+    user-defined stylesheets. For example, a tag with *name* "warning" will
+    generate an HTML element with a `class="note-tag-warning"` attribute.
 
 [note tag]: ../javadoc/doc-comment-spec.html#note
 
