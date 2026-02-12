@@ -148,8 +148,8 @@ public class SinCosTests {
 
         for (int i = 0; i < N; ++i) {
             X[i] = rand.nextDouble(0.0, 2 * Math.PI);
-            failures+=Tests.test("StrictMath.sin",        X[i], (x)->Math.sincos(x)[0],        StrictMath.sin(X[i]));
-            failures+=Tests.test("StrictMath.cos",        X[i], (x)->Math.sincos(x)[1],        StrictMath.cos(X[i]));
+            failures+=Tests.test("StrictMath.sin",        X[i], (x)->Math.sincos_v1(x)[0],        StrictMath.sin(X[i]));
+            failures+=Tests.test("StrictMath.cos",        X[i], (x)->Math.sincos_v1(x)[1],        StrictMath.cos(X[i]));
         }
 
         return failures;
