@@ -928,6 +928,8 @@ public:
   bool do_heap_region(G1HeapRegion* r) override {
     if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
       _cm->update_top_at_mark_start(r);
+    } else {
+      _cm->reset_top_at_mark_start(r);
     }
     return false;
   }
