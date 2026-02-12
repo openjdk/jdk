@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -793,6 +793,8 @@ public interface HttpServerAdapters {
 
         @Override
         public void handle(HttpTestExchange t) throws IOException {
+            System.err.printf("EchoHandler received request to %s from %s (version %s)%n",
+                    t.getRequestURI(), t.getRemoteAddress(), t.getExchangeVersion());
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 byte[] bytes = is.readAllBytes();
@@ -805,7 +807,7 @@ public interface HttpServerAdapters {
                             t.getRequestHeaders().firstValue("Content-type").get());
                 }
                 t.sendResponseHeaders(200, bytes.length);
-                if (!t.getRequestMethod().equals("HEAD")) {
+                if (!t.getRequestMethod().equals("HEAD") && bytes.length > 0) {
                     os.write(bytes);
                 }
             }

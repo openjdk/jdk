@@ -22,7 +22,6 @@
  */
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
@@ -40,8 +39,7 @@ import java.util.concurrent.Future;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestEchoHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
@@ -83,27 +81,27 @@ class NullReturningBodyHandlerTest {
     @BeforeAll
     static void beforeAll() throws Exception {
         h1HttpServer = HttpTestServer.create(Version.HTTP_1_1);
-        h1HttpServer.addHandler(new Handler(), CTX_PATH);
+        h1HttpServer.addHandler(new HttpTestEchoHandler(false), CTX_PATH);
         h1HttpServer.start();
         System.err.println("HTTP/1.1 http server started at " + h1HttpServer.getAddress());
 
         h1HttpsServer = HttpTestServer.create(Version.HTTP_1_1, sslContext);
-        h1HttpsServer.addHandler(new Handler(), CTX_PATH);
+        h1HttpsServer.addHandler(new HttpTestEchoHandler(false), CTX_PATH);
         h1HttpsServer.start();
         System.err.println("HTTP/1.1 https server started at " + h1HttpsServer.getAddress());
 
         h2HttpServer = HttpTestServer.create(Version.HTTP_2);
-        h2HttpServer.addHandler(new Handler(), CTX_PATH);
+        h2HttpServer.addHandler(new HttpTestEchoHandler(false), CTX_PATH);
         h2HttpServer.start();
         System.err.println("HTTP/2 http server started at " + h2HttpServer.getAddress());
 
         h2HttpsServer = HttpTestServer.create(Version.HTTP_2, sslContext);
-        h2HttpsServer.addHandler(new Handler(), CTX_PATH);
+        h2HttpsServer.addHandler(new HttpTestEchoHandler(false), CTX_PATH);
         h2HttpsServer.start();
         System.err.println("HTTP/2 https server started at " + h2HttpsServer.getAddress());
 
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
-        h3Server.addHandler(new Handler(), CTX_PATH);
+        h3Server.addHandler(new HttpTestEchoHandler(false), CTX_PATH);
         h3Server.start();
         System.err.println("HTTP/3 server started at " + h3Server.getAddress());
 
@@ -243,20 +241,6 @@ class NullReturningBodyHandlerTest {
         @Override
         public BodySubscriber<String> apply(final ResponseInfo responseInfo) {
             return null;
-        }
-    }
-
-    private static final class Handler implements HttpTestHandler {
-        private static final byte[] RESPONSE = new byte[]{0x42, 0x42};
-
-        @Override
-        public void handle(final HttpTestExchange exchange) throws IOException {
-            System.err.println("handling " + exchange.getExchangeVersion()
-                    + " request " + exchange.getRequestURI());
-            exchange.sendResponseHeaders(200, RESPONSE.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(RESPONSE);
-            }
         }
     }
 }
