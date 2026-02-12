@@ -25,7 +25,6 @@
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
-#include "gc/shenandoah/shenandoahCollectionSetPreselector.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
@@ -72,11 +71,9 @@ ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGen
 void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  _add_regions_to_old = 0;
+  assert(heap->collection_set()->is_empty(), "Collection set must be empty here");
 
-  // Seed the collection set with resource area-allocated
-  // preselected regions, which are removed when we exit this scope.
-  ShenandoahCollectionSetPreselector preselector(collection_set, heap->num_regions());
+  _add_regions_to_old = 0;
 
   // Find the amount that will be promoted, regions that will be promoted in
   // place, and preselected older regions that will be promoted by evacuation.
@@ -267,7 +264,7 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
     if (!_generation->contains(region)) {
       continue;
     }
-    size_t garbage = region->garbage();
+    const size_t garbage = region->garbage();
     total_garbage += garbage;
     if (region->is_empty()) {
       free_regions++;
@@ -279,14 +276,10 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
         immediate_garbage += garbage;
         region->make_trash_immediate();
       } else {
-        bool is_candidate;
         // This is our candidate for later consideration.
-        if (collection_set->is_preselected(i)) {
-          assert(heap->is_tenurable(region), "Preselection filter");
-          is_candidate = true;
+        if (collection_set->is_in(i)) {
+          assert(heap->is_tenurable(region), "Preselected region %zu must be tenurable", i);
           preselected_candidates++;
-          // Set garbage value to maximum value to force this into the sorted collection set.
-          garbage = region_size_bytes;
         } else if (region->is_young() && heap->is_tenurable(region)) {
           // Note that for GLOBAL GC, region may be OLD, and OLD regions do not qualify for pre-selection
 
@@ -295,17 +288,14 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
           // in old gen to hold the evacuated copies of this region's live data.  In both cases, we choose not to
           // place this region into the collection set.
           if (region->get_top_before_promote() != nullptr) {
+            // TODO: Move this into in place promotion planner
             // Region was included for promotion-in-place
             regular_regions_promoted_in_place++;
             regular_regions_promoted_usage += region->used_before_promote();
             regular_regions_promoted_free += region->free();
             regular_regions_promoted_garbage += region->garbage();
           }
-          is_candidate = false;
         } else {
-          is_candidate = true;
-        }
-        if (is_candidate) {
           candidates[cand_idx].set_region_and_garbage(region, garbage);
           cand_idx++;
         }
@@ -333,7 +323,7 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
         }
       }
     } else if (region->is_trash()) {
-      // Count in just trashed collection set, during coalesced CM-with-UR
+      // Count in just trashed humongous continuation regions
       immediate_regions++;
       immediate_garbage += garbage;
     }
@@ -378,7 +368,7 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
                                            immediate_garbage);
 }
 
-// Preselect for inclusion into the collection set all regions whose age is at or above tenure age and for which the
+// Select for inclusion into the collection set all regions whose age is at or above tenure age and for which the
 // garbage percentage exceeds a dynamically adjusted threshold (known as the old-garbage threshold percentage).  We
 // identify these regions by setting the appropriate entry of the collection set's preselected regions array to true.
 // All entries are initialized to false before calling this function.
@@ -400,9 +390,6 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(const size_t old_pr
   assert_no_in_place_promotions();
 
   auto const heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahFreeSet* free_set = heap->free_set();
-  bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
-  ShenandoahMarkingContext* const ctx = heap->marking_context();
 
   size_t promo_potential = 0;
   size_t candidates = 0;
@@ -479,14 +466,14 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(const size_t old_pr
       const size_t promotion_need = (size_t) (region_live_data * ShenandoahPromoEvacWaste);
       if (old_consumed + promotion_need <= old_promotion_reserve) {
         old_consumed += promotion_need;
-        candidate_regions_for_promotion_by_copy[region->index()] = true;
+        heap->collection_set()->add_region(region);
         selected_regions++;
         selected_live += region_live_data;
       } else {
         // We rejected this promotable region from the collection set because we had no room to hold its copy.
         // Add this region to promo potential for next GC.
         promo_potential += region_live_data;
-        assert(!candidate_regions_for_promotion_by_copy[region->index()], "Shouldn't be selected");
+        assert(!heap->collection_set()->is_in(region), "Region %zu shouldn't be in the collection set", region->index());
       }
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
@@ -555,7 +542,7 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap*
          young_evacuated_reserve_used, total_young_available);
   young_generation->set_evacuation_reserve(young_evacuated_reserve_used);
 
-  // We have not yet rebuilt the free set.  Some of the memory that is thought to be avaiable within old may no
+  // We have not yet rebuilt the free set.  Some of the memory that is thought to be available within old may no
   // longer be available if that memory had been free within regions that were selected for the collection set.
   // Make the necessary adjustments to old_available.
   size_t old_available =
@@ -634,24 +621,3 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap*
   old_generation->set_promoted_reserve(total_promotion_reserve);
   old_generation->reset_promoted_expended();
 }
-
-size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_set(ShenandoahCollectionSet* cset,
-                                                                                   const RegionData* data,
-                                                                                   size_t size) const {
-  // cur_young_garbage represents the amount of memory to be reclaimed from young-gen.  In the case that live objects
-  // are known to be promoted out of young-gen, we count this as cur_young_garbage because this memory is reclaimed
-  // from young-gen and becomes available to serve future young-gen allocation requests.
-  size_t cur_young_garbage = 0;
-  for (size_t idx = 0; idx < size; idx++) {
-    ShenandoahHeapRegion* r = data[idx].get_region();
-    if (cset->is_preselected(r->index())) {
-      assert(ShenandoahGenerationalHeap::heap()->is_tenurable(r), "Preselected regions must have tenure age");
-      // Entire region will be promoted, This region does not impact young-gen or old-gen evacuation reserve.
-      // This region has been pre-selected and its impact on promotion reserve is already accounted for.
-      cur_young_garbage += r->garbage();
-      cset->add_region(r);
-    }
-  }
-  return cur_young_garbage;
-}
-

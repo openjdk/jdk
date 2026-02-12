@@ -82,10 +82,6 @@ protected:
   ShenandoahGeneration* _generation;
 
   size_t _add_regions_to_old;
-
-  size_t add_preselected_regions_to_collection_set(ShenandoahCollectionSet* cset,
-                                                   const RegionData* data,
-                                                   size_t size) const;
 };
 
 
