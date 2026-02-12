@@ -23,11 +23,14 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 /*
  * @test
  * @bug 8375633
+ * @key randomness
  * @summary Test that ConvF2HF::Ideal optimization is not missed with incremental inlining.
  *          AlwaysIncrementalInline is not required but deterministically defers even
  *          small methods, making this test reliable.
@@ -36,22 +39,21 @@ import java.util.Random;
  */
 public class ConvF2HFIdealizationStress {
 
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     private short srcBits;
     private short twoBits;
-    private short dstBits;
+    private short actualBits;
 
     public static void main(String[] args) {
-        TestFramework testFramework = new TestFramework();
-        testFramework.addFlags("-XX:-TieredCompilation",
-                               "-XX:+UnlockDiagnosticVMOptions",
-                               "-XX:+IgnoreUnrecognizedVMOptions",
-                               "-XX:+AlwaysIncrementalInline",
-                               "-XX:VerifyIterativeGVN=1110");
-        testFramework.start();
+        TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                   "-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:+AlwaysIncrementalInline",
+                                   "-XX:VerifyIterativeGVN=1110");
     }
 
     public ConvF2HFIdealizationStress() {
-        srcBits = Float.floatToFloat16(new Random(42).nextFloat());
+        srcBits = Float.floatToFloat16(RANDOM.nextFloat());
         twoBits = Float.floatToFloat16(2.0f);
     }
 
@@ -70,16 +72,13 @@ public class ConvF2HFIdealizationStress {
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
         failOn = {IRNode.CONV_F2HF})
     public void testMultiply() {
-        dstBits = Float.floatToFloat16(toFloat(srcBits) * toFloat(twoBits));
+        actualBits = Float.floatToFloat16(toFloat(srcBits) * toFloat(twoBits));
     }
 
     @Check(test = "testMultiply")
     public void checkMultiply() {
-        float expected = Float.float16ToFloat(srcBits) * Float.float16ToFloat(twoBits);
-        short expectedBits = Float.floatToFloat16(expected);
-        if (expectedBits != dstBits) {
-            throw new RuntimeException("testMultiply: expected " + expectedBits +
-                                       " but got " + dstBits);
-        }
+        float twice = Float.float16ToFloat(srcBits) * Float.float16ToFloat(twoBits);
+        short expected = Float.floatToFloat16(twice);
+        Asserts.assertEQ(expected, actualBits);
     }
 }

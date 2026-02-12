@@ -23,10 +23,14 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 /*
  * @test
  * @bug 8375633
+ * @key randomness
  * @summary Test that ConvD2F::Ideal optimization is not missed with incremental inlining.
  *          AlwaysIncrementalInline is not required but deterministically defers even
  *          small methods, making this test reliable.
@@ -35,14 +39,13 @@ import compiler.lib.ir_framework.*;
  */
 public class ConvD2FIdealizationStress {
 
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public static void main(String[] args) {
-        TestFramework testFramework = new TestFramework();
-        testFramework.addFlags("-XX:-TieredCompilation",
-                               "-XX:+UnlockDiagnosticVMOptions",
-                               "-XX:+IgnoreUnrecognizedVMOptions",
-                               "-XX:+AlwaysIncrementalInline",
-                               "-XX:VerifyIterativeGVN=1110");
-        testFramework.start();
+        TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                   "-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:+AlwaysIncrementalInline",
+                                   "-XX:VerifyIterativeGVN=1110");
     }
 
     // Deferred by AlwaysIncrementalInline; ConvF2D appears only after inlining.
@@ -61,9 +64,12 @@ public class ConvD2FIdealizationStress {
 
     @Run(test = "testSqrtConversion")
     public void runSqrtConversion() {
-        float result = testSqrtConversion(4.0f);
-        if (result != 2.0f) {
-            throw new RuntimeException("Expected 2.0f but got " + result);
-        }
+        float input = RANDOM.nextFloat();
+        checkSqrtConversion(input, testSqrtConversion(input));
+    }
+
+    @DontCompile
+    public void checkSqrtConversion(float input, float result) {
+        Asserts.assertEQ((float) Math.sqrt(input), result);
     }
 }
