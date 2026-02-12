@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.List;
  *    {&#064;note [attributes] body}
  * </pre>
  *
- * @since 26
+ * @since 27
  */
 public interface NoteTree extends BlockTagTree, InlineTagTree {
 

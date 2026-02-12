@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public abstract class DocTrees extends Trees {
      *
      * @see #setCustomTags(Set)
      *
-     * @since 26
+     * @since 27
      */
     public abstract Set<String> getCustomTags();
 
@@ -278,7 +278,7 @@ public abstract class DocTrees extends Trees {
      * @param customTags a set of tag names of known custom tags
      * @see #getCustomTags()
      *
-     * @since 26
+     * @since 27
      */
     public abstract void setCustomTags(Set<String> customTags);
 
