@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -904,6 +905,70 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         }
         this.count = count;
         return this;
+    }
+
+    /**
+     * Appends two Latin1 characters to this sequence.
+     * <p>
+     * This method is used internally by the JVM optimizer when it detects
+     * two consecutive {@code append(char)} calls where both characters
+     * are known to be Latin1 (in the range '\u0000' to '\u00FF').
+     * <p>
+     * This method combines the two append operations into a single call,
+     * reducing the overhead of capacity checks and coder handling.
+     *
+     * @param   c1  the first {@code char} (must be Latin1).
+     * @param   c2  the second {@code char} (must be Latin1).
+     * @return  a reference to this object.
+     */
+    void appendLatin1(char c1, char c2) {
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
+        if (isLatin1(coder)) {
+            value[count    ] = (byte)c1;
+            value[count + 1] = (byte)c2;
+        } else {
+            StringUTF16.putChar(value, count, c1);
+            StringUTF16.putChar(value, count + 1, c2);
+        }
+        this.count = count + 2;
+        this.value = value;
+    }
+
+    /**
+     * Appends four Latin1 characters to this sequence.
+     * <p>
+     * This method is used internally by the JVM optimizer when it detects
+     * four consecutive {@code append(char)} calls where all characters
+     * are known to be Latin1 (in the range '\u0000' to '\u00FF').
+     * <p>
+     * This method combines the four append operations into a single call,
+     * reducing the overhead of capacity checks and coder handling.
+     * When stored to a Latin1-encoded byte array, MergeStores optimization
+     * can combine four byte stores into a single 32-bit store.
+     *
+     * @param   c1  the first {@code char} (must be Latin1).
+     * @param   c2  the second {@code char} (must be Latin1).
+     * @param   c3  the third {@code char} (must be Latin1).
+     * @param   c4  the fourth {@code char} (must be Latin1).
+     * @return  a reference to this object.
+     */
+    void appendLatin1(char c1, char c2, char c3, char c4) {
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, count + 4);
+        if (isLatin1(coder)) {
+            value[count    ] = (byte)c1;
+            value[count + 1] = (byte)c2;
+            value[count + 2] = (byte)c3;
+            value[count + 3] = (byte)c4;
+        } else {
+            StringUTF16.putChar(value, count, c1);
+            StringUTF16.putChar(value, count + 1, c2);
+            StringUTF16.putChar(value, count + 2, c3);
+            StringUTF16.putChar(value, count + 3, c4);
+        }
+        this.count = count + 4;
+        this.value = value;
     }
 
     /**

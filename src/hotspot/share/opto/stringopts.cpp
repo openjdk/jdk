@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2020,8 +2021,64 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
             break;
           }
           case StringConcat::CharMode: {
+            // Check if we can optimize consecutive Latin1 chars
+            // First, try to find 4 consecutive Latin1 chars for maximum MergeStores benefit
+            if (argi + 3 < sc->num_arguments() &&
+                sc->mode(argi + 1) == StringConcat::CharMode &&
+                sc->mode(argi + 2) == StringConcat::CharMode &&
+                sc->mode(argi + 3) == StringConcat::CharMode) {
+              Node* arg2 = sc->argument(argi + 1);
+              Node* arg3 = sc->argument(argi + 2);
+              Node* arg4 = sc->argument(argi + 3);
+              const TypeInt* t1 = kit.gvn().type(arg)->is_int();
+              const TypeInt* t2 = kit.gvn().type(arg2)->is_int();
+              const TypeInt* t3 = kit.gvn().type(arg3)->is_int();
+              const TypeInt* t4 = kit.gvn().type(arg4)->is_int();
+              // Check if all four chars are Latin1 (type range within 0x00-0xFF)
+              // This handles both constants and variables with known Latin1 range
+              if (t1->_hi <= 0xFF && t2->_hi <= 0xFF && t3->_hi <= 0xFF && t4->_hi <= 0xFF) {
+                // All four are Latin1 chars - store them together
+                // This enables MergeStores to combine into a single 32-bit store
+                Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
+                __ store(__ ctrl(), adr1, arg, T_BYTE, byte_adr_idx, MemNode::unordered);
+                Node* idx2 = __ AddI(start, __ intcon(1));
+                Node* adr2 = kit.array_element_address(dst_array, idx2, T_BYTE);
+                __ store(__ ctrl(), adr2, arg2, T_BYTE, byte_adr_idx, MemNode::unordered);
+                Node* idx3 = __ AddI(start, __ intcon(2));
+                Node* adr3 = kit.array_element_address(dst_array, idx3, T_BYTE);
+                __ store(__ ctrl(), adr3, arg3, T_BYTE, byte_adr_idx, MemNode::unordered);
+                Node* idx4 = __ AddI(start, __ intcon(3));
+                Node* adr4 = kit.array_element_address(dst_array, idx4, T_BYTE);
+                __ store(__ ctrl(), adr4, arg4, T_BYTE, byte_adr_idx, MemNode::unordered);
+                start = __ AddI(start, __ intcon(4));
+                // Skip the next three chars since we already processed them
+                argi += 3;
+                break;
+              }
+            }
+            // Try to find 2 consecutive Latin1 chars
+            if (argi + 1 < sc->num_arguments() && sc->mode(argi + 1) == StringConcat::CharMode) {
+              Node* next_arg = sc->argument(argi + 1);
+              const TypeInt* t1 = kit.gvn().type(arg)->is_int();
+              const TypeInt* t2 = kit.gvn().type(next_arg)->is_int();
+              // Check if both chars are Latin1 (type range within 0x00-0xFF)
+              // This handles both constants and variables with known Latin1 range
+              if (t1->_hi <= 0xFF && t2->_hi <= 0xFF) {
+                // Both are Latin1 chars - store them together
+                Node* adr1 = kit.array_element_address(dst_array, start, T_BYTE);
+                __ store(__ ctrl(), adr1, arg, T_BYTE, byte_adr_idx, MemNode::unordered);
+                Node* next_idx = __ AddI(start, __ intcon(1));
+                Node* adr2 = kit.array_element_address(dst_array, next_idx, T_BYTE);
+                __ store(__ ctrl(), adr2, next_arg, T_BYTE, byte_adr_idx, MemNode::unordered);
+                start = __ AddI(start, __ intcon(2));
+                // Skip the next char since we already processed it
+                argi++;
+                break;
+              }
+            }
+            // Fall back to regular single char handling
             start = copy_char(kit, arg, dst_array, coder, start);
-          break;
+            break;
           }
           default:
             ShouldNotReachHere();
