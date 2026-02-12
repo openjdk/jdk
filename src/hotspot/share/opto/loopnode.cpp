@@ -2051,7 +2051,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       }
     }
   }
-
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //
@@ -4534,6 +4533,13 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
 //------------------------------counted_loop-----------------------------------
 // Convert to counted loops where possible
 void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
+  #ifndef PRODUCT
+  if ( StressCountedLoop && !(phase->_igvn._skip_stress_counted_loop) ) {
+      if((phase->C->random() % 2) == 0) {
+          return;
+    }
+  }
+  #endif
 
   // For grins, set the inner-loop flag here
   if (!_child) {

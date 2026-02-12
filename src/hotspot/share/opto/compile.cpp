@@ -741,7 +741,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
       StressIncrementalInlining || StressMacroExpansion ||
       StressMacroElimination || StressUnstableIfTraps ||
-      StressBailout || StressLoopPeeling) {
+      StressBailout || StressLoopPeeling || StressCountedLoop) {
     initialize_stress_seed(directive);
   }
 
@@ -2268,7 +2268,16 @@ bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
       PhaseIdealLoop::optimize(igvn, mode);
       _loop_opts_cnt--;
       if (failing())  return false;
-      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
+      if (major_progress()) {
+        print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
+      }
+      #ifndef PRODUCT
+      if (StressCountedLoop && (!major_progress() || _loop_opts_cnt == 1)) {
+          igvn._skip_stress_counted_loop = true;
+          PhaseIdealLoop::optimize(igvn, mode);
+          _loop_opts_cnt--;
+      }
+      #endif
     }
   }
   return true;

@@ -601,6 +601,10 @@ public:
   bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
+   bool _skip_stress_counted_loop = false;
+#endif
+
+#ifndef PRODUCT
   static bool is_verify_def_use() {
     // '-XX:VerifyIterativeGVN=1'
     return (VerifyIterativeGVN % 10) == 1;
