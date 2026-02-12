@@ -297,9 +297,8 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
          PROPERFMTARGS(immediate_garbage), PROPERFMTARGS(total_garbage));
 
   const size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
-  const bool doing_promote_in_place = heap->old_generation()->has_in_place_promotions();
   const bool has_preselected_regions = !collection_set->is_empty();
-  if (doing_promote_in_place || has_preselected_regions || (immediate_percent <= ShenandoahImmediateThreshold)) {
+  if (has_preselected_regions || (immediate_percent <= ShenandoahImmediateThreshold)) {
     // Call the subclasses to add young-gen regions into the collection set.
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
