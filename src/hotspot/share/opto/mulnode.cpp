@@ -1346,6 +1346,7 @@ Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return this;
     }
   }
+
   return progress;
 }
 
