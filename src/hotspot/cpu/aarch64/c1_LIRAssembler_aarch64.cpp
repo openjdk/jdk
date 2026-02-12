@@ -1445,19 +1445,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
   __ cmpxchg(addr, cmpval, newval, Assembler::word, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
   __ cset(rscratch1, Assembler::NE);
-  if(!UseLSE) {
-    // Prevent a later volatile load from being reordered with the STLXR in cmpxchg.
-    __ membar(__ AnyAny);
-  }
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
   __ cmpxchg(addr, cmpval, newval, Assembler::xword, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
   __ cset(rscratch1, Assembler::NE);
-  if(!UseLSE) {
-    // Prevent a later volatile load from being reordered with the STLXR in cmpxchg.
-    __ membar(__ AnyAny);
-  }
 }
 
 
@@ -3061,9 +3053,6 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     break;
   default:
     ShouldNotReachHere();
-  }
-  if(!UseLSE) {
-    __ membar(__ AnyAny);
   }
 }
 

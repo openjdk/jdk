@@ -3510,6 +3510,8 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
       cbnzw(rscratch1, retry_load);
     }
     bind(done);
+    // Prevent a later volatile load from being reordered with the STLXR.
+    membar(AnyAny);
   }
   BLOCK_COMMENT("} cmpxchg");
 }
@@ -3565,6 +3567,7 @@ void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Regis
   if (prev->is_valid() && prev != result) {                             \
     IOP(prev, rscratch1, incr);                                         \
   }                                                                     \
+  membar(AnyAny);                                                       \
 }
 
 ATOMIC_OP(add, ldxr, add, sub, ldadd, stxr, Assembler::xword)
@@ -3593,6 +3596,7 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
   cbnzw(rscratch1, retry_load);                                         \
   if (prev->is_valid() && prev != result)                               \
     mov(prev, result);                                                  \
+  membar(AnyAny);                                                       \
 }
 
 ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
