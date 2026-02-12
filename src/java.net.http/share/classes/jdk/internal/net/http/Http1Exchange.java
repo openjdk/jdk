@@ -473,12 +473,10 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     @Override
     Http1ResponseBodySubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
-        BodySubscriber<T> subscriber = handler.apply(response);
-        Objects.requireNonNull(subscriber, "BodyHandler returned a null BodySubscriber");
         var cancelTimerOnTermination =
                 cancelTimerOnResponseBodySubscriberTermination(
                         exchange.request().isWebSocket(), response.statusCode());
-        return new Http1ResponseBodySubscriber<>(subscriber, cancelTimerOnTermination, this);
+        return new Http1ResponseBodySubscriber<>(handler.apply(response), cancelTimerOnTermination, this);
     }
 
     @Override
