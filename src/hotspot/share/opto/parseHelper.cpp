@@ -165,7 +165,7 @@ void Parse::array_store_check() {
   // Make constant out of the inexact array klass, but use it only if the cast
   // succeeds.
   if (MonomorphicArrayCheck &&
-      !too_many_traps(Deoptimization::Reason_array_check) &&
+      !too_many_traps_or_recompiles(Deoptimization::Reason_array_check) &&
       !tak->klass_is_exact() &&
       tak->isa_aryklassptr()) {
       // Regarding the fourth condition in the if-statement from above:
