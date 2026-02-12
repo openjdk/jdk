@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,8 @@ class ExchangeImpl {
     private boolean isUpgradeRequest(Headers headers) {
         var values = headers.get("Connection");
         return values != null
-            && headers.get("Upgrade") != null
-            && GET.equals(getRequestMethod())
+            && GET.equals(method)
+            && headers.containsKey("Upgrade")
             && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
     }
 
