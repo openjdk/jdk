@@ -350,7 +350,7 @@ class GraphKit : public Phase {
   Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new CmpPNode(l, r));       }
   Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
 
-  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(new AddPNode(b, a, o));    }
+  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(AddPNode::make_with_base(b, a, o)); }
 
   // Convert between int and long, and size_t.
   // (See macros ConvI2X, etc., in type.hpp for ConvI2X, etc.)

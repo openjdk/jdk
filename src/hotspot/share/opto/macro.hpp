@@ -50,15 +50,17 @@ public:
     return basic_plus_adr(base, base, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    Node* adr = new AddPNode(base, ptr, offset);
+    Node* adr = AddPNode::make_with_base(base, ptr, offset);
     return transform_later(adr);
   }
+
   Node* off_heap_plus_addr(Node* ptr, int offset) {
     return (offset == 0)? ptr: off_heap_plus_addr(ptr, MakeConX(offset));
   }
   Node* off_heap_plus_addr(Node* ptr, Node* offset) {
     return transform_later(AddPNode::make_off_heap(ptr, offset));
   }
+
   Node* transform_later(Node* n) {
     // equivalent to _gvn.transform in GraphKit, Ideal, etc.
     _igvn.register_new_node_with_optimizer(n);

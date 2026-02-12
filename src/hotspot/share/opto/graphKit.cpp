@@ -1178,7 +1178,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   // short-circuit a common case
   if (offset == intcon(0))  return ptr;
-  return _gvn.transform( new AddPNode(base, ptr, offset) );
+  return _gvn.transform(AddPNode::make_with_base(base, ptr, offset));
 }
 
 Node* GraphKit::off_heap_plus_addr(Node* ptr, Node* offset) {

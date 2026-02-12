@@ -621,10 +621,10 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
         IdealLoopTree* n23_loop = get_loop(n23_ctrl);
         if (n22loop != n_loop && n22loop->is_member(n_loop) &&
             n23_loop == n_loop) {
-          Node* add1 = new AddPNode(n->in(1), n->in(2)->in(2), n->in(3));
+          Node* add1 = AddPNode::make_with_base(n->in(1), n->in(2)->in(2), n->in(3));
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->as_Loop()->skip_strip_mined(1)->in(LoopNode::EntryControl));
-          Node* add2 = new AddPNode(n->in(1), add1, n->in(2)->in(3));
+          Node* add2 = AddPNode::make_with_base(n->in(1), add1, n->in(2)->in(3));
           register_new_node(add2, n_ctrl);
           _igvn.replace_node(n, add2);
           return add2;
@@ -642,10 +642,10 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
           Node *tmp = V; V = I; I = tmp;
         }
         if (!ctrl_is_member(n_loop, I)) {
-          Node* add1 = new AddPNode(n->in(1), n->in(2), I);
+          Node* add1 = AddPNode::make_with_base(n->in(1), n->in(2), I);
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->as_Loop()->skip_strip_mined(1)->in(LoopNode::EntryControl));
-          Node* add2 = new AddPNode(n->in(1), add1, V);
+          Node* add2 = AddPNode::make_with_base(n->in(1), add1, V);
           register_new_node(add2, n_ctrl);
           _igvn.replace_node(n, add2);
           return add2;

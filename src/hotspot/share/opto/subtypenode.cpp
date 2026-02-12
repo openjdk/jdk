@@ -217,7 +217,7 @@ Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
   const Type* sub_t = phase->type(obj_or_subklass);
   Node* subklass = nullptr;
   if (sub_t->isa_oopptr()) {
-    Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
+    Node* adr = phase->transform(AddPNode::make_with_base(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
     subklass  = phase->transform(LoadKlassNode::make(*phase, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
     record_for_cleanup(subklass, phase);
   } else {

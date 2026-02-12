@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,8 +226,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     ciField* field = ik->nonstatic_field_at(i);
     const TypePtr* adr_type = phase->C->alias_type(field)->adr_type();
     Node* off = phase->MakeConX(field->offset_in_bytes());
-    Node* next_src = phase->transform(new AddPNode(base_src,base_src,off));
-    Node* next_dest = phase->transform(new AddPNode(base_dest,base_dest,off));
+    Node* next_src = phase->transform(AddPNode::make_with_base(base_src, base_src, off));
+    Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest, base_dest, off));
     assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_src)->isa_ptr()),
       "slice of address and input slice don't match");
     assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_dest)->isa_ptr()),
@@ -332,11 +332,11 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     Node* dest_scale = phase->transform(new LShiftXNode(dest_offset, phase->intcon(shift)));
 
-    adr_src          = phase->transform(new AddPNode(base_src, base_src, src_scale));
-    adr_dest         = phase->transform(new AddPNode(base_dest, base_dest, dest_scale));
+    adr_src = phase->transform(AddPNode::make_with_base(base_src, base_src, src_scale));
+    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, base_dest, dest_scale));
 
-    adr_src          = phase->transform(new AddPNode(base_src, adr_src, phase->MakeConX(header)));
-    adr_dest         = phase->transform(new AddPNode(base_dest, adr_dest, phase->MakeConX(header)));
+    adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(header)));
+    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(header)));
 
     copy_type = dest_elem;
   } else {
@@ -355,8 +355,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
       return false;
     }
 
-    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
-    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
+    adr_src  = phase->transform(AddPNode::make_with_base(base_src, base_src, src_offset));
+    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, base_dest, dest_offset));
 
     // The address is offsetted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to
@@ -366,8 +366,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     int diff = arrayOopDesc::base_offset_in_bytes(elem) - offset;
     assert(diff >= 0, "clone should not start after 1st array element");
     if (diff > 0) {
-      adr_src = phase->transform(new AddPNode(base_src, adr_src, phase->MakeConX(diff)));
-      adr_dest = phase->transform(new AddPNode(base_dest, adr_dest, phase->MakeConX(diff)));
+      adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(diff)));
+      adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(diff)));
     }
     copy_type = elem;
     value_type = ary_src->elem();
@@ -425,8 +425,8 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
       store(bs, phase, forward_ctl, mm, adr_dest, atp_dest, v, value_type, copy_type);
       for (int i = 1; i < count; i++) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
-        Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
-        Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
+        Node* next_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, off));
+        Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, off));
         v = load(bs, phase, forward_ctl, mm, next_src, atp_src, value_type, copy_type);
         store(bs, phase, forward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
@@ -463,8 +463,8 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
     if (count > 0) {
       for (int i = count-1; i >= 1; i--) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
-        Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
-        Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
+        Node* next_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, off));
+        Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, off));
         Node* v = load(bs, phase, backward_ctl, mm, next_src, atp_src, value_type, copy_type);
         store(bs, phase, backward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
