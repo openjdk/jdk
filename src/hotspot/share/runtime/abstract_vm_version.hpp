@@ -229,7 +229,9 @@ class Abstract_VM_Version: AllStatic {
   static const char* cpu_description(void);
 
   static void get_cpu_features_name(void* features_buffer, stringStream& ss) { return; }
-  static void get_missing_features_name(void* features_buffer, stringStream& ss) { return; }
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) { return; }
 
   // Returns number of bytes required to store cpu features representation
   static int cpu_features_size() { return 0; }

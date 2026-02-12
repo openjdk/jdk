@@ -3314,14 +3314,15 @@ void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) 
   insert_features_names(*features, ss);
 }
 
-void VM_Version::get_missing_features_name(void* features_buffer, stringStream& ss) {
-  VM_Features* features_to_test = (VM_Features*)features_buffer;
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  VM_Features* vm_features_set1 = (VM_Features*)features_set1;
+  VM_Features* vm_features_set2 = (VM_Features*)features_set2;
   int i = 0;
   ss.join([&]() {
     const char* str = nullptr;
     while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
       Feature_Flag flag = (Feature_Flag)i;
-      if (features_to_test->supports_feature(flag) && !_features.supports_feature(flag)) {
+      if (vm_features_set1->supports_feature(flag) && !vm_features_set2->supports_feature(flag)) {
         str = _features_names[i];
       }
       i += 1;

@@ -249,7 +249,9 @@ public:
   }
 
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
-  static void get_missing_features_name(void* features_buffer, stringStream& ss);
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
 
   // Returns number of bytes required to store cpu features representation
   static int cpu_features_size();
