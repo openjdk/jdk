@@ -126,7 +126,7 @@ public final class ModulePathTest {
             final CannedFormattedString expectedErrorMessage;
             if (modulePathArgs.isEmpty()) {
                 expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
-                        "ERR_MissingArgument2", "--runtime-image", "--module-path");
+                        "ERR_MissingOption2", "--module", "--runtime-image", "--module-path");
             } else {
                 expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
                         "error.no-module-in-path", appDesc.moduleName());
