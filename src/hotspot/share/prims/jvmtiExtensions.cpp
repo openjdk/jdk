@@ -30,12 +30,74 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
+#include "runtime/stackWalker.hpp"
 
 // the list of extension functions
 GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
 
 // the list of extension events
 GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
+
+// async stack trace capability
+bool JvmtiExtensions::_can_request_stack_trace = false;
+
+#ifdef LINUX
+// JVMTI callback wrapper for StackWalker
+class JvmtiStackWalkerCallback : public StackWalkerCallback {
+  jvmtiBeginStackTraceCallback _begin_callback;
+  jvmtiEndStackTraceCallback _end_callback;
+  jvmtiStackFrameCallback _frame_callback;
+  const void* _user_data;
+  JavaThread* _jt;
+
+  static jvmtiFrameType convert_type(StackWalkerFrameType type) {
+    switch (type) {
+      case StackWalkerFrameType::FRAME_INTERPRETER:
+      case StackWalkerFrameType::FRAME_JIT:
+      case StackWalkerFrameType::FRAME_INLINE:
+        return JVMTI_JAVA_FRAME;
+      case StackWalkerFrameType::FRAME_NATIVE:
+        return JVMTI_NATIVE_FRAME;
+    }
+    ShouldNotReachHere();
+    return JVMTI_JAVA_FRAME;
+  }
+
+public:
+  JvmtiStackWalkerCallback(jvmtiBeginStackTraceCallback begin_callback,
+                           jvmtiEndStackTraceCallback end_callback,
+                           jvmtiStackFrameCallback frame_callback,
+                           const void* user_data) :
+    _begin_callback(begin_callback),
+    _end_callback(end_callback),
+    _frame_callback(frame_callback),
+    _user_data(user_data),
+    _jt(nullptr) {}
+
+  void begin_stacktrace(JavaThread* jt, bool continuation, bool biased) override {
+    _jt = jt;
+    ThreadToNativeFromVM ttnfv(jt);
+    _begin_callback(false, biased, _user_data);
+  }
+
+  void end_stacktrace(bool truncated) override {
+    ThreadToNativeFromVM ttnfv(_jt);
+    _end_callback(_user_data);
+  }
+
+  void stack_frame(const Method* method, int bci, int line_no, StackWalkerFrameType type) override {
+    jvmtiFrameType frame_type = convert_type(type);
+    jlocation loc = bci;
+    jmethodID method_id = const_cast<Method*>(method)->jmethod_id();
+    ThreadToNativeFromVM ttnfv(_jt);
+    _frame_callback(frame_type, method_id, loc, _user_data);
+  }
+
+  void failure() override {
+    // Nothing to report on failure
+  }
+};
+#endif // LINUX
 
 
 //
@@ -172,7 +234,7 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
 // Parameters: (thread, ucontext, begin_stack_trace_callback, end_stack_trace_callback, stack_frame_callback, user_data)
 static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
   JvmtiEnv* jvmti_env = JvmtiEnv::JvmtiEnv_from_jvmti_env((jvmtiEnv*)env);
-  if (!JvmtiExport::can_request_stack_trace()) {
+  if (!JvmtiExtensions::can_request_stack_trace()) {
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
 
@@ -196,9 +258,17 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
   user_data = va_arg(ap, const void*);
   va_end(ap);
 
-#if INCLUDE_JFR && defined(LINUX)
+#ifdef LINUX
   if (thread == nullptr) {
-    JfrCPUTimeThreadSampling::jvmti_request_stacktrace(ucontext, begin_stack_trace_callback, end_stack_trace_callback, stack_frame_callback, user_data);
+    // Use StackWalker API directly.
+    // Note: StackWalker::initialize() is called in init_globals2() after
+    // InitializeRequestStackTrace sets can_request_stack_trace().
+    StackWalkRequest request;
+    request.set_max_frames(512);
+    new (request.callback_storage()) JvmtiStackWalkerCallback(
+        begin_stack_trace_callback, end_stack_trace_callback,
+        stack_frame_callback, user_data);
+    StackWalker::request_stack_trace(request, current_thread, ucontext);
     return JVMTI_ERROR_NONE;
   }
 #endif
@@ -207,8 +277,22 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
 
 // No parameters.
 static jvmtiError JNICALL InitializeRequestStackTrace(const jvmtiEnv* env, ...) {
-  JvmtiExport::set_can_request_stack_trace(true);
+  // Set the flag so post_initialize() will initialize the StackWalker.
+  // Note: This is typically called during Agent_OnLoad before the VM is fully
+  // initialized, so we cannot initialize StackWalker here directly.
+  JvmtiExtensions::set_can_request_stack_trace(true);
   return JVMTI_ERROR_NONE;
+}
+
+// Called from init_globals2() after VM initialization is complete.
+void JvmtiExtensions::post_initialize() {
+#ifdef LINUX
+  // Initialize the StackWalker if JVMTI requested async stack traces.
+  // This must happen after VM initialization is complete (BarrierSet created).
+  if (JvmtiExtensions::can_request_stack_trace()) {
+    StackWalker::initialize();
+  }
+#endif
 }
 
 // register extension functions and events. In this implementation we

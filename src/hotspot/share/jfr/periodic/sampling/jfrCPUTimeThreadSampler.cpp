@@ -312,7 +312,6 @@ void JfrCPUSamplerThread::on_javathread_create(JavaThread* thread) {
   JfrThreadLocal* tl = thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
   tl->cpu_time_jfr_queue().init();
-  thread->stackwalker_thread_local().queue().init();
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
     tl->set_cpu_timer(&timerid);
@@ -526,9 +525,6 @@ JfrCPUTimeThreadSampling& JfrCPUTimeThreadSampling::instance() {
 JfrCPUTimeThreadSampling* JfrCPUTimeThreadSampling::create() {
   assert(_instance == nullptr, "invariant");
   _instance = new JfrCPUTimeThreadSampling();
-  if (JvmtiExport::can_request_stack_trace()) {
-    initialize_jvmti();
-  }
   return _instance;
 }
 
@@ -565,15 +561,10 @@ void JfrCPUTimeThreadSampling::update_run_state(JfrCPUSamplerThrottle& throttle)
     }
     return;
   }
-  if (_sampler != nullptr && !JvmtiExport::can_request_stack_trace()) {
+  if (_sampler != nullptr) {
     _sampler->set_throttle(throttle);
     _sampler->disenroll();
   }
-}
-
-void JfrCPUTimeThreadSampling::initialize_jvmti() {
-  JfrCPUSamplerThrottle throttle(500.0);
-  instance().update_run_state(throttle);
 }
 
 void JfrCPUTimeThreadSampling::set_rate(double rate) {
@@ -732,10 +723,12 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   int64_t period = _sampler->get_sampling_period() * (info->si_overrun + 1);
   Tickspan cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
 
-  JfrCPUTimeStackWalkerCallback* callback = new JfrCPUTimeStackWalkerCallback(now, cpu_time_period);
   JavaThread* current = get_java_thread_if_valid();
   if (current != nullptr) {
-   StackWalker::request_stack_trace(callback, current, context, JfrOptionSet::stackdepth());
+    StackWalkRequest request;
+    request.set_max_frames(JfrOptionSet::stackdepth());
+    new (request.callback_storage()) JfrCPUTimeStackWalkerCallback(now, cpu_time_period);
+    StackWalker::request_stack_trace(request, current, context);
   }
   _sampler->decrement_signal_handler_count();
 }

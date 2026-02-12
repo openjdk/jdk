@@ -35,6 +35,7 @@
 #include "oops/trainingData.hpp"
 #include "prims/downcallLinker.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiExtensions.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
@@ -203,6 +204,10 @@ jint init_globals2() {
   compiler_stubs_init(false /* in_compiler_thread */); // compiler's intrinsics stubs
   final_stubs_init();    // final StubRoutines stubs
   MethodHandles::generate_adapters();
+
+#if INCLUDE_JVMTI
+  JvmtiExtensions::post_initialize();
+#endif
 
   // All the flags that get adjusted by VM_Version_init and os::init_2
   // have been set so dump the flags now.

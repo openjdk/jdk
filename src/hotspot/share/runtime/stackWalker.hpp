@@ -38,9 +38,18 @@ enum class StackWalkerFrameType {
   FRAME_NATIVE,
 };
 
-class StackWalkerCallback : public CHeapObj<mtOther> {
+class StackWalkerCallback {
 public:
-  virtual ~StackWalkerCallback() =default;
+  // Prevent heap allocation - only embedded storage via placement new is allowed.
+  void* operator new(size_t size) = delete;
+  void* operator new[](size_t size) = delete;
+  void operator delete[](void* p) = delete;
+  // Placement new for embedded storage in StackWalkRequest.
+  void* operator new(size_t size, void* ptr) { return ptr; }
+  // No-op: destructor is called explicitly, never via delete.
+  void operator delete(void* p) {}
+
+  virtual ~StackWalkerCallback() = default;
 
   virtual void begin_stacktrace(JavaThread* jt, bool continuation, bool biased) = 0;
   virtual void end_stacktrace(bool truncated) = 0;
@@ -49,22 +58,37 @@ public:
 };
 
 class StackWalkRequest {
-  StackWalkerCallback* _callback;
+  // Embedded storage for the callback object to avoid heap allocation in signal handlers.
+  // Size must accommodate both JfrCPUTimeStackWalkerCallback and JvmtiStackWalkerCallback.
+  static constexpr size_t CALLBACK_STORAGE_SIZE = 64;
+  alignas(16) char _callback_storage[CALLBACK_STORAGE_SIZE];
   u4 _max_frames;
 public:
   void* _sample_sp;
   void* _sample_pc;
   void* _sample_bcp;
 
-  StackWalkRequest(StackWalkerCallback* callback, u4 max_frames) :
-    _callback(callback),
-    _max_frames(max_frames),
+  StackWalkRequest() :
+    _max_frames(0),
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr) {}
 
+  void set_max_frames(u4 max_frames) { _max_frames = max_frames; }
   u4 max_frames() const { return _max_frames; }
-  StackWalkerCallback* callback() const { return _callback; }
+
+  // Returns raw storage for placement new of callback objects.
+  void* callback_storage() { return _callback_storage; }
+
+  // Returns the callback pointer (assumes callback was constructed in storage).
+  StackWalkerCallback* callback() const {
+    return reinterpret_cast<StackWalkerCallback*>(const_cast<char*>(_callback_storage));
+  }
+
+  // Call destructor on the callback (must be called after processing).
+  void destroy_callback() {
+    callback()->~StackWalkerCallback();
+  }
 };
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
@@ -212,7 +236,13 @@ class StackWalker : public AllStatic {
 
 public:
   static void initialize();
-  static void request_stack_trace(StackWalkerCallback* callback, JavaThread* jt, const void* context, u4 max_frames);
+  // Called when a new Java thread is created to initialize its queue.
+  static void on_javathread_create(JavaThread* thread);
+  // Request a stack trace. The caller must prepare the request by:
+  // 1. Constructing a callback in request.callback_storage() using placement new
+  // 2. Setting request.set_max_frames()
+  // This API is signal-safe (no allocations).
+  static void request_stack_trace(StackWalkRequest& request, JavaThread* jt, const void* context);
 
   // Entry point for the runtime to trigger stack-walk processing.
   static inline void check_and_process_requests(JavaThread* jt);

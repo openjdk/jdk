@@ -155,7 +155,6 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
-  static void initialize_jvmti();
   static void set_rate(double rate);
   static void set_period(u8 nanos);
 

@@ -399,6 +399,7 @@ public:
 };
 
 NativeStackWalkerThread* StackWalker::_native_stackwalker_thread = nullptr;
+static volatile int _stackwalker_initialized = 0;
 
 static bool is_entry_frame(address pc) {
   return StubRoutines::returns_to_call_stub(pc);
@@ -593,7 +594,7 @@ static bool check_state(const JavaThread* thread) {
   }
 }
 
-void StackWalker::request_stack_trace(StackWalkerCallback* callback, JavaThread* jt, const void* context, u4 max_frames) {
+void StackWalker::request_stack_trace(StackWalkRequest& request, JavaThread* jt, const void* context) {
   // TODO: Handle other threads as well. Those would have to be biased and taken
   // at the next safepoint/handshake.
   assert(jt == JavaThread::current(), "Only current thread supported for now");
@@ -608,7 +609,6 @@ void StackWalker::request_stack_trace(StackWalkerCallback* callback, JavaThread*
     return;
   }
 
-  StackWalkRequest request(callback, max_frames);
   build_stack_walk_request(request, context, jt);
 
   if (queue.enqueue(request)) {
@@ -953,7 +953,9 @@ void StackWalker::process_requests(const Thread* current, JavaThread* jt, bool l
   }
   StackWalkerRequestQueue& queue = tl.queue();
   for (u4 i = 0; i < queue.size(); i++) {
-    report_thread(queue.at(i), tl, jt, current);
+    StackWalkRequest& request = queue.at(i);
+    report_thread(request, tl, jt, current);
+    request.destroy_callback();
   }
   queue.clear();
   assert(queue.is_empty(), "invariant");
@@ -996,8 +998,31 @@ void StackWalkerThreadLocal::on_set_current_thread(JavaThread* jt, oop thread) {
 }
 
 void StackWalker::initialize() {
-  assert(_native_stackwalker_thread == nullptr, "must not initialize twice");
+  // Thread-safe initialization: use atomic CAS to ensure only one thread initializes.
+  // This allows both JFR and JVMTI to call initialize() without coordination.
+  if (AtomicAccess::cmpxchg(&_stackwalker_initialized, 0, 1) != 0) {
+    // Already initialized by another thread
+    return;
+  }
   _native_stackwalker_thread = new NativeStackWalkerThread();
   _native_stackwalker_thread->start_thread();
   _native_stackwalker_thread->enroll();
+
+  // Initialize queues for all existing threads. No safepoint needed here because
+  // no profiling signals are active yet (timers/signal handlers are installed later).
+  // JavaThreadIteratorWithHandle uses Thread-SMR for safe iteration.
+  JavaThreadIteratorWithHandle jtiwh;
+  for (JavaThread* jt = jtiwh.next(); jt != nullptr; jt = jtiwh.next()) {
+    on_javathread_create(jt);
+  }
+}
+
+void StackWalker::on_javathread_create(JavaThread* thread) {
+  if (AtomicAccess::load_acquire(&_stackwalker_initialized) == 0) {
+    return;  // StackWalker not initialized yet
+  }
+  if (thread->is_hidden_from_external_view()) {
+    return;
+  }
+  thread->stackwalker_thread_local().queue().init();
 }

@@ -40,8 +40,11 @@ class JvmtiExtensions : public AllStatic {
  private:
   static GrowableArray<jvmtiExtensionFunctionInfo*>* _ext_functions;
   static GrowableArray<jvmtiExtensionEventInfo*>* _ext_events;
+  static bool _can_request_stack_trace;
 
  public:
+  static bool can_request_stack_trace() { return _can_request_stack_trace; }
+  static void set_can_request_stack_trace(bool value) { _can_request_stack_trace = value; }
   // register extensions function
   static void register_extensions();
 
@@ -56,6 +59,9 @@ class JvmtiExtensions : public AllStatic {
   // sets the callback function for an extension event and enables the event
   static jvmtiError set_event_callback(JvmtiEnv* env, jint extension_event_index,
                                        jvmtiExtensionEvent callback);
+
+  // called after VM initialization to perform deferred initialization
+  static void post_initialize();
 };
 
 #endif // SHARE_PRIMS_JVMTIEXTENSIONS_HPP
