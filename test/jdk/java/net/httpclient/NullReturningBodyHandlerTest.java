@@ -142,7 +142,7 @@ class NullReturningBodyHandlerTest {
                 .path(CTX_PATH)
                 .query("reqVersion=h1")
                 .build();
-        args.add(Arguments.of(new Request(h1HttpsReq, Version.HTTP_1_1)));
+        args.add(Arguments.of(h1HttpsReq, Version.HTTP_1_1, false));
 
         final URI h1HttpReq = URIBuilder.newBuilder()
                 .scheme("http")
@@ -151,7 +151,7 @@ class NullReturningBodyHandlerTest {
                 .path(CTX_PATH)
                 .query("reqVersion=h1&scheme=http")
                 .build();
-        args.add(Arguments.of(new Request(h1HttpReq, Version.HTTP_1_1)));
+        args.add(Arguments.of(h1HttpReq, Version.HTTP_1_1, false));
 
         final URI h2Req = URIBuilder.newBuilder()
                 .scheme("https")
@@ -160,7 +160,7 @@ class NullReturningBodyHandlerTest {
                 .path(CTX_PATH)
                 .query("reqVersion=h2")
                 .build();
-        args.add(Arguments.of(new Request(h2Req, Version.HTTP_2)));
+        args.add(Arguments.of(h2Req, Version.HTTP_2, false));
 
         final URI h2HttpReq = URIBuilder.newBuilder()
                 .scheme("http")
@@ -170,9 +170,9 @@ class NullReturningBodyHandlerTest {
                 .query("reqVersion=h2&scheme=http")
                 .build();
         // test for HTTP/2 upgrade when there are no already established connections
-        args.add(Arguments.of(new Request(h2HttpReq, Version.HTTP_2)));
+        args.add(Arguments.of(h2HttpReq, Version.HTTP_2, false));
         // test for HTTP/2 upgrade when there is an established connection
-        args.add(Arguments.of(new Request(h2HttpReq, Version.HTTP_2, true)));
+        args.add(Arguments.of(h2HttpReq, Version.HTTP_2, true));
 
         final URI h3Req = URIBuilder.newBuilder()
                 .scheme("https")
@@ -181,7 +181,7 @@ class NullReturningBodyHandlerTest {
                 .path(CTX_PATH)
                 .query("reqVersion=h3")
                 .build();
-        args.add(Arguments.of(new Request(h3Req, Version.HTTP_3)));
+        args.add(Arguments.of(h3Req, Version.HTTP_3, false));
         return args;
     }
 
@@ -193,12 +193,13 @@ class NullReturningBodyHandlerTest {
      */
     @ParameterizedTest
     @MethodSource("params")
-    void test(final Request request) throws Exception {
-        if (request.requiresWarmupHEADRequest) {
+    void test(final URI reqURI, final Version version,
+              final boolean requiresWarmupHEADRequest) throws Exception {
+        if (requiresWarmupHEADRequest) {
             final HttpRequest.Builder builder = HttpRequest.newBuilder().HEAD()
-                    .version(request.version)
-                    .uri(request.reqURI);
-            if (request.version == Version.HTTP_3) {
+                    .version(version)
+                    .uri(reqURI);
+            if (version == Version.HTTP_3) {
                 builder.setOption(HttpOption.H3_DISCOVERY, HTTP_3_URI_ONLY);
             }
             final HttpRequest head = builder.build();
@@ -208,32 +209,26 @@ class NullReturningBodyHandlerTest {
         }
         // now run the actual test
         final HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .version(request.version)
-                .uri(request.reqURI);
-        if (request.version == Version.HTTP_3) {
+                .version(version)
+                .uri(reqURI);
+        if (version == Version.HTTP_3) {
             builder.setOption(HttpOption.H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         final HttpRequest req = builder.build();
         // test synchronous send()
-        System.err.println("issuing request " + request.reqURI);
+        System.err.println("issuing request " + reqURI);
         final IOException ioe = assertThrows(IOException.class,
                 () -> client.send(req, new AlwaysReturnsNull()));
         if (!(ioe.getCause() instanceof NullPointerException)) {
             throw ioe; // propagate the original exception
         }
         // now test with sendAsync()
-        System.err.println("issuing async request " + request.reqURI);
+        System.err.println("issuing async request " + reqURI);
         final Future<HttpResponse<String>> f = client.sendAsync(req, new AlwaysReturnsNull());
         final ExecutionException ee = assertThrows(ExecutionException.class, f::get);
         if (!(ee.getCause() instanceof IOException cause)
                 || !(cause.getCause() instanceof NullPointerException)) {
             throw ee; // propagate the original exception
-        }
-    }
-
-    private record Request(URI reqURI, Version version, boolean requiresWarmupHEADRequest) {
-        Request(URI reqURI, Version version) {
-            this(reqURI, version, false);
         }
     }
 
