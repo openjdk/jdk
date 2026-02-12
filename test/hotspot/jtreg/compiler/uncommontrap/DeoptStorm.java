@@ -54,7 +54,7 @@ public class DeoptStorm {
             "-XX:CompileCommand=dontinline,compiler.uncommontrap::*",
             "-Xlog:deoptimization=debug",
             className, "dummy"};
-        ProcessBuilder pb  = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         List<String> lines = out.asLines();
         long deoptCount = lines.stream().filter(l -> l.contains(DEOPT_TAG)).count();
