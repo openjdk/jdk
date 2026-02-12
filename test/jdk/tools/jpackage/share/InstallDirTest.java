@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
@@ -106,7 +105,7 @@ public class InstallDirTest {
             cmd.saveConsoleOutput(true);
         })
         .addBundleVerifier((cmd, result) -> {
-            cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString("error.invalid-install-dir"));
+            cmd.validateErr(JPackageCommand.makeError("error.invalid-install-dir"));
         })
         .run();
     }

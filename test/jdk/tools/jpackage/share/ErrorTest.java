@@ -43,6 +43,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
@@ -51,7 +52,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -202,10 +203,34 @@ public final class ErrorTest {
         private static final Optional<PackageType> NATIVE_TYPE = defaultNativeType();
     }
 
-    public record TestSpec(Optional<PackageTypeSpec> type, Optional<String> appDesc, List<String> addArgs,
-            List<String> removeArgs, List<CannedFormattedString> expectedMessages) {
+    public record TestSpec(
+            Optional<PackageTypeSpec> type,
+            Optional<String> appDesc,
+            List<String> addArgs,
+            List<String> removeArgs,
+            List<CannedFormattedString> expectedMessages,
+            boolean match) {
 
         static final class Builder {
+
+            Builder() {
+                type = new PackageTypeSpec(PackageType.IMAGE);
+                appDesc = DEFAULT_APP_DESC;
+                match = true;
+            }
+
+            Builder(Builder other) {
+                type = other.type;
+                appDesc = other.appDesc;
+                match = other.match;
+                addArgs.addAll(other.addArgs);
+                removeArgs.addAll(other.removeArgs);
+                expectedMessages.addAll(other.expectedMessages);
+            }
+
+            Builder copy() {
+                return new Builder(this);
+            }
 
             Builder type(PackageType v) {
                 type = Optional.ofNullable(v).map(PackageTypeSpec::new).orElse(null);
@@ -228,6 +253,19 @@ public final class ErrorTest {
 
             Builder noAppDesc() {
                 return appDesc(null);
+            }
+
+            Builder match(boolean v) {
+                match = v;
+                return this;
+            }
+
+            Builder match() {
+                return match(true);
+            }
+
+            Builder find() {
+                return match(false);
             }
 
             Builder setAddArgs(List<String> v) {
@@ -269,7 +307,8 @@ public final class ErrorTest {
             }
 
             Builder setMessages(List<CannedFormattedString> v) {
-                expectedMessages = v;
+                expectedMessages.clear();
+                expectedMessages.addAll(v);
                 return this;
             }
 
@@ -287,11 +326,11 @@ public final class ErrorTest {
             }
 
             Builder error(String key, Object ... args) {
-                return messages(makeError(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
+                return messages(makeError(key, args));
             }
 
             Builder advice(String key, Object ... args) {
-                return messages(makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
+                return messages(makeAdvice(key, args));
             }
 
             Builder invalidTypeArg(String arg, String... otherArgs) {
@@ -304,15 +343,21 @@ public final class ErrorTest {
             }
 
             TestSpec create() {
-                return new TestSpec(Optional.ofNullable(type), Optional.ofNullable(appDesc),
-                        List.copyOf(addArgs), List.copyOf(removeArgs), List.copyOf(expectedMessages));
+                return new TestSpec(
+                        Optional.ofNullable(type),
+                        Optional.ofNullable(appDesc),
+                        List.copyOf(addArgs),
+                        List.copyOf(removeArgs),
+                        List.copyOf(expectedMessages),
+                        match);
             }
 
-            private PackageTypeSpec type = new PackageTypeSpec(PackageType.IMAGE);
-            private String appDesc = DEFAULT_APP_DESC;
-            private List<String> addArgs = new ArrayList<>();
-            private List<String> removeArgs = new ArrayList<>();
-            private List<CannedFormattedString> expectedMessages = new ArrayList<>();
+            private PackageTypeSpec type;
+            private String appDesc;
+            private boolean match;
+            private final List<String> addArgs = new ArrayList<>();
+            private final List<String> removeArgs = new ArrayList<>();
+            private final List<CannedFormattedString> expectedMessages = new ArrayList<>();
         }
 
         public TestSpec {
@@ -360,12 +405,29 @@ public final class ErrorTest {
                 cmd.clearArguments().addArguments(newArgs);
             }
 
-            defaultInit(cmd, expectedMessages);
-            cmd.execute(1);
+            // Disable default logic adding `--verbose` option
+            // to jpackage command line.
+            // It will affect jpackage error messages if the command line is malformed.
+            cmd.ignoreDefaultVerbose(true);
+
+            // Ignore external runtime as it will interfere
+            // with jpackage arguments in this test.
+            cmd.ignoreDefaultRuntime(true);
+
+            var validator = new JPackageOutputValidator().stderr().expectMatchingStrings(expectedMessages).match(match);
+            if (match) {
+                new JPackageOutputValidator().stdout().validateEndOfStream().applyTo(cmd);
+            }
+
+            cmd.mutate(validator::applyTo).execute(1);
         }
 
         TestSpec mapExpectedMessages(UnaryOperator<CannedFormattedString> mapper) {
-            return new TestSpec(type, appDesc, addArgs, removeArgs, expectedMessages.stream().map(mapper).toList());
+            return new TestSpec(type, appDesc, addArgs, removeArgs, expectedMessages.stream().map(mapper).toList(), match);
+        }
+
+        TestSpec copyWithExpectedMessages(List<CannedFormattedString> expectedMessages) {
+            return new TestSpec(type, appDesc, addArgs, removeArgs, expectedMessages, match);
         }
 
         @Override
@@ -382,6 +444,9 @@ public final class ErrorTest {
             }
             if (!removeArgs.isEmpty()) {
                 sb.append("args-del=").append(removeArgs).append("; ");
+            }
+            if (!match) {
+                sb.append("find; ");
             }
             sb.append("errors=").append(expectedMessages);
             return sb.toString();
@@ -408,7 +473,7 @@ public final class ErrorTest {
                     .error("error.no-main-class-with-main-jar", "hello.jar")
                     .advice("error.no-main-class-with-main-jar.advice", "hello.jar"),
             // non-existent main jar
-            testSpec().addArgs("--main-jar", "non-existent.jar")
+            testSpec().addArgs("--main-jar", "non-existent.jar").find()
                     .error("error.main-jar-does-not-exist", "non-existent.jar"),
             // non-existent runtime
             testSpec().addArgs("--runtime-image", "non-existent.runtime")
@@ -448,7 +513,7 @@ public final class ErrorTest {
         createMutuallyExclusive(
                 new ArgumentGroup("--module", "foo.bar"),
                 new ArgumentGroup("--main-jar", "foo.jar")
-        ).map(TestSpec.Builder::noAppDesc).map(TestSpec.Builder::create).forEach(testCases::add);
+        ).map(TestSpec.Builder::noAppDesc).map(TestSpec.Builder::find).map(TestSpec.Builder::create).forEach(testCases::add);
 
         // forbidden jlink options
         testCases.addAll(Stream.of("--output", "--add-modules", "--module-path").map(opt -> {
@@ -499,7 +564,12 @@ public final class ErrorTest {
                 testSpec().addArgs("--app-version", "").error("error.version-string-empty"),
                 testSpec().addArgs("--app-version", "1.").error("error.version-string-zero-length-component", "1."),
                 testSpec().addArgs("--app-version", "1.b.3").error("error.version-string-invalid-component", "1.b.3", "b.3")
-        ));
+        ).map(builder -> {
+            if (TKit.isOSX()) {
+                builder.advice("error.invalid-cfbundle-version.advice");
+            };
+            return builder;
+        }));
     }
 
     @Test
@@ -532,10 +602,13 @@ public final class ErrorTest {
         }
 
         return fromTestSpecBuilders(argsStream.map(args -> {
-            return testSpec().noAppDesc().nativeType()
+            var builder = testSpec().noAppDesc().nativeType()
                     .addArgs("--runtime-image", Token.JAVA_HOME.token())
-                    .addArgs(args)
-                    .error("ERR_NoInstallerEntryPoint", args.getFirst());
+                    .addArgs(args);
+            if (args.contains("--add-modules")) {
+                builder.error("ERR_MutuallyExclusiveOptions", "--runtime-image", "--add-modules");
+            }
+            return builder.error("ERR_NoInstallerEntryPoint", args.getFirst());
         }));
     }
 
@@ -566,17 +639,21 @@ public final class ErrorTest {
 
     @Test
     @ParameterSupplier("invalidNames")
-    public static void testInvalidAppName(String name) {
-        testSpec().removeArgs("--name").addArgs("--name", name)
-                .error("ERR_InvalidAppName", adjustTextStreamVerifierArg(name)).create().test();
+    public static void testInvalidAppName(InvalidName name) {
+        testSpec().removeArgs("--name").addArgs("--name", name.value())
+                .error("ERR_InvalidAppName", adjustTextStreamVerifierArg(name.value()))
+                .match(!name.isMessingUpConsoleOutput())
+                .create()
+                .test();
     }
 
     @Test
     @ParameterSupplier("invalidNames")
-    public static void testInvalidAddLauncherName(String name) {
+    public static void testInvalidAddLauncherName(InvalidName name) {
         testAdditionLaunchers(testSpec()
                 .addArgs("--add-launcher", name + "=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
-                .error("ERR_InvalidSLName", adjustTextStreamVerifierArg(name))
+                .error("ERR_InvalidSLName", adjustTextStreamVerifierArg(name.value()))
+                .match(!name.isMessingUpConsoleOutput())
                 .create());
     }
 
@@ -586,7 +663,27 @@ public final class ErrorTest {
         if (TKit.isWindows()) {
             data.add("foo\\bar");
         }
-        return toTestArgs(data.stream());
+        return toTestArgs(data.stream().map(InvalidName::new));
+    }
+
+    record InvalidName(String value) {
+        InvalidName {
+            Objects.requireNonNull(value);
+        }
+
+        boolean isMessingUpConsoleOutput() {
+            var controlChars = "\r\n\t".codePoints().toArray();
+            return value.codePoints().anyMatch(cp -> {
+                return IntStream.of(controlChars).anyMatch(v -> {
+                    return v == cp;
+                });
+            });
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
     }
 
     public static Collection<Object[]> testWindows() {
@@ -640,7 +737,8 @@ public final class ErrorTest {
                 testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token())
                         .error("error.app-image.mac-sign.required"),
                 testSpec().type(PackageType.MAC_PKG).addArgs("--mac-package-identifier", "#1")
-                        .error("message.invalid-identifier", "#1"),
+                        .error("message.invalid-identifier", "#1")
+                        .advice("message.invalid-identifier.advice"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
                         .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
@@ -658,21 +756,62 @@ public final class ErrorTest {
                 new ArgumentGroup("--app-version", "2.0"),
                 new ArgumentGroup("--name", "foo"),
                 new ArgumentGroup("--mac-app-store")
-        ).map(argGroup -> {
-            return testSpec().noAppDesc().addArgs(argGroup.asArray()).addArgs("--app-image", Token.APP_IMAGE.token())
-                    .error("ERR_InvalidOptionWithAppImageSigning", argGroup.arg());
-         // It should bail out with the same error message regardless of `--mac-sign` option.
-        }).mapMulti(ErrorTest::duplicateForMacSign).toList());
+        ).flatMap(argGroup -> {
+            var withoutSign = testSpec()
+                    .noAppDesc()
+                    .addArgs(argGroup.asArray())
+                    .addArgs("--app-image", Token.APP_IMAGE.token());
+
+            var withSign = withoutSign.copy().addArgs("--mac-sign");
+
+            withoutSign.error("error.app-image.mac-sign.required");
+
+            // It should bail out with the same error message regardless of `--mac-sign` option.
+            return Stream.of(withoutSign, withSign).map(builder -> {
+                return builder.error("ERR_InvalidOptionWithAppImageSigning", argGroup.arg());
+            });
+
+        }).map(TestSpec.Builder::create).toList());
 
         testCases.addAll(createMutuallyExclusive(
                 new ArgumentGroup("--mac-signing-key-user-name", "foo"),
                 new ArgumentGroup("--mac-app-image-sign-identity", "bar")
         ).mapMulti(ErrorTest::duplicateForMacSign).toList());
 
-        testCases.addAll(createMutuallyExclusive(
-                new ArgumentGroup("--mac-signing-key-user-name", "foo"),
-                new ArgumentGroup("--mac-installer-sign-identity", "bar")
-        ).map(TestSpec.Builder::nativeType).mapMulti(ErrorTest::duplicateForMacSign).toList());
+        for (var packageType : PackageType.MAC) {
+            testCases.addAll(createMutuallyExclusive(
+                    new ArgumentGroup("--mac-signing-key-user-name", "foo"),
+                    new ArgumentGroup("--mac-installer-sign-identity", "bar")
+            ).map(builder -> {
+                return builder.type(packageType);
+            }).mapMulti(ErrorTest::duplicateForMacSign).map(testCase -> {
+                if (packageType != PackageType.MAC_PKG) {
+                    /*
+                     * This is a bit tricky.
+                     * The error output should also contain
+                     *
+                     *  Error: Option [--mac-installer-sign-identity] is not valid with type [dmg]" error message.
+                     *
+                     * The order of errors is defined by the order of options on the command line causing them.
+                     * If "--mac-installer-sign-identity" goes before "--mac-signing-key-user-name", the error output will be:
+                     *
+                     *  Error: Option [--mac-installer-sign-identity] is not valid with type [dmg]
+                     *  Error: Mutually exclusive options [--mac-signing-key-user-name] and [--mac-installer-sign-identity]
+                     *
+                     * otherwise errors in the output will be in reverse order.
+                     */
+                    var expectedMessages = new ArrayList<>(testCase.expectedMessages());
+                    var invalidTypeOption = makeError("ERR_InvalidTypeOption", "--mac-installer-sign-identity", packageType.getType());
+                    if (testCase.addArgs().indexOf("--mac-installer-sign-identity") < testCase.addArgs().indexOf("--mac-signing-key-user-name")) {
+                        expectedMessages.addFirst(invalidTypeOption);
+                    } else {
+                        expectedMessages.add(invalidTypeOption);
+                    }
+                    testCase = testCase.copyWithExpectedMessages(expectedMessages);
+                }
+                return testCase;
+            }).toList());
+        }
 
         return toTestArgs(testCases.stream());
     }
@@ -707,8 +846,7 @@ public final class ErrorTest {
         final var signingId = "foo";
 
         final List<CannedFormattedString> errorMessages = new ArrayList<>();
-        errorMessages.add(makeError(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.cert.not.found", "Developer ID Application: " + signingId, "")));
+        errorMessages.add(makeError("error.cert.not.found", "Developer ID Application: " + signingId, ""));
 
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
@@ -720,9 +858,9 @@ public final class ErrorTest {
             errorMessages.stream()
                     .map(CannedFormattedString::getValue)
                     .map(TKit::assertTextStream)
-                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateOutput);
+                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateErr);
         } else {
-            cmd.validateOutput(errorMessages.toArray(CannedFormattedString[]::new));
+            cmd.validateErr(errorMessages.toArray(CannedFormattedString[]::new));
         }
 
         cmd.execute(1);
@@ -750,12 +888,12 @@ public final class ErrorTest {
     }
 
     private static void macInvalidRuntime(Consumer<TestSpec> accumulator) {
-        var runtimeWithBinDirErr = makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+        var runtimeWithBinDirErr = makeError(
                 "error.invalid-runtime-image-bin-dir", JPackageCommand.cannedArgument(cmd -> {
                     return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.JAVA_HOME.token())));
-        var runtimeWithBinDirErrAdvice = makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store"));
+                }, Token.JAVA_HOME.token()));
+        var runtimeWithBinDirErrAdvice = makeAdvice(
+                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
 
         Stream.of(
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
@@ -795,10 +933,10 @@ public final class ErrorTest {
         }
 
         private CannedFormattedString expectedErrorMsg() {
-            return makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+            return makeError(
                     "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
                         return Path.of(cmd.getArgumentValue("--runtime-image"));
-                    }, runtimeDir.token()), missingFile));
+                    }, runtimeDir.token()), missingFile);
         }
     }
 
@@ -867,20 +1005,6 @@ public final class ErrorTest {
                 new UnsupportedPlatformOption("--mac-app-category", "category"),
                 new UnsupportedPlatformOption("--mac-dmg-content", "additional-content")
         );
-    }
-
-    private static void defaultInit(JPackageCommand cmd, List<CannedFormattedString> expectedMessages) {
-
-        // Disable default logic adding `--verbose` option
-        // to jpackage command line.
-        // It will affect jpackage error messages if the command line is malformed.
-        cmd.ignoreDefaultVerbose(true);
-
-        // Ignore external runtime as it will interfere
-        // with jpackage arguments in this test.
-        cmd.ignoreDefaultRuntime(true);
-
-        cmd.validateOutput(expectedMessages.toArray(CannedFormattedString[]::new));
     }
 
     private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {
