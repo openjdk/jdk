@@ -36,7 +36,7 @@
 #include "runtime/os.hpp"
 #endif
 
-inline jlong Thread::cooked_allocated_bytes() {
+inline jlong Thread::cooked_allocated_bytes() const {
   jlong allocated_bytes = AtomicAccess::load_acquire(&_allocated_bytes);
   size_t used_bytes = 0;
   if (UseTLAB) {
