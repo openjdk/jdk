@@ -25,7 +25,6 @@
 
 package java.security;
 
-import jdk.internal.javac.PreviewFeature;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.KeyUtil;
 import sun.security.util.Pem;
@@ -122,7 +121,6 @@ import java.util.Objects;
  *
  * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMEncoder {
 
     // Singleton instance of PEMEncoder

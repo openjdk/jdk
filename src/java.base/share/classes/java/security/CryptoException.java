@@ -33,7 +33,7 @@ package java.security;
  * {@link GeneralSecurityException}, but in contexts where checked exceptions
  * are not desired.
  *
- * <p>This exception is <strong>not</strong> intended to represent internal
+ * <p>This exception is not intended to represent internal
  * provider errors, which should be reported using {@link ProviderException}.
  */
 public final class CryptoException extends RuntimeException {

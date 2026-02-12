@@ -34,35 +34,35 @@ import java.util.Base64;
 import java.util.Objects;
 
 /**
- * A {@code BinaryEncodable} object representing Privacy-Enhanced Mail (PEM)
- * data, identified by a type and binary data.
+ * A {@link BinaryEncodable} representing a Privacy-Enhanced Mail (PEM) structure
+ * composed of a type identifier, base64-decoded binary content, and any
+ * leading data that precedes the PEM header during decoding.
  *
- * <p>Instances of this class are returned by {@link PEMDecoder#decode(String)} and
- * {@link PEMDecoder#decode(InputStream)} when the content cannot be represented
- * as a cryptographic object. Use {@link PEMDecoder#decode(String, Class)} or
- * {@link PEMDecoder#decode(InputStream, Class)} with {@code PEM.class} as the
- * class argument to access the leading data or handle the decoded content
- * directly.
- *
- * <p>A {@code PEM} object can be encoded back to its textual representation by
- * invoking {@link #toString()} or by using the encoding methods provided by
- * {@link PEMEncoder}.
- *
- * <p>To construct a {@code PEM} instance, {@code type} and content parameters
- * ({@code base64Content} or {@code binaryContent}) must be non-{@code null}.
- * The {@code leadingData} parameter, when present, represents any
- * data that preceded the PEM header during decoding and may be {@code null}.
- * The {@code binaryContent} and {@code leadingData} values are defensively
- * copied. The {@code base64Content} is decoded into binary form and stored
- * internally.
- *
- * <p>No validation is performed to ensure that the {@code type} conforms to
- * RFC 7468 or legacy formats, or the content corresponds to the declared
- * {@code type}.
- *
- * <p>Common type identifiers include, but are not limited to:
+ * <p>The {@code type} is the label in the PEM header, following the
+ * {@code BEGIN} keyword and excluding the encapsulation boundaries.
+ * Common {@code type} values include, but are not limited to:
  * CERTIFICATE, CERTIFICATE REQUEST, ATTRIBUTE CERTIFICATE, X509 CRL, PKCS7,
  * CMS, PRIVATE KEY, ENCRYPTED PRIVATE KEY, and PUBLIC KEY.
+ *
+ * <p>Instances of this class are returned by {@link PEMDecoder#decode(String)}
+ * and {@link PEMDecoder#decode(InputStream)} when the content cannot be represented
+ * as a cryptographic object. To explicitly retrieve a {@code PEM} instance
+ * with access to the leading data, use {@link PEMDecoder#decode(String, Class)}
+ * or {@link PEMDecoder#decode(InputStream, Class)} with {@code PEM.class} as the
+ * type.
+ *
+ * <p>A {@code PEM} object can be encoded to its textual representation by
+ * invoking {@link #toString()} or by using {@link PEMEncoder}.
+ *
+ * <p>To construct a {@code PEM} instance, both the {@code type} and content parameters
+ * ({@code base64Content} or {@code binaryContent}) must be non-{@code null}.
+ * If {@code base64Content} is provided, it is decoded to binary and stored.
+ * The {@code binaryContent} and, if present, the {@code leadingData} are copied
+ * defensively.
+ *
+ * <p>No validation is performed to ensure that the {@code type} conforms to
+ * RFC 7468 or legacy formats, or that the content corresponds to the declared
+ * {@code type}.
  *
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
@@ -102,7 +102,7 @@ final public class PEM implements BinaryEncodable {
 
     /**
      * Creates a {@code PEM} instance with the specified type and Base64-encoded
-     * content. The {@code base64Content} is decoded and stored internally.
+     * content. The {@code base64Content} is decoded and stored internally as binary.
      * {@code leadingData} is set to {@code null}.
      *
      * @param type the PEM type identifier; must not contain PEM syntax labels
@@ -153,11 +153,11 @@ final public class PEM implements BinaryEncodable {
     }
 
     /**
-     * Constructs a {@code PEM} instance with the specified type and binary content.
+     * Creates a {@code PEM} instance with the specified type and binary content.
      * {@code leadingData} is set to {@code null}.
      *
      * @param type the PEM type identifier; must not contain PEM syntax labels
-     * @param binaryContent binary-encoded content, such as DER.
+     * @param binaryContent binary-encoded content, such as DER
      *
      * @throws IllegalArgumentException if {@code type} is incorrectly formatted
      * @throws NullPointerException if any parameter is {@code null}
@@ -190,23 +190,24 @@ final public class PEM implements BinaryEncodable {
     /**
      * Returns the leading data that preceded the PEM header during decoding.
      *
-     * @return a clone of {@code leadingData}, or {@code null} if not present
+     * @return a copy of the leading data, or {@code null} if no leading data
+     *         is present
      */
     public byte[] leadingData() {
         return (leadingData != null) ? leadingData.clone() : null;
     }
 
     /**
-     * Returns the encoded binary PEM content.
+     * Returns the binary content.
      *
-     * @return a clone of the encoded binary PEM content
+     * @return a copy of the binary content
      */
     public byte[] content() {
         return content.clone();
     }
 
     /**
-     * Returns the PEM-encoded string representation of this object.  The
+     * Returns the PEM-encoded string representation of this object. The
      * {@code type} is used to generate the header and footer,
      * and the content is Base64-encoded. {@code leadingData} is
      * not included.

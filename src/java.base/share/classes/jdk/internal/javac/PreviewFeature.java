@@ -87,9 +87,6 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         @JEP(number = 526, title = "Lazy Constants", status = "Second Preview")
         LAZY_CONSTANTS,
-        @JEP(number=524, title="PEM Encodings of Cryptographic Objects",
-            status="Second Preview")
-        PEM_API,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

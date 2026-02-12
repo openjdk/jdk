@@ -25,8 +25,6 @@
 
 package javax.crypto;
 
-import jdk.internal.javac.PreviewFeature;
-
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.*;
@@ -368,7 +366,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+
     public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
         char[] password, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
@@ -409,7 +407,6 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
         char[] password) {
         return encrypt(de, password, Pem.DEFAULT_ALGO, null,
@@ -448,7 +445,6 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
         Key encryptKey, String algorithm, AlgorithmParameterSpec params,
         Provider provider, SecureRandom random) {
@@ -518,7 +514,6 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 25
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {
         Objects.requireNonNull(password, "a password must be specified.");
