@@ -3728,6 +3728,18 @@ public final class Math {
     }
 
     /**
+     * Returns the pair of [sine,cosine] of an angle naively. Special cases:
+     * <ul><li>If the argument is NaN or an infinity, then the
+     * result is NaN.</ul>
+     *
+     * @param a an angle, in radians.
+     * @return  the [sine,cosine] pair for the argument.
+     */
+    public static double [] sincos_naive_strict(double a) {
+        return new double[] { StrictMath.sin(a), StrictMath.cos(a) };
+    }
+
+    /**
      * Returns the pair of [sine,cosine] of an angle. Special cases:
      * <ul><li>If the argument is NaN or an infinity, then the
      * result is NaN.</ul>
