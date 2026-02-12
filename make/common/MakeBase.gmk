@@ -158,48 +158,48 @@ $(eval $(call SetupLogging))
 # must be quoted to a form so that we can recognise the "append pack".
 # We recognise an "append pack" by its lack of strict assignment ":="
 
-q       := $(HASH)
-spaceQ  := $(q)s
-appendQ := $(q)+
-assignQ := $(q)a
-qQ      := $(q)$(q)
+Q       := $(HASH)
+SpaceQ  := $(Q)s
+AppendQ := $(Q)+
+AssignQ := $(Q)a
+QQ      := $(Q)$(Q)
 
-# $(call quote,echo "#trala:=") -> echo#s"##trala#a"
-quote = $(subst :=,$(assignQ),$(subst $(SPACE),$(spaceQ),$(subst $(q),$(qQ),$1)))
+# $(call Quote,echo "#trala:=") -> echo#s"##trala#a"
+Quote = $(subst :=,$(AssignQ),$(subst $(SPACE),$(SpaceQ),$(subst $(Q),$(QQ),$1)))
 
-# $(call unQuote,echo#s"##trala#a") -> echo "#trala:="
-unQuote = $(subst $(qQ),$(q),$(subst $(spaceQ),$(SPACE),$(subst $(assignQ),:=,$1)))
+# $(call Unquote,echo#s"##trala#a") -> echo "#trala:="
+Unquote = $(subst $(QQ),$(Q),$(subst $(SpaceQ),$(SPACE),$(subst $(AssignQ),:=,$1)))
 
-# $(call quoteAppend,name,some value) -> name#+some#svalue
-# $(call quoteAppend,bad+=name,some value) -> error
-quoteAppend = $(if $(findstring +=,$1),$(error you can not have += in a variable name: "$1"),$(call quote,$1)$(appendQ)$(call quote,$2))
+# $(call QuoteAppend,name,some value) -> name#+some#svalue
+# $(call QuoteAppend,bad+=name,some value) -> error
+QuoteAppend = $(if $(findstring +=,$1),$(error you can not have += in a variable name: "$1"),$(call Quote,$1)$(AppendQ)$(call Quote,$2))
 
-# $(call unquoteAppendIndex,name#+some#svalue,1) -> name
-# $(call unquoteAppendIndex,name#+some#svalue,2) -> some value
-unquoteAppendIndex = $(call unQuote,$(word $2,$(subst $(appendQ),$(SPACE),$1)))
+# $(call UnquoteAppendIndex,name#+some#svalue,1) -> name
+# $(call UnquoteAppendIndex,name#+some#svalue,2) -> some value
+UnquoteAppendIndex = $(call Unquote,$(word $2,$(subst $(AppendQ),$(SPACE),$1)))
 
-# $(call filterFiles,dir,%.cpp) -> file1.cpp file2.cpp (without path)
-filterFiles = $(filter $2,$(notdir $(call FindFiles,$1)))
+# $(call FilterFiles,dir,%.cpp) -> file1.cpp file2.cpp (without path)
+FilterFiles = $(filter $2,$(notdir $(call FindFiles,$1)))
 
-# $(call unpack module_,file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion) -> module_file1.cpp_CXXFLAGS += -Wconversion
+# $(call Unpack module_,file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion) -> module_file1.cpp_CXXFLAGS += -Wconversion
 #                                                                                             module_file2.cpp_CXXFLAGS += -Wconversion
-unpack = $(foreach pair,$2,$1$(call unquoteAppendIndex,$(pair),1) += $(call unquoteAppendIndex,$(pair),2)$(NEWLINE))
+Unpack = $(foreach pair,$2,$1$(call UnquoteAppendIndex,$(pair),1) += $(call UnquoteAppendIndex,$(pair),2)$(NEWLINE))
 
 # This macro takes four arguments:
-# $1: directory where to find files, example: $(TOPDIR)/src/hotspot/share/gc/g1
-# $2: filter to match what to keep, example: g1Concurrent%.cpp
-# $3: what flags to override: example: _CXXFLAGS
-# $4: what value to append to the flag, example: $(CFLAGS_CONVERSION_WARNINGS)
+# $1: directory where to find files (striped), example: $(TOPDIR)/src/hotspot/share/gc/g1
+# $2: filter to match what to keep (striped), example: g1Concurrent%.cpp
+# $3: what flags to override (striped), example: _CXXFLAGS
+# $4: what value to append to the flag (striped), example: $(CFLAGS_CONVERSION_WARNINGS)
 #
 # The result will be a quoted string that can be unpacked to a list of
-# variable appendings (see macro unpack above). You do not need to take
+# variable appendings (see macro Unpack above). You do not need to take
 # care of unpacking, it is done in NamedParamsMacroTemplate.
 #
 # This feature should only be used for warnings that we want to
 # incrementally add to the rest of the code base.
 #
-# $(call extendingFlags,dir,%.cpp,_CXXFLAGS,-Wconversion) -> file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion
-extendingFlags = $(foreach file,$(call filterFiles,$1,$2,),$(call quoteAppend,$(file)$3,$4))
+# $(call ExtendFlags,dir,%.cpp,_CXXFLAGS,-Wconversion) -> file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion
+ExtendFlags = $(foreach file,$(call FilterFiles,$(strip $1),$(strip $2)),$(call QuoteAppend,$(file)$(strip $3),$(strip $4)))
 
 ################################################################################
 
@@ -228,7 +228,7 @@ define NamedParamsMacroTemplate
   $(foreach i, $(PARAM_SEQUENCE), $(if $(strip $($i)), \
     $(if $(findstring :=,$($i)), \
       $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE), \
-      $(call unpack,$(strip $1)_,$($i)))))
+      $(call Unpack,$(strip $1)_,$($i)))))
 
   # Debug print all named parameter names and values
   $(if $(findstring $(LOG_LEVEL), trace), \
