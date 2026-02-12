@@ -36,7 +36,7 @@ package compiler.c2.igvn;
  *
  */
 
-public class TestShiftIdealReplacesShiftAmount {
+public class TestMissingOptReplaceShiftAmount {
     static long lFld;
     static boolean flag;
 
