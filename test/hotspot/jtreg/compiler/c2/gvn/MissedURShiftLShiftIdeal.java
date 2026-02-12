@@ -24,7 +24,7 @@ package compiler.c2.gvn;
 
 /*
  * @test
- * @bug 8377389
+ * @bug 8374798 8377389
  * @summary URShift(LShift(x, C), C) Ideal optimization missed due to missing IGVN notification:
  *          when LShift inputs change, its URShift users were not re-queued for the
  *          (X << C) >>> C -> X & mask optimization.
