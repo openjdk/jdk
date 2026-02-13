@@ -298,7 +298,6 @@ void ShenandoahRefProcThreadLocal::mark_discovered_list() {
     return;
   }
 
-  bool ignore_was_updated;
   T* list = reinterpret_cast<T*>(&_discovered_list);
   while (list != nullptr) {
     const oop discovered_ref = CompressedOops::decode(*list);
@@ -308,11 +307,15 @@ void ShenandoahRefProcThreadLocal::mark_discovered_list() {
 
     // We have discovered this reference, and it has an old referent. We must keep this young
     // reference itself alive until old reference processing is complete. If we don't do this,
-    // an unreachable young reference will simply disappear, leaving e a dangling pointer
+    // an unreachable young reference will simply disappear, leaving a dangling pointer
     // in the list. Note that we cannot also simply remove young references from the list at the
     // end of young marking even if they are unreachable. If the reference has a queue associated
     // with it, we _must_ wait until old marking is complete before enqueueing the reference.
-    ShenandoahHeap::heap()->marking_context()->mark_strong(discovered_ref, ignore_was_updated);
+    const auto cl = mark_closure();
+    const auto mode = cl->reference_iteration_mode();
+    cl->set_reference_iteration_mode(OopIterateClosure::ReferenceIterationMode::DO_FIELDS_EXCEPT_REFERENT);
+    discovered_ref->oop_iterate(cl);
+    cl->set_reference_iteration_mode(mode);
 
     // Discovered list terminates with a self-loop
     const oop discovered = reference_discovered<T>(discovered_ref);

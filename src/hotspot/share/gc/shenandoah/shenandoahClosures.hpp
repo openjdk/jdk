@@ -69,6 +69,7 @@ private:
   ShenandoahObjToScanQueue* _old_queue;
   ShenandoahMarkingContext* const _mark_context;
   bool _weak;
+  ReferenceIterationMode _reference_iteration_mode;
 
 protected:
   template <class T, ShenandoahGenerationType GENERATION>
@@ -76,6 +77,14 @@ protected:
 
 public:
   inline ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q);
+
+  ReferenceIterationMode reference_iteration_mode() override {
+    return _reference_iteration_mode;
+  }
+
+  void set_reference_iteration_mode(ReferenceIterationMode mode) {
+    _reference_iteration_mode = mode;
+  }
 
   bool is_weak() const {
     return _weak;
