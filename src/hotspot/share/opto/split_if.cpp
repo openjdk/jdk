@@ -740,25 +740,19 @@ void PhaseIdealLoop::pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangeche
       continue;
     }
 
-    if (use->is_Load()) {
-      // A load from a field or a klass should have its control input removed, don't pin it here
-      const TypePtr* adr_type = use->adr_type();
-      if (adr_type == nullptr || !adr_type->isa_aryptr()) {
-        continue;
-      }
 
-      // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
-      // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
-      // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the
-      // Load.
-      if (!old_iff_is_rangecheck) {
-        continue;
-      }
+    // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
+    // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
+    // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the Load.
+    if (use->is_Load() && !old_iff_is_rangecheck) {
+      continue;
     }
 
     Node* pinned_clone = use->pin_node_under_control();
-    register_new_node_with_ctrl_of(pinned_clone, use);
-    _igvn.replace_node(use, pinned_clone);
-    --i;
+    if (pinned_clone != nullptr) {
+      register_new_node_with_ctrl_of(pinned_clone, use);
+      _igvn.replace_node(use, pinned_clone);
+      --i;
+    }
   }
 }

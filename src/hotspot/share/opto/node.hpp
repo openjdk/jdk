@@ -1165,10 +1165,20 @@ public:
   //    x / y;
   // The division now has the control input being the RegionNode merge the branches of if(b)
   // instead of a test that proves y != 0. As a result, it must be pinned at that node.
+  //
+  // There are cases where the node does not actually have a dependency on its control input. For
+  // example, when we try to sink a LoadNode out of a loop in PhaseIdealLoop::try_sink_out_of_loop,
+  // we clone the node so that all of the clones can be scheduled out of the loop. To prevent the
+  // clones from being GVN-ed again, we add a control input for the node at the loop exit. For the
+  // cases when the node does provably not depend on its control input, this method can return
+  // nullptr.
   Node* pin_node_under_control() const {
     assert(depends_only_on_test(), "must be a depends_only_on_test node");
     Node* res = pin_node_under_control_impl();
-    assert(res != nullptr, "must not return null");
+    if (res == nullptr) {
+      assert(is_Load(), "unexpected failure to pin for %s", Name());
+      return nullptr;
+    }
     assert(!res->depends_only_on_test(), "the result must not depends_only_on_test");
     return res;
   }

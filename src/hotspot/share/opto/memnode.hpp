@@ -327,7 +327,7 @@ private:
   }
 
   LoadNode* clone_pinned() const;
-  virtual LoadNode* pin_node_under_control_impl() const { return clone_pinned(); }
+  virtual LoadNode* pin_node_under_control_impl() const;
 };
 
 //------------------------------LoadBNode--------------------------------------

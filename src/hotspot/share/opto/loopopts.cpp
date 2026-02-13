@@ -405,9 +405,11 @@ void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* domina
         // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the lowest
         // dominating check.
         Node* clone = out->pin_node_under_control();
-        clone = _igvn.register_new_node_with_optimizer(clone, out);
-        _igvn.replace_node(out, clone);
-        out = clone;
+        if (clone != nullptr) {
+          clone = _igvn.register_new_node_with_optimizer(clone, out);
+          _igvn.replace_node(out, clone);
+          out = clone;
+        }
       }
       set_early_ctrl(out, false);
       IdealLoopTree* new_loop = get_loop(get_ctrl(out));
@@ -1725,9 +1727,11 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             // the correct test. As a result, it must be pinned otherwise it can be incorrectly
             // rewired to a dominating test equivalent to the new control.
             Node* pinned_clone = n->pin_node_under_control();
-            register_new_node(pinned_clone, n_ctrl);
-            maybe_pinned_n = pinned_clone;
-            _igvn.replace_node(n, pinned_clone);
+            if (pinned_clone != nullptr) {
+              register_new_node(pinned_clone, n_ctrl);
+              maybe_pinned_n = pinned_clone;
+              _igvn.replace_node(n, pinned_clone);
+            }
           }
           _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
         }
@@ -2328,10 +2332,12 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
         // correct test. As a result, it must be pinned otherwise it can be incorrectly rewired to
         // a dominating test equivalent to the new control.
         Node* pinned_clone = use->pin_node_under_control();
-        pinned_clone->set_req(0, phi);
-        register_new_node_with_ctrl_of(pinned_clone, use);
-        _igvn.replace_node(use, pinned_clone);
-        continue;
+        if (pinned_clone != nullptr) {
+          pinned_clone->set_req(0, phi);
+          register_new_node_with_ctrl_of(pinned_clone, use);
+          _igvn.replace_node(use, pinned_clone);
+          continue;
+        }
       }
       _igvn.replace_input_of(use, idx, phi);
       if( use->_idx >= new_counter ) { // If updating new phis
@@ -4096,10 +4102,12 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
         // If this node depends_only_on_test, it will be rewire to the loop head, which is not the
         // correct test
         Node* pinned_clone = n_clone->pin_node_under_control();
-        register_new_node_with_ctrl_of(pinned_clone, n_clone);
-        old_new.map(n->_idx, pinned_clone);
-        _igvn.replace_node(n_clone, pinned_clone);
-        n_clone = pinned_clone;
+        if (pinned_clone != nullptr) {
+          register_new_node_with_ctrl_of(pinned_clone, n_clone);
+          old_new.map(n->_idx, pinned_clone);
+          _igvn.replace_node(n_clone, pinned_clone);
+          n_clone = pinned_clone;
+        }
       }
       _igvn.replace_input_of(n_clone, 0, new_head_clone);
     }

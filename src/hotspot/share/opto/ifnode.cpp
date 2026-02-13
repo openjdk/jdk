@@ -1578,8 +1578,10 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
           // lowest dominating one. As a result, it must be pinned there. Otherwise, it can be
           // incorrectly moved to a dominating test equivalent to the lowest one here.
           Node* clone = s->pin_node_under_control();
-          igvn->register_new_node_with_optimizer(clone);
-          igvn->replace_node(s, clone);
+          if (clone != nullptr) {
+            igvn->register_new_node_with_optimizer(clone, s);
+            igvn->replace_node(s, clone);
+          }
         }
       } else {
         // Find the control input matching this def-use edge.
@@ -1832,9 +1834,11 @@ void IfProjNode::pin_dependent_nodes(PhaseIterGVN* igvn) {
       continue;
     }
     Node* clone = u->pin_node_under_control();
-    igvn->register_new_node_with_optimizer(clone);
-    igvn->replace_node(u, clone);
-    --i;
+    if (clone != nullptr) {
+      igvn->register_new_node_with_optimizer(clone, u);
+      igvn->replace_node(u, clone);
+      --i;
+    }
   }
 }
 
