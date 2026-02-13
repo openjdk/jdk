@@ -401,7 +401,7 @@ public interface HttpServerAdapters {
          *         #getExchangeVersion() HTTP_3}
          */
         public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders headers)
-                throws IOException {
+            throws IOException {
             throw new UnsupportedOperationException("serverPushId with " + getExchangeVersion());
         }
         /**
@@ -425,7 +425,7 @@ public interface HttpServerAdapters {
                                           HttpHeaders reqHeaders,
                                           HttpHeaders rspHeaders,
                                           InputStream body)
-                throws IOException {
+            throws IOException {
             throw new UnsupportedOperationException("serverPushWithId with " + getExchangeVersion());
         }
         /**
@@ -452,7 +452,7 @@ public interface HttpServerAdapters {
          *         #getExchangeVersion() HTTP_3}
          */
         public void sendHttp3CancelPushFrame(long pushId)
-                throws IOException {
+            throws IOException {
             throw new UnsupportedOperationException("cancelPushId with " + getExchangeVersion());
         }
         /**
@@ -598,7 +598,7 @@ public interface HttpServerAdapters {
             }
             @Override
             public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
-                    throws IOException {
+                throws IOException {
                 exchange.serverPush(uri, reqHeaders, rspHeaders, body);
             }
             @Override
@@ -621,7 +621,7 @@ public interface HttpServerAdapters {
             }
             @Override
             public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders reqHeaders) throws IOException {
-                return exchange.sendPushId(pushId, uri, reqHeaders);
+               return exchange.sendPushId(pushId, uri, reqHeaders);
             }
             @Override
             public void sendHttp3CancelPushFrame(long pushId) throws IOException {
@@ -1253,77 +1253,77 @@ public interface HttpServerAdapters {
 
     public static class HttpBasicAuthFilter extends AbstractHttpAuthFilter {
 
-        static String type(HttpAuthMode authType) {
-            String type = authType == HttpAuthMode.SERVER
-                    ? "BasicAuth Server Filter" : "BasicAuth Proxy Filter";
-            return "["+type+"]";
-        }
+            static String type(HttpAuthMode authType) {
+                String type = authType == HttpAuthMode.SERVER
+                        ? "BasicAuth Server Filter" : "BasicAuth Proxy Filter";
+                return "["+type+"]";
+            }
 
-        final BasicAuthenticator auth;
-        public HttpBasicAuthFilter(BasicAuthenticator auth) {
-            this(auth, HttpAuthMode.SERVER);
-        }
+            final BasicAuthenticator auth;
+            public HttpBasicAuthFilter(BasicAuthenticator auth) {
+                this(auth, HttpAuthMode.SERVER);
+            }
 
-        public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType) {
-            this(auth, authType, type(authType));
-        }
+            public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType) {
+                this(auth, authType, type(authType));
+            }
 
-        public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType, String typeDesc) {
-            super(authType, typeDesc);
-            this.auth = auth;
-        }
+            public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType, String typeDesc) {
+                super(authType, typeDesc);
+                this.auth = auth;
+            }
 
-        protected String getAuthValue() {
-            return "Basic realm=\"" + auth.getRealm() + "\"";
-        }
+            protected String getAuthValue() {
+                return "Basic realm=\"" + auth.getRealm() + "\"";
+            }
 
-        @Override
-        protected void requestAuthentication(HttpTestExchange he)
-                throws IOException
-        {
-            String headerName = getAuthenticate();
-            String headerValue = getAuthValue();
-            he.getResponseHeaders().addHeader(headerName, headerValue);
-            System.out.println(type + ": Requesting Basic Authentication, "
-                    + headerName + " : "+ headerValue);
-        }
+            @Override
+            protected void requestAuthentication(HttpTestExchange he)
+                    throws IOException
+            {
+                String headerName = getAuthenticate();
+                String headerValue = getAuthValue();
+                he.getResponseHeaders().addHeader(headerName, headerValue);
+                System.out.println(type + ": Requesting Basic Authentication, "
+                        + headerName + " : "+ headerValue);
+            }
 
-        @Override
-        protected boolean isAuthentified(HttpTestExchange he) {
-            if (he.getRequestHeaders().containsKey(getAuthorization())) {
-                List<String> authorization =
-                        he.getRequestHeaders().get(getAuthorization());
-                for (String a : authorization) {
-                    System.out.println(type + ": processing " + a);
-                    int sp = a.indexOf(' ');
-                    if (sp < 0) return false;
-                    String scheme = a.substring(0, sp);
-                    if (!"Basic".equalsIgnoreCase(scheme)) {
-                        System.out.println(type + ": Unsupported scheme '"
-                                + scheme +"'");
-                        return false;
+            @Override
+            protected boolean isAuthentified(HttpTestExchange he) {
+                if (he.getRequestHeaders().containsKey(getAuthorization())) {
+                    List<String> authorization =
+                            he.getRequestHeaders().get(getAuthorization());
+                    for (String a : authorization) {
+                        System.out.println(type + ": processing " + a);
+                        int sp = a.indexOf(' ');
+                        if (sp < 0) return false;
+                        String scheme = a.substring(0, sp);
+                        if (!"Basic".equalsIgnoreCase(scheme)) {
+                            System.out.println(type + ": Unsupported scheme '"
+                                    + scheme +"'");
+                            return false;
+                        }
+                        if (a.length() <= sp+1) {
+                            System.out.println(type + ": value too short for '"
+                                    + scheme +"'");
+                            return false;
+                        }
+                        a = a.substring(sp+1);
+                        return validate(a);
                     }
-                    if (a.length() <= sp+1) {
-                        System.out.println(type + ": value too short for '"
-                                + scheme +"'");
-                        return false;
-                    }
-                    a = a.substring(sp+1);
-                    return validate(a);
+                    return false;
                 }
                 return false;
             }
-            return false;
-        }
 
-        boolean validate(String a) {
-            byte[] b = Base64.getDecoder().decode(a);
-            String userpass = new String (b);
-            int colon = userpass.indexOf (':');
-            String uname = userpass.substring (0, colon);
-            String pass = userpass.substring (colon+1);
-            return auth.checkCredentials(uname, pass);
-        }
+            boolean validate(String a) {
+                byte[] b = Base64.getDecoder().decode(a);
+                String userpass = new String (b);
+                int colon = userpass.indexOf (':');
+                String uname = userpass.substring (0, colon);
+                String pass = userpass.substring (colon+1);
+                return auth.checkCredentials(uname, pass);
+            }
 
         @Override
         public String description() {
@@ -1570,8 +1570,8 @@ public interface HttpServerAdapters {
          * @throws IOException              if any exception occurs during the server creation
          */
         private static HttpTestServer create(final Version serverVersion, final SSLContext sslContext,
-                                             final Http3DiscoveryMode h3DiscoveryCfg,
-                                             final ExecutorService executor) throws IOException {
+                                            final Http3DiscoveryMode h3DiscoveryCfg,
+                                            final ExecutorService executor) throws IOException {
             Objects.requireNonNull(serverVersion);
             if (h3DiscoveryCfg != null && serverVersion != HTTP_3) {
                 // Http3DiscoveryMode is only supported when version of HTTP_3
@@ -1763,7 +1763,7 @@ public interface HttpServerAdapters {
             @Override
             public HttpTestContext addHandler(HttpTestHandler handler, String path) {
                 System.out.println("Http2TestServerImpl[" + getAddress()
-                        + "]::addHandler " + handler + ", " + path);
+                                   + "]::addHandler " + handler + ", " + path);
                 Http2TestContext context = new Http2TestContext(handler, path);
                 impl.addHandler(context.toHttp2Handler(), path);
                 return context;
