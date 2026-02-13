@@ -95,10 +95,10 @@ private:
   // Evict a given element of the statistics cache.
   void evict(uint idx);
 
-  size_t _num_cache_entries_mask;
+  const uint _num_cache_entries_mask;
 
   uint hash(uint idx) {
-    return idx & static_cast<uint>(_num_cache_entries_mask);
+    return idx & _num_cache_entries_mask;
   }
 
   G1RegionMarkStatsCacheEntry* find_for_add(uint region_idx);

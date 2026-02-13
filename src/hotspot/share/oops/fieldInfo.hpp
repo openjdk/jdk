@@ -302,7 +302,7 @@ class FieldStatus {
 
   // boilerplate:
   u1 _flags;
-  static constexpr u1 flag_mask(FieldStatusBitPosition pos) { return static_cast<u1>(1 << pos); }
+  static constexpr u1 flag_mask(FieldStatusBitPosition pos) { return checked_cast<u1>(1 << pos); }
   bool test_flag(FieldStatusBitPosition pos) { return (_flags & flag_mask(pos)) != 0; }
   // this performs an atomic update on a live status byte!
   void update_flag(FieldStatusBitPosition pos, bool z);
