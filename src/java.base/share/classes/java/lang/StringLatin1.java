@@ -109,7 +109,7 @@ final class StringLatin1 {
         return equals0(value, other);
     }
 
-    // inline_string_equals
+    // vmIntrinsics::_equalsL
     @IntrinsicCandidate
     private static boolean equals0(byte[] value, byte[] other) {
         if (value.length == other.length) {
@@ -142,7 +142,7 @@ final class StringLatin1 {
         return compareTo0(value, other);
     }
 
-    // inline_string_compareTo
+    // vmIntrinsics::_compareToL
     @IntrinsicCandidate
     private static int compareTo0(byte[] value, byte[] other) {
         return compareTo(value, other, value.length, other.length);
@@ -194,7 +194,7 @@ final class StringLatin1 {
         return compareToUTF16_0(value, other);
     }
 
-    // inline_string_compareTo
+    // vmIntrinsics::_compareToLU
     @IntrinsicCandidate
     private static int compareToUTF16_0(byte[] value, byte[] other) {
         int len1 = length(value);
@@ -435,7 +435,7 @@ final class StringLatin1 {
         return indexOfChar0(value, ch, fromIndex, toIndex);
     }
 
-    // inline_string_indexOfChar
+    // vmIntrinsics::_indexOfL_char
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
@@ -466,7 +466,7 @@ final class StringLatin1 {
         return indexOf0(value, str);
     }
 
-    // inline_string_indexOf
+    // vmIntrinsics::_indexOfL
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, byte[] str) {
         if (str.length == 0) {
@@ -502,7 +502,7 @@ final class StringLatin1 {
         return indexOf0(value, valueToIndex, str, strToIndex, valueFromIndex);
     }
 
-    // inline_string_indexOfI
+    // vmIntrinsics::_indexOfIL
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         byte first = str[0];
@@ -1043,7 +1043,7 @@ final class StringLatin1 {
         inflate0(src, srcOff, dst, dstOff, len);
     }
 
-    // inline_string_copy(compress=false)
+    // vmIntrinsics::_inflateStringC
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
@@ -1074,7 +1074,7 @@ final class StringLatin1 {
         inflate0(src, srcOff, dst, dstOff, len);
     }
 
-    // inline_string_copy(compress=false)
+    // vmIntrinsics::_inflateStringB
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {

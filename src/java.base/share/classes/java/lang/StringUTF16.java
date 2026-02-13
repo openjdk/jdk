@@ -418,7 +418,7 @@ final class StringUTF16 {
         return compress0(src, srcOff, dst, dstOff, len);
     }
 
-    // inline_string_copy(compress=true)
+    // vmIntrinsics::_compressStringC
     @IntrinsicCandidate
     private static int compress0(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
@@ -458,7 +458,7 @@ final class StringUTF16 {
         return compress0(src, srcOff, dst, dstOff, len);
     }
 
-    // inline_string_copy(compress=true)
+    // vmIntrinsics::_compressStringB
     @IntrinsicCandidate
     private static int compress0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
@@ -534,7 +534,7 @@ final class StringUTF16 {
         return compareTo0(value, other);
     }
 
-    // inline_string_compareTo
+    // vmIntrinsics::_compareToU
     @IntrinsicCandidate
     private static int compareTo0(byte[] value, byte[] other) {
         int len1 = length(value);
@@ -593,7 +593,7 @@ final class StringUTF16 {
         return compareToLatin1_0(value, other);
     }
 
-    // inline_string_compareTo
+    // vmIntrinsics::_compareToUL
     @IntrinsicCandidate
     private static int compareToLatin1_0(byte[] value, byte[] other) {
         return -StringLatin1.compareToUTF16(other, value);
@@ -845,7 +845,7 @@ final class StringUTF16 {
         return indexOf0(value, str);
     }
 
-    // inline_string_indexOf
+    // vmIntrinsics::_indexOfU
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, byte[] str) {
         if (str.length == 0) {
@@ -883,7 +883,7 @@ final class StringUTF16 {
         return indexOf0(value, valueToIndex, str, strToIndex, valueFromIndex);
     }
 
-    // inline_string_indexOf
+    // vmIntrinsics::_indexOfIU
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         return indexOfUnsafe(value, valueToIndex, str, strToIndex, valueFromIndex);
@@ -935,7 +935,7 @@ final class StringUTF16 {
         return indexOfLatin1_0(value, str);
     }
 
-    // inline_string_indexOf
+    // vmIntrinsics::_indexOfUL
     @IntrinsicCandidate
     private static int indexOfLatin1_0(byte[] value, byte[] str) {
         if (str.length == 0) {
@@ -972,7 +972,7 @@ final class StringUTF16 {
         return indexOfLatin1_0(src, srcToIndex, tgt, tgtToIndex, tgtFromIndex);
     }
 
-    // inline_string_indexOfI
+    // vmIntrinsics::_indexOfIUL
     @IntrinsicCandidate
     private static int indexOfLatin1_0(byte[] src, int srcToIndex, byte[] tgt, int tgtToIndex, int srcFromIndex) {
         return indexOfLatin1Unsafe(src, srcToIndex, tgt, tgtToIndex, srcFromIndex);
@@ -1006,7 +1006,7 @@ final class StringUTF16 {
         return -1;
     }
 
-    // inline_string_indexOfChar
+    // vmIntrinsics::_indexOfU_char
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         for (int i = fromIndex; i < max; i++) {
