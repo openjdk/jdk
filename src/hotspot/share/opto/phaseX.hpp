@@ -446,9 +446,29 @@ class PhaseIterGVN : public PhaseGVN {
 private:
   bool _delay_transform;  // When true simply register the node when calling transform
                           // instead of actually optimizing it
+  bool _deep_revisit_done; // Set after deep revisit pass completes successfully
+  DEBUG_ONLY(uint _num_processed;) // Running count for trace_PhaseIterGVN_verbose
 
   // Idealize old Node 'n' with respect to its inputs and its value
   virtual Node *transform_old( Node *a_node );
+
+  // Drain the IGVN worklist: process nodes until the worklist is empty.
+  // Returns true if compilation was aborted (node limit or infinite loop),
+  // false on normal completion.
+  bool drain_worklist(uint& loop_count);
+
+  // Walk all live nodes and push deep-inspection candidates to _worklist.
+  void push_deep_revisit_candidates();
+
+  // After the main worklist drains, re-process deep-inspection nodes to
+  // catch optimization opportunities from far-away changes. Repeats until
+  // convergence (live_nodes stable) or max rounds reached.
+  void deep_revisit(uint& loop_count);
+
+  // Returns true for nodes that inspect the graph beyond their direct
+  // inputs, and therefore may miss optimization opportunities when
+  // changes happen far away.
+  bool needs_deep_revisit(const Node* n) const;
 
   // Subsume users of node 'old' into node 'nn'
   void subsume_node( Node *old, Node *nn );
@@ -493,7 +513,12 @@ public:
   // Given def-use info and an initial worklist, apply Node::Ideal,
   // Node::Value, Node::Identity, hash-based value numbering, Node::Ideal_DU
   // and dominator info to a fixed point.
-  void optimize();
+  // When deep is true, after the main worklist drains, re-process
+  // nodes that inspect the graph deeply (Load, CmpP, If, RangeCheck,
+  // CountedLoopEnd, LongCountedLoopEnd) to catch optimization opportunities
+  // from changes far away that the normal notification mechanism misses.
+  void optimize(bool deep = false);
+
 #ifdef ASSERT
   void verify_optimize();
   void verify_Value_for(const Node* n, bool strict = false);

@@ -814,6 +814,7 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_transform),
+                                                 _deep_revisit_done(false),
                                                  _worklist(*C->igvn_worklist())
 {
   _phase = PhaseValuesType::iter_gvn;
@@ -823,6 +824,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize from scratch
 PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
+                               _deep_revisit_done(false),
                                _worklist(*C->igvn_worklist())
 {
   _phase = PhaseValuesType::iter_gvn;
@@ -1029,38 +1031,53 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 }
 #endif /* ASSERT */
 
-void PhaseIterGVN::optimize() {
-  DEBUG_ONLY(uint num_processed  = 0;)
-  NOT_PRODUCT(init_verifyPhaseIterGVN();)
-  NOT_PRODUCT(C->reset_igv_phase_iter(PHASE_AFTER_ITER_GVN_STEP);)
-  C->print_method(PHASE_BEFORE_ITER_GVN, 3);
-  if (StressIGVN) {
-    shuffle_worklist();
+bool PhaseIterGVN::needs_deep_revisit(const Node* n) const {
+  // LoadNode::Value() -> can_see_stored_value() walks up through many memory
+  // nodes. LoadNode::Ideal() -> find_previous_store() also walks up to 50
+  // nodes through stores and arraycopy nodes.
+  if (n->is_Load()) {
+    return true;
   }
+  // CmpPNode::sub() -> detect_ptr_independence() -> all_controls_dominate()
+  // walks CFG dominator relationships extensively. This only triggers when
+  // both inputs are oop pointers (subnode.cpp:984).
+  if (n->Opcode() == Op_CmpP) {
+    const Type* t1 = type_or_null(n->in(1));
+    const Type* t2 = type_or_null(n->in(2));
+    return t1 != nullptr && t1->isa_oopptr() &&
+           t2 != nullptr && t2->isa_oopptr();
+  }
+  // IfNode::Ideal() -> search_identical() walks up the CFG dominator tree.
+  // RangeCheckNode::Ideal() scans up to ~999 nodes up the chain.
+  // CountedLoopEndNode/LongCountedLoopEndNode::Ideal() via simple_subsuming
+  // looks for dominating test that subsumes the current test.
+  switch (n->Opcode()) {
+  case Op_If:
+  case Op_RangeCheck:
+  case Op_CountedLoopEnd:
+  case Op_LongCountedLoopEnd:
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
 
-  // The node count check in the loop below (check_node_count) assumes that we
-  // increase the live node count with at most
-  // max_live_nodes_increase_per_iteration in between checks. If this
-  // assumption does not hold, there is a risk that we exceed the max node
-  // limit in between checks and trigger an assert during node creation.
+bool PhaseIterGVN::drain_worklist(uint& loop_count) {
   const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 3;
-
-  uint loop_count = 0;
-  // Pull from worklist and transform the node. If the node has changed,
-  // update edge info and put uses on worklist.
-  while (_worklist.size() > 0) {
+  while (_worklist.size() != 0) {
     if (C->check_node_count(max_live_nodes_increase_per_iteration, "Out of nodes")) {
       C->print_method(PHASE_AFTER_ITER_GVN, 3);
-      return;
+      return true;
     }
     Node* n  = _worklist.pop();
     if (loop_count >= K * C->live_nodes()) {
-      DEBUG_ONLY(dump_infinite_loop_info(n, "PhaseIterGVN::optimize");)
-      C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");
+      DEBUG_ONLY(dump_infinite_loop_info(n, "PhaseIterGVN::drain_worklist");)
+      C->record_method_not_compilable("infinite loop in PhaseIterGVN::drain_worklist");
       C->print_method(PHASE_AFTER_ITER_GVN, 3);
-      return;
+      return true;
     }
-    DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, num_processed++);)
+    DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, _num_processed++);)
     if (n->outcnt() != 0) {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation
@@ -1068,7 +1085,7 @@ void PhaseIterGVN::optimize() {
       Node* nn = transform_old(n);
       DEBUG_ONLY(int live_nodes_after = C->live_nodes();)
       // Ensure we did not increase the live node count with more than
-      // max_live_nodes_increase_per_iteration during the call to transform_old
+      // max_live_nodes_increase_per_iteration during the call to transform_old.
       DEBUG_ONLY(int increase = live_nodes_after - live_nodes_before;)
       assert(increase < max_live_nodes_increase_per_iteration,
              "excessive live node increase in single iteration of IGVN: %d "
@@ -1080,6 +1097,116 @@ void PhaseIterGVN::optimize() {
     }
     loop_count++;
   }
+  return false;
+}
+
+void PhaseIterGVN::push_deep_revisit_candidates() {
+  ResourceMark rm;
+  Unique_Node_List all_nodes;
+  all_nodes.push(C->root());
+  for (uint j = 0; j < all_nodes.size(); j++) {
+    Node* n = all_nodes.at(j);
+    if (needs_deep_revisit(n) && n->outcnt() != 0) {
+      _worklist.push(n);
+    }
+    // Walk both inputs (including precedence edges) and outputs to find all live nodes.
+    // Input-only walks miss nodes that are only reachable as users (outputs) of live nodes,
+    // such as If nodes on paths not in the transitive input closure from root.
+    for (uint i = 0; i < n->len(); i++) {
+      Node* m = n->in(i);
+      if (not_a_node(m)) continue;
+      all_nodes.push(m);
+    }
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      all_nodes.push(n->fast_out(i));
+    }
+  }
+}
+
+void PhaseIterGVN::deep_revisit(uint& loop_count) {
+  // Re-process nodes that inspect the graph deeply. After the main worklist drains, walk
+  // the graph to find all live deep-inspection nodes and push them to the worklist
+  // for re-evaluation. If any produce changes, drain the worklist again.
+  // Repeat until stable. This mirrors PhaseCCP::analyze()'s revisit loop.
+  const uint max_deep_revisit_rounds = 10; // typically converges in <2 rounds
+  uint round = 0;
+  for (; round < max_deep_revisit_rounds; round++) {
+    push_deep_revisit_candidates();
+    if (_worklist.size() == 0) {
+      break; // No deep-inspection nodes to revisit, done.
+    }
+
+    NOT_PRODUCT(uint candidates = _worklist.size();)
+    NOT_PRODUCT(uint n_if = 0; uint n_rc = 0; uint n_load = 0; uint n_cmpp = 0; uint n_cle = 0; uint n_lcle = 0;)
+    NOT_PRODUCT(
+      if (TraceIterativeGVN) {
+        for (uint i = 0; i < _worklist.size(); i++) {
+          Node* n = _worklist.at(i);
+          switch (n->Opcode()) {
+          case Op_If:                n_if++;   break;
+          case Op_RangeCheck:        n_rc++;   break;
+          case Op_CountedLoopEnd:    n_cle++;  break;
+          case Op_LongCountedLoopEnd:n_lcle++; break;
+          case Op_CmpP:             n_cmpp++;  break;
+          default: if (n->is_Load()) n_load++; break;
+          }
+        }
+      }
+    )
+
+    // Convergence: if the drain does not change the graph structurally (live_nodes unchanged),
+    // we are at a fixed point. We use live_nodes rather than worklist activity (loop_count vs pushed)
+    // because various transformations can break the loop_count/pushed relationship, e.g.:
+    // - split_if speculatively clones and kills nodes, inflating loop_count
+    //   without actual graph changes (false non-convergence)
+    // - dominated_by kills nodes directly without worklist additions,
+    //   invisible to loop_count (false convergence)
+    uint live_before_drain = C->live_nodes();
+    loop_count = 0;
+    if (drain_worklist(loop_count)) return;
+
+    NOT_PRODUCT(
+      if (TraceIterativeGVN) {
+        uint live_after = C->live_nodes();
+        tty->print("deep_revisit round %u: %u candidates (If=%u RC=%u Load=%u CmpP=%u CLE=%u LCLE=%u), "
+                   "live %u -> %u (%s)",
+                   round, candidates, n_if, n_rc, n_load, n_cmpp, n_cle, n_lcle, live_before_drain, live_after,
+                   (live_after != live_before_drain) ? "changed" : "converged");
+        if (C->method() != nullptr) {
+          tty->print(", ");
+          C->method()->print_short_name(tty);
+        }
+        tty->cr();
+      }
+    )
+
+    if (C->live_nodes() == live_before_drain) {
+      round++; // count this round in the total
+      break;   // fixed point reached
+    }
+  }
+  _deep_revisit_done = (round < max_deep_revisit_rounds);
+}
+
+void PhaseIterGVN::optimize(bool deep) {
+  _deep_revisit_done = false; // Reset per call; only set true after successful deep revisit in THIS call.
+  DEBUG_ONLY(_num_processed = 0;)
+  NOT_PRODUCT(init_verifyPhaseIterGVN();)
+  NOT_PRODUCT(C->reset_igv_phase_iter(PHASE_AFTER_ITER_GVN_STEP);)
+  C->print_method(PHASE_BEFORE_ITER_GVN, 3);
+  if (StressIGVN) {
+    shuffle_worklist();
+  }
+
+  uint loop_count = 0;
+  // Pull from worklist and transform the node.
+  if (drain_worklist(loop_count)) return;
+
+  if (deep && UseDeepIGVNRevisit) {
+    deep_revisit(loop_count);
+    if (C->failing()) return;
+  }
+
   NOT_PRODUCT(verify_PhaseIterGVN();)
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
@@ -1087,6 +1214,23 @@ void PhaseIterGVN::optimize() {
 #ifdef ASSERT
 void PhaseIterGVN::verify_optimize() {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
+
+  // Verify deep revisit convergence: push deep-inspection nodes one more time and drain
+  // the worklist. If live_nodes changes, deep revisit did not reach a fixed point.
+  // This uses the worklist mechanism (correct processing order) rather than the BFS Ideal-calling
+  // loop below, which cannot safely verify deep-inspection nodes because Ideal(can_reshape=true)
+  // is destructive, e.g. optimizing one If can enable another If's optimization.
+  if (_deep_revisit_done && is_verify_Ideal()) {
+    push_deep_revisit_candidates();
+    if (_worklist.size() != 0) {
+      uint live_before = C->live_nodes();
+      uint loop_count = 0;
+      if (drain_worklist(loop_count)) return;
+      assert(C->live_nodes() == live_before,
+             "Deep revisit did not converge: live_nodes changed from %u to %u "
+             "in verification round", live_before, C->live_nodes());
+    }
+  }
 
   if (is_verify_Value() ||
       is_verify_Ideal() ||
@@ -1175,7 +1319,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   }
   // Exception (2)
   // LoadNode performs deep traversals. Load is not notified for changes far away.
-  if (!strict && n->is_Load() && !told->singleton()) {
+  if (!strict && !_deep_revisit_done && n->is_Load() && !told->singleton()) {
     // MemNode::can_see_stored_value looks up through many memory nodes,
     // which means we would need to notify modifications from far up in
     // the inputs all the way down to the LoadNode. We don't do that.
@@ -1183,7 +1327,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   }
   // Exception (3)
   // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-  if (!strict && n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+  if (!strict && !_deep_revisit_done && n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
     // SubNode::Value
     // CmpPNode::sub
     // MemNode::detect_ptr_independence
@@ -1243,36 +1387,18 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     case Op_RangeCheck:
-      return;
-
-    // IfNode::Ideal does:
-    //   Node* prev_dom = search_identical(dist, igvn);
-    // which means we seach up the CFG, traversing at most up to a distance.
-    // If anything happens rather far away from the If, we may not put the If
-    // back on the worklist.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_If:
-      return;
-
-    // IfNode::simple_subsuming
-    // Looks for dominating test that subsumes the current test.
-    // Notification could be difficult because of larger distance.
-    //
-    // Found with:
-    //   runtime/exceptionMsgs/ArrayIndexOutOfBoundsException/ArrayIndexOutOfBoundsExceptionTest.java#id1
-    //   -XX:VerifyIterativeGVN=1110
     case Op_CountedLoopEnd:
-      return;
-
-    // LongCountedLoopEndNode::Ideal
-    // Probably same issue as above.
-    //
-    // Found with:
-    //   compiler/predicates/assertion/TestAssertionPredicates.java#NoLoopPredicationXbatch
-    //   -XX:StressLongCountedLoop=2000000 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     case Op_LongCountedLoopEnd:
+      // These nodes perform deep graph traversals in their Ideal methods:
+      //   IfNode/RangeCheckNode::Ideal -> Ideal_common -> split_if speculatively
+      //     clones nodes, bumping unique() without progress.
+      //   IfNode::Ideal -> search_identical() walks CFG dominator tree.
+      //   CountedLoopEndNode/LongCountedLoopEndNode::Ideal -> simple_subsuming
+      //     looks for dominating test that subsumes the current test.
+      // Calling Ideal(can_reshape=true) on these nodes modifies the graph, contaminating
+      // verification of subsequent nodes. Deep revisit convergence for these nodes is
+      // instead verified via the drain-based check in verify_optimize().
       return;
 
     // RegionNode::Ideal does "Skip around the useless IF diamond".
@@ -1752,18 +1878,9 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   }
 
   if (n->is_Load()) {
-    // LoadNode::Ideal uses tries to find an earlier memory state, and
-    // checks can_see_stored_value for it.
-    //
-    // Investigate why this was not already done during IGVN.
-    // A similar issue happens with Identity.
-    //
-    // There seem to be other cases where loads go up some steps, like
-    // LoadNode::Ideal going up 10x steps to find dominating load.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/arraycopy/TestCloneAccess.java
-    //   -XX:VerifyIterativeGVN=1110
+    // LoadNode::Ideal walks up through memory nodes (find_previous_store,
+    // can_see_stored_value) and can modify the graph. Deep revisit
+    // convergence for Load is verified via verify_optimize().
     return;
   }
 
