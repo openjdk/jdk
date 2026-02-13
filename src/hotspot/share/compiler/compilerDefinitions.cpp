@@ -406,7 +406,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
 #ifdef COMPILER2
     // Some inlining tuning
-#if defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)
+#if defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390)
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
