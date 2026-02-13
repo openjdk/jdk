@@ -53,6 +53,7 @@ public class TestShrinkAuxiliaryData {
         "-XX:+UseG1GC",
         "-XX:G1HeapRegionSize=" + REGION_SIZE,
         "-XX:-ExplicitGCInvokesConcurrent",
+        "-Xlog:gc=debug",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+WhiteBoxAPI",
         "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
