@@ -77,7 +77,7 @@ void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::reset() {
 }
 
 ShenandoahInPlacePromotionPlanner::ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap)
-  : _old_garbage_threshold(ShenandoahHeapRegion::region_size_bytes() * heap->old_generation()->heuristics()->get_old_garbage_threshold() / 100)
+  : _old_garbage_threshold(0)
   , _pip_used_threshold(ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage / 100)
   , _heap(heap)
   , _free_set(_heap->free_set())
@@ -179,6 +179,10 @@ void ShenandoahInPlacePromotionPlanner::reset() {
   _pip_regular_stats.reset();
   _pip_humongous_stats.reset();
   _pip_padding_bytes = 0;
+
+  // The old garbage threshold is adjusted dynamically, so we need to refresh it here
+  const auto threshold = _heap->old_generation()->heuristics()->get_old_garbage_threshold();
+  _old_garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * threshold / 100;
 }
 
 void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
