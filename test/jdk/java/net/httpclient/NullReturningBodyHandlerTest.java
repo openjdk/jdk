@@ -196,13 +196,12 @@ class NullReturningBodyHandlerTest {
     void test(final URI reqURI, final Version version,
               final boolean requiresWarmupHEADRequest) throws Exception {
         if (requiresWarmupHEADRequest) {
-            final HttpRequest.Builder builder = HttpRequest.newBuilder().HEAD()
+            // the test only issues a warmup request for HTTP/2 requests
+            assertEquals(Version.HTTP_2, version, "unexpected HTTP version");
+            final HttpRequest head = HttpRequest.newBuilder().HEAD()
                     .version(version)
-                    .uri(reqURI);
-            if (version == Version.HTTP_3) {
-                builder.setOption(HttpOption.H3_DISCOVERY, HTTP_3_URI_ONLY);
-            }
-            final HttpRequest head = builder.build();
+                    .uri(reqURI)
+                    .build();
             System.err.println("issuing warmup head request " + head);
             HttpResponse<Void> headResp = client.send(head, HttpResponse.BodyHandlers.discarding());
             assertEquals(200, headResp.statusCode(), "unexpected status code for HEAD request");
