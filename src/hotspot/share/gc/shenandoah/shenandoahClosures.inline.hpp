@@ -37,6 +37,7 @@
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "memory/iterator.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -74,7 +75,8 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _queue(q),
         _old_queue(old_q),
         _mark_context(ShenandoahHeap::heap()->marking_context()),
-        _weak(false) {}
+        _weak(false),
+        _reference_iteration_mode(DO_DISCOVERY) {}
 
 template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
