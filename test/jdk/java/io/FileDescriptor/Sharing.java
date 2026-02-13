@@ -28,7 +28,14 @@
  * @run main/othervm Sharing
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.io.Writer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.concurrent.CountDownLatch;
@@ -290,7 +297,7 @@ public class Sharing {
         FileInputStream fis = new FileInputStream(raf.getFD());
         fis.close();
         if (raf.getFD().valid()) {
-             throw new RuntimeException("FD should not be valid.");
+            throw new RuntimeException("FD should not be valid.");
         }
 
         // Test the suppressed exception handling - FileInputStream
@@ -308,7 +315,7 @@ public class Sharing {
             ioe.printStackTrace();
             if (ioe.getSuppressed().length != 2) {
                 throw new RuntimeException("[FIS]Incorrect number of suppressed " +
-                          "exceptions received : " + ioe.getSuppressed().length);
+                                           "exceptions received : " + ioe.getSuppressed().length);
             }
         }
         if (raf.getFD().valid()) {
@@ -332,7 +339,7 @@ public class Sharing {
             ioe.printStackTrace();
             if (ioe.getSuppressed().length != 2) {
                 throw new RuntimeException("[FOS]Incorrect number of suppressed " +
-                          "exceptions received : " + ioe.getSuppressed().length);
+                                           "exceptions received : " + ioe.getSuppressed().length);
             }
         }
         if (raf.getFD().valid()) {
@@ -356,32 +363,32 @@ public class Sharing {
         }
 
         public void run() {
-             FileInputStream[] fisArray = new FileInputStream[numFiles];
-             FileOutputStream[] fosArray = new FileOutputStream[numFiles];
+            FileInputStream[] fisArray = new FileInputStream[numFiles];
+            FileOutputStream[] fosArray = new FileOutputStream[numFiles];
 
-             try {
-                 for(int i=0;i<numFiles;i++) {
-                     fisArray[i] = new FileInputStream(fd);
-                     fosArray[i] = new FileOutputStream(fd);
-                 }
+            try {
+                for(int i=0;i<numFiles;i++) {
+                    fisArray[i] = new FileInputStream(fd);
+                    fosArray[i] = new FileOutputStream(fd);
+                }
 
-                 // Now close out
-                 for(int i=0;i<numFiles;i++) {
-                     fisArray[i].close();
-                     fosArray[i].close();
-                 }
+                // Now close out
+                for(int i=0;i<numFiles;i++) {
+                    fisArray[i].close();
+                    fosArray[i].close();
+                }
 
-             } catch(IOException ioe) {
-                 System.err.println("OpenClose encountered IO issue :" + ioe);
-                 fail = true;
-             } finally {
-                 if (fd.valid()) { // fd should not be valid after first close() call
-                     System.err.println("OpenClose: FileDescriptor shouldn't be valid");
-                     fail = true;
-                 }
-                 done.countDown();
-             }
-         }
+            } catch(IOException ioe) {
+                System.err.println("OpenClose encountered IO issue :" + ioe);
+                fail = true;
+            } finally {
+                if (fd.valid()) { // fd should not be valid after first close() call
+                    System.err.println("OpenClose: FileDescriptor shouldn't be valid");
+                    fail = true;
+                }
+                done.countDown();
+            }
+        }
     }
 
     private static class BadFileInputStream extends FileInputStream {
