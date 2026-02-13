@@ -139,10 +139,15 @@ public class CompileFramework {
         }
     }
 
-    public Optional<RuntimeException> findJtregSkippedExceptionInCauses(Throwable ex) {
+    public Optional<RuntimeException> findJtregSkippedExceptionInCauses(
+            Throwable ex) {
+
         while (ex != null) {
-            // jtreg.SkippedException can be from a different classloader, comparing by name
-            if (ex.getClass().getName().equals(SkippedException.class.getName())) {
+            // jtreg.SkippedException can be from a different classloader,
+            // comparing by name
+            if (ex.getClass().getName().equals(
+                    SkippedException.class.getName())) {
+
                 return Optional.of((RuntimeException) ex);
             }
 
