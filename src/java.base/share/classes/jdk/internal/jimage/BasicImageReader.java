@@ -195,7 +195,9 @@ public class BasicImageReader implements AutoCloseable {
         }
 
         if (result.getMajorVersion() != ImageHeader.MAJOR_VERSION ||
-            result.getMinorVersion() != ImageHeader.MINOR_VERSION) {
+                result.getMinorVersion() != ImageHeader.MINOR_VERSION) {
+            // We rely on the sub-string "not the correct version" to detect
+            // version issues in JImageTask and give a better user message.
             throw new IOException("The image file \"" + name + "\" is not " +
                 "the correct version. Major: " + result.getMajorVersion() +
                 ". Minor: " + result.getMinorVersion());

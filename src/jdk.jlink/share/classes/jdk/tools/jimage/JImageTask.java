@@ -435,7 +435,10 @@ class JImageTask {
                     }
                 }
             } catch (IOException ioe) {
-                throw TASK_HELPER.newBadArgs("err.invalid.jimage", file, ioe.getMessage());
+                boolean isVersionMismatch = ioe.getMessage().contains("not the correct version");
+                // Both messages take the file name and underlying message.
+                String msgKey = isVersionMismatch ? "err.wrong.version" : "err.invalid.jimage";
+                throw TASK_HELPER.newBadArgs(msgKey, file, ioe.getMessage());
             }
         }
     }
