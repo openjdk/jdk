@@ -902,8 +902,8 @@ static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBit
 }
 
 // Use this in ::Ideal only with shiftNode == this!
-// Returns the masked shift amount if constant or 0 if not constant,
-// and sets reshaped to true if the input for the shift amount was changed.
+// Sets masked_shift to the masked shift amount if constant or 0 if not constant.
+// Returns shift_node if the shift amount input node was modified, nullptr otherwise.
 static Node* mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, uint nBits, uint& masked_shift) {
   int real_shift;
   if (mask_shift_amount(phase, shift_node, nBits, real_shift, masked_shift)) {
