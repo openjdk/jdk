@@ -71,7 +71,6 @@ public class TestShrinkDefragmentedHeap {
                 "-XX:G1HeapRegionSize=" + REGION_SIZE,
                 "-XX:-ExplicitGCInvokesConcurrent",
                 "-verbose:gc",
-                "-Xlog:gc+region=trace",
                 GCTest.class.getName()
         );
 
