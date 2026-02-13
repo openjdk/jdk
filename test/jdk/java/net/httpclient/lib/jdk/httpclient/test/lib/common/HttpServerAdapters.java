@@ -251,6 +251,60 @@ public interface HttpServerAdapters {
      * A version agnostic adapter class for HTTP Server Exchange.
      */
     public static abstract class HttpTestExchange implements AutoCloseable {
+        /**
+         * This constant can be passed to {@link #sendResponseHeaders(int, long)}
+         * to indicate an empty response.
+         */
+        public static final int RSPBODY_EMPTY = 0;
+        /**
+         * This constant can be passed to {@link #sendResponseHeaders(int, long)}
+         * to indicate that the response will be chunked.
+         */
+        public static final int RSPBODY_CHUNKED = -1;
+
+        /**
+         * {@return the response length to pass to {@link #sendResponseHeaders(int, long)}
+         * if the response is not chunked}
+         * @param bytes the response length
+         */
+        public static long fixedRsp(long bytes) {
+            return bytes == 0 ? RSPBODY_EMPTY : bytes;
+        }
+
+        /**
+         * {@return the response length to pass to {@link #sendResponseHeaders(int, long)}}
+         * This is the response length when `chunked` is false, and
+         * {@link #RSPBODY_CHUNKED} otherwise.
+         * @param length   The number of bytes to send
+         * @param chunked  Whether the response should be chunked
+         */
+        public static long responseLength(long length, boolean chunked) {
+            return chunked ? HttpTestExchange.RSPBODY_CHUNKED : fixedRsp(length);
+        }
+
+        /**
+         * {@return true if the {@linkplain #getRequestHeaders() request headers}
+         * contain {@code XFixed: yes}}
+         */
+        public boolean rspFixedRequested() {
+            return "yes".equals(getRequestHeaders()
+                    .firstValue("XFixed")
+                    .orElse(null));
+        }
+
+        /**
+         * {@return the length to be passed to {@link #sendResponseHeaders(int, long)},
+         *  taking into account whether using {@linkplain #rspFixedRequested()
+         *  fixed length was requested} in the {@linkplain #getRequestHeaders()
+         *  request headers}.}
+         * By default, returns {@link #RSPBODY_CHUNKED} unless {@linkplain
+         * #rspFixedRequested() fixed length was requested}.
+         * @param length the length to use in content-length if fixed length is used.
+         */
+        public long responseLength(long length) {
+            return responseLength(length, !rspFixedRequested());
+        }
+
         public abstract Version getServerVersion();
         public abstract Version getExchangeVersion();
         public abstract InputStream   getRequestBody();
@@ -265,6 +319,10 @@ public interface HttpServerAdapters {
         public abstract InetSocketAddress getLocalAddress();
         public abstract String getConnectionKey();
         public abstract SSLSession getSSLSession();
+        public CompletableFuture<Long> sendPing() {
+            throw new UnsupportedOperationException("sendPing not supported on "
+                    + getExchangeVersion());
+        }
         public void serverPush(URI uri, HttpHeaders reqHeaders, byte[] body) throws IOException {
             ByteArrayInputStream bais = new ByteArrayInputStream(body);
             serverPush(uri, reqHeaders, bais);
@@ -343,7 +401,7 @@ public interface HttpServerAdapters {
          *         #getExchangeVersion() HTTP_3}
          */
         public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders headers)
-            throws IOException {
+                throws IOException {
             throw new UnsupportedOperationException("serverPushId with " + getExchangeVersion());
         }
         /**
@@ -367,7 +425,7 @@ public interface HttpServerAdapters {
                                           HttpHeaders reqHeaders,
                                           HttpHeaders rspHeaders,
                                           InputStream body)
-            throws IOException {
+                throws IOException {
             throw new UnsupportedOperationException("serverPushWithId with " + getExchangeVersion());
         }
         /**
@@ -394,7 +452,7 @@ public interface HttpServerAdapters {
          *         #getExchangeVersion() HTTP_3}
          */
         public void sendHttp3CancelPushFrame(long pushId)
-            throws IOException {
+                throws IOException {
             throw new UnsupportedOperationException("cancelPushId with " + getExchangeVersion());
         }
         /**
@@ -540,9 +598,14 @@ public interface HttpServerAdapters {
             }
             @Override
             public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
-                throws IOException {
+                    throws IOException {
                 exchange.serverPush(uri, reqHeaders, rspHeaders, body);
             }
+            @Override
+            public CompletableFuture<Long> sendPing() {
+                return exchange.sendPing();
+            }
+
             @Override
             public void requestStopSending(long errorCode) {
                 exchange.requestStopSending(errorCode);
@@ -558,7 +621,7 @@ public interface HttpServerAdapters {
             }
             @Override
             public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders reqHeaders) throws IOException {
-               return exchange.sendPushId(pushId, uri, reqHeaders);
+                return exchange.sendPushId(pushId, uri, reqHeaders);
             }
             @Override
             public void sendHttp3CancelPushFrame(long pushId) throws IOException {
@@ -701,7 +764,8 @@ public interface HttpServerAdapters {
 
     /**
      * An echo handler that can be used to transfer large amount of data, and
-     * uses file on the file system to download the input.
+     * uses file on the file system to download the input. This handler honors
+     * the {@code XFixed} header.
      */
     // TODO: it would be good if we could merge this with the Http2EchoHandler,
     //       from which this code was copied and adapted.
@@ -737,7 +801,7 @@ public interface HttpServerAdapters {
                         assertFileContentsEqual(check, outfile.toPath());
                     } catch (Throwable x) {
                         System.err.println("Files do not match: " + x);
-                        t.sendResponseHeaders(500, -1);
+                        t.sendResponseHeaders(500, HttpTestExchange.RSPBODY_EMPTY);
                         outfile.delete();
                         os.close();
                         return;
@@ -747,7 +811,7 @@ public interface HttpServerAdapters {
                 // return the number of bytes received (no echo)
                 String summary = requestHeaders.firstValue("XSummary").orElse(null);
                 if (fixedrequest != null && summary == null) {
-                    t.sendResponseHeaders(200, count);
+                    t.sendResponseHeaders(200, HttpTestExchange.fixedRsp(count));
                     os = t.getResponseBody();
                     if (!t.getRequestMethod().equals("HEAD")) {
                         long count1 = is1.transferTo(os);
@@ -756,7 +820,7 @@ public interface HttpServerAdapters {
                         System.err.printf("EchoHandler HEAD received, no bytes sent%n");
                     }
                 } else {
-                    t.sendResponseHeaders(200, -1);
+                    t.sendResponseHeaders(200, HttpTestExchange.RSPBODY_CHUNKED);
                     os = t.getResponseBody();
                     if (!t.getRequestMethod().equals("HEAD")) {
                         long count1 = is1.transferTo(os);
@@ -780,6 +844,14 @@ public interface HttpServerAdapters {
         }
     }
 
+    /**
+     * An echo handler that can be used to transfer small amounts of data.
+     * All the request data is read in memory in a single byte array before
+     * being sent back. If the handler is {@linkplain #useXFixed() configured
+     * to honor the {@code XFixed} header}, and the request headers do not
+     * specify {@code XFixed: yes}, the data is sent back in chunk mode.
+     * Otherwise, chunked mode is not used (this is the default).
+     */
     public static class HttpTestEchoHandler implements HttpTestHandler {
 
         private final boolean printBytes;
@@ -791,12 +863,26 @@ public interface HttpServerAdapters {
             this.printBytes = printBytes;
         }
 
+        /**
+         * {@return whether the {@code XFixed} header should be
+         * honored. If this method returns false, chunked mode will
+         * not be used. If this method returns true, chunked mode
+         * will be used unless the request headers contain
+         * {@code XFixed: yes}}
+         */
+        protected boolean useXFixed() {
+            return false;
+        }
+
         @Override
         public void handle(HttpTestExchange t) throws IOException {
             System.err.printf("EchoHandler received request to %s from %s (version %s)%n",
                     t.getRequestURI(), t.getRemoteAddress(), t.getExchangeVersion());
-            try (InputStream is = t.getRequestBody();
-                 OutputStream os = t.getResponseBody()) {
+            InputStream is = null;
+            OutputStream os = null;
+            try {
+                is = t.getRequestBody();
+                os = t.getResponseBody();
                 byte[] bytes = is.readAllBytes();
                 if (printBytes) {
                     printBytes(System.out, "Echo server got "
@@ -806,11 +892,30 @@ public interface HttpServerAdapters {
                     t.getResponseHeaders().addHeader("Content-type",
                             t.getRequestHeaders().firstValue("Content-type").get());
                 }
-                t.sendResponseHeaders(200, bytes.length);
+
+                long responseLength = useXFixed()
+                        ? t.responseLength(bytes.length)
+                        : HttpTestExchange.fixedRsp(bytes.length);
+                t.sendResponseHeaders(200, responseLength);
                 if (!t.getRequestMethod().equals("HEAD") && bytes.length > 0) {
                     os.write(bytes);
                 }
+            } finally {
+                if (os != null) close(t, os);
+                if (is != null) close(t, is);
             }
+        }
+        protected void close(OutputStream os) throws IOException {
+            os.close();
+        }
+        protected void close(InputStream is) throws IOException {
+            is.close();
+        }
+        protected void close(HttpTestExchange t, OutputStream os) throws IOException {
+            close(os);
+        }
+        protected void close(HttpTestExchange t, InputStream is) throws IOException {
+            close(is);
         }
     }
 
@@ -853,6 +958,117 @@ public interface HttpServerAdapters {
         // override in sub-class to examine the exchange, but don't
         // alter transaction state by reading the request body etc.
         protected void examineExchange(HttpTestExchange t) {
+        }
+    }
+
+    /**
+     * A simple FileServerHandler that understand "XFixed" header.
+     * If the request headers contain {@code XFixed: yes}, a fixed
+     * length response is sent. Otherwise, the response will be
+     * chunked. Note that for directories the response is always
+     * chunked.
+     */
+    class HttpTestFileServerHandler implements HttpTestHandler {
+
+        String docroot;
+
+        public HttpTestFileServerHandler(String docroot) {
+            this.docroot = docroot;
+        }
+
+        public void handle(HttpTestExchange t)
+                throws IOException
+        {
+            InputStream is = t.getRequestBody();
+            var rspHeaders = t.getResponseHeaders();
+            URI uri = t.getRequestURI();
+            String path = uri.getPath();
+
+            int x = 0;
+            while (is.read() != -1) x++;
+            is.close();
+            File f = new File(docroot, path);
+            if (!f.exists()) {
+                notfound(t, path);
+                return;
+            }
+
+            String method = t.getRequestMethod();
+            if (method.equals("HEAD")) {
+                rspHeaders.addHeader("Content-Length", Long.toString(f.length()));
+                t.sendResponseHeaders(200, HttpTestExchange.RSPBODY_EMPTY);
+                t.close();
+            } else if (!method.equals("GET")) {
+                t.sendResponseHeaders(405, HttpTestExchange.RSPBODY_EMPTY);
+                t.close();
+                return;
+            }
+
+            if (path.endsWith(".html") || path.endsWith(".htm")) {
+                rspHeaders.addHeader("Content-Type", "text/html");
+            } else {
+                rspHeaders.addHeader("Content-Type", "text/plain");
+            }
+            if (f.isDirectory()) {
+                if (!path.endsWith("/")) {
+                    moved (t);
+                    return;
+                }
+                rspHeaders.addHeader("Content-Type", "text/html");
+                t.sendResponseHeaders(200, HttpTestExchange.RSPBODY_CHUNKED);
+                String[] list = f.list();
+                try (final OutputStream os = t.getResponseBody();
+                     final PrintStream p = new PrintStream(os)) {
+                    p.println("<h2>Directory listing for: " + path + "</h2>");
+                    p.println("<ul>");
+                    for (int i = 0; i < list.length; i++) {
+                        p.println("<li><a href=\"" + list[i] + "\">" + list[i] + "</a></li>");
+                    }
+                    p.println("</ul><p><hr>");
+                    p.flush();
+                }
+            } else {
+                long clen = f.length();
+                t.sendResponseHeaders(200, t.responseLength(clen));
+                long count = 0;
+                try (final OutputStream os = t.getResponseBody();
+                     final FileInputStream fis = new FileInputStream (f)) {
+                    byte[] buf = new byte [16 * 1024];
+                    int len;
+                    while ((len=fis.read(buf)) != -1) {
+                        os.write(buf, 0, len);
+                        count += len;
+                    }
+                    if (clen != count) {
+                        System.err.println("FileServerHandler: WARNING: count of bytes sent does not match content-length");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        void moved(HttpTestExchange t) throws IOException {
+            var req = t.getRequestHeaders();
+            var rsp = t.getResponseHeaders();
+            URI uri = t.getRequestURI();
+            String host = req.firstValue("Host").get();
+            String location = "http://"+host+uri.getPath() + "/";
+            rsp.addHeader("Content-Type", "text/html");
+            rsp.addHeader("Location", location);
+            t.sendResponseHeaders(301, HttpTestExchange.RSPBODY_EMPTY);
+            t.close();
+        }
+
+        void notfound(HttpTestExchange t, String p) throws IOException {
+            t.getResponseHeaders().addHeader("Content-Type", "text/html");
+            t.sendResponseHeaders(404, HttpTestExchange.RSPBODY_CHUNKED);
+            OutputStream os = t.getResponseBody();
+            String s = "<h2>File not found</h2>";
+            s = s + p + "<p>";
+            os.write(s.getBytes());
+            os.close();
+            t.close();
         }
     }
 
@@ -1037,77 +1253,77 @@ public interface HttpServerAdapters {
 
     public static class HttpBasicAuthFilter extends AbstractHttpAuthFilter {
 
-            static String type(HttpAuthMode authType) {
-                String type = authType == HttpAuthMode.SERVER
-                        ? "BasicAuth Server Filter" : "BasicAuth Proxy Filter";
-                return "["+type+"]";
-            }
+        static String type(HttpAuthMode authType) {
+            String type = authType == HttpAuthMode.SERVER
+                    ? "BasicAuth Server Filter" : "BasicAuth Proxy Filter";
+            return "["+type+"]";
+        }
 
-            final BasicAuthenticator auth;
-            public HttpBasicAuthFilter(BasicAuthenticator auth) {
-                this(auth, HttpAuthMode.SERVER);
-            }
+        final BasicAuthenticator auth;
+        public HttpBasicAuthFilter(BasicAuthenticator auth) {
+            this(auth, HttpAuthMode.SERVER);
+        }
 
-            public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType) {
-                this(auth, authType, type(authType));
-            }
+        public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType) {
+            this(auth, authType, type(authType));
+        }
 
-            public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType, String typeDesc) {
-                super(authType, typeDesc);
-                this.auth = auth;
-            }
+        public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType, String typeDesc) {
+            super(authType, typeDesc);
+            this.auth = auth;
+        }
 
-            protected String getAuthValue() {
-                return "Basic realm=\"" + auth.getRealm() + "\"";
-            }
+        protected String getAuthValue() {
+            return "Basic realm=\"" + auth.getRealm() + "\"";
+        }
 
-            @Override
-            protected void requestAuthentication(HttpTestExchange he)
-                    throws IOException
-            {
-                String headerName = getAuthenticate();
-                String headerValue = getAuthValue();
-                he.getResponseHeaders().addHeader(headerName, headerValue);
-                System.out.println(type + ": Requesting Basic Authentication, "
-                        + headerName + " : "+ headerValue);
-            }
+        @Override
+        protected void requestAuthentication(HttpTestExchange he)
+                throws IOException
+        {
+            String headerName = getAuthenticate();
+            String headerValue = getAuthValue();
+            he.getResponseHeaders().addHeader(headerName, headerValue);
+            System.out.println(type + ": Requesting Basic Authentication, "
+                    + headerName + " : "+ headerValue);
+        }
 
-            @Override
-            protected boolean isAuthentified(HttpTestExchange he) {
-                if (he.getRequestHeaders().containsKey(getAuthorization())) {
-                    List<String> authorization =
-                            he.getRequestHeaders().get(getAuthorization());
-                    for (String a : authorization) {
-                        System.out.println(type + ": processing " + a);
-                        int sp = a.indexOf(' ');
-                        if (sp < 0) return false;
-                        String scheme = a.substring(0, sp);
-                        if (!"Basic".equalsIgnoreCase(scheme)) {
-                            System.out.println(type + ": Unsupported scheme '"
-                                    + scheme +"'");
-                            return false;
-                        }
-                        if (a.length() <= sp+1) {
-                            System.out.println(type + ": value too short for '"
-                                    + scheme +"'");
-                            return false;
-                        }
-                        a = a.substring(sp+1);
-                        return validate(a);
+        @Override
+        protected boolean isAuthentified(HttpTestExchange he) {
+            if (he.getRequestHeaders().containsKey(getAuthorization())) {
+                List<String> authorization =
+                        he.getRequestHeaders().get(getAuthorization());
+                for (String a : authorization) {
+                    System.out.println(type + ": processing " + a);
+                    int sp = a.indexOf(' ');
+                    if (sp < 0) return false;
+                    String scheme = a.substring(0, sp);
+                    if (!"Basic".equalsIgnoreCase(scheme)) {
+                        System.out.println(type + ": Unsupported scheme '"
+                                + scheme +"'");
+                        return false;
                     }
-                    return false;
+                    if (a.length() <= sp+1) {
+                        System.out.println(type + ": value too short for '"
+                                + scheme +"'");
+                        return false;
+                    }
+                    a = a.substring(sp+1);
+                    return validate(a);
                 }
                 return false;
             }
+            return false;
+        }
 
-            boolean validate(String a) {
-                byte[] b = Base64.getDecoder().decode(a);
-                String userpass = new String (b);
-                int colon = userpass.indexOf (':');
-                String uname = userpass.substring (0, colon);
-                String pass = userpass.substring (colon+1);
-                return auth.checkCredentials(uname, pass);
-            }
+        boolean validate(String a) {
+            byte[] b = Base64.getDecoder().decode(a);
+            String userpass = new String (b);
+            int colon = userpass.indexOf (':');
+            String uname = userpass.substring (0, colon);
+            String pass = userpass.substring (colon+1);
+            return auth.checkCredentials(uname, pass);
+        }
 
         @Override
         public String description() {
@@ -1145,6 +1361,22 @@ public interface HttpServerAdapters {
         public abstract HttpTestContext addHandler(HttpTestHandler handler, String root);
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
+
+        /**
+         * Adds a new handler and return its context.
+         * @implSpec
+         * This method just returns {@link #addHandler(HttpTestHandler, String)
+         * addHandler(context, root)}
+         * @apiNote
+         * This is a convenience method to help migrate from
+         * {@link HttpServer#createContext(String, HttpHandler)}.
+         * @param root     The context root
+         * @param handler  The handler to attach to the context
+         * @return the context to which the new handler is attached
+         */
+        public HttpTestContext createContext(String root, HttpTestHandler handler) {
+            return addHandler(handler, root);
+        }
 
         /**
          * {@return the HTTP3 test server which is acting as an alt-service for this server,
@@ -1338,8 +1570,8 @@ public interface HttpServerAdapters {
          * @throws IOException              if any exception occurs during the server creation
          */
         private static HttpTestServer create(final Version serverVersion, final SSLContext sslContext,
-                                            final Http3DiscoveryMode h3DiscoveryCfg,
-                                            final ExecutorService executor) throws IOException {
+                                             final Http3DiscoveryMode h3DiscoveryCfg,
+                                             final ExecutorService executor) throws IOException {
             Objects.requireNonNull(serverVersion);
             if (h3DiscoveryCfg != null && serverVersion != HTTP_3) {
                 // Http3DiscoveryMode is only supported when version of HTTP_3
@@ -1531,7 +1763,7 @@ public interface HttpServerAdapters {
             @Override
             public HttpTestContext addHandler(HttpTestHandler handler, String path) {
                 System.out.println("Http2TestServerImpl[" + getAddress()
-                                   + "]::addHandler " + handler + ", " + path);
+                        + "]::addHandler " + handler + ", " + path);
                 Http2TestContext context = new Http2TestContext(handler, path);
                 impl.addHandler(context.toHttp2Handler(), path);
                 return context;
