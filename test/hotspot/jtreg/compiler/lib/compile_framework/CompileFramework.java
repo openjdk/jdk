@@ -28,6 +28,8 @@ import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import jtreg.SkippedException;
 
 /**
  * This is the entry-point for the Compile Framework. Its purpose it to allow
@@ -132,8 +134,26 @@ public class CompileFramework {
         } catch (IllegalAccessException e) {
             throw new CompileFrameworkException("Illegal access:", e);
         } catch (InvocationTargetException e) {
+            findJtregSkippedExceptionInCauses(e).ifPresent(ex -> { throw ex; });
             throw new CompileFrameworkException("Invocation target:", e);
         }
+    }
+
+    public Optional<RuntimeException> findJtregSkippedExceptionInCauses(Throwable ex) {
+        while (ex != null) {
+            // jtreg.SkippedException can be from a different classloader, comparing by name
+            if (ex.getClass().getName().equals(SkippedException.class.getName())) {
+                return Optional.of((RuntimeException) ex);
+            }
+
+            if (ex.getCause() == ex) {
+                break;
+            }
+
+            ex = ex.getCause();
+        }
+
+        return Optional.empty();
     }
 
     private Method findMethod(String className, String methodName) {
