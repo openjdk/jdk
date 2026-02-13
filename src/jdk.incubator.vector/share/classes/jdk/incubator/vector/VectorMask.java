@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
         int laneCount = vsp.laneCount();
         offset = VectorIntrinsics.checkFromIndexSize(offset, laneCount, bits.length);
         return VectorSupport.load(
-                vsp.maskType(), vsp.elementType(), laneCount,
+                vsp.maskType(), vsp.laneTypeOrdinal(), laneCount,
                 bits, (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
                 bits, offset, vsp,
                 (c, idx, s)
@@ -240,7 +240,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public static <E> VectorMask<E> fromLong(VectorSpecies<E> species, long bits) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
         bits = bits & (0xFFFFFFFFFFFFFFFFL >>> (64 - vsp.laneCount()));
-        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.elementType(), vsp.laneCount(), bits,
+        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.laneTypeOrdinal(), vsp.laneCount(), bits,
                                              VectorSupport.MODE_BITS_COERCED_LONG_TO_MASK, vsp,
                                              (m, s) -> {
                                                  if (m == (m >> 1)) {
