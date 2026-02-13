@@ -83,7 +83,6 @@
  *      JSR166TestCase
  */
 
-
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -629,13 +628,13 @@ public class JSR166TestCase extends TestCase {
         if (atLeastJava20()) {
             String[] java20TestClassNames = {
                 "ForkJoinPool20Test",
+                "SynchronousQueue20Test",
+                "ReentrantReadWriteLock20Test"
             };
 
-            if (!Platform.isS390x()) {
+            if (Platform.isS390x()) {
                 java20TestClassNames = new String[] {
                     "ForkJoinPool20Test",
-                    "SynchronousQueue20Test",
-                    "ReentrantReadWriteLock20Test"
                 };
             }
 
