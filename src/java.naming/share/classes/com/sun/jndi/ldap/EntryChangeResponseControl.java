@@ -51,6 +51,7 @@ import javax.naming.directory.*;
  * </pre>
  *
  * @see PersistentSearchControl
+ * @see DefaultResponseControlFactory
  */
 public final class EntryChangeResponseControl extends BasicControl {
 
