@@ -34,7 +34,7 @@ namespace {
    public:
     MemoryReleaser(ReservedSpace* rs) : _rs(rs) { }
     ~MemoryReleaser() {
-      EXPECT_TRUE(MemoryReserver::release(*_rs));
+      MemoryReserver::release(*_rs);
     }
   };
 
@@ -355,9 +355,9 @@ class TestReservedSpace : AllStatic {
 
   static void release_memory_for_test(ReservedSpace rs) {
     if (rs.special()) {
-      EXPECT_TRUE(os::release_memory_special(rs.base(), rs.size()));
+      os::release_memory_special(rs.base(), rs.size());
     } else {
-      EXPECT_TRUE(os::release_memory(rs.base(), rs.size()));
+      os::release_memory(rs.base(), rs.size());
     }
   }
 

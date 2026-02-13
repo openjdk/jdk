@@ -511,7 +511,7 @@ static inline bool can_reserve_executable_memory(void) {
 static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = start + (stripe * stripe_len);
-    EXPECT_TRUE(os::release_memory((char*)q, stripe_len));
+    os::release_memory((char*)q, stripe_len);
   }
 }
 
@@ -534,7 +534,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
     p = (address)os::reserve_memory(total_range_len, mtTest);
     EXPECT_NE(p, (address)nullptr);
     // .. release it...
-    EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
+    os::release_memory((char*)p, total_range_len);
     // ... re-reserve in the same spot multiple areas...
     for (int stripe = 0; stripe < num_stripes; stripe++) {
       address q = p + (stripe * stripe_len);
@@ -627,7 +627,7 @@ TEST_VM(os, release_multi_mappings) {
     // On Windows, temporarily switch on UseNUMAInterleaving to allow release_memory to release
     //  multiple mappings in one go (otherwise we assert, which we test too, see death test below).
     WINDOWS_ONLY(NUMASwitcher b(true);)
-    ASSERT_TRUE(os::release_memory((char*)p_middle_stripes, middle_stripe_len));
+    os::release_memory((char*)p_middle_stripes, middle_stripe_len);
   }
   PRINT_MAPPINGS("B");
 
@@ -641,7 +641,7 @@ TEST_VM(os, release_multi_mappings) {
   // Clean up. Release all mappings.
   {
     WINDOWS_ONLY(NUMASwitcher b(true);) // allow release_memory to release multiple regions
-    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+    os::release_memory((char*)p, total_range_len);
   }
 }
 #endif // !AIX
@@ -650,29 +650,54 @@ TEST_VM(os, release_multi_mappings) {
 // On Windows, test that we recognize bad ranges.
 //  On debug this would assert. Test that too.
 //  On other platforms, we are unable to recognize bad ranges.
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(os, release_bad_ranges, ".*bad release") {
-#else
-TEST_VM(os, release_bad_ranges) {
-#endif
-  char* p = os::reserve_memory(4 * M, mtTest);
-  ASSERT_NE(p, (char*)nullptr);
-  // Release part of range
-  ASSERT_FALSE(os::release_memory(p, M));
-  // Release part of range
-  ASSERT_FALSE(os::release_memory(p + M, M));
-  // Release more than the range (explicitly switch off NUMA here
-  //  to make os::release_memory() test more strictly and to not
-  //  accidentally release neighbors)
-  {
-    NUMASwitcher b(false);
-    ASSERT_FALSE(os::release_memory(p, M * 5));
-    ASSERT_FALSE(os::release_memory(p - M, M * 5));
-    ASSERT_FALSE(os::release_memory(p - M, M * 6));
-  }
 
-  ASSERT_TRUE(os::release_memory(p, 4 * M)); // Release for real
-  ASSERT_FALSE(os::release_memory(p, 4 * M)); // Again, should fail
+#ifdef ASSERT
+#define TEST_RELEASE_RANGE_ERROR(name) TEST_VM_ASSERT_MSG(os, name, ".*bad release")
+#else
+#define TEST_RELEASE_RANGE_ERROR(name) TEST_VM_FATAL_ERROR_MSG(os, name, ".*Failed to release.*")
+#endif
+
+static char* setup_release_test_memory() {
+  char* p = os::reserve_memory(4 * M, mtTest);
+  EXPECT_NE(p, (char*)nullptr);
+  return p;
+}
+
+TEST_RELEASE_RANGE_ERROR(release_bad_range_start) {
+  char* p = setup_release_test_memory();
+  os::release_memory(p, M);  // Release part of the range
+}
+
+TEST_RELEASE_RANGE_ERROR(release_bad_range_middle) {
+  char* p = setup_release_test_memory();
+  os::release_memory(p + M, M);  // Release middle part
+}
+
+// Release more than the range (explicitly switch off NUMA here
+//  to make os::release_memory() test more strict and to not
+//  accidentally release neighbors)
+TEST_RELEASE_RANGE_ERROR(release_beyond_range1) {
+  char* p = setup_release_test_memory();
+  NUMASwitcher b(false);
+  os::release_memory(p, M * 5);
+}
+
+TEST_RELEASE_RANGE_ERROR(release_beyond_range2) {
+  char* p = setup_release_test_memory();
+  NUMASwitcher b(false);
+  os::release_memory(p - M, M * 5);
+}
+
+TEST_RELEASE_RANGE_ERROR(release_beyond_range3) {
+  char* p = setup_release_test_memory();
+  NUMASwitcher b(false);
+  os::release_memory(p - M, M * 6);
+}
+
+TEST_RELEASE_RANGE_ERROR(release_already_released) {
+  char* p = setup_release_test_memory();
+  os::release_memory(p, 4 * M); // Release for real
+  os::release_memory(p, 4 * M); // Again, should fail
 }
 #endif // _WIN32
 
@@ -695,11 +720,11 @@ TEST_VM(os, release_one_mapping_multi_commits) {
 
   ASSERT_TRUE(p2 == nullptr || p2 == border);
 
-  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  os::release_memory((char*)p, total_range_len);
   PRINT_MAPPINGS("C");
 
   if (p2 != nullptr) {
-    ASSERT_TRUE(os::release_memory((char*)p2, stripe_len));
+    os::release_memory((char*)p2, stripe_len);
     PRINT_MAPPINGS("D");
   }
 }
@@ -772,7 +797,7 @@ TEST_VM(os, find_mapping_simple) {
     if (os::win32::find_mapping(p + total_range_len, &mapping_info)) {
       ASSERT_NE(mapping_info.base, p);
     }
-    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+    os::release_memory((char*)p, total_range_len);
     PRINT_MAPPINGS("B");
     ASSERT_FALSE(os::win32::find_mapping(p, &mapping_info));
   }
@@ -801,7 +826,7 @@ TEST_VM(os, find_mapping_2) {
   if (os::win32::find_mapping(p + total_range_len, &mapping_info)) {
     ASSERT_NE(mapping_info.base, p);
   }
-  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  os::release_memory((char*)p, total_range_len);
   PRINT_MAPPINGS("B");
   ASSERT_FALSE(os::win32::find_mapping(p, &mapping_info));
 }
@@ -1132,11 +1157,11 @@ TEST_VM(os, commit_memory_or_exit) {
   ASSERT_NOT_NULL(base);
   os::commit_memory_or_exit(base, size, false, "Commit failed.");
   strcpy(base, letters);
-  ASSERT_TRUE(os::uncommit_memory(base, size, false));
+  os::uncommit_memory(base, size, false);
   os::commit_memory_or_exit(base, size, page_sz, false, "Commit with alignment hint failed.");
   strcpy(base, letters);
-  ASSERT_TRUE(os::uncommit_memory(base, size, false));
-  EXPECT_TRUE(os::release_memory(base, size));
+  os::uncommit_memory(base, size, false);
+  os::release_memory(base, size);
 }
 
 #if !defined(_AIX)
@@ -1152,7 +1177,7 @@ TEST_VM(os, map_memory_to_file) {
   char* result = os::map_memory_to_file(size, fd, mtTest);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
-  EXPECT_TRUE(os::unmap_memory(result, size));
+  os::unmap_memory(result, size);
   ::close(fd);
 }
 
@@ -1169,7 +1194,7 @@ TEST_VM(os, map_unmap_memory) {
   char* result = os::map_memory(fd, path, 0, nullptr, size, mtTest, true, false);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
-  EXPECT_TRUE(os::unmap_memory(result, size));
+  os::unmap_memory(result, size);
   ::close(fd);
 }
 
@@ -1184,7 +1209,7 @@ TEST_VM(os, map_memory_to_file_aligned) {
   char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
-  EXPECT_TRUE(os::unmap_memory(result, os::vm_allocation_granularity()));
+  os::unmap_memory(result, os::vm_allocation_granularity());
   ::close(fd);
 }
 

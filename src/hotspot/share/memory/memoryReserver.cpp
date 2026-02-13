@@ -99,9 +99,7 @@ static char* reserve_memory_inner(char* requested_address,
   }
 
   // Base not aligned, retry.
-  if (!os::release_memory(base, size)) {
-    fatal("os::release_memory failed");
-  }
+  os::release_memory(base, size);
 
   // Map using the requested alignment.
   return os::reserve_memory_aligned(size, alignment, mem_tag, exec);
@@ -231,13 +229,13 @@ ReservedSpace MemoryReserver::reserve(size_t size,
                  mem_tag);
 }
 
-bool MemoryReserver::release(const ReservedSpace& reserved) {
+void MemoryReserver::release(const ReservedSpace& reserved) {
   assert(reserved.is_reserved(), "Precondition");
 
   if (reserved.special()) {
-    return os::release_memory_special(reserved.base(), reserved.size());
+    os::release_memory_special(reserved.base(), reserved.size());
   } else {
-    return os::release_memory(reserved.base(), reserved.size());
+    os::release_memory(reserved.base(), reserved.size());
   }
 }
 
@@ -266,9 +264,7 @@ static char* map_memory_to_file(char* requested_address,
 
 
   // Base not aligned, retry.
-  if (!os::unmap_memory(base, size)) {
-    fatal("os::unmap_memory failed");
-  }
+  os::unmap_memory(base, size);
 
   // Map using the requested alignment.
   return os::map_memory_to_file_aligned(size, alignment, fd, mem_tag);

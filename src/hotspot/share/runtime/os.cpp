@@ -2293,7 +2293,7 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 // We do not have the same lock protection for pd_commit_memory and record_virtual_memory_commit.
 // We assume that there is some external synchronization that prevents a region from being uncommitted
 // before it is finished being committed.
-bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+void os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
@@ -2306,13 +2306,10 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
     res = pd_uncommit_memory(addr, bytes, executable);
   }
 
-  if (res) {
-    log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  } else {
-    log_info(os, map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  if (!res) {
+    fatal("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
-
-  return res;
+  log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
 // The scope of NmtVirtualMemoryLocker covers both pd_release_memory and record_virtual_memory_release because
@@ -2320,7 +2317,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 // We do not have the same lock protection for pd_reserve_memory and record_virtual_memory_reserve.
 // We assume that there is some external synchronization that prevents a region from being released
 // before it is finished being reserved.
-bool os::release_memory(char* addr, size_t bytes) {
+void os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
@@ -2333,11 +2330,9 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  } else {
-    log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    fatal("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
-  return res;
+  log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
 // Prints all mappings
@@ -2406,7 +2401,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
   return result;
 }
 
-bool os::unmap_memory(char *addr, size_t bytes) {
+void os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
     MemTracker::NmtVirtualMemoryLocker nvml;
@@ -2417,7 +2412,9 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   } else {
     result = pd_unmap_memory(addr, bytes);
   }
-  return result;
+  if (!result) {
+    fatal("Failed to unmap memory " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  }
 }
 
 void os::disclaim_memory(char *addr, size_t bytes) {
@@ -2445,7 +2442,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   return result;
 }
 
-bool os::release_memory_special(char* addr, size_t bytes) {
+void os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
     MemTracker::NmtVirtualMemoryLocker nvml;
@@ -2456,7 +2453,9 @@ bool os::release_memory_special(char* addr, size_t bytes) {
   } else {
     res = pd_release_memory_special(addr, bytes);
   }
-  return res;
+  if (!res) {
+    fatal("Failed to release memory special " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  }
 }
 
 // Convenience wrapper around naked_short_sleep to allow for longer sleep
