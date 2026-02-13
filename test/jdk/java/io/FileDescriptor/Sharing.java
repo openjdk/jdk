@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class Sharing {
                 // encourage gc
                 System.gc();
                 // read from fis2 - when fis1 is gc'ed and finalizer is run, read will fail
-                System.out.print(".");
+                System.err.print(".");
                 ret = fis2.read();
             }
         }
@@ -93,7 +93,7 @@ public class Sharing {
                  * read from fis3 - when raf is gc'ed and finalizer is run,
                  * fd should still be valid.
                  */
-                System.out.print(".");
+                System.err.print(".");
                 ret = fis3.read();
             }
         } finally {
@@ -366,16 +366,16 @@ public class Sharing {
 
                  // Now close out
                  for(int i=0;i<numFiles;i++) {
-                     if(fisArray[i] != null) fisArray[i].close();
-                     if(fosArray[i] != null) fosArray[i].close();
+                     fisArray[i].close();
+                     fosArray[i].close();
                  }
 
              } catch(IOException ioe) {
-                 System.out.println("OpenClose encountered IO issue :" + ioe);
+                 System.err.println("OpenClose encountered IO issue :" + ioe);
                  fail = true;
              } finally {
                  if (fd.valid()) { // fd should not be valid after first close() call
-                     System.out.println("OpenClose: FileDescriptor shouldn't be valid");
+                     System.err.println("OpenClose: FileDescriptor shouldn't be valid");
                      fail = true;
                  }
                  done.countDown();
