@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -79,8 +77,8 @@ public class H3BasicTest implements HttpServerAdapters {
     private static final String CLASS_NAME = H3BasicTest.class.getSimpleName();
 
     static int http3Port, https2Port;
-    static Http3TestServer http3OnlyServer;
-    static Http2TestServer https2AltSvcServer;
+    static HttpTestServer http3OnlyServer;
+    static HttpTestServer https2AltSvcServer;
     static HttpClient client = null;
     static ExecutorService clientExec;
     static ExecutorService serverExec;
@@ -92,20 +90,21 @@ public class H3BasicTest implements HttpServerAdapters {
             client = getClient();
 
             // server that only supports HTTP/3
-            http3OnlyServer = new Http3TestServer(sslContext, serverExec);
-            http3OnlyServer.addHandler("/", new Http2EchoHandler());
-            http3OnlyServer.addHandler("/ping", new EchoWithPingHandler());
+            http3OnlyServer = HttpTestServer.of(new Http3TestServer(sslContext, serverExec));
+            http3OnlyServer.createContext("/", new HttpTestFileEchoHandler());
+            http3OnlyServer.createContext("/ping", new EchoWithPingHandler());
             http3Port = http3OnlyServer.getAddress().getPort();
             System.out.println("HTTP/3 server started at localhost:" + http3Port);
 
             // server that supports both HTTP/2 and HTTP/3, with HTTP/3 on an altSvc port.
-            https2AltSvcServer = new Http2TestServer(true, 0, serverExec, sslContext);
+            Http2TestServer http2ServerImpl = new Http2TestServer(true, 0, serverExec, sslContext);
             if (RANDOM.nextBoolean()) {
-                https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
+                http2ServerImpl.enableH3AltServiceOnEphemeralPort();
             } else {
-                https2AltSvcServer.enableH3AltServiceOnSamePort();
+                http2ServerImpl.enableH3AltServiceOnSamePort();
             }
-            https2AltSvcServer.addHandler(new Http2EchoHandler(), "/");
+            https2AltSvcServer = HttpTestServer.of(http2ServerImpl);
+            https2AltSvcServer.addHandler(new HttpTestFileEchoHandler(), "/");
             https2Port = https2AltSvcServer.getAddress().getPort();
             if (https2AltSvcServer.supportsH3DirectConnection()) {
                 System.out.println("HTTP/2 server (same HTTP/3 origin) started at localhost:" + https2Port);
@@ -113,9 +112,9 @@ public class H3BasicTest implements HttpServerAdapters {
                 System.out.println("HTTP/2 server (different HTTP/3 origin) started at localhost:" + https2Port);
             }
 
-            http3URIString = "https://localhost:" + http3Port + "/foo/";
-            pingURIString = "https://localhost:" + http3Port + "/ping/";
-            https2URIString = "https://localhost:" + https2Port + "/bar/";
+            http3URIString = "https://" + http3OnlyServer.serverAuthority() + "/foo/";
+            pingURIString = "https://" + http3OnlyServer.serverAuthority() + "/ping/";
+            https2URIString = "https://" + https2AltSvcServer.serverAuthority() + "/bar/";
 
             http3OnlyServer.start();
             https2AltSvcServer.start();
@@ -131,11 +130,11 @@ public class H3BasicTest implements HttpServerAdapters {
 
     static CompletableFuture<Long> currentCF;
 
-    static class EchoWithPingHandler extends Http2EchoHandler {
+    static class EchoWithPingHandler extends HttpTestFileEchoHandler {
         private final Object lock = new Object();
 
         @Override
-        public void handle(Http2TestExchange exchange) throws IOException {
+        public void handle(HttpTestExchange exchange) throws IOException {
             // for now only one ping active at a time. don't want to saturate
             System.out.println("PING handler invoked for " + exchange.getRequestURI());
             synchronized(lock) {
@@ -292,16 +291,16 @@ public class H3BasicTest implements HttpServerAdapters {
     }
 
     static void paramsTest() throws Exception {
-        URI u = new URI("https://localhost:"+https2Port+"/foo");
+        URI u = new URI("https://" + https2AltSvcServer.serverAuthority() + "/foo");
         System.out.println("paramsTest: Request to " + u);
-        https2AltSvcServer.addHandler((t -> {
+        https2AltSvcServer.addHandler(((HttpTestExchange t) -> {
             SSLSession s = t.getSSLSession();
             String prot = s.getProtocol();
             if (prot.equals("TLSv1.3")) {
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, HttpTestExchange.RSPBODY_EMPTY);
             } else {
                 System.err.printf("Protocols =%s\n", prot);
-                t.sendResponseHeaders(500, -1);
+                t.sendResponseHeaders(500, HttpTestExchange.RSPBODY_EMPTY);
             }
         }), "/");
         HttpClient client = getClient();
