@@ -680,10 +680,7 @@ public class Attr extends JCTree.Visitor {
             }
             matchBindings = matchBindingsComputer.finishBindings(tree,
                                                                  matchBindings);
-            if (tree == breakTree &&
-                    resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                breakTreeFound(copyEnv(env));
-            }
+            checkBreakTree(tree, env);
             return result;
         } catch (CompletionFailure ex) {
             tree.type = syms.errType;
@@ -691,6 +688,13 @@ public class Attr extends JCTree.Visitor {
         } finally {
             this.env = prevEnv;
             this.resultInfo = prevResult;
+        }
+    }
+
+    private void checkBreakTree(JCTree tree, Env<AttrContext> env) {
+        if (tree == breakTree &&
+                resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
+            breakTreeFound(copyEnv(env));
         }
     }
 
@@ -2790,6 +2794,8 @@ public class Attr extends JCTree.Visitor {
             attribIdentAsEnumType(env, (JCIdent)clazz) :
             attribType(clazz, env);
 
+        checkBreakTree(tree.clazz, localEnv);
+
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
         if (tree.encl != null) {
@@ -3250,10 +3256,8 @@ public class Attr extends JCTree.Visitor {
                 attribTree(that.getBody(), localEnv, bodyResultInfo);
             } else {
                 JCBlock body = (JCBlock)that.body;
-                if (body == breakTree &&
-                        resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                    breakTreeFound(copyEnv(localEnv));
-                }
+
+                checkBreakTree(body, localEnv);
                 attribStats(body.stats, localEnv);
             }
 
@@ -5390,7 +5394,8 @@ public class Attr extends JCTree.Visitor {
 
         Type st = types.supertype(c.type);
         if ((c.flags_field & Flags.COMPOUND) == 0 &&
-            (c.flags_field & Flags.SUPER_OWNER_ATTRIBUTED) == 0) {
+            (c.flags_field & Flags.SUPER_OWNER_ATTRIBUTED) == 0 &&
+            breakTree == null) {
             // First, attribute superclass.
             if (st.hasTag(CLASS))
                 attribClass((ClassSymbol)st.tsym);
