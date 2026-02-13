@@ -554,6 +554,13 @@ public:
   // has other users.
   void add_users_to_worklist(Node* n);
 
+  // Re-enqueue selected Add users of a Sub node to avoid missing cancellation
+  // optimizations in IGVN.
+  // When a SubI/SubL input is updated (often due to upstream rewiring such as a
+  // Mul identity folding), its AddI/AddL users may become foldable via
+  // cancellation patterns like: (x - y) + y  -> x or x + (y - x) -> y
+  void add_users_of_sub_to_worklist(Node* n);
+
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {
     add_users_to_worklist(old);
