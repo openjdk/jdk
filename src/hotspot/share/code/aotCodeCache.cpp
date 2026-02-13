@@ -452,7 +452,7 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
     if (log.is_enabled()) {
       ResourceMark rm; // required for stringStream::as_string()
       stringStream ss;
-      char runtime_cpu_features[VM_Version::cpu_features_size()];
+      char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
       VM_Version::store_cpu_features(runtime_cpu_features);
       VM_Version::get_missing_features_name(runtime_cpu_features, cached_cpu_features_buffer, ss);
       log.print_cr("Additional runtime CPU features: %s", ss.as_string());
@@ -461,7 +461,7 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
     if (log.is_enabled()) {
       ResourceMark rm; // required for stringStream::as_string()
       stringStream ss;
-      char runtime_cpu_features[VM_Version::cpu_features_size()];
+      char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
       VM_Version::store_cpu_features(runtime_cpu_features);
       VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, ss);
       log.print_cr("AOT Code Cache disabled: required cpu features are missing: %s", ss.as_string());

@@ -688,7 +688,7 @@ void VM_Version::get_missing_features_name(void* features_set1, void* features_s
     const char* str = nullptr;
     while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
       Feature_Flag flag = (Feature_Flag)i;
-      if (supports_feature(features_set1, flag) && !supports_feature(features_set2, flag)) {
+      if (supports_feature(vm_features_set1, flag) && !supports_feature(vm_features_set2, flag)) {
         str = _features_names[i];
       }
       i += 1;
