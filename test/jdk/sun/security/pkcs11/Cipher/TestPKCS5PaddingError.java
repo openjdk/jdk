@@ -124,8 +124,11 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                         byte[] result = c2.doFinal(cipherText);
 
                         final String errorDescription =
-                                "Decrypted text " + Arrays.toString(result) +
-                                " " + new String(result);
+                                "Decrypted text " + Arrays.toString(result);
+                        if (Arrays.equals(result, plainText)) {
+                            System.out.println("WARNING: initial text and " +
+                                               "decoded text are the same");
+                        }
                         System.out.println(errorDescription);
                         throw new RuntimeException(
                                 "Expected BPE NOT thrown \n" + errorDescription);
