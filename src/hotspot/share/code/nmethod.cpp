@@ -1596,6 +1596,9 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
+      ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
+      // NOT_PRODUCT(nm_copy->set_flushed());
+
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 

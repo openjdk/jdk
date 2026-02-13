@@ -106,6 +106,12 @@ void AbstractAssembler::end_a_const(CodeSection* cs) {
 
 void AbstractAssembler::flush() {
   ICache::invalidate_range(addr_at(0), offset());
+#ifndef PRODUCT
+  auto blob = CodeCache::find_blob(addr_at(0));
+  if (blob != nullptr) {
+    blob->set_flushed();
+  }
+#endif
 }
 
 void AbstractAssembler::bind(Label& L) {

@@ -166,6 +166,10 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     assert(_mutable_data == blob_end(), "sanity");
   }
 
+#ifndef PRODUCT
+  _was_flushed = false;
+#endif
+
   set_oop_maps(oop_maps);
 }
 
@@ -190,6 +194,10 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
   assert(_mutable_data == blob_end(), "sanity");
+
+#ifndef PRODUCT
+  _was_flushed = false;
+#endif
 }
 
 void CodeBlob::purge() {
@@ -299,6 +307,7 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob, AOTCodeReader* reader)
 
       // Flush the code block
       ICache::invalidate_range(blob->code_begin(), blob->code_size());
+      // NOT_PRODUCT(blob->set_flushed());
       CodeCache::commit(blob); // Count adapters
     }
   }
