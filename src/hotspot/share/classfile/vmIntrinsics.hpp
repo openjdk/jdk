@@ -359,9 +359,9 @@ class methodHandle;
    do_name(     vectorizedHashCode_name,                         "vectorizedHashCode")                                  \
    do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;IIII)I")                           \
                                                                                                                         \
-  do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compressString_name, encodeISOArray_signature,      F_S) \
+  do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compressString_name, encodeISOArray_signature, F_S)   \
    do_name(     compressString_name,                                  "compress0")                                      \
-  do_intrinsic(_compressStringB,          java_lang_StringUTF16,  compressString_name, indexOfI_signature,            F_S) \
+  do_intrinsic(_compressStringB,          java_lang_StringUTF16,  compressString_name, indexOfI_signature,       F_S)   \
   do_intrinsic(_inflateStringC,           java_lang_StringLatin1, inflate_name, inflateC_signature,              F_S)   \
    do_name(     inflate_name,                                    "inflate0")                                            \
    do_signature(inflateC_signature,                              "([BI[CII)V")                                          \
@@ -398,7 +398,7 @@ class methodHandle;
    do_name(     indexOfUL_name,                                  "indexOfLatin1_0")                                     \
    do_signature(indexOfI_signature,                              "([BI[BII)I")                                          \
    do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
-  do_intrinsic(_equalsL,                  java_lang_StringLatin1,equalsString_name, equalsB_signature,                 F_S) \
+  do_intrinsic(_equalsL,                  java_lang_StringLatin1,equalsString_name, equalsB_signature,           F_S)   \
    do_name(     equalsString_name,                               "equals0")                                             \
                                                                                                                         \
   do_intrinsic(_isDigit,                  java_lang_CharacterDataLatin1, isDigit_name,      int_bool_signature,  F_R)   \
