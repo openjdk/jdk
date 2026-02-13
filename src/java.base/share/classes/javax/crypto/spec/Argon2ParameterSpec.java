@@ -36,7 +36,7 @@ import sun.security.util.PBEUtil;
  * <a href="http://tools.ietf.org/html/rfc9106">RFC 9106</a>.
  *
  * <p> The parameters consist of {@code type}, {@code version}, {@code nonce},
- * {@code parallelism}, {@code tagLen}, {@code memoryKB}, {@code iterations} and
+ * {@code parallelism}, {@code tagLen}, {@code memory}, {@code iterations} and
  * optional {@code secret} and {@code ad} bytes.
  *
  * <p> This class can be used to initialize a {@code KDF} object that
@@ -133,8 +133,10 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
      */
     public static final class Builder {
 
-        private static int P_MAX = 16777215; // 2^24-1
-        private static int M_MIN = 8;
+        private static int NONCE_LEN_MIN = 8;
+        private static int P_MAX = 16777215; // 2^24 - 1
+        private static int M_MIN = 8; // since p >= 1
+        private static int MP_MAX = 30; // java integer max 2^31 - 1
         private static int TAGLEN_MIN = 4;
 
         private Type type;
@@ -142,7 +144,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
         private byte[] nonce;
         private int p;
         private int tagLen;
-        private int mKB;
+        private int memory;
         private int t;
         private byte[] k = B0; // optional
         private byte[] x = B0; // optional
@@ -179,6 +181,14 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
             return i;
         }
 
+        // return the ceiling of log2 value
+        private static int ceilingOfLog2(int n) {
+            if (n < 1) {
+                throw new IllegalArgumentException("Input must be positive");
+            }
+            return 32 - Integer.numberOfLeadingZeros(n - 1);
+        }
+
         // create a Builder w/ the specified {@code type}
         private Builder(Type type) {
             checkNonNull(type, "type");
@@ -209,7 +219,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
          *         {@code null}, or less than 8-byte
          */
         public Builder nonce(byte[] n) throws IllegalArgumentException {
-            this.nonce = checkBytes(n, 8, "nonce").clone();
+            this.nonce = checkBytes(n, NONCE_LEN_MIN, "nonce").clone();
             return this;
         }
 
@@ -219,11 +229,12 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
          * @param p the parallelism value
          * @return this builder
          * @throws IllegalArgumentException if {@code p} is not a positive
-         *         integer or larger than {@code m/8} if {@code memoryKB(m)}
-         *         is already called
+         *         integer, or larger than ({@code m} / 8) or
+         *         (2^({@code mPower} - 3)) if {@code memoryKiB(m)} or
+         *         {@code memoryPowerOfTwo(mPower)} is already called
          */
         public Builder parallelism(int p) throws IllegalArgumentException {
-            this.p = checkInteger(p, 1, (mKB > 0 ? mKB >>> 3 : P_MAX),
+            this.p = checkInteger(p, 1, (memory > 0 ? (memory >>> 3) : P_MAX),
                     "parallellism");
             return this;
         }
@@ -243,15 +254,33 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
         /**
          * Set the memory value to the builder.
          *
-         * @param mKB memory value in KB
+         * @param m the memory value in Kibibytes
          * @return this builder
          * @throws IllegalArgumentException
-         *         if the {@code mKB} argument is less than {@code 8*p} if
-         *         {@code parallelism(p)} is called
+         *         if {@code m} is less than 8 or less than 8 * {@code p} if
+         *         {@code parallelism(p)} is already called.
          */
-        public Builder memoryKB(int mKB) throws IllegalArgumentException {
-            this.mKB = checkInteger(mKB, (p > 0 ? p << 3 : M_MIN), -1,
-                    "memory size(KB)");
+        public Builder memoryKiB(int m) throws IllegalArgumentException {
+            this.memory = checkInteger(m, (p > 0 ? p << 3 : M_MIN),
+                    -1, "memory cost in KiB");
+            return this;
+        }
+
+        /**
+         * Set the memory value to the builder.
+         *
+         * @param mPower set memory value to 2^{@code mc} Kibibytes
+         * @return this builder
+         * @throws IllegalArgumentException
+         *         if {@code mPower} is less than 3 or larger than 30. Or if
+         *         {@code parallelism(p)} is already called,
+         *         {@code mPower} is less than 3 + log({@code p})
+         */
+        public Builder memoryPowerOfTwo(int mPower)
+                throws IllegalArgumentException {
+            checkInteger(mPower, ((p > 0 ? ceilingOfLog2(p) : 0) + 3),
+                    MP_MAX, "memory cost in power of two");
+            this.memory = 1 << mPower;
             return this;
         }
 
@@ -306,12 +335,12 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
          */
         public Argon2ParameterSpec build(byte[] msg) {
             checkNonNull(msg, "message");
-            // validate the other parameters
-            checkBytes(this.nonce, 8, "nonce");
+            // validate the other parameters to make sure they are all set
+            checkBytes(this.nonce, NONCE_LEN_MIN, "nonce");
             checkInteger(this.p, 1, -1, "parallelism");
             checkInteger(this.tagLen, TAGLEN_MIN, -1, "tag length");
-            checkInteger(this.mKB, 4*this.p, -1, "memory size");
-            checkInteger(this.t, 1, -1, "number of passes");
+            checkInteger(this.memory, p << 3, -1, "memory");
+            checkInteger(this.t, 1, -1, "iterations");
             return new Argon2ParameterSpec(this, msg);
         }
 
@@ -372,7 +401,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
     // message, e.g. password for Password Hashing applications, len >= 0
     // clearable thus non-final
     private byte[] msg;
-    // nonce, e.g. salt for Password Hashing applications, len >= 8 per
+    // nonce, e.g. salt for Password Hashing applications, min len = 8 per
     // argon2-specs.pdf, it should be unique for each password; 16 bytes
     // is RECOMMENDED for password hashing.
     private final byte[] nonce;
@@ -380,8 +409,8 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
     private final int p;
     // output length in bytes, min = 4
     private final int tagLen;
-    // memory, number of kibibytes, min = 8*p
-    private final int mKB;
+    // memory in kibibytes
+    private final int memory;
     // number of iterations, min = 1
     private final int t;
     // optional secret value, used for keyed hashing; clearable thus non-final
@@ -405,7 +434,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
         this.nonce = builder.nonce.clone();
         this.p = builder.p;
         this.tagLen = builder.tagLen;
-        this.mKB = builder.mKB;
+        this.memory = builder.memory;
         this.t = builder.t;
         this.k = builder.k.clone();
         this.x = builder.x.clone();
@@ -455,14 +484,14 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * {@return the number of memory bytes in KB, e.g. 8*p...2^32-1}
+     * {@return the memory, i.e. in Kibibytes, must be at least 8*p}
      */
-    public int memoryKB() {
-        return mKB;
+    public int memory() {
+        return memory;
     }
 
     /**
-     * {@return the number of passes or iterations, e.g. 1...2^32-1}
+     * {@return the number of iterations, must be a positive integer}
      */
     public int iterations() {
         return t;

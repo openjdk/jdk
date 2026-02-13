@@ -64,7 +64,7 @@ public final class Argon2Util {
     // Used by both javax.crypto.spec.Argon2ParameterSpec and
     // com.sun.crypto.provider.Argon2DerivedKey
     public static String encodeHash(Argon2ParameterSpec spec, byte[] tag) {
-        String params = encodeParams(spec.memoryKB(), spec.iterations(),
+        String params = encodeParams(spec.memory(), spec.iterations(),
                 spec.parallelism(), spec.secret(), spec.ad());
         if (tag != null) {
             return String.format("$%s$v=%d$%s$%s$%s",
@@ -94,7 +94,7 @@ public final class Argon2Util {
         } else {
             Type type = Type.valueOf(values[1].toUpperCase());
             Version ver = Version.get(values[2].split("=")[1]);
-            int mKB = -1, passes = -1, p = -1;
+            int mKiB = -1, passes = -1, p = -1;
             byte[] k = null, x = null;
             String[] assignments = values[3].split(",");
             for (int i = 0; i < assignments.length; i++) {
@@ -102,7 +102,7 @@ public final class Argon2Util {
                 String varName = pair[0].trim();
                 String varValue = pair[1].trim();
                 switch (varName) {
-                    case "m"->{ mKB = Integer.parseInt(varValue); }
+                    case "m"->{ mKiB = Integer.parseInt(varValue); }
                     case "t"->{ passes = Integer.parseInt(varValue); }
                     case "p"->{ p = Integer.parseInt(varValue); }
                     case "keyid"->{ k = dec.decode(varValue); }
@@ -118,7 +118,7 @@ public final class Argon2Util {
             int tagLen = tag.length;
             Argon2ParameterSpec.Builder builder =
                     Argon2ParameterSpec.newBuilder(type).version(ver)
-                    .memoryKB(mKB).iterations(passes).parallelism(p)
+                    .memoryKiB(mKiB).iterations(passes).parallelism(p)
                     .nonce(salt).tagLen(tagLen);
             if (k != null) {
                 builder.secret(k);

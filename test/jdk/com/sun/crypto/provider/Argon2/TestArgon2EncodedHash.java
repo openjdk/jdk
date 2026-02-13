@@ -43,7 +43,7 @@ public class TestArgon2EncodedHash {
             byte[] pwdBytes = inStr.getBytes();
             Argon2ParameterSpec[] res = new Argon2ParameterSpec[2];
             res[0] = Argon2ParameterSpec.newBuilder(type)
-                .nonce(saltStr.getBytes()).parallelism(p).memoryKB(m)
+                .nonce(saltStr.getBytes()).parallelism(p).memoryKiB(m)
                 .iterations(t).tagLen(outLen).build(pwdBytes);
             res[1] = Argon2ParameterSpec.newBuilder(encodedStr).build(pwdBytes);
             return res;

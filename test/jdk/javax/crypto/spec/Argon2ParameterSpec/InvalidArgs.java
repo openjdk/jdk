@@ -54,20 +54,25 @@ public class InvalidArgs {
         Utils.runAndCheckException(()->b.nonce(B0), iaeCls);
         Utils.runAndCheckException(()->b.parallelism(-1), iaeCls);
         Utils.runAndCheckException(()->b.parallelism(0), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKB(10).parallelism(2), iaeCls);
+        Utils.runAndCheckException(()->b.parallelism(2).memoryKiB(12), iaeCls);
+        Utils.runAndCheckException(()->b.parallelism(2).memoryPowerOfTwo(3),
+                iaeCls);
         Utils.runAndCheckException(()->b.tagLen(0), iaeCls);
         Utils.runAndCheckException(()->b.tagLen(2), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKB(-1), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKB(0), iaeCls);
-        Utils.runAndCheckException(()->b.memoryKB(7), iaeCls);
-        Utils.runAndCheckException(()->b.parallelism(2).memoryKB(10), iaeCls);
+        Utils.runAndCheckException(()->b.memoryKiB(-1), iaeCls);
+        Utils.runAndCheckException(()->b.memoryKiB(0), iaeCls);
+        Utils.runAndCheckException(()->b.memoryKiB(7), iaeCls);
+        Utils.runAndCheckException(()->b.memoryKiB(16).parallelism(3), iaeCls);
+        Utils.runAndCheckException(()->b.memoryPowerOfTwo(2), iaeCls);
+        Utils.runAndCheckException(()->b.memoryPowerOfTwo(4).parallelism(3),
+                iaeCls);
         Utils.runAndCheckException(()->b.iterations(0), iaeCls);
         Utils.runAndCheckException(()->b.secret(null), iaeCls);
         Utils.runAndCheckException(()->b.ad(null), iaeCls);
 
         byte[] b8 = new byte[8];
         Builder b2 = Argon2ParameterSpec.newBuilder(Type.ARGON2ID).nonce(b8)
-               .parallelism(2).memoryKB(32).tagLen(8).iterations(5);
+               .parallelism(2).memoryKiB(32).tagLen(8).iterations(5);
         Utils.runAndCheckException(()->b2.build(null), iaeCls);
         System.out.println(b2.build("12345678".getBytes()));
 
