@@ -996,7 +996,12 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     float total_cnt = sum_of_cnts(lo, hi);
 
     int nr = hi - lo + 1;
-    if (UseSwitchProfiling) {
+    // With total_cnt==0 the profiling pivot degenerates to mid==lo
+    // (0 >= 0/2), producing a linear chain of If nodes instead of a
+    // balanced tree. A balanced tree is strictly better here: all paths
+    // are cold, so a balanced split gives fewer comparisons at runtime
+    // and avoids pathological memory usage in the optimizer.
+    if (UseSwitchProfiling && total_cnt > 0) {
       // Don't keep the binary search tree balanced: pick up mid point
       // that split frequencies in half.
       float cnt = 0;
@@ -1006,14 +1011,6 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
           mid = sr;
           break;
         }
-      }
-      // With total_cnt==0 the pivot degenerates to mid==lo (0 >= 0/2),
-      // producing a linear chain of If nodes instead of a balanced tree.
-      // A balanced tree is strictly better here: all paths are cold, so
-      // a balanced split gives fewer comparisons at runtime and avoids
-      // pathological memory usage in the optimizer.
-      if (mid == lo && total_cnt == 0) {
-        mid = lo + nr/2;
       }
     } else {
       mid = lo + nr/2;
