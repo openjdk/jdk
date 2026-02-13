@@ -462,7 +462,7 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler
 
   Address gc_state(rthread, ShenandoahThreadLocalData::gc_state_offset());
   __ lea(tmp, gc_state);
-  __ ldrb(tmp, Address(tmp));
+  __ ldrb(tmp, __ legitimize_address(gc_state, 1, tmp));
 
   // Check if the heap is under weak-reference/roots processing, in
   // which case we need to take the slow path.
