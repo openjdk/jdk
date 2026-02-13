@@ -425,7 +425,7 @@ final class StringLatin1 {
      * given target string sub-range; {@code -1} otherwise
      *
      * @throws NullPointerException if {@code value} is null
-     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     * @throws StringIndexOutOfBoundsException if the sub-range is out of bounds
      */
     static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         String.checkBoundsBeginEnd(fromIndex, toIndex, value.length);   // Implicit null check on `value`
@@ -505,6 +505,12 @@ final class StringLatin1 {
     // vmIntrinsics::_indexOfIL
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        if (strToIndex == 0) {
+            return 0;
+        }
+        if ((valueToIndex - valueFromIndex) < strToIndex) {
+            return -1;
+        }
         byte first = str[0];
         int max = (valueToIndex - strToIndex);
         for (int i = valueFromIndex; i <= max; i++) {
@@ -1022,8 +1028,8 @@ final class StringLatin1 {
     }
 
     /**
-     * Exhaustively copies characters from a Latin-1 string byte array sub-range
-     * to the given {@code char} array sub-range.
+     * Copies characters from a Latin-1 string byte array sub-range to the
+     * given {@code char} array sub-range.
      * <p>
      * This effectively <em>inflates</em> the content from a 1 byte per
      * character representation to a 2 byte one.
@@ -1052,8 +1058,8 @@ final class StringLatin1 {
     }
 
     /**
-     * Exhaustively copies characters from a Latin-1 string byte array sub-range
-     * to a UTF-16 one.
+     * Copies characters from a Latin-1 string byte array sub-range to a UTF-16
+     * one.
      * <p>
      * This effectively <em>inflates</em> the content from a 1 byte per
      * character representation to a 2 byte one.

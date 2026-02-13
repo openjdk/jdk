@@ -404,7 +404,7 @@ final class StringUTF16 {
      * @param src the source {@code char} array
      * @param srcOff the index (inclusive) of the first character in {@code src}
      * @param dst the target Latin-1 string byte array
-     * @param srcOff the index (inclusive) of the first character in {@code dst}
+     * @param dstOff the index (inclusive) of the first character in {@code dst}
      * @param len the maximum number of characters to copy
      *
      * @return the number of characters copied
@@ -617,10 +617,6 @@ final class StringUTF16 {
      * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
     static int compareToLatin1(byte[] value, byte[] other, int len1, int len2) {
-        Objects.requireNonNull(value);
-        Objects.requireNonNull(other);
-        checkOffset(len1, value);
-        String.checkOffset(len2, StringLatin1.length(other));
         return -StringLatin1.compareToUTF16(other, value, len2, len1);
     }
 
@@ -722,8 +718,6 @@ final class StringUTF16 {
      * Case-insensitive {@link #compareToLatin1(byte[], byte[]) compareToLatin1}.
      */
     static int compareToCI_Latin1(byte[] value, byte[] other) {
-        Objects.requireNonNull(value);
-        Objects.requireNonNull(other);
         return -StringLatin1.compareToCI_UTF16(other, value);
     }
 
@@ -886,14 +880,26 @@ final class StringUTF16 {
     // vmIntrinsics::_indexOfIU
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        if (strToIndex == 0) {
+            return 0;
+        }
+        if ((valueToIndex - valueFromIndex) < strToIndex) {
+            return -1;
+        }
         return indexOfUnsafe(value, valueToIndex, str, strToIndex, valueFromIndex);
     }
 
+    // This method has the following assumptions on its inputs:
+    //
+    // - Arrays are not null
+    // - Sub-ranges are valid
+    // - The `str` sub-range is not empty
+    // - The `value` sub-range length is greater than or equal to the `str` sub-range length
     private static int indexOfUnsafe(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         assert valueFromIndex >= 0;
         assert strToIndex > 0;
         assert strToIndex <= length(str);
-        assert valueToIndex >= strToIndex;
+        assert (valueToIndex - valueFromIndex) >= strToIndex;
         char first = getChar(str, 0);
         int max = (valueToIndex - strToIndex);
         for (int i = valueFromIndex; i <= max; i++) {
@@ -975,14 +981,26 @@ final class StringUTF16 {
     // vmIntrinsics::_indexOfIUL
     @IntrinsicCandidate
     private static int indexOfLatin1_0(byte[] src, int srcToIndex, byte[] tgt, int tgtToIndex, int srcFromIndex) {
+        if (tgtToIndex == 0) {
+            return 0;
+        }
+        if ((srcToIndex - srcFromIndex) < tgtToIndex) {
+            return -1;
+        }
         return indexOfLatin1Unsafe(src, srcToIndex, tgt, tgtToIndex, srcFromIndex);
     }
 
+    // This method has the following assumptions on its inputs:
+    //
+    // - Arrays are not null
+    // - Sub-ranges are valid
+    // - The `tgt` sub-range is not empty
+    // - The `src` sub-range length is greater than or equal to the `tgt` sub-range length
     private static int indexOfLatin1Unsafe(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
-        assert srcCount >= tgtCount;
+        assert (srcCount - fromIndex) >= tgtCount;
         char first = (char)(tgt[0] & 0xff);
         int max = (srcCount - tgtCount);
         for (int i = fromIndex; i <= max; i++) {
