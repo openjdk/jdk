@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,32 +30,22 @@
 
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_AARCH64
 #include "runtime/os.hpp"
 #endif
 
-inline jlong Thread::cooked_allocated_bytes() {
+inline jlong Thread::cooked_allocated_bytes() const {
   jlong allocated_bytes = AtomicAccess::load_acquire(&_allocated_bytes);
+  size_t used_bytes = 0;
   if (UseTLAB) {
-    // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
-    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
-    const HeapWord* const top = tlab().top_relaxed();
-    const HeapWord* const start = tlab().start_relaxed();
-    if (top <= start) {
-      return allocated_bytes;
-    }
-    const size_t used_bytes = pointer_delta(top, start, 1);
-    if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
-      // Comparing used_bytes with the maximum allowed size will ensure
-      // that we don't add the used bytes from a semi-initialized TLAB
-      // ending up with incorrect values. There is still a race between
-      // incrementing _allocated_bytes and clearing the TLAB, that might
-      // cause double counting in rare cases.
-      return allocated_bytes + used_bytes;
-    }
+    // cooked_used_bytes() does its best to not return implausible values, but
+    // there is still a potential race between incrementing _allocated_bytes and
+    // clearing the TLAB, that might cause double-counting.
+    used_bytes = tlab().estimated_used_bytes();
   }
-  return allocated_bytes;
+  return allocated_bytes + used_bytes;
 }
 
 inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value) {
@@ -71,11 +61,17 @@ inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
 }
 
 #if defined(__APPLE__) && defined(AARCH64)
+
+static void dummy() { }
+
 inline void Thread::init_wx() {
   assert(this == Thread::current(), "should only be called for current thread");
   assert(!_wx_init, "second init");
   _wx_state = WXWrite;
+  permit_forbidden_function::pthread_jit_write_protect_np(false);
   os::current_thread_enable_wx(_wx_state);
+  // Side effect: preload base address of libjvm
+  guarantee(os::address_is_in_vm(CAST_FROM_FN_PTR(address, &dummy)), "must be");
   DEBUG_ONLY(_wx_init = true);
 }
 
@@ -85,10 +81,19 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
   WXMode old = _wx_state;
   if (_wx_state != new_state) {
     _wx_state = new_state;
-    os::current_thread_enable_wx(new_state);
+    switch (new_state) {
+      case WXWrite:
+      case WXExec:
+        os::current_thread_enable_wx(new_state);
+        break;
+      case WXArmedForWrite:
+        break;
+      default: ShouldNotReachHere();  break;
+    }
   }
   return old;
 }
+
 #endif // __APPLE__ && AARCH64
 
 #endif // SHARE_RUNTIME_THREAD_INLINE_HPP

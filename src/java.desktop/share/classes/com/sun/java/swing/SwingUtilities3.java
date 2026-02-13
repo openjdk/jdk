@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.RepaintManager;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.swing.MenuItemLayoutHelper;
 import sun.swing.SwingUtilities2;
@@ -69,16 +68,17 @@ public class SwingUtilities3 {
     private static final Object DELEGATE_REPAINT_MANAGER_KEY =
         new StringBuilder("DelegateRepaintManagerKey");
 
+    private static volatile boolean repaintDelegateSet;
+
     /**
       * Registers delegate RepaintManager for {@code JComponent}.
       */
     public static void setDelegateRepaintManager(JComponent component,
                                                 RepaintManager repaintManager) {
-        /* setting up flag in AppContext to speed up lookups in case
+        /* setting up flag to speed up lookups in case
          * there are no delegate RepaintManagers used.
          */
-        AppContext.getAppContext().put(DELEGATE_REPAINT_MANAGER_KEY,
-                                       Boolean.TRUE);
+        repaintDelegateSet = true;
 
         component.putClientProperty(DELEGATE_REPAINT_MANAGER_KEY,
                                     repaintManager);
@@ -126,8 +126,7 @@ public class SwingUtilities3 {
     public static RepaintManager getDelegateRepaintManager(Component
                                                             component) {
         RepaintManager delegate = null;
-        if (Boolean.TRUE == SunToolkit.targetToAppContext(component)
-                                      .get(DELEGATE_REPAINT_MANAGER_KEY)) {
+        if (repaintDelegateSet) {
             while (delegate == null && component != null) {
                 while (component != null
                          && ! (component instanceof JComponent)) {
