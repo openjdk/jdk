@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -25,11 +25,11 @@ typedef struct {
   funcType:
   0 : vdouble func(vdouble);
   1 : vdouble func(vdouble, vdouble);
-  2 : vdouble2 func(vdouble);   GNUABI : void func(vdouble, double *, double *);
+  2 : vdouble2 func(vdouble);
   3 : vdouble func(vdouble, vint);
   4 : vint func(vdouble);
   5 : vdouble func(vdouble, vdouble, vdouble);
-  6 : vdouble2 func(vdouble);   GNUABI : vdouble func(vdouble, double *);
+  6 : vdouble2 func(vdouble);
   7 : int func(int);
   8 : void *func(int);
 

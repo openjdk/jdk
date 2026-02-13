@@ -359,7 +359,6 @@ vposneg_vf_vf
 vpow2i_vd_vi
 vpow2i_vd_vm
 vpow2i_vf_vi2
-vprefetch_v_p
 vptrunc_vd_vd
 vptrunc_vf_vf
 vqgetx_vm_vq

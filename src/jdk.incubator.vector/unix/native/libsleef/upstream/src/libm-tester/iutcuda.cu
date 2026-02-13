@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <cuda.h>
 
-#include "sleefinline_purec_scalar.h"
+#include "sleefinline_purecfma_scalar.h"
 #include "sleefinline_cuda.h"
 
 #define STDIN_FILENO 0
@@ -220,113 +220,113 @@ __global__ void xerfcf_u15(float *r, float *a0) { *r = Sleef_erfcf1_u15cuda(*a0)
 
 //
 
-#define func_d_d(funcStr, funcName) {                           \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint64_t u;                                               \
-      sscanf(buf, funcStr " %" PRIx64, &u);                     \
-      *a0 = u2d(u);                                             \
+#define func_d_d(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint64_t u;                                                \
+      sscanf(buf, funcStr " %" PRIx64, &u);                        \
+      *a0 = u2d(u);                                                \
       funcName<<<1, 1>>>(r, a0);                                \
-      cudaDeviceSynchronize();                                  \
-      printf("%" PRIx64 "\n", d2u(*r));                         \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+      cudaDeviceSynchronize();                                        \
+      printf("%" PRIx64 "\n", d2u(*r));                                \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
-#define func_d2_d(funcStr, funcName) {                                  \
-    while (startsWith(buf, funcStr " ")) {                              \
-      uint64_t u;                                                       \
-      sscanf(buf, funcStr " %" PRIx64, &u);                             \
-      *a0 = u2d(u);                                                     \
-      funcName<<<1, 1>>>(r2, a0);                                       \
-      cudaDeviceSynchronize();                                          \
-      printf("%" PRIx64 " %" PRIx64 "\n", d2u(r2->x), d2u(r2->y));      \
-      fflush(stdout);                                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
-    }                                                                   \
+#define func_d2_d(funcStr, funcName) {                                        \
+    while (startsWith(buf, funcStr " ")) {                                \
+      uint64_t u;                                                        \
+      sscanf(buf, funcStr " %" PRIx64, &u);                                \
+      *a0 = u2d(u);                                                        \
+      funcName<<<1, 1>>>(r2, a0);                                        \
+      cudaDeviceSynchronize();                                                \
+      printf("%" PRIx64 " %" PRIx64 "\n", d2u(r2->x), d2u(r2->y));        \
+      fflush(stdout);                                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                        \
+    }                                                                        \
   }
 
-#define func_d_d_d(funcStr, funcName) {                         \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint64_t u, v;                                            \
-      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);     \
-      *a0 = u2d(u);                                             \
-      *a1 = u2d(v);                                             \
-      funcName<<<1, 1>>>(r, a0, a1);                            \
-      cudaDeviceSynchronize();                                  \
-      printf("%" PRIx64 "\n", d2u(*r));                         \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+#define func_d_d_d(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint64_t u, v;                                                \
+      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);        \
+      *a0 = u2d(u);                                                \
+      *a1 = u2d(v);                                                \
+      funcName<<<1, 1>>>(r, a0, a1);                                \
+      cudaDeviceSynchronize();                                        \
+      printf("%" PRIx64 "\n", d2u(*r));                                \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
-#define func_d_d_i(funcStr, funcName) {                                 \
-    while (startsWith(buf, funcStr " ")) {                              \
-      uint64_t u, v;                                                    \
-      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);             \
-      *a0 = u2d(u);                                                     \
+#define func_d_d_i(funcStr, funcName) {                                        \
+    while (startsWith(buf, funcStr " ")) {                                \
+      uint64_t u, v;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);                \
+      *a0 = u2d(u);                                                        \
       *i0 = (int)u2d(v);                                                \
-      funcName<<<1, 1>>>(r, a0, i0);                                    \
-      cudaDeviceSynchronize();                                          \
-      printf("%" PRIx64 "\n", d2u(*r));                                 \
-      fflush(stdout);                                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
-    }                                                                   \
+      funcName<<<1, 1>>>(r, a0, i0);                                        \
+      cudaDeviceSynchronize();                                                \
+      printf("%" PRIx64 "\n", d2u(*r));                                        \
+      fflush(stdout);                                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                        \
+    }                                                                        \
   }
 
-#define func_i_d(funcStr, funcName) {                   \
-    while (startsWith(buf, funcStr " ")) {              \
-      uint64_t u;                                       \
-      sscanf(buf, funcStr " %" PRIx64, &u);             \
-      *a0 = u2d(u);                                     \
-      funcName<<<1, 1>>>(i0, a0);                       \
-      cudaDeviceSynchronize();                          \
-      printf("%d\n", *i0);                              \
-      fflush(stdout);                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
-    }                                                   \
+#define func_i_d(funcStr, funcName) {                        \
+    while (startsWith(buf, funcStr " ")) {                \
+      uint64_t u;                                        \
+      sscanf(buf, funcStr " %" PRIx64, &u);                \
+      *a0 = u2d(u);                                        \
+      funcName<<<1, 1>>>(i0, a0);                        \
+      cudaDeviceSynchronize();                                \
+      printf("%d\n", *i0);                                \
+      fflush(stdout);                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;        \
+    }                                                        \
   }
 
 //
 
-#define func_f_f(funcStr, funcName) {                           \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint32_t u;                                               \
-      sscanf(buf, funcStr " %x", &u);                           \
-      *b0 = u2f(u);                                             \
+#define func_f_f(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint32_t u;                                                \
+      sscanf(buf, funcStr " %x", &u);                                \
+      *b0 = u2f(u);                                                \
       funcName<<<1, 1>>>(s, b0);                                \
-      cudaDeviceSynchronize();                                  \
-      printf("%x\n", f2u(*s));                                  \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+      cudaDeviceSynchronize();                                        \
+      printf("%x\n", f2u(*s));                                        \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
-#define func_f2_f(funcStr, funcName) {                          \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint32_t u;                                               \
-      sscanf(buf, funcStr " %x", &u);                           \
-      *b0 = u2f(u);                                             \
-      funcName<<<1, 1>>>(s2, b0);                               \
-      cudaDeviceSynchronize();                                  \
+#define func_f2_f(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint32_t u;                                                \
+      sscanf(buf, funcStr " %x", &u);                                \
+      *b0 = u2f(u);                                                \
+      funcName<<<1, 1>>>(s2, b0);                                \
+      cudaDeviceSynchronize();                                        \
       printf("%x %x\n", f2u(s2->x), f2u(s2->y));                \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
-#define func_f_f_f(funcStr, funcName) {                         \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint32_t u, v;                                            \
-      sscanf(buf, funcStr " %x %x", &u, &v);                    \
-      *b0 = u2f(u);                                             \
-      *b1 = u2f(v);                                             \
-      funcName<<<1, 1>>>(s, b0, b1);                            \
-      cudaDeviceSynchronize();                                  \
-      printf("%x\n", f2u(*s));                                  \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+#define func_f_f_f(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint32_t u, v;                                                \
+      sscanf(buf, funcStr " %x %x", &u, &v);                        \
+      *b0 = u2f(u);                                                \
+      *b1 = u2f(v);                                                \
+      funcName<<<1, 1>>>(s, b0, b1);                                \
+      cudaDeviceSynchronize();                                        \
+      printf("%x\n", f2u(*s));                                        \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
 //

@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -91,26 +91,10 @@ static INLINE int vavailability_i(int name) {
 #define DFTPRIORITY 30
 #endif
 
-#if CONFIG == 2 && defined(__AVX512F__)
-static INLINE int vavailability_i(int name) {
-  int d = cpuSupportsAVX512F();
-  return d ? 3 : 0;
-}
-#define ISANAME "AVX512FNOFMA"
-#define DFTPRIORITY 0
-#endif
-
 #endif // #if !defined(SLEEF_GENHEADER)
 
-static INLINE void vprefetch_v_p(const void *ptr) { _mm_prefetch(ptr, _MM_HINT_T0); }
-
-#ifdef __INTEL_COMPILER
-static INLINE int vtestallones_i_vo64(vopmask g) { return _mm512_mask2int(g) == 0xff; }
-static INLINE int vtestallones_i_vo32(vopmask g) { return _mm512_mask2int(g) == 0xffff; }
-#else
 static INLINE int vtestallones_i_vo64(vopmask g) { return g == 0xff; }
 static INLINE int vtestallones_i_vo32(vopmask g) { return g == 0xffff; }
-#endif
 
 //
 
@@ -570,11 +554,7 @@ static INLINE vargquad cast_aq_vq(vquad vq) {
   return aq;
 }
 
-#ifdef __INTEL_COMPILER
-static INLINE int vtestallzeros_i_vo64(vopmask g) { return _mm512_mask2int(g) == 0; }
-#else
 static INLINE int vtestallzeros_i_vo64(vopmask g) { return g == 0; }
-#endif
 
 static INLINE vmask vsel_vm_vo64_vm_vm(vopmask m, vmask x, vmask y) { return _mm512_mask_blend_epi64(m, y, x); }
 

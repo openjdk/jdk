@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -41,13 +41,25 @@ char *replaceAll(const char *in, const char *pat, const char *replace) {
 char line[LEN+10];
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
-    fprintf(stderr, "Usage : %s <Base type> <ISA> ...\n", argv[0]);
+  if (argc < 5) {
+    fprintf(stderr, "Usage : %s <file name> <Base type> <Base type ID> <shift> <ISA> ...\n", argv[0]);
     exit(-1);
   }
 
-  const char *baseType = argv[1];
-  const int isastart = 2;
+  const char *fn = argv[1];
+  const char *baseTypeID = argv[3];
+  int shift = atoi(argv[4]);
+  const int isastart = 5;
+  int mode = 1;
+  if (strcmp(argv[4], "-") == 0) {
+    mode = 0;
+  } else if (shift <= 0) {
+    mode = 2;
+    shift = -shift;
+  }
+
+  char shiftstr[21];
+  snprintf(shiftstr, 20, "%d", shift);
 
   for(int config=0;config<CONFIGMAX;config++) {
 #if ENABLE_STREAM == 0
@@ -58,13 +70,22 @@ int main(int argc, char **argv) {
       char configString[100];
       sprintf(configString, "%d", config);
 
-      FILE *fpin = fopen("unroll0.org", "r");
+      FILE *fpin = fopen(fn, "r");
 
-      sprintf(line, "unroll_%d_%s.c", config, isaString);
+      switch(mode) {
+      case 0:
+        sprintf(line, "unroll_%d_%s.cpp", config, isaString);
+        break;
+      case 1:
+        sprintf(line, "unroll_%d_%s_%d.cpp", config, isaString, shift);
+        break;
+      case 2:
+        sprintf(line, "unroll2_%d_%s_%d.cpp", config, isaString, shift);
+        break;
+      }
+
       FILE *fpout = fopen(line, "w");
-      fputs("#include \"vectortype.h\"\n\n", fpout);
-      fprintf(fpout, "extern %s ctbl_%s[];\n", baseType, baseType);
-      fprintf(fpout, "#define ctbl ctbl_%s\n\n", baseType);
+      fputs("#include \"vectortype.hpp\"\n\n", fpout);
 
       for(;;) {
         if (fgets(line, LEN, fpin) == NULL) break;
@@ -82,13 +103,30 @@ int main(int argc, char **argv) {
         }
 
         if ((config & 2) == 0) {
-          char *s0 = replaceAll(s, "#pragma", "//");
+          char *s0 = replaceAll(s, "#pragma", "//pragma");
+          char *s1 = replaceAll(s0, "%DEFINE%", "//#define");
+          free(s); free(s0);
+          s = s1;
+        } else {
+          char *s0 = replaceAll(s, "%DEFINE%", "#define");
           free(s);
           s = s0;
         }
 
         if (config == 0) {
           char *s0 = replaceAll(s, "#undef EMITREALSUB", "#define EMITREALSUB");
+          free(s);
+          s = s0;
+        }
+
+        {
+          char *s0 = replaceAll(s, "%TYPEID%", baseTypeID);
+          free(s);
+          s = s0;
+        }
+
+        {
+          char *s0 = replaceAll(s, "%SHIFT%", shiftstr);
           free(s);
           s = s0;
         }

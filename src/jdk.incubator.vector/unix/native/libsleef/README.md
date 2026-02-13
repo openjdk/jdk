@@ -4,8 +4,8 @@ This directory contains the source code for the SLEEF library, the
 **SIMD Library for Evaluating Elementary Functions**. For more information on
 SLEEF, see https://sleef.org/.
 
-The currently imported libsleef sources is version 3.6.1, which has
-git tag `3.6.1` and git commit hash `6ee14bcae5fe92c2ff8b000d5a01102dab08d774`.
+The currently imported libsleef sources is version 3.9.0, which has
+git tag `3.9.0` and git commit hash `906ca758b7b7922f35a13f6fa8733935564cb948`.
 
 # About the libsleef integration in the JDK
 

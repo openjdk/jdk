@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -79,20 +79,6 @@ typedef Sleef___m512d_2 vdouble2;
 typedef Sleef___m512_2 vfloat2;
 #endif
 
-#ifdef ENABLE_AVX512FNOFMA
-#define CONFIG 2
-#include "helperavx512f.h"
-#include "renameavx512fnofma.h"
-typedef Sleef___m512d_2 vdouble2;
-typedef Sleef___m512_2 vfloat2;
-#endif
-
-#ifdef ENABLE_VECEXT
-#define CONFIG 1
-#include "helpervecext.h"
-#include "norename.h"
-#endif
-
 #ifdef ENABLE_PUREC
 #define CONFIG 1
 #include "helperpurec.h"
@@ -107,38 +93,16 @@ typedef Sleef_float64x2_t_2 vdouble2;
 typedef Sleef_float32x4_t_2 vfloat2;
 #endif
 
-#ifdef ENABLE_ADVSIMDNOFMA
-#define CONFIG 2
-#include "helperadvsimd.h"
-#include "renameadvsimdnofma.h"
-typedef Sleef_float64x2_t_2 vdouble2;
-typedef Sleef_float32x4_t_2 vfloat2;
-#endif
-
 #ifdef ENABLE_SVE
 #define CONFIG 1
 #include "helpersve.h"
 #include "renamesve.h"
 #endif /* ENABLE_SVE */
 
-#ifdef ENABLE_SVENOFMA
-#define CONFIG 2
-#include "helpersve.h"
-#include "renamesvenofma.h"
-#endif
-
 #ifdef ENABLE_VSX
 #define CONFIG 1
 #include "helperpower_128.h"
 #include "renamevsx.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-
-#ifdef ENABLE_VSXNOFMA
-#define CONFIG 2
-#include "helperpower_128.h"
-#include "renamevsxnofma.h"
 typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
@@ -151,26 +115,10 @@ typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 
-#ifdef ENABLE_VSX3NOFMA
-#define CONFIG 4
-#include "helperpower_128.h"
-#include "renamevsx3nofma.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-
 #ifdef ENABLE_VXE
 #define CONFIG 140
 #include "helpers390x_128.h"
 #include "renamevxe.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-
-#ifdef ENABLE_VXENOFMA
-#define CONFIG 141
-#include "helpers390x_128.h"
-#include "renamevxenofma.h"
 typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
@@ -183,14 +131,6 @@ typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 
-#ifdef ENABLE_VXE2NOFMA
-#define CONFIG 151
-#include "helpers390x_128.h"
-#include "renamevxe2nofma.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-
 #ifdef ENABLE_RVVM1
 #define CONFIG 1
 #define ENABLE_RVV_DP
@@ -199,27 +139,11 @@ typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #include "sleef.h"
 #endif
 
-#ifdef ENABLE_RVVM1NOFMA
-#define CONFIG 2
-#define ENABLE_RVV_DP
-#include "helperrvv.h"
-#include "renamervvm1nofma.h"
-#include "sleef.h"
-#endif
-
 #ifdef ENABLE_RVVM2
 #define CONFIG 1
 #define ENABLE_RVV_DP
 #include "helperrvv.h"
 #include "renamervvm2.h"
-#include "sleef.h"
-#endif
-
-#ifdef ENABLE_RVVM2NOFMA
-#define CONFIG 2
-#define ENABLE_RVV_DP
-#include "helperrvv.h"
-#include "renamervvm2nofma.h"
 #include "sleef.h"
 #endif
 
@@ -241,7 +165,7 @@ typedef Sleef_float_2 vfloat2;
 
 //
 
-#if !(defined(ENABLE_SVE) || defined(ENABLE_SVENOFMA) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM1NOFMA) || defined(ENABLE_RVVM2) || defined(ENABLE_RVVM2NOFMA))
+#if !(defined(ENABLE_SVE) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM2))
 static vdouble vd2getx_vd_vd2(vdouble2 v) { return v.x; }
 static vdouble vd2gety_vd_vd2(vdouble2 v) { return v.y; }
 #endif
@@ -293,7 +217,7 @@ double rnd_fr() {
 #else
     c.u64 = random() | ((uint64_t)random() << 31) | ((uint64_t)random() << 62);
 #endif
-  } while(!isnumber(c.d));
+  } while(!xisnumber(c.d));
   return c.d;
 }
 
@@ -305,7 +229,7 @@ double rnd_zo() {
 #else
     c.u64 = random() | ((uint64_t)random() << 31) | ((uint64_t)random() << 62);
 #endif
-  } while(!isnumber(c.d) || c.d < -1 || 1 < c.d);
+  } while(!xisnumber(c.d) || c.d < -1 || 1 < c.d);
   return c.d;
 }
 
@@ -427,21 +351,21 @@ int main(int argc,char **argv)
 
       double u0 = countULP2dp(t = vget(vd2getx_vd_vd2(sc), e), frx);
 
-      if (u0 != 0 && ((fabs(d) <= rangemax2 && u0 > 0.506) || fabs(t) > 1 || !isnumber(t))) {
+      if (u0 != 0 && ((fabs(d) <= rangemax2 && u0 > 0.506) || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincospi_u05 sin arg=%.20g ulp=%.20g\n", d, u0);
         fflush(stdout); ecnt++;
       }
 
       double u1 = countULP2dp(t = vget(vd2getx_vd_vd2(sc2), e), frx);
 
-      if (u1 != 0 && ((fabs(d) <= rangemax2 && u1 > 1.5) || fabs(t) > 1 || !isnumber(t))) {
+      if (u1 != 0 && ((fabs(d) <= rangemax2 && u1 > 1.5) || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincospi_u35 sin arg=%.20g ulp=%.20g\n", d, u1);
         fflush(stdout); ecnt++;
       }
 
       double u2 = countULP2dp(t = vget(xsinpi_u05(vd), e), frx);
 
-      if (u2 != 0 && ((fabs(d) <= rangemax2 && u2 > 0.506) || fabs(t) > 1 || !isnumber(t))) {
+      if (u2 != 0 && ((fabs(d) <= rangemax2 && u2 > 0.506) || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sinpi_u05 arg=%.20g ulp=%.20g\n", d, u2);
         fflush(stdout); ecnt++;
       }
@@ -454,21 +378,21 @@ int main(int argc,char **argv)
 
       double u0 = countULP2dp(t = vget(vd2gety_vd_vd2(sc), e), frx);
 
-      if (u0 != 0 && ((fabs(d) <= rangemax2 && u0 > 0.506) || fabs(t) > 1 || !isnumber(t))) {
+      if (u0 != 0 && ((fabs(d) <= rangemax2 && u0 > 0.506) || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincospi_u05 cos arg=%.20g ulp=%.20g\n", d, u0);
         fflush(stdout); ecnt++;
       }
 
       double u1 = countULP2dp(t = vget(vd2gety_vd_vd2(sc), e), frx);
 
-      if (u1 != 0 && ((fabs(d) <= rangemax2 && u1 > 1.5) || fabs(t) > 1 || !isnumber(t))) {
+      if (u1 != 0 && ((fabs(d) <= rangemax2 && u1 > 1.5) || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincospi_u35 cos arg=%.20g ulp=%.20g\n", d, u1);
         fflush(stdout); ecnt++;
       }
 
       double u2 = countULP2dp(t = vget(xcospi_u05(vd), e), frx);
 
-      if (u2 != 0 && ((fabs(d) <= rangemax2 && u2 > 0.506) || fabs(t) > 1 || !isnumber(t))) {
+      if (u2 != 0 && ((fabs(d) <= rangemax2 && u2 > 0.506) || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " cospi_u05 arg=%.20g ulp=%.20g\n", d, u2);
         fflush(stdout); ecnt++;
       }
@@ -483,28 +407,28 @@ int main(int argc,char **argv)
 
       double u0 = countULPdp(t = vget(xsin(vd), e), frx);
 
-      if (u0 != 0 && (u0 > 3.5 || fabs(t) > 1 || !isnumber(t))) {
+      if (u0 != 0 && (u0 > 3.5 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sin arg=%.20g ulp=%.20g\n", d, u0);
         fflush(stdout); ecnt++;
       }
 
       double u1 = countULPdp(t = vget(vd2getx_vd_vd2(sc), e), frx);
 
-      if (u1 != 0 && (u1 > 3.5 || fabs(t) > 1 || !isnumber(t))) {
+      if (u1 != 0 && (u1 > 3.5 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincos sin arg=%.20g ulp=%.20g\n", d, u1);
         fflush(stdout); ecnt++;
       }
 
       double u2 = countULPdp(t = vget(xsin_u1(vd), e), frx);
 
-      if (u2 != 0 && (u2 > 1 || fabs(t) > 1 || !isnumber(t))) {
+      if (u2 != 0 && (u2 > 1 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sin_u1 arg=%.20g ulp=%.20g\n", d, u2);
         fflush(stdout); ecnt++;
       }
 
       double u3 = countULPdp(t = vget(vd2getx_vd_vd2(sc2), e), frx);
 
-      if (u3 != 0 && (u3 > 1 || fabs(t) > 1 || !isnumber(t))) {
+      if (u3 != 0 && (u3 > 1 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincos_u1 sin arg=%.20g ulp=%.20g\n", d, u3);
         fflush(stdout); ecnt++;
       }
@@ -516,28 +440,28 @@ int main(int argc,char **argv)
 
       double u0 = countULPdp(t = vget(xcos(vd), e), frx);
 
-      if (u0 != 0 && (u0 > 3.5 || fabs(t) > 1 || !isnumber(t))) {
+      if (u0 != 0 && (u0 > 3.5 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " cos arg=%.20g ulp=%.20g\n", d, u0);
         fflush(stdout); ecnt++;
       }
 
       double u1 = countULPdp(t = vget(vd2gety_vd_vd2(sc), e), frx);
 
-      if (u1 != 0 && (u1 > 3.5 || fabs(t) > 1 || !isnumber(t))) {
+      if (u1 != 0 && (u1 > 3.5 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincos cos arg=%.20g ulp=%.20g\n", d, u1);
         fflush(stdout); ecnt++;
       }
 
       double u2 = countULPdp(t = vget(xcos_u1(vd), e), frx);
 
-      if (u2 != 0 && (u2 > 1 || fabs(t) > 1 || !isnumber(t))) {
+      if (u2 != 0 && (u2 > 1 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " cos_u1 arg=%.20g ulp=%.20g\n", d, u2);
         fflush(stdout); ecnt++;
       }
 
       double u3 = countULPdp(t = vget(vd2gety_vd_vd2(sc2), e), frx);
 
-      if (u3 != 0 && (u3 > 1 || fabs(t) > 1 || !isnumber(t))) {
+      if (u3 != 0 && (u3 > 1 || fabs(t) > 1 || !xisnumber(t))) {
         printf(ISANAME " sincos_u1 cos arg=%.20g ulp=%.20g\n", d, u3);
         fflush(stdout); ecnt++;
       }
@@ -1159,7 +1083,7 @@ int main(int argc,char **argv)
 
       double u0 = countULPdp(t = vget(xfrfrexp(vd), e), frx);
 
-      if (d != 0 && isnumber(d) && u0 != 0) {
+      if (d != 0 && xisnumber(d) && u0 != 0) {
         printf(ISANAME " frfrexp arg=%.20g ulp=%.20g\n", d, u0);
         fflush(stdout); ecnt++;
       }
@@ -1200,7 +1124,7 @@ int main(int argc,char **argv)
 
       int texp = vgeti(xexpfrexp(vd), e);
 
-      if (isnumber(d) && cexp != texp) {
+      if (xisnumber(d) && cexp != texp) {
         printf(ISANAME " expfrexp arg=%.20g\n", d);
         fflush(stdout); ecnt++;
       }

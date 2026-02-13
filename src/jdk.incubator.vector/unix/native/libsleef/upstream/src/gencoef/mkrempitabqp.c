@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
   printf("NOEXPORT const double Sleef_rempitabqp[] = {\n  ");
   for(int i=0;i<16385-106+(53-B)*(N+1);i++) {
-    printf("%.20g, ", rempitabqp[i]);
+    printf("%.11a, ", rempitabqp[i]);
     if ((i & 3) == 3) printf("\n  ");
   }
   printf("\n};\n");

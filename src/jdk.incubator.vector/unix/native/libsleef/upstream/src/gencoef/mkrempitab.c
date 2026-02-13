@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   mpfr_set_d(x, 0.5, GMP_RNDN);
   mpfr_div(rpi, x, pi, GMP_RNDN);
 
-  printf("NOEXPORT ALIGNED(64) const double rempitabdp[] = {\n");
+  printf("FUNCATR const double Sleef_rempitabdp[] = {\n");
   for(int i=55;i<1024;i++) {
     int M = i > 700 ? -64 : 0;
     int ex = i - 53;
@@ -84,11 +84,12 @@ int main(int argc, char **argv) {
 
     double rpi3 = mpfr_get_d(x, GMP_RNDN);
 
-    printf("  %.20g, %.20g, %.20g, %.20g,\n", rpi0, rpi1, rpi2, rpi3);
+    printf("  %+.13a, %+.13a, %+.13a, %+.13a,\n", rpi0, rpi1, rpi2, rpi3);
   }
+  printf("  0, 0, 0, 0,\n");
   printf("};\n\n");
 
-  printf("NOEXPORT ALIGNED(64) const float rempitabsp[] = {\n");
+  printf("FUNCATR const float Sleef_rempitabsp[] = {\n");
   for(int i=25;i<128;i++) {
     int M = i > 90 ? -64 : 0;
     int ex = i - 23;
@@ -115,7 +116,8 @@ int main(int argc, char **argv) {
 
     float rpi23 = mpfr_get_d(x, GMP_RNDN);
 
-    printf("  %.10g, %.10g, %.10g, %.10g,\n", rpi20, rpi21, rpi22, rpi23);
+    printf("  %+.6a, %+.6a, %+.6a, %+.6a,\n", rpi20, rpi21, rpi22, rpi23);
   }
+  printf("  0, 0, 0, 0,\n");
   printf("};\n");
 }

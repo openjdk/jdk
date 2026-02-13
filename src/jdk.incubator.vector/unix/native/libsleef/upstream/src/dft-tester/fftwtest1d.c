@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -40,10 +40,22 @@ static double squ(double x) { return x * x; }
 double check_cf(int n) {
   fftw_complex *in  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
   fftw_complex *out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
+
+  if (!in || !out) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   fftw_plan w = fftw_plan_dft_1d(n, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
   real *sx = (real *)Sleef_malloc(n*2*sizeof(real));
   real *sy = (real *)Sleef_malloc(n*2*sizeof(real));
+
+  if (!sx || !sy) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   struct SleefDFT *p = SleefDFT_init1d(n, sx, sy, MODE);
 
   for(int i=0;i<n;i++) {
@@ -79,10 +91,22 @@ double check_cf(int n) {
 double check_cb(int n) {
   fftw_complex *in  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
   fftw_complex *out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
+
+  if (!in || !out) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   fftw_plan w = fftw_plan_dft_1d(n, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   real *sx = (real *)Sleef_malloc(n*2*sizeof(real));
   real *sy = (real *)Sleef_malloc(n*2*sizeof(real));
+
+  if (!sx || !sy) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   struct SleefDFT *p = SleefDFT_init1d(n, sx, sy, SLEEF_MODE_BACKWARD | MODE);
 
   for(int i=0;i<n;i++) {
@@ -118,10 +142,22 @@ double check_cb(int n) {
 double check_rf(int n) {
   double       *in  = (double *)      fftw_malloc(sizeof(double) * n);
   fftw_complex *out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (n/2+1));
+
+  if (!in || !out) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   fftw_plan w       = fftw_plan_dft_r2c_1d(n, in, out, FFTW_ESTIMATE);
 
   real *sx = (real *)Sleef_malloc(n*sizeof(real));
   real *sy = (real *)Sleef_malloc((n/2+1)*sizeof(real)*2);
+
+  if (!sx || !sy) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   struct SleefDFT *p = SleefDFT_init1d(n, sx, sy, SLEEF_MODE_REAL | MODE);
 
   for(int i=0;i<n;i++) {
@@ -155,10 +191,22 @@ double check_rf(int n) {
 double check_rb(int n) {
   fftw_complex *in  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (n/2+1));
   double       *out = (double *)      fftw_malloc(sizeof(double) * n);
+
+  if (!in || !out) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   fftw_plan w = fftw_plan_dft_c2r_1d(n, in, out, FFTW_ESTIMATE);
 
   real *sx = (real *)Sleef_malloc((n/2+1) * sizeof(real)*2);
   real *sy = (real *)Sleef_malloc(sizeof(real)*n);
+
+  if (!sx || !sy) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
+
   struct SleefDFT *p = SleefDFT_init1d(n, sx, sy, SLEEF_MODE_REAL | SLEEF_MODE_BACKWARD | MODE);
 
   for(int i=0;i<n/2;i++) {
@@ -204,7 +252,7 @@ int main(int argc, char **argv) {
 
   const int n = 1 << atoi(argv[1]);
 
-  srand((unsigned int)time(NULL));
+  srand((unsigned int)(Sleef_currentTimeMicros() & 0xffffffff));
 
   SleefDFT_setPlanFilePath(NULL, NULL, SLEEF_PLAN_RESET | SLEEF_PLAN_READONLY);
 
