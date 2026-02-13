@@ -40,9 +40,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class implements the algorithm constraints for the
- * "jdk.crypto.disabledAlgorithms" security property. This security property
- * can be overridden by the system property of the same name. See the
- * java.security file for the syntax of the property value.
+ * "jdk.crypto.disabledAlgorithms" and "jdk.crypto.legacyAlgorithms" security
+ * properties. Each security property can be overridden by a system property
+ * of the same name. See the java.security file for the syntax of the property
+ * values.
  */
 public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final Debug debug = Debug.getInstance("jca");
@@ -58,10 +59,11 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_CRYPTO_LEGACY_ALGS =
             "jdk.crypto.legacyAlgorithms";
 
-    private static class CryptoHolder {
+    private static class DisabledHolder {
         static final CryptoAlgorithmConstraints DISABLED_CONSTRAINTS =
                 new CryptoAlgorithmConstraints(PROPERTY_CRYPTO_DISABLED_ALGS);
     }
+
     private static class LegacyHolder {
         static final CryptoAlgorithmConstraints LEGACY_CONSTRAINTS =
                 new CryptoAlgorithmConstraints(PROPERTY_CRYPTO_LEGACY_ALGS);
@@ -74,7 +76,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     public static boolean permits(String service, String algo) {
-        return CryptoHolder.DISABLED_CONSTRAINTS.cachedCheckAlgorithm(
+        return DisabledHolder.DISABLED_CONSTRAINTS.cachedCheckAlgorithm(
                 service + "." + algo);
     }
 
@@ -83,6 +85,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static class CallersHolder {
         static final Map<CallerInfo, Boolean> callers
             = Collections.synchronizedMap(new WeakHashMap<>());
+//            = Collections.synchronizedMap(new java.util.HashMap<>());
     }
 
     public static void warn(String service, String alg, Class<?> callerClass) {
