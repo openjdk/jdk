@@ -37,6 +37,7 @@ import javax.swing.filechooser.FileSystemView;
  * @test
  * @bug 8376253
  * @summary FileSystemView may not report system icons when -Xcheck:jni enabled
+ * @key headful
  * @run main SystemIconPixelDataTest
  * @run main/othervm -Xcheck:jni SystemIconPixelDataTest
  */
