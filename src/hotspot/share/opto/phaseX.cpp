@@ -2031,20 +2031,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     case Op_MinD:
       return;
 
-
-    // AddINode::Identity
-    // Converts (x-y)+y to x
-    // Could be issue with notification
-    //
-    // Turns out AddL does the same.
-    //
-    // Found with:
-    //  compiler/c2/Test6792161.java
-    //  -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_AddI:
-    case Op_AddL:
-      return;
-
     // AbsINode::Identity
     // Not investigated yet.
     case Op_AbsI:
