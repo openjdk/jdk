@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -16,9 +16,17 @@
 #include "dispatcher.h"
 
 NOEXPORT double sleef_cpuid_SCALFMA;
+
+#ifdef ENABLE_PURECFMA
+static int cache_fma = -1;
 static void tryFMA() { sleef_cpuid_SCALFMA = Sleef_sind1_u10purecfma(sleef_cpuid_SCALFMA); }
 
-#define SUBST_IF_EXT1(funcExt1) if (cpuSupportsExt(tryFMA)) p = funcExt1;
+#define SUBST_IF_EXT1(funcExt1) if (Sleef_internal_cpuSupportsExt(tryFMA, &cache_fma)) p = funcExt1;
 #define SUBST_IF_EXT2(funcExt2)
+#else
+#define SUBST_IF_EXT1(funcExt1)
+#define SUBST_IF_EXT2(funcExt2)
+#endif
 
 //
+

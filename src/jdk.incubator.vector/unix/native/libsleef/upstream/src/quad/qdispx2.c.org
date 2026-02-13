@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -18,18 +18,21 @@
 NOEXPORT Sleef_quadx2 sleef_cpuid_EXT;
 
 #ifdef ENABLE_AVX2
+static int cache_avx2 = -1;
 static void tryEXT1() { sleef_cpuid_EXT = Sleef_sinq2_u10avx2128(sleef_cpuid_EXT); }
-#define SUBST_IF_EXT1(funcExt1) if (cpuSupportsExt(tryEXT1)) p = funcExt1;
+#define SUBST_IF_EXT1(funcExt1) if (Sleef_internal_cpuSupportsExt(tryEXT1, &cache_avx2)) p = funcExt1;
 #endif
 
 #ifdef ENABLE_VSX3
+static int cache_vsx3 = -1;
 static void tryEXT1() { sleef_cpuid_EXT = Sleef_sinq2_u10vsx3(sleef_cpuid_EXT); }
-#define SUBST_IF_EXT1(funcExt1) if (cpuSupportsExt(tryEXT1)) p = funcExt1;
+#define SUBST_IF_EXT1(funcExt1) if (Sleef_internal_cpuSupportsExt(tryEXT1, &cache_vsx3)) p = funcExt1;
 #endif
 
 #ifdef ENABLE_VXE2
+static int cache_vxe2 = -1;
 static void tryEXT1() { sleef_cpuid_EXT = Sleef_sinq2_u10vxe2(sleef_cpuid_EXT); }
-#define SUBST_IF_EXT1(funcExt1) if (cpuSupportsExt(tryEXT1)) p = funcExt1;
+#define SUBST_IF_EXT1(funcExt1) if (Sleef_internal_cpuSupportsExt(tryEXT1, &cache_vxe2)) p = funcExt1;
 #endif
 
 #ifndef SUBST_IF_EXT1
@@ -37,3 +40,4 @@ static void tryEXT1() { sleef_cpuid_EXT = Sleef_sinq2_u10vxe2(sleef_cpuid_EXT); 
 #endif
 
 //
+

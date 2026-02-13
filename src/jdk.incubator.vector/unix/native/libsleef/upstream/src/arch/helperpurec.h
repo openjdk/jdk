@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -67,7 +67,6 @@ typedef quadVector vquad;
 //
 
 static INLINE int vavailability_i(int name) { return -1; }
-static INLINE void vprefetch_v_p(const void *ptr) { }
 
 static INLINE int vtestallones_i_vo64(vopmask g) {
   int ret = 1; for(int i=0;i<VECTLENDP;i++) ret = ret && g.x[i]; return ret;

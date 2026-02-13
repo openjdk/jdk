@@ -48,7 +48,7 @@ ifneq ($(OPENJDK_BUILD_OS), linux)
 endif
 
 SLEEF_SUPPORT_DIR := $(MAKESUPPORT_OUTPUTDIR)/sleef
-SLEEF_SOURCE_BASE_DIR := $(TOPDIR)/src/jdk.incubator.vector/linux/native/libsleef
+SLEEF_SOURCE_BASE_DIR := $(TOPDIR)/src/jdk.incubator.vector/unix/native/libsleef
 SLEEF_SOURCE_DIR := $(SLEEF_SOURCE_BASE_DIR)/upstream
 SLEEF_TARGET_DIR := $(SLEEF_SOURCE_BASE_DIR)/generated
 SLEEF_NATIVE_BUILD_DIR := $(SLEEF_SUPPORT_DIR)/native
@@ -82,7 +82,11 @@ $(eval $(call SetupExecute, sleef_native_config, \
     INFO := Configuring native sleef build, \
     OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
     WORKING_DIR := $(SLEEF_SOURCE_DIR), \
-    COMMAND := $(CMAKE) -S . -B $(SLEEF_NATIVE_BUILD_DIR), \
+    COMMAND := $(CMAKE) -S . -B $(SLEEF_NATIVE_BUILD_DIR) \
+       -DCMAKE_INSTALL_PREFIX=$(SLEEF_NATIVE_BUILD_DIR) \
+       -DSLEEF_BUILD_TESTS=OFF \
+       -DSLEEF_ENABLE_SSL=OFF \
+       -DSLEEF_ENABLE_TESTER4=OFF, \
 ))
 
 TARGETS := $(sleef_native_config)
@@ -106,6 +110,10 @@ $(eval $(call SetupExecute, sleef_cross_config, \
         -DCMAKE_C_COMPILER=$(CC) \
         -DCMAKE_TOOLCHAIN_FILE=$(SLEEF_CMAKE_FILE) \
         -DNATIVE_BUILD_DIR=$(SLEEF_NATIVE_BUILD_DIR) \
+        -DCMAKE_INSTALL_PREFIX=$(SLEEF_CROSS_BUILD_DIR) \
+        -DSLEEF_BUILD_TESTS=OFF \
+        -DSLEEF_ENABLE_SSL=OFF \
+        -DSLEEF_ENABLE_TESTER4=OFF \
         -DSLEEF_BUILD_INLINE_HEADERS=TRUE \
         $(EXTRA_CROSS_OPTIONS), \
 ))
@@ -139,7 +147,7 @@ $(eval $(call SetupCopyFiles, copy_generated_sleef_source, \
     DEST := $(SLEEF_TARGET_DIR), \
 ))
 
-TARGETS := $(copy_generated_sleef_source)
+TARGETS := $(copy_static_sleef_source) $(copy_generated_sleef_source)
 
 ################################################################################
 
