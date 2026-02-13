@@ -215,8 +215,8 @@ void AOTCodeCache::initialize() {
   }
   _max_aot_code_size = AOTCodeMaxSize;
   if (!FLAG_IS_DEFAULT(AOTCodeMaxSize)) {
-    if (!is_aligned(AOTCodeMaxSize, os::vm_allocation_granularity())) {
-      _max_aot_code_size = align_up(AOTCodeMaxSize, os::vm_allocation_granularity());
+    if (!is_aligned(AOTCodeMaxSize, os::vm_page_size())) {
+      _max_aot_code_size = align_up(AOTCodeMaxSize, os::vm_page_size());
       log_debug(aot,codecache,init)("Max AOT Code Cache size is aligned up to %uK", (int)(max_aot_code_size()/K));
     }
   }
