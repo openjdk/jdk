@@ -727,6 +727,11 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
     tty->print("done with CodeBuffer:");
     ((CodeBuffer*)this)->print_on(tty);
   }
+
+  auto blob = CodeCache::find_blob(insts_begin());
+  if (blob != nullptr && blob->was_flushed()) {
+    tty->print_cr("Unnecessary ICache flush detected before copy_code_to for blob %s", dest_blob->name());
+  }
 #endif //PRODUCT
 
   CodeBuffer dest(dest_blob);
@@ -744,6 +749,10 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
+
+  // Flush generated code
+  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
+  // NOT_PRODUCT(dest_blob->set_flushed());
 }
 
 // Move all my code into another code buffer.  Consult applicable
