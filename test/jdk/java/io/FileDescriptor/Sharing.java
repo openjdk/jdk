@@ -347,10 +347,8 @@ public class Sharing {
      * FileOutputStreams referencing the same native file descriptor.
      */
     private static class OpenClose extends Thread {
-        private FileDescriptor fd = null;
-        private CountDownLatch done;
-        FileInputStream[] fisArray = new FileInputStream[numFiles];
-        FileOutputStream[] fosArray = new FileOutputStream[numFiles];
+        private final FileDescriptor fd;
+        private final CountDownLatch done;
 
         OpenClose(FileDescriptor filedescriptor, CountDownLatch done) {
             this.fd = filedescriptor;
@@ -358,6 +356,9 @@ public class Sharing {
         }
 
         public void run() {
+             FileInputStream[] fisArray = new FileInputStream[numFiles];
+             FileOutputStream[] fosArray = new FileOutputStream[numFiles];
+
              try {
                  for(int i=0;i<numFiles;i++) {
                      fisArray[i] = new FileInputStream(fd);
