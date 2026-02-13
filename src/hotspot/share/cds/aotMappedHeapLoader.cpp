@@ -794,32 +794,49 @@ class RootOopsScanner : public BasicOopIterateClosure {
                       mtClassShared,
                       oop_hash,
                       primitive_equals<oop>> _table;
-  int _current_root_index;
+  GrowableArray<oop> _stack;
+  oop _current;
+
 public:
-  RootOopsScanner() : _table(15889, 1000000), _current_root_index(-1) {}
+  RootOopsScanner() : _table(15889, 1000000) {}
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
   virtual void do_oop(narrowOop *p) { do_oop_work(p); }
   virtual void do_oop(      oop *p) { do_oop_work(p); }
-  void set_current_root_index(int i) { _current_root_index = i;}
 
   int number_of_reachable_oops() {
     return _table.number_of_entries();
   }
 
-private:
-  template <class T> void do_oop_work(T* p) {
-    oop obj = do_oop_work(HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load(p)
+  void push(oop obj) {
     if (obj != nullptr && !_table.contains(obj)) {
-      _table.put_when_absent(obj, true);
       Klass* k = obj->klass();
       if (k->class_loader_data() == nullptr) {
         ResourceMark rm;
-        fatal("Klass %s must have been loaded (reachable from root %d)",
-              k->external_name(), _current_root_index);
+        fatal("Klass %s is reachable from heap roots and must have been loaded",
+              k->external_name());
       }
-      obj->oop_iterate(this);
+
+      _table.put_when_absent(obj, true);
       _table.maybe_grow();
+      _stack.push(obj);
     }
+  }
+
+  void drain() {
+    // Recurse with an external stack to avoid native stack overflow.
+    while (_stack.length() > 0) {
+      oop obj = _stack.pop();
+      _current = obj;
+      obj->oop_iterate(this);
+      _current = nullptr;
+    }
+  }
+
+private:
+  template <class T> void do_oop_work(T* p) {
+    int field_offset = pointer_delta_as_int(reinterpret_cast<char*>(p), cast_from_oop<char*>(_current));
+    oop obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_current, field_offset);
+    push(obj);
   }
 };
 
@@ -833,20 +850,21 @@ static bool _verify_roots_ready_for_gc_exited = false;
 // This is required by the collectors.
 void AOTMappedHeapLoader::verify_roots_ready_for_gc() {
   _verify_roots_ready_for_gc_entered = true;
+  ResourceMark rm;
   RootOopsScanner scanner;
   HeapRootSegments segments = FileMapInfo::current_info()->mapped_heap()->root_segments();
+  int num_roots = 0;
+
+  // DFS walk of all the objects reachable from the roots.
   for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
     objArrayOop segment = root_segment(checked_cast<int>(seg_idx));
-    for (int i = 0; i < segment->length(); i++) {
-      oop root = segment->obj_at(i);
-      if (root != nullptr) {
-        scanner.set_current_root_index(i);
-        root->oop_iterate(&scanner);
-      }
-    }
+    scanner.push(segment);
+    num_roots += segment->length();
   }
-  log_info(aot, heap)("Verified %d objects in %zu root segment(s)",
-                      scanner.number_of_reachable_oops(), segments.count());
+  scanner.drain();
+
+  log_info(aot, heap)("Verified %d objects in %d roots from %zu root segment(s)",
+                      scanner.number_of_reachable_oops(), num_roots, segments.count());
   _verify_roots_ready_for_gc_exited = true;
 }
 #endif // ASSERT
