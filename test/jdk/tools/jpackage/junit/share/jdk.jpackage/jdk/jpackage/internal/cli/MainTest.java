@@ -38,11 +38,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
@@ -53,9 +54,11 @@ import jdk.jpackage.internal.MockUtils;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
+import jdk.jpackage.internal.util.IdentityWrapper;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.test.Annotations;
 import jdk.jpackage.test.JPackageCommand;
@@ -181,114 +184,157 @@ public class MainTest extends JUnitAdapter {
         ).map(TestSpec.Builder::create).toList();
     }
 
-
     private static List<ErrorReporterTestSpec> test_ErrorReporter() {
-        var data = new ArrayList<ErrorReporterTestSpec>();
-
+        var testCases = new ArrayList<ErrorReporterTestSpec>();
         for (var verbose : List.of(true, false)) {
-            for (var makeCause : List.<UnaryOperator<Exception>>of(
-                    ex -> ex,
-                    // UncheckedIOException
-                    ex -> {
-                        if (ex instanceof IOException ioex) {
-                            return new UncheckedIOException(ioex);
-                        } else {
-                            return null;
-                        }
-                    },
-                    // ExceptionBox
-                    ex -> {
-                        var rex = ExceptionBox.toUnchecked(ex);
-                        if (rex != ex) {
-                            return rex;
-                        } else {
-                            return null;
-                        }
-                    }
-            )) {
-                for (var expect : List.of(
-                        Map.entry(new IOException("I/O error"), true),
-                        Map.entry(new NullPointerException(), true),
-                        Map.entry(new JPackageException("Kaput!"), false),
-                        Map.entry(new ConfigException("It is broken", "Fix it!"), false),
-                        Map.entry(new ConfigException("It is broken. No advice how to fix it", (String)null), false),
-                        Map.entry(new Utils.ParseException("Malformed command line"), false),
-                        Map.entry(new StandardOption.AddLauncherIllegalArgumentException("Malformed value of --add-launcher option"), false)
-                )) {
-                    var cause = makeCause.apply(expect.getKey());
-                    if (cause == null) {
-                        continue;
-                    }
-
-                    var expectedOutput = new ArrayList<ExceptionFormatter>();
-                    if (expect.getValue()) {
-                        // An alien exception.
-                        expectedOutput.add(ExceptionFormatter.STACK_TRACE);
-                        expectedOutput.add(ExceptionFormatter.TO_STRING);
-                    } else {
-                        if (verbose) {
-                            expectedOutput.add(ExceptionFormatter.STACK_TRACE);
-                        }
-                        if (expect.getKey() instanceof ConfigException cex) {
-                            if (cex.getAdvice() != null) {
-                                expectedOutput.add(ExceptionFormatter.MESSAGE_WITH_ADVICE);
-                            } else {
-                                expectedOutput.add(ExceptionFormatter.GET_MESSAGE);
-                            }
-                        } else {
-                            expectedOutput.add(ExceptionFormatter.GET_MESSAGE);
-                        }
-                    }
-
-                    data.add(new ErrorReporterTestSpec(cause, expect.getKey(), verbose, expectedOutput));
-                }
-            }
-
-            var execAttrs = new CommandOutputControl.ProcessAttributes(Optional.of(12345L), List.of("foo", "--bar"));
-            for (var makeCause : List.<UnaryOperator<Exception>>of(
-                    ex -> ex,
-                    ExceptionBox::toUnchecked
-            )) {
-
-                for (var expect : List.of(
-                        Map.entry(
-                                augmentResultWithOutput(
-                                        CommandOutputControl.Result.build().exitCode(135).execAttrs(execAttrs).create(),
-                                        "The quick brown fox\njumps over the lazy dog"
-                                ).unexpected("Kaput!"),
-                                ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_OUTPUT_MESSAGE
-                        ),
-                        Map.entry(
-                                new UnexpectedExitCodeException(augmentResultWithOutput(
-                                        CommandOutputControl.Result.build().exitCode(135).create(),
-                                        "The quick brown fox\njumps"
-                                )),
-                                ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_EXIT_CODE_MESSAGE
-                        ),
-                        Map.entry(
-                                augmentResultWithOutput(
-                                        CommandOutputControl.Result.build().create(),
-                                        "The quick brown fox\njumps"
-                                ).unexpected("Timed out!"),
-                                ExceptionFormatter.FAILED_COMMAND_TIMEDOUT_MESSAGE
-                        )
-                )) {
-                    var cause = makeCause.apply(expect.getKey());
-                    var expectedOutput = new ArrayList<ExceptionFormatter>();
-                    if (verbose) {
-                        expectedOutput.add(ExceptionFormatter.STACK_TRACE);
-                    }
-                    expectedOutput.add(expect.getValue());
-                    if (!verbose) {
-                        expectedOutput.add(ExceptionFormatter.FAILED_COMMAND_OUTPUT);
-                    }
-                    data.add(new ErrorReporterTestSpec(cause, expect.getKey(), verbose, expectedOutput));
-                }
-            }
-
+            test_ErrorReporter_Exception(verbose, testCases::add);
+            test_ErrorReporter_UnexpectedResultException(verbose, testCases::add);
+            test_ErrorReporter_suppressedExceptions(verbose, testCases::add);
         }
 
-        return data;
+        return testCases;
+    }
+
+    private static void test_ErrorReporter_Exception(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+
+        for (var makeCause : List.<UnaryOperator<Exception>>of(
+                ex -> ex,
+                // UncheckedIOException
+                ex -> {
+                    if (ex instanceof IOException ioex) {
+                        return new UncheckedIOException(ioex);
+                    } else {
+                        return null;
+                    }
+                },
+                // ExceptionBox
+                ex -> {
+                    var rex = ExceptionBox.toUnchecked(ex);
+                    if (rex != ex) {
+                        return rex;
+                    } else {
+                        return null;
+                    }
+                }
+        )) {
+            for (var expect : List.of(
+                    new IOException("I/O error"),
+                    new NullPointerException(),
+                    new JPackageException("Kaput!"),
+                    new ConfigException("It is broken", "Fix it!"),
+                    new ConfigException("It is broken. No advice how to fix it", (String)null),
+                    new Utils.ParseException("Malformed command line"),
+                    new StandardOption.AddLauncherIllegalArgumentException("Malformed value of --add-launcher option")
+            )) {
+                var cause = makeCause.apply(expect);
+                if (cause == null) {
+                    continue;
+                }
+
+                var expectedOutput = new ArrayList<ExceptionFormatter>();
+                ErrorReporterTestSpec.expectExceptionFormatters(expect, verbose, expectedOutput::add);
+                sink.accept(ErrorReporterTestSpec.create(cause, expect, verbose, expectedOutput));
+            }
+        }
+    }
+
+    private static void test_ErrorReporter_UnexpectedResultException(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+
+        var execAttrs = new CommandOutputControl.ProcessAttributes(Optional.of(12345L), List.of("foo", "--bar"));
+
+        for (var makeCause : List.<UnaryOperator<Exception>>of(
+                ex -> ex,
+                ExceptionBox::toUnchecked
+        )) {
+
+            for (var expect : List.of(
+                    augmentResultWithOutput(
+                            CommandOutputControl.Result.build().exitCode(135).execAttrs(execAttrs).create(),
+                            "The quick brown fox\njumps over the lazy dog"
+                    ).unexpected("Kaput!"),
+                    new UnexpectedExitCodeException(augmentResultWithOutput(
+                            CommandOutputControl.Result.build().exitCode(135).create(),
+                            "The quick brown fox\njumps"
+                    )),
+                    augmentResultWithOutput(
+                            CommandOutputControl.Result.build().create(),
+                            "The quick brown fox\njumps"
+                    ).unexpected("Timed out!")
+            )) {
+                var cause = makeCause.apply(expect);
+                var expectedOutput = new ArrayList<ExceptionFormatter>();
+                ErrorReporterTestSpec.expectExceptionFormatters(expect, verbose, expectedOutput::add);
+                sink.accept(ErrorReporterTestSpec.create(cause, expect, verbose, expectedOutput));
+            }
+        }
+    }
+
+    private static Exception suppressException(Exception main, Exception suppressed) {
+        Objects.requireNonNull(main);
+        Objects.requireNonNull(suppressed);
+
+        try (var autoCloseable = new AutoCloseable() {
+
+            @Override
+            public void close() throws Exception {
+                throw suppressed;
+            }}) {
+
+            throw main;
+        } catch (Exception ex) {
+            return ex;
+        }
+    }
+
+    private static void test_ErrorReporter_suppressedExceptions(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+
+        var execAttrs = new CommandOutputControl.ProcessAttributes(Optional.of(567L), List.of("foo", "--bar"));
+
+        Supplier<Exception> createUnexpectedResultException = () -> {
+            return augmentResultWithOutput(
+                    CommandOutputControl.Result.build().exitCode(7).execAttrs(execAttrs).create(),
+                    "The quick brown fox\njumps over the lazy dog"
+            ).unexpected("Alas");
+        };
+
+        for (var makeCause : List.<UnaryOperator<Exception>>of(
+                ex -> ex,
+                ex -> {
+                    var rex = ExceptionBox.toUnchecked(ex);
+                    if (rex != ex) {
+                        return rex;
+                    } else {
+                        return null;
+                    }
+                }
+        )) {
+
+            for (var exceptions : List.of(
+                    List.<Exception>of(new JPackageException("Kaput!"), new JPackageException("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Kaput!"), new JPackageException("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Kaput!"), new Exception("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Kaput!"), ExceptionBox.toUnchecked(new Exception("Suppressed kaput"))),
+                    List.<Exception>of(createUnexpectedResultException.get(), new Exception("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Alas!"), createUnexpectedResultException.get()),
+                    List.<Exception>of(new JPackageException("Alas!"), createUnexpectedResultException.get())
+            )) {
+                var main = exceptions.getFirst();
+                var suppressed = exceptions.getLast();
+
+                var cause = makeCause.apply(suppressException(main, suppressed));
+
+                if (cause == null) {
+                    continue;
+                }
+
+                var expectedOutput = new ArrayList<FormattedException>();
+
+                ErrorReporterTestSpec.expectOutputFragments(ExceptionBox.unbox(suppressed), verbose, expectedOutput::add);
+                ErrorReporterTestSpec.expectOutputFragments(main, verbose, expectedOutput::add);
+
+                sink.accept(new ErrorReporterTestSpec(cause, verbose, expectedOutput));
+            }
+        }
     }
 
 
@@ -454,6 +500,19 @@ public class MainTest extends JUnitAdapter {
     }
 
 
+    private record FormattedException(ExceptionFormatter formatter, Exception exception) {
+
+        FormattedException {
+            Objects.requireNonNull(formatter);
+            Objects.requireNonNull(exception);
+        }
+
+        String format() {
+            return formatter.format(exception);
+        }
+    }
+
+
     private enum ExceptionFormatter {
         GET_MESSAGE(errorMessage(Exception::getMessage)),
         MESSAGE_WITH_ADVICE(ex -> {
@@ -497,6 +556,10 @@ public class MainTest extends JUnitAdapter {
 
         String format(Exception v) {
             return formatter.apply(v);
+        }
+
+        FormattedException bind(Exception v) {
+            return new FormattedException(this, v);
         }
 
         private static Function<Exception, String> errorMessage(Function<Exception, String> formatter) {
@@ -547,29 +610,99 @@ public class MainTest extends JUnitAdapter {
     }
 
 
-    record ErrorReporterTestSpec(Exception cause, Exception expect, boolean verbose, List<ExceptionFormatter> expectOutput) {
+    record ErrorReporterTestSpec(Exception cause, boolean verbose, List<FormattedException> expectOutput) {
 
         ErrorReporterTestSpec {
             Objects.requireNonNull(cause);
-            Objects.requireNonNull(expect);
             Objects.requireNonNull(expectOutput);
+            if (expectOutput.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
         }
 
-        ErrorReporterTestSpec(Exception cause, boolean verbose, List<ExceptionFormatter> expectOutput) {
-            this(cause, cause, verbose, expectOutput);
+        static ErrorReporterTestSpec create(
+                Exception cause, boolean verbose, List<ExceptionFormatter> expectOutput) {
+            return create(cause, cause, verbose, expectOutput);
+        }
+
+        static ErrorReporterTestSpec create(
+                Exception cause, Exception expect, boolean verbose, List<ExceptionFormatter> expectOutput) {
+            Objects.requireNonNull(cause);
+            Objects.requireNonNull(expect);
+            return new ErrorReporterTestSpec(cause, verbose, expectOutput.stream().map(formatter -> {
+                return new FormattedException(formatter, expect);
+            }).toList());
+        }
+
+        static void expectExceptionFormatters(Exception ex, boolean verbose, Consumer<ExceptionFormatter> sink) {
+            Objects.requireNonNull(ex);
+            Objects.requireNonNull(sink);
+
+            final var isSelfContained = (ex.getClass().getAnnotation(SelfContainedException.class) != null);
+
+            if (verbose || !(isSelfContained || ex instanceof UnexpectedResultException)) {
+                sink.accept(ExceptionFormatter.STACK_TRACE);
+            }
+
+            switch (ex) {
+                case ConfigException cex -> {
+                    if (cex.getAdvice() != null) {
+                        sink.accept(ExceptionFormatter.MESSAGE_WITH_ADVICE);
+                    } else {
+                        sink.accept(ExceptionFormatter.GET_MESSAGE);
+                    }
+                }
+                case UnexpectedResultException urex -> {
+                    if (urex instanceof UnexpectedExitCodeException) {
+                        sink.accept(ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_EXIT_CODE_MESSAGE);
+                    } else if (urex.getResult().exitCode().isPresent()) {
+                        sink.accept(ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_OUTPUT_MESSAGE);
+                    } else {
+                        sink.accept(ExceptionFormatter.FAILED_COMMAND_TIMEDOUT_MESSAGE);
+                    }
+                    sink.accept(ExceptionFormatter.FAILED_COMMAND_OUTPUT);
+                }
+                default -> {
+                    if (isSelfContained) {
+                        sink.accept(ExceptionFormatter.GET_MESSAGE);
+                    } else {
+                        sink.accept(ExceptionFormatter.TO_STRING);
+                    }
+                }
+            }
+        }
+
+        static void expectOutputFragments(Exception ex, boolean verbose, Consumer<FormattedException> sink) {
+            Objects.requireNonNull(sink);
+            expectExceptionFormatters(ex, verbose, formatter -> {
+                sink.accept(formatter.bind(ex));
+            });
         }
 
         @Override
         public String toString() {
             var tokens = new ArrayList<String>();
 
-            if (cause == expect) {
+            var expect = expectOutput.stream()
+                    .map(FormattedException::exception)
+                    .map(IdentityWrapper::new)
+                    .distinct()
+                    .toList();
+
+            if (expect.size() == 1 && expect.getFirst().value() == cause) {
                 tokens.add(cause.toString());
             } else {
-                tokens.add(String.format("[%s] => [%s]", cause, expect));
+                tokens.add(String.format("[%s] => %s", cause, expect.stream().map(IdentityWrapper::value).toList()));
             }
 
-            tokens.add(expectOutput.stream().map(Enum::name).collect(Collectors.joining("+")));
+            if (expect.size() == 1) {
+                tokens.add(expectOutput.stream().map(FormattedException::formatter).map(Enum::name).collect(Collectors.joining("+")));
+            } else {
+                tokens.add(expectOutput.stream().map(fragment -> {
+                    var idx = expect.indexOf(IdentityWrapper.wrapIdentity(fragment.exception()));
+                    return String.format("%s@%d", fragment.formatter(), idx);
+                }).collect(Collectors.joining("+")));
+            }
 
             if (verbose) {
                 tokens.add("verbose");
@@ -589,9 +722,7 @@ public class MainTest extends JUnitAdapter {
                 }, verbose).reportError(cause);
             }
 
-            var expected = expectOutput.stream().map(formatter -> {
-                return formatter.format(expect);
-            }).collect(Collectors.joining(""));
+            var expected = expectOutput.stream().map(FormattedException::format).collect(Collectors.joining(""));
 
             assertEquals(expected, sink.toString());
         }

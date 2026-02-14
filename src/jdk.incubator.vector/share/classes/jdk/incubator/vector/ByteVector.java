@@ -4105,7 +4105,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return this;
     }
 
-    /*package-private*/
     @Override
     @ForceInline
     final
