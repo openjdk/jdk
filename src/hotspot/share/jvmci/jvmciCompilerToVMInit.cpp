@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,7 +355,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   return vmIntrinsics;
 }
 
-#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_size_t_flag, do_intx_flag, do_uintx_flag) \
+#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_uint_flag, do_int_flag, do_size_t_flag, do_intx_flag, do_uintx_flag) \
   do_int_flag(AllocateInstancePrefetchLines)                               \
   do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
@@ -367,7 +367,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(CITime)                                                     \
   do_bool_flag(CITimeEach)                                                 \
   do_size_t_flag(CodeCacheSegmentSize)                                     \
-  do_intx_flag(CodeEntryAlignment)                                         \
+  do_uint_flag(CodeEntryAlignment)                                         \
   do_int_flag(ContendedPaddingWidth)                                       \
   do_bool_flag(DontCompileHugeMethods)                                     \
   do_bool_flag(EagerJVMCI)                                                 \
@@ -554,16 +554,17 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JVMCIENV->put_object_at(vmFlags, i++, vmFlagObj);                                    \
 }
 #define ADD_BOOL_FLAG(name)   ADD_FLAG(bool, name, BOXED_BOOLEAN)
+#define ADD_UINT_FLAG(name)   ADD_FLAG(uint, name, BOXED_LONG)
 #define ADD_INT_FLAG(name)    ADD_FLAG(int, name, BOXED_LONG)
 #define ADD_SIZE_T_FLAG(name) ADD_FLAG(size_t, name, BOXED_LONG)
 #define ADD_INTX_FLAG(name)   ADD_FLAG(intx, name, BOXED_LONG)
 #define ADD_UINTX_FLAG(name)  ADD_FLAG(uintx, name, BOXED_LONG)
 
-  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
+  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
   JVMCIObjectArray vmFlags = JVMCIENV->new_VMFlag_array(len, JVMCI_CHECK_NULL);
   int i = 0;
   JVMCIObject value;
-  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INT_FLAG, ADD_SIZE_T_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
+  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_UINT_FLAG, ADD_INT_FLAG, ADD_SIZE_T_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
 
   JVMCIObjectArray vmIntrinsics = CompilerToVM::initialize_intrinsics(JVMCI_CHECK_NULL);
 
