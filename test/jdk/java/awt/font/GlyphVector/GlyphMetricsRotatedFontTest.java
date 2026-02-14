@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148334
+ * @bug 8148334 8377937
  * @summary Checks behavior of GlyphVector.getGlyphMetrics(int) with rotated fonts.
  */
 
