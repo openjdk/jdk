@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,7 +467,7 @@ public final class ProcessTools {
             Collections.addAll(args, command);
         }
 
-        args = deduplicateAgentOpts(args);
+        checkDuplicateAgentOpts(args);
 
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
@@ -483,23 +483,28 @@ public final class ProcessTools {
         return pb;
     }
 
-    // Deduplicate agent loading options, as an attempt to load the same agent
-    // twice may cause Agent_OnLoad VM startup failure
-    public static List<String> deduplicateAgentOpts(List<String> args) {
+    // 8377729: Check for duplicate VM JVMTI agent options, as it may 
+    // cause test to fail
+    public static void checkDuplicateAgentOpts(List<String> args) {
         if (args == null || args.isEmpty()) {
-            return args;
+            return;
         }
 
         Set<String> seen = new HashSet<>();
-        return args.stream()
-                .filter(arg -> !(arg.startsWith("-agent")
+        List<String> dupArgs = args.stream()
+                .filter(arg -> (arg.startsWith("-agent")
                                 || arg.startsWith("-javaagent:"))
-                        || seen.add(arg))
+                        && !seen.add(arg))
                 .collect(Collectors.toList());
+
+        if (!dupArgs.isEmpty()) {
+            System.err.println("WARNING: Duplicate JVMTI agent options may"
+                + " cause test to fail:\n" + dupArgs);
+        }
     }
 
-    public static String[] deduplicateAgentOpts(String[] args) {
-        return deduplicateAgentOpts(Arrays.asList(args)).toArray(new String[0]);
+    public static void checkDuplicateAgentOpts(String[] args) {
+        checkDuplicateAgentOpts(Arrays.asList(args));
     }
 
     private static void printStack(Thread t, StackTraceElement[] stack) {

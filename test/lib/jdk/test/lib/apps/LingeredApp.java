@@ -452,7 +452,8 @@ public class LingeredApp {
         long t1 = System.currentTimeMillis();
         theApp.createLock();
         try {
-            theApp.runAppExactJvmOpts(ProcessTools.deduplicateAgentOpts(jvmOpts));
+            ProcessTools.checkDuplicateAgentOpts(jvmOpts);
+            theApp.runAppExactJvmOpts(jvmOpts);
             theApp.waitAppReadyOrCrashed();
         } catch (Exception ex) {
             boolean alive = theApp.getProcess() != null && theApp.getProcess().isAlive();
