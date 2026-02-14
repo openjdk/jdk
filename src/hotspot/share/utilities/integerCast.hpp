@@ -60,8 +60,8 @@ template<typename To, typename From,
          ENABLE_IF(std::is_integral_v<From>)>
 constexpr bool is_integer_convertible(From from) {
   if constexpr (is_always_integer_convertible<From, To>()) {
-    // This clause simplifies direct calls.  It isn't needed by
-    // integer_cast, where a tautological call is discarded.
+    // This clause simplifies direct calls and the implementation below.  It
+    // isn't needed by integer_cast, where a tautological call is discarded.
     return true;
   } else if constexpr (std::is_unsigned_v<From>) {
     using U = std::make_unsigned_t<To>;
@@ -69,25 +69,15 @@ constexpr bool is_integer_convertible(From from) {
     // Convert To::max to corresponding unsigned for compare.
     return from <= static_cast<U>(std::numeric_limits<To>::max());
   } else if constexpr (std::is_signed_v<To>) {
-    // signed => signed.  Range check with one comparison.
-    using U = std::make_unsigned_t<From>;
-    U ufrom = static_cast<U>(from);
-    constexpr U umin = static_cast<U>(std::numeric_limits<To>::min());
-    constexpr U umax = static_cast<U>(std::numeric_limits<To>::max());
-    // The "usual" single-compare range check formulation would be
-    //   (U)(from - min) <= (U)(max - min)
-    // but that has UB overflows (both actual and potential).
-    // Converting to U earlier is equivalent but avoids UB overflows.
-    return (ufrom - umin) <= (umax - umin);
+    // signed => signed.  Compilers can do range check in a single comparison.
+    return ((std::numeric_limits<To>::min() <= from) &&
+            (from <= std::numeric_limits<To>::max()));
   } else {
-    // signed => unsigned.  Range check with one comparison.
-    if constexpr (sizeof(To) < sizeof(From)) { // Avoid tautological compare.
-      using U = std::make_unsigned_t<From>;
-      // Negative from converts to large value that exceeds To's max.
-      return static_cast<U>(from) <= std::numeric_limits<To>::max();
-    } else {
-      return from >= 0;
-    }
+    // signed => unsigned.  Convert from to corresponding unsigned for
+    // compare.  Compilers can do range check in a single comparison and can
+    // remove the upper bound check when it's tautological.
+    using U = std::make_unsigned_t<From>;
+    return (0 <= from) && (static_cast<U>(from) <= std::numeric_limits<To>::max());
   }
 }
 
