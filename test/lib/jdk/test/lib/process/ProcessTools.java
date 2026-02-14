@@ -483,7 +483,7 @@ public final class ProcessTools {
         return pb;
     }
 
-    // 8377729: Check for duplicate VM JVMTI agent options, as it may 
+    // 8377729: Check for duplicate VM JVMTI agent options, as it may
     // cause test to fail
     public static void checkDuplicateAgentOpts(List<String> args) {
         if (args == null || args.isEmpty()) {
