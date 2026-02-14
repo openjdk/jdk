@@ -61,11 +61,11 @@ public class GlyphMetricsRotatedFontTest {
             for (int i = 0; i < gv1.getNumGlyphs(); i++) {
                 GlyphMetrics gm1 = gv1.getGlyphMetrics(i);
                 GlyphMetrics gm2 = gv2.getGlyphMetrics(i);
-                assertEqual(0, gm1.getAdvanceY(), 0, name, i);
+                assertEqual(0, gm1.getAdvanceY(), 0, name + " normal y", i);
                 double expectedX = Math.cos(theta) * gm1.getAdvanceX();
                 double expectedY = Math.sin(theta) * gm1.getAdvanceX();
-                assertEqual(expectedX, gm2.getAdvanceX(), 1, name, i);
-                assertEqual(expectedY, gm2.getAdvanceY(), 1, name, i);
+                assertEqual(expectedX, gm2.getAdvanceX(), 1, name + " rotated x", i);
+                assertEqual(expectedY, gm2.getAdvanceY(), 1, name + " rotated y", i);
             }
         }
     }
