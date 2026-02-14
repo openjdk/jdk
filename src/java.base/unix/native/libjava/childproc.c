@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
  * questions.
  */
 
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <limits.h>
 
@@ -37,6 +40,20 @@
 #include "jni_util.h"
 
 const char * const *parentPathv;
+
+#ifdef DEBUG
+bool fdIsValid(int fd) {
+    return fcntl(fd, F_GETFD) != -1;
+}
+bool fdIsPipe(int fd) {
+    struct stat buf;
+    return fstat(fd, &buf) != -1 && S_ISFIFO(buf.st_mode);
+}
+bool fdIsCloexec(int fd) {
+    const int flags = fcntl(fd, F_GETFD);
+    return flags != -1 && (flags & FD_CLOEXEC);
+}
+#endif // DEBUG
 
 static int
 restartableDup2(int fd_from, int fd_to)
@@ -357,6 +374,11 @@ JDK_execvpe(int mode, const char *file,
     }
 }
 
+static bool sendAlivePing(int fd) {
+    int code = CHILD_IS_ALIVE;
+    return (writeFully(fd, &code, sizeof(code)) == sizeof(code));
+}
+
 /**
  * Child process after a successful fork().
  * This function must not return, and must be prepared for either all
@@ -367,54 +389,77 @@ int
 childProcess(void *arg)
 {
     const ChildStuff* p = (const ChildStuff*) arg;
-    int fail_pipe_fd = p->fail[1];
+    int fail_pipe_fd = -1;
 
-    if (p->sendAlivePing) {
-        /* Child shall signal aliveness to parent at the very first
-         * moment. */
-        int code = CHILD_IS_ALIVE;
-        if (writeFully(fail_pipe_fd, &code, sizeof(code)) != sizeof(code)) {
+    if (p->mode == MODE_POSIX_SPAWN) {
+        /* POSIX_SPAWN:
+         * We already duped; file descriptors already set up. */
+
+        fail_pipe_fd = FAIL_FILENO;
+
+        /* Child shall signal aliveness to parent at the very first moment. */
+        if (p->sendAlivePing && !sendAlivePing(fail_pipe_fd)) {
             goto WhyCantJohnnyExec;
         }
-    }
 
 #ifdef DEBUG
-    jtregSimulateCrash(0, 6);
+        jtregSimulateCrash(0, 6);
 #endif
-    /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
-       would do it anyways, but a little paranoia is a good thing. */
-    if ((closeSafely(p->in[1])   == -1) ||
-        (closeSafely(p->out[0])  == -1) ||
-        (closeSafely(p->err[0])  == -1) ||
-        (closeSafely(p->childenv[0])  == -1) ||
-        (closeSafely(p->childenv[1])  == -1) ||
-        (closeSafely(p->fail[0]) == -1))
-        goto WhyCantJohnnyExec;
 
-    /* Give the child sides of the pipes the right fileno's. */
-    /* Note: it is possible for in[0] == 0 */
-    if ((moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
-                        STDIN_FILENO) == -1) ||
-        (moveDescriptor(p->out[1]!= -1 ? p->out[1] : p->fds[1],
-                        STDOUT_FILENO) == -1))
-        goto WhyCantJohnnyExec;
-
-    if (p->redirectErrorStream) {
-        if ((closeSafely(p->err[1]) == -1) ||
-            (restartableDup2(STDOUT_FILENO, STDERR_FILENO) == -1))
-            goto WhyCantJohnnyExec;
     } else {
-        if (moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
-                           STDERR_FILENO) == -1)
+
+        /* FORK/VFORK:
+         * We need to set up file descriptors */
+
+        fail_pipe_fd = p->fail[1]; /* for now */
+
+        /* Child shall signal aliveness to parent at the very first moment. */
+        if (p->sendAlivePing && !sendAlivePing(fail_pipe_fd)) {
             goto WhyCantJohnnyExec;
-    }
+        }
 
-    if (moveDescriptor(fail_pipe_fd, FAIL_FILENO) == -1)
-        goto WhyCantJohnnyExec;
+#ifdef DEBUG
+        jtregSimulateCrash(0, 6);
+#endif
 
-    /* We moved the fail pipe fd */
-    fail_pipe_fd = FAIL_FILENO;
+        /* Close the parent sides of the pipes.
+           Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
+           would do it anyways, but a little paranoia is a good thing. */
+        if ((closeSafely(p->in[1])   == -1) ||
+            (closeSafely(p->out[0])  == -1) ||
+            (closeSafely(p->err[0])  == -1) ||
+            (closeSafely(p->childenv[0])  == -1) ||
+            (closeSafely(p->childenv[1])  == -1) ||
+            (closeSafely(p->fail[0]) == -1))
+            goto WhyCantJohnnyExec;
+
+        /* Give the child sides of the pipes the right fileno's. */
+        /* Note: it is possible for in[0] == 0 */
+        if ((moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
+                            STDIN_FILENO) == -1) ||
+            (moveDescriptor(p->out[1]!= -1 ? p->out[1] : p->fds[1],
+                            STDOUT_FILENO) == -1))
+            goto WhyCantJohnnyExec;
+
+        if (p->redirectErrorStream) {
+            if ((closeSafely(p->err[1]) == -1) ||
+                (restartableDup2(STDOUT_FILENO, STDERR_FILENO) == -1))
+                goto WhyCantJohnnyExec;
+        } else {
+            if (moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
+                               STDERR_FILENO) == -1)
+                goto WhyCantJohnnyExec;
+        }
+
+        if (moveDescriptor(fail_pipe_fd, FAIL_FILENO) == -1)
+            goto WhyCantJohnnyExec;
+
+        /* We moved the fail pipe fd */
+        fail_pipe_fd = FAIL_FILENO;
+
+    } /* end: FORK/VFORK mode */
+
+    assert(fail_pipe_fd == FAIL_FILENO);
 
     /* For AIX: The code in markDescriptorsCloseOnExec() relies on the current
      * semantic of this function. When this point here is reached only the
@@ -479,7 +524,7 @@ void jtregSimulateCrash(pid_t child, int stage) {
     if (env != NULL && atoi(env) == stage) {
         printf("posix_spawn:%d\n", child);
         fflush(stdout);
-        _exit(stage);
+        exit(stage);
     }
 }
 #endif

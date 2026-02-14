@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define CHILDPROC_MD_H
 
 #include <sys/types.h>
+#include <stdbool.h>
 
 #ifdef __APPLE__
 #include <crt_externs.h>
@@ -71,6 +72,10 @@ extern char **environ;
 #endif
 
 #define FAIL_FILENO (STDERR_FILENO + 1)
+
+/* For POSIX_SPAWN mode */
+#define CHILDENV_FILENO (FAIL_FILENO + 1)
+
 
 /* These numbers must be the same as the Enum in ProcessImpl.java
  * Must be a better way of doing this.
@@ -136,6 +141,17 @@ int childProcess(void *arg);
  * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
  */
 void jtregSimulateCrash(pid_t child, int stage);
+/* Helper functions to check the state of fds */
+bool fdIsValid(int fd);
+bool fdIsPipe(int fd);
+bool fdIsCloexec(int fd);
 #endif
 
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#define HAVE_PIPE2
+#else
+// Neither MacOS nor AIX support pipe2, unfortunately
+#undef HAVE_PIPE2
 #endif
+
+#endif /* CHILDPROC_MD_H */

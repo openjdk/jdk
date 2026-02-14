@@ -36,15 +36,17 @@
  * Platform-specific support for java.lang.Process
  */
 #include <assert.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <spawn.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <ctype.h>
-#include <sys/wait.h>
-#include <signal.h>
 #include <string.h>
-
-#include <spawn.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "childproc.h"
 
@@ -527,27 +529,47 @@ forkChild(ChildStuff *c) {
     return resultPid;
 }
 
+/* Given two fds, one of which has to be valid and one not, return
+ * the one that is valid */
+static int eitherOneOf(int fd1, int fd2) {
+#ifdef DEBUG
+    if (fd2 == -1) {
+        assert(fdIsValid(fd1));
+    } else {
+        assert(fdIsValid(fd2));
+        assert(fd1 == -1);
+    }
+#endif // DEBUG
+    return fd1 != -1? fd1 : fd2;
+}
+
+static int call_posix_spawn_file_actions_adddup2(posix_spawn_file_actions_t *file_actions, int filedes, int newfiledes) {
+#ifdef __APPLE__
+    /* MacOS is not POSIX-compliant by not allowing dup2 file actions to specify the same source and target file
+     * descriptor (according to POSIX, that should be a no-op) */
+    if (filedes == newfiledes) {
+        return 0;
+    }
+#endif
+    return posix_spawn_file_actions_adddup2(file_actions, filedes, newfiledes);
+}
+
 static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
-    int i, offset, rval, bufsize, magic;
-    char *buf, buf1[(3 * 11) + 3]; // "%d:%d:%d\0"
-    char *hlpargs[4];
+    int offset, rval, bufsize, magic;
+    char* buf, *hlpargs[3];
     SpawnInfo sp;
+    posix_spawn_file_actions_t file_actions;
+    int child_stdin, child_stdout, child_stderr, child_childenv, child_fail = -1;
 
-    /* need to tell helper which fd is for receiving the childstuff
-     * and which fd to send response back on
-     */
-    snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
     /* NULL-terminated argv array.
      * argv[0] contains path to jspawnhelper, to follow conventions.
      * argv[1] contains the version string as argument to jspawnhelper
-     * argv[2] contains the fd string as argument to jspawnhelper
      */
     hlpargs[0] = (char*)helperpath;
     hlpargs[1] = VERSION_STRING;
-    hlpargs[2] = buf1;
-    hlpargs[3] = NULL;
+    hlpargs[2] = NULL;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.
@@ -570,19 +592,77 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     bufsize += sp.dirlen;
     arraysize(parentPathv, &sp.nparentPathv, &sp.parentPathvBytes);
     bufsize += sp.parentPathvBytes;
-    /* We need to clear FD_CLOEXEC if set in the fds[].
-     * Files are created FD_CLOEXEC in Java.
-     * Otherwise, they will be closed when the target gets exec'd */
-    for (i=0; i<3; i++) {
-        if (c->fds[i] != -1) {
-            int flags = fcntl(c->fds[i], F_GETFD);
-            if (flags & FD_CLOEXEC) {
-                fcntl(c->fds[i], F_SETFD, flags & (~FD_CLOEXEC));
-            }
-        }
+
+    /* Prepare file descriptors for jspawnhelper and the target binary. */
+
+    /* Define which file descriptors to hand down to child process:
+     * 0: copy of either "in" pipe read fd or the stdin redirect fd */
+    child_stdin = eitherOneOf(c->fds[0], c->in[0]);
+
+    /* 1: copy of either "out" pipe write fd or the stdout redirect fd */
+    child_stdout = eitherOneOf(c->fds[1], c->out[1]);
+
+    /* 2: redirectErrorStream=1: redirected to stdout (Order of spawn file actions later matters!)
+     *    redirectErrorStream=0: copy of either stderr redirect fd. */
+    if (c->redirectErrorStream) {
+        child_stderr = STDOUT_FILENO; /* Note: this refers to the future stdout in the child process */
+    } else {
+        child_stderr = eitherOneOf(c->fds[2], c->err[1]);
     }
 
-    rval = posix_spawn(&resultPid, helperpath, 0, 0, (char * const *) hlpargs, environ);
+    /* 3: copy of the "fail" pipe write fd */
+    child_fail = c->fail[1];
+
+    /* 4: copy of the "childenv" pipe read end */
+    child_childenv = c->childenv[0];
+
+#ifdef __APPLE__
+    /* Apple's implementation of posix_spawn is buggy and not POSIX-compliant with respect to
+     * how dup2 file actions intermix with the FD_CLOEXEC flag on inherited file descriptors.
+     * On MacOS, the kernel closes file descriptors marked with CLOEXEC too early for the libc to
+     * dup2 them in the new process. The result is an invalid file descriptor in the child process.
+     * The only way to prevent this (the often mentioned posix_spawn_file_actions_addinherit_np(3)
+     * does not reliably work) is to create temporary file descriptor duplicates that are *not*
+     * marked as CLOEXEC, use them as source for dup2 file actions, and close them right after the
+     * posix_spawn call. These file descriptors can of course leak to other processes, but their
+     * lifetime is limited and they are not used inside this process after the spawn. */
+    child_fail = dup(child_fail);
+    child_childenv = dup(child_childenv);
+#endif
+
+    assert(fdIsValid(child_stdin));
+    assert(fdIsValid(child_stdout));
+    assert(fdIsValid(child_stderr));
+    assert(fdIsPipe(child_fail));
+    assert(fdIsPipe(child_childenv));
+
+    /* slot in dup2 file actions. Note: order matters. Do stdout before stderr. */
+    posix_spawn_file_actions_init(&file_actions);
+    if (call_posix_spawn_file_actions_adddup2(&file_actions, child_stdin, STDIN_FILENO) != 0 ||
+        call_posix_spawn_file_actions_adddup2(&file_actions, child_stdout, STDOUT_FILENO) != 0 ||
+        call_posix_spawn_file_actions_adddup2(&file_actions, child_stderr, STDERR_FILENO) != 0 ||
+        call_posix_spawn_file_actions_adddup2(&file_actions, child_fail, FAIL_FILENO) != 0 ||
+        call_posix_spawn_file_actions_adddup2(&file_actions, child_childenv, CHILDENV_FILENO) != 0)
+    {
+        return -1;
+    }
+
+    /* Since we won't use the file descriptor members of ChildStuff in jspawnhelper,
+     * reset them all */
+    c->in[0] = c->in[1] = c->out[0] = c->out[1] =
+    c->err[0] = c->err[1] = c->fail[0] = c->fail[1] =
+    c->fds[0] = c->fds[1] = c->fds[2] = -1;
+    c->redirectErrorStream = false;
+
+    rval = posix_spawn(&resultPid, helperpath, &file_actions, 0, (char * const *) hlpargs, environ);
+
+#ifdef __APPLE__
+    /* Close our dup'ed copies */
+    close(child_fail);
+    child_fail = -1;
+    close(child_childenv);
+    child_childenv = -1;
+#endif
 
     if (rval != 0) {
         return -1;
@@ -666,6 +746,28 @@ startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     }
 }
 
+static int pipeOrPipe2(int fd[2], bool cloexec) {
+    /* We must ensure the pipe fd's are set to CLOEXEC as early as possible, since at any moment a
+     * concurrent fork() (uncontrolled by us, e.g. third-party JNI coding) could create copies of
+     * these descriptors and accidentally keep the pipes open. That would cause the parent process
+     * to hang (see JDK-8377907).
+     * We use pipe2, if we have it; if not, we use pipe, but tag file descriptors as CLOEXEC
+     * immediately. Still racy, but dangerous time window is as short as we can make it. */
+    int rc = -1;
+#ifdef HAVE_PIPE2
+    rc = pipe2(fd, cloexec ? O_CLOEXEC : 0);
+#else
+    rc = pipe(fd);
+    if (rc == 0 && cloexec) {
+        fcntl(fd[0], F_SETFD, FD_CLOEXEC);
+        fcntl(fd[1], F_SETFD, FD_CLOEXEC);
+    }
+#endif /* HAVE_PIPE2 */
+    assert(fdIsCloexec(fd[0]));
+    assert(fdIsCloexec(fd[1]));
+    return rc;
+}
+
 JNIEXPORT jint JNICALL
 Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                                        jobject process,
@@ -727,11 +829,12 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     fds = (*env)->GetIntArrayElements(env, std_fds, NULL);
     if (fds == NULL) goto Catch;
 
-    if ((fds[0] == -1 && pipe(in)  < 0) ||
-        (fds[1] == -1 && pipe(out) < 0) ||
-        (fds[2] == -1 && !redirectErrorStream && pipe(err) < 0) || // if not redirecting create the pipe
-        (pipe(childenv) < 0) ||
-        (pipe(fail) < 0)) {
+    const bool cloExec = true;//((mode == MODE_FORK) || (mode == MODE_VFORK));
+    if ((fds[0] == -1 && pipeOrPipe2(in, cloExec)  < 0) ||
+        (fds[1] == -1 && pipeOrPipe2(out, cloExec) < 0) ||
+        (fds[2] == -1 && !redirectErrorStream && pipeOrPipe2(err, cloExec) < 0) ||
+        (pipeOrPipe2(childenv, cloExec) < 0) ||
+        (pipeOrPipe2(fail, cloExec) < 0)) {
         throwInternalIOException(env, errno, "Bad file descriptor", mode);
         goto Catch;
     }
@@ -796,9 +899,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
             if (errnum != CHILD_IS_ALIVE) {
                 /* This can happen if the spawn helper encounters an error
                  * before or during the handshake with the parent. */
-                throwInternalIOException(env, 0,
-                                         "Bad code from spawn helper (Failed to exec spawn helper)",
-                                         c->mode);
+                char msg[256];
+                snprintf(msg, sizeof(msg), "Bad code from spawn helper (%d) (Failed to exec spawn helper)", errnum);
+                throwInternalIOException(env, 0, msg, c->mode);
                 goto Catch;
             }
             break;

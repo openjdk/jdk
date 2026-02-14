@@ -63,7 +63,8 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
       libExplicitAttach.c libImplicitAttach.c \
       exelauncher.c libFDLeaker.c exeFDLeakTester.c \
-      libChangeSignalDisposition.c exePrintSignalDisposition.c
+      libChangeSignalDisposition.c exePrintSignalDisposition.c \
+      libConcNativeFork.c libPipesCloseOnExec.c
 
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib

@@ -45,7 +45,7 @@ public class JspawnhelperWarnings {
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
         oa.shouldContain("This command is not for general use");
-        if (nArgs != 2) {
+        if (nArgs != 1) {
             oa.shouldContain("Incorrect number of arguments");
         } else {
             oa.shouldContain("Incorrect Java version");
@@ -53,10 +53,9 @@ public class JspawnhelperWarnings {
     }
 
     private static void testVersion() throws Exception {
-        String[] args = new String[3];
+        String[] args = new String[2];
         args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
         args[1] = "wrongVersion";
-        args[2] = "1:1:1";
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
