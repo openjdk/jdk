@@ -2403,6 +2403,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
       if (use->in(j) == old) {
         use->set_req(j, nn);
         ++num_edges;
+        on_input_edge_rewire(use, j);
       }
     }
     i -= num_edges;    // we deleted 1 or more copies of this edge
