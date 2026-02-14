@@ -254,13 +254,11 @@ void HeapShared::ensure_determinism(TRAPS) {
   precond(weak_ref_key_class != nullptr);
 
   log_debug(aot)("Calling WeakReferenceKey::ensureDeterministicAOTCache(Object.class)");
-  Handle h_obj(THREAD, vmClasses::Object_klass()->java_mirror());
   JavaValue result(T_BOOLEAN);
   JavaCalls::call_static(&result,
                          weak_ref_key_class,
                          method_name,
-                         vmSymbols::object_boolean_signature(),
-                         h_obj, // just use any object that's not a ReferenceKey
+                         vmSymbols::void_boolean_signature(),
                          CHECK);
   assert(result.get_jboolean() == false, "sanity");
 }
