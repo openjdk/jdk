@@ -554,12 +554,12 @@ public:
   // has other users.
   void add_users_to_worklist(Node* n);
 
-  // Re-enqueue selected Add users of a Sub node to avoid missing cancellation
-  // optimizations in IGVN.
-  // When a SubI/SubL input is updated (often due to upstream rewiring such as a
-  // Mul identity folding), its AddI/AddL users may become foldable via
-  // cancellation patterns like: (x - y) + y  -> x or x + (y - x) -> y
-  void add_users_of_sub_to_worklist(Node* n);
+  // Notify dependent nodes on input edge rewiring.
+  // Some C2 cancellations (e.g., (x - y) + y) become visible only after IGVN
+  // rewires edges (subsume_node). Performing exact pattern checks earlier
+  // (e.g., in add_users_of_use_to_worklist) can be unreliable because the
+  // inputs may still reference the old nodes.
+  void on_input_edge_rewire(Node* n, uint idx);
 
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {

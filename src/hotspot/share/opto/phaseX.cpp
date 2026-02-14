@@ -2115,17 +2115,26 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   return n;
 }
 
-void PhaseIterGVN::add_users_of_sub_to_worklist(Node* n) {
-  Node* y = n->in(2);
-  const int add_op = (n->Opcode() == Op_SubI) ? Op_AddI : Op_AddL;
-  for (DUIterator_Fast i2max, i2 = n->fast_outs(i2max); i2 < i2max; i2++) {
-    Node* u = n->fast_out(i2);
-    if (u->Opcode() == add_op) {
-      Node* a1 = u->in(1);
-      Node* a2 = u->in(2);
-      // match (x - y) + y or x + (y - x)
-      if ((a1 == n && a2 == y) || (a2 == n && a1 == y)) {
-        _worklist.push(u);
+void PhaseIterGVN::on_input_edge_rewire(Node* n, uint idx) {
+  const uint op = n->Opcode();
+  // The reason we call it here is the ordering: the Mul identity optimization enqueues
+  // the Sub via add_users_to_worklist0(), but at that point we cannot reliably perform
+  // an exact (x - y) + y / x + (y - x) match in add_users_of_use_to_worklist(). Because
+  // it runs before subsume_node() rewires the edges, so the Sub inputs have not been
+  // updated yet and sub->in(2) may still point to the old Mul node. As a result,
+  // equality checks involving sub->in(2) can fail.
+  if ((op == Op_SubI || op == Op_SubL) && idx == 2) {
+    Node* y = n->in(idx);
+    const int add_op = (op == Op_SubI) ? Op_AddI : Op_AddL;
+    for (DUIterator_Fast i2max, i2 = n->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = n->fast_out(i2);
+      if (u->Opcode() == add_op) {
+        Node* a1 = u->in(1);
+        Node* a2 = u->in(2);
+        // match (x - y) + y or x + (y - x)
+        if ((a1 == n && a2 == y) || (a2 == n && a1 == y)) {
+          _worklist.push(u);
+        }
       }
     }
   }
@@ -2263,16 +2272,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
     return i;
-  }
-
-  // The reason we call it here is the ordering: the Mul identity optimization enqueues
-  // the Sub via add_users_to_worklist0(), but at that point we cannot reliably perform
-  // an exact (x - y) + y / x + (y - x) match in add_users_of_use_to_worklist(). Because
-  // it runs before subsume_node() rewires the edges, so the Sub inputs have not been
-  // updated yet and sub->in(2) may still point to the old Mul node. As a result,
-  // equality checks involving sub->in(2) can fail.
-  if (k->Opcode() == Op_SubI || k->Opcode() == Op_SubL) {
-    add_users_of_sub_to_worklist(k);
   }
 
   // Return Idealized original
