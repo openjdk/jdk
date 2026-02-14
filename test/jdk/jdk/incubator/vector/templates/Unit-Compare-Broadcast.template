@@ -10,7 +10,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j), a[i + j] [[TEST_OP]] b[i]);
+                assertEquals(mv.laneIsSet(j), a[i + j] [[TEST_OP]] b[i]);
             }
         }
     }
@@ -30,7 +30,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] [[TEST_OP]] b[i]));
+                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] [[TEST_OP]] b[i]));
             }
         }
     }
@@ -47,7 +47,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j), a[i + j] [[TEST_OP]] ($type$)((long)b[i]));
+                assertEquals(mv.laneIsSet(j), a[i + j] [[TEST_OP]] ($type$)((long)b[i]));
             }
         }
     }
@@ -67,7 +67,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] [[TEST_OP]] ($type$)((long)b[i])));
+                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] [[TEST_OP]] ($type$)((long)b[i])));
             }
         }
     }

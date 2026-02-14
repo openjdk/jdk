@@ -64,6 +64,7 @@ do
   MinValue=MIN_VALUE
 
   kind=BITWISE
+  fpkind=BITWISE
 
   bitstype=$type
   Bitstype=$Type
@@ -99,6 +100,7 @@ do
       ;;
     float)
       kind=FP
+      fpkind=FP32
       bitstype=int
       Bitstype=Int
       Boxbitstype=Integer
@@ -108,6 +110,7 @@ do
       ;;
     double)
       kind=FP
+      fpkind=FP64
       bitstype=long
       Bitstype=Long
       Boxbitstype=Long
@@ -117,7 +120,7 @@ do
       ;;
   esac
 
-  args="$args -K$kind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
+  args="$args -K$kind -K$fpkind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
 
