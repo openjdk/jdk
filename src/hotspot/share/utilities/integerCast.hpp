@@ -69,13 +69,11 @@ constexpr bool is_integer_convertible(From from) {
     // Convert To::max to corresponding unsigned for compare.
     return from <= static_cast<U>(std::numeric_limits<To>::max());
   } else if constexpr (std::is_signed_v<To>) {
-    // signed => signed.  Compilers can do range check in a single comparison.
+    // signed => signed.
     return ((std::numeric_limits<To>::min() <= from) &&
             (from <= std::numeric_limits<To>::max()));
   } else {
-    // signed => unsigned.  Convert from to corresponding unsigned for
-    // compare.  Compilers can do range check in a single comparison and can
-    // remove the upper bound check when it's tautological.
+    // signed => unsigned.  Convert from to corresponding unsigned for compare.
     using U = std::make_unsigned_t<From>;
     return (0 <= from) && (static_cast<U>(from) <= std::numeric_limits<To>::max());
   }
