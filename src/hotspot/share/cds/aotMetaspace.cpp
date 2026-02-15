@@ -661,8 +661,8 @@ void AOTMetaspace::rewrite_bytecodes_and_calculate_fingerprints(Thread* thread, 
 
 class VM_PopulateDumpSharedSpace : public VM_Operation {
 private:
-  ArchiveMappedHeapInfo _mapped_heap_info;
-  ArchiveStreamedHeapInfo _streamed_heap_info;
+  AOTMappedHeapInfo _mapped_heap_info;
+  AOTStreamedHeapInfo _streamed_heap_info;
   FileMapInfo* _map_info;
   StaticArchiveBuilder& _builder;
 
@@ -682,8 +682,8 @@ public:
   bool skip_operation() const { return false; }
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
-  ArchiveMappedHeapInfo* mapped_heap_info()  { return &_mapped_heap_info; }
-  ArchiveStreamedHeapInfo* streamed_heap_info()  { return &_streamed_heap_info; }
+  AOTMappedHeapInfo* mapped_heap_info()  { return &_mapped_heap_info; }
+  AOTStreamedHeapInfo* streamed_heap_info()  { return &_streamed_heap_info; }
   void doit();   // outline because gdb sucks
   bool allow_nested_vm_operations() const { return true; }
 }; // class VM_PopulateDumpSharedSpace
@@ -698,6 +698,9 @@ public:
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
     TrainingData::iterate_roots(it);
+    if (CDSConfig::is_dumping_full_module_graph()) {
+      ClassLoaderDataShared::iterate_roots(it);
+    }
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -794,6 +797,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   log_info(aot)("Make classes shareable");
   _builder.make_klasses_shareable();
   AOTMetaspace::make_method_handle_intrinsics_shareable();
+
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    ClassLoaderDataShared::remove_unshareable_info();
+  }
 
   dump_java_heap_objects();
   dump_shared_symbol_table(_builder.symbols());
@@ -1097,7 +1104,12 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    if (!CDSConfig::is_dumping_preimage_static_archive()) {
+      // A single thread is required for Reference handling and deterministic CDS archive.
+      // Its's not required for dumping preimage, where References won't be archived and
+      // determinism is not needed.
+      assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    }
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       report_loading_error("archivedBootLayer not available, disabling full module graph");
       CDSConfig::stop_dumping_full_module_graph();
@@ -1135,6 +1147,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     HeapShared::init_heap_writer();
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
+      ClassLoaderDataShared::build_tables(CHECK);
       HeapShared::reset_archived_object_states(CHECK);
     }
 
@@ -1153,12 +1166,6 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
       // Perhaps there is a way to avoid hard-coding these names here.
       // See discussion in JDK-8342481.
-    }
-
-    if (HeapShared::is_writing_mapping_mode()) {
-      // Do this at the very end, when no Java code will be executed. Otherwise
-      // some new strings may be added to the intern table.
-      StringTable::allocate_shared_strings_array(CHECK);
     }
   } else {
     log_info(aot)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
@@ -1205,8 +1212,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
 bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder,
                                         FileMapInfo* map_info,
-                                        ArchiveMappedHeapInfo* mapped_heap_info,
-                                        ArchiveStreamedHeapInfo* streamed_heap_info) {
+                                        AOTMappedHeapInfo* mapped_heap_info,
+                                        AOTStreamedHeapInfo* streamed_heap_info) {
   // relocate the data so that it can be mapped to AOTMetaspace::requested_base_address()
   // without runtime relocation.
   builder->relocate_to_requested();
@@ -2099,7 +2106,7 @@ MapArchiveResult AOTMetaspace::map_archive(FileMapInfo* mapinfo, char* mapped_ba
     // Currently, only static archive uses early serialized data.
     char* buffer = mapinfo->early_serialized_data();
     intptr_t* array = (intptr_t*)buffer;
-    ReadClosure rc(&array, (intptr_t)mapped_base_address);
+    ReadClosure rc(&array, (address)mapped_base_address);
     early_serialize(&rc);
   }
 
@@ -2145,7 +2152,7 @@ void AOTMetaspace::initialize_shared_spaces() {
   // shared string/symbol tables.
   char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
-  ReadClosure rc(&array, (intptr_t)SharedBaseAddress);
+  ReadClosure rc(&array, (address)SharedBaseAddress);
   serialize(&rc);
 
   // Finish initializing the heap dump mode used in the archive
@@ -2157,7 +2164,7 @@ void AOTMetaspace::initialize_shared_spaces() {
 
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
-    ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
+    ReadClosure rc(&buffer, (address)SharedBaseAddress);
     DynamicArchive::serialize(&rc);
   }
 

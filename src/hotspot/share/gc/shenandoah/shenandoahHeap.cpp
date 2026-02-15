@@ -1775,12 +1775,7 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
 
 void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
   if (!_aux_bitmap_region_special) {
-    bool success = os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size());
-    if (!success) {
-      log_warning(gc)("Auxiliary marking bitmap uncommit failed: " PTR_FORMAT " (%zu bytes)",
-                      p2i(_aux_bitmap_region.start()), _aux_bitmap_region.byte_size());
-      assert(false, "Auxiliary marking bitmap uncommit should always succeed");
-    }
+    os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size());
   }
 }
 
@@ -2626,11 +2621,7 @@ void ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   size_t len = _bitmap_bytes_per_slice;
 
   char* addr = (char*) _bitmap_region.start() + off;
-  bool success = os::uncommit_memory(addr, len);
-  if (!success) {
-    log_warning(gc)("Bitmap slice uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(addr), len);
-    assert(false, "Bitmap slice uncommit should always succeed");
-  }
+  os::uncommit_memory(addr, len);
 }
 
 void ShenandoahHeap::forbid_uncommit() {
@@ -2718,18 +2709,6 @@ void ShenandoahRegionIterator::reset() {
 bool ShenandoahRegionIterator::has_next() const {
   return _index < _heap->num_regions();
 }
-
-char ShenandoahHeap::gc_state() const {
-  return _gc_state.raw_value();
-}
-
-bool ShenandoahHeap::is_gc_state(GCState state) const {
-  // If the global gc state has been changed, but hasn't yet been propagated to all threads, then
-  // the global gc state is the correct value. Once the gc state has been synchronized with all threads,
-  // _gc_state_changed will be toggled to false and we need to use the thread local state.
-  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
-}
-
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT
