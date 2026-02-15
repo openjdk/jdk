@@ -1056,7 +1056,6 @@ public class ForkJoinPool extends AbstractExecutorService
     // masks and sentinels for queue indices
     static final int MAX_CAP          = 0x7fff;   // max # workers
     static final int EXTERNAL_ID_MASK = 0x3ffe;   // max external queue id
-    static final int INVALID_ID       = 0x4000;   // unused external queue id
 
     // pool.runState bits
     static final long STOP            = 1L <<  0;   // terminating
@@ -2122,14 +2121,14 @@ public class ForkJoinPool extends AbstractExecutorService
             long nc = ((w.stackPred & LMASK) |
                        ((RC_MASK & c) | (TC_MASK & (c - TC_UNIT))));
             if (U.compareAndSetLong(this, CTL, c, nc)) {
-                w.source = DROPPED;
+                w.trimStatus = 1;
                 w.phase = activePhase;
                 if ((vp = (int)nc) != 0 && (vs = queues) != null &&
                     vs.length > (i = vp & SMASK) && (v = vs[i]) != null &&
                     U.compareAndSetLong(this, CTL, // try to wake up next waiter
                         nc, ((v.stackPred & LMASK) |
                              ((UMASK & (nc + RC_UNIT)) | (nc & TC_MASK))))) {
-                    v.source = INVALID_ID;
+                    v.trimStatus = -1;
                     v.phase = vp;
                     U.unpark(v.owner);
                 }
