@@ -405,14 +405,14 @@ class Thread: public ThreadShadow {
 
   // Thread-Local Allocation Buffer (TLAB) support
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
+  const ThreadLocalAllocBuffer& tlab() const     { return _tlab; }
   void initialize_tlab();
   void retire_tlab(ThreadLocalAllocStats* stats = nullptr);
   void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
   jlong allocated_bytes()               { return _allocated_bytes; }
-  void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
-  inline jlong cooked_allocated_bytes();
+  inline jlong cooked_allocated_bytes() const;
 
   ThreadHeapSampler& heap_sampler()     { return _heap_sampler; }
 
@@ -603,18 +603,21 @@ protected:
   jint _hashStateY;
   jint _hashStateZ;
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_AARCH64
  private:
   DEBUG_ONLY(bool _wx_init);
   WXMode _wx_state;
  public:
   void init_wx();
   WXMode enable_wx(WXMode new_state);
-
+  bool wx_enable_write();
   void assert_wx_state(WXMode expected) {
     assert(_wx_state == expected, "wrong state");
   }
-#endif // __APPLE__ && AARCH64
+  WXMode get_wx_state() {
+    return _wx_state;
+  }
+#endif // MACOS_AARCH64
 
  private:
   bool _in_asgct = false;

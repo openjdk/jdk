@@ -38,7 +38,6 @@ import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * This class prepares, creates, and runs the Test VM with verification of proper termination. The class also stores
@@ -108,7 +107,7 @@ public class TestVMProcess {
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
         cmds.add("-XX:+WhiteBoxAPI");
         // Ignore CompileCommand flags which have an impact on the profiling information.
-        List<String> jtregVMFlags = Arrays.stream(Utils.getTestJavaOpts()).filter(s -> !s.contains("CompileThreshold")).collect(Collectors.toList());
+        List<String> jtregVMFlags = Arrays.stream(Utils.getTestJavaOpts()).filter(s -> !s.contains("CompileThreshold")).toList();
         if (!PREFER_COMMAND_LINE_FLAGS) {
             cmds.addAll(jtregVMFlags);
         }
