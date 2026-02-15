@@ -429,10 +429,8 @@ extern "C" DEBUGEXPORT void pp(void* p) {
     tty->print_cr("null");
     return;
   }
-  if (Universe::heap()->is_in(p)) {
-    oop obj = cast_to_oop(p);
-    obj->print();
-  } else {
+
+  if (!Universe::heap()->print_location(tty, p)) {
     // Ask NMT about this pointer.
     // GDB note: We will be using SafeFetch to access the supposed malloc header. If the address is
     // not readable, this will generate a signal. That signal will trip up the debugger: gdb will

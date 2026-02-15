@@ -140,10 +140,15 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+#ifdef MACOS_AARCH64
 enum WXMode {
-  WXWrite,
-  WXExec
+  WXWrite = 0,
+  WXExec = 1,
+  WXArmedForWrite = 2,
 };
+
+extern WXMode DefaultWXWriteMode;
+#endif // MACOS_AARCH64
 
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
@@ -531,8 +536,8 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
-  static bool   release_memory(char* addr, size_t bytes);
+  static void   uncommit_memory(char* addr, size_t bytes, bool executable = false);
+  static void   release_memory(char* addr, size_t bytes);
 
   // Does the platform support trimming the native heap?
   static bool can_trim_native_heap();
@@ -561,7 +566,7 @@ class os: AllStatic {
   static bool   unguard_memory(char* addr, size_t bytes);
   static bool   create_stack_guard_pages(char* addr, size_t bytes);
   static bool   pd_create_stack_guard_pages(char* addr, size_t bytes);
-  static bool   remove_stack_guard_pages(char* addr, size_t bytes);
+  static void   remove_stack_guard_pages(char* addr, size_t bytes);
   // Helper function to create a new file with template jvmheap.XXXXXX.
   // Returns a valid fd on success or else returns -1
   static int create_file_for_heap(const char* dir);
@@ -577,7 +582,7 @@ class os: AllStatic {
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, MemTag mem_tag, bool read_only = false,
                            bool allow_exec = false);
-  static bool   unmap_memory(char *addr, size_t bytes);
+  static void   unmap_memory(char *addr, size_t bytes);
   static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
@@ -600,7 +605,7 @@ class os: AllStatic {
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                        char* addr, bool executable);
-  static bool   release_memory_special(char* addr, size_t bytes);
+  static void   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
@@ -1128,9 +1133,23 @@ class os: AllStatic {
   static char*  build_agent_function_name(const char *sym, const char *cname,
                                           bool is_absolute_path);
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_AARCH64
   // Enables write or execute access to writeable and executable pages.
   static void current_thread_enable_wx(WXMode mode);
+  // Macos-AArch64 only.
+  static void thread_wx_enable_write_impl();
+
+  // Short circuit write enabling if it's already enabled. This
+  // function is executed many times, so it makes sense to inline a
+  // small part of it.
+private:
+  static THREAD_LOCAL bool _jit_exec_enabled;
+public:
+  static void thread_wx_enable_write() {
+    if (__builtin_expect(_jit_exec_enabled, false)) {
+      thread_wx_enable_write_impl();
+    }
+  }
 #endif // __APPLE__ && AARCH64
 
  protected:

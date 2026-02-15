@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,12 @@ send a keytab file over a network in the clear.
 
 ## Commands and Options
 
-`-l` \[`-e`\] \[`-t`\]
+[`-l`]{#command-l} \[`-e`\] \[`-t`\]
 :   Lists the keytab name and entries. When `-e` is specified, the encryption
     type for each entry is displayed. When `-t` is specified, the timestamp for
     each entry is displayed.
 
-`-a` *principal\_name* \[*password*\] \[`-n` *kvno*\] \[`-s` *salt* \| `-f`\] \[`-append`\]
+[`-a`]{#command-a} *principal\_name* \[*password*\] \[`-n` *kvno*\] \[`-s` *salt* \| `-f`\] \[`-append`\]
 :   Adds new key entries to the keytab for the given principal name with an
     optional *password*. If a *kvno* is specified, new keys' Key Version
     Numbers equal to the value, otherwise, automatically incrementing the Key
@@ -90,7 +90,7 @@ send a keytab file over a network in the clear.
     on the command line or in a script.** This tool will prompt for a password
     if it isn't specified.
 
-`-d` *principal\_name* \[`-f`\] \[`-e` *etype*\] \[*kvno* \| `all`\| `old`\]
+[`-d`]{#command-d} *principal\_name* \[`-f`\] \[`-e` *etype*\] \[*kvno* \| `all`\| `old`\]
 :   Deletes key entries from the keytab for the specified principal. No changes
     are made to the Kerberos database.
 
@@ -115,7 +115,7 @@ send a keytab file over a network in the clear.
 
 This option can be used with the `-l`, `-a` or `-d` commands.
 
-`-k` *keytab name*
+[`-k`]{#option-k} *keytab name*
 :   Specifies the keytab name and path with the `FILE:` prefix.
 
 ## Examples

@@ -1,5 +1,6 @@
 /**
  * @test /nodynamiccopyright/
+ * @bug 8375571
  * @summary Verify error reports for erroneous deconstruction patterns are sensible
  * @compile/fail/ref=DeconstructionPatternErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
  */
@@ -37,6 +38,10 @@ public class DeconstructionPatternErrors {
             case GenRecord<>(String s) -> {}
         }
         boolean b = p instanceof P(int i) p; //introducing a variable for the record pattern
+    }
+
+    <T> void typeVarTest(T p) {
+        if (p instanceof T(int i) && i == 0); //T is a type variable
     }
 
     public record P(int i) {

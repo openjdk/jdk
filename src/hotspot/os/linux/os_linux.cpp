@@ -3523,6 +3523,9 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
     log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
                        RANGEFMTARGS(addr, size),
                        os::strerror(ep.saved_errno()));
+    if (ep.saved_errno() == ENOMEM) {
+      fatal("Failed to uncommit " RANGEFMT ". It is possible that the process's maximum number of mappings would have been exceeded. Try increasing the limit.", RANGEFMTARGS(addr, size));
+    }
     return false;
   }
   return true;
@@ -3633,14 +3636,16 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 // It's safe to always unmap guard pages for primordial thread because we
 // always place it right after end of the mapped region.
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  uintptr_t stack_extent, stack_base;
+void os::remove_stack_guard_pages(char* addr, size_t size) {
 
   if (os::is_primordial_thread()) {
-    return ::munmap(addr, size) == 0;
+    if (::munmap(addr, size) != 0) {
+      fatal("Failed to munmap " RANGEFMT, RANGEFMTARGS(addr, size));
+    }
+    return;
   }
 
-  return os::uncommit_memory(addr, size);
+  os::uncommit_memory(addr, size);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -4963,9 +4968,14 @@ int os::open(const char *path, int oflag, int mode) {
   oflag |= O_CLOEXEC;
 
   int fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
+  // No further checking is needed if open() returned an error or
+  // access mode is not read only.
+  if (fd == -1 || (oflag & O_ACCMODE) != O_RDONLY) {
+    return fd;
+  }
 
-  //If the open succeeded, the file might still be a directory
+  // If the open succeeded and is read only, the file might be a directory
+  // which the JVM doesn't allow to be read.
   {
     struct stat buf;
     int ret = ::fstat(fd, &buf);

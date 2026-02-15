@@ -353,6 +353,9 @@ class InstanceKlass: public Klass {
   int static_oop_field_count() const       { return (int)_static_oop_field_count; }
   void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
 
+  bool trust_final_fields()                { return _misc_flags.trust_final_fields(); }
+  void set_trust_final_fields(bool value)  { _misc_flags.set_trust_final_fields(value); }
+
   // Java itable
   int  itable_length() const               { return _itable_len; }
   void set_itable_length(int len)          { _itable_len = len; }
