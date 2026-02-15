@@ -930,8 +930,8 @@ public final class ProcessBuilder
      * command interpreters, or the standard C library function
      * {@code system()}.
      *
-     * @apiNote
-     * When the process is {@link #start started}, 
+     * @implNote
+     * When the process is {@link #start started},
      * if {#code System.out} and/or {#code System.err} have been
      * closed in the current process, the corresponding output
      * in the subprocess will be discarded.
