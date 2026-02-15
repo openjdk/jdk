@@ -667,7 +667,7 @@ void VM_Version::insert_features_names(uint64_t features, stringStream& ss) {
     const char* str = nullptr;
     while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
       if (supports_feature(features, (VM_Version::Feature_Flag)i)) {
-        str = _features_names[i++];
+        str = _features_names[i];
       }
       i += 1;
     }
