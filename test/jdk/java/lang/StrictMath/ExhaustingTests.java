@@ -93,6 +93,7 @@ public class ExhaustingTests {
             new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan,  DEFAULT_SHIFT),
 
             new UnaryTestCase("asinh", FdlibmTranslit::asinh, StrictMath::asinh, DEFAULT_SHIFT),
+            new UnaryTestCase("acosh", FdlibmTranslit::acosh, StrictMath::acosh, DEFAULT_SHIFT),
         };
 
         for (var testCase : testCases) {

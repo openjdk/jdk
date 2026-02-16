@@ -109,10 +109,10 @@ import static java.lang.Double.*;
  * acos acos}, {@link atan atan}, {@link exp exp}, {@link expm1
  * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
  * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link asinh asinh},
- * {@link hypot hypot}, and {@link pow pow}.  (The {@link sqrt sqrt}
- * operation is a required part of IEEE 754 from a different section
- * of the standard.) The special case behavior of the recommended
- * operations generally follows the guidance of the IEEE 754
+ * {@link acosh acosh}, {@link hypot hypot}, and {@link pow pow}.
+ * (The {@link sqrt sqrt} operation is a required part of IEEE 754
+ * from a different section of the standard.) The special case behavior
+ * of the recommended operations generally follows the guidance of the IEEE 754
  * standard. However, the {@code pow} method defines different
  * behavior for some arguments, as noted in its {@linkplain pow
  * specification}. The IEEE 754 standard defines its operations to be
@@ -2783,6 +2783,35 @@ public final class Math {
      */
     public static double asinh(double x) {
         return StrictMath.asinh(x);
+    }
+
+
+
+    /**
+     * Returns the inverse hyperbolic cosine of a {@code double} value.
+     * The inverse hyperbolic cosine of <i>x</i> is defined to be the function such that
+     *  acosh({@linkplain Math#cosh cosh(<i>x</i>)}) = <i>x</i> for any <i>x</i> >= 0.
+     *  Note that range of the exact acosh(x) is >= 0.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is positive infinity, then the result is
+     * positive infinity
+     *
+     * <li>If the argument less than 1, then the result is NaN.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is {@code 1.0}, then the result is positive zero.
+     *
+     * </ul>
+     * <p>The computed result must be within 2.5 ulps of the exact result.
+     * @param   x The number whose inverse hyperbolic cosine is to be returned.
+     * @return  The inverse hyperbolic cosine of {@code x}.
+     * @since 27
+     */
+    public static double acosh(double x) {
+        return StrictMath.acosh(x);
     }
 
     /**

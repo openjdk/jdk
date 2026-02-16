@@ -3561,4 +3561,50 @@ final class FdLibm {
             return hx > 0 ? w : -w;
         }
     }
+
+    /**
+     * Return the Inverse Hyperbolic Cosine of x
+     *
+     * Method :
+     *
+     *
+     *      acosh(x) is defined so that acosh(cosh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
+     *      and cosh(acosh(x)) = x, 1 <= x &lt; &infin;.
+     *      It can be written as acosh(x) = log(x + sqrt(x^2 - 1)), 1 <= x  &lt; &infin;.
+     *      acosh(x) := log(x)+ln2, if x is large; else
+     *               := log(2x-1/(sqrt(x*x-1)+x)) if x&gt;2; else
+     *               := log1p(t+sqrt(2.0*t+t*t)); where t=x-1.
+     *
+     *
+     *
+     * Special cases:
+     *      acosh(x) is NaN with signal if x < 1.
+     *      acosh(NaN) is NaN without signal.
+     */
+    static final class Acosh {
+        private static final double ln2 = 6.93147180559945286227e-01;
+
+        static double compute(double x) {
+            double t;
+            int hx;
+            hx = __HI(x);
+            if (hx < 0x3ff0_0000) {                           // x < 1 */
+                return (x - x) / (x - x);
+            } else if (hx >= 0x41b0_0000) {                   // x > 2**28
+                if (hx >= 0x7ff0_0000) {                      // x is inf of NaN
+                    return x + x;
+                } else {
+                    return Log.compute(x) + ln2;              // acosh(huge) = log(2x)
+                }
+            } else if (((hx - 0x3ff0_0000) | __LO(x)) == 0) {
+                return 0.0;                                   // acosh(1) = 0
+            } else if (hx > 0x4000_0000) {                    // 2**28 > x > 2
+                t = x * x;
+                return Log.compute(2.0 * x - 1.0 / (x + Sqrt.compute(t - 1.0)));
+            } else {                                          // 1< x <2
+                t = x - 1.0;
+                return Log1p.compute(t + Sqrt.compute(2.0 * t + t * t));
+            }
+        }
+    }
 }

@@ -76,8 +76,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@code exp}, {@code log}, {@code log10},
  * {@code cbrt}, {@code atan2}, {@code pow},
  * {@code sinh}, {@code cosh}, {@code tanh},
- * {@code asinh}, {@code hypot}, {@code expm1},
- * and {@code log1p}.
+ * {@code asinh}, {@code acosh}, {@code hypot},
+ * {@code expm1}, and {@code log1p}.
  *
  * <p>
  * The platform uses signed two's complement integer arithmetic with
@@ -2194,6 +2194,32 @@ public final class StrictMath {
      */
     public static double asinh(double x) {
         return FdLibm.Asinh.compute(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic cosine of a {@code double} value.
+     * The inverse hyperbolic cosine of <i>x</i> is defined to be the function such that
+     *  acosh({@linkplain Math#cosh cosh(<i>x</i>)}) = <i>x</i> for any <i>x</i> >= 0.
+     *  Note that range of the exact acosh(x) is >= 0.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is positive infinity, then the result is
+     * positive infinity
+     *
+     * <li>If the argument less than {@code 1.0}, then the result is NaN.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is {@code 1.0}, then the result is positive zero.
+     *
+     * </ul>
+     * @param   x The number whose inverse hyperbolic cosine is to be returned.
+     * @return  The inverse hyperbolic cosine of {@code x}.
+     * @since 27
+     */
+    public static double acosh(double x) {
+        return FdLibm.Acosh.compute(x);
     }
 
     /**
