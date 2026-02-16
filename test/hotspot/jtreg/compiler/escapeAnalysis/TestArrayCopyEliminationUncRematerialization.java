@@ -376,7 +376,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                     """
                 ));
                 // Unfortunately, it is not possible to validate the placement of rematerialization nodes because
-                // the number of uncomon traps is sensible to changes in the profile, which leads to a bimodal count
+                // the number of uncomon traps is sensitive to changes in the profile, which leads to a bimodal count
                 // of load nodes.
                 return scope(
                     runTestConst.asToken("Const" + testName),
