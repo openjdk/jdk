@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1313,9 +1313,17 @@ public:
   void ucomiss(XMMRegister dst, Address        src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  void vucomxss(XMMRegister dst, XMMRegister    src) { Assembler::vucomxss(dst, src); }
+  void vucomxss(XMMRegister dst, Address        src) { Assembler::vucomxss(dst, src); }
+  void vucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
   void ucomisd(XMMRegister dst, XMMRegister    src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, Address        src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void vucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::vucomxsd(dst, src); }
+  void vucomxsd(XMMRegister dst, Address        src) { Assembler::vucomxsd(dst, src); }
+  void vucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister    src);

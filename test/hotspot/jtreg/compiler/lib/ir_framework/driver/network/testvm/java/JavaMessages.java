@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,30 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+package compiler.lib.ir_framework.driver.network.testvm.java;
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutNoProxyAsync
+import compiler.lib.ir_framework.test.network.MessageTag;
+
+/**
+ * Class to collect all Java messages sent from the Test VM to the Driver VM.
  */
+public class JavaMessages {
+    private final String output;
+    private final boolean receivedStdOut;
 
-public class ConnectTimeoutNoProxyAsync extends AbstractConnectTimeout {
+    public JavaMessages(String output, boolean receivedStdOut) {
+        this.output = output;
+        this.receivedStdOut = receivedStdOut;
+    }
 
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutNoProxyAsync(Version requestVersion,
-                                    String scheme,
-                                    String method,
-                                    Duration connectTimeout,
-                                    Duration requestduration)
-    {
-        super.timeoutNoProxyAsync(requestVersion, scheme, method, connectTimeout, requestduration);
+    public String output() {
+        return output;
+    }
+
+    /**
+     * Return whether Test VM sent messages to be put on stdout (starting with {@link MessageTag#STDOUT}).
+     */
+    public boolean hasStdOut() {
+        return receivedStdOut;
     }
 }
