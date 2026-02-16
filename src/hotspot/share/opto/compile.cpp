@@ -2525,6 +2525,8 @@ void Compile::Optimize() {
 
   process_for_post_loop_opts_igvn(igvn);
 
+  if (failing())  return;
+
   process_for_merge_stores_igvn(igvn);
 
   if (failing())  return;
@@ -4442,6 +4444,22 @@ void Compile::record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_mult
     if (CaptureBailoutInformation) {
       _first_failure_details = new CompilationFailureInfo(reason);
     }
+#ifdef ASSERT
+    if (StressBailout) {
+      ResourceMark rm;
+      Unique_Node_List wq;
+      wq.push(root());
+      for (uint i = 0; i < wq.size(); i++) {
+        Node* n = wq.at(i);
+        for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+          wq.push(n->fast_out(j));
+        }
+      }
+      for (uint i = 0; i < wq.size(); i++) {
+        wq.at(i)->disconnect_inputs(this);
+      }
+    }
+#endif
   } else {
     assert(!StressBailout || allow_multiple_failures, "should have handled previous failure.");
   }

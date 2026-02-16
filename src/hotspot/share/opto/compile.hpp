@@ -899,7 +899,7 @@ public:
                                            }
   uint          live_nodes() const         {
     int  val = _unique - _dead_node_count;
-    assert (val >= 0, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);
+    assert (val >= 0 || StressBailout, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);
             return (uint) val;
                                            }
 #ifdef ASSERT
