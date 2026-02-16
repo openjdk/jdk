@@ -29,6 +29,7 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
+#include "jfr/periodic/jfrRedactedEvents.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
@@ -462,6 +463,7 @@ void JfrRecorder::destroy_components() {
   JfrEventThrottler::destroy();
   JfrThreadGroupManager::destroy();
   JfrSymbolTable::destroy();
+  JfrRedactedEvents::destroy();
 }
 
 bool JfrRecorder::create_recorder_thread() {

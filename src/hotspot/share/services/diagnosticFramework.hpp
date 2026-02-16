@@ -85,6 +85,9 @@ public:
     // instance to the caller.
     return line;
   }
+  size_t cursor() const {
+    return _cursor;
+  }
 };
 
 // Iterator class to iterate over diagnostic command arguments
