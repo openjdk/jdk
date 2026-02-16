@@ -64,9 +64,9 @@ constexpr bool is_integer_convertible(From from) {
     // isn't needed by integer_cast, where a tautological call is discarded.
     return true;
   } else if constexpr (std::is_unsigned_v<From>) {
-    using U = std::make_unsigned_t<To>;
     // unsigned => signed or unsigned => unsigned.
     // Convert To::max to corresponding unsigned for compare.
+    using U = std::make_unsigned_t<To>;
     return from <= static_cast<U>(std::numeric_limits<To>::max());
   } else if constexpr (std::is_signed_v<To>) {
     // signed => signed.
