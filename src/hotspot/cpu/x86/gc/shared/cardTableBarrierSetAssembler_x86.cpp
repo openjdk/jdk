@@ -115,6 +115,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ movptr(tmp, ExternalAddress(AOTRuntimeConstants::card_table_address()));
+    __ movq(tmp, tmp);
   } else
 #endif
   {
@@ -147,6 +148,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ movptr(rscratch, ExternalAddress(AOTRuntimeConstants::card_table_address()));
+    __ movq(rscratch, rscratch);
     card_addr = Address(rscratch, obj, Address::times_1, 0);
   } else
 #endif
