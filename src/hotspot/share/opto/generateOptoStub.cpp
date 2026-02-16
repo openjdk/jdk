@@ -97,8 +97,8 @@ void GraphKit::gen_stub(address C_function,
   // as soon as last_Java_sp != nullptr the has_last_Java_frame is true and
   // users will look at the other fields.
   //
-  Node *adr_sp = off_heap_plus_addr(thread, in_bytes(JavaThread::last_Java_sp_offset()));
-  Node *last_sp = frameptr();
+  Node* adr_sp = off_heap_plus_addr(thread, in_bytes(JavaThread::last_Java_sp_offset()));
+  Node* last_sp = frameptr();
   store_to_memory(control(), adr_sp, last_sp, T_ADDRESS, MemNode::unordered);
 
   // Set _thread_in_native
