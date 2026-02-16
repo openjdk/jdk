@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.network.TestVMData;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFrameworkSocket;
 import compiler.lib.ir_framework.shared.NoTestsRunException;
@@ -58,10 +59,9 @@ public class TestVMProcess {
     private static String lastTestVMOutput = "";
 
     private final ArrayList<String> cmds;
-    private String hotspotPidFileName;
     private String commandLine;
     private OutputAnalyzer oa;
-    private String applicableIRRules;
+    private final TestVMData testVmData;
 
     public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup,
                          boolean allowNotCompilable, boolean testClassesOnBootClassPath) {
@@ -72,20 +72,17 @@ public class TestVMProcess {
                                allowNotCompilable, testClassesOnBootClassPath);
             start();
         }
-        processSocketOutput(socket);
         checkTestVMExitCode();
+        String hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());
+        testVmData = socket.testVmData(hotspotPidFileName, allowNotCompilable);
     }
 
     public String getCommandLine() {
         return commandLine;
     }
 
-    public String getApplicableIRRules() {
-        return applicableIRRules;
-    }
-
-    public String getHotspotPidFileName() {
-        return hotspotPidFileName;
+    public TestVMData testVmData() {
+        return testVmData;
     }
 
     public static String getLastTestVMOutput() {
@@ -172,53 +169,7 @@ public class TestVMProcess {
         process.command().add(1, "-DReproduce=true"); // Add after "/path/to/bin/java" in order to rerun the Test VM directly
         commandLine = "Command Line:" + System.lineSeparator() + String.join(" ", process.command())
                       + System.lineSeparator();
-        hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());
         lastTestVMOutput = oa.getOutput();
-    }
-
-    /**
-     * Process the socket output: All prefixed lines are dumped to the standard output while the remaining lines
-     * represent the Applicable IR Rules used for IR matching later.
-     */
-    private void processSocketOutput(TestFrameworkSocket socket) {
-        String output = socket.getOutput();
-        if (socket.hasStdOut()) {
-            StringBuilder testListBuilder = new StringBuilder();
-            StringBuilder messagesBuilder = new StringBuilder();
-            StringBuilder nonStdOutBuilder = new StringBuilder();
-            Scanner scanner = new Scanner(output);
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                if (line.startsWith(TestFrameworkSocket.STDOUT_PREFIX)) {
-                    // Exclude [STDOUT] from message.
-                    line = line.substring(TestFrameworkSocket.STDOUT_PREFIX.length());
-                    if (line.startsWith(TestFrameworkSocket.TESTLIST_TAG)) {
-                        // Exclude [TESTLIST] from message for better formatting.
-                        line = "> " + line.substring(TestFrameworkSocket.TESTLIST_TAG.length() + 1);
-                        testListBuilder.append(line).append(System.lineSeparator());
-                    } else {
-                        messagesBuilder.append(line).append(System.lineSeparator());
-                    }
-                } else {
-                    nonStdOutBuilder.append(line).append(System.lineSeparator());
-                }
-            }
-            System.out.println();
-            if (!testListBuilder.isEmpty()) {
-                System.out.println("Run flag defined test list");
-                System.out.println("--------------------------");
-                System.out.println(testListBuilder);
-                System.out.println();
-            }
-            if (!messagesBuilder.isEmpty()) {
-                System.out.println("Messages from Test VM");
-                System.out.println("---------------------");
-                System.out.println(messagesBuilder);
-            }
-            applicableIRRules = nonStdOutBuilder.toString();
-        } else {
-            applicableIRRules = output;
-        }
     }
 
     private void checkTestVMExitCode() {

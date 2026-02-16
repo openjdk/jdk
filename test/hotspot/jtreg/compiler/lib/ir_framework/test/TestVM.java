@@ -26,6 +26,8 @@ package compiler.lib.ir_framework.test;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
@@ -37,8 +39,6 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static compiler.lib.ir_framework.shared.TestFrameworkSocket.PRINT_TIMES_TAG;
 
 /**
  * This class' main method is called from {@link TestFramework} and represents the so-called "Test VM". The class is
@@ -159,6 +159,7 @@ public class TestVM {
      */
     public static void main(String[] args) {
         try {
+            TestVmSocket.connect();
             String testClassName = args[0];
             System.out.println("TestVM main() called - about to run tests in class " + testClassName);
             Class<?> testClass = getClassObject(testClassName, "test");
@@ -167,7 +168,7 @@ public class TestVM {
             framework.addHelperClasses(args);
             framework.start();
         } finally {
-            TestFrameworkSocket.closeClientSocket();
+            TestVmSocket.close();
         }
     }
 
@@ -864,7 +865,7 @@ public class TestVM {
                 System.out.println("Run " + test.toString());
             }
             if (testFilterPresent) {
-                TestFrameworkSocket.write("Run " + test.toString(), TestFrameworkSocket.TESTLIST_TAG, true);
+                TestVmSocket.send(MessageTag.TEST_LIST + "Run " + test.toString());
             }
             try {
                 test.run();
@@ -892,10 +893,9 @@ public class TestVM {
 
         // Print execution times
         if (PRINT_TIMES) {
-            TestFrameworkSocket.write("Test execution times:", PRINT_TIMES_TAG, true);
+            TestVmSocket.send(MessageTag.PRINT_TIMES + " Test execution times:");
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
-                        PRINT_TIMES_TAG, true);
+                TestVmSocket.send(MessageTag.PRINT_TIMES + String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()));
             }
         }
 
