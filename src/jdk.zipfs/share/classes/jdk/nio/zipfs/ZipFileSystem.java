@@ -2699,7 +2699,7 @@ class ZipFileSystem extends FileSystem {
                 xoff = ZIP64_MINVAL;
                 hasZip64 = true;
             }
-            long count = centot;
+            int count = Math.toIntExact(centot);
             if (count >= ZIP64_MINVAL32) {
                 count = ZIP64_MINVAL32;
                 hasZip64 = true;
@@ -2726,8 +2726,8 @@ class ZipFileSystem extends FileSystem {
             writeInt(os, ENDSIG);                 // END record signature
             writeShort(os, 0);                    // number of this disk
             writeShort(os, 0);                    // central directory start disk
-            writeShort(os, Math.toIntExact(count));                // number of directory entries on disk
-            writeShort(os, Math.toIntExact(count));                // total number of directory entries
+            writeShort(os, count);                // number of directory entries on disk
+            writeShort(os, count);                // total number of directory entries
             writeInt(os, xlen);                   // length of central directory
             writeInt(os, xoff);                   // offset of central directory
             writeShort(os, 0);                    // zip file comment, not used
