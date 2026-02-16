@@ -839,7 +839,15 @@ bool os::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
+bool os::Machine::available_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
 bool os::free_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
@@ -858,7 +866,11 @@ bool os::win32::available_memory(physical_memory_size_type& value) {
   }
 }
 
-bool os::total_swap_space(physical_memory_size_type& value) {
+bool os::total_swap_space(physical_memory_size_type& value)  {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
@@ -872,6 +884,10 @@ bool os::total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
@@ -885,6 +901,10 @@ bool os::free_swap_space(physical_memory_size_type& value) {
 }
 
 physical_memory_size_type os::physical_memory() {
+  return win32::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -911,6 +931,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
   if (UseAllWindowsProcessorGroups && !schedules_all_processor_groups && !win32::processor_group_warning_displayed()) {
     win32::set_processor_group_warning_displayed(true);
@@ -3257,11 +3281,10 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    bool rc = (file_desc != -1) ? os::unmap_memory(extra_base, extra_size) :
-                                  os::release_memory(extra_base, extra_size);
-    assert(rc, "release failed");
-    if (!rc) {
-      return nullptr;
+    if (file_desc != -1) {
+      os::unmap_memory(extra_base, extra_size);
+    } else {
+      os::release_memory(extra_base, extra_size);
     }
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
@@ -3657,8 +3680,8 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size, !ExecMem);
 }
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+void os::remove_stack_guard_pages(char* addr, size_t size) {
+  os::uncommit_memory(addr, size);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {

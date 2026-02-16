@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -82,7 +83,7 @@ Thread::Thread(MemTag mem_tag) {
   _threads_hazard_ptr = nullptr;
   _threads_list_ptr = nullptr;
   _nested_threads_hazard_ptr_cnt = 0;
-  _rcu_counter = 0;
+  _rcu_counter.store_relaxed(0);
 
   // the handle mark links itself to last_handle_mark
   new HandleMark(this);
@@ -91,7 +92,7 @@ Thread::Thread(MemTag mem_tag) {
   DEBUG_ONLY(_owned_locks = nullptr;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
-  set_allocated_bytes(0);
+  _allocated_bytes = 0;
   _current_pending_raw_monitor = nullptr;
   _vm_error_callbacks = nullptr;
 
@@ -484,7 +485,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
               (double)_statistical_info.getElapsedTime() / 1000.0
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
-      size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
+      size_t allocated_bytes = checked_cast<size_t>(cooked_allocated_bytes());
       st->print("allocated=%zu%s ",
                 byte_size_in_proper_unit(allocated_bytes),
                 proper_unit_for_byte_size(allocated_bytes)

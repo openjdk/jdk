@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,14 +110,14 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool clear_soft_refs,
                                  bool do_maximal_compaction,
-                                 G1FullGCTracer* tracer) :
+                                 GCTracer* tracer) :
     _heap(heap),
     _scope(heap->monitoring_support(), clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _has_compaction_targets(false),
     _has_humongous(false),
-    _oop_queue_set(_num_workers),
-    _array_queue_set(_num_workers),
+    _marking_task_queues(_num_workers),
+    _partial_array_state_manager(nullptr),
     _preserved_marks_set(true),
     _serial_compaction_point(this, nullptr),
     _humongous_compaction_point(this, nullptr),
@@ -134,21 +134,27 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_num_regions(), mtGC);
-  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_num_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
   for (uint j = 0; j < heap->max_num_regions(); j++) {
     _live_stats[j].clear();
-    _compaction_tops[j] = nullptr;
+    ::new (&_compaction_tops[j]) Atomic<HeapWord*>{};
   }
+
+  _partial_array_state_manager = new PartialArrayStateManager(_num_workers);
 
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _live_stats);
     _compaction_points[i] = new G1FullGCCompactionPoint(this, _preserved_marks_set.get(i));
-    _oop_queue_set.register_queue(i, marker(i)->oop_stack());
-    _array_queue_set.register_queue(i, marker(i)->objarray_stack());
+    _marking_task_queues.register_queue(i, marker(i)->task_queue());
   }
+
   _serial_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
   _humongous_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
   _region_attr_table.initialize(heap->reserved(), G1HeapRegion::GrainBytes);
+}
+
+PartialArrayStateManager* G1FullCollector::partial_array_state_manager() const {
+  return _partial_array_state_manager;
 }
 
 G1FullCollector::~G1FullCollector() {
@@ -157,9 +163,11 @@ G1FullCollector::~G1FullCollector() {
     delete _compaction_points[i];
   }
 
+  delete _partial_array_state_manager;
+
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
-  FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
+  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _compaction_tops);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
@@ -268,6 +276,21 @@ void G1FullCollector::before_marking_update_attribute_table(G1HeapRegion* hr) {
 class G1FullGCRefProcProxyTask : public RefProcProxyTask {
   G1FullCollector& _collector;
 
+  // G1 Full GC specific closure for handling discovered fields. Do NOT need any
+  // barriers as Full GC discards all this information anyway.
+  class G1FullGCDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
+    G1CollectedHeap* _g1h;
+
+  public:
+    G1FullGCDiscoveredFieldClosure() : _g1h(G1CollectedHeap::heap()) { }
+
+    void enqueue(HeapWord* discovered_field_addr, oop value) override {
+      assert(_g1h->is_in(discovered_field_addr), PTR_FORMAT " is not in heap ", p2i(discovered_field_addr));
+      // Store the value and done.
+      RawAccess<>::oop_store(discovered_field_addr, value);
+    }
+  };
+
 public:
   G1FullGCRefProcProxyTask(G1FullCollector &collector, uint max_workers)
     : RefProcProxyTask("G1FullGCRefProcProxyTask", max_workers),
@@ -278,9 +301,9 @@ public:
     G1IsAliveClosure is_alive(&_collector);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1FullKeepAliveClosure keep_alive(_collector.marker(index));
-    BarrierEnqueueDiscoveredFieldClosure enqueue;
-    G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_gc);
+    G1FullGCDiscoveredFieldClosure enqueue;
+    G1MarkStackClosure* complete_marking = _collector.marker(index)->stack_closure();
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_marking);
   }
 };
 
@@ -302,7 +325,7 @@ void G1FullCollector::phase1_mark_live_objects() {
     const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, _heap->workers(), pt);
     scope()->tracer()->report_gc_reference_stats(stats);
     pt.print_all_references();
-    assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
+    assert(marker(0)->task_queue()->is_empty(), "Should be no oops on the stack");
   }
 
   {
@@ -328,8 +351,7 @@ void G1FullCollector::phase1_mark_live_objects() {
     scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
   }
 #if TASKQUEUE_STATS
-  oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
-  array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+  marking_task_queues()->print_and_reset_taskqueue_stats("Marking Task Queue");
 #endif
 }
 
