@@ -174,7 +174,7 @@ public class TestPrimitiveTypes {
 
         tests.put("test_names", namesTemplate.asToken());
 
-        var shortDefTemplate = Template.make("type", (PrimitiveType type) -> scope(
+        var abbrevDefTemplate = Template.make("type", (PrimitiveType type) -> scope(
             let("CON1", type.con()),
             let("CON2", type.con()),
             let("abbrev", type.abbrev()),
@@ -193,15 +193,15 @@ public class TestPrimitiveTypes {
             varFieldDesc#fieldDesc = tmp#abbrev;
             """
         ));
-        var shortsTemplate = Template.make(() -> scope(
+        var abbrevTemplate = Template.make(() -> scope(
             """
-            public static void test_shorts() {
+            public static void test_abbrev() {
             """,
             Hooks.CLASS_HOOK.insert(scope(
                 // Create fields that would collide if the abbrev() or fieldDesc() methods produced colliding
                 // strings for different types
                 CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
-                    shortDefTemplate.asToken(type)
+                    abbrevDefTemplate.asToken(type)
                 ).toList()
             )),
                 CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
@@ -212,7 +212,7 @@ public class TestPrimitiveTypes {
             """
         ));
 
-        tests.put("test_shorts", shortsTemplate.asToken());
+        tests.put("test_abbrev", abbrevTemplate.asToken());
 
         // Test runtime random value generation with LibraryRNG
         // Runtime random number generation of a given primitive type can be very helpful

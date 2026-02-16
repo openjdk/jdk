@@ -155,13 +155,13 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     }
 
     /**
-     * Provides the one-letter abbreviation of the type as it would be used for node classes in
-     * the IR-Framework. Note the the abbreviations for boolean and char are used inconsistently.
+     * Provides the abbreviation of the type as it would be used for node classes in the
+     * IR-Framework. Note the the abbreviations for boolean and char are used inconsistently.
      * This method maps boolean to "UB", even though it might sometimes be mapped under "B" since
      * it is loaded as a byte, and char to "C", even though it might sometimes be mapped to "US"
      * for "unsigned short".
      *
-     * @return the one-letter abbreviation of the type.
+     * @return the abbreviation of the type.
      */
     public String abbrev() {
         return switch (kind) {
