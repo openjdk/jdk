@@ -1390,15 +1390,13 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     case Op_If:
     case Op_CountedLoopEnd:
     case Op_LongCountedLoopEnd:
-      // These nodes perform deep graph traversals in their Ideal methods:
-      //   IfNode/RangeCheckNode::Ideal -> Ideal_common -> split_if speculatively
-      //     clones nodes, bumping unique() without progress.
-      //   IfNode::Ideal -> search_identical() walks CFG dominator tree.
-      //   CountedLoopEndNode/LongCountedLoopEndNode::Ideal -> simple_subsuming
-      //     looks for dominating test that subsumes the current test.
-      // Calling Ideal(can_reshape=true) on these nodes modifies the graph, contaminating
-      // verification of subsequent nodes. Deep revisit convergence for these nodes is
-      // instead verified via the drain-based check in verify_optimize().
+      // Ideal(can_reshape=true) for these nodes is not a pure query: split_if
+      // (called from Ideal_common) speculatively clones a compare node to test
+      // constant foldability, then destroys it. When the test fails, Ideal returns
+      // nullptr (the node IS at its fixed point), but clone() has already bumped
+      // C->unique(). This triggers a false assertion in the old_unique check below.
+      // Deep revisit convergence for these nodes is instead verified via the
+      // drain-based check in verify_optimize().
       return;
 
     // RegionNode::Ideal does "Skip around the useless IF diamond".
