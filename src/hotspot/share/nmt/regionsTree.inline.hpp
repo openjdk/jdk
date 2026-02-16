@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "nmt/virtualMemoryTracker.hpp"
 
 template<typename F>
-void RegionsTree::visit_committed_regions(const VirtualMemoryRegion& rgn, F func) {
+void RegionsTree::visit_committed_regions(const ReservedMemoryRegion& rgn, F func) {
   position start = (position)rgn.base();
   size_t end = reinterpret_cast<size_t>(rgn.end()) + 1;
   size_t comm_size = 0;
@@ -38,12 +38,8 @@ void RegionsTree::visit_committed_regions(const VirtualMemoryRegion& rgn, F func
   visit_range_in_order(start, end, [&](Node* node) {
     NodeHelper curr(node);
     if (prev.is_valid() && prev.is_committed_begin()) {
-      VirtualMemoryRegion rgn((address)prev.position(),
-                              curr.distance_from(prev),
-                              reserved_stack(prev),
-                              committed_stack(prev),
-                              prev.out_tag());
-      if (!func(rgn)) {
+      CommittedMemoryRegion cmr((address)prev.position(), curr.distance_from(prev), stack(prev));
+      if (!func(cmr)) {
         return false;
       }
     }
@@ -67,13 +63,13 @@ void RegionsTree::visit_reserved_regions(F func) {
     }
     prev = curr;
     if (curr.is_released_begin() || begin_node.out_tag() != curr.out_tag()) {
-      auto st = reserved_stack(begin_node);
+      auto st = stack(begin_node);
       if (rgn_size == 0) {
         prev.clear_node();
         return true;
       }
-      VirtualMemoryRegion rgn((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
-      if (!func(rgn)) {
+      ReservedMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
+      if (!func(rmr)) {
         return false;
       }
       rgn_size = 0;

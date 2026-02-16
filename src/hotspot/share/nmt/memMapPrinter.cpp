@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -149,7 +149,7 @@ public:
     }
   }
 
-  bool do_allocation_site(const VirtualMemoryRegion* rgn) override {
+  bool do_allocation_site(const ReservedMemoryRegion* rgn) override {
     // Cancel iteration if we run out of memory (add returns false);
     return add(rgn->base(), rgn->end(), rgn->mem_tag());
   }
