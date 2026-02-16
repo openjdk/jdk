@@ -2676,7 +2676,7 @@ class ZipFileSystem extends FileSystem {
         // int  disknum;
         // int  sdisknum;
         // int  endsub;
-        long centot;       // 4 bytes
+        long centot;        // 4 bytes
         long cenlen;        // 4 bytes
         long cenoff;        // 4 bytes
         // int  comlen;     // comment length
