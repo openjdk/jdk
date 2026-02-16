@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,15 +397,15 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Creates an sRGB color with the specified combined RGBA value consisting
+     * Creates an sRGB color with the specified combined ARGB value consisting
      * of the alpha component in bits 24-31, the red component in bits 16-23,
-     * the green component in bits 8-15, and the blue component in bits 0-7.
-     * If the {@code hasalpha} argument is {@code false}, alpha
-     * is defaulted to 255.
+     * the green component in bits 8-15, and the blue component in bits 0-7. If
+     * the {@code hasAlpha} argument is {@code false}, alpha is defaulted to
+     * 255.
      *
-     * @param rgba the combined RGBA components
-     * @param hasalpha {@code true} if the alpha bits are valid;
-     *        {@code false} otherwise
+     * @param  argb the combined ARGB components
+     * @param  hasAlpha {@code true} if the alpha bits are valid; {@code false}
+     *         otherwise
      * @see java.awt.image.ColorModel#getRGBdefault
      * @see #getRed
      * @see #getGreen
@@ -413,11 +413,11 @@ public class Color implements Paint, java.io.Serializable {
      * @see #getAlpha
      * @see #getRGB
      */
-    public Color(int rgba, boolean hasalpha) {
-        if (hasalpha) {
-            value = rgba;
+    public Color(int argb, boolean hasAlpha) {
+        if (hasAlpha) {
+            value = argb;
         } else {
-            value = 0xff000000 | rgba;
+            value = 0xff000000 | argb;
         }
     }
 
