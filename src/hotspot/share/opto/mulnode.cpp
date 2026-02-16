@@ -1238,20 +1238,26 @@ Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
       return in(1);
     }
     // Check for useless sign-masking
+    int lshift_count = 0;
     if (in(1)->Opcode() == Op_LShift(bt) &&
         in(1)->req() == 3 &&
-        in(1)->in(2) == in(2)) {
+        // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+        // negative constant (e.g. -1 vs 31)
+        const_shift_count(phase, in(1), &lshift_count)) {
       count &= bits_per_java_integer(bt) - 1; // semantics of Java shifts
-      // Compute masks for which this shifting doesn't change
-      jlong lo = (CONST64(-1) << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
-      jlong hi = ~lo;                                                            // 00007FFF
-      const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
-      if (t11 == nullptr) {
-        return this;
-      }
-      // Does actual value fit inside of mask?
-      if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
-        return in(1)->in(1);      // Then shifting is a nop
+      lshift_count &= bits_per_java_integer(bt) - 1;
+      if (count == lshift_count) {
+        // Compute masks for which this shifting doesn't change
+        jlong lo = (CONST64(-1) << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
+        jlong hi = ~lo;                                                            // 00007FFF
+        const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
+        if (t11 == nullptr) {
+          return this;
+        }
+        // Does actual value fit inside of mask?
+        if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
+          return in(1)->in(1);      // Then shifting is a nop
+        }
       }
     }
   }
@@ -1524,11 +1530,14 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // If Q is "X << z" the rounding is useless.  Look for patterns like
   // ((X<<Z) + Y) >>> Z  and replace with (X + Y>>>Z) & Z-mask.
   Node *add = in(1);
-  const TypeInt *t2 = phase->type(in(2))->isa_int();
   if (in1_op == Op_AddI) {
     Node *lshl = add->in(1);
-    if( lshl->Opcode() == Op_LShiftI &&
-        phase->type(lshl->in(2)) == t2 ) {
+    // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+    // negative constant (e.g. -1 vs 31)
+    int lshl_con = 0;
+    if (lshl->Opcode() == Op_LShiftI &&
+        const_shift_count(phase, lshl, &lshl_con) &&
+        (lshl_con & (BitsPerJavaInteger - 1)) == con) {
       Node *y_z = phase->transform( new URShiftINode(add->in(2),in(2)) );
       Node *sum = phase->transform( new AddINode( lshl->in(1), y_z ) );
       return new AndINode( sum, phase->intcon(mask) );
@@ -1555,11 +1564,16 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Check for "(X << z ) >>> z" which simply zero-extends
   Node *shl = in(1);
-  if( in1_op == Op_LShiftI &&
-      phase->type(shl->in(2)) == t2 )
-    return new AndINode( shl->in(1), phase->intcon(mask) );
+  // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+  // negative constant (e.g. -1 vs 31)
+  int shl_con = 0;
+  if (in1_op == Op_LShiftI &&
+      const_shift_count(phase, shl, &shl_con) &&
+      (shl_con & (BitsPerJavaInteger - 1)) == con)
+    return new AndINode(shl->in(1), phase->intcon(mask));
 
   // Check for (x >> n) >>> 31. Replace with (x >>> 31)
+  const TypeInt* t2 = phase->type(in(2))->isa_int();
   Node *shr = in(1);
   if ( in1_op == Op_RShiftI ) {
     Node *in11 = shr->in(1);
@@ -1677,11 +1691,15 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeInt *t2 = phase->type(in(2))->isa_int();
   if (add->Opcode() == Op_AddL) {
     Node *lshl = add->in(1);
-    if( lshl->Opcode() == Op_LShiftL &&
-        phase->type(lshl->in(2)) == t2 ) {
-      Node *y_z = phase->transform( new URShiftLNode(add->in(2),in(2)) );
-      Node *sum = phase->transform( new AddLNode( lshl->in(1), y_z ) );
-      return new AndLNode( sum, phase->longcon(mask) );
+    // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+    // negative constant (e.g. -1 vs 63)
+    int lshl_con = 0;
+    if (lshl->Opcode() == Op_LShiftL &&
+        const_shift_count(phase, lshl, &lshl_con) &&
+        (lshl_con & (BitsPerJavaLong - 1)) == con) {
+      Node* y_z = phase->transform(new URShiftLNode(add->in(2), in(2)));
+      Node* sum = phase->transform(new AddLNode(lshl->in(1), y_z));
+      return new AndLNode(sum, phase->longcon(mask));
     }
   }
 
@@ -1701,9 +1719,14 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Check for "(X << z ) >>> z" which simply zero-extends
   Node *shl = in(1);
-  if( shl->Opcode() == Op_LShiftL &&
-      phase->type(shl->in(2)) == t2 )
-    return new AndLNode( shl->in(1), phase->longcon(mask) );
+  // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+  // negative constant (e.g. -1 vs 63)
+  int shl_con = 0;
+  if (shl->Opcode() == Op_LShiftL &&
+      const_shift_count(phase, shl, &shl_con) &&
+      (shl_con & (BitsPerJavaLong - 1)) == con) {
+    return new AndLNode(shl->in(1), phase->longcon(mask));
+  }
 
   // Check for (x >> n) >>> 63. Replace with (x >>> 63)
   Node *shr = in(1);
