@@ -539,9 +539,6 @@ private:
     Node** outp = &_out[_outcnt];
     // Find and remove n
     do {
-      if (StressBailout && outp <= _out) {
-        return;
-      }
       assert(outp > _out, "Missing Def-Use edge");
     } while (*--outp != n);
     *outp = _out[--_outcnt];
