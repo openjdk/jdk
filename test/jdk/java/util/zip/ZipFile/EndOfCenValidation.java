@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,26 +24,27 @@
 /* @test
  * @bug 8272746
  * @modules java.base/jdk.internal.util
- * @summary Verify that ZipFile rejects files with CEN sizes exceeding the implementation limit
+ * @summary Verify that ZipFile/ZipFileSystem rejects files with CEN sizes exceeding the implementation limit
  * @run junit/othervm EndOfCenValidation
  */
 
 import jdk.internal.util.ArraysSupport;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.zip.ZipEntry;
@@ -51,7 +52,8 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * This test augments {@link TestTooManyEntries}. It creates sparse ZIPs where
@@ -118,11 +120,7 @@ public class EndOfCenValidation {
 
         Path zip = zipWithModifiedEndRecord(size, true, 0, CEN_TOO_LARGE_ZIP);
 
-        ZipException ex = assertThrows(ZipException.class, () -> {
-            new ZipFile(zip.toFile());
-        });
-
-        assertEquals(INVALID_CEN_SIZE_TOO_LARGE, ex.getMessage());
+        assertRejection(zip, INVALID_CEN_SIZE_TOO_LARGE);
     }
 
     /**
@@ -138,11 +136,7 @@ public class EndOfCenValidation {
 
         Path zip = zipWithModifiedEndRecord(size, false, 0, INVALID_CEN_SIZE);
 
-        ZipException ex = assertThrows(ZipException.class, () -> {
-            new ZipFile(zip.toFile());
-        });
-
-        assertEquals(INVALID_CEN_BAD_SIZE, ex.getMessage());
+        assertRejection(zip, INVALID_CEN_BAD_SIZE);
     }
 
     /**
@@ -158,11 +152,7 @@ public class EndOfCenValidation {
 
         Path zip = zipWithModifiedEndRecord(size, true, 100, BAD_CEN_OFFSET_ZIP);
 
-        ZipException ex = assertThrows(ZipException.class, () -> {
-            new ZipFile(zip.toFile());
-        });
-
-        assertEquals(INVALID_CEN_BAD_OFFSET, ex.getMessage());
+        assertRejection(zip, INVALID_CEN_BAD_OFFSET);
     }
 
     /**
@@ -284,12 +274,28 @@ public class EndOfCenValidation {
         Files.write(zipFile, zipBytes);
 
         // Verify that the END header is rejected
-        ZipException ex = assertThrows(ZipException.class, () -> {
-            try (var zf = new ZipFile(zipFile.toFile())) {
-            }
-        });
+        assertRejection(zipFile, INVALID_BAD_ENTRY_COUNT);
+    }
 
-        assertEquals(INVALID_BAD_ENTRY_COUNT, ex.getMessage());
+    /**
+     * Verify that opening the a ZipFile/ZipFileSystem fails
+     * with a ZipException with the given message
+     *
+     * @param zip ZIP file to open
+     * @param msg expected ZipException message string
+     */
+    private static void assertRejection(Path zip, String msg) {
+        // Verify ZipFile
+        ZipException zfEx = assertThrows(ZipException.class, () -> {
+            new ZipFile(zip.toFile());
+        });
+        assertEquals(msg, zfEx.getMessage());
+
+        // Verify ZipFileSystem
+        ZipException zfsEx = assertThrows(ZipException.class, () -> {
+            FileSystems.newFileSystem(zip);
+        });
+        assertEquals(msg, zfsEx.getMessage());
     }
 
     /**
