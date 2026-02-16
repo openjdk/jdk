@@ -1177,13 +1177,13 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 //------------------------------basic_plus_adr---------------------------------
 Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   // short-circuit a common case
-  if (offset == intcon(0))  return ptr;
+  if (offset == intcon(0)) { return ptr; }
   return _gvn.transform(AddPNode::make_with_base(base, ptr, offset));
 }
 
 Node* GraphKit::off_heap_plus_addr(Node* ptr, Node* offset) {
   // short-circuit a common case
-  if (offset == intcon(0))  return ptr;
+  if (offset == intcon(0)) { return ptr; }
   return _gvn.transform(AddPNode::make_off_heap(ptr, offset));
 }
 
@@ -2749,9 +2749,9 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // will always succeed.  We could leave a dependency behind to ensure this.
 
   // First load the super-klass's check-offset
-  Node *p1 = gvn.transform(AddPNode::make_off_heap(superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+  Node* p1 = gvn.transform(AddPNode::make_off_heap(superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
   Node* m = C->immutable_memory();
-  Node *chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
+  Node* chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
   int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
   const TypeInt* chk_off_t = chk_off->Value(&gvn)->isa_int();
   int chk_off_con = (chk_off_t != nullptr && chk_off_t->is_con()) ? chk_off_t->get_con() : cacheoff_con;
@@ -2771,7 +2771,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // For some types like interfaces the following loadKlass is from a 1-word
   // cache which is mutable so can't use immutable memory.  Other
   // types load from the super-class display table which is immutable.
-  Node *kmem = C->immutable_memory();
+  Node* kmem = C->immutable_memory();
   // secondary_super_cache is not immutable but can be treated as such because:
   // - no ideal node writes to it in a way that could cause an
   //   incorrect/missed optimization of the following Load.

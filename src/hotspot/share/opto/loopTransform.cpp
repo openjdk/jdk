@@ -3969,7 +3969,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  Node* from = AddPNode::make_with_base(base, base, index);
+  Node* from = AddPNode::make_with_base(base, index);
   _igvn.register_new_node_with_optimizer(from);
   // For normal array fills, C2 uses two AddP nodes for array element
   // addressing. But for array fills with Unsafe call, there's only one

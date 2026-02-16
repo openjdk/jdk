@@ -222,7 +222,7 @@ public:
 // an add.
 class AddPNode : public Node {
 private:
-  AddPNode(Node *base, Node *ptr, Node *off) : Node(nullptr,base,ptr,off) {
+  AddPNode(Node* base, Node* ptr, Node* off) : Node(nullptr, base, ptr, off) {
     init_class_id(Class_AddP);
     assert((ptr->bottom_type() == Type::TOP) ||
            ((base == Compile::current()->top()) == (ptr->bottom_type()->make_ptr()->isa_oopptr() == nullptr)),
@@ -247,6 +247,10 @@ public:
 
   static AddPNode* make_with_base(Node* base, Node* ptr, Node* offset) {
     return new AddPNode(base, ptr, offset);
+  }
+
+  static AddPNode* make_with_base(Node* base, Node* offset) {
+    return make_with_base(base, base, offset);
   }
 
   static AddPNode* make_off_heap(Node* ptr, Node* offset) {

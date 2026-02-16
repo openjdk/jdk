@@ -200,7 +200,7 @@ class IdealKit: public StackObj {
 
   // Raw address should be transformed regardless 'delay_transform' flag
   // to produce canonical form CastX2P(offset).
-  Node* AddP(Node *base, Node *ptr, Node *off) { return _gvn.transform(AddPNode::make_with_base(base, ptr, off)); }
+  Node* AddP(Node* base, Node* ptr, Node* off) { return _gvn.transform(AddPNode::make_with_base(base, ptr, off)); }
 
   Node* CmpP(Node* l, Node* r) { return transform(new CmpPNode(l, r)); }
 #ifdef _LP64

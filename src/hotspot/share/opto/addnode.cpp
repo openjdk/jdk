@@ -790,27 +790,27 @@ Node* AddPNode::Identity(PhaseGVN* phase) {
 //------------------------------Idealize---------------------------------------
 Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Bail out if dead inputs
-  if (phase->type(in(Address)) == Type::TOP) return nullptr;
+  if( phase->type( in(Address) ) == Type::TOP ) return nullptr;
 
   // If the left input is an add of a constant, flatten the expression tree.
   const Node *n = in(Address);
   if (n->is_AddP() && n->in(Base) == in(Base)) {
     const AddPNode *addp = n->as_AddP(); // Left input is an AddP
-    assert(!addp->in(Address)->is_AddP() ||
-           addp->in(Address)->as_AddP() != addp,
-           "dead loop in AddPNode::Ideal");
+    assert( !addp->in(Address)->is_AddP() ||
+             addp->in(Address)->as_AddP() != addp,
+            "dead loop in AddPNode::Ideal" );
     // Type of left input's right input
-    const Type *t = phase->type(addp->in(Offset));
-    if (t == Type::TOP) return nullptr;
+    const Type *t = phase->type( addp->in(Offset) );
+    if( t == Type::TOP ) return nullptr;
     const TypeX *t12 = t->is_intptr_t();
-    if (t12->is_con()) {       // Left input is an add of a constant?
+    if( t12->is_con() ) {       // Left input is an add of a constant?
       // If the right input is a constant, combine constants
-      const Type *temp_t2 = phase->type(in(Offset));
-      if (temp_t2 == Type::TOP) return nullptr;
+      const Type *temp_t2 = phase->type( in(Offset) );
+      if( temp_t2 == Type::TOP ) return nullptr;
       const TypeX *t2 = temp_t2->is_intptr_t();
       Node* address;
       Node* offset;
-      if (t2->is_con()) {
+      if( t2->is_con() ) {
         // The Add of the flattened expression
         address = addp->in(Address);
         offset  = phase->MakeConX(t2->get_con() + t12->get_con());
@@ -826,7 +826,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Raw pointers?
-  if (in(Base)->bottom_type() == Type::TOP) {
+  if( in(Base)->bottom_type() == Type::TOP ) {
     // If this is a null+long form (from unsafe accesses), switch to a rawptr.
     if (phase->type(in(Address)) == TypePtr::NULL_PTR) {
       Node* offset = in(Offset);
@@ -838,9 +838,9 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert: (ptr + (offset+con)) into (ptr+offset)+con.
   // The idea is to merge array_base+scaled_index groups together,
   // and only have different constant offsets from the same base.
-  const Node *add = in(Offset);
+  const Node* add = in(Offset);
   if (add->Opcode() == Op_AddX && add->in(1) != add) {
-    const Type *t22 = phase->type(add->in(2));
+    const Type* t22 = phase->type(add->in(2));
     if (t22->singleton() && (t22 != Type::TOP)) {  // Right input is an add of a constant?
       set_req(Address, phase->transform(AddPNode::make_with_base(in(Base), in(Address), add->in(1))));
       set_req_X(Offset, add->in(2), phase); // puts add on igvn worklist if needed

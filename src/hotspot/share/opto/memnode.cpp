@@ -1769,7 +1769,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
       }
       if (base_is_phi && (base->in(0) == region)) {
         Node* base_x = base->in(i); // Clone address for loads from boxed objects.
-        Node* adr_x = phase->transform(AddPNode::make_with_base(base_x, base_x, address->in(AddPNode::Offset)));
+        Node* adr_x = phase->transform(AddPNode::make_with_base(base_x, address->in(AddPNode::Offset)));
         x->set_req(Address, adr_x);
       }
     }
@@ -4068,21 +4068,21 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
   if (!IdealizeClearArrayNode) return nullptr;
   Node *mem = in(1);
-  if (phase->type(mem)==Type::TOP) return nullptr;
+  if( phase->type(mem)==Type::TOP ) return nullptr;
   Node *adr = in(3);
   const Type* at = phase->type(adr);
-  if (at==Type::TOP) return nullptr;
+  if( at==Type::TOP ) return nullptr;
   const TypePtr* atp = at->isa_ptr();
   // adjust atp to be the correct array element address type
-  if (atp == nullptr) atp = TypePtr::BOTTOM;
-  else atp = atp->add_offset(Type::OffsetBot);
+  if (atp == nullptr)  atp = TypePtr::BOTTOM;
+  else              atp = atp->add_offset(Type::OffsetBot);
   // Get base for derived pointer purposes
-  if (adr->Opcode() != Op_AddP) Unimplemented();
+  if( adr->Opcode() != Op_AddP ) Unimplemented();
   Node *base = adr->in(1);
 
   Node *zero = phase->makecon(TypeLong::ZERO);
   Node *off  = phase->MakeConX(BytesPerLong);
-  mem = new StoreLNode(in(0), mem, adr, atp, zero, MemNode::unordered, false);
+  mem = new StoreLNode(in(0),mem,adr,atp,zero,MemNode::unordered,false);
   count--;
   while (count--) {
     mem = phase->transform(mem);

@@ -780,7 +780,7 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
         base = base->find_out_with(Op_CastPP);
       }
 
-      Node* addr = _igvn->transform(AddPNode::make_with_base(base, base, curr_addp->in(AddPNode::Offset)));
+      Node* addr = _igvn->transform(AddPNode::make_with_base(base, curr_addp->in(AddPNode::Offset)));
       Node* mem = (memory->is_Phi() && (memory->in(0) == region)) ? memory->in(i) : memory;
       Node* load = curr_load->clone();
       load->set_req(0, nullptr);

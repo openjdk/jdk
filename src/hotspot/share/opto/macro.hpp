@@ -55,8 +55,9 @@ public:
   }
 
   Node* off_heap_plus_addr(Node* ptr, int offset) {
-    return (offset == 0)? ptr: off_heap_plus_addr(ptr, MakeConX(offset));
+    return (offset == 0) ? ptr : off_heap_plus_addr(ptr, MakeConX(offset));
   }
+
   Node* off_heap_plus_addr(Node* ptr, Node* offset) {
     return transform_later(AddPNode::make_off_heap(ptr, offset));
   }

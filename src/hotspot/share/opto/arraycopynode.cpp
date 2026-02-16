@@ -226,8 +226,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     ciField* field = ik->nonstatic_field_at(i);
     const TypePtr* adr_type = phase->C->alias_type(field)->adr_type();
     Node* off = phase->MakeConX(field->offset_in_bytes());
-    Node* next_src = phase->transform(AddPNode::make_with_base(base_src, base_src, off));
-    Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest, base_dest, off));
+    Node* next_src = phase->transform(AddPNode::make_with_base(base_src, off));
+    Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest, off));
     assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_src)->isa_ptr()),
       "slice of address and input slice don't match");
     assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_dest)->isa_ptr()),
@@ -332,8 +332,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     Node* dest_scale = phase->transform(new LShiftXNode(dest_offset, phase->intcon(shift)));
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, base_src, src_scale));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, base_dest, dest_scale));
+    adr_src = phase->transform(AddPNode::make_with_base(base_src, src_scale));
+    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, dest_scale));
 
     adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(header)));
     adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(header)));
@@ -355,8 +355,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
       return false;
     }
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, base_src, src_offset));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, base_dest, dest_offset));
+    adr_src = phase->transform(AddPNode::make_with_base(base_src, src_offset));
+    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, dest_offset));
 
     // The address is offsetted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to

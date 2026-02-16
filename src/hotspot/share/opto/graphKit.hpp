@@ -323,6 +323,7 @@ class GraphKit : public Phase {
   Node* off_heap_plus_addr(Node* ptr, intptr_t offset) {
     return off_heap_plus_addr(ptr, MakeConX(offset));
   }
+
   Node* off_heap_plus_addr(Node* ptr, Node* offset);
 
   // Some convenient shortcuts for common nodes
