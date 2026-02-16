@@ -125,6 +125,38 @@ public class ReadZip {
     }
 
     /**
+     * Read a zip file that has the END header repeated.
+     * This excerices code paths intended to skip over unrelated
+     * ENDSIG byte sequences while searching for the actual END header.
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void endSigPaddedAtEnd() throws IOException {
+
+        zip = createZip("bytes-end-padded.zip");
+
+        byte[] bytes = Files.readAllBytes(zip);
+
+        // Pad ZIP with repeated END header
+        try (OutputStream os = Files.newOutputStream(zip,
+                StandardOpenOption.APPEND)) {
+            // Repeating END header to inject a "false" ENDSIG
+            int endOff = bytes.length - ZipFile.ENDHDR;
+            int endLen = ZipFile.ENDHDR;
+            os.write(bytes, endOff, endLen);
+            // Pad an extra byte to offset the file size
+            os.write(1);
+        }
+
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+            assertEquals(1, zf.size());
+            ZipEntry ze = zf.getEntry("file.txt");
+            assertNotNull(ze, "cannot read from zip file");
+        }
+    }
+
+    /**
      * Verify that we can read a comment from the ZIP
      * file's 'End of Central Directory' header
      * @throws IOException if an unexpected IOException occurs
