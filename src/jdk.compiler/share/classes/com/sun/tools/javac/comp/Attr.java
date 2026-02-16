@@ -2794,8 +2794,6 @@ public class Attr extends JCTree.Visitor {
             attribIdentAsEnumType(env, (JCIdent)clazz) :
             attribType(clazz, env);
 
-        checkBreakTree(tree.clazz, localEnv);
-
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
         if (tree.encl != null) {
@@ -2818,6 +2816,8 @@ public class Attr extends JCTree.Visitor {
             // Check for the existence of an apropos outer instance
             checkNewInnerClass(tree.pos(), env, clazztype, false);
         }
+
+        checkBreakTree(tree.clazz, localEnv);
 
         // Attribute constructor arguments.
         ListBuffer<Type> argtypesBuf = new ListBuffer<>();
