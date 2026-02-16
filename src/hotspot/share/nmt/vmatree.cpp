@@ -27,6 +27,7 @@
 #include "nmt/vmatree.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 
 // Semantics
@@ -753,11 +754,21 @@ bool VMATree::is_empty() {
 
 VMATree::SummaryDiff::KVEntry&
 VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool *found) {
-  DEBUG_ONLY(int counter = 0;)
+  DEBUG_ONLY(int counter = 0);
+  // If the length is large (picked as 32)
+  // then we apply a load-factor check and rehash if it exceeds it.
+  // When the length is small we're OK with a full linear search for an empty space
+  // to avoid a grow and rehash.
+  constexpr const float load_factor = 0.5;
+  constexpr const int load_factor_cutoff_length = 32;
+  if (_length > load_factor_cutoff_length &&
+      (float)_occupied / _length > load_factor) {
+    grow_and_rehash();
+  }
   while (true) {
-    DEBUG_ONLY(counter++;)
+    DEBUG_ONLY(counter++);
     assert(counter < 8, "Infinite loop?");
-    int i = (int)kvt.mem_tag % _length;
+    int i = hash_to_bucket(kvt.mem_tag);
     while (i < _length && _members[i].marker == Marker::Occupied) {
       if (_members[i].mem_tag == kvt.mem_tag) {
         // Found previous
@@ -776,11 +787,14 @@ VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool *found) {
     // We didn't find it, but _members[i] is empty, allocate a new one
     assert(_members[i].marker == Marker::Empty, "must be");
     _members[i] = kvt;
+    _occupied++;
     return _members[i];
   }
 }
 
 void VMATree::SummaryDiff::grow_and_rehash() {
+  assert(is_power_of_2(_length), "");
+
   int new_len = _length * 2;
   // Save old entries (can't use ResourceMark, too early)
   GrowableArrayCHeap<KVEntry, mtNMT> tmp(_length);
@@ -837,4 +851,10 @@ void VMATree::SummaryDiff::clear() {
     FreeHeap(_members);
   }
   memset(_small, 0, sizeof(_small));
+}
+
+int VMATree::SummaryDiff::hash_to_bucket(MemTag mt) {
+  int hash =  primitive_hash<int>((int)mt);
+  assert(is_power_of_2(_length), "");
+  return hash & (_length - 1);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -250,11 +250,13 @@ public:
     KVEntry _small[_init_size];
     KVEntry* _members;
     int _length;
+    int _occupied;
     KVEntry& hash_insert_or_get(const KVEntry& kvt, bool* found);
     void grow_and_rehash();
+    int hash_to_bucket(MemTag mt);
 
   public:
-    SummaryDiff() : _small(), _members(_small), _length(_init_size) {
+    SummaryDiff() : _small(), _members(_small), _length(_init_size), _occupied(0) {
       clear();
     }
     ~SummaryDiff() {
