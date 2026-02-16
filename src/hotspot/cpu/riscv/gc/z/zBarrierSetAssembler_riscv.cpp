@@ -610,7 +610,9 @@ void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, R
   BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
 
   // Check if the oop is bad, in which case we need to take the slow path.
-  __ ld(tmp, mark_bad_mask_from_thread(xthread));
+  __ relocate(barrier_Relocation::spec(), [&] {
+    __ li16u(tmp, barrier_Relocation::unpatched);
+  }, ZBarrierRelocationFormatMarkBadMask);
   __ andr(tmp, obj, tmp);
   __ bnez(tmp, slow_path);
 

@@ -469,6 +469,8 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
 #ifdef COMPILER2
 void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler *masm, Register obj,
                                                                   Register tmp, Label& slow_path) {
+  assert_different_registers(obj, tmp);
+
   Label done;
 
   // Resolve weak handle using the standard implementation.
@@ -477,7 +479,6 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler
   // Check if the reference is null, and if it is, take the fast path.
   __ beqz(obj, done);
 
-  assert(obj != tmp, "need tmp");
   Address gc_state(xthread, ShenandoahThreadLocalData::gc_state_offset());
   __ lbu(tmp, gc_state);
 
