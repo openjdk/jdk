@@ -469,12 +469,6 @@ final class StringLatin1 {
     // vmIntrinsics::_indexOfL
     @IntrinsicCandidate
     private static int indexOf0(byte[] value, byte[] str) {
-        if (str.length == 0) {
-            return 0;
-        }
-        if (value.length == 0) {
-            return -1;
-        }
         return indexOf0(value, value.length, str, str.length, 0);
     }
 
