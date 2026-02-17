@@ -73,14 +73,14 @@ public class Float16Vector64LoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static void assertEquals(short [] actual, short [] expected) {
         assert actual.length == expected.length;
-        for (int i = 0; i < actual.length; i++) { 
+        for (int i = 0; i < actual.length; i++) {
             Assert.assertEquals(Float.float16ToFloat(actual[i]), Float.float16ToFloat(expected[i]));
         }
     }
 
     static void assertEquals(short [] actual, short [] expected, String msg) {
         assert actual.length == expected.length;
-        for (int i = 0; i < actual.length; i++) { 
+        for (int i = 0; i < actual.length; i++) {
             Assert.assertEquals(Float.float16ToFloat(actual[i]), Float.float16ToFloat(expected[i]), msg);
         }
     }
