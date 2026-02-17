@@ -44,7 +44,7 @@ public final class ColorARGBConstructorTest {
     private static void verify(int argb, boolean hasAlpha) {
         var c = new Color(argb, hasAlpha);
         int expRGB = hasAlpha ? argb : (0xFF000000 | argb);
-        int expA = hasAlpha ? argb >>> 24 : 0xFF;
+        int expA = hasAlpha ? (argb >>> 24) : 0xFF;
         int expR = (argb >> 16) & 0xFF;
         int expG = (argb >> 8) & 0xFF;
         int expB = argb & 0xFF;

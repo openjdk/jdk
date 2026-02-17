@@ -334,7 +334,7 @@ public class Color implements Paint, java.io.Serializable {
      * The actual color used in rendering depends
      * on finding the best match given the color space
      * available for a given output device.
-     * Alpha is defaulted to 255.
+     * Alpha defaults to 255.
      *
      * @throws IllegalArgumentException if {@code r}, {@code g}
      *        or {@code b} are outside of the range
@@ -382,8 +382,8 @@ public class Color implements Paint, java.io.Serializable {
      * consisting of the red component in bits 16-23, the green component
      * in bits 8-15, and the blue component in bits 0-7.  The actual color
      * used in rendering depends on finding the best match given the
-     * color space available for a particular output device.  Alpha is
-     * defaulted to 255.
+     * color space available for a particular output device.  Alpha
+     * defaults to 255.
      *
      * @param rgb the combined RGB components
      * @see java.awt.image.ColorModel#getRGBdefault
@@ -400,12 +400,11 @@ public class Color implements Paint, java.io.Serializable {
      * Creates an sRGB color with the specified combined ARGB value consisting
      * of the alpha component in bits 24-31, the red component in bits 16-23,
      * the green component in bits 8-15, and the blue component in bits 0-7. If
-     * the {@code hasAlpha} argument is {@code false}, alpha is defaulted to
-     * 255.
+     * the {@code hasAlpha} argument is {@code false}, alpha defaults to 255.
      *
-     * @param  argb the combined ARGB components
-     * @param  hasAlpha {@code true} if the alpha bits are valid; {@code false}
-     *         otherwise
+     * @param argb the combined ARGB components
+     * @param hasAlpha {@code true} if the alpha bits are valid;
+     *        {@code false} otherwise
      * @see java.awt.image.ColorModel#getRGBdefault
      * @see #getRed
      * @see #getGreen
@@ -423,7 +422,7 @@ public class Color implements Paint, java.io.Serializable {
 
     /**
      * Creates an opaque sRGB color with the specified red, green, and blue
-     * values in the range (0.0 - 1.0).  Alpha is defaulted to 1.0.  The
+     * values in the range (0.0 - 1.0).  Alpha defaults to 1.0.  The
      * actual color used in rendering depends on finding the best
      * match given the color space available for a particular output
      * device.
