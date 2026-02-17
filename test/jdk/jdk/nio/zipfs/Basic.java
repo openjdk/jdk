@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,15 @@ import java.net.URI;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+
+import jdk.nio.zipfs.ZipFileSystemProvider;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-/**
+/*
  * @test
- * @bug 8038500 8040059 8150366 8150496 8147539 8290047
+ * @bug 8038500 8040059 8150366 8150496 8147539 8290047 8326487
  * @summary Basic test for zip provider
  *
- * @modules jdk.zipfs
+ * @modules jdk.zipfs/jdk.nio.zipfs
  * @run main Basic
  */
 
@@ -73,6 +75,23 @@ public class Basic {
         // Test: FileSystems#newFileSystem(URI)
         URI uri = new URI("jar", jarFile.toUri().toString(), null);
         FileSystem fs = FileSystems.newFileSystem(uri, env, null);
+        if (fs == null) {
+            throw new RuntimeException("FileSystem.newFileSystem returned null for " + uri);
+        }
+        if (!(fs.provider() instanceof ZipFileSystemProvider)) {
+            throw new RuntimeException("Unexpected FileSystem " + fs.getClass().getName()
+                    + " for " + uri);
+        }
+        // Test: Test for empty path - ZipFileSystem.getPath("")
+        Path emptyPath = fs.getPath("");
+        int nameCount = emptyPath.getNameCount();
+        if (nameCount != 1) {
+            throw new RuntimeException("unexpected name count: " + nameCount + " for empty path");
+        }
+        Path emptyPathFileName = emptyPath.getFileName();
+        if (emptyPathFileName == null) {
+            throw new RuntimeException("Path.getFileName() returned null for empty path");
+        }
 
         // Test: exercise toUri method
         String expected = uri.toString() + "!/foo";
