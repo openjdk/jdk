@@ -1277,6 +1277,7 @@ public class Attr extends JCTree.Visitor {
                 try {
                     annotate.blockAnnotations();
                     memberEnter.memberEnter(tree, env);
+                    typeAnnotations.organizeTypeAnnotationsSignatures(env, tree);
                 } finally {
                     annotate.unblockAnnotations();
                 }
@@ -4219,7 +4220,6 @@ public class Attr extends JCTree.Visitor {
         } else {
             type = resultInfo.pt;
         }
-        tree.type = tree.var.type = type;
         BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
@@ -4236,7 +4236,8 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v);
         }
         annotate.flush();
-        result = tree.type;
+        typeAnnotations.organizeTypeAnnotationsSignatures(env, tree.var);
+        result = tree.type = tree.var.type = v.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
         } else {

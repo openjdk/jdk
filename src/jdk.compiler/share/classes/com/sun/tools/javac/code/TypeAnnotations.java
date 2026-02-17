@@ -50,6 +50,7 @@ import com.sun.tools.javac.code.TypeAnnotationPosition.TypePathEntryKind;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type.ModuleType;
+import com.sun.tools.javac.code.Type.UnionClassType;
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -61,6 +62,7 @@ import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
 import com.sun.tools.javac.tree.JCTree.JCArrayTypeTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
+import com.sun.tools.javac.tree.JCTree.JCCatch;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
@@ -70,6 +72,7 @@ import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
+import com.sun.tools.javac.tree.JCTree.JCTry;
 import com.sun.tools.javac.tree.JCTree.JCTypeApply;
 import com.sun.tools.javac.tree.JCTree.JCTypeIntersection;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
@@ -111,6 +114,7 @@ public class TypeAnnotations {
     final Symtab syms;
     final Annotate annotate;
     final Attr attr;
+    final Types types;
 
     @SuppressWarnings("this-escape")
     protected TypeAnnotations(Context context) {
@@ -120,6 +124,7 @@ public class TypeAnnotations {
         syms = Symtab.instance(context);
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
+        types = Types.instance(context);
     }
 
     /**
@@ -132,7 +137,24 @@ public class TypeAnnotations {
         annotate.afterTypes(() -> {
             JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
             try {
-                new TypeAnnotationPositions(true).scan(tree);
+                new TypeAnnotationPositions(null, true).scan(tree);
+            } finally {
+                log.useSource(oldSource);
+            }
+        });
+    }
+
+    public void organizeTypeAnnotationsSignatures(final Env<AttrContext> env, final JCVariableDecl tree) {
+        annotate.afterTypes(() -> {
+            JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
+            try {
+                TypeAnnotationPositions pos = new TypeAnnotationPositions(env.tree, true);
+                if (env.tree instanceof JCLambda) {
+                    pos.push(env.tree);
+                } else {
+                    pos.push(env.enclMethod);
+                }
+                pos.scan(tree);
             } finally {
                 log.useSource(oldSource);
             }
@@ -155,7 +177,7 @@ public class TypeAnnotations {
      * top-level blocks, and method bodies, and should be called from Attr.
      */
     public void organizeTypeAnnotationsBodies(JCClassDecl tree) {
-        new TypeAnnotationPositions(false).scan(tree);
+        new TypeAnnotationPositions(null, false).scan(tree);
     }
 
     public enum AnnotationType { DECLARATION, TYPE, NONE, BOTH }
@@ -265,9 +287,11 @@ public class TypeAnnotations {
 
     private class TypeAnnotationPositions extends TreeScanner {
 
+        private final JCTree contextTree;
         private final boolean sigOnly;
 
-        TypeAnnotationPositions(boolean sigOnly) {
+        TypeAnnotationPositions(JCTree contextTree, boolean sigOnly) {
+            this.contextTree = contextTree;
             this.sigOnly = sigOnly;
         }
 
@@ -455,14 +479,15 @@ public class TypeAnnotations {
                 return type.annotatedType(onlyTypeAnnotations);
             } else if (type.getKind() == TypeKind.UNION) {
                 // There is a TypeKind, but no TypeTag.
+                UnionClassType ut = (UnionClassType) type;
                 JCTypeUnion tutree = (JCTypeUnion)typetree;
                 JCExpression fst = tutree.alternatives.get(0);
                 Type res = typeWithAnnotations(fst, fst.type, annotations, onlyTypeAnnotations, pos);
                 fst.type = res;
-                // TODO: do we want to set res as first element in uct.alternatives?
-                // UnionClassType uct = (com.sun.tools.javac.code.Type.UnionClassType)type;
-                // Return the un-annotated union-type.
-                return type;
+                ListBuffer<Type> alternatives = new ListBuffer<>();
+                alternatives.add(res);
+                alternatives.addAll(ut.alternatives_field.tail);
+                return new UnionClassType((ClassType) ut.getLub(), alternatives.toList());
             } else {
                 Type enclTy = type;
                 Element enclEl = type.asElement();
@@ -1237,7 +1262,16 @@ public class TypeAnnotations {
             } else if (tree.sym == null) {
                 Assert.error("Visiting tree node before memberEnter");
             } else if (tree.sym.getKind() == ElementKind.PARAMETER) {
-                // Parameters are handled in visitMethodDef or visitLambda.
+                if (sigOnly) {
+                    if (contextTree instanceof JCCatch c && c.param == tree) {
+                        final TypeAnnotationPosition pos =
+                            TypeAnnotationPosition.exceptionParameter(currentLambda,
+                                                                      tree.pos);
+                        separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                    }
+                } else {
+                    // (real) parameters are handled in visitMethodDef or visitLambda.
+                }
             } else if (tree.sym.getKind() == ElementKind.FIELD) {
                 if (sigOnly) {
                     TypeAnnotationPosition pos =
@@ -1245,27 +1279,36 @@ public class TypeAnnotations {
                     separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
                 }
             } else if (tree.sym.getKind() == ElementKind.LOCAL_VARIABLE) {
-                final TypeAnnotationPosition pos =
-                    TypeAnnotationPosition.localVariable(currentLambda,
-                                                         tree.pos);
-                if (!tree.declaredUsingVar()) {
-                    separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                if (sigOnly) {
+                    if (contextTree instanceof JCTry t && t.resources.contains(tree)) {
+                        final TypeAnnotationPosition pos =
+                            TypeAnnotationPosition.resourceVariable(currentLambda,
+                                                                    tree.pos);
+                        separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                    } else {
+                        final TypeAnnotationPosition pos =
+                            TypeAnnotationPosition.localVariable(currentLambda,
+                                                                 tree.pos);
+                        if (!tree.declaredUsingVar()) {
+                            separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                        }
+                    }
                 }
             } else if (tree.sym.getKind() == ElementKind.BINDING_VARIABLE) {
+                if (sigOnly) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.localVariable(currentLambda,
                                                          tree.pos);
                 separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                }
             } else if (tree.sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
-                final TypeAnnotationPosition pos =
-                    TypeAnnotationPosition.exceptionParameter(currentLambda,
-                                                              tree.pos);
-                separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                if (sigOnly) {
+                    Assert.error("Unhandled variable kind: " + tree.sym.getKind());
+                }
             } else if (tree.sym.getKind() == ElementKind.RESOURCE_VARIABLE) {
-                final TypeAnnotationPosition pos =
-                    TypeAnnotationPosition.resourceVariable(currentLambda,
-                                                            tree.pos);
-                separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                if (sigOnly) {
+                    Assert.error("Unhandled variable kind: " + tree.sym.getKind());
+                }
             } else if (tree.sym.getKind() == ElementKind.ENUM_CONSTANT) {
                 // No type annotations can occur here.
             } else {
