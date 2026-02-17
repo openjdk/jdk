@@ -60,7 +60,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
     protected void prepareControls() {
         wasLWClicked = false;
 
-        if(f != null) {
+        if (f != null) {
             f.setVisible(false);
         }
         f = new JFrame("Mixing : GlassPane Overlapping test");
@@ -69,7 +69,8 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
 
         propagateAWTControls(f);
 
-        f.getGlassPane().setVisible(true);
+        f.getGlassPane()
+         .setVisible(true);
         Container glassPane = (Container) f.getGlassPane();
         glassPane.setLayout(null);
 
@@ -108,6 +109,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
      * Run test by {@link OverlappingTestBase#clickAndBlink(java.awt.Robot, java.awt.Point) } validation for current lightweight component.
      * <p>Also resize component and repeat validation in the resized area.
      * <p>Called by base class.
+     *
      * @return true if test passed
      * @see GlassPaneOverlappingTestBase#testResize
      */
