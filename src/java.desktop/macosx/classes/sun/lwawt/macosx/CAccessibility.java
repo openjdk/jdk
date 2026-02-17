@@ -116,7 +116,9 @@ final class CAccessibility implements PropertyChangeListener {
         if (newValue instanceof Accessible) {
             AccessibleContext nvAC = ((Accessible) newValue).getAccessibleContext();
             AccessibleRole nvRole = nvAC.getAccessibleRole();
-            if (!ignoredRoles.contains(roleKey(nvRole))) {
+            String roleStr = AWTAccessor.getAccessibleBundleAccessor().
+                    getKey(nvRole);
+            if (!ignoredRoles.contains(roleStr)) {
                 focusChanged();
             }
         }
@@ -1034,8 +1036,10 @@ final class CAccessibility implements PropertyChangeListener {
                 // "ignored", and we should skip it and its descendants
                 if (isShowing(context)) {
                     final AccessibleRole role = context.getAccessibleRole();
+                    String roleStr = role == null ? null :
+                            AWTAccessor.getAccessibleBundleAccessor().getKey(role);
                     if (role != null && ignoredRoles != null &&
-                            ignoredRoles.contains(roleKey(role))) {
+                            ignoredRoles.contains(roleStr)) {
                         // Get the child's unignored children.
                         _addChildren(child, whichChildren, false,
                                 childrenAndRoles, ChildrenOperations.COMMON);
@@ -1095,8 +1099,6 @@ final class CAccessibility implements PropertyChangeListener {
         }
         return isShowing(parentContext);
     }
-
-    private static native String roleKey(AccessibleRole aRole);
 
     public static Object[] getChildren(final Accessible a, final Component c) {
         if (a == null) return null;
