@@ -14,17 +14,16 @@ You can configure the agent using agent arguments:
 java \
      -XX:+UnlockDiagnosticVMOptions \
      -XX:+WhiteBoxAPI \
-     -javaagent:codecachefragmenter.jar=MinBlobSize=500,MaxBlobSize=10000,AvgBlobSize=2000,DivBlobSize=500,RequiredStableGcRounds=3,FillPercentage=50.0,RandomSeed=12345 \
+     -javaagent:codecachefragmenter.jar=MinBlobSize=300,MaxBlobSize=100000,Mu=6.2,RequiredStableGcRounds=3,FillPercentage=50.0,RandomSeed=12345 \
      -Xbootclasspath/a:codecachefragmenter.jar \
      YourMainClass
 ```
 
 Key parameters:
 
-- **MinBlobSize**: minimum size of dummy code blobs in bytes (default: 500)
-- **MaxBlobSize**: maximum size of dummy code blobs in bytes (default: 10000)
-- **AvgBlobSize**: average size of blobs in bytes (default: 2000)
-- **DivBlobSize**: standard deviation for blob sizes (default: 500)
+- **MinBlobSize**: minimum size of dummy code blobs in bytes (default: 300)
+- **MaxBlobSize**: maximum size of dummy code blobs in bytes (default: 100000)
+- **Mu**: log-normal distribution parameter for blob size generation (default: 6.2)
 - **RequiredStableGcRounds**: number of stable GC rounds before filling (default: 3)
 - **FillPercentage**: target code cache fill percentage (0–100, default: 50.0)
 - **RandomSeed**: seed for random generation (default: current time millis)

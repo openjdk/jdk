@@ -12,10 +12,9 @@ import jdk.test.whitebox.code.CodeBlob;
 public class CodeCacheFragAgent {
 
   // Configurable variables (can be overridden via agent arguments)
-  private static int minBlobSize = 500;
-  private static int maxBlobSize = 10000;
-  private static int avgBlobSize = 2000;
-  private static int divBlobSize = 500;
+  private static int minBlobSize = 300;
+  private static int maxBlobSize = 100_000;
+  private static double mu = 6.2;
   private static int requiredStableGcRounds = 3;
   private static double fillPercent = 50.0;
 
@@ -47,11 +46,8 @@ public class CodeCacheFragAgent {
           case "MaxBlobSize":
             maxBlobSize = Integer.parseInt(value);
             break;
-          case "AvgBlobSize":
-            avgBlobSize = Integer.parseInt(value);
-            break;
-          case "DivBlobSize":
-            divBlobSize = Integer.parseInt(value);
+          case "Mu":
+            mu = Double.parseDouble(value);
             break;
           case "RequiredStableGcRounds":
             requiredStableGcRounds = Integer.parseInt(value);
@@ -77,7 +73,7 @@ public class CodeCacheFragAgent {
       return false;
     }
 
-    if (minBlobSize <= 0 || maxBlobSize <= 0 || avgBlobSize <= 0 || divBlobSize <= 0) {
+    if (minBlobSize <= 0 || maxBlobSize <= 0) {
       System.err.println("Blob size parameters must be positive values");
       return false;
     }
@@ -165,7 +161,9 @@ public class CodeCacheFragAgent {
     int size = -1;
 
     while (size < minBlobSize || size > maxBlobSize) {
-      size = (int) blobGen.nextGaussian(avgBlobSize, divBlobSize);
+      double normalSample = blobGen.nextGaussian() + mu;
+      double logNormalSample = Math.exp(normalSample);
+      size = (int) Math.round(logNormalSample);
     }
 
     long addr = WHITEBOX.allocateCodeBlob(size, BlobType.MethodNonProfiled.id);
