@@ -163,7 +163,7 @@ public class AbstractDebuggeeTest {
                 // expected.
                 wasUnloaded = classUnloader.unloadClassAndWait(10_000);
             } else {
-                wasUnloaded = classUnloader.unloadClass();;
+                wasUnloaded = classUnloader.unloadClass();
             }
 
             if (wasUnloaded)

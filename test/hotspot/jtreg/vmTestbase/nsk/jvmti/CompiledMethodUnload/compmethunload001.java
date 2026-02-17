@@ -24,8 +24,6 @@
 package nsk.jvmti.CompiledMethodUnload;
 
 import java.io.*;
-import java.math.*;
-import java.util.*;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
@@ -94,7 +92,7 @@ public class compmethunload001 {
         c = null;
 
         // BackgroundCompilation is on by default so wait for compiler threads
-        // to drop references to the to-be-unload class.
+        // to drop references to the to-be-unloaded class.
         if (!clsUnLoader.unloadClassAndWait(10_000)) {
             throw new Failure("Class should have been unloaded");
         }
