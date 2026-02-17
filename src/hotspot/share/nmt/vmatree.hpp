@@ -270,6 +270,23 @@ public:
 
     SingleDiff& tag(MemTag tag);
     SingleDiff& tag(int mt_index);
+
+    template<typename F>
+    void visit(F f) const {
+      int hits = 0;
+      for (int i = 0; i < _length; i++) {
+        const KVEntry& kv = _members[i];
+        if (kv.marker == Marker::Occupied) {
+          f(kv.mem_tag, kv.single_diff);
+          hits++;
+        }
+        if (hits == _occupied) {
+          // Early exit
+          return;
+        }
+      }
+    }
+
     void add(const SummaryDiff& other);
     void clear();
 

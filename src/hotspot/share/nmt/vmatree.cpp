@@ -830,20 +830,15 @@ VMATree::SingleDiff& VMATree::SummaryDiff::tag(int mt_index) {
 }
 
 void VMATree::SummaryDiff::add(const SummaryDiff& other) {
-  int other_len = other._length;
-  int this_len = this->_length;
-
-  for (int i = 0; i < other_len; i++) {
-    const KVEntry& other_kvt = other._members[i];
-    if (other_kvt.marker == Marker::Occupied) {
-      bool found = false;
-      KVEntry& this_kvt = hash_insert_or_get(other_kvt, &found);
-      if (found) {
-        this_kvt.single_diff.reserve += other_kvt.single_diff.reserve;
-        this_kvt.single_diff.commit += other_kvt.single_diff.commit;
-      }
+  other.visit([&](MemTag mt, const SingleDiff& single_diff) {
+    bool found = false;
+    KVEntry other_kv = {Marker::Occupied, mt, single_diff};
+    KVEntry& this_kv = hash_insert_or_get(other_kv, &found);
+    if (found) {
+      this_kv.single_diff.reserve += other_kv.single_diff.reserve;
+      this_kv.single_diff.commit += other_kv.single_diff.commit;
     }
-  }
+  });
 }
 
 void VMATree::SummaryDiff::clear() {
