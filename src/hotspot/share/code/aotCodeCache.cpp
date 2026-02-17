@@ -455,7 +455,9 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
       char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
       VM_Version::store_cpu_features(runtime_cpu_features);
       VM_Version::get_missing_features_name(runtime_cpu_features, cached_cpu_features_buffer, ss);
-      log.print_cr("Additional runtime CPU features: %s", ss.as_string());
+      if (!ss.is_empty()) {
+        log.print_cr("Additional runtime CPU features: %s", ss.as_string());
+      }
     }
   } else {
     if (log.is_enabled()) {
