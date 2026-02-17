@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,48 @@
 
 #include "utilities/rbTree.hpp"
 
+#include "memory/allocation.hpp"
+#include "memory/arena.hpp"
+#include "memory/resourceArea.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+inline IntrusiveRBNode::IntrusiveRBNode()
+  : _parent(0), _left(nullptr), _right(nullptr) DEBUG_ONLY(COMMA _visited(false)) {}
+
+inline bool IntrusiveRBNode::is_black() const {
+  return (_parent & 0x1) != 0;
+}
+
+inline bool IntrusiveRBNode::is_red() const {
+  return (_parent & 0x1) == 0;
+}
+
+inline void IntrusiveRBNode::set_black() {
+  _parent |= 0x1;
+}
+inline void IntrusiveRBNode::set_red() {
+  _parent &= ~0x1;
+}
+
+inline IntrusiveRBNode* IntrusiveRBNode::parent() const {
+  return reinterpret_cast<IntrusiveRBNode*>(_parent & ~0x1);
+}
+
+inline void IntrusiveRBNode::set_parent(IntrusiveRBNode* new_parent) {
+  _parent = (_parent & 0x1) | reinterpret_cast<uintptr_t>(new_parent);
+}
+
+inline bool IntrusiveRBNode::is_right_child() const {
+  return parent() != nullptr && parent()->_right == this;
+}
+
+inline bool IntrusiveRBNode::is_left_child() const {
+  return parent() != nullptr && parent()->_left == this;
+}
 
 inline void IntrusiveRBNode::replace_child(IntrusiveRBNode* old_child, IntrusiveRBNode* new_child) {
   if (_left == old_child) {
@@ -183,6 +220,144 @@ inline void IntrusiveRBNode::verify(
     black_nodes_until_leaf++;
   }
 
+}
+
+template <typename K, typename V>
+inline const K& RBNode<K, V>::key() const {
+  return _key;
+}
+
+template <typename K, typename V>
+inline V& RBNode<K, V>::val() {
+  return _value;
+}
+
+template <typename K, typename V>
+inline const V& RBNode<K, V>::val() const {
+  return _value;
+}
+
+template <typename K, typename V>
+inline void RBNode<K, V>::set_val(const V& v) {
+  _value = v;
+}
+
+template <typename K, typename V>
+inline RBNode<K, V>::RBNode() {}
+
+template <typename K, typename V>
+inline RBNode<K, V>::RBNode(const K& key) : IntrusiveRBNode(), _key(key) {}
+
+template <typename K, typename V>
+inline RBNode<K, V>::RBNode(const K& key, const V& val) : IntrusiveRBNode(), _key(key), _value(val) {}
+
+template <typename K, typename V>
+inline const RBNode<K, V>* RBNode<K, V>::prev() const {
+  return static_cast<const RBNode<K, V>*>(IntrusiveRBNode::prev());
+}
+
+template <typename K, typename V>
+inline const RBNode<K, V>* RBNode<K, V>::next() const {
+  return static_cast<const RBNode<K, V>*>(IntrusiveRBNode::next());
+}
+
+template <typename K, typename V>
+inline RBNode<K, V>* RBNode<K, V>::prev() {
+  return static_cast<RBNode<K, V>*>(IntrusiveRBNode::prev());
+}
+
+template <typename K, typename V>
+inline RBNode<K, V>* RBNode<K, V>::next() {
+  return static_cast<RBNode<K, V>*>(IntrusiveRBNode::next());
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::Cursor()
+  : _insert_location(nullptr), _parent(nullptr) {}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::Cursor(NodeType** insert_location, NodeType* parent)
+  : _insert_location(insert_location), _parent(parent) {}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::Cursor(NodeType* const* insert_location, NodeType* parent)
+  : _insert_location(const_cast<NodeType**>(insert_location)), _parent(parent) {}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::valid() const {
+  return _insert_location != nullptr;
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::found() const {
+  return *_insert_location != nullptr;
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::node() {
+  return _insert_location == nullptr ? nullptr : *_insert_location;
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::node() const {
+  return _insert_location == nullptr ? nullptr : *_insert_location;
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline RBTreeOrdering AbstractRBTree<K, NodeType, COMPARATOR>::cmp(const K& a, const NodeType* b) const {
+  if constexpr (HasNodeComparator) {
+    return COMPARATOR::cmp(a, b);
+  } else if constexpr (HasKeyComparator) {
+    return COMPARATOR::cmp(a, b->key());
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::less_than(const NodeType* a, const NodeType* b) const {
+  if constexpr (HasNodeVerifier) {
+    return COMPARATOR::less_than(a, b);
+  } else {
+    return true;
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::assert_key_leq(K a, K b) const {
+  if constexpr (HasKeyComparator) { // Cannot assert if no key comparator exist.
+    assert(COMPARATOR::cmp(a, b) != RBTreeOrdering::GT, "key a must be less or equal to key b");
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::is_black(const IntrusiveRBNode* node) {
+  return node == nullptr || node->is_black();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::is_red(const IntrusiveRBNode* node) {
+  return node != nullptr && node->is_red();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::empty_verifier::operator()(const NodeType* n) const {
+  return true;
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::default_printer::operator()(outputStream* st, const NodeType* n, int depth) const {
+  n->print_on(st, depth);
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline AbstractRBTree<K, NodeType, COMPARATOR>::AbstractRBTree()
+    : _num_nodes(0), _root(nullptr) DEBUG_ONLY(COMMA _expected_visited(false)) {
+  static_assert(std::is_trivially_destructible<K>::value, "key type must be trivially destructable");
+  static_assert(HasKeyComparator || HasNodeComparator, "comparator must be of correct type");
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline size_t AbstractRBTree<K, NodeType, COMPARATOR>::size() const {
+  return _num_nodes;
 }
 
 template <typename K, typename NodeType, typename COMPARATOR>
@@ -597,6 +772,104 @@ AbstractRBTree<K, NodeType, COMPARATOR>::prev(const Cursor& node_cursor) {
 }
 
 template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::find_node(const K& key, const NodeType* hint_node) const {
+  Cursor node_cursor = cursor(key, hint_node);
+  return node_cursor.node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::find_node(const K& key, const NodeType* hint_node) {
+  Cursor node_cursor = cursor(key, hint_node);
+  return node_cursor.node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::insert(const K& key, NodeType* node, const NodeType* hint_node) {
+  Cursor node_cursor = cursor(key, hint_node);
+  insert_at_cursor(node, node_cursor);
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::remove(NodeType* node) {
+  Cursor node_cursor = cursor(node);
+  remove_at_cursor(node_cursor);
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::closest_leq(const K& key) const {
+  Cursor node_cursor = cursor(key);
+  return node_cursor.found() ? node_cursor.node() : prev(node_cursor).node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::closest_leq(const K& key) {
+  Cursor node_cursor = cursor(key);
+  return node_cursor.found() ? node_cursor.node() : prev(node_cursor).node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::closest_gt(const K& key) const {
+  Cursor node_cursor = cursor(key);
+  return next(node_cursor).node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::closest_gt(const K& key) {
+  Cursor node_cursor = cursor(key);
+  return next(node_cursor).node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::closest_ge(const K& key) const {
+  Cursor node_cursor = cursor(key);
+  return node_cursor.found() ? node_cursor.node() : next(node_cursor).node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::closest_ge(const K& key) {
+  Cursor node_cursor = cursor(key);
+  return node_cursor.found() ? node_cursor.node() : next(node_cursor).node();
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline const NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::leftmost() const {
+  IntrusiveRBNode* n = _root, *n2 = nullptr;
+  while (n != nullptr) {
+    n2 = n;
+    n = n->_left;
+  }
+  return static_cast<const NodeType*>(n2);
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline const NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::rightmost() const {
+  IntrusiveRBNode* n = _root, *n2 = nullptr;
+  while (n != nullptr) {
+    n2 = n;
+    n = n->_right;
+  }
+  return static_cast<const NodeType*>(n2);
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::leftmost() {
+  return const_cast<NodeType*>(static_cast<const AbstractRBTree<K, NodeType, COMPARATOR>*>(this)->leftmost());
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::rightmost() {
+  return const_cast<NodeType*>(static_cast<const AbstractRBTree<K, NodeType, COMPARATOR>*>(this)->rightmost());
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+inline typename AbstractRBTree<K, NodeType, COMPARATOR>::Range
+AbstractRBTree<K, NodeType, COMPARATOR>::find_enclosing_range(K key) const {
+  NodeType* start = closest_leq(key);
+  NodeType* end = closest_gt(key);
+  return Range(start, end);
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
 template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
   const NodeType* node = leftmost();
@@ -659,6 +932,18 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
       return;
     }
     start = start->next();
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+template <typename USER_VERIFIER>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(const USER_VERIFIER& extra_verifier) const {
+  if constexpr (HasNodeVerifier) {
+    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::less_than(a, b);}, extra_verifier);
+  } else if constexpr (HasKeyComparator) {
+    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) == RBTreeOrdering::LT; }, extra_verifier);
+  } else {
+    verify_self([](const NodeType*, const NodeType*){ return true;}, extra_verifier);
   }
 }
 
@@ -753,6 +1038,15 @@ void AbstractRBTree<K, NodeType, COMPARATOR>::print_on(outputStream* st, const P
   }
 }
 
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+template<typename... AllocArgs>
+inline RBTree<K, V, COMPARATOR, ALLOCATOR>::RBTree(AllocArgs... alloc_args) : BaseType(), _allocator(alloc_args...) {}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline RBTree<K, V, COMPARATOR, ALLOCATOR>::~RBTree() {
+  remove_all();
+}
+
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 bool RBTree<K, V, COMPARATOR, ALLOCATOR>::copy_into(RBTree& other) const {
   assert(other.size() == 0, "You can only copy into an empty RBTree");
@@ -801,5 +1095,133 @@ bool RBTree<K, V, COMPARATOR, ALLOCATOR>::copy_into(RBTree& other) const {
   DEBUG_ONLY(other._expected_visited = this->_expected_visited);
   return true;
 }
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor) {
+  RBNode<K, V>* old_node = node_cursor.node();
+  BaseType::replace_at_cursor(new_node, node_cursor);
+  free_node(old_node);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline RBNode<K, V>* RBTree<K, V, COMPARATOR, ALLOCATOR>::allocate_node(const K& key) {
+  void* node_place = _allocator.allocate(sizeof(RBNode<K, V>));
+  if (node_place == nullptr) {
+    return nullptr;
+  }
+  return new (node_place) RBNode<K, V>(key);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline RBNode<K, V>* RBTree<K, V, COMPARATOR, ALLOCATOR>::allocate_node(const K& key, const V& val) {
+  void* node_place = _allocator.allocate(sizeof(RBNode<K, V>));
+  if (node_place == nullptr) {
+    return nullptr;
+  }
+  return new (node_place) RBNode<K, V>(key, val);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::free_node(RBNode<K, V>* node) {
+  node->_value.~V();
+  _allocator.free(node);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::upsert(const K& key, const V& val, const RBNode<K, V>* hint_node) {
+  Cursor node_cursor = cursor(key, hint_node);
+  RBNode<K, V>* node = node_cursor.node();
+  if (node != nullptr) {
+    node->set_val(val);
+    return true;
+  }
+
+  node = allocate_node(key, val);
+  if (node == nullptr) {
+    return false;
+  }
+  insert_at_cursor(node, node_cursor);
+  return true;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline V* RBTree<K, V, COMPARATOR, ALLOCATOR>::find(const K& key) {
+  Cursor node_cursor = cursor(key);
+  return node_cursor.found() ? &node_cursor.node()->_value : nullptr;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline V* RBTree<K, V, COMPARATOR, ALLOCATOR>::find(const K& key) const {
+  const Cursor node_cursor = cursor(key);
+  return node_cursor.found() ? &node_cursor.node()->_value : nullptr;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode<K, V>* node) {
+  Cursor node_cursor = cursor(node);
+  remove_at_cursor(node_cursor);
+  free_node(node);
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(const K& key) {
+  Cursor node_cursor = cursor(key);
+  if (!node_cursor.found()) {
+    return false;
+  }
+  RBNode<K, V>* node = node_cursor.node();
+  remove_at_cursor(node_cursor);
+  free_node((RBNode<K, V>*)node);
+  return true;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_all() {
+  IntrusiveRBNode* to_delete[64];
+  int stack_idx = 0;
+  to_delete[stack_idx++] = BaseType::_root;
+
+  while (stack_idx > 0) {
+    IntrusiveRBNode* head = to_delete[--stack_idx];
+    if (head == nullptr) continue;
+    to_delete[stack_idx++] = head->_left;
+    to_delete[stack_idx++] = head->_right;
+    free_node((RBNode<K, V>*)head);
+  }
+  BaseType::_num_nodes = 0;
+  BaseType::_root = nullptr;
+}
+
+template <MemTag mem_tag, AllocFailType strategy>
+inline void* RBTreeCHeapAllocator<mem_tag, strategy>::allocate(size_t sz) {
+  return AllocateHeap(sz, mem_tag, strategy);
+}
+
+template <MemTag mem_tag, AllocFailType strategy>
+inline void RBTreeCHeapAllocator<mem_tag, strategy>::free(void* ptr) {
+  FreeHeap(ptr);
+}
+
+template <AllocFailType strategy>
+inline RBTreeArenaAllocator<strategy>::RBTreeArenaAllocator(Arena* arena) : _arena(arena) {}
+
+template <AllocFailType strategy>
+inline void* RBTreeArenaAllocator<strategy>::allocate(size_t sz) {
+  return _arena->Amalloc(sz, strategy);
+}
+
+template <AllocFailType strategy>
+inline void RBTreeArenaAllocator<strategy>::free(void* ptr) { /* NOP */ }
+
+template <AllocFailType strategy>
+inline RBTreeResourceAreaAllocator<strategy>::RBTreeResourceAreaAllocator(ResourceArea* rarea) : _rarea(rarea) {}
+
+template <AllocFailType strategy>
+inline void* RBTreeResourceAreaAllocator<strategy>::allocate(size_t sz) {
+  return _rarea->Amalloc(sz, strategy);
+}
+
+template <AllocFailType strategy>
+inline void RBTreeResourceAreaAllocator<strategy>::free(void* ptr) { /* NOP */ }
 
 #endif // SHARE_UTILITIES_RBTREE_INLINE_HPP
