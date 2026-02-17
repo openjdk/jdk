@@ -44,7 +44,6 @@ class ShenandoahInPlacePromotionPlanner {
     ShenandoahFreeSet* _free_set;
 
     explicit RegionPromotions(ShenandoahFreeSet* free_set);
-    void reset();
     void increment(idx_t region_index, size_t remnant_bytes);
     void update_free_set(ShenandoahFreeSetPartitionId partition_id) const;
   };
@@ -94,8 +93,6 @@ public:
   const RegionPromotionStats& humongous_region_stats() const { return _pip_humongous_stats; }
 
   size_t old_garbage_threshold() const { return _old_garbage_threshold; }
-
-  void reset();
 };
 
 class ShenandoahInPlacePromoter {

@@ -41,13 +41,6 @@ ShenandoahInPlacePromotionPlanner::RegionPromotions::RegionPromotions(Shenandoah
 {
 }
 
-void ShenandoahInPlacePromotionPlanner::RegionPromotions::reset() {
-  _low_idx = _free_set->max_regions();
-  _high_idx = -1;
-  _regions = 0;
-  _bytes = 0;
-}
-
 void ShenandoahInPlacePromotionPlanner::RegionPromotions::increment(idx_t region_index, size_t remnant_bytes) {
   if (region_index < _low_idx) {
     _low_idx = region_index;
@@ -77,7 +70,7 @@ void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::reset() {
 }
 
 ShenandoahInPlacePromotionPlanner::ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap)
-  : _old_garbage_threshold(0)
+  : _old_garbage_threshold(ShenandoahHeapRegion::region_size_bytes() * heap->old_generation()->heuristics()->get_old_garbage_threshold() / 100)
   , _pip_used_threshold(ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage / 100)
   , _heap(heap)
   , _free_set(_heap->free_set())
@@ -171,18 +164,6 @@ void ShenandoahInPlacePromotionPlanner::complete_planning() const {
   // Retire any regions that have been selected for promote in place
   _mutator_regions.update_free_set(ShenandoahFreeSetPartitionId::Mutator);
   _collector_regions.update_free_set(ShenandoahFreeSetPartitionId::Collector);
-}
-
-void ShenandoahInPlacePromotionPlanner::reset() {
-  _mutator_regions.reset();
-  _collector_regions.reset();
-  _pip_regular_stats.reset();
-  _pip_humongous_stats.reset();
-  _pip_padding_bytes = 0;
-
-  // The old garbage threshold is adjusted dynamically, so we need to refresh it here
-  const auto threshold = _heap->old_generation()->heuristics()->get_old_garbage_threshold();
-  _old_garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * threshold / 100;
 }
 
 void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
