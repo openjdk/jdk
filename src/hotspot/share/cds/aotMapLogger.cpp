@@ -88,7 +88,7 @@ void AOTMapLogger::ergo_initialize() {
 }
 
 void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                                ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info,
+                                AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info,
                                 char* bitmap, size_t bitmap_size_in_bytes) {
   _is_runtime_logging = false;
   _buffer_to_requested_delta =  ArchiveBuilder::current()->buffer_to_requested_delta();
@@ -823,7 +823,7 @@ public:
   }
 }; // AOTMapLogger::ArchivedFieldPrinter
 
-void AOTMapLogger::dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) {
+void AOTMapLogger::dumptime_log_mapped_heap_region(AOTMappedHeapInfo* heap_info) {
   MemRegion r = heap_info->buffer_region();
   address buffer_start = address(r.start()); // start of the current oop inside the buffer
   address buffer_end = address(r.end());
@@ -835,7 +835,7 @@ void AOTMapLogger::dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* heap_i
   log_archived_objects(AOTMappedHeapWriter::oop_iterator(heap_info));
 }
 
-void AOTMapLogger::dumptime_log_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) {
+void AOTMapLogger::dumptime_log_streamed_heap_region(AOTStreamedHeapInfo* heap_info) {
   MemRegion r = heap_info->buffer_region();
   address buffer_start = address(r.start()); // start of the current oop inside the buffer
   address buffer_end = address(r.end());

@@ -702,57 +702,50 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     if (new_outer_size < size) {
       return nullptr;
     }
-
-    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
-
-    // Observe MallocLimit
-    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
-      return nullptr;
-    }
+    MallocHeader* header = MallocHeader::kill_block(memblock);
+    const size_t old_size = header->size();
 
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
     // may invalidate the old block, including its header.
-    MallocHeader* header = MallocHeader::resolve_checked(memblock);
     assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
            NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
-    const MallocHeader::FreeInfo free_info = header->free_info();
-
-    header->mark_block_as_dead();
-
-    // the real realloc
-    void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
-
-    if (new_outer_ptr == nullptr) {
-      // realloc(3) failed and the block still exists.
-      // We have however marked it as dead, revert this change.
-      header->revive();
-      return nullptr;
-    }
-    // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
-    MemTracker::deaccount(free_info);
-
-    // After a successful realloc(3), we account the resized block with its new size
-    // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
+    bool within_malloc_limit = !((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag));
+    bool success = within_malloc_limit;
+    // Observe MallocLimit
+    if (success) {
+      // If realloc succeeds, the header is freed. Get FreeInfo before that.
+      MallocHeader::FreeInfo free_info = header->free_info();
+      void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
+      success = new_outer_ptr != nullptr;
+      if (success) {
+        // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
+        MemTracker::deaccount(free_info);
+        // After a successful realloc(3), we account the resized block with its new size
+        // to NMT.
+        void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
 
 #ifdef ASSERT
-    assert(old_size == free_info.size, "Sanity");
-    if (ZapCHeap && old_size < size) {
-      // We also zap the newly extended region.
-      ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
-    }
+        if (ZapCHeap && old_size < size) {
+          // We also zap the newly extended region.
+          ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
+        }
 #endif
 
-    rc = new_inner_ptr;
-
+        rc = new_inner_ptr;
+      }
+    }
+    if (!success) {
+      // realloc(3) failed and the block still exists.
+      // We have however marked it as dead, revert this change.
+      MallocHeader::revive_block(memblock);
+      return nullptr;
+    }
   } else {
-
     // NMT disabled.
     rc = permit_forbidden_function::realloc(memblock, size);
     if (rc == nullptr) {
       return nullptr;
     }
-
   }
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)
@@ -2300,7 +2293,7 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 // We do not have the same lock protection for pd_commit_memory and record_virtual_memory_commit.
 // We assume that there is some external synchronization that prevents a region from being uncommitted
 // before it is finished being committed.
-bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+void os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
@@ -2313,13 +2306,10 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
     res = pd_uncommit_memory(addr, bytes, executable);
   }
 
-  if (res) {
-    log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  } else {
-    log_info(os, map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  if (!res) {
+    fatal("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
-
-  return res;
+  log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
 // The scope of NmtVirtualMemoryLocker covers both pd_release_memory and record_virtual_memory_release because
@@ -2327,7 +2317,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 // We do not have the same lock protection for pd_reserve_memory and record_virtual_memory_reserve.
 // We assume that there is some external synchronization that prevents a region from being released
 // before it is finished being reserved.
-bool os::release_memory(char* addr, size_t bytes) {
+void os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
@@ -2340,11 +2330,9 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  } else {
-    log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
+    fatal("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
-  return res;
+  log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
 // Prints all mappings
@@ -2413,7 +2401,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
   return result;
 }
 
-bool os::unmap_memory(char *addr, size_t bytes) {
+void os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
     MemTracker::NmtVirtualMemoryLocker nvml;
@@ -2424,7 +2412,9 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   } else {
     result = pd_unmap_memory(addr, bytes);
   }
-  return result;
+  if (!result) {
+    fatal("Failed to unmap memory " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  }
 }
 
 void os::disclaim_memory(char *addr, size_t bytes) {
@@ -2452,7 +2442,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   return result;
 }
 
-bool os::release_memory_special(char* addr, size_t bytes) {
+void os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
     MemTracker::NmtVirtualMemoryLocker nvml;
@@ -2463,7 +2453,9 @@ bool os::release_memory_special(char* addr, size_t bytes) {
   } else {
     res = pd_release_memory_special(addr, bytes);
   }
-  return res;
+  if (!res) {
+    fatal("Failed to release memory special " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  }
 }
 
 // Convenience wrapper around naked_short_sleep to allow for longer sleep
