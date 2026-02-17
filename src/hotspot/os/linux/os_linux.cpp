@@ -211,13 +211,56 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
+bool os::is_containerized() {
+  return OSContainer::is_containerized();
+}
+
+bool os::Container::memory_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_soft_limit_in_bytes(result) && result != 0 && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_throttle_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::used_memory(physical_memory_size_type& value) {
+  return OSContainer::memory_usage_in_bytes(value);
+}
+
 bool os::available_memory(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("available container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
+  return Machine::available_memory(value);
+}
+
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return Linux::available_memory(value);
+}
+
+bool os::Container::available_memory(physical_memory_size_type& value) {
+  return OSContainer::available_memory_in_bytes(value);
 }
 
 bool os::Linux::available_memory(physical_memory_size_type& value) {
@@ -251,11 +294,15 @@ bool os::Linux::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::free_memory(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("free container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
+  return Machine::free_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return Linux::free_memory(value);
 }
 
@@ -274,19 +321,28 @@ bool os::Linux::free_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized()) {
-    physical_memory_size_type mem_swap_limit = value_unlimited;
-    physical_memory_size_type memory_limit = value_unlimited;
-    if (OSContainer::memory_and_swap_limit_in_bytes(mem_swap_limit) &&
-        OSContainer::memory_limit_in_bytes(memory_limit)) {
-      if (memory_limit != value_unlimited && mem_swap_limit != value_unlimited &&
-          mem_swap_limit >= memory_limit /* ensure swap is >= 0 */) {
-        value = mem_swap_limit - memory_limit;
-        return true;
-      }
-    }
-  } // fallback to the host swap space if the container returned unlimited
+  if (is_containerized() && Container::total_swap_space(value)) {
+    return true;
+  } // fallback to the host swap space if the container value fails
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   return Linux::host_swap(value);
+}
+
+bool os::Container::total_swap_space(physical_memory_size_type& value) {
+  physical_memory_size_type mem_swap_limit = value_unlimited;
+  physical_memory_size_type memory_limit = value_unlimited;
+  if (OSContainer::memory_and_swap_limit_in_bytes(mem_swap_limit) &&
+      OSContainer::memory_limit_in_bytes(memory_limit)) {
+    if (memory_limit != value_unlimited && mem_swap_limit != value_unlimited &&
+        mem_swap_limit >= memory_limit /* ensure swap is >= 0 */) {
+      value = mem_swap_limit - memory_limit;
+      return true;
+    }
+  }
+  return false;
 }
 
 static bool host_free_swap_f(physical_memory_size_type& value) {
@@ -309,30 +365,43 @@ bool os::free_swap_space(physical_memory_size_type& value) {
     return false;
   }
   physical_memory_size_type host_free_swap_val = MIN2(total_swap_space, host_free_swap);
-  if (OSContainer::is_containerized()) {
-    if (OSContainer::available_swap_in_bytes(host_free_swap_val, value)) {
+  if (is_containerized()) {
+    if (Container::free_swap_space(value)) {
       return true;
     }
     // Fall through to use host value
     log_trace(os,container)("os::free_swap_space: containerized value unavailable"
                             " returning host value: " PHYS_MEM_TYPE_FORMAT, host_free_swap_val);
   }
+
   value = host_free_swap_val;
   return true;
 }
 
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
+  return host_free_swap_f(value);
+}
+
+bool os::Container::free_swap_space(physical_memory_size_type& value) {
+  return OSContainer::available_swap_in_bytes(value);
+}
+
 physical_memory_size_type os::physical_memory() {
-  if (OSContainer::is_containerized()) {
+  if (is_containerized()) {
     physical_memory_size_type mem_limit = value_unlimited;
-    if (OSContainer::memory_limit_in_bytes(mem_limit) && mem_limit != value_unlimited) {
+    if (Container::memory_limit(mem_limit) && mem_limit != value_unlimited) {
       log_trace(os)("total container memory: " PHYS_MEM_TYPE_FORMAT, mem_limit);
       return mem_limit;
     }
   }
 
-  physical_memory_size_type phys_mem = Linux::physical_memory();
+  physical_memory_size_type phys_mem = Machine::physical_memory();
   log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
+  return Linux::physical_memory();
 }
 
 // Returns the resident set size (RSS) of the process.
@@ -2439,20 +2508,21 @@ bool os::Linux::print_container_info(outputStream* st) {
   OSContainer::print_container_metric(st, "cpu_memory_nodes", p != nullptr ? p : "not supported");
   free(p);
 
-  int i = -1;
-  bool supported = OSContainer::active_processor_count(i);
+  double cpus = -1;
+  bool supported = OSContainer::active_processor_count(cpus);
   if (supported) {
-    assert(i > 0, "must be");
+    assert(cpus > 0, "must be");
     if (ActiveProcessorCount > 0) {
       OSContainer::print_container_metric(st, "active_processor_count", ActiveProcessorCount, "(from -XX:ActiveProcessorCount)");
     } else {
-      OSContainer::print_container_metric(st, "active_processor_count", i);
+      OSContainer::print_container_metric(st, "active_processor_count", cpus);
     }
   } else {
     OSContainer::print_container_metric(st, "active_processor_count", "not supported");
   }
 
 
+  int i = -1;
   supported = OSContainer::cpu_quota(i);
   if (supported && i > 0) {
     OSContainer::print_container_metric(st, "cpu_quota", i);
@@ -3453,6 +3523,9 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
     log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
                        RANGEFMTARGS(addr, size),
                        os::strerror(ep.saved_errno()));
+    if (ep.saved_errno() == ENOMEM) {
+      fatal("Failed to uncommit " RANGEFMT ". It is possible that the process's maximum number of mappings would have been exceeded. Try increasing the limit.", RANGEFMTARGS(addr, size));
+    }
     return false;
   }
   return true;
@@ -3563,14 +3636,16 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 // It's safe to always unmap guard pages for primordial thread because we
 // always place it right after end of the mapped region.
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  uintptr_t stack_extent, stack_base;
+void os::remove_stack_guard_pages(char* addr, size_t size) {
 
   if (os::is_primordial_thread()) {
-    return ::munmap(addr, size) == 0;
+    if (::munmap(addr, size) != 0) {
+      fatal("Failed to munmap " RANGEFMT, RANGEFMTARGS(addr, size));
+    }
+    return;
   }
 
-  return os::uncommit_memory(addr, size);
+  os::uncommit_memory(addr, size);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -4737,15 +4812,26 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  int active_cpus = -1;
-  if (OSContainer::is_containerized() && OSContainer::active_processor_count(active_cpus)) {
-    log_trace(os)("active_processor_count: determined by OSContainer: %d",
-                   active_cpus);
-  } else {
-    active_cpus = os::Linux::active_processor_count();
+  if (is_containerized()) {
+    double cpu_quota;
+    if (Container::processor_count(cpu_quota)) {
+      int active_cpus = ceilf(cpu_quota); // Round fractional CPU quota up.
+      assert(active_cpus <= Machine::active_processor_count(), "must be");
+      log_trace(os)("active_processor_count: determined by OSContainer: %d",
+                     active_cpus);
+      return active_cpus;
+    }
   }
 
-  return active_cpus;
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
+  return os::Linux::active_processor_count();
+}
+
+bool os::Container::processor_count(double& value) {
+  return OSContainer::active_processor_count(value);
 }
 
 static bool should_warn_invalid_processor_id() {
@@ -4882,9 +4968,14 @@ int os::open(const char *path, int oflag, int mode) {
   oflag |= O_CLOEXEC;
 
   int fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
+  // No further checking is needed if open() returned an error or
+  // access mode is not read only.
+  if (fd == -1 || (oflag & O_ACCMODE) != O_RDONLY) {
+    return fd;
+  }
 
-  //If the open succeeded, the file might still be a directory
+  // If the open succeeded and is read only, the file might be a directory
+  // which the JVM doesn't allow to be read.
   {
     struct stat buf;
     int ret = ::fstat(fd, &buf);

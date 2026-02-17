@@ -162,7 +162,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
     @Override
     public void accept(PackagingPipeline.Builder pipelineBuilder) {
-        pipelineBuilder.excludeDirFromCopying(outputDir)
+        pipelineBuilder
                 .task(PackagingPipeline.PackageTaskID.CREATE_CONFIG_FILES)
                         .action(this::prepareConfigFiles)
                         .add()

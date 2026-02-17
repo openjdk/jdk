@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,10 +140,15 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+#ifdef MACOS_AARCH64
 enum WXMode {
-  WXWrite,
-  WXExec
+  WXWrite = 0,
+  WXExec = 1,
+  WXArmedForWrite = 2,
 };
+
+extern WXMode DefaultWXWriteMode;
+#endif // MACOS_AARCH64
 
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
@@ -342,6 +347,52 @@ class os: AllStatic {
   static bool is_server_class_machine();
   static size_t rss();
 
+  // On platforms with container support (currently only Linux) we combine machine values with
+  // potential container values in os:: methods, abstracting which value is actually used.
+  // The os::Machine and os::Container classes and containing methods are used to get machine
+  // and container values (when available) separately.
+  static bool is_containerized();
+
+  // The os::Machine class reports system resource metrics from the perspective of the operating
+  // system, without considering container-imposed limits. The values returned by these methods
+  // reflect the resources visible to the process as reported by the OS, and may already be
+  // affected by mechanisms such as virtualization, hypervisor limits, or process affinity,
+  // but do NOT consider further restrictions imposed by container runtimes (e.g., cgroups)
+  class Machine : AllStatic {
+  public:
+    static int active_processor_count();
+
+    [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_memory(physical_memory_size_type& value);
+
+    [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
+
+    static physical_memory_size_type physical_memory();
+  };
+
+  // The os::Container class reports resource limits as imposed by a supported container runtime
+  // (currently only cgroup-based Linux runtimes). If the process is running inside a
+  // containerized environment, methods from this class report the effective limits imposed
+  // by the container, which may be more restrictive than what os::Machine reports.
+  // Methods return true and set the out-parameter if a limit is found,
+  // or false if no limit exists or it cannot be determined.
+  class Container : AllStatic {
+  public:
+    [[nodiscard]] static bool processor_count(double& value); // Returns the core-equivalent CPU quota
+
+    [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
+
+    [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
+
+    [[nodiscard]] static bool memory_limit(physical_memory_size_type& value);
+    [[nodiscard]] static bool memory_soft_limit(physical_memory_size_type& value);
+    [[nodiscard]] static bool memory_throttle_limit(physical_memory_size_type& value);
+  };
+
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
   static uint processor_id();
@@ -485,8 +536,8 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
-  static bool   release_memory(char* addr, size_t bytes);
+  static void   uncommit_memory(char* addr, size_t bytes, bool executable = false);
+  static void   release_memory(char* addr, size_t bytes);
 
   // Does the platform support trimming the native heap?
   static bool can_trim_native_heap();
@@ -515,7 +566,7 @@ class os: AllStatic {
   static bool   unguard_memory(char* addr, size_t bytes);
   static bool   create_stack_guard_pages(char* addr, size_t bytes);
   static bool   pd_create_stack_guard_pages(char* addr, size_t bytes);
-  static bool   remove_stack_guard_pages(char* addr, size_t bytes);
+  static void   remove_stack_guard_pages(char* addr, size_t bytes);
   // Helper function to create a new file with template jvmheap.XXXXXX.
   // Returns a valid fd on success or else returns -1
   static int create_file_for_heap(const char* dir);
@@ -531,7 +582,7 @@ class os: AllStatic {
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, MemTag mem_tag, bool read_only = false,
                            bool allow_exec = false);
-  static bool   unmap_memory(char *addr, size_t bytes);
+  static void   unmap_memory(char *addr, size_t bytes);
   static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
@@ -554,7 +605,7 @@ class os: AllStatic {
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                        char* addr, bool executable);
-  static bool   release_memory_special(char* addr, size_t bytes);
+  static void   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
@@ -1082,9 +1133,23 @@ class os: AllStatic {
   static char*  build_agent_function_name(const char *sym, const char *cname,
                                           bool is_absolute_path);
 
-#if defined(__APPLE__) && defined(AARCH64)
+#ifdef MACOS_AARCH64
   // Enables write or execute access to writeable and executable pages.
   static void current_thread_enable_wx(WXMode mode);
+  // Macos-AArch64 only.
+  static void thread_wx_enable_write_impl();
+
+  // Short circuit write enabling if it's already enabled. This
+  // function is executed many times, so it makes sense to inline a
+  // small part of it.
+private:
+  static THREAD_LOCAL bool _jit_exec_enabled;
+public:
+  static void thread_wx_enable_write() {
+    if (__builtin_expect(_jit_exec_enabled, false)) {
+      thread_wx_enable_write_impl();
+    }
+  }
 #endif // __APPLE__ && AARCH64
 
  protected:

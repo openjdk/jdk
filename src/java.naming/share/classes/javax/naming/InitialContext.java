@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ import com.sun.naming.internal.ResourceManager;
  * @see Context
  * @see NamingManager#setInitialContextFactoryBuilder
  *      NamingManager.setInitialContextFactoryBuilder
- * @since 1.3, JNDI 1.1
+ * @since 1.3
  */
 
 public class InitialContext implements Context {
