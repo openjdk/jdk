@@ -523,6 +523,12 @@ public final class Connection implements Runnable {
     void abandonRequest(LdapRequest ldr, Control[] reqCtls) {
         // Remove from queue
         removeRequest(ldr);
+        // an optimistic check to avoid having to construct the BER
+        // messages for the "abandon request". we repeat
+        // this check later when holding the lock, before actually
+        // writing out the "abandon request", and that check actually
+        // determines whether or not the "abandon request" is actually
+        // sent
         if (!ldr.shouldAbandonRequest()) {
             return;
         }
@@ -549,6 +555,9 @@ public final class Connection implements Runnable {
 
             lock.lock();
             try {
+                if (!ldr.shouldAbandonRequest()) {
+                    return;
+                }
                 outStream.write(ber.getBuf(), 0, ber.getDataLen());
                 outStream.flush();
             } finally {
