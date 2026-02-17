@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/cdsConfig.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMetadata.hpp"
@@ -512,8 +513,7 @@ void TrainingData::dump_training_data() {
 #endif // ASSERT
       td = ArchiveBuilder::current()->get_buffered_addr(td);
       uint hash = TrainingData::Key::cds_hash(td->key());
-      u4 delta = ArchiveBuilder::current()->buffer_to_offset_u4((address)td);
-      writer.add(hash, delta);
+      writer.add(hash, AOTCompressedPointers::encode_not_null(td));
     }
     writer.dump(&_archived_training_data_dictionary_for_dumping, "training data dictionary");
   }
