@@ -34,7 +34,7 @@ import java.util.function.DoubleUnaryOperator;
  * @build FdlibmTranslit
  * @build HyperbolicTests
  * @run main HyperbolicTests
- * @summary Tests for StrictMath.{sinh, cosh, tanh, asinh}
+ * @summary Tests for StrictMath.{sinh, cosh, tanh, asinh, acosh}
  */
 
 /**
@@ -65,6 +65,7 @@ public class HyperbolicTests {
         failures += testCosh();
         failures += testTanh();
         failures += testAsinh();
+        failures += testAcosh();
 
         if (failures > 0) {
             System.err.println("Testing the hyperbolics incurred "
@@ -80,7 +81,8 @@ public class HyperbolicTests {
         SINH(HyperbolicTests::testSinhCase, FdlibmTranslit::sinh),
         COSH(HyperbolicTests::testCoshCase, FdlibmTranslit::cosh),
         TANH(HyperbolicTests::testTanhCase, FdlibmTranslit::tanh),
-        ASINH(HyperbolicTests::testAsinhCase, FdlibmTranslit::asinh);
+        ASINH(HyperbolicTests::testAsinhCase, FdlibmTranslit::asinh),
+        ACOSH(HyperbolicTests::testAcoshCase, FdlibmTranslit::acosh);
 
         private DoubleDoubleToInt testCase;
         private DoubleUnaryOperator transliteration;
@@ -258,6 +260,11 @@ public class HyperbolicTests {
     private static int testAsinhCase(double input, double expected) {
         return Tests.test("StrictMath.asinh(double)", input,
                 StrictMath::asinh, expected);
+    }
+
+    private static int testAcoshCase(double input, double expected) {
+        return Tests.test("StrictMath.asinh(double)", input,
+                StrictMath::acosh, expected);
     }
 
     private static int testSinh() {
@@ -559,6 +566,54 @@ public class HyperbolicTests {
 
         for (double[] testCase: testCases) {
             failures += testAsinhCase(testCase[0], testCase[1]);
+        }
+
+        return failures;
+    }
+
+    private static int testAcosh() {
+        int failures = 0;
+        double [][] testCases = {
+                {0x1.00020000aaaabp+0,      0x1.fffffffff749fp-8},
+                {0x1.000346de27853p+0,      0x1.47ae147ae274p-7},
+                {0x1.0008000aaab05p+0,      0x1.fffffffffe9f1p-7},
+                {0x1.0008000aaab05p+0,      0x1.fffffffffe9f1p-7},
+                {0x1.002000aaac169p+0,      0x1.fffffffffe67bp-6},
+                {0x1.002000aaac16bp+0,      0x1.ffffffffff679p-6},
+                {0x1.00800aab05b1ep+0,      0x1.ffffffffffc9cp-5},
+                {0x1.00800aab05b1fp+0,      0x1.ffffffffffe9bp-5},
+                {0x1.0147f40224b2ep+0,      0x1.9999999999318p-4},
+                {0x1.0147f40224b35p+0,      0x1.9999999999776p-4},
+                {0x1.0200aac16db6cp+0,      0x1.ffffffffffe91p-4},
+                {0x1.0200aac16db6ep+0,      0x1.fffffffffff91p-4},
+                {0x1.080ab05ca613bp+0,      0x1.ffffffffffea5p-3},
+                {0x1.080ab05ca6146p+0,      0x1.0000000000001p-2},
+                {0x1.20ac1862ae8cep+0,      0x1.fffffffffffedp-2},
+                {0x1.20ac1862ae8dp+0,       0x1.ffffffffffffdp-2},
+                {0x1.8b07551d9f551p+0,      0x1p+0},
+                {0x1.e18fa0df2d9b3p+1,      0x1.ffffffffffffbp+0},
+                {0x1.e18fa0df2d9b8p+1,      0x1.ffffffffffffep+0},
+                {0x1.e18fa0df2d9bap+1,      0x1.fffffffffffffp+0},
+                {0x1.b4ee858de3e68p+4,      0x1.ffffffffffff9p+1},
+                {0x1.b4ee858de3e7ap+4,      0x1.ffffffffffffep+1},
+                {0x1.b4ee858de3e7dp+4,      0x1.fffffffffffffp+1},
+                {0x1.749eaa93f4e5ep+10,     0x1.ffffffffffffcp+2},
+                {0x1.749eaa93f4e64p+10,     0x1.ffffffffffffdp+2},
+                {0x1.749eaa93f4e76p+10,     0x1p+3},
+                {0x1.0f2ebd0a7fb9p+22,      0x1.fffffffffff6fp+3},
+                {0x1.0f2ebd0a8005cp+22,     0x1p+4},
+                {0x1.1f43fcc4b6316p+45,     0x1.fffffffffffd3p+4},
+                {0x1.1f43fcc4b662cp+45,     0x1.fffffffffffffp+4},
+                {0x1.fdf25fc26e7cp+1023,    0x1.633c654fee2bap+9},
+                {0x1.fdf25fc26e7cp+1023,    0x1.633c654fee2bap+9},
+                {0x1.e0976c8f0ebdfp+1,      0x1.ff76fb3f476d5p+0},
+                {0x1.ff66e0de4dc6fp+1023,   0x1.633cc2ae1c934p+9},
+                {0x1.f97ccb0aef314p+11,     0x1.1ff088806d82ep+3},
+                {0x1.fdf28623ef923p+1021,   0x1.628af341989dap+9},
+        };
+
+        for (double[] testCase: testCases) {
+            failures += testAcoshCase(testCase[0], testCase[1]);
         }
 
         return failures;
