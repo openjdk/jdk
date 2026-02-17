@@ -26,7 +26,6 @@
 #include "logging/log.hpp"
 
 #if defined(LINUX)
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"

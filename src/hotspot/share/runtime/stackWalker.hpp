@@ -244,6 +244,20 @@ public:
   // This API is signal-safe (no allocations).
   static void request_stack_trace(StackWalkRequest& request, JavaThread* jt, const void* context);
 
+  // Called by a sampler thread to install a pre-built stack walk request
+  // on a suspended target thread. The request will be processed when the
+  // target resumes and hits a safepoint poll.
+  // ucontext is the CPU context of the suspended target thread.
+  static void install_stack_walk_request(StackWalkRequest& request, JavaThread* target, const void* ucontext);
+
+  // Enqueue a biased stack walk request into the target thread's queue.
+  // Unlike install_stack_walk_request, this does NOT read the target thread's
+  // frame state (no build_stack_walk_request). The target will walk from
+  // its own last_frame() when it processes the request at a safepoint poll.
+  // This is safe for cross-thread use (e.g., from a sampler thread) because
+  // it only touches the thread-local queue and arms the poll.
+  static void enqueue_stack_walk_request(StackWalkRequest& request, JavaThread* target);
+
   // Entry point for the runtime to trigger stack-walk processing.
   static inline void check_and_process_requests(JavaThread* jt);
 

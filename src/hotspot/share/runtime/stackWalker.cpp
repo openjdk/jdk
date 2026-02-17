@@ -116,8 +116,9 @@ StackWalkerRequestQueue::~StackWalkerRequestQueue() {
 }
 
 bool StackWalkerRequestQueue::enqueue(const StackWalkRequest& request) {
-  assert(JavaThread::current()->stackwalker_thread_local().is_enqueue_locked(), "invariant");
-  assert(&JavaThread::current()->stackwalker_thread_local().queue() == this, "invariant");
+  // Note: assertions about JavaThread::current() are not valid here because
+  // cross-thread enqueuing (e.g., from JFR wall-clock sampler) calls this
+  // from a non-JavaThread on behalf of the target thread.
   u4 elementIndex;
   do {
     elementIndex = AtomicAccess::load_acquire(&_head);
@@ -508,7 +509,7 @@ static bool build_for_interpreter(StackWalkRequest& request, JavaThread* jt) {
   return build(request, fp, jt);
 }
 
-// Attempt to build a Jfr sample request.
+// Attempt to build a stack-walk request.
 static bool build(StackWalkRequest& request, intptr_t* fp, JavaThread* jt) {
   assert(request._sample_sp != nullptr, "invariant");
   assert(request._sample_pc != nullptr, "invariant");
@@ -560,6 +561,36 @@ static bool build_from_ljf(StackWalkRequest& request,
   return build(request, nullptr, jt);
 }
 
+static bool build_from_context(StackWalkRequest& request,
+                               const void* ucontext,
+                               JavaThread* jt) {
+  assert(ucontext != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  intptr_t* fp;
+  request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
+  assert(sp_in_stack(request, jt), "invariant");
+  if (is_interpreter(request)) {
+    const StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+    if (tl.in_critical_section() || !in_stack(fp, jt)) {
+      return false;
+    }
+    if (frame::is_interpreter_frame_setup_at(fp, request._sample_sp)) {
+      // Set fp as sp for interpreter frames.
+      request._sample_sp = fp;
+      void* bcp = os::fetch_bcp_from_context(ucontext);
+      // Setting bcp = 1 marks the sample request to represent a native method.
+      request._sample_bcp = bcp != nullptr ? bcp : reinterpret_cast<void*>(1);
+      return true;
+    }
+    request._sample_bcp = fp;
+    fp = sender_for_interpreter_frame(request, jt);
+    if (request._sample_pc == nullptr || request._sample_sp == nullptr) {
+      return false;
+    }
+  }
+  return build(request, fp, jt);
+}
+
 // A biased stack-walk request is denoted by an empty bcp and an empty pc.
 static void set_biased(StackWalkRequest& request, JavaThread* jt) {
   if (request._sample_bcp != nullptr) {
@@ -569,18 +600,23 @@ static void set_biased(StackWalkRequest& request, JavaThread* jt) {
   request._sample_pc = nullptr;
 }
 
+static void set_unbiased(StackWalkRequest& request, JavaThread* jt) {
+  assert(request._sample_sp != nullptr, "invariant");
+  assert(sp_in_stack(request, jt), "invariant");
+  assert(request._sample_bcp != nullptr || !is_interpreter(request), "invariant");
+}
+
 void StackWalker::build_stack_walk_request(StackWalkRequest& request, const void* ucontext, JavaThread* java_thread) {
   assert(java_thread != nullptr, "invariant");
 
   // Prioritize the ljf, if one exists.
   request._sample_sp = java_thread->last_Java_sp();
-  if (request._sample_sp == nullptr || !build_from_ljf(request, java_thread)) {
-    intptr_t* fp;
-    request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
-    assert(sp_in_stack(request, java_thread), "invariant");
-    if (!build(request, fp, java_thread)) {
-      set_biased(request, java_thread);
-    }
+  if (request._sample_sp != nullptr && build_from_ljf(request, java_thread)) {
+    set_unbiased(request, java_thread);
+  } else if (ucontext != nullptr && build_from_context(request, ucontext, java_thread)) {
+    set_unbiased(request, java_thread);
+  } else {
+    set_biased(request, java_thread);
   }
 }
 
@@ -637,12 +673,57 @@ void StackWalker::trigger_async_processing_of_requests() {
   _native_stackwalker_thread->trigger_async_processing_of_stackwalk_requests();
 }
 
+void StackWalker::install_stack_walk_request(StackWalkRequest& request, JavaThread* target, const void* ucontext) {
+  assert(target != nullptr, "invariant");
+  assert(Thread::current() != target, "use request_stack_trace for same-thread requests");
+  StackWalkerThreadLocal& tl = target->stackwalker_thread_local();
+  StackWalkerRequestQueue& queue = tl.queue();
+
+  build_stack_walk_request(request, ucontext, target);
+
+  if (!tl.try_acquire_enqueue_lock()) {
+    queue.increment_lost_requests();
+    return;
+  }
+  if (queue.enqueue(request)) {
+    if (queue.size() == 1) {
+      tl.set_has_requests(true);
+      SafepointMechanism::arm_local_poll_release(target);
+    }
+  } else {
+    queue.increment_lost_requests();
+    queue.increment_lost_requests_due_to_queue_full();
+  }
+  tl.release_queue_lock();
+}
+
+void StackWalker::enqueue_stack_walk_request(StackWalkRequest& request, JavaThread* target) {
+  assert(target != nullptr, "invariant");
+  // The request is enqueued as-is (biased: null bcp/pc/sp).
+  // The target thread will walk from its own last_frame() when processing.
+  StackWalkerThreadLocal& tl = target->stackwalker_thread_local();
+  StackWalkerRequestQueue& queue = tl.queue();
+  if (!tl.try_acquire_enqueue_lock()) {
+    queue.increment_lost_requests();
+    return;
+  }
+  if (queue.enqueue(request)) {
+    if (queue.size() == 1) {
+      tl.set_has_requests(true);
+      SafepointMechanism::arm_local_poll_release(target);
+    }
+  } else {
+    queue.increment_lost_requests();
+    queue.increment_lost_requests_due_to_queue_full();
+  }
+  tl.release_queue_lock();
+}
+
 static bool is_in_continuation(const frame& frame, JavaThread* jt) {
   return StackWalkerThreadLocal::is_vthread(jt) &&
          (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
 }
 
-#ifdef LINUX
 // An interpreter frame is handled differently from a compiler frame.
 //
 // The StackWalkRequest description partially describes a _potential_ interpreter Java frame.
@@ -938,7 +1019,6 @@ static void report_thread(StackWalkRequest& request, const StackWalkerThreadLoca
   }
   request.callback()->end_stacktrace(state._truncated);
 }
-#endif
 
 void StackWalker::process_requests(const Thread* current, JavaThread* jt, bool lock) {
   assert(current != nullptr, "current should not be null");
@@ -946,7 +1026,6 @@ void StackWalker::process_requests(const Thread* current, JavaThread* jt, bool l
   //assert(jt->thread_state() == _thread_in_vm || jt->thread_state() == _thread_in_Java, "invariant");
 
   StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
-#ifdef LINUX
   tl.set_do_async_processing_of_requests(false);
   if (lock) {
     tl.acquire_dequeue_lock();
@@ -969,7 +1048,6 @@ void StackWalker::process_requests(const Thread* current, JavaThread* jt, bool l
   if (lock) {
     tl.release_queue_lock();
   }
-#endif
 }
 
 static bool is_virtual(const JavaThread* jt, oop thread) {

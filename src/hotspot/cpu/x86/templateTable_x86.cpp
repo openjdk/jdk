@@ -1824,7 +1824,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ mov(rbx, rax);
 
       STACKWALKER_ONLY(__ enter_stackwalker_critical_section();)
-      JFR_ONLY(__ enter_jfr_critical_section();)
 
       call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
@@ -1840,7 +1839,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       // pop the interpreter frame
       __ movptr(sender_sp, Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
       __ leave();                                // remove frame anchor
-      JFR_ONLY(__ leave_jfr_critical_section();)
       STACKWALKER_ONLY(__ leave_stackwalker_critical_section();)
       __ pop(retaddr);                           // get return address
       __ mov(rsp, sender_sp);                    // set sp to sender sp

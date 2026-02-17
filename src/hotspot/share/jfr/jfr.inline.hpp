@@ -27,28 +27,4 @@
 
 #include "jfr/jfr.hpp"
 
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
-#include "runtime/javaThread.hpp"
-
-inline bool Jfr::has_sample_request(JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  JfrThreadLocal* tl = jt->jfr_thread_local();
-  return tl->has_sample_request();
-}
-
-inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
-  JfrThreadLocal* tl = jt->jfr_thread_local();
-  // Protect agains re-entrant calls. This can happen when we are
-  // currently processing sampling requests and one is calling into
-  // a JVMTI callback. Calling into a callback requires that we
-  // transition the thread state from VM to native, which also
-  // involves a safepoint check. That safepoint would then go ahead
-  // and call into JFR again.
-  if (has_sample_request(jt) && !tl->is_processing_sample_request()) {
-    tl->set_processing_sample_request(true);
-    JfrThreadSampling::process_sample_request(jt);
-    tl->set_processing_sample_request(false);
-  }
-}
-
 #endif // SHARE_JFR_JFR_INLINE_HPP
