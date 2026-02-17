@@ -54,7 +54,10 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
 
         this.paramSpec = new NamedParameterSpec(params.getName());
         this.algid = new AlgorithmId(params.getOid());
-        this.u = u.mod(params.getP());
+
+        // RFC 7748 Section 5 requires the MSB of `u` to be zeroed for X25519
+        this.u = params.getName().equals("X448") ? u.mod(params.getP()) :
+            u.clearBit(255).mod(params.getP());
 
         byte[] u_arr = this.u.toByteArray();
         reverse(u_arr);
@@ -83,7 +86,10 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
             u_arr[0] &= mask;
         }
 
-        this.u = new BigInteger(1, u_arr);
+        // RFC 7748 Section 5 requires the MSB of `u` to be zeroed for X25519
+        this.u = params.getName().equals("X448") ?
+            new BigInteger(1, u_arr) :
+            new BigInteger(1, u_arr).clearBit(255);
 
         checkLength(params);
     }
