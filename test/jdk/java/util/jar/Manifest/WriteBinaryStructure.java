@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,21 @@
  * questions.
  */
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.Manifest;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @test
  * @bug 8066619
- * @run testng WriteBinaryStructure
+ * @run junit WriteBinaryStructure
  * @summary Tests that jar manifests are written in a particular structure
  */
 public class WriteBinaryStructure {
@@ -47,10 +47,10 @@ public class WriteBinaryStructure {
         mf.getMainAttributes().put(new Name("Key"), "Value");
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         mf.write(buf);
-        assertEquals(buf.toByteArray(), (
+        assertArrayEquals((
                 "Manifest-Version: 1.0\r\n" +
                 "Key: Value\r\n" +
-                "\r\n").getBytes(UTF_8));
+                "\r\n").getBytes(UTF_8), buf.toByteArray());
     }
 
     @Test
@@ -62,12 +62,12 @@ public class WriteBinaryStructure {
         attributes.put(new Name("Key"), "Value");
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         mf.write(buf);
-        assertEquals(buf.toByteArray(), (
+        assertArrayEquals((
                 "Manifest-Version: 1.0\r\n" +
                 "\r\n" +
                 "Name: Individual-Section-Name\r\n" +
                 "Key: Value\r\n" +
-                "\r\n").getBytes(UTF_8));
+                "\r\n").getBytes(UTF_8), buf.toByteArray());
     }
 
 }
