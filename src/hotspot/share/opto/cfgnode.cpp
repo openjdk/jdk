@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2243,7 +2243,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     if (wait_for_cast_input_igvn(igvn)) {
       igvn->_worklist.push(this);
-      return nullptr;
+      return progress;
     }
     uncasted = true;
     uin = unique_input(phase, true);
@@ -2320,6 +2320,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       for (uint i = 1; i < req(); i++) {
         set_req_X(i, cast, igvn);
+        progress = this;
       }
       uin = cast;
     }
@@ -2338,7 +2339,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
     // Identity may not return the expected uin, if it has to wait for the region, in irreducible case
     assert(ident == uin || ident->is_top() || must_wait_for_region_in_irreducible_loop(phase), "Identity must clean this up");
-    return nullptr;
+    return progress;
   }
 
   Node* opt = nullptr;
@@ -2529,7 +2530,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Phi references itself through all other inputs then splitting the
       // Phi through memory merges would create dead loop at later stage.
       if (ii == top) {
-        return nullptr; // Delay optimization until graph is cleaned.
+        return progress; // Delay optimization until graph is cleaned.
       }
       if (ii->is_MergeMem()) {
         MergeMemNode* n = ii->as_MergeMem();
@@ -2642,7 +2643,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               }
               Node* phi = mms.memory();
               assert(made_new_phi || phi->in(i) == n, "replace the i-th merge by a slice");
-              phi->set_req(i, mms.memory2());
+              phi->set_req_X(i, mms.memory2(), phase);
             }
           }
         }
@@ -2651,7 +2652,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           for (MergeMemStream mms(result); mms.next_non_empty(); ) {
             Node* phi = mms.memory();
             for (uint i = 1; i < req(); ++i) {
-              if (phi->in(i) == this)  phi->set_req(i, phi);
+              if (phi->in(i) == this) {
+                phi->set_req_X(i, phi, phase);
+              }
             }
           }
         }
@@ -2673,7 +2676,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *ii = in(i);
       Node *new_in = MemNode::optimize_memory_chain(ii, at, nullptr, phase);
       if (ii != new_in ) {
-        set_req(i, new_in);
+        set_req_X(i, new_in, phase);
         progress = this;
       }
     }

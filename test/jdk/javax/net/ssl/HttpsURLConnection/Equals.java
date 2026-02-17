@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class Equals {
      */
     private static final boolean debug = false;
 
-    static SSLContext ctx;
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
 
     public static void main(String[] args) throws Exception {
         if (debug) {
@@ -65,7 +65,6 @@ public class Equals {
             HttpContext c2 = s2.createContext("/test1", h);
             executor = Executors.newCachedThreadPool();
             s2.setExecutor(executor);
-            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator(ctx));
             s2.start();
             int httpsport = s2.getAddress().getPort();

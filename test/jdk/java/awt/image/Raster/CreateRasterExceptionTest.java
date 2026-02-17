@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8255800 8369129
+ * @bug 8255800 8369129 8376297
  * @summary verify Raster + SampleModel creation vs spec.
  */
 
@@ -739,7 +739,7 @@ public class CreateRasterExceptionTest {
              /* @throws IllegalArgumentException if
               * {@code scanlineStride} is less than 0
               */
-            Raster.createBandedRaster(DataBuffer.TYPE_INT, 1, 1, -3,
+            Raster.createBandedRaster(DataBuffer.TYPE_INT, 10, 10, -1000,
                                       bankIndices, bandOffsets, null);
             noException();
         } catch (IllegalArgumentException t) {
