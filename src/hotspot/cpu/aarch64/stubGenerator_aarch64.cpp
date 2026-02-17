@@ -7984,6 +7984,8 @@ class StubGenerator: public StubCodeGenerator {
       VSeq<5> a_vec(16);
       VSeq<5> b_vec(22);
 
+      int offsets[2] = { 0, 32 };
+
       __ ldr(a10, Address(aLimbs, 80));
       __ ldr(a11, Address(aLimbs, 88));
       __ ldr(a12, Address(aLimbs, 96));
@@ -7995,8 +7997,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(b13, Address(bLimbs, 104));
 
       __ ld1(a_vec[0], __ T2D, aLimbs);
-      __ ldpq(a_vec[1], a_vec[2], Address(aLimbs, 16));
-      __ ldpq(a_vec[3], a_vec[4], Address(aLimbs, 48));
+      vs_ldpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
 
       __ eor(b10, b10, a10);
       __ eor(b11, b11, a11);
@@ -8004,8 +8005,7 @@ class StubGenerator: public StubCodeGenerator {
       __ eor(b13, b13, a13);
 
       __ ld1(b_vec[0], __ T2D, bLimbs);
-      __ ldpq(b_vec[1], b_vec[2], Address(bLimbs, 16));
-      __ ldpq(b_vec[3], b_vec[4], Address(bLimbs, 48));
+      vs_ldpq_indexed(vs_tail(b_vec), bLimbs, 16, offsets);
 
       __ andr(b10, b10, mask_scalar);
       __ andr(b11, b11, mask_scalar);
@@ -8029,8 +8029,7 @@ class StubGenerator: public StubCodeGenerator {
       vs_eor(a_vec, a_vec, b_vec);
 
       __ st1(a_vec[0], __ T2D, aLimbs);
-      __ stpq(a_vec[1], a_vec[2], Address(aLimbs, 16));
-      __ stpq(a_vec[3], a_vec[4], Address(aLimbs, 48));
+      vs_stpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
 
       __ b(L_Done);
     }
