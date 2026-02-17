@@ -331,8 +331,7 @@ public final class Security {
                 return initialSecurityProperties;
             }
             @Override
-            public Properties getCurrentProperties() {
-                return (Properties) props.clone();
+            public Properties getCurrentProperties() { return props;
             }
         });
     }
