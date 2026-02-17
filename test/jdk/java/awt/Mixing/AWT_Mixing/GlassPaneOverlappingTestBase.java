@@ -118,71 +118,59 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         if (!super.performTest()) {
             return false;
         }
+        if (!testResize) {
+            return true;
+        }
         final CountDownLatch latch = new CountDownLatch(1);
         f.addFocusListener(new FocusAdapter() {
-            @Override public void focusGained(FocusEvent e) {
+            @Override
+            public void focusGained(FocusEvent e) {
                 latch.countDown();
             }
         });
-        if (testResize) {
-            wasLWClicked = false;
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-
-                    public void run() {
-                        testedComponent.setBounds(0, 0,
-                                testedComponent.getPreferredSize().width,
-                                testedComponent.getPreferredSize().height + 20);
-                        Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                                .getFocusOwner();
-                        if (focusOwner == f) {
-                            // frame already had focus
-                            latch.countDown();
-                        } else {
-                            f.requestFocusInWindow();
-                        }
-                    }
-                });
-            } catch (InterruptedException | InvocationTargetException ex) {
-                fail(ex.getMessage());
-            }
-            Point lLoc = testedComponent.getLocationOnScreen();
-            lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
-            try {
-                if (!latch.await(1, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Ancestor frame didn't receive focus");
-                }
-                clickAndBlink(robot, lLoc);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            return wasLWClicked;
-        } else {
-            latch.countDown();
-        }
-
-        if (!testResize) {
-
-            return true;
-        }
-
         wasLWClicked = false;
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
                 public void run() {
                     testedComponent.setBounds(0, 0,
-                            testedComponent.getPreferredSize().width,
-                            testedComponent.getPreferredSize().height + 20);
+                                              testedComponent.getPreferredSize().width,
+                                              testedComponent.getPreferredSize().height + 20);
+                    Component focusOwner = KeyboardFocusManager
+                            .getCurrentKeyboardFocusManager()
+                            .getFocusOwner();
+                    if (focusOwner == f) {
+                        // frame already had focus
+                        latch.countDown();
+                    } else {
+                        f.requestFocusInWindow();
+                    }
                 }
             });
         } catch (InterruptedException | InvocationTargetException ex) {
             fail(ex.getMessage());
+            return false;
         }
-        Point lLoc = testedComponent.getLocationOnScreen();
-        lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
-        clickAndBlink(robot, lLoc);
+        final Point[] points = new Point[1];
+        final CountDownLatch edtLatch = new CountDownLatch(1);
+        SwingUtilities.invokeLater(() -> {
+            Point lLoc = testedComponent.getLocationOnScreen();
+            points[0] = lLoc;
+            lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
+            edtLatch.countDown();
+        });
 
+        try {
+            if (!latch.await(1, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Ancestor frame didn't receive focus");
+            }
+            if (!edtLatch.await(1, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Point location was not received!");
+            }
+            clickAndBlink(robot, points[0]);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return wasLWClicked;
     }
 
