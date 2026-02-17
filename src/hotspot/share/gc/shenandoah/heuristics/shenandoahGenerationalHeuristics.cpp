@@ -69,12 +69,12 @@ ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGen
 }
 
 void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
 
-  assert(heap->collection_set()->is_empty(), "Collection set must be empty here");
+  assert(collection_set->is_empty(), "Collection set must be empty here");
 
   _add_regions_to_old = 0;
-  ShenandoahInPlacePromotionPlanner in_place_promotions(ShenandoahGenerationalHeap::heap());
+  ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
 
   // Find the amount that will be promoted, regions that will be promoted in
   // place, and preselected older regions that will be promoted by evacuation.
@@ -225,8 +225,6 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
 
 void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions,
                                                       ShenandoahCollectionSet* collection_set) {
-  assert(collection_set->is_empty(), "Must be empty");
-
   auto heap = ShenandoahGenerationalHeap::heap();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
