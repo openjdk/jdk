@@ -1722,11 +1722,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     case Op_MergeMem:
       return;
 
-    // URShiftINode::Ideal
-    // Found in tier1-3. Did not investigate further yet.
-    case Op_URShiftI:
-      return;
-
     // CMoveINode::Ideal
     // Found in tier1-3. Did not investigate further yet.
     case Op_CMoveI:
@@ -2594,12 +2589,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     auto is_boundary = [](Node* n){ return !n->is_ConstraintCast(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary);
   }
-  // If changed LShift inputs, check RShift users for useless sign-ext
+  // If changed LShift inputs, check RShift/URShift users for
+  // "(X << C) >> C" sign-ext and "(X << C) >>> C" zero-ext optimizations.
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL)
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+          u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL) {
         worklist.push(u);
+      }
     }
   }
   // If changed LShift inputs, check And users for shift and mask (And) operation
