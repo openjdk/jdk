@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -186,6 +186,9 @@ public:
   static bool supports_feature(Feature_Flag flag) {
     return (_features & BIT_MASK(flag)) != 0;
   }
+  static bool supports_feature(uint64_t features, Feature_Flag flag) {
+    return (features & BIT_MASK(flag)) != 0;
+  }
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
@@ -249,6 +252,20 @@ public:
 
   static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
   static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
+
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss);
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+
+  // Returns number of bytes required to store cpu features representation
+  static int cpu_features_size();
+
+  // Stores cpu features representation in the provided buffer. This representation is arch dependent.
+  // Size of the buffer must be same as returned by cpu_features_size()
+  static void store_cpu_features(void* buf);
+
+  static bool supports_features(void* features_to_test);
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

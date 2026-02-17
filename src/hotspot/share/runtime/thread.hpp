@@ -405,13 +405,14 @@ class Thread: public ThreadShadow {
 
   // Thread-Local Allocation Buffer (TLAB) support
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
+  const ThreadLocalAllocBuffer& tlab() const     { return _tlab; }
   void initialize_tlab();
   void retire_tlab(ThreadLocalAllocStats* stats = nullptr);
   void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
   jlong allocated_bytes()               { return _allocated_bytes; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
-  inline jlong cooked_allocated_bytes();
+  inline jlong cooked_allocated_bytes() const;
 
   ThreadHeapSampler& heap_sampler()     { return _heap_sampler; }
 
