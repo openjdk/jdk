@@ -127,12 +127,28 @@ public:
     _enqueued_count[type]++;
   }
 
-  template <typename T>
-  void mark_discovered_list();
+  template <typename OopType, typename ClosureType>
+  void do_mark_discovered_list(ClosureType* cl);
+
+  template <typename ClosureType>
+  void mark_discovered_list(ClosureType* cl);
+};
+
+class ShenandoahReferenceProcessor;
+
+class ShenandoahRefProcIterator {
+  ShenandoahReferenceProcessor* _rp;
+  size_t _max;
+  size_t _index;
+public:
+  explicit ShenandoahRefProcIterator(size_t max);
+  ShenandoahRefProcThreadLocal* next();
 };
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
 private:
+  friend ShenandoahRefProcIterator;
+
   static AlwaysClearPolicy _always_clear_policy;
 
   ReferencePolicy* _soft_reference_policy;
@@ -220,8 +236,6 @@ public:
   // forwardee.
   void heal_discovered_lists(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
 
-  void mark_discovered_lists();
-
   bool discover_reference(oop obj, ReferenceType type) override;
 
   void process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
@@ -229,6 +243,8 @@ public:
   const ReferenceProcessorStats& reference_process_stats() const { return _stats; }
 
   void abandon_partial_discovery();
+
+  void mark_discovered_young_reference(oop reference) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP

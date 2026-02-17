@@ -176,6 +176,7 @@
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -1015,9 +1016,10 @@ public:
 
 class ShenandoahScanRememberedTask : public WorkerTask {
  private:
-  ShenandoahObjToScanQueueSet* _queue_set;
-  ShenandoahObjToScanQueueSet* _old_queue_set;
-  ShenandoahReferenceProcessor* _rp;
+  ShenandoahObjToScanQueueSet*   _queue_set;
+  ShenandoahObjToScanQueueSet*   _old_queue_set;
+  ShenandoahRefProcIterator      _old_discovered_lists;
+  ShenandoahReferenceProcessor*  _rp;
   ShenandoahRegionChunkIterator* _work_list;
   bool _is_concurrent;
 

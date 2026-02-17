@@ -292,13 +292,30 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
   *discovered_list_addr<oop>() = head;
 }
 
-template <typename T>
-void ShenandoahRefProcThreadLocal::mark_discovered_list() {
+template <typename ClosureType>
+void ShenandoahRefProcThreadLocal::mark_discovered_list(ClosureType* cl) {
+  // We may have young references with old referents on the discovered lists of the
+  // old generation reference processor. Since these references were "discovered",
+  // none of them were marked. However, they also cannot be "processed" until old
+  // marking is complete. We therefore have the unappetizing duty to keep these young
+  // references alive until old marking is done. This is a form of nepotism. Note that
+  // here we are only marking the references, not the referents.
+  if (UseCompressedOops) {
+    do_mark_discovered_list<narrowOop>(cl);
+  } else {
+    do_mark_discovered_list<oop>(cl);
+  }
+}
+
+template <typename OopType, typename ClosureType>
+void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
   if (_discovered_list == nullptr) {
     return;
   }
 
-  T* list = reinterpret_cast<T*>(&_discovered_list);
+  const auto mode = cl->reference_iteration_mode();
+  cl->set_reference_iteration_mode(OopIterateClosure::DO_FIELDS_EXCEPT_REFERENT);
+  OopType* list = reinterpret_cast<OopType*>(&_discovered_list);
   while (list != nullptr) {
     const oop discovered_ref = CompressedOops::decode(*list);
     if (discovered_ref == nullptr) {
@@ -311,19 +328,25 @@ void ShenandoahRefProcThreadLocal::mark_discovered_list() {
     // in the list. Note that we cannot also simply remove young references from the list at the
     // end of young marking even if they are unreachable. If the reference has a queue associated
     // with it, we _must_ wait until old marking is complete before enqueueing the reference.
-    const auto cl = mark_closure();
-    const auto mode = cl->reference_iteration_mode();
-    cl->set_reference_iteration_mode(OopIterateClosure::ReferenceIterationMode::DO_FIELDS_EXCEPT_REFERENT);
     discovered_ref->oop_iterate(cl);
-    cl->set_reference_iteration_mode(mode);
 
     // Discovered list terminates with a self-loop
-    const oop discovered = reference_discovered<T>(discovered_ref);
+    const oop discovered = reference_discovered<OopType>(discovered_ref);
     if (discovered_ref == discovered) {
       break;
     }
-    list = reference_discovered_addr<T>(discovered_ref);
+    list = reference_discovered_addr<OopType>(discovered_ref);
   }
+  cl->set_reference_iteration_mode(mode);
+}
+
+ShenandoahRefProcIterator::ShenandoahRefProcIterator(size_t max) : _max(max), _index(0) {
+  _rp = ShenandoahGenerationalHeap::heap()->old_generation()->ref_processor();
+}
+
+ShenandoahRefProcThreadLocal* ShenandoahRefProcIterator::next() {
+  const size_t next_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
+  return next_index < _max ? &_rp->_ref_proc_thread_locals[next_index] : nullptr;
 }
 
 AlwaysClearPolicy ShenandoahReferenceProcessor::_always_clear_policy;
@@ -381,18 +404,6 @@ void ShenandoahReferenceProcessor::heal_discovered_lists(ShenandoahPhaseTimings:
   workers->run_task(&heal_lists_task);
 }
 
-void ShenandoahReferenceProcessor::mark_discovered_lists() {
-  assert(_generation->is_old(), "This is only for old reference processing");
-  uint max_workers = ShenandoahHeap::heap()->max_workers();
-  for (uint i = 0; i < max_workers; i++) {
-    if (UseCompressedOops) {
-      _ref_proc_thread_locals[i].mark_discovered_list<narrowOop>();
-    } else {
-      _ref_proc_thread_locals[i].mark_discovered_list<oop>();
-    }
-  }
-}
-
 template <typename T>
 bool ShenandoahReferenceProcessor::is_inactive(oop reference, oop referent, ReferenceType type) const {
   if (type == REF_FINAL) {
@@ -448,6 +459,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
     if (_old_generation_ref_processor != nullptr) {
       log_trace(gc,ref)("Discovered reference for old: " PTR_FORMAT, p2i(reference));
       _old_generation_ref_processor->discover_reference(reference, type);
+      mark_discovered_young_reference(reference);
       return true;
     }
 
@@ -757,6 +769,17 @@ void ShenandoahReferenceProcessor::abandon_partial_discovery() {
     }
   }
   _pending_list_tail = &_pending_list;
+}
+
+void ShenandoahReferenceProcessor::mark_discovered_young_reference(oop reference) const {
+  assert(_generation->is_young(), "Expected young generation, but got: %s", _generation->name());
+  assert(_generation->contains(reference), "Reference must be in young generation");
+  const uint worker_id = WorkerThread::worker_id();
+  ShenandoahMarkRefsSuperClosure* cl = _ref_proc_thread_locals[worker_id].mark_closure();
+  const auto mode = cl->reference_iteration_mode();
+  cl->set_reference_iteration_mode(OopIterateClosure::DO_FIELDS_EXCEPT_REFERENT);
+  cl->do_oop(&reference);
+  cl->set_reference_iteration_mode(mode);
 }
 
 void ShenandoahReferenceProcessor::collect_statistics() {
