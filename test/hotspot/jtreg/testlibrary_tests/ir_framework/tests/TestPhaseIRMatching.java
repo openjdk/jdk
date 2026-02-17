@@ -69,8 +69,7 @@ public class TestPhaseIRMatching {
         List<String> testVMFlags = flagVMProcess.getTestVMFlags();
         TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1, false, false);
         TestClassParser testClassParser = new TestClassParser(testClass, false);
-        Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
-                                                             testVMProcess.getApplicableIRRules());
+        Matchable testClassMatchable = testClassParser.parse(testVMProcess.testVmData());
         MatchResult result = testClassMatchable.match();
         List<Failure> expectedFails = new ExpectedFailsBuilder().build(testClass);
         List<Failure> foundFailures = new FailureBuilder().build(result);

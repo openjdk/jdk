@@ -88,7 +88,7 @@ private:
   ShenandoahHeap* _heap;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
   // No implicit copying: iterators should be passed by reference to capture the state
@@ -208,9 +208,9 @@ private:
   size_t _initial_size;
   size_t _minimum_size;
 
-  volatile size_t _soft_max_size;
+  Atomic<size_t> _soft_max_size;
   shenandoah_padding(0);
-  volatile size_t _committed;
+  Atomic<size_t> _committed;
   shenandoah_padding(1);
 
 public:
@@ -340,7 +340,7 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  size_t _gc_no_progress_count;
+  Atomic<size_t> _gc_no_progress_count;
 
   // This updates the singular, global gc state. This call must happen on a safepoint.
   void set_gc_state_at_safepoint(uint mask, bool value);

@@ -298,11 +298,11 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- compressed_class_ptrs:                    %d", _compressed_class_ptrs);
   st->print_cr("- narrow_klass_pointer_bits:                %d", _narrow_klass_pointer_bits);
   st->print_cr("- narrow_klass_shift:                       %d", _narrow_klass_shift);
-  st->print_cr("- cloned_vtables_offset:                    0x%zx", _cloned_vtables_offset);
-  st->print_cr("- early_serialized_data_offset:             0x%zx", _early_serialized_data_offset);
-  st->print_cr("- serialized_data_offset:                   0x%zx", _serialized_data_offset);
+  st->print_cr("- cloned_vtables:                           %u", cast_to_u4(_cloned_vtables));
+  st->print_cr("- early_serialized_data:                    %u", cast_to_u4(_early_serialized_data));
+  st->print_cr("- serialized_data:                          %u", cast_to_u4(_serialized_data));
   st->print_cr("- jvm_ident:                                %s", _jvm_ident);
-  st->print_cr("- class_location_config_offset:             0x%zx", _class_location_config_offset);
+  st->print_cr("- class_location_config:                    %d", cast_to_u4(_class_location_config));
   st->print_cr("- verify_local:                             %d", _verify_local);
   st->print_cr("- verify_remote:                            %d", _verify_remote);
   st->print_cr("- has_platform_or_app_classes:              %d", _has_platform_or_app_classes);
@@ -1325,9 +1325,7 @@ char* FileMapInfo::map_auxiliary_region(int region_index, bool read_only) {
 
   if (VerifySharedSpaces && !r->check_region_crc(mapped_base)) {
     aot_log_error(aot)("region %d CRC error", region_index);
-    if (!os::unmap_memory(mapped_base, r->used_aligned())) {
-      fatal("os::unmap_memory of region %d failed", region_index);
-    }
+    os::unmap_memory(mapped_base, r->used_aligned());
     return nullptr;
   }
 
@@ -1654,9 +1652,7 @@ void FileMapInfo::unmap_region(int i) {
         // is released. Zero it so that we don't accidentally read its content.
         aot_log_info(aot)("Region #%d (%s) is in a reserved space, it will be freed when the space is released", i, shared_region_name[i]);
       } else {
-        if (!os::unmap_memory(mapped_base, size)) {
-          fatal("os::unmap_memory failed");
-        }
+        os::unmap_memory(mapped_base, size);
       }
     }
     r->set_mapped_base(nullptr);
@@ -1765,10 +1761,6 @@ void FileMapInfo::print(outputStream* st) const {
   if (!is_static()) {
     dynamic_header()->print(st);
   }
-}
-
-void FileMapHeader::set_as_offset(char* p, size_t *offset) {
-  *offset = ArchiveBuilder::current()->any_to_offset((address)p);
 }
 
 int FileMapHeader::compute_crc() {

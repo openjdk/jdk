@@ -514,7 +514,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
 #ifdef MACOS_AARCH64
   _cur_wx_enable(nullptr),
-  _cur_wx_mode(0),
+  _cur_wx_mode(nullptr),
 #endif
 
   _lock_stack(this),
