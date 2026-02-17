@@ -44,7 +44,6 @@ import java.awt.peer.ComponentPeer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.Override;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -384,9 +383,9 @@ public abstract class OverlappingTestBase {
     protected String failMessage = "The LW component did not received the click.";
 
     private static boolean isValidForPixelCheck(Component component) {
-        return !(component == null ||
-                 (component instanceof Scrollbar) ||
-                 (isMac && (component instanceof Button)));
+        return component != null
+                 && !(component instanceof Scrollbar)
+                 && !(isMac && (component instanceof Button));
     }
 
     /**
