@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #define SHARE_UTILITIES_RBTREE_HPP
 
 #include "cppstdlib/type_traits.hpp"
+#include "memory/allocation.hpp"
+#include "memory/arena.hpp"
+#include "memory/resourceArea.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
@@ -458,7 +461,8 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
   ALLOCATOR _allocator;
 
 public:
-  RBTree() : BaseType(), _allocator() {}
+  template<typename... AllocArgs>
+  RBTree(AllocArgs... alloc_args) : BaseType(), _allocator(alloc_args...) {}
   NONCOPYABLE(RBTree);
   ~RBTree() { remove_all(); }
 
@@ -580,8 +584,39 @@ public:
   void free(void* ptr) { os::free(ptr); }
 };
 
+template <AllocFailType strategy>
+class RBTreeArenaAllocator {
+  Arena* _arena;
+public:
+  RBTreeArenaAllocator(Arena* arena) : _arena(arena) {}
+
+  void* allocate(size_t sz) {
+    return _arena->Amalloc(sz, strategy);
+  }
+  void free(void* ptr) { /* NOP */ }
+};
+
+template <AllocFailType strategy>
+class RBTreeResourceAreaAllocator {
+  ResourceArea* _rarea;
+public:
+  RBTreeResourceAreaAllocator(ResourceArea* rarea) : _rarea(rarea) {}
+  void* allocate(size_t sz) {
+    return _rarea->Amalloc(sz, strategy);
+  }
+  void free(void* ptr) { /* NOP */ }
+};
+
+
+
 template <typename K, typename V, typename COMPARATOR, MemTag mem_tag, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
 using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag, strategy>>;
+
+template <typename K, typename V, typename COMPARATOR, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
+using RBTreeArena = RBTree<K, V, COMPARATOR, RBTreeArenaAllocator<strategy>>;
+
+template <typename K, typename V, typename COMPARATOR, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
+using RBTreeResourceArea = RBTree<K, V, COMPARATOR, RBTreeResourceAreaAllocator<strategy>>;
 
 template <typename K, typename COMPARATOR>
 using IntrusiveRBTree = AbstractRBTree<K, IntrusiveRBNode, COMPARATOR>;
