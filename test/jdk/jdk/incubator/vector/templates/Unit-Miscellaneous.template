@@ -10,7 +10,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -26,7 +26,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }
@@ -351,7 +351,7 @@
             int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
-            AssertEquals(length, SPECIES.length());
+            assertEquals(length, SPECIES.length());
         }
     }
 
@@ -379,7 +379,7 @@
             var bv = VectorShuffle.fromArray(SPECIES, b, i);
             boolean eq = av.equals(bv);
             int to = i + SPECIES.length();
-            AssertEquals(eq, Arrays.equals(a, i, to, b, i, to));
+            assertEquals(eq, Arrays.equals(a, i, to, b, i, to));
         }
     }
 
@@ -394,7 +394,7 @@
                 var bv = SPECIES.loadMask(b, i);
                 boolean equals = av.equals(bv);
                 int to = i + SPECIES.length();
-                AssertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+                assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
             }
         }
     }
@@ -497,7 +497,7 @@
                 trueCount = vmask.trueCount();
                 var rmask = vmask.compress();
                 for (int j = 0; j < SPECIES.length(); j++)  {
-                    AssertEquals(rmask.laneIsSet(j), j < trueCount);
+                    assertEquals(rmask.laneIsSet(j), j < trueCount);
                 }
             }
         }
@@ -523,7 +523,7 @@
             assert(actualMask.equals(expectedMask));
             for (int j = 0; j < SPECIES.length(); j++)  {
                 int index = i + j + offset;
-                AssertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+                assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
             }
         }
     }
@@ -537,7 +537,7 @@
             assert(actualMask.equals(expectedMask));
             for (int j = 0; j < SPECIES.length(); j++)  {
                 long index = i + j + offset;
-                AssertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+                assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
             }
         }
     }
@@ -559,7 +559,7 @@
     static void loopBound$vectorteststype$SmokeTest(int length) {
         int actualLoopBound = SPECIES.loopBound(length);
         int expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
-        AssertEquals(actualLoopBound, expectedLoopBound);
+        assertEquals(actualLoopBound, expectedLoopBound);
     }
 
     @Test(dataProvider = "lengthProvider")
@@ -567,14 +567,14 @@
         long length = _length;
         long actualLoopBound = SPECIES.loopBound(length);
         long expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
-        AssertEquals(actualLoopBound, expectedLoopBound);
+        assertEquals(actualLoopBound, expectedLoopBound);
     }
 
     @Test
     static void ElementSize$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
         int elsize = av.elementSize();
-        AssertEquals(elsize, $Wideboxtype$.SIZE);
+        assertEquals(elsize, $Wideboxtype$.SIZE);
     }
 
     @Test
@@ -628,6 +628,6 @@
     @Test
     static void MaskAllTrue$vectorteststype$SmokeTest() {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-          AssertEquals(SPECIES.maskAll(true).toLong(), -1L >>> (64 - SPECIES.length()));
+          assertEquals(SPECIES.maskAll(true).toLong(), -1L >>> (64 - SPECIES.length()));
         }
     }

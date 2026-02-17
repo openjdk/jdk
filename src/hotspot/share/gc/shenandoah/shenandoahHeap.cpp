@@ -86,6 +86,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -201,9 +202,9 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  _soft_max_size = clamp(SoftMaxHeapSize, min_capacity(), max_capacity());
+  _soft_max_size.store_relaxed(clamp(SoftMaxHeapSize, min_capacity(), max_capacity()));
 
-  _committed = _initial_size;
+  _committed.store_relaxed(_initial_size);
 
   size_t heap_page_size   = UseLargePages ? os::large_page_size() : os::vm_page_size();
   size_t bitmap_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
@@ -725,17 +726,17 @@ size_t ShenandoahHeap::used() const {
 }
 
 size_t ShenandoahHeap::committed() const {
-  return AtomicAccess::load(&_committed);
+  return _committed.load_relaxed();
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _committed += bytes;
+  _committed.fetch_then_add(bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::decrease_committed(size_t bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _committed -= bytes;
+  _committed.fetch_then_sub(bytes, memory_order_relaxed);
 }
 
 size_t ShenandoahHeap::capacity() const {
@@ -747,7 +748,7 @@ size_t ShenandoahHeap::max_capacity() const {
 }
 
 size_t ShenandoahHeap::soft_max_capacity() const {
-  size_t v = AtomicAccess::load(&_soft_max_size);
+  size_t v = _soft_max_size.load_relaxed();
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
@@ -758,7 +759,7 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
-  AtomicAccess::store(&_soft_max_size, v);
+  _soft_max_size.store_relaxed(v);
 }
 
 size_t ShenandoahHeap::min_capacity() const {
@@ -1775,12 +1776,7 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
 
 void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
   if (!_aux_bitmap_region_special) {
-    bool success = os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size());
-    if (!success) {
-      log_warning(gc)("Auxiliary marking bitmap uncommit failed: " PTR_FORMAT " (%zu bytes)",
-                      p2i(_aux_bitmap_region.start()), _aux_bitmap_region.byte_size());
-      assert(false, "Auxiliary marking bitmap uncommit should always succeed");
-    }
+    os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size());
   }
 }
 
@@ -1946,7 +1942,7 @@ private:
   size_t const _stride;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
 public:
@@ -1959,8 +1955,8 @@ public:
     size_t stride = _stride;
 
     size_t max = _heap->num_regions();
-    while (AtomicAccess::load(&_index) < max) {
-      size_t cur = AtomicAccess::fetch_then_add(&_index, stride, memory_order_relaxed);
+    while (_index.load_relaxed() < max) {
+      size_t cur = _index.fetch_then_add(stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -2626,11 +2622,7 @@ void ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   size_t len = _bitmap_bytes_per_slice;
 
   char* addr = (char*) _bitmap_region.start() + off;
-  bool success = os::uncommit_memory(addr, len);
-  if (!success) {
-    log_warning(gc)("Bitmap slice uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(addr), len);
-    assert(false, "Bitmap slice uncommit should always succeed");
-  }
+  os::uncommit_memory(addr, len);
 }
 
 void ShenandoahHeap::forbid_uncommit() {
@@ -2712,11 +2704,11 @@ ShenandoahRegionIterator::ShenandoahRegionIterator(ShenandoahHeap* heap) :
   _index(0) {}
 
 void ShenandoahRegionIterator::reset() {
-  _index = 0;
+  _index.store_relaxed(0);
 }
 
 bool ShenandoahRegionIterator::has_next() const {
-  return _index < _heap->num_regions();
+  return _index.load_relaxed() < _heap->num_regions();
 }
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {

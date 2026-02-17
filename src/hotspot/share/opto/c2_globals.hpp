@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -694,7 +694,9 @@
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =EDCBA, with:"           \
+          "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
+          "  F: verify Node::Ideal does not return nullptr if the node"     \
+                "hash has changed"                                          \
           "  E: verify node specific invariants"                            \
           "  D: verify Node::Identity did not miss opportunities"           \
           "  C: verify Node::Ideal did not miss opportunities"              \

@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -40,7 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -63,9 +61,10 @@ final class AppImageSigner {
                 throw handleCodesignException(app, ex);
             } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof CodesignException codesignEx) {
-                    handleCodesignException(app, codesignEx);
+                    throw handleCodesignException(app, codesignEx);
+                } else {
+                    throw ex;
                 }
-                throw ex;
             }
         });
     }
@@ -165,28 +164,20 @@ final class AppImageSigner {
         }
     }
 
-    private static CodesignException handleCodesignException(MacApplication app, CodesignException ex) {
-        // Log output of "codesign" in case of error. It should help
-        // user to diagnose issues when using --mac-app-image-sign-identity.
-        // In addition add possible reason for failure. For example
-        // "--app-content" can fail "codesign".
-
+    private static IOException handleCodesignException(MacApplication app, CodesignException ex) {
         if (!app.contentDirSources().isEmpty()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
+            // Additional content may cause signing error.
+            Log.fatalError(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 
         // Signing might not work without Xcode with command line
         // developer tools. Show user if Xcode is missing as possible
         // reason.
         if (!isXcodeDevToolsInstalled()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
+            Log.fatalError(I18N.getString("message.codesign.failed.reason.xcode.tools"));
         }
 
-        // Log "codesign" output
-        Log.info(I18N.format("error.tool.failed.with.output", "codesign"));
-        Log.info(Stream.of(ex.getOutput()).collect(joining("\n")).strip());
-
-        return ex;
+        return ex.getCause();
     }
 
     private static boolean isXcodeDevToolsInstalled() {

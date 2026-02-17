@@ -70,29 +70,36 @@ public class Float16VectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
 
-    static void AssertEquals(short actual, short expected) {
-        Assert.assertEquals(actual, expected);
+    static void assertEquals(short actual, short expected) {
+        Assert.assertEquals(Float.float16ToFloat(actual), Float.float16ToFloat(expected));
     }
 
-    static void AssertEquals(short actual, short expected, String msg) {
-        Assert.assertEquals(actual, expected, msg);
+    static void assertEquals(short actual, short expected, String msg) {
+        Assert.assertEquals(Float.float16ToFloat(actual), Float.float16ToFloat(expected), msg);
     }
 
-    static void AssertEquals(short [] actual, short [] expected) {
-        Assert.assertEquals(actual, expected);
+    static void assertEquals(short [] actual, short [] expected) {
+        assert actual.length == expected.length;
+        for (int i = 0; i < actual.length; i++) { 
+            Assert.assertEquals(Float.float16ToFloat(actual[i]), Float.float16ToFloat(expected[i]));
+        }
     }
-    static void AssertEquals(short [] actual, short [] expected, String msg) {
-        Assert.assertEquals(actual, expected, msg);
+
+    static void assertEquals(short [] actual, short [] expected, String msg) {
+        assert actual.length == expected.length;
+        for (int i = 0; i < actual.length; i++) { 
+            Assert.assertEquals(Float.float16ToFloat(actual[i]), Float.float16ToFloat(expected[i]), msg);
+        }
     }
 
     static void assertArraysEquals(short[] r, short[] a, boolean[] mask) {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0);
+                assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0);
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0, "at index #" + i);
+            assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (short) 0, "at index #" + i);
         }
     }
 
@@ -346,7 +353,7 @@ public class Float16VectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest 
                 av.intoArray(r, i);
             }
         }
-        AssertEquals(r, a);
+        assertEquals(r, a);
     }
 
     @Test(dataProvider = "shortProviderForIOOBE")
@@ -894,11 +901,11 @@ public class Float16VectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest 
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    AssertEquals(r[j], a[i + indexMap[j]]);
+                    assertEquals(r[j], a[i + indexMap[j]]);
                 }
             }
         } catch (AssertionError e) {
-            AssertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
+            assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
         }
     }
 
@@ -909,11 +916,11 @@ public class Float16VectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest 
             for (; i < a.length; i += SPECIES.length()) {
                 j = i;
                 for (; j < i + SPECIES.length(); j++) {
-                    AssertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0);
+                    assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0);
                 }
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0, "at index #" + j);
+            assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (short) 0, "at index #" + j);
         }
     }
 
@@ -929,7 +936,7 @@ public class Float16VectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest 
             }
         }
 
-        AssertEquals(r, expected);
+        assertEquals(r, expected);
     }
 
     static void assertScatterArraysEquals(short[] r, short[] a, int[] indexMap) {
@@ -942,7 +949,7 @@ public class Float16VectorMaxLoadStoreTests extends AbstractVectorLoadStoreTest 
             }
         }
 
-        AssertEquals(r, expected);
+        assertEquals(r, expected);
     }
 
     @DataProvider

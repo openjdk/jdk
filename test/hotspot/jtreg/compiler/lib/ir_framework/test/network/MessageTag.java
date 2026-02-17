@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,12 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+package compiler.lib.ir_framework.test.network;
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutWithProxySync
- */
-
-public class ConnectTimeoutWithProxySync extends AbstractConnectTimeout {
-
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutWithProxySync(Version requestVersion,
-                                     String scheme,
-                                     String method,
-                                     Duration connectTimeout,
-                                     Duration requestTimeout)
-        throws Exception
-    {
-        super.timeoutWithProxySync(requestVersion, scheme, method, connectTimeout, requestTimeout);
-    }
+public class MessageTag {
+    public static final String STDOUT = "[STDOUT]";
+    public static final String TEST_LIST = "[TEST_LIST]";
+    public static final String PRINT_TIMES = "[PRINT_TIMES]";
+    public static final String VM_INFO = "[VM_INFO]";
+    public static final String APPLICABLE_IR_RULES = "[APPLICABLE_IR_RULES]";
 }
