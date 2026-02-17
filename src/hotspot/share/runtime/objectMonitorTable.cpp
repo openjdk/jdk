@@ -132,7 +132,7 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
   volatile size_t _items_count;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(_items_count));
 
-  static Entry as_entry(ObjectMonitor *monitor) {
+  static Entry as_entry(ObjectMonitor* monitor) {
     Entry entry = static_cast<Entry>((uintptr_t)monitor);
     assert(entry >= Entry::below_is_special, "Must be! (entry: " PTR_FORMAT ")", intptr_t(entry));
     return entry;
@@ -140,7 +140,7 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
 
   static ObjectMonitor* as_monitor(Entry entry) {
     assert(entry >= Entry::below_is_special, "Must be! (entry: " PTR_FORMAT ")", intptr_t(entry));
-    return reinterpret_cast<ObjectMonitor *>(entry);
+    return reinterpret_cast<ObjectMonitor*>(entry);
   }
 
   static Entry empty() {
@@ -315,7 +315,7 @@ public:
         // Empty slot to install the new monitor
         if (try_inc_items_count()) {
           // Succeeding in claiming an item.
-          Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_release);
+          Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_acq_rel);
           if (result == entry) {
             // Success - already incremented.
             return as_monitor(new_monitor);
@@ -352,6 +352,9 @@ public:
   }
 
   void remove(oop obj, Entry old_monitor, intptr_t hash) {
+    assert(old_monitor >= Entry::below_is_special,
+           "Must be! (old_monitor: " PTR_FORMAT ")", intptr_t(old_monitor));
+
     const size_t start_index = size_t(hash) & _capacity_mask;
     size_t index = start_index;
 
@@ -369,7 +372,7 @@ public:
         break;
       }
 
-      if (entry != removed() && entry == old_monitor) {
+      if (entry == old_monitor) {
         // Found matching entry; remove it
         Entry result = AtomicAccess::cmpxchg(bucket, entry, removed(), memory_order_relaxed);
         assert(result == entry, "should not fail");
@@ -484,7 +487,7 @@ public:
 
       if (entry != tombstone() && entry != removed()) {
         // A monitor
-        ObjectMonitor *monitor = as_monitor(entry);
+        ObjectMonitor* monitor = as_monitor(entry);
         oop obj = monitor->object_peek();
         if (obj != nullptr) {
           // In the current implementation the deflation thread drives
@@ -510,13 +513,12 @@ ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
   const intptr_t hash = obj->mark().hash();
   Table* curr = AtomicAccess::load_acquire(&_curr);
   ObjectMonitor* monitor = curr->get(obj, hash);
-  OrderAccess::acquire();
   return monitor;
 }
 
 // Returns a new table to try inserting into.
 ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
-  Table* new_table = AtomicAccess::load(&_curr);
+  Table* new_table = AtomicAccess::load_acquire(&_curr);
   if (new_table != curr) {
     // Table changed; no need to try further
     return new_table;
