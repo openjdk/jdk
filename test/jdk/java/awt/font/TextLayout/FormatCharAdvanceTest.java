@@ -143,7 +143,7 @@ public class FormatCharAdvanceTest {
 
         byte[] ttfBytes = Base64.getDecoder().decode(TTF_BYTES);
         ByteArrayInputStream ttfStream = new ByteArrayInputStream(ttfBytes);
-        Font ttf = Font.createFont(Font.TRUETYPE_FONT, ttfStream).deriveFont(80f);
+        Font ttf = Font.createFont(Font.TRUETYPE_FONT, ttfStream).deriveFont(70f);
         testChars(image, g2d, ttf);
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
