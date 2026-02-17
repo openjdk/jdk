@@ -703,7 +703,7 @@ static void *thread_native_entry(Thread *thread) {
   log_info(os, thread)("Thread finished (tid: %zu, kernel thread id: %zu).",
     os::current_thread_id(), (uintx) kernel_thread_id);
 
-  return 0;
+  return nullptr;
 }
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,
@@ -1753,10 +1753,9 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return true;
 }
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
+void os::remove_stack_guard_pages(char* addr, size_t size) {
   // Do not call this; no need to commit stack pages on AIX.
   ShouldNotReachHere();
-  return true;
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {

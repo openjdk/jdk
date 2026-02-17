@@ -55,7 +55,6 @@ import com.sun.source.doctree.TextTree;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree;
 
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.source.tree.CompilationUnitTree;
@@ -616,7 +615,7 @@ public class JavadocLog extends Log implements Reporter {
             }
 
             @Override
-            public int getEndPosition(EndPosTable endPosTable) {
+            public int getEndPosition() {
                 return end;
             }
         };
