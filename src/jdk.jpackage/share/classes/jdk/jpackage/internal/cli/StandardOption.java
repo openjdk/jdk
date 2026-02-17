@@ -248,7 +248,10 @@ public final class StandardOption {
                             .validatorExceptionFormatString("error.parameter-not-mac-bundle")
                             .validator(StandardValidator.IS_VALID_MAC_BUNDLE)
                             .createValidator().orElseThrow();
-                    b.validator(Validator.and(directoryValidator, macBundleValidator));
+                    // Use "lazy and" validator composition.
+                    // If the value of the option is not a directory, we want only one error reported, not two:
+                    // one that the value is not a directory and another that it is not a valid macOS bundle.
+                    b.validator(Validator.andLazy(directoryValidator, macBundleValidator));
                 }
             }))
             .create();
