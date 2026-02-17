@@ -37,7 +37,7 @@ import test.java.awt.regtesthelpers.Util;
 
 
 /**
- * AWT/Swing overlapping test for {@link javax.swing.JCombobox } component.
+ * AWT/Swing overlapping test for {@link javax.swing.JComboBox } component.
  * <p>This test creates combobox and test if heavyweight component is drawn correctly then dropdown is shown.
  * <p>See base class for details.
  */
@@ -58,17 +58,22 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
     private boolean lwClicked = false;
     private Point loc;
     private Point loc2;
-    private JComboBox cb;
+    private JComboBox<String> cb;
     private JFrame frame;
 
-    {testEmbeddedFrame = true;}
+    {
+        testEmbeddedFrame = true;
+    }
 
     protected void prepareControls() {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
-        frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
+        frame.getContentPane()
+             .setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
         frame.setSize(200, 200);
-        cb = new JComboBox(petStrings);
-        cb.setPreferredSize(new Dimension(frame.getContentPane().getWidth(), 20));
+
+        cb = new JComboBox<>(petStrings);
+        cb.setPreferredSize(new Dimension(frame.getContentPane()
+                                               .getWidth(), 20));
         cb.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -94,14 +99,15 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 loc = cb.getLocationOnScreen();
-                loc2 = frame.getContentPane().getLocationOnScreen();
+                loc2 = frame.getContentPane()
+                            .getLocationOnScreen();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
         loc2.translate(75, 75);
-        robot.mouseMove(0, 0);
+        robot.mouseMove(0, 0); // Avoid capturing mouse cursor
         pixelPreCheck(robot, loc2, currentAwtControl);
 
         loc.translate(3, 3);
