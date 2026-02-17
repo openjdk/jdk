@@ -244,8 +244,11 @@ public:
     static_assert((int)Marker::Empty == 0, "We memset the array to 0, so this must be true");
 
     struct KVEntry {
-      Marker marker;  MemTag mem_tag; SingleDiff single_diff;
+      Marker marker;
+      MemTag mem_tag;
+      SingleDiff single_diff;
     };
+
     static constexpr const int _init_size = 4;
     KVEntry _small[_init_size];
     KVEntry* _members;
@@ -267,7 +270,7 @@ public:
 
     SingleDiff& tag(MemTag tag);
     SingleDiff& tag(int mt_index);
-    void add(const SummaryDiff &other);
+    void add(const SummaryDiff& other);
     void clear();
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -753,7 +753,7 @@ bool VMATree::is_empty() {
 }
 
 VMATree::SummaryDiff::KVEntry&
-VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool *found) {
+VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool* found) {
   DEBUG_ONLY(int counter = 0);
   // If the length is large (picked as 32)
   // then we apply a load-factor check and rehash if it exceeds it.
@@ -804,7 +804,7 @@ void VMATree::SummaryDiff::grow_and_rehash() {
 
   // Clear previous -- if applicable
   if (_members != _small) {
-    FreeHeap(_members);
+    FREE_C_HEAP_ARRAY(KVEntry, _members);
   }
 
   _members = NEW_C_HEAP_ARRAY(KVEntry, new_len, mtNMT);
@@ -818,18 +818,18 @@ void VMATree::SummaryDiff::grow_and_rehash() {
   }
 }
 
-VMATree::SingleDiff &VMATree::SummaryDiff::tag(MemTag tag) {
+VMATree::SingleDiff& VMATree::SummaryDiff::tag(MemTag tag) {
   KVEntry kvt{Marker::Occupied, tag, {}};
   bool _found = false;
   KVEntry& inserted = hash_insert_or_get(kvt, &_found);
   return inserted.single_diff;
 }
 
-VMATree::SingleDiff &VMATree::SummaryDiff::tag(int mt_index) {
+VMATree::SingleDiff& VMATree::SummaryDiff::tag(int mt_index) {
   return tag((MemTag)mt_index);
 }
 
-void VMATree::SummaryDiff::add(const SummaryDiff &other) {
+void VMATree::SummaryDiff::add(const SummaryDiff& other) {
   int other_len = other._length;
   int this_len = this->_length;
 
@@ -848,7 +848,7 @@ void VMATree::SummaryDiff::add(const SummaryDiff &other) {
 
 void VMATree::SummaryDiff::clear() {
   if (_members != _small) {
-    FreeHeap(_members);
+    FREE_C_HEAP_ARRAY(KVEntry, _members);
   }
   memset(_small, 0, sizeof(_small));
 }
