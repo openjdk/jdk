@@ -58,8 +58,7 @@ import test.java.awt.regtesthelpers.Util;
  */
 public class MixingPanelsResizing {
 
-    static final int TOLERANCE_MACOSX = 15;
-    static volatile boolean failed = false;
+    private static final int TOLERANCE_MACOSX = 15;
 
     private static JFrame frame;
     private static JButton jbutton;
@@ -114,9 +113,9 @@ public class MixingPanelsResizing {
         //*** Create instructions for the user here ***
         borderShift = frameBorderCounter();
         borderShift =
-                Math.abs(borderShift) == 1 ?
-                borderShift :
-                (borderShift / 2);
+                Math.abs(borderShift) == 1
+                ? borderShift
+                : (borderShift / 2);
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 // prepare controls
@@ -165,7 +164,6 @@ public class MixingPanelsResizing {
         Util.waitForIdle(robot);
 
         SwingUtilities.invokeAndWait(new Runnable() {
-
             public void run() {
                 lLoc = frame.getLocationOnScreen();
                 lLoc.translate(frame.getWidth() + borderShift,
@@ -251,7 +249,6 @@ public class MixingPanelsResizing {
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
     public static void main(String args[]) throws Exception {
-
         if (!Toolkit.getDefaultToolkit().isDynamicLayoutActive()) {
             System.out.println("Dynamic layout is not active. Test passes.");
             return;
@@ -274,7 +271,7 @@ public class MixingPanelsResizing {
             Thread.sleep(sleepTime);
             //Timed out, so fail the test
             throw new RuntimeException(
-                    "Timed out after " + sleepTime / 1000 + " seconds");
+                    "Timed out after " + (sleepTime / 1000) + " seconds");
         } catch (InterruptedException e) {
             //The test harness may have interrupted the test.  If so, rethrow the exception
             // so that the harness gets it and deals with it.
