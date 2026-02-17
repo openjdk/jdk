@@ -93,6 +93,18 @@ public class Basic {
             throw new RuntimeException("Path.getFileName() returned null for empty path");
         }
 
+        // Test: Test for root path - ZipFileSystem.getPath("/")
+        Path rootPath = fs.getPath("/");
+        int rootNameCount = rootPath.getNameCount();
+        if (rootNameCount != 0) {
+            throw new RuntimeException("unexpected name count: " + rootNameCount + " for root path");
+        }
+        Path rootPathFileName = rootPath.getFileName();
+        if (rootPathFileName != null) {
+            throw new RuntimeException("Path.getFileName() returned non-null Path: "
+                    + rootPathFileName + " for root path");
+        }
+
         // Test: exercise toUri method
         String expected = uri.toString() + "!/foo";
         String actual = fs.getPath("/foo").toUri().toString();
