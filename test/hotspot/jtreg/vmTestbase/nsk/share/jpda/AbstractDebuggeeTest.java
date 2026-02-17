@@ -156,7 +156,7 @@ public class AbstractDebuggeeTest {
             boolean wasUnloaded;
             if (expectedUnloadingResult) {
                 // We expect unloading to succeed. Retry multiple times because
-                // JDWP internally creates global references (NewGlobalRef)
+                // the debug agent creates global references (NewGlobalRef)
                 // when handling ClassPrepare events. These global references
                 // are released only by the agent thread, whose scheduling can
                 // be delayed, causing class unloading to occur later than
