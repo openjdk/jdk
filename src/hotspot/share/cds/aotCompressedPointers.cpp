@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
+#include "cds/aotCompressedPointers.hpp"
+#include "cds/archiveBuilder.hpp"
 
-/*
- * @test
- * @summary Tests for connection related timeouts
- * @bug 8208391
- * @run testng/othervm ConnectTimeoutNoProxySync
- */
-
-public class ConnectTimeoutNoProxySync extends AbstractConnectTimeout {
-
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutNoProxySync(Version requestVersion,
-                                   String scheme,
-                                   String method,
-                                   Duration connectTimeout,
-                                   Duration requestTimeout)
-        throws Exception
-    {
-        super.timeoutNoProxySync(requestVersion, scheme, method, connectTimeout, requestTimeout);
-    }
+size_t AOTCompressedPointers::compute_byte_offset(address p) {
+  return ArchiveBuilder::current()->any_to_offset(p);
 }
