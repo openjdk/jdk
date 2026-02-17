@@ -378,11 +378,14 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Creates an opaque sRGB color with the specified combined RGB value
-     * consisting of the red component in bits 16-23, the green component
-     * in bits 8-15, and the blue component in bits 0-7.  The actual color
-     * used in rendering depends on finding the best match given the
-     * color space available for a particular output device.  Alpha
+     * Creates an opaque sRGB color with the specified RGB value consisting of
+     * <ul>
+     *   <li>the red component in bits 16-23,
+     *   <li>the green component in bits 8-15, and
+     *   <li>the blue component in bits 0-7.
+     * </ul>
+     * The actual color used in rendering depends on finding the best match
+     * given the color space available for a particular output device. Alpha
      * defaults to 255.
      *
      * @param rgb the combined RGB components
@@ -397,10 +400,14 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Creates an sRGB color with the specified combined ARGB value consisting
-     * of the alpha component in bits 24-31, the red component in bits 16-23,
-     * the green component in bits 8-15, and the blue component in bits 0-7. If
-     * the {@code hasAlpha} argument is {@code false}, alpha defaults to 255.
+     * Creates an sRGB color with the specified ARGB value consisting of
+     * <ul>
+     *   <li>the alpha component in bits 24-31,
+     *   <li>the red component in bits 16-23,
+     *   <li>the green component in bits 8-15, and
+     *   <li>the blue component in bits 0-7.
+     * </ul>
+     * If the {@code hasAlpha} argument is {@code false}, alpha defaults to 255.
      *
      * @param argb the combined ARGB components
      * @param hasAlpha {@code true} if the alpha bits are valid;
@@ -569,9 +576,14 @@ public class Color implements Paint, java.io.Serializable {
 
     /**
      * Returns the RGB value representing the color in the default sRGB
-     * {@link ColorModel}.
-     * (Bits 24-31 are alpha, 16-23 are red, 8-15 are green, 0-7 are
-     * blue).
+     * {@link ColorModel}, consisting of
+     * <ul>
+     *   <li>the alpha component in bits 24-31,
+     *   <li>the red component in bits 16-23,
+     *   <li>the green component in bits 8-15, and
+     *   <li>the blue component in bits 0-7.
+     * </ul>
+     *
      * @return the RGB value of the color in the default sRGB
      *         {@code ColorModel}.
      * @see java.awt.image.ColorModel#getRGBdefault
