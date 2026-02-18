@@ -804,6 +804,8 @@ public final class Operations {
             // skip hashCode
         }
 
+        // TODO: VectorSpecies API methods
+
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
     }
