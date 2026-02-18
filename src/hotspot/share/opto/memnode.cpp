@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -900,7 +900,7 @@ void LoadNode::dump_spec(outputStream *st) const {
     // standard dump does this in Verbose and WizardMode
     st->print(" #"); _type->dump_on(st);
   }
-  if (!depends_only_on_test()) {
+  if (in(0) != nullptr && !depends_only_on_test()) {
     st->print(" (does not depend only on test, ");
     if (control_dependency() == UnknownControl) {
       st->print("unknown control");
@@ -1023,14 +1023,6 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   }
 
   return false;
-}
-
-LoadNode* LoadNode::pin_array_access_node() const {
-  const TypePtr* adr_type = this->adr_type();
-  if (adr_type != nullptr && adr_type->isa_aryptr()) {
-    return clone_pinned();
-  }
-  return nullptr;
 }
 
 // Is the value loaded previously stored by an arraycopy? If so return
@@ -2585,6 +2577,21 @@ LoadNode* LoadNode::clone_pinned() const {
   return ld;
 }
 
+// Pin a LoadNode if it carries a dependency on its control input. There are cases when the node
+// does not actually have any dependency on its control input. For example, if we have a LoadNode
+// being used only outside a loop but it must be scheduled inside the loop, we can clone the node
+// for each of its use so that all the clones can be scheduled outside the loop. Then, to prevent
+// the clones from being GVN-ed again, we add a control input for each of them at the loop exit. In
+// those case, since there is not a dependency between the node and its control input, we do not
+// need to pin it.
+LoadNode* LoadNode::pin_node_under_control_impl() const {
+  const TypePtr* adr_type = this->adr_type();
+  if (adr_type != nullptr && adr_type->isa_aryptr()) {
+    // Only array accesses have dependencies on their control input
+    return clone_pinned();
+  }
+  return nullptr;
+}
 
 //------------------------------Value------------------------------------------
 const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
