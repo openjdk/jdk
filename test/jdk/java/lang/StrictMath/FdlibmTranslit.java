@@ -2882,8 +2882,7 @@ public class FdlibmTranslit {
             if(ix==0x3ff00000)
                 return x/zero;
             if(ix<0x3e300000&&(huge+x)>zero) return x;  /* x<2**-28 */
-            //__HI(x) = ix;      /* x <- |x| */
-            x = __HI(x, ix);
+            x = __HI(x, ix);     /* x <- |x| */
             if(ix<0x3fe00000) {     /* x < 0.5 */
                 t = x+x;
                 t = 0.5*log1p(t+t*x/(one-x));

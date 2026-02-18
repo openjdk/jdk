@@ -3648,8 +3648,7 @@ final class FdLibm {
             if(ix < 0x3e30_0000 && (huge + x) > zero) {
                 return x;                                       /* x<2**-28 */
             }
-            //__HI(x) = ix;                                     /* x <- |x| */
-            x = __HI(x, ix);
+            x = __HI(x, ix);                                    /* x <- |x| */
             if(ix < 0x3fe0_0000) {                              /* x < 0.5 */
                 t = x + x;
                 t = 0.5 * Log1p.compute(t + t*x/(one - x));
