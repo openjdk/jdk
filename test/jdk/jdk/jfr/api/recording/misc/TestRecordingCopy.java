@@ -86,12 +86,11 @@ public class TestRecordingCopy {
         Asserts.assertEquals(closedCopy.getState(), RecordingState.CLOSED);
         int afterCount = FlightRecorder.getFlightRecorder().getRecordings().size();
         Asserts.assertEquals(beforeCount, afterCount);
-        
+
         // Clean-up
         runningCopy.stop();
         runningCopy.close();
         stoppedCopy.close();
-
 
         testMemoryCopy();
     }
