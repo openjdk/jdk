@@ -860,7 +860,7 @@ public class CommandProcessor {
             }
         },
         new Command("printall", "printall", false) {
-            // Print every MDO in the heap or the one referenced by expression.
+            // Print every Method for every class loaded.
             public void doit(Tokens t) {
                 if (t.countTokens() != 0) {
                     usage();
