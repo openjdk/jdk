@@ -41,6 +41,9 @@ class NativeBuffer implements AutoCloseable {
     // (only safe for use by thread-local caches)
     private Object owner;
 
+    // owner thread ID
+    private long ownerTid;
+
     NativeBuffer(int size) {
         this.address = unsafe.allocateMemory(size);
         this.size = size;
@@ -69,12 +72,21 @@ class NativeBuffer implements AutoCloseable {
 
     // not synchronized; only safe for use by thread-local caches
     void setOwner(Object owner) {
-        assert !Thread.currentThread().isVirtual();
+        Thread thread = Thread.currentThread();
+        assert !thread.isVirtual();
+        assert ownerTid == 0 || ownerTid == thread.threadId();
         this.owner = owner;
+        this.ownerTid = (owner != null) ? thread.threadId() : 0;
     }
 
     // not synchronized; only safe for use by thread-local caches
     Object owner() {
-        return owner;
+        long tid = Thread.currentThread().threadId();
+        assert ownerTid == 0 || ownerTid == tid;
+        if (ownerTid == tid) {
+            return owner;
+        } else {
+            return null;
+        }
     }
 }
