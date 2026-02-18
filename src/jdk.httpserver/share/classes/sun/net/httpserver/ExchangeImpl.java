@@ -203,6 +203,8 @@ class ExchangeImpl {
         return values != null
             && GET.equals(method)
             && headers.containsKey("Upgrade")
+            && !headers.containsKey("Content-length")
+            && !headers.containsKey("Transfer-encoding")
             && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
     }
 
@@ -305,7 +307,7 @@ class ExchangeImpl {
         rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
         /* check for connection upgrade */
-        if (rCode == 101) {
+        if (upgrade && rCode == 101) {
 
             if (contentLen != 0) {
                 logger.log(
@@ -346,6 +348,8 @@ class ExchangeImpl {
                     close = true;
                 } else if (upgrade && rCode == 101) {
                     o.setWrappedStream (new UpgradeOutputStream(this, ros));
+                     // the connection should not be returned to the pool but should
+                    // be closed when the upgraded exchange finishes
                     close = true;
                 } else {
                     rspHdrs.set("Transfer-encoding", "chunked");
