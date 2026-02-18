@@ -107,6 +107,9 @@ package gc;
  * are passed.
  */
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import jdk.test.whitebox.WhiteBox;
 
 public class TestDeferredICacheInvalidation {
@@ -229,8 +232,71 @@ public class TestDeferredICacheInvalidation {
     }
 
     public static void fullGC() throws Exception {
-        a = null;
-        WB.fullGC();
+        // Thread synchronization
+        final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+        final ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
+        final ReentrantReadWriteLock.WriteLock writeLock = rwLock.writeLock();
+        final AtomicBoolean running = new AtomicBoolean(true);
+
+        // Thread 1: GC thread that runs for 1 second with 100ms sleep intervals
+        Thread gcThread = new Thread(() -> {
+            final long startTime = System.currentTimeMillis();
+            final long duration = 1000;
+            try {
+                while (System.currentTimeMillis() - startTime < duration) {
+                    writeLock.lock();
+                    try {
+                        a = new A();
+                        WB.fullGC();
+                    } finally {
+                        writeLock.unlock();
+                    }
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException e) {
+                // Thread interrupted, exit
+            }
+            running.set(false);
+        });
+
+        // Threads 2-11: Test threads that execute test0() through test9()
+        Thread[] testThreads = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            final int testIdx = i;
+            testThreads[i] = new Thread(() -> {
+                try {
+                    var method = B.class.getDeclaredMethod("test" + testIdx);
+                    while (running.get()) {
+                        readLock.lock();
+                        try {
+                            if (WB.getMethodCompilationLevel(method) != compLevel) {
+                                throw new IllegalStateException("Method " + method
+                                    + " is not compiled at the compilation level: "
+                                    + compLevel + ". Got: " + WB.getMethodCompilationLevel(method));
+                            }
+                            method.invoke(null);
+                        } finally {
+                            readLock.unlock();
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(10);
+                }
+            });
+        }
+
+        // Start all threads
+        gcThread.start();
+        for (Thread t : testThreads) {
+            t.start();
+        }
+
+        // Wait for all threads to complete
+        gcThread.join();
+        for (Thread t : testThreads) {
+            t.join();
+        }
     }
 
     public static void main(String[] args) throws Exception {
