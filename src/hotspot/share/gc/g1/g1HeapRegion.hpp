@@ -148,7 +148,21 @@ public:
   // Create objects in the given range. The BOT will be updated if needed and
   // the created objects will have their header marked to show that they are
   // dead.
-  void fill_range_with_dead_objects(HeapWord* start, HeapWord* end);
+  // Optionally zaps the payload of the filler object (in debug builds).
+  //
+  // Callers must be a bit careful with heap areas that contain pinned objects.
+  // While the ranges passed in here corresponding to the space between live objects,
+  // it is possible that there is a pinned object that is not any more referenced by
+  // Java code (only by native).
+  //
+  // In this case the caller should not zap, because that would overwrite
+  // user-observable data. Memory corresponding to obj-header is safe to
+  // change, since it's not directly user-observable.
+  //
+  // In particular String Deduplication might change the reference to the character
+  // array of the j.l.String after native code obtained a raw reference to it (via
+  // GetStringCritical()).
+  void fill_range_with_dead_objects(HeapWord* start, HeapWord* end, bool zap);
 
   // All allocations are done without updating the BOT. The BOT
   // needs to be kept in sync for old generation regions and

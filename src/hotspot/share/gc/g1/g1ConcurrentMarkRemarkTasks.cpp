@@ -138,7 +138,12 @@ G1UpdateRegionLivenessAndSelectForRebuildTask::G1UpdateRegionLivenessAndSelectFo
   _cm(cm),
   _hrclaimer(num_workers),
   _total_selected_for_rebuild(0),
-  _cleanup_list("Empty Regions After Mark List") {}
+  _cleanup_list("Empty Regions After Mark List") {
+
+  // We use pinning information to verify that we are allowed to reclaim completely empty
+  // regions later. Need to make the pin counts accurate.
+  _g1h->flush_region_pin_cache();
+}
 
 G1UpdateRegionLivenessAndSelectForRebuildTask::~G1UpdateRegionLivenessAndSelectForRebuildTask() {
   if (!_cleanup_list.is_empty()) {

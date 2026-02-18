@@ -775,21 +775,8 @@ void G1HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, b
   CollectedHeap::fill_with_object(address, word_size, zap);
 }
 
-void G1HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
+void G1HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end, bool zap) {
   size_t range_size = pointer_delta(end, start);
-
-  // We must be a bit careful with regions that contain pinned objects. While the
-  // ranges passed in here corresponding to the space between live objects, it is
-  // possible that there is a pinned object that is not any more referenced by
-  // Java code (only by native).
-  //
-  // In this case we should not zap, because that would overwrite
-  // user-observable data. Memory corresponding to obj-header is safe to
-  // change, since it's not directly user-observable.
-  //
-  // In particular String Deduplication might change the reference to the character
-  // array of the j.l.String after native code obtained a raw reference to it (via
-  // GetStringCritical()).
-  CollectedHeap::fill_with_object(start, range_size, !has_pinned_objects());
+  CollectedHeap::fill_with_object(start, range_size, zap);
   update_bot_for_block(start, start + range_size);
 }

@@ -169,7 +169,9 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       } else {
         // Found dead object (which klass has potentially been unloaded). Scrub to next marked object.
         HeapWord* scrub_end = _bitmap->get_next_marked_addr(addr, limit);
-        hr->fill_range_with_dead_objects(addr, scrub_end);
+        // Do not allow zapping the payload because the region pin count we could rely on may not
+        // be accurate right now.
+        hr->fill_range_with_dead_objects(addr, scrub_end, false /* zap */);
         // Return the next object to handle.
         return scrub_end;
       }

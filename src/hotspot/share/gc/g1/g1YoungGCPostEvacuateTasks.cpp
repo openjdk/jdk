@@ -186,7 +186,7 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
       return 0;
     }
 
-    hr->fill_range_with_dead_objects(start, end);
+    hr->fill_range_with_dead_objects(start, end, !hr->has_pinned_objects());
     return pointer_delta(end, start);
   }
 

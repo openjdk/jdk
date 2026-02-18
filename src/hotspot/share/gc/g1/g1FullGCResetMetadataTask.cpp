@@ -77,7 +77,7 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_re
     HeapWord* scrub_start = current_obj;
     HeapWord* scrub_end = bitmap->get_next_marked_addr(scrub_start, limit);
     assert(scrub_start != scrub_end, "must advance");
-    hr->fill_range_with_dead_objects(scrub_start, scrub_end);
+    hr->fill_range_with_dead_objects(scrub_start, scrub_end, !hr->has_pinned_objects());
 
     current_obj = scrub_end;
   }
