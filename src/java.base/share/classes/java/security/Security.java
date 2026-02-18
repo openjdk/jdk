@@ -331,7 +331,8 @@ public final class Security {
                 return initialSecurityProperties;
             }
             @Override
-            public Properties getCurrentProperties() { return props;
+            public Properties getCurrentProperties() {
+                return props;
             }
         });
     }
