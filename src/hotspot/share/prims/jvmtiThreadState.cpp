@@ -56,12 +56,7 @@ bool JvmtiThreadState::_seen_interp_only_mode = false;
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
-
-  // The _thread field is a link to the JavaThread associated with JvmtiThreadState.
-  // A carrier thread shgould always have a stable link to its JavaThread.
-  // The _thread field of a virtual thread should point to the JavaThread when
-  // virtual thread is mounted. It should be set to null when it is unmounted.
-  _thread = thread;
+  _thread               = thread;
   _exception_state      = ES_CLEARED;
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;

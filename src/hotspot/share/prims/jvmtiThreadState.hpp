@@ -123,6 +123,10 @@ class JvmtiVTSuspender : AllStatic {
 class JvmtiThreadState : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiEnv;
+  // The _thread field is a link to the JavaThread associated with JvmtiThreadState.
+  // A platform (including carrier) thread should always have a stable link to its JavaThread.
+  // The _thread field of a virtual thread should point to the JavaThread when
+  // virtual thread is mounted. It should be set to null when it is unmounted.
   JavaThread        *_thread;
   OopHandle         _thread_oop_h;
   // Jvmti Events that cannot be posted in their current context.
