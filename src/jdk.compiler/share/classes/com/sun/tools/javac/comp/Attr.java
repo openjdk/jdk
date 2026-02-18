@@ -1277,7 +1277,7 @@ public class Attr extends JCTree.Visitor {
                 try {
                     annotate.blockAnnotations();
                     memberEnter.memberEnter(tree, env);
-                    typeAnnotations.organizeTypeAnnotationsSignatures(env, tree);
+                    typeAnnotations.organizeTypeAnnotationsSignaturesForLocalVarType(env, tree);
                 } finally {
                     annotate.unblockAnnotations();
                 }
@@ -4236,7 +4236,7 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v);
         }
         annotate.flush();
-        typeAnnotations.organizeTypeAnnotationsSignatures(env, tree.var);
+        typeAnnotations.organizeTypeAnnotationsSignaturesForLocalVarType(env, tree.var);
         result = tree.type = tree.var.type = v.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;

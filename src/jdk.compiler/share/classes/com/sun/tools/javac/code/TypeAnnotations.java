@@ -144,7 +144,7 @@ public class TypeAnnotations {
         });
     }
 
-    public void organizeTypeAnnotationsSignatures(final Env<AttrContext> env, final JCVariableDecl tree) {
+    public void organizeTypeAnnotationsSignaturesForLocalVarType(final Env<AttrContext> env, final JCVariableDecl tree) {
         annotate.afterTypes(() -> {
             JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
             try {
@@ -1264,13 +1264,14 @@ public class TypeAnnotations {
             } else if (tree.sym.getKind() == ElementKind.PARAMETER) {
                 if (sigOnly) {
                     if (contextTree instanceof JCCatch c && c.param == tree) {
+                        //exception "parameter":
                         final TypeAnnotationPosition pos =
                             TypeAnnotationPosition.exceptionParameter(currentLambda,
                                                                       tree.pos);
                         separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                    } else {
+                        // (real) parameters are handled in visitMethodDef or visitLambda.
                     }
-                } else {
-                    // (real) parameters are handled in visitMethodDef or visitLambda.
                 }
             } else if (tree.sym.getKind() == ElementKind.FIELD) {
                 if (sigOnly) {
@@ -1296,18 +1297,18 @@ public class TypeAnnotations {
                 }
             } else if (tree.sym.getKind() == ElementKind.BINDING_VARIABLE) {
                 if (sigOnly) {
-                final TypeAnnotationPosition pos =
-                    TypeAnnotationPosition.localVariable(currentLambda,
-                                                         tree.pos);
-                separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                    final TypeAnnotationPosition pos =
+                        TypeAnnotationPosition.localVariable(currentLambda,
+                                                             tree.pos);
+                    separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
                 }
             } else if (tree.sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 if (sigOnly) {
-                    Assert.error("Unhandled variable kind: " + tree.sym.getKind());
+                    Assert.error("Should not get variable kind: " + tree.sym.getKind());
                 }
             } else if (tree.sym.getKind() == ElementKind.RESOURCE_VARIABLE) {
                 if (sigOnly) {
-                    Assert.error("Unhandled variable kind: " + tree.sym.getKind());
+                    Assert.error("Should not get variable kind: " + tree.sym.getKind());
                 }
             } else if (tree.sym.getKind() == ElementKind.ENUM_CONSTANT) {
                 // No type annotations can occur here.
