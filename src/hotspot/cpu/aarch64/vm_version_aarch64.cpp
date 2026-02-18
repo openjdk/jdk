@@ -676,11 +676,20 @@ void VM_Version::initialize() {
 
   if (NeoverseN1Errata1542419) {
     if (!has_neoverse_n1_errata_1542419()) {
-      warning("NeoverseN1Errata1542419 is set for the CPU not having Neoverse N1 errata 1542419");
+      vm_exit_during_initialization("NeoverseN1Errata1542419 is set for the CPU not having Neoverse N1 errata 1542419");
     }
     if (FLAG_IS_DEFAULT(UseDeferredICacheInvalidation)) {
       FLAG_SET_DEFAULT(UseDeferredICacheInvalidation, true);
     }
+
+    if (!UseDeferredICacheInvalidation) {
+      vm_exit_during_initialization("NeoverseN1Errata1542419 is set but UseDeferredICacheInvalidation is not enabled");
+    }
+  }
+
+  if (UseDeferredICacheInvalidation
+      && (!is_cache_idc_enabled() || (!is_cache_dic_enabled() && !NeoverseN1Errata1542419))) {
+    vm_exit_during_initialization("UseDeferredICacheInvalidation is set but neither IDC nor DIC nor NeoverseN1Errata1542419 is enabled");
   }
 
   // Construct the "features" string
