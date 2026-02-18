@@ -3636,19 +3636,19 @@ final class FdLibm {
             double t;
             int hx,ix;
             /*unsigned*/ int lx;
-            hx = __HI(x);                                       /* high word */
-            lx = __LO(x);                                       /* low word */
+            hx = __HI(x);                                        /* high word */
+            lx = __LO(x);                                        /* low word */
             ix = hx & 0x7fff_ffff;
-            if ((ix | ((lx | (-lx)) >> 31)) > 0x3ff0_0000) {    /* |x| > 1 */
+            if ((ix | ((lx | (-lx)) >> 31)) > 0x3ff0_0000) {     /* |x| > 1 */
                 return (x - x) / (x - x);
             }
             if (ix == 0x3ff0_0000) {
                 return x / zero;
             }
             if (ix < 0x3e30_0000 && (huge + x) > zero) {
-                return x;                                       /* x<2**-28 */
+                return x;                                        /* x<2**-28 */
             }
-            x = __HI(x, ix);                                    /* x <- |x| */
+            x = __HI(x, ix);                                     /* x <- |x| */
             if (ix < 0x3fe0_0000) {                              /* x < 0.5 */
                 t = x + x;
                 t = 0.5 * Log1p.compute(t + t*x/(one - x));
