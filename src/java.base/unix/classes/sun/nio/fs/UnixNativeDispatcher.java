@@ -43,10 +43,8 @@ class UnixNativeDispatcher {
             buffer = NativeBuffers.allocNativeBuffer(size);
         } else {
             // buffer already contains the path
-            if (buffer.owner() == path) {
-                assert !Thread.currentThread().isVirtual();
+            if (buffer.owner() == path)
                 return buffer;
-            }
         }
         NativeBuffers.copyCStringToNativeBuffer(cstr, buffer);
         if (!Thread.currentThread().isVirtual())
