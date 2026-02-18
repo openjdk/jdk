@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 /*
  * @test
- * @bug 8377985
+ * @bug 8378003
  * @summary Verify that JarURLConnection.getCertificates() and
  *          JarURLConnection.getJarEntry().getCodeSigners() returns the
  *          expected results for entries in a signed JAR file
@@ -86,12 +87,23 @@ class JarURLConnectionCertsAndCodeSigners {
         try (InputStream is = jarURLConn.getInputStream()) {
             is.readAllBytes();
         }
-        final Certificate[] certs = jarURLConn.getCertificates();
-        assertNotNull(certs, "null certificates for signed JAR entry: " + uri);
-        assertNotEquals(0, certs.length, "empty certificates for signed JAR entry: " + uri);
-        assertInstanceOf(X509Certificate.class, certs[0], "unexpected certificate type");
-        final String subject = ((X509Certificate) certs[0]).getSubjectX500Principal().getName();
-        assertEquals(CERT_SUBJECT, subject, "unexpected subject in certificate");
+        Certificate[] prevIterationCerts = null;
+        for (int i = 1; i <= 2; i++) {
+            final Certificate[] certs = jarURLConn.getCertificates();
+            assertNotNull(certs, "null certificates for signed JAR entry: " + uri);
+            assertNotEquals(0, certs.length, "empty certificates for signed JAR entry: " + uri);
+            assertInstanceOf(X509Certificate.class, certs[0], "unexpected certificate type");
+            final String subject = ((X509Certificate) certs[0]).getSubjectX500Principal().getName();
+            assertEquals(CERT_SUBJECT, subject, "unexpected subject in certificate");
+            if (i > 1) {
+                // verify that each call to getCertificates() returns
+                // a new instance of the array.
+                // intentional identity check
+                assertNotSame(prevIterationCerts, certs, "getCertificates() did not return" +
+                        " a new array");
+            }
+            prevIterationCerts = certs;
+        }
     }
 
     /*
@@ -108,15 +120,26 @@ class JarURLConnectionCertsAndCodeSigners {
         try (InputStream is = jarURLConn.getInputStream()) {
             is.readAllBytes();
         }
-        final CodeSigner[] codeSigners = jarURLConn.getJarEntry().getCodeSigners();
-        assertNotNull(codeSigners, "null codesigners for signed JAR entry: " + uri);
-        assertNotEquals(0, codeSigners.length, "empty codesigners for signed JAR entry: " + uri);
-        final List<? extends Certificate> certs = codeSigners[0].getSignerCertPath().getCertificates();
-        assertNotNull(certs, "null certificates from codesigner");
-        assertNotEquals(0, certs.size(), "empty certificates from codesigner");
-        assertInstanceOf(X509Certificate.class, certs.getFirst(), "unexpected certificate type");
-        final String subject = ((X509Certificate) certs.getFirst()).getSubjectX500Principal().getName();
-        assertEquals(CERT_SUBJECT, subject, "unexpected subject in certificate");
+        CodeSigner[] prevIterationCodeSigners = null;
+        for (int i = 1; i <= 2; i++) {
+            final CodeSigner[] codeSigners = jarURLConn.getJarEntry().getCodeSigners();
+            assertNotNull(codeSigners, "null codesigners for signed JAR entry: " + uri);
+            assertNotEquals(0, codeSigners.length, "empty codesigners for signed JAR entry: " + uri);
+            final List<? extends Certificate> certs = codeSigners[0].getSignerCertPath().getCertificates();
+            assertNotNull(certs, "null certificates from codesigner");
+            assertNotEquals(0, certs.size(), "empty certificates from codesigner");
+            assertInstanceOf(X509Certificate.class, certs.getFirst(), "unexpected certificate type");
+            final String subject = ((X509Certificate) certs.getFirst()).getSubjectX500Principal().getName();
+            assertEquals(CERT_SUBJECT, subject, "unexpected subject in certificate");
+            if (i > 1) {
+                // verify that each call to getCodeSigners() returns
+                // a new instance of the array.
+                // intentional identity check
+                assertNotSame(prevIterationCodeSigners, codeSigners, "getCodeSigners() did not"
+                        + " return a new array");
+            }
+            prevIterationCodeSigners = codeSigners;
+        }
     }
 
     private static KeyStore.PrivateKeyEntry generatePrivateKey() throws Exception {
