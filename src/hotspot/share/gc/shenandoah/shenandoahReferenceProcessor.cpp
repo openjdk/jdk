@@ -28,7 +28,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -95,7 +95,7 @@ void set_oop_field<narrowOop>(narrowOop* field, oop value) {
   }
 }
 
-static oop lrb(oop obj) {
+oop lrb(oop obj) {
   if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
     return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
   } else {
@@ -127,17 +127,6 @@ static HeapWord* reference_referent_raw(oop reference) {
 
 static void reference_clear_referent(oop reference) {
   java_lang_ref_Reference::clear_referent_raw(reference);
-}
-
-template <typename T>
-static T* reference_discovered_addr(oop reference) {
-  return reinterpret_cast<T*>(java_lang_ref_Reference::discovered_addr_raw(reference));
-}
-
-template <typename T>
-static oop reference_discovered(oop reference) {
-  T heap_oop = *reference_discovered_addr<T>(reference);
-  return lrb(CompressedOops::decode(heap_oop));
 }
 
 template <typename T>
@@ -290,54 +279,6 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<narrowOop>(oop head)
 template <>
 void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
   *discovered_list_addr<oop>() = head;
-}
-
-template <typename ClosureType>
-void ShenandoahRefProcThreadLocal::mark_discovered_list(ClosureType* cl) {
-  // We may have young references with old referents on the discovered lists of the
-  // old generation reference processor. Since these references were "discovered",
-  // none of them were marked. However, they also cannot be "processed" until old
-  // marking is complete. We therefore have the unappetizing duty to keep these young
-  // references alive until old marking is done. This is a form of nepotism. Note that
-  // here we are only marking the references, not the referents.
-  if (UseCompressedOops) {
-    do_mark_discovered_list<narrowOop>(cl);
-  } else {
-    do_mark_discovered_list<oop>(cl);
-  }
-}
-
-template <typename OopType, typename ClosureType>
-void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
-  if (_discovered_list == nullptr) {
-    return;
-  }
-
-  const auto mode = cl->reference_iteration_mode();
-  cl->set_reference_iteration_mode(OopIterateClosure::DO_FIELDS_EXCEPT_REFERENT);
-  OopType* list = reinterpret_cast<OopType*>(&_discovered_list);
-  while (list != nullptr) {
-    const oop discovered_ref = CompressedOops::decode(*list);
-    if (discovered_ref == nullptr) {
-      break;
-    }
-
-    // We have discovered this reference, and it has an old referent. We must keep this young
-    // reference itself alive until old reference processing is complete. If we don't do this,
-    // an unreachable young reference will simply disappear, leaving a dangling pointer
-    // in the list. Note that we cannot also simply remove young references from the list at the
-    // end of young marking even if they are unreachable. If the reference has a queue associated
-    // with it, we _must_ wait until old marking is complete before enqueueing the reference.
-    discovered_ref->oop_iterate(cl);
-
-    // Discovered list terminates with a self-loop
-    const oop discovered = reference_discovered<OopType>(discovered_ref);
-    if (discovered_ref == discovered) {
-      break;
-    }
-    list = reference_discovered_addr<OopType>(discovered_ref);
-  }
-  cl->set_reference_iteration_mode(mode);
 }
 
 ShenandoahRefProcIterator::ShenandoahRefProcIterator(size_t max) : _max(max), _index(0) {
