@@ -66,7 +66,8 @@ public class TestParticleLife {
 
     private static void runIR() {
         System.out.println("Testing with IR rules...");
-        TestFramework.runWithFlags("-XX:CompileCommand=inline,compiler.gallery.ParticleLife$State::update*");
+        TestFramework.runWithFlags("-XX:CompileCommand=inline,compiler.gallery.ParticleLife$State::update*",
+                                   "--add-modules=jdk.incubator.vector");
     }
 
     private static void runVisual() throws InterruptedException {
