@@ -126,8 +126,8 @@ import com.sun.net.httpserver.*;
  *
  * <p>In case of a blank or invalid value, the default will be used.</p>
  *
- * <p>This property is introduced temporarily to restore the old behavior in
- * case of need and will be removed in a future release.</p>
+ * <p>This property and the ability to restore the old behavior may be removed
+ * in a future release.</p>
  * </li>
  * </ul>
  *
