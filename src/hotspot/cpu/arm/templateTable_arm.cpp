@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2137,9 +2137,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ cbz(Rnmethod, dispatch);                // test result, no osr if null
 
     // nmethod may have been invalidated (VM may block upon call_VM return)
-    // Load the _hdr pointer from the nmethod
     __ ldr(R1_tmp, Address(Rnmethod, nmethod::hdr_offset()));
-    // Load _state value from _hdr at an offset specified by nmethod::state_offset()
     __ ldrb(R1_tmp, Address(R1_tmp, nmethod::state_offset()));
     __ cmp(R1_tmp, nmethod::in_use);
     __ b(dispatch, ne);
@@ -2154,10 +2152,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
     // R0 is OSR buffer
 
-    // Load the _hdr pointer from the nmethod
     __ ldr(R1_tmp, Address(Rtmp_save0, nmethod::hdr_offset()));
-    // Load _osr_entry_point address from _hdr at an offset specified
-    // by nmethod::osr_entry_point_offset()
     __ ldr(R1_tmp, Address(R1_tmp, nmethod::osr_entry_point_offset()));
     __ ldr(Rtemp, Address(FP, frame::interpreter_frame_sender_sp_offset * wordSize));
 
