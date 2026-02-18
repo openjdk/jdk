@@ -480,7 +480,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(counts = { IRNode.CAST_II, ">0" }, applyIf = { "LoopPeeling", "true" })
+    @IR(counts = { IRNode.CAST_II, ">0" })
     @Warmup(0)
     public Object[] testCastII() {
         byte[] bytes = new byte[400];
@@ -509,3 +509,4 @@ public class TestSubwordTruncation {
         TestFramework.run();
     }
 }
+
