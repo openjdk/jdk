@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -457,12 +458,10 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
-  if (base != nullptr && addr != base) {
-    if (!os::release_memory(addr, size)) {
-      warning("Could not release memory on unsuccessful file mapping");
-    }
-    return nullptr;
-  }
+
+  // The requested address should be the same as the returned address when using MAP_FIXED
+  // as per POSIX.
+  assert(base == nullptr || addr == base, "base should equal addr when using MAP_FIXED");
   return addr;
 }
 
@@ -1028,6 +1027,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
@@ -1349,6 +1349,10 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
 
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
+}
+
+bool os::Posix::is_current_user_root(){
+    return is_root(geteuid());
 }
 
 bool os::Posix::matches_effective_uid_or_root(uid_t uid) {

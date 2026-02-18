@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8139885 8150824 8150825 8194238 8233920
- * @run testng/othervm -ea -esa -Xverify:all test.java.lang.invoke.TryFinallyTest
+ * @run junit/othervm -ea -esa -Xverify:all test.java.lang.invoke.TryFinallyTest
  */
 
 package test.java.lang.invoke;
@@ -35,9 +35,12 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import static org.testng.AssertJUnit.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for the tryFinally method handle combinator introduced in JEP 274.
@@ -47,13 +50,12 @@ public class TryFinallyTest {
     static final Lookup LOOKUP = MethodHandles.lookup();
 
     @Test
-    public static void testTryFinally() throws Throwable {
+    public void testTryFinally() throws Throwable {
         MethodHandle hello = MethodHandles.tryFinally(TryFinally.MH_greet, TryFinally.MH_exclaim);
         assertEquals(TryFinally.MT_hello, hello.type());
         assertEquals("Hello, world!", hello.invoke("world"));
     }
 
-    @DataProvider
     static Object[][] tryFinallyArgs() {
         return new Object[][] {
                 { boolean.class, true },
@@ -68,8 +70,9 @@ public class TryFinallyTest {
         };
     }
 
-    @Test(dataProvider = "tryFinallyArgs")
-    public static void testTryFinally(Class<?> argType, Object arg) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("tryFinallyArgs")
+    public void testTryFinally(Class<?> argType, Object arg) throws Throwable {
         MethodHandle identity = MethodHandles.identity(argType);
         MethodHandle tryFinally = MethodHandles.tryFinally(
                 identity,
@@ -78,31 +81,31 @@ public class TryFinallyTest {
         assertEquals(arg, tryFinally.invoke(arg));
     }
 
-    @Test(dataProvider = "tryFinallyArgs", expectedExceptions = TryFinally.T1.class)
-    public static void testTryFinallyException(Class<?> argType, Object arg) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("tryFinallyArgs")
+    public void testTryFinallyException(Class<?> argType, Object arg) throws Throwable {
         MethodHandle identity = TryFinally.MH_throwingTargetIdentity.asType(methodType(argType, argType));
         MethodHandle tryFinally = MethodHandles.tryFinally(
                 identity,
                 MethodHandles.dropArguments(identity, 0, TryFinally.T1.class));
         assertEquals(methodType(argType, argType), tryFinally.type());
-        tryFinally.invoke(arg); // should throw
+        assertThrows(TryFinally.T1.class, () -> tryFinally.invoke(arg));
     }
 
     @Test
-    public static void testTryFinallyVoid() throws Throwable {
+    public void testTryFinallyVoid() throws Throwable {
         MethodHandle tfVoid = MethodHandles.tryFinally(TryFinally.MH_print, TryFinally.MH_printMore);
         assertEquals(TryFinally.MT_printHello, tfVoid.type());
         tfVoid.invoke("world");
     }
 
     @Test
-    public static void testTryFinallySublist() throws Throwable {
+    public void testTryFinallySublist() throws Throwable {
         MethodHandle helloMore = MethodHandles.tryFinally(TryFinally.MH_greetMore, TryFinally.MH_exclaimMore);
         assertEquals(TryFinally.MT_moreHello, helloMore.type());
         assertEquals("Hello, world and universe (but world first)!", helloMore.invoke("world", "universe"));
     }
 
-    @DataProvider
     static Object[][] omitTrailingArguments() {
         MethodHandle c = TryFinally.MH_voidCleanup;
         return new Object[][]{
@@ -114,13 +117,13 @@ public class TryFinallyTest {
         };
     }
 
-    @Test(dataProvider = "omitTrailingArguments")
-    public static void testTryFinallyOmitTrailingArguments(MethodHandle cleanup) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("omitTrailingArguments")
+    public void testTryFinallyOmitTrailingArguments(MethodHandle cleanup) throws Throwable {
         MethodHandle tf = MethodHandles.tryFinally(TryFinally.MH_dummyTarget, cleanup);
         tf.invoke(1, 2L, "a", 23, 42L, "b");
     }
 
-    @DataProvider
     static Object[][] negativeTestData() {
         MethodHandle intid = MethodHandles.identity(int.class);
         MethodHandle intco = MethodHandles.constant(int.class, 0);
@@ -145,29 +148,18 @@ public class TryFinallyTest {
         };
     }
 
-    @Test(dataProvider = "negativeTestData")
-    public static void testTryFinallyNegative(MethodHandle target, MethodHandle cleanup, String expectedMessage) {
-        boolean caught = false;
-        try {
-            MethodHandles.tryFinally(target, cleanup);
-        } catch (IllegalArgumentException iae) {
-            assertEquals(expectedMessage, iae.getMessage());
-            caught = true;
-        }
-        assertTrue(caught);
+    @ParameterizedTest
+    @MethodSource("negativeTestData")
+    public void testTryFinallyNegative(MethodHandle target, MethodHandle cleanup, String expectedMessage) {
+        var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.tryFinally(target, cleanup));
+        assertEquals(expectedMessage, iae.getMessage());
     }
 
     @Test
-    public static void testTryFinallyThrowableCheck() {
+    public void testTryFinallyThrowableCheck() {
         MethodHandle mh = MethodHandles.tryFinally(TryFinally.MH_throwingTarget,
                                                    TryFinally.MH_catchingCleanup);
-        try {
-            mh.invoke();
-            fail("ClassCastException expected");
-        } catch (Throwable t) {
-            assertTrue("Throwable not assignable to ClassCastException: " + t,
-                       ClassCastException.class.isAssignableFrom(t.getClass()));
-        }
+        assertThrows(ClassCastException.class, mh::invoke);
     }
 
     static class TryFinally {

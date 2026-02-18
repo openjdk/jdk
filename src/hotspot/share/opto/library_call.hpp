@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,10 +158,12 @@ class LibraryCallKit : public GraphKit {
   Node* generate_fair_guard(Node* test, RegionNode* region);
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
-                                Node* *pos_index = nullptr);
+                                Node** pos_index = nullptr,
+                                bool with_opaque = false);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
-                             RegionNode* region);
+                             RegionNode* region,
+                             bool with_opaque = false);
   void  generate_string_range_check(Node* array, Node* offset,
                                     Node* length, bool char_count,
                                     bool halt_on_oob = false);
@@ -275,9 +277,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
+
+  bool inline_native_vthread_start_transition(address funcAddr, const char* funcName, bool is_final_transition);
+  bool inline_native_vthread_end_transition(address funcAddr, const char* funcName, bool is_first_transition);
+
 #if INCLUDE_JVMTI
-  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
-  bool inline_native_notify_jvmti_hide();
   bool inline_native_notify_jvmti_sync();
 #endif
 

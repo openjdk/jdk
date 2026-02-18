@@ -63,7 +63,7 @@ private:
   uint                    _nworkers;
   ShenandoahHeapRegion**  _coalesce_and_fill_region_array;
   uint                    _coalesce_and_fill_region_count;
-  volatile bool           _is_preempted;
+  Atomic<bool>            _is_preempted;
 
 public:
   ShenandoahConcurrentCoalesceAndFillTask(uint nworkers,
@@ -88,7 +88,7 @@ public:
 
       if (!r->oop_coalesce_and_fill(true)) {
         // Coalesce and fill has been preempted
-        AtomicAccess::store(&_is_preempted, true);
+        _is_preempted.store_relaxed(true);
         return;
       }
     }
@@ -96,7 +96,7 @@ public:
 
   // Value returned from is_completed() is only valid after all worker thread have terminated.
   bool is_completed() {
-    return !AtomicAccess::load(&_is_preempted);
+    return !_is_preempted.load_relaxed();
   }
 };
 
@@ -116,11 +116,10 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
     _is_parsable(true),
     _card_scan(nullptr),
     _state(WAITING_FOR_BOOTSTRAP),
-    _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
-    _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
+    _growth_percent_before_collection(INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION)
 {
   assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
-  _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
+  _live_bytes_at_last_mark = (ShenandoahHeap::heap()->soft_max_capacity() * INITIAL_LIVE_PERCENT) / 100;
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
 
@@ -148,27 +147,27 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
-  AtomicAccess::store(&_promoted_expended, static_cast<size_t>(0));
-  AtomicAccess::store(&_promotion_failure_count, static_cast<size_t>(0));
-  AtomicAccess::store(&_promotion_failure_words, static_cast<size_t>(0));
+  _promoted_expended.store_relaxed(0);
+  _promotion_failure_count.store_relaxed(0);
+  _promotion_failure_words.store_relaxed(0);
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(get_promoted_expended() + increment <= get_promoted_reserve(), "Do not expend more promotion than budgeted");
-  return AtomicAccess::add(&_promoted_expended, increment);
+  return _promoted_expended.add_then_fetch(increment);
 }
 
 size_t ShenandoahOldGeneration::unexpend_promoted(size_t decrement) {
-  return AtomicAccess::sub(&_promoted_expended, decrement);
+  return _promoted_expended.sub_then_fetch(decrement);
 }
 
 size_t ShenandoahOldGeneration::get_promoted_expended() const {
-  return AtomicAccess::load(&_promoted_expended);
+  return _promoted_expended.load_relaxed();
 }
 
 bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) const {
-  assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "GCLAB pertains only to young-gen memory");
+  assert(req.is_old(), "Must be old allocation request");
 
   const size_t requested_bytes = req.size() * HeapWordSize;
   // The promotion reserve may also be used for evacuations. If we can promote this object,
@@ -180,7 +179,7 @@ bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) co
     return true;
   }
 
-  if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
+  if (req.is_lab_alloc()) {
     // The promotion reserve cannot accommodate this plab request. Check if we still have room for
     // evacuations. Note that we cannot really know how much of the plab will be used for evacuations,
     // so here we only check that some evacuation reserve still exists.
@@ -195,54 +194,46 @@ bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) co
 
 void
 ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAllocRequest &req) {
-  // Note: Even when a mutator is performing a promotion outside a LAB, we use a 'shared_gc' request.
-  if (req.is_gc_alloc()) {
-    const size_t actual_size = req.actual_size() * HeapWordSize;
-    if (req.type() ==  ShenandoahAllocRequest::_alloc_plab) {
-      // We've created a new plab. Now we configure it whether it will be used for promotions
-      // and evacuations - or just evacuations.
-      Thread* thread = Thread::current();
-      ShenandoahThreadLocalData::reset_plab_promoted(thread);
+  assert(req.is_gc_alloc() && req.is_old() && req.is_lab_alloc(), "Must be a plab alloc request");
+  const size_t actual_size = req.actual_size() * HeapWordSize;
+  // We've created a new plab. Now we configure it whether it will be used for promotions
+  // and evacuations - or just evacuations.
+  Thread* thread = Thread::current();
+  ShenandoahThreadLocalData::reset_plab_promoted(thread);
 
-      // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
-      // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
-      if (can_promote(actual_size)) {
-        // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
-        // When we retire this plab, we'll unexpend what we don't really use.
-        log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
-                            actual_size, get_promoted_expended(), get_promoted_reserve());
-        expend_promoted(actual_size);
-        ShenandoahThreadLocalData::enable_plab_promotions(thread);
-        ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
-      } else {
-        // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
-        ShenandoahThreadLocalData::disable_plab_promotions(thread);
-        ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
-        log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
-                            actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
-      }
-    } else if (req.is_promotion()) {
-      // Shared promotion.
-      log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
-      expend_promoted(actual_size);
-    }
+  // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
+  // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
+  if (can_promote(actual_size)) {
+    // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
+    // When we retire this plab, we'll unexpend what we don't really use.
+    log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
+                        actual_size, get_promoted_expended(), get_promoted_reserve());
+    expend_promoted(actual_size);
+    ShenandoahThreadLocalData::enable_plab_promotions(thread);
+    ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
+  } else {
+    // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
+    ShenandoahThreadLocalData::disable_plab_promotions(thread);
+    ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
+    log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
+                        actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
   }
 }
 
-size_t ShenandoahOldGeneration::get_live_bytes_after_last_mark() const {
-  return _live_bytes_after_last_mark;
+size_t ShenandoahOldGeneration::get_live_bytes_at_last_mark() const {
+  return _live_bytes_at_last_mark;
 }
 
-void ShenandoahOldGeneration::set_live_bytes_after_last_mark(size_t bytes) {
+void ShenandoahOldGeneration::set_live_bytes_at_last_mark(size_t bytes) {
   if (bytes == 0) {
     // Restart search for best old-gen size to the initial state
-    _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
-    _growth_before_compaction = INITIAL_GROWTH_BEFORE_COMPACTION;
+    _live_bytes_at_last_mark = (ShenandoahHeap::heap()->soft_max_capacity() * INITIAL_LIVE_PERCENT) / 100;
+    _growth_percent_before_collection = INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION;
   } else {
-    _live_bytes_after_last_mark = bytes;
-    _growth_before_compaction /= 2;
-    if (_growth_before_compaction < _min_growth_before_compaction) {
-      _growth_before_compaction = _min_growth_before_compaction;
+    _live_bytes_at_last_mark = bytes;
+    _growth_percent_before_collection /= 2;
+    if (_growth_percent_before_collection < ShenandoahMinOldGenGrowthPercent) {
+      _growth_percent_before_collection = ShenandoahMinOldGenGrowthPercent;
     }
   }
 }
@@ -252,7 +243,19 @@ void ShenandoahOldGeneration::handle_failed_transfer() {
 }
 
 size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
-  size_t result = _live_bytes_after_last_mark + (_live_bytes_after_last_mark * _growth_before_compaction) / FRACTIONAL_DENOMINATOR;
+  size_t threshold_by_relative_growth =
+    _live_bytes_at_last_mark + (_live_bytes_at_last_mark * _growth_percent_before_collection) / 100;
+  size_t soft_max_capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t threshold_by_growth_into_percent_remaining;
+  if (_live_bytes_at_last_mark < soft_max_capacity) {
+    threshold_by_growth_into_percent_remaining = (size_t)
+      (_live_bytes_at_last_mark + ((soft_max_capacity - _live_bytes_at_last_mark)
+                                      * ShenandoahMinOldGenGrowthRemainingHeapPercent / 100.0));
+  } else {
+    // we're already consuming more than soft max capacity, so we should start old GC right away.
+    threshold_by_growth_into_percent_remaining = soft_max_capacity;
+  }
+  size_t result = MIN2(threshold_by_relative_growth, threshold_by_growth_into_percent_remaining);
   return result;
 }
 
@@ -409,9 +412,12 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahGCPhase phase(concurrent ?
         ShenandoahPhaseTimings::final_rebuild_freeset :
         ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+    ShenandoahFreeSet* free_set = heap->free_set();
     ShenandoahHeapLocker locker(heap->lock());
-    size_t young_trash_regions, old_trash_regions;
-    size_t first_old, last_old, num_old;
+
+    // This is completion of old-gen marking.  We rebuild in order to reclaim immediate garbage and to
+    // prepare for subsequent mixed evacuations.
+    size_t young_trash_regions, old_trash_regions, first_old, last_old, num_old;
     heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
     // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
@@ -421,8 +427,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway =
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions);
-
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions, young_trash_regions);
     heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
@@ -577,8 +582,8 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
-  AtomicAccess::inc(&_promotion_failure_count);
-  AtomicAccess::add(&_promotion_failure_words, size);
+  _promotion_failure_count.add_then_fetch(1UL);
+  _promotion_failure_words.and_then_fetch(size);
 
   LogTarget(Debug, gc, plab) lt;
   LogStream ls(lt);

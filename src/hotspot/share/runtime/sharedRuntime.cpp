@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,11 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -736,34 +738,6 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
   Handle h_exception = Exceptions::new_exception(current, name, message);
   throw_and_post_jvmti_exception(current, h_exception);
 }
-
-#if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_FALSE, "must be VTMS transition finish");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_TRUE, "must be VTMS transition start");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-#endif // INCLUDE_JVMTI
 
 // The interpreter code to call this tracing function is only
 // called/generated when UL is on for redefine, class and has the right level
@@ -2961,8 +2935,7 @@ public:
       assert(buffered_entry != nullptr,"sanity check");
 
       uint hash = fp->compute_hash();
-      u4 delta = _builder->buffer_to_offset_u4((address)buffered_entry);
-      _writer->add(hash, delta);
+      _writer->add(hash, AOTCompressedPointers::encode_not_null(buffered_entry));
       if (lsh.is_enabled()) {
         address fp_runtime_addr = (address)buffered_fp + ArchiveBuilder::current()->buffer_to_requested_delta();
         address entry_runtime_addr = (address)buffered_entry + ArchiveBuilder::current()->buffer_to_requested_delta();
@@ -3390,7 +3363,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
                   RegisterMap::WalkContinuation::skip);
   frame sender = fr.sender(&map);
   if (sender.is_interpreted_frame()) {
-    current->push_cont_fastpath(sender.sp());
+    current->push_cont_fastpath(sender.unextended_sp());
   }
 
   return buf;

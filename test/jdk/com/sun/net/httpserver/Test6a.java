@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6270015
  * @library /test/lib
@@ -55,7 +55,7 @@ public class Test6a extends Test {
         HttpsServer server = HttpsServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
-        SSLContext ssl = new SimpleSSLContext().get();
+        SSLContext ssl = SimpleSSLContext.findSSLContext();
         server.setExecutor (executor);
         server.setHttpsConfigurator(new HttpsConfigurator (ssl));
         server.start ();

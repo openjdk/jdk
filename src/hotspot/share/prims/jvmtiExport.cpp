@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -70,6 +71,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef JVMTI_TRACE
@@ -412,7 +414,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded into running VM.
       // There is a performance impact when VTMS transitions are enabled.
-      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+      if (!MountUnmountDisabler::notify_jvmti_events()) {
         JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
       }
     }
@@ -426,7 +428,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded at startup.
       // There is a performance impact when VTMS transitions are enabled.
-      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+      MountUnmountDisabler::set_notify_jvmti_events(true, true /*is_onload*/);
     }
     return JNI_OK;
 
@@ -647,22 +649,27 @@ JvmtiExport::decode_version_values(jint version, int * major, int * minor,
 }
 
 void JvmtiExport::enter_primordial_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter primordial phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_PRIMORDIAL);
 }
 
 void JvmtiExport::enter_early_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter early start phase");
   set_early_vmstart_recorded(true);
 }
 
 void JvmtiExport::enter_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter start phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_START);
 }
 
 void JvmtiExport::enter_onload_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter onload phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_ONLOAD);
 }
 
 void JvmtiExport::enter_live_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter live phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_LIVE);
 }
 
@@ -812,6 +819,7 @@ void JvmtiExport::post_vm_death() {
     }
   }
 
+  Events::log(Thread::current_or_null(), "JVMTI - enter dead phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
 }
 
@@ -1639,7 +1647,7 @@ void JvmtiExport::post_vthread_end(jobject vthread) {
         JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventVirtualThreadEnd callback = env->callbacks()->VirtualThreadEnd;
         if (callback != nullptr) {
-          (*callback)(env->jvmti_external(), jem.jni_env(), vthread);
+          (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
         }
       }
     }
@@ -2924,13 +2932,13 @@ void JvmtiExport::vthread_post_monitor_waited(JavaThread *current, ObjectMonitor
   Handle vthread(current, current->vthread());
 
   // Finish the VTMS transition temporarily to post the event.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vthread.raw_value(), false);
+  MountUnmountDisabler::end_transition(current, vthread(), true /*is_mount*/, false /*is_thread_start*/);
 
   // Post event.
   JvmtiExport::post_monitor_waited(current, obj_mntr, timed_out);
 
   // Go back to VTMS transition state.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)vthread.raw_value(), true);
+  MountUnmountDisabler::start_transition(current, vthread(), false /*is_mount*/, false /*is_thread_start*/);
 }
 
 void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {

@@ -127,10 +127,10 @@ public class TestMisc {
         // mapping function.
         if (numberMatch) {
           int valueExpected = isCgroupV2 ? expected : cpuShares;
-          out.shouldContain("cpu_shares: " + valueExpected);
+          DockerTestUtils.shouldMatchWithValue(out, "cpu_shares", String.valueOf(valueExpected));
         } else {
           // must not print "no shares"
-          out.shouldNotContain("cpu_shares: no shares");
+          DockerTestUtils.shouldNotMatchWithValue(out, "cpu_shares", "no shares");
         }
     }
 
@@ -141,7 +141,7 @@ public class TestMisc {
         Common.addWhiteBoxOpts(opts);
 
         OutputAnalyzer out = Common.run(opts);
-        out.shouldContain("but overridden by -XX:ActiveProcessorCount 2");
+        DockerTestUtils.shouldMatchWithValue(out, "active_processor_count", "2 (from -XX:ActiveProcessorCount)");
     }
 
     private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
@@ -158,11 +158,11 @@ public class TestMisc {
             "Memory Throttle Limit",
             "Memory Usage",
             "Maximum Memory Usage",
-            "memory_max_usage_in_bytes",
+            "memory_max_usage",
             "maximum number of tasks",
             "current number of tasks",
-            "rss_usage_in_bytes",
-            "cache_usage_in_bytes"
+            "rss_usage",
+            "cache_usage"
         };
 
         for (String s : expectedToContain) {
@@ -170,13 +170,13 @@ public class TestMisc {
         }
         String str = out.getOutput();
         if (str.contains("cgroupv1")) {
-            out.shouldContain("kernel_memory_usage_in_bytes");
-            out.shouldContain("kernel_memory_max_usage_in_bytes");
-            out.shouldContain("kernel_memory_limit_in_bytes");
+            out.shouldContain("kernel_memory_usage");
+            out.shouldContain("kernel_memory_max_usage");
+            out.shouldContain("kernel_memory_limit");
         } else {
             if (str.contains("cgroupv2")) {
-                out.shouldContain("memory_swap_current_in_bytes");
-                out.shouldContain("memory_swap_max_limit_in_bytes");
+                out.shouldContain("memory_swap_current");
+                out.shouldContain("memory_swap_max_limit");
             } else {
                 throw new RuntimeException("Output has to contain information about cgroupv1 or cgroupv2");
             }

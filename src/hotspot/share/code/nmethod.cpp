@@ -1510,6 +1510,40 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   //   - OOP table
   memcpy(consts_begin(), nm.consts_begin(), nm.data_end() - nm.consts_begin());
 
+  // Fix relocation
+  RelocIterator iter(this);
+  CodeBuffer src(&nm);
+  CodeBuffer dst(this);
+  while (iter.next()) {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+    // After an nmethod is moved, some direct call sites may end up out of range.
+    // CallRelocation::fix_relocation_after_move() assumes the target is always
+    // reachable and does not check branch range. Calling it without range checks
+    // could cause us to write an offset too large for the instruction.
+    //
+    // If a call site has a trampoline, we skip the normal call relocation. The
+    // associated trampoline_stub_Relocation will handle the call and the
+    // trampoline, including range checks and updating the branch as needed.
+    //
+    // If no trampoline exists, we can assume the call target is always
+    // reachable and therefore within direct branch range, so calling
+    // CallRelocation::fix_relocation_after_move() is safe.
+    if (iter.reloc()->is_call()) {
+      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), this);
+      if (trampoline != nullptr) {
+        continue;
+      }
+    }
+#endif
+
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
+  {
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    clear_inline_caches();
+  }
+
   post_init();
 }
 
@@ -1531,25 +1565,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
   if (nm_copy == nullptr) {
     return nullptr;
-  }
-
-  // Fix relocation
-  RelocIterator iter(nm_copy);
-  CodeBuffer src(this);
-  CodeBuffer dst(nm_copy);
-  while (iter.next()) {
-#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
-    // Direct calls may no longer be in range and the use of a trampoline may now be required.
-    // Instead, allow trampoline relocations to update their owners and perform the necessary checks.
-    if (iter.reloc()->is_call()) {
-      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), nm_copy);
-      if (trampoline != nullptr) {
-        continue;
-      }
-    }
-#endif
-
-    iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
   // To make dependency checking during class loading fast, record
@@ -1581,8 +1596,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   if (!is_marked_for_deoptimization() && is_in_use()) {
     assert(method() != nullptr && method()->code() == this, "should be if is in use");
 
-    nm_copy->clear_inline_caches();
-
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
       ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
@@ -1590,7 +1603,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 
-      make_not_used();
+      make_not_entrant(InvalidationReason::RELOCATED);
 
       nm_copy->post_compiled_method_load_event();
 
@@ -2142,6 +2155,9 @@ void nmethod::make_deoptimized() {
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
 
+  // Assume there will be some calls to make deoptimized.
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   while (iter.next()) {
 
     switch (iter.type()) {
@@ -2218,6 +2234,7 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   AtomicAccess::store(&_hdr->_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -2309,6 +2326,8 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     // No need for fencing either.
     return false;
   }
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   {
     // Enter critical section.  Does not block for safepoint.
@@ -2744,6 +2763,8 @@ bool nmethod::is_unloading() {
   state_unloading_cycle = current_cycle;
   state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
   uint8_t new_state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // Note that if an nmethod has dead oops, everyone will agree that the
   // nmethod is_unloading. However, the is_cold heuristics can yield

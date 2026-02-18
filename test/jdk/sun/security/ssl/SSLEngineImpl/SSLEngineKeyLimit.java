@@ -60,7 +60,6 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
 
 public class SSLEngineKeyLimit extends SSLContextTemplate {
 
@@ -112,16 +111,14 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
             System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
                     " -Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
-                            " -Djavax.net.debug=ssl,handshake" +
+                            " -Djavax.net.debug=ssl" +
                             " -Djava.security.properties=" + f.getName());
 
             System.out.println("test.java.opts: " +
                     System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                    Utils.addTestJavaOpts("SSLEngineKeyLimit", "p", args[1],
-                            args[2]));
-
+                    "SSLEngineKeyLimit", "p", args[1], args[2]);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {
                 output.shouldContain(String.format(

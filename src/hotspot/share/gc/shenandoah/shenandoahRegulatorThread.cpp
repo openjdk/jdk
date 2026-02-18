@@ -149,6 +149,13 @@ bool ShenandoahRegulatorThread::start_global_cycle() const {
 
 bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGeneration* generation) const {
   double now = os::elapsedTime();
+
+  // This call may find the control thread waiting on workers which have suspended
+  // to allow a safepoint to run. If this regulator thread does not yield, the safepoint
+  // will not run. The worker threads won't progress, the control thread won't progress,
+  // and the regulator thread may never yield. Therefore, we leave the suspendible
+  // thread set before making this call.
+  SuspendibleThreadSetLeaver leaver;
   bool accepted = _control_thread->request_concurrent_gc(generation);
   if (LogTarget(Debug, gc, thread)::is_enabled() && accepted) {
     double wait_time = os::elapsedTime() - now;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -936,28 +936,26 @@ bool VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(int op
   }
 }
 
+// Idealize vector operations whose vector size is less than the hardware supported
+// max vector size. Generate a vector mask for the operation. Lanes with indices
+// inside of the vector size are set to true, while the remaining lanes are set to
+// false. Returns the corresponding masked vector node.
+static Node* ideal_partial_operations(PhaseGVN* phase, Node* node, const TypeVect* vt) {
+  if (!Matcher::vector_needs_partial_operations(node, vt)) {
+    return nullptr;
+  }
 
-Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt) {
   int vopc = node->Opcode();
   uint vlen = vt->length();
   BasicType bt = vt->element_basic_type();
+  assert(Matcher::match_rule_supported_vector_masked(vopc, vlen, bt),
+         "The masked feature is required for the vector operation");
+  assert(Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt),
+         "'VectorMaskGen' is required to generate a vector mask");
 
-  // Predicated vectors do not need to add another mask input
-  if (node->is_predicated_vector() || !Matcher::has_predicated_vectors() ||
-      !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt) ||
-      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt)) {
-    return nullptr;
-  }
-
-  Node* mask = nullptr;
-  // Generate a vector mask for vector operation whose vector length is lower than the
-  // hardware supported max vector length.
-  if (vt->length_in_bytes() < (uint)MaxVectorSize) {
-    Node* length = gvn->transform(new ConvI2LNode(gvn->makecon(TypeInt::make(vlen))));
-    mask = gvn->transform(VectorMaskGenNode::make(length, bt, vlen));
-  } else {
-    return nullptr;
-  }
+  // Generate a vector mask, with lanes inside of the vector length set to true.
+  Node* length = phase->transform(new ConvI2LNode(phase->makecon(TypeInt::make(vlen))));
+  Node* mask = phase->transform(VectorMaskGenNode::make(length, bt, vlen));
 
   // Generate the related masked op for vector load/store/load_gather/store_scatter.
   // Or append the mask to the vector op's input list by default.
@@ -1037,8 +1035,9 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
 }
 
 Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (Matcher::vector_needs_partial_operations(this, vect_type())) {
-    return try_to_gen_masked_vector(phase, this, vect_type());
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
 
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
@@ -1119,9 +1118,9 @@ LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
 }
 
 Node* LoadVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
   return LoadNode::Ideal(phase, can_reshape);
 }
@@ -1133,9 +1132,9 @@ StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem, Node* adr,
 }
 
 Node* StoreVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
   return StoreNode::Ideal(phase, can_reshape);
 }
@@ -1327,6 +1326,32 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       assert(bt == T_DOUBLE, "must be");
       vopc = Op_MaxReductionV;
       break;
+    case Op_UMinV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR: return 0;
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+        case T_LONG:
+          vopc = Op_UMinReductionV;
+          break;
+        default: ShouldNotReachHere(); return 0;
+      }
+      break;
+    case Op_UMaxV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR: return 0;
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+        case T_LONG:
+          vopc = Op_UMaxReductionV;
+          break;
+        default: ShouldNotReachHere(); return 0;
+      }
+      break;
     case Op_AndI:
       switch (bt) {
       case T_BOOLEAN:
@@ -1401,6 +1426,8 @@ ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, Basi
   case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
   case Op_MinReductionV:  return new MinReductionVNode (ctrl, n1, n2);
   case Op_MaxReductionV:  return new MaxReductionVNode (ctrl, n1, n2);
+  case Op_UMinReductionV: return new UMinReductionVNode(ctrl, n1, n2);
+  case Op_UMaxReductionV: return new UMaxReductionVNode(ctrl, n1, n2);
   case Op_AndReductionV:  return new AndReductionVNode (ctrl, n1, n2);
   case Op_OrReductionV:   return new OrReductionVNode  (ctrl, n1, n2);
   case Op_XorReductionV:  return new XorReductionVNode (ctrl, n1, n2);
@@ -1411,11 +1438,11 @@ ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, Basi
 }
 
 Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
-  return nullptr;
+  return Node::Ideal(phase, can_reshape);
 }
 
 // Convert fromLong to maskAll if the input sets or unsets all lanes.
@@ -1610,6 +1637,30 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
         case T_DOUBLE:
           return gvn.makecon(TypeD::NEG_INF);
           default: Unimplemented(); return nullptr;
+      }
+      break;
+    case Op_UMinReductionV:
+      switch (bt) {
+        case T_BYTE:
+          return gvn.makecon(TypeInt::make(max_jubyte));
+        case T_SHORT:
+          return gvn.makecon(TypeInt::make(max_jushort));
+        case T_INT:
+          return gvn.makecon(TypeInt::MINUS_1);
+        case T_LONG:
+          return gvn.makecon(TypeLong::MINUS_1);
+        default: Unimplemented(); return nullptr;
+      }
+      break;
+    case Op_UMaxReductionV:
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          return gvn.makecon(TypeInt::ZERO);
+        case T_LONG:
+          return gvn.makecon(TypeLong::ZERO);
+        default: Unimplemented(); return nullptr;
       }
       break;
     default:
@@ -1893,11 +1944,11 @@ Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
 }
 
 Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
-  return nullptr;
+  return TypeNode::Ideal(phase, can_reshape);
 }
 
 Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
@@ -1920,6 +1971,15 @@ Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
   // saved with a predicate type.
   if (in1->Opcode() == Op_VectorStoreMask) {
     Node* mask = in1->in(1);
+    // Skip the optimization if the mask is dead.
+    if (phase->type(mask) == Type::TOP) {
+      return nullptr;
+    }
+    // If the ideal graph is transformed correctly, the input mask should be a
+    // vector type node. Following optimization can ignore the mismatched type
+    // issue. But we still keep the sanity check for the mask type by using
+    // "is_vect()" in the assertion below, so that there can be less optimizations
+    // evolved before the compiler finally runs into a problem.
     assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask->bottom_type()->is_vect()), "sanity");
     in1 = mask;
   }

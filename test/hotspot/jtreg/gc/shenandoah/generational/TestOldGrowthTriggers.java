@@ -99,8 +99,12 @@ public class TestOldGrowthTriggers {
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseShenandoahGC",
                 "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahMinOldGenGrowthPercent=12.5",
+                "-XX:ShenandoahIgnoreOldGrowthBelowPercentage=10",
+                "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
-                "-XX:ShenandoahGuaranteedOldGCInterval=0"
+                "-XX:ShenandoahGuaranteedOldGCInterval=0",
+                "-XX:-UseCompactObjectHeaders"
         );
 
         testOld("-Xlog:gc",
@@ -110,6 +114,9 @@ public class TestOldGrowthTriggers {
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseShenandoahGC",
                 "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahMinOldGenGrowthPercent=12.5",
+                "-XX:ShenandoahIgnoreOldGrowthBelowPercentage=10",
+                "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
                 "-XX:ShenandoahGuaranteedOldGCInterval=0",
                 "-XX:+UseCompactObjectHeaders"
