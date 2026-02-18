@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@ class PartialSubtypeCheckNode : public Node {
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeRawPtr::BOTTOM; }
   virtual uint ideal_reg() const { return Op_RegP; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------StrIntrinsic-------------------------------
@@ -74,13 +77,15 @@ class StrIntrinsicNode: public Node {
   Node(control, char_array_mem, s1, s2), _encoding(encoding) {
   }
 
-  virtual bool depends_only_on_test() const { return false; }
   virtual const TypePtr* adr_type() const { return TypeAryPtr::BYTES; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   ArgEncoding encoding() const { return _encoding; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------StrComp-------------------------------------
@@ -172,13 +177,15 @@ class VectorizedHashCodeNode: public Node {
   VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* arg1, Node* cnt1, Node* result, Node* basic_type)
     : Node(control, ary_mem, arg1, cnt1, result, basic_type) {};
   virtual int Opcode() const;
-  virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------EncodeISOArray--------------------------------
@@ -191,7 +198,6 @@ class EncodeISOArrayNode: public Node {
 
   bool is_ascii() { return _ascii; }
   virtual int Opcode() const;
-  virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
   virtual uint match_edge(uint idx) const;
@@ -203,6 +209,9 @@ class EncodeISOArrayNode: public Node {
   virtual bool cmp(const Node& n) const {
     return Node::cmp(n) && _ascii == ((EncodeISOArrayNode&)n).is_ascii();
   }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //-------------------------------DigitNode----------------------------------------

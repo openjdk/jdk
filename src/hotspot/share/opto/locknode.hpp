@@ -147,6 +147,9 @@ public:
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 
@@ -169,6 +172,8 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 #endif // SHARE_OPTO_LOCKNODE_HPP

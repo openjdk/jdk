@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,7 +604,6 @@ public:
   }
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
-  bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
   static bool is_verify_def_use() {
@@ -626,6 +625,10 @@ public:
   static bool is_verify_invariants() {
     // '-XX:VerifyIterativeGVN=10000'
     return ((VerifyIterativeGVN % 100000) / 10000) == 1;
+  }
+  static bool is_verify_Ideal_return() {
+    // '-XX:VerifyIterativeGVN=100000'
+    return ((VerifyIterativeGVN % 1000000) / 100000) == 1;
   }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).

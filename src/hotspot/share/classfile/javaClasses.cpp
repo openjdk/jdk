@@ -1908,16 +1908,16 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
   return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
-// Obtain stack trace for platform or mounted virtual thread.
-// If jthread is a virtual thread and it has been unmounted (or remounted to different carrier) the method returns null.
-// The caller (java.lang.VirtualThread) handles returned nulls via retry.
+// Obtain stack trace for a platform or virtual thread.
 oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
   JavaThread* java_thread = nullptr;
-  oop thread_oop;
+  oop thread_oop = nullptr;
 
   bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
-  if (!has_java_thread) {
+  assert(thread_oop != nullptr, "Missing Thread oop");
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+  if (!has_java_thread && !is_virtual) {
     return nullptr;
   }
 
@@ -1925,12 +1925,11 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   public:
     const Handle _thread_h;
     int _depth;
-    bool _retry_handshake;
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
     GetStackTraceHandshakeClosure(Handle thread_h) :
-        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0), _retry_handshake(false),
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0),
         _methods(nullptr), _bcis(nullptr) {
     }
     ~GetStackTraceHandshakeClosure() {
@@ -1938,37 +1937,15 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       delete _bcis;
     }
 
-    bool read_reset_retry() {
-      bool ret = _retry_handshake;
-      // If we re-execute the handshake this method need to return false
-      // when the handshake cannot be performed. (E.g. thread terminating)
-      _retry_handshake = false;
-      return ret;
-    }
-
     void do_thread(Thread* th) {
-      if (!Thread::current()->is_Java_thread()) {
-        _retry_handshake = true;
+      JavaThread* java_thread = th != nullptr ? JavaThread::cast(th) : nullptr;
+      if (java_thread != nullptr && !java_thread->has_last_Java_frame()) {
+        // stack trace is empty
         return;
       }
 
-      JavaThread* java_thread = JavaThread::cast(th);
-
-      if (!java_thread->has_last_Java_frame()) {
-        return;
-      }
-
-      bool carrier = false;
-      if (java_lang_VirtualThread::is_instance(_thread_h())) {
-        // Ensure _thread_h is still mounted to java_thread.
-        const ContinuationEntry* ce = java_thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_h())) {
-          // Target thread has been unmounted.
-          return;
-        }
-      } else {
-        carrier = (java_thread->vthread_continuation() != nullptr);
-      }
+      bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
+      bool vthread_carrier = !is_virtual && (java_thread->vthread_continuation() != nullptr);
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
@@ -1979,7 +1956,10 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
-      for (vframeStream vfst(java_thread, false, false, carrier); // we don't process frames as we don't care about oops
+      vframeStream vfst(java_thread != nullptr
+        ? vframeStream(java_thread, false, false, vthread_carrier)  // we don't process frames as we don't care about oops
+        : vframeStream(java_lang_VirtualThread::continuation(_thread_h())));
+      for (;
            !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
            vfst.next()) {
 
@@ -2001,9 +1981,11 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
   GetStackTraceHandshakeClosure gsthc(Handle(THREAD, thread_oop));
-  do {
-   Handshake::execute(&gsthc, &tlh, java_thread);
-  } while (gsthc.read_reset_retry());
+  if (is_virtual) {
+    Handshake::execute(&gsthc, thread_oop);
+  } else {
+    Handshake::execute(&gsthc, &tlh, java_thread);
+  }
 
   // Stop if no stack trace is found.
   if (gsthc._depth == 0) {
@@ -2200,7 +2182,7 @@ void java_lang_VirtualThread::set_timeout(oop vthread, jlong value) {
 
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
-  switch (state & ~SUSPENDED) {
+  switch (state) {
     case NEW:
       status = JavaThreadStatus::NEW;
       break;

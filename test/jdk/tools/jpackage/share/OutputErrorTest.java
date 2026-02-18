@@ -34,7 +34,6 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
@@ -62,8 +61,8 @@ public final class OutputErrorTest {
             cmd.setFakeRuntime();
             cmd.setArgumentValue("--dest", TKit.createTempDirectory("output"));
             cmd.removeOldOutputBundle(false);
-            cmd.validateOutput(JPackageCommand.makeError(JPackageStringBundle.MAIN.cannedFormattedString(
-                    "error.output-bundle-cannot-be-overwritten", cmd.outputBundle().toAbsolutePath())));
+            cmd.validateErr(JPackageCommand.makeError(
+                    "error.output-bundle-cannot-be-overwritten", cmd.outputBundle().toAbsolutePath()));
 
             var outputBundle = cmd.outputBundle();
 
