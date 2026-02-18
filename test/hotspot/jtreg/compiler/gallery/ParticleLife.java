@@ -518,6 +518,10 @@ public class ParticleLife {
                             // Medium distance: attract/repell according to pole
                             f = ((SCALE1 + 2f * SCALE2) - d) / SCALE2 * pole * SCALE3;
                         }
+                        // The force is adjustable by the user via FORCE_PARTICLE.
+                        // Additionally we need to respect the DT factor of the simulation
+                        // time step. Finally, we need to normalize dx and dy by dividing
+                        // by d.
                         f *= FORCE_PARTICLE * DT / d;
                         pivx += dx * f;
                         pivy += dy * f;
@@ -528,6 +532,7 @@ public class ParticleLife {
             }
         }
 
+        // Inner loop vectorization, the inner loop is vectorized.
         public void updateForcesVectorAPI_Inner() {
             // We don't want to deal with tail loops, so we just assert that the number of
             // particles is a multiple of the vector length.
@@ -535,12 +540,12 @@ public class ParticleLife {
                 throw new RuntimeException("Number of particles is not a multiple of the vector length.");
             }
 
-            // Inner loop vectorization, the inner loop is vectorized.
             for (int i = 0; i < x.length; i++) {
                 float pix = x[i];
                 float piy = y[i];
                 float pivy = vy[i];
 
+                // We consider the force of multiple (j) particles on particle i.
                 var fx = FloatVector.zero(SPECIES_F);
                 var fy = FloatVector.zero(SPECIES_F);
 
@@ -555,29 +560,36 @@ public class ParticleLife {
 
                     var pole = FloatVector.fromArray(SPECIES_F, poles[group[i]], 0, group, j);
 
+                    // We need to compute all 3 piece-wise liner parts.
                     var poleDivScale2 = pole.mul(SCALE3 / SCALE2);
                     var f1 = d.sub(SCALE1).neg().mul(1f / SCALE1);
                     var f2 = d.sub(SCALE1).mul(poleDivScale2);
                     var f3 = d.sub(SCALE1 + SCALE2 * 2f).neg().mul(poleDivScale2);
 
+                    // And we need to perform all checks, for the boundaries of the piece-wise parts.
                     var f0Mask = d.compare(VectorOperators.GT, 0);
                     var f1Mask = d.compare(VectorOperators.LT, SCALE1);
                     var f2Mask = d.compare(VectorOperators.LT, SCALE1 + SCALE2);
                     var f3Mask = d.compare(VectorOperators.LT, SCALE1 + SCALE2 * 2f);
                     var f03Mask = f0Mask.and(f3Mask);
 
+                    // Then, we put together the 3 middle parts.
                     var f12  = f2.blend(f1, f1Mask);
                     var f123 = f3.blend(f12, f2Mask);
 
                     f123 = f123.mul(FORCE_PARTICLE * DT).div(d);
+
+                    // And we only apply the middle (non-zero) parts if the mask is enabled.
                     fx = fx.add(dx.mul(f123), f03Mask);
                     fy = fy.add(dy.mul(f123), f03Mask);
                 }
+                // We need to add the force of all the (j) particles onto i's velocity.
                 vx[i] += fx.reduceLanes(VectorOperators.ADD);
                 vy[i] += fy.reduceLanes(VectorOperators.ADD);
             }
         }
 
+        // Instead of vectorizing the inner loop, we can also vectorize the outer loop.
         public void updateForcesVectorAPI_Outer() {
             // We don't want to deal with tail loops, so we just assert that the number of
             // particles is a multiple of the vector length.
@@ -585,12 +597,13 @@ public class ParticleLife {
                 throw new RuntimeException("Number of particles is not a multiple of the vector length.");
             }
 
-            // Outer loop vectorization: the outer loop is vectorized.
             for (int i = 0; i < x.length; i += SPECIES_F.length()) {
                 var pix = FloatVector.fromArray(SPECIES_F, x, i);
                 var piy = FloatVector.fromArray(SPECIES_F, y, i);
                 var pivx = FloatVector.fromArray(SPECIES_F, vx, i);
                 var pivy = FloatVector.fromArray(SPECIES_F, vy, i);
+
+                // Let's consider the force of the j particle on all of the i particles in the vector.
                 for (int j = 0; j < x.length; j++) {
                     float pjx = x[j];
                     float pjy = y[j];
@@ -654,6 +667,9 @@ public class ParticleLife {
         }
     }
 
+    /**
+     * This panel displays the simulation.
+     **/
     public static class ParticlePanel extends JPanel {
 
         @Override
@@ -692,6 +708,9 @@ public class ParticleLife {
         }
     }
 
+    /**
+     * This panel displays the pole matrix.
+     **/
     public static class ForcePanel extends JPanel {
 
         @Override
