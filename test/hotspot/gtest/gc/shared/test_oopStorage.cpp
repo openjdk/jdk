@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -899,7 +899,7 @@ WorkerThreads* OopStorageTestParIteration::_workers = nullptr;
 WorkerThreads* OopStorageTestParIteration::workers() {
   if (_workers == nullptr) {
     _workers = new WorkerThreads("OopStorageTestParIteration workers", _max_workers);
-    _workers->initialize_workers();
+    _workers->initialize_workers(false /* concurrent */);
     _workers->set_active_workers(_max_workers);
   }
   return _workers;

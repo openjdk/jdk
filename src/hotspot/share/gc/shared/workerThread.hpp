@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -67,6 +68,9 @@ class WorkerTaskDispatcher {
   // Semaphore used to notify the coordinator that all workers are done.
   Semaphore _end_semaphore;
 
+  // Priority to be used by worker threads
+  ThreadPriority _worker_priority;
+
 public:
   WorkerTaskDispatcher();
 
@@ -80,6 +84,9 @@ public:
 
   // Waits for a task to become available to the worker and runs it.
   void worker_run_task();
+
+  ThreadPriority worker_priority() const            { return _worker_priority; }
+  void set_worker_priority(ThreadPriority priority) { _worker_priority = priority; }
 };
 
 // A set of worker threads to execute tasks
@@ -103,7 +110,7 @@ protected:
 public:
   WorkerThreads(const char* name, uint max_workers);
 
-  void initialize_workers();
+  void initialize_workers(bool concurrent);
   bool allow_inject_creation_failure() const;
 
   uint max_workers() const     { return _max_workers; }

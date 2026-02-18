@@ -1575,7 +1575,7 @@ jint G1CollectedHeap::initialize() {
   if (_workers == nullptr) {
     return JNI_ENOMEM;
   }
-  _workers->initialize_workers();
+  _workers->initialize_workers(false /* concurrent */);
 
   _numa->set_region_info(G1HeapRegion::GrainBytes, page_size);
 

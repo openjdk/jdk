@@ -89,7 +89,7 @@ jint ParallelScavengeHeap::initialize() {
   BarrierSet::set_barrier_set(barrier_set);
 
   // Set up WorkerThreads
-  _workers.initialize_workers();
+  _workers.initialize_workers(false /* concurrent */);
 
   // Create and initialize the generations.
   _young_gen = new PSYoungGen(

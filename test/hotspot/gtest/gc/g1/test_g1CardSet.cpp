@@ -53,7 +53,7 @@ class G1CardSetTest : public ::testing::Test {
     if (_workers == nullptr) {
       _max_workers = os::processor_count();
       _workers = new WorkerThreads("G1CardSetTest Workers", _max_workers);
-      _workers->initialize_workers();
+      _workers->initialize_workers(false /* concurrent */);
       _workers->set_active_workers(_max_workers);
     }
     return _workers;
