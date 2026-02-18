@@ -2129,7 +2129,7 @@ public class HyperbolicTests {
     static int testAtanh() {
         int failures = 0;
         /*
-         * Array elements below generated using a quad sinh
+         * Array elements below generated using a quad atanh
          * implementation.  Rounded to a double, the quad result
          * *should* be correctly rounded, unless we are quite unlucky.
          * Assuming the quad value is a correctly rounded double, the
@@ -2248,7 +2248,7 @@ public class HyperbolicTests {
          * value rounded to double can have its own 1/2 ulp error.
          */
         double[][] testCases = {
-                // x                                             tanh(x)
+                // x                                             atanh(x)
                 {+9.39017107929201566562937841808889061e-01    , +1.72967155564501022599234830162276798e+00    },
                 {+4.56590977869321346105380143853835762e-01    , +4.92995868916526654745557405930485720e-01    },
                 {-6.57855028101722583144805867050308734e-01    , -7.89022676186288902931611202476188124e-01    },
