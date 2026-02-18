@@ -1974,6 +1974,7 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
   ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
   ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr());
+  ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr());
   ADD_EXTERNAL_ADDRESS(ZBarrierSetRuntime::load_barrier_on_oop_array_addr());
 
   ADD_EXTERNAL_ADDRESS(ZPointerVectorLoadBadMask);
