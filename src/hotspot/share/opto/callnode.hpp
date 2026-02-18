@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,6 @@ public:
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
@@ -141,7 +140,6 @@ class RethrowNode : public Node {
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint match_edge(uint idx) const;
@@ -758,6 +756,7 @@ public:
   virtual uint match_edge(uint idx) const;
 
   bool is_call_to_arraycopystub() const;
+  bool is_call_to_multianewarray_stub() const;
 
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
@@ -943,9 +942,8 @@ protected:
   TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
 
 public:
-  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type)
-      : CallLeafNode(tf, addr, name, adr_type) {
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name)
+      : CallLeafNode(tf, addr, name, nullptr) {
     init_class_id(Class_CallLeafPure);
   }
   int Opcode() const override;
@@ -1101,7 +1099,7 @@ public:
   void compute_MemBar_redundancy(ciMethod* initializer);
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
-  Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+  Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };

@@ -24,30 +24,19 @@
 
 #include "runtime/atomicAccess.hpp"
 #include "utilities/spinCriticalSection.hpp"
+#include "utilities/spinYield.hpp"
 
 void SpinCriticalSection::spin_acquire(volatile int* adr) {
   if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return
   }
 
+  SpinYield sy(4096, 5, millis_to_nanos(1));
+
   // Slow-path : We've encountered contention -- Spin/Yield/Block strategy.
-  int ctr = 0;
-  int Yields = 0;
   for (;;) {
     while (*adr != 0) {
-      ++ctr;
-      if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
-        if (Yields > 5) {
-          os::naked_short_sleep(1);
-        }
-        else {
-          os::naked_yield();
-          ++Yields;
-        }
-      }
-      else {
-        SpinPause();
-      }
+      sy.wait();
     }
     if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) return;
   }

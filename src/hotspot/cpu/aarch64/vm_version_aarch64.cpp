@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -201,16 +201,14 @@ void VM_Version::initialize() {
     }
   }
 
-  // Cortex A53
-  if (_cpu == CPU_ARM && model_is(0xd03)) {
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A53)) {
     set_feature(CPU_A53MAC);
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
     }
   }
 
-  // Cortex A73
-  if (_cpu == CPU_ARM && model_is(0xd09)) {
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A73)) {
     if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance)) {
       FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, -1);
     }
@@ -220,16 +218,11 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse
-  //   N1: 0xd0c
-  //   N2: 0xd49
-  //   N3: 0xd8e
-  //   V1: 0xd40
-  //   V2: 0xd4f
-  //   V3: 0xd84
-  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
-                          model_is(0xd40) || model_is(0xd4f) ||
-                          model_is(0xd8e) || model_is(0xd84))) {
+  if (_cpu == CPU_ARM &&
+      model_is_in({ CPU_MODEL_ARM_NEOVERSE_N1, CPU_MODEL_ARM_NEOVERSE_V1,
+                    CPU_MODEL_ARM_NEOVERSE_N2, CPU_MODEL_ARM_NEOVERSE_V2,
+                    CPU_MODEL_ARM_NEOVERSE_N3, CPU_MODEL_ARM_NEOVERSE_V3,
+                    CPU_MODEL_ARM_NEOVERSE_V3AE })) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -261,12 +254,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
-  // Neoverse
-  //   V1: 0xd40
-  //   V2: 0xd4f
-  //   V3: 0xd84
   if (_cpu == CPU_ARM &&
-      (model_is(0xd40) || model_is(0xd4f) || model_is(0xd84))) {
+      model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
+                    CPU_MODEL_ARM_NEOVERSE_V3, CPU_MODEL_ARM_NEOVERSE_V3AE })) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
@@ -632,6 +622,22 @@ void VM_Version::initialize() {
 
   check_virtualizations();
 
+#ifdef __APPLE__
+  DefaultWXWriteMode = UseOldWX ? WXWrite : WXArmedForWrite;
+
+  if (TraceWXHealing) {
+    if (pthread_jit_write_protect_supported_np()) {
+      tty->print_cr("### TraceWXHealing is in use");
+      if (StressWXHealing) {
+        tty->print_cr("### StressWXHealing is in use");
+      }
+    } else {
+      tty->print_cr("WX Healing is not in use because MAP_JIT write protection "
+                    "does not work on this system.");
+    }
+  }
+#endif
+
   // Sync SVE related CPU features with flags
   if (UseSVE < 2) {
     clear_feature(CPU_SVE2);
@@ -658,14 +664,50 @@ void VM_Version::initialize() {
 void VM_Version::insert_features_names(uint64_t features, stringStream& ss) {
   int i = 0;
   ss.join([&]() {
-    while (i < MAX_CPU_FEATURES) {
-      if (supports_feature((VM_Version::Feature_Flag)i)) {
-        return _features_names[i++];
+    const char* str = nullptr;
+    while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
+      if (supports_feature(features, (VM_Version::Feature_Flag)i)) {
+        str = _features_names[i];
       }
       i += 1;
     }
-    return (const char*)nullptr;
+    return str;
   }, ", ");
+}
+
+void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  uint64_t features = *(uint64_t*)features_buffer;
+  insert_features_names(features, ss);
+}
+
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  uint64_t vm_features_set1 = *(uint64_t*)features_set1;
+  uint64_t vm_features_set2 = *(uint64_t*)features_set2;
+  int i = 0;
+  ss.join([&]() {
+    const char* str = nullptr;
+    while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
+      Feature_Flag flag = (Feature_Flag)i;
+      if (supports_feature(vm_features_set1, flag) && !supports_feature(vm_features_set2, flag)) {
+        str = _features_names[i];
+      }
+      i += 1;
+    }
+    return str;
+  }, ", ");
+}
+
+int VM_Version::cpu_features_size() {
+  return sizeof(_features);
+}
+
+void VM_Version::store_cpu_features(void* buf) {
+  *(uint64_t*)buf = _features;
+}
+
+bool VM_Version::supports_features(void* features_buffer) {
+  uint64_t features_to_test = *(uint64_t*)features_buffer;
+  return (_features & features_to_test) == features_to_test;
 }
 
 #if defined(LINUX)

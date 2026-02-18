@@ -115,7 +115,7 @@ The [@IR](./IR.java) annotation provides two kinds of checks:
  - `counts`: A list of one or more "IR node/user-defined regex - counter" pairs which specify how often each IR node/user-defined regex should be matched on the compilation output of each compile phase.
 
 #### Disable/Enable IR Rules based on VM Flags
-One might also want to restrict the application of certain `@IR` rules depending on the used flags in the test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITELIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
+One might also want to restrict the application of certain `@IR` rules depending on the used flags in the Test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITELIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
 
 - `applyIf`: Only apply a rule if a flag has the specified value/range of values.
 - `applyIfNot`: Only apply a rule if a flag has **not** a specified value/range of values
@@ -144,7 +144,7 @@ An IR verification cannot always be performed. Certain VM flags explicitly disab
 More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java), [TestIRMatching](../../../testlibrary_tests/ir_framework/tests/TestIRMatching.java) (internal framework test), and [TestPhaseIRMatching](../../../testlibrary_tests/ir_framework/tests/TestPhaseIRMatching.java) (internal framework test).
 
 ### 2.3 Test VM Flags and Scenarios
-The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.
+The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional Test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.
 
 If a user wants to provide multiple flag combinations for a single test, he or she has the option to provide different scenarios. A scenario based flag will always have precedence over other user defined flags. More information about scenarios can be found in the Javadocs of [Scenario](./Scenario.java). If a user wants to test all combinations of multiple sets of flags, they can use `TestFramework.addCrossProductScenarios()`.
 
@@ -174,16 +174,16 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution.
 - `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
-- `-DReportStdout=true`: Print the standard output of the test VM.
+- `-DReportStdout=true`: Print the standard output of the Test VM.
 - `-DVerbose=true`: Enable more fine-grained logging (slows the execution down).
-- `-DReproduce=true`: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).
+- `-DReproduce=true`: Flag to use when directly running a Test VM to bypass dependencies to the Driver VM state (for example, when reproducing an issue).
 - `-DPrintTimes=true`: Print the execution time measurements of each executed test.
 - `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before measurement.
-- `-DVerifyVM=true`: The framework runs the test VM with additional verification flags (slows the execution down).
+- `-DVerifyVM=true`: The framework runs the Test VM with additional verification flags (slows the execution down).
 - `-DExcludeRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
 - `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
 - `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
-- `-DDumpReplay=true`: Add the `DumpReplay` directive to the test VM.
+- `-DDumpReplay=true`: Add the `DumpReplay` directive to the Test VM.
 - `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution down).
 - `-DTestCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a normal `@Test` annotated method.
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
@@ -193,12 +193,12 @@ The framework provides various stress and debug flags. They should mainly be use
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.
 
-The framework will spawn a new "test VM" to execute the user defined tests. The test VM collects all tests of the test class specified by the user code in `main()` and ensures that there is no violation of the required format by the framework. In a next step, the framework does the following for each test in general:
+The framework will spawn a new "Test VM" to execute the user defined tests. The Test VM collects all tests of the test class specified by the user code in `main()` and ensures that there is no violation of the required format by the framework. In a next step, the framework does the following for each test in general:
 1. Warm the test up for a predefined number of times (default 2000). This can also be adapted for all tests by using `testFrameworkobject.setDefaultWarmup(100)` or for individual tests with an additional [@Warmup](./Warmup.java) annotation.
 2. After the warm-up is finished, the framework compiles the associated `@Test` annotated method at the specified compilation level (default: C2).
 3. After the compilation, the test is invoked one more time.
 
-Once the test VM terminates, IR verification (if possible) is performed on the output of the test VM. If any test throws an exception during its execution or if IR matching fails, the failures are collected and reported in a pretty format. Check the standard error and output for more information and how to reproduce these failures.
+Once the Test VM terminates, IR verification (if possible) is performed on the output of the Test VM. If any test throws an exception during its execution or if IR matching fails, the failures are collected and reported in a pretty format. Check the standard error and output for more information and how to reproduce these failures.
 
 Some of the steps above can be different due to the kind of the test or due to using non-default annotation properties. These details and differences are described in the Javadocs for the three tests (see section 2.1 Different Tests).
 
@@ -212,10 +212,10 @@ Additional testing was performed by converting all compiler Inline Types tests t
 ## 5. Framework Package Structure
 A user only needs to import classes from the package `compiler.lib.ir_framework` (e.g. `import compiler.lib.ir_framework.*;`) which represents the interface classes to the framework. The remaining framework internal classes are kept in separate subpackages and should not directly be imported:
 
-- `compiler.lib.ir_framework.driver`: These classes are used while running the driver VM (same VM as the one running the user code's `main()` method of a JTreg test).
-- `compiler.lib.ir_framework.flag`: These classes are used while running the flag VM to determine additional flags for the test VM which are required for IR verification.
-- `compiler.lib.ir_framework.test`: These classes are used while running the test VM (i.e. the actual execution of the user tests as described in section 3).
-- `compiler.lib.ir_framework.shared`: These classes can be called from either the driver, flag, or test VM.
+- `compiler.lib.ir_framework.driver`: These classes are used while running the Driver VM (same VM as the one running the user code's `main()` method of a JTreg test).
+- `compiler.lib.ir_framework.flag`: These classes are used while running the Flag VM to determine additional flags for the Test VM which are required for IR verification.
+- `compiler.lib.ir_framework.test`: These classes are used while running the Test VM (i.e. the actual execution of the user tests as described in section 3).
+- `compiler.lib.ir_framework.shared`: These classes can be called from either the driver, flag, or Test VM.
 
 ## 6. Summary
 The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas can be found as subtasks of the [initial RFE](https://bugs.openjdk.org/browse/JDK-8254129) for this framework.

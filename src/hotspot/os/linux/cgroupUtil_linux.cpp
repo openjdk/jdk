@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2025, Red Hat, Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +26,8 @@
 #include "cgroupUtil_linux.hpp"
 #include "os_linux.hpp"
 
-bool CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int upper_bound, int& value) {
+bool CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int upper_bound, double& value) {
   assert(upper_bound > 0, "upper bound of cpus must be positive");
-  int limit_count = upper_bound;
   int quota = -1;
   int period = -1;
   if (!cpu_ctrl->cpu_quota(quota)) {
@@ -37,20 +37,15 @@ bool CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int upper_bound,
     return false;
   }
   int quota_count = 0;
-  int result = upper_bound;
+  double result = upper_bound;
 
-  if (quota > -1 && period > 0) {
-    quota_count = ceilf((float)quota / (float)period);
-    log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
+  if (quota > 0 && period > 0) { // Use quotas
+    double cpu_quota = static_cast<double>(quota) / period;
+    log_trace(os, container)("CPU Quota based on quota/period: %.2f", cpu_quota);
+    result = MIN2(result, cpu_quota);
   }
 
-  // Use quotas
-  if (quota_count != 0) {
-    limit_count = quota_count;
-  }
-
-  result = MIN2(upper_bound, limit_count);
-  log_trace(os, container)("OSContainer::active_processor_count: %d", result);
+  log_trace(os, container)("OSContainer::active_processor_count: %.2f", result);
   value = result;
   return true;
 }
@@ -73,11 +68,11 @@ physical_memory_size_type CgroupUtil::get_updated_mem_limit(CgroupMemoryControll
 
 // Get an updated cpu limit. The return value is strictly less than or equal to the
 // passed in 'lowest' value.
-int CgroupUtil::get_updated_cpu_limit(CgroupCpuController* cpu,
+double CgroupUtil::get_updated_cpu_limit(CgroupCpuController* cpu,
                                      int lowest,
                                      int upper_bound) {
   assert(lowest > 0 && lowest <= upper_bound, "invariant");
-  int cpu_limit_val = -1;
+  double cpu_limit_val = -1;
   if (CgroupUtil::processor_count(cpu, upper_bound, cpu_limit_val) && cpu_limit_val != upper_bound) {
     assert(cpu_limit_val <= upper_bound, "invariant");
     if (lowest > cpu_limit_val) {
@@ -172,7 +167,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
   int host_cpus = os::Linux::active_processor_count();
   int lowest_limit = host_cpus;
-  int cpus = get_updated_cpu_limit(cpu, lowest_limit, host_cpus);
+  double cpus = get_updated_cpu_limit(cpu, lowest_limit, host_cpus);
   int orig_limit = lowest_limit != host_cpus ? lowest_limit : host_cpus;
   char* limit_cg_path = nullptr;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {

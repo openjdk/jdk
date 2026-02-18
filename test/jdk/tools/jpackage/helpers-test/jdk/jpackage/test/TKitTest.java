@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -212,13 +213,13 @@ public class TKitTest extends JUnitAdapter {
 
     @Test
     @ParameterSupplier("testCreateTempPath")
-    public void testCreateTempFile(CreateTempTestSpec testSpec) throws Throwable {
+    public void testCreateTempFile(CreateTempTestSpec testSpec) throws IOException {
         testSpec.test(TKit::createTempFile, TKit::assertFileExists);
     }
 
     @Test
     @ParameterSupplier("testCreateTempPath")
-    public void testCreateTempDirectory(CreateTempTestSpec testSpec) throws Throwable {
+    public void testCreateTempDirectory(CreateTempTestSpec testSpec) throws IOException {
         testSpec.test(TKit::createTempDirectory, TKit::assertDirectoryEmpty);
     }
 
@@ -232,7 +233,7 @@ public class TKitTest extends JUnitAdapter {
             }
         }
 
-        void test(ThrowingFunction<String, Path> createTempPath, Consumer<Path> assertTempPathExists) throws Throwable {
+        void test(ThrowingFunction<String, Path, IOException> createTempPath, Consumer<Path> assertTempPathExists) throws IOException {
             for (var existingFile : existingFiles) {
                 existingFile = TKit.workDir().resolve(existingFile);
 
@@ -333,14 +334,14 @@ public class TKitTest extends JUnitAdapter {
         }).toList();
     }
 
-    private static void runAssertWithExpectedLogOutput(ThrowingRunnable action,
+    private static void runAssertWithExpectedLogOutput(ThrowingRunnable<? extends Exception> action,
             boolean expectFail, String... expectLogStrings) {
         runWithExpectedLogOutput(() -> {
             TKit.assertAssert(!expectFail, toRunnable(action));
         }, expectLogStrings);
     }
 
-    private static void runWithExpectedLogOutput(ThrowingRunnable action,
+    private static void runWithExpectedLogOutput(ThrowingRunnable<? extends Exception> action,
             String... expectLogStrings) {
         final var output = JUnitAdapter.captureJPackageTestLog(action);
         if (output.size() == 1 && expectLogStrings.length == 1) {

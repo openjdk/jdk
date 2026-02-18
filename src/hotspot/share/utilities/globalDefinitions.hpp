@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,7 +433,8 @@ typedef unsigned char u_char;
 typedef u_char*       address;
 typedef const u_char* const_address;
 
-// Pointer subtraction.
+// Pointer subtraction, calculating high - low. Asserts on underflow.
+//
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
 // the range we might need to find differences from one end of the heap
 // to the other.
@@ -444,28 +445,28 @@ typedef const u_char* const_address;
 // and then additions like
 //       ... top() + size ...
 // are safe because we know that top() is at least size below end().
-inline size_t pointer_delta(const volatile void* left,
-                            const volatile void* right,
+inline size_t pointer_delta(const volatile void* high,
+                            const volatile void* low,
                             size_t element_size) {
-  assert(left >= right, "avoid underflow - left: " PTR_FORMAT " right: " PTR_FORMAT, p2i(left), p2i(right));
-  return (((uintptr_t) left) - ((uintptr_t) right)) / element_size;
+  assert(high >= low, "avoid underflow - high address: " PTR_FORMAT " low address: " PTR_FORMAT, p2i(high), p2i(low));
+  return (((uintptr_t) high) - ((uintptr_t) low)) / element_size;
 }
 
 // A version specialized for HeapWord*'s.
-inline size_t pointer_delta(const HeapWord* left, const HeapWord* right) {
-  return pointer_delta(left, right, sizeof(HeapWord));
+inline size_t pointer_delta(const HeapWord* high, const HeapWord* low) {
+  return pointer_delta(high, low, sizeof(HeapWord));
 }
 // A version specialized for MetaWord*'s.
-inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
-  return pointer_delta(left, right, sizeof(MetaWord));
+inline size_t pointer_delta(const MetaWord* high, const MetaWord* low) {
+  return pointer_delta(high, low, sizeof(MetaWord));
 }
 
 // pointer_delta_as_int is called to do pointer subtraction for nearby pointers that
 // returns a non-negative int, usually used as a size of a code buffer range.
 // This scales to sizeof(T).
 template <typename T>
-inline int pointer_delta_as_int(const volatile T* left, const volatile T* right) {
-  size_t delta = pointer_delta(left, right, sizeof(T));
+inline int pointer_delta_as_int(const volatile T* high, const volatile T* low) {
+  size_t delta = pointer_delta(high, low, sizeof(T));
   assert(delta <= size_t(INT_MAX), "pointer delta out of range: %zu", delta);
   return static_cast<int>(delta);
 }
@@ -1373,14 +1374,6 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 // Converts any type T to a reference type.
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
-
-// This provides a workaround for static_assert(false) in discarded or
-// otherwise uninstantiated places.  Instead use
-//   static_assert(DependentAlwaysFalse<T>, "...")
-// See http://wg21.link/p2593r1. Some, but not all, compiler versions we're
-// using have implemented that change as a DR:
-// https://cplusplus.github.io/CWG/issues/2518.html
-template<typename T> inline constexpr bool DependentAlwaysFalse = false;
 
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -582,6 +582,16 @@ public interface JavaLangAccess {
     Object scopedValueBindings();
 
     /**
+     * Returns the native thread ID for the given platform thread or 0 if not set.
+     */
+    long nativeThreadID(Thread thread);
+
+    /**
+     * Sets the native thread ID for the current platform thread.
+     */
+    void setThreadNativeID(long id);
+
+    /**
      * Returns the innermost mounted continuation
      */
     Continuation getContinuation(Thread thread);
@@ -638,10 +648,15 @@ public interface JavaLangAccess {
     /**
      * Copy the string bytes to an existing segment, avoiding intermediate copies.
      */
-    void copyToSegmentRaw(String string, MemorySegment segment, long offset);
+    void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength);
 
     /**
      * Are the string bytes compatible with the given charset?
      */
-    boolean bytesCompatible(String string, Charset charset);
+    boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars);
+
+    /**
+     * Finish initialization of the StackTraceElement objects in a stack trace.
+     */
+    void finishInit(StackTraceElement[] stackTrace);
 }
