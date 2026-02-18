@@ -43,13 +43,13 @@ import java.awt.geom.Ellipse2D;
  * where every body (particle) interacts with every other body.
  *
  * This is a stand-alone test that you can run directly with:
- *   java NBody.java
+ *   java --add-modules=jdk.incubator.vector ParticleLife.java
  *
  * On x86, you can also play with the UseAVX flag:
- *   java -XX:UseAVX=2 NBody.java
+ *   java --add-modules=jdk.incubator.vector -XX:UseAVX=2 ParticleLife.java
  *
  * There is a JTREG test that automatically runs this demo,
- * see {@link TestNBody}.
+ * see {@link TestParticleLife}.
  *
  * The motivation for this demo is to present a realistic computation,
  * such as a physics simulation, but which is currently not auto
@@ -65,11 +65,11 @@ import java.awt.geom.Ellipse2D;
  *                   This is the most expensive part of the simulation.
  *   - updatePositions: The velocities are added to the position.
  */
-public class NBody {
+public class ParticleLife {
     public static final Random RANDOM = new Random(123);
 
     // Increasing this number will make the demo slower.
-    public static int NUMBER_OF_BODIES = 2560;
+    public static int NUMBER_OF_PARTICLES = 2560;
     public static int NUMBER_OF_GROUPS = 50;
 
     public static float ZOOM = 1500f;
@@ -77,7 +77,7 @@ public class NBody {
     public static float SCALE1 = 0.02f;
     public static float SCALE2 = 0.04f;
     public static float SCALE3 = 1f;
-    public static float FORCE_NBODY = 0.0001f;
+    public static float FORCE_PARTICLE = 0.0001f;
     public static float FORCE_ORIGIN = 0.05f;
 
     // Dampening factor, applied to the velocity.
@@ -103,13 +103,13 @@ public class NBody {
 
     private static final VectorSpecies<Float> SPECIES_F = FloatVector.SPECIES_PREFERRED;
 
-    public static State STATE = new State(NUMBER_OF_BODIES, NUMBER_OF_GROUPS);
+    public static State STATE = new State();
 
     public static void main(String[] args) {
-        System.out.println("Welcome to the N-Body Demo!");
+        System.out.println("Welcome to the Particle Life Demo!");
 
         // Set up a panel we can draw on, and put it in a window.
-        JFrame frame = new JFrame("N-Body Demo (VectorAPI)");
+        JFrame frame = new JFrame("Particle Life Demo (VectorAPI)");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1400, 1000);
         frame.setResizable(false);
@@ -126,10 +126,10 @@ public class NBody {
         // ---------------------------- Reset Button -------------------------
         JButton button = new JButton("Reset");
         button.setBounds(10, y, 120, 30);
-        button.setToolTipText("Reset state, with new numbers of bodies and groups, and new poles.");
+        button.setToolTipText("Reset state, with new numbers of particles and groups, and new poles.");
         controlPanel.add(button);
 
-        button.addActionListener(e -> { STATE = new State(NUMBER_OF_BODIES, NUMBER_OF_GROUPS); });
+        button.addActionListener(e -> { STATE = new State(); });
         y += 40;
 
         // ---------------------------- Computation Selector -------------------------
@@ -173,24 +173,24 @@ public class NBody {
         zoomSlider.setValue((int)ZOOM);
         y += 40;
 
-        // ---------------------------- Bodies Slider -------------------------
-        JLabel bodiesLabel = new JLabel("Bodies");
-        bodiesLabel.setBounds(10, y, 150, 30);
-        controlPanel.add(bodiesLabel);
+        // ---------------------------- :Particles Slider -------------------------
+        JLabel particlesLabel = new JLabel("Particles");
+        particlesLabel.setBounds(10, y, 150, 30);
+        controlPanel.add(particlesLabel);
 
-        JSlider bodiesSlider = new JSlider(JSlider.HORIZONTAL, 64, 10000, 64);
-        bodiesSlider.setBounds(160, y, 200, 30);
-        bodiesSlider.setMajorTickSpacing(100);
-        bodiesSlider.setPaintTicks(false);
-        bodiesSlider.setPaintLabels(false);
-        bodiesSlider.setToolTipText("More bodies make the simulation slower. Only applied on Reset.");
-        controlPanel.add(bodiesSlider);
+        JSlider particlesSlider = new JSlider(JSlider.HORIZONTAL, 64, 10000, 64);
+        particlesSlider.setBounds(160, y, 200, 30);
+        particlesSlider.setMajorTickSpacing(100);
+        particlesSlider.setPaintTicks(false);
+        particlesSlider.setPaintLabels(false);
+        particlesSlider.setToolTipText("More particles make the simulation slower. Only applied on Reset.");
+        controlPanel.add(particlesSlider);
 
-        bodiesSlider.addChangeListener(e -> {
-            NUMBER_OF_BODIES = bodiesSlider.getValue() / 64 * 64;
-            bodiesLabel.setText("Bodies = " + NUMBER_OF_BODIES);
+        particlesSlider.addChangeListener(e -> {
+            NUMBER_OF_PARTICLES = particlesSlider.getValue() / 64 * 64;
+            particlesLabel.setText("Particles = " + NUMBER_OF_PARTICLES);
         });
-        bodiesSlider.setValue(NUMBER_OF_BODIES);
+        particlesSlider.setValue(NUMBER_OF_PARTICLES);
         y += 40;
 
         // ---------------------------- Groups Slider -------------------------
@@ -247,7 +247,7 @@ public class NBody {
         scale1Slider.setMajorTickSpacing(100);
         scale1Slider.setPaintTicks(false);
         scale1Slider.setPaintLabels(false);
-        scale1Slider.setToolTipText("Defines (inner) radius: repulsion between all bodies.");
+        scale1Slider.setToolTipText("Defines (inner) radius: repulsion between all particles.");
         controlPanel.add(scale1Slider);
 
         scale1Slider.addChangeListener(e -> {
@@ -297,24 +297,24 @@ public class NBody {
         scale3Slider.setValue(50);
         y += 40;
 
-        // ---------------------------- FORCE_NBODY Slider -------------------------
-        JLabel forceNBodyLabel = new JLabel("fNBody");
-        forceNBodyLabel.setBounds(10, y, 150, 30);
-        controlPanel.add(forceNBodyLabel);
+        // ---------------------------- FORCE_PARTICLE Slider -------------------------
+        JLabel forceParticlesLabel = new JLabel("fParticles");
+        forceParticlesLabel.setBounds(10, y, 150, 30);
+        controlPanel.add(forceParticlesLabel);
 
-        JSlider forceNBodySlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
-        forceNBodySlider.setBounds(160, y, 200, 30);
-        forceNBodySlider.setMajorTickSpacing(100);
-        forceNBodySlider.setPaintTicks(false);
-        forceNBodySlider.setPaintLabels(false);
-        forceNBodySlider.setToolTipText("NBody force factor: adjust force strength between bodies.");
-        controlPanel.add(forceNBodySlider);
+        JSlider forceParticlesSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
+        forceParticlesSlider.setBounds(160, y, 200, 30);
+        forceParticlesSlider.setMajorTickSpacing(100);
+        forceParticlesSlider.setPaintTicks(false);
+        forceParticlesSlider.setPaintLabels(false);
+        forceParticlesSlider.setToolTipText("Particles force factor: adjust force strength between particles.");
+        controlPanel.add(forceParticlesSlider);
 
-        forceNBodySlider.addChangeListener(e -> {
-            FORCE_NBODY = forceNBodySlider.getValue() * 0.00001f;
-            forceNBodyLabel.setText("fNBody = " + String.format("%.5f", FORCE_NBODY));
+        forceParticlesSlider.addChangeListener(e -> {
+            FORCE_PARTICLE = forceParticlesSlider.getValue() * 0.00001f;
+            forceParticlesLabel.setText("fParticles = " + String.format("%.5f", FORCE_PARTICLE));
         });
-        forceNBodySlider.setValue(10);
+        forceParticlesSlider.setValue(10);
         y += 40;
 
         // ---------------------------- FORCE_ORIGIN Slider -------------------------
@@ -327,7 +327,7 @@ public class NBody {
         forceOriginSlider.setMajorTickSpacing(100);
         forceOriginSlider.setPaintTicks(false);
         forceOriginSlider.setPaintLabels(false);
-        forceOriginSlider.setToolTipText("Origin force factor: adjust force attracting all bodies to the center/origin.");
+        forceOriginSlider.setToolTipText("Origin force factor: adjust force attracting all particles to the center/origin.");
         controlPanel.add(forceOriginSlider);
 
         forceOriginSlider.addChangeListener(e -> {
@@ -424,7 +424,9 @@ public class NBody {
         public float[][] poles;
         public float[][] polesT; // transpose of poles
 
-        public State(int n, int g) {
+        public State() {
+            int n = NUMBER_OF_PARTICLES;
+            int g = NUMBER_OF_GROUPS;
             x = new float[n];
             y = new float[n];
             vx = new float[n];
@@ -506,7 +508,7 @@ public class NBody {
                         } else if (d < SCALE1 + 2f * SCALE2) {
                             f = ((SCALE1 + 2f * SCALE2) - d) / SCALE2 * pole * SCALE3;
                         }
-                        f *= FORCE_NBODY * DT / d;
+                        f *= FORCE_PARTICLE * DT / d;
                         pivx += dx * f;
                         pivy += dy * f;
                     }
@@ -518,9 +520,9 @@ public class NBody {
 
         public void updateForcesVectorAPI_Inner() {
             // We don't want to deal with tail loops, so we just assert that the number of
-            // bodiess is a multiple of the vector length.
+            // particles is a multiple of the vector length.
             if (x.length % SPECIES_F.length() != 0) {
-                throw new RuntimeException("Number of bodies is not a multiple of the vector length.");
+                throw new RuntimeException("Number of particles is not a multiple of the vector length.");
             }
 
             // Inner loop vectorization, the inner loop is vectorized.
@@ -557,7 +559,7 @@ public class NBody {
                     var f12  = f2.blend(f1, f1Mask);
                     var f123 = f3.blend(f12, f2Mask);
 
-                    f123 = f123.mul(FORCE_NBODY * DT).div(d);
+                    f123 = f123.mul(FORCE_PARTICLE * DT).div(d);
                     fx = fx.add(dx.mul(f123), f03Mask);
                     fy = fy.add(dy.mul(f123), f03Mask);
                 }
@@ -568,9 +570,9 @@ public class NBody {
 
         public void updateForcesVectorAPI_Outer() {
             // We don't want to deal with tail loops, so we just assert that the number of
-            // bodiess is a multiple of the vector length.
+            // particles is a multiple of the vector length.
             if (x.length % SPECIES_F.length() != 0) {
-                throw new RuntimeException("Number of bodies is not a multiple of the vector length.");
+                throw new RuntimeException("Number of particles is not a multiple of the vector length.");
             }
 
             // Outer loop vectorization: the outer loop is vectorized.
@@ -605,7 +607,7 @@ public class NBody {
                     var f12  = f2.blend(f1, f1Mask);
                     var f123 = f3.blend(f12, f2Mask);
 
-                    f123 = f123.mul(FORCE_NBODY * DT).div(d);
+                    f123 = f123.mul(FORCE_PARTICLE * DT).div(d);
                     pivx = pivx.add(dx.mul(f123), f03Mask);
                     pivy = pivy.add(dy.mul(f123), f03Mask);
                 }

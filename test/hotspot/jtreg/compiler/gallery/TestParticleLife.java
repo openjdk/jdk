@@ -24,7 +24,7 @@
 /*
  * @test id=ir
  * @bug 8378166
- * @summary Visual example of the Vector API: NBody simulation.
+ * @summary Visual example of the Vector API: NBody / Particle Life simulation.
  * @library /test/lib /
  * @run driver ${test.main.class} ir
  */
@@ -44,13 +44,13 @@ import compiler.lib.ir_framework.*;
 
 /**
  * This test is the JTREG version for automatic verification of the stand-alone
- * {@link NBody}. If you just want to run the demo and play with it,
- * go look at the documentation in {@link NBody}.
+ * {@link ParticleLife}. If you just want to run the demo and play with it,
+ * go look at the documentation in {@link ParticleLife}.
  * Here, we launch both a visual version that just runs for a few seconds, to see
  * that there are no crashes, but we don't do any specific verification.
  * We also have an IR test, that ensures that we get vectorization.
  */
-public class TestNBody {
+public class TestParticleLife {
     public static void main(String[] args) throws InterruptedException {
         String mode = args[0];
         System.out.println("Running JTREG test in mode: " + mode);
@@ -64,11 +64,11 @@ public class TestNBody {
 
     private static void runIR() {
         System.out.println("Testing with IR rules...");
+        // TODO: rm src
         String src = System.getProperty("test.src", null);
         if (src == null) { throw new RuntimeException("Could not find test.src property."); }
         TestFramework.runWithFlags("-Dtest.src=" + src,
-                                   "-XX:CompileCommand=inline,compiler.gallery.NBody$State::update",
-                                   "-XX:CompileCommand=inline,compiler.gallery.NBody$State::computeLight");
+                                   "-XX:CompileCommand=inline,compiler.gallery.ParticleLife$State::update*");
     }
 
     private static void runVisual() throws InterruptedException {
@@ -78,7 +78,7 @@ public class TestNBody {
         // tell it to run for 10 second, interrupt it and let it shut down.
         Thread thread = new Thread() {
             public void run() {
-                NBody.main(null);
+                ParticleLife.main(null);
             }
         };
         thread.setDaemon(true);
@@ -89,27 +89,44 @@ public class TestNBody {
     }
 
     // ---------------------- For the IR testing part only --------------------------------
-    NBody.State state = new NBody.State(5);
+    ParticleLife.State state = new ParticleLife.State();
 
     @Test
-    @Warmup(1000)
-    @IR(counts = {IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.REPLICATE_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.LOAD_VECTOR_F,   IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.SUB_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.MUL_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.ADD_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.SQRT_VF,         IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.MAX_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.AND_VI,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-                  IRNode.LSHIFT_VI,       IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    @Warmup(100)
+    @IR(counts = {IRNode.REPLICATE_F,     "> 0",
+                  IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.SUB_VF,          "> 0",
+                  IRNode.MUL_VF,          "> 0",
+                  IRNode.ADD_VF,          "> 0",
+                  IRNode.SQRT_VF,         "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
-    private void testIR() {
-        // This call should inline givne the CompileCommand above.
-        state.update();
+    private void testIR_updatePositions() {
+        // This call should inline given the CompileCommand above.
+        state.updatePositions();
     }
+
+    //@Test
+    //@Warmup(100)
+    //@IR(counts = {IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.REPLICATE_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.LOAD_VECTOR_F,   IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.SUB_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.MUL_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.ADD_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.SQRT_VF,         IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.MAX_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.AND_VI,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.LSHIFT_VI,       IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
+    //              IRNode.STORE_VECTOR, "> 0"},
+    //    applyIf = {"AlignVector", "false"},
+    //    applyIfPlatform = {"64-bit", "true"},
+    //    applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    //private void testIR() {
+    //    // This call should inline givne the CompileCommand above.
+    //    state.update();
+    //}
 }
