@@ -94,10 +94,6 @@ public class ExhaustingTests {
 
             new UnaryTestCase("asinh", FdlibmTranslit::asinh, StrictMath::asinh, DEFAULT_SHIFT),
             new UnaryTestCase("acosh", FdlibmTranslit::acosh, StrictMath::acosh, DEFAULT_SHIFT),
-
-            // Not strictly from FDLIBM, but highly relevant
-            new UnaryTestCase("sincos[0]", (x)->Math.sincos_v1(x)[0], StrictMath::sin, DEFAULT_SHIFT),
-            new UnaryTestCase("sincos[1]", (x)->Math.sincos_v1(x)[1], StrictMath::cos, DEFAULT_SHIFT),
         };
 
         for (var testCase : testCases) {

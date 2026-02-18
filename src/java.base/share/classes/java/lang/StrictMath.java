@@ -2747,4 +2747,17 @@ public final class StrictMath {
         return Math.unsignedPowExact(x, n);
     }
 
+
+    /**
+     * Returns the pair of [sine,cosine] of an angle, inspired by openlibm. Special cases:
+     * <ul><li>If the argument is NaN or an infinity, then the
+     * result is NaN.</ul>
+     *
+     * @param a an angle, in radians.
+     * @return  the [sine,cosine] pair for the argument.
+     */
+    public static Math.SinCosResult sincos(double a) {
+        return OpenLibm.Sincos.compute(a);
+    }
+
 }

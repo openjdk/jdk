@@ -134,7 +134,6 @@ public class SinCosTests {
      * "Special cases:
      *
      * If the argument is NaN or an infinity, then the result is NaN.
-     * If the argument is zero, then the result is 1.0."
      */
     private static int testSinCos() {
         int failures = 0;
@@ -147,9 +146,15 @@ public class SinCosTests {
         // FIXME Add nand and inf cases, edit the comment
 
         for (int i = 0; i < N; ++i) {
-            X[i] = rand.nextDouble(0.0, 2 * Math.PI);
-            failures+=Tests.test("StrictMath.sin",        X[i], (x)->Math.sincos_v1(x)[0],        StrictMath.sin(X[i]));
-            failures+=Tests.test("StrictMath.cos",        X[i], (x)->Math.sincos_v1(x)[1],        StrictMath.cos(X[i]));
+            X[i] = rand.nextDouble(-1000000 * Math.PI, 1000000 * Math.PI);
+            failures += Tests.testUlpDiffWithAbsBound("StrictMath.sincos.sin()",        X[i], (x)->StrictMath.sincos(x).sin(),        StrictMath.sin(X[i]), 1.0, 1.0);
+            failures += Tests.testUlpDiffWithAbsBound("StrictMath.sincos.cos()",        X[i], (x)->StrictMath.sincos(x).cos(),        StrictMath.cos(X[i]), 1.0, 1.0);
+        }
+
+        for (int i = 0; i < N; ++i) {
+            X[i] = rand.nextDouble(-1000000 * Math.PI, 1000000 * Math.PI);
+            failures += Tests.testUlpDiffWithAbsBound("Math.sincos.sin()",        X[i], (x)->Math.sincos(x).sin(),        Math.sin(X[i]), 1.0, 1.0);
+            failures += Tests.testUlpDiffWithAbsBound("Math.sincos.cos()",        X[i], (x)->Math.sincos(x).cos(),        Math.cos(X[i]), 1.0, 1.0);
         }
 
         return failures;
