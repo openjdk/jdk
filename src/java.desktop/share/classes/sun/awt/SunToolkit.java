@@ -414,6 +414,11 @@ public abstract class SunToolkit extends Toolkit
         cont.setFocusTraversalPolicy(defaultPolicy);
     }
 
+    /* This method should be removed at the same time as targetToAppContext() */
+    public static void insertTargetMapping(Object target) {
+        insertTargetMapping(target, AppContext.getAppContext());
+    }
+
     /*
      * Insert a mapping from target to AppContext, for later retrieval
      * via targetToAppContext() above.
