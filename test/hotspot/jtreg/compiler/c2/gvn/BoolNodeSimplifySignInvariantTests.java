@@ -22,11 +22,11 @@
  */
 package compiler.c2.gvn;
 
-import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
+import compiler.lib.generators.IntRange;
+import compiler.lib.generators.LongRange;
 import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.DontCompile;
-import compiler.lib.ir_framework.ForceInline;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
@@ -82,24 +82,27 @@ public class BoolNodeSimplifySignInvariantTests {
     }
 
     @Run(test = {
-        "knownAndInputInt1", "knownAndInputInt2", "knownAndInputInt3", "knownAndInputInt4",
-        "knownMaxInputInt1", "knownMaxInputInt2", "knownMaxInputInt3", "knownMaxInputInt4",
-        "knownOrInputInt1", "knownOrInputInt2", "knownOrInputInt3", "knownOrInputInt4",
-        "knownMinInputInt1", "knownMinInputInt2", "knownMinInputInt3", "knownMinInputInt4",
-        "knownXorInputInt1", "knownXorInputInt2", "knownXorInputInt3", "knownXorInputInt4",
-        "knownXorInputInt5", "knownXorInputInt6", "knownXorInputInt7", "knownXorInputInt8",
-        "knownAndInputLong1", "knownAndInputLong2", "knownAndInputLong3", "knownAndInputLong4",
-        "knownMaxInputLong1", "knownMaxInputLong2", "knownMaxInputLong3", "knownMaxInputLong4",
-        "knownOrInputLong1", "knownOrInputLong2", "knownOrInputLong3", "knownOrInputLong4",
-        "knownMinInputLong1", "knownMinInputLong2", "knownMinInputLong3", "knownMinInputLong4",
-        "knownXorInputLong1", "knownXorInputLong2", "knownXorInputLong3", "knownXorInputLong4",
-        "knownXorInputLong5", "knownXorInputLong6", "knownXorInputLong7", "knownXorInputLong8",
+        "knownAndInputIntLtR", "knownAndInputIntLtL", "knownAndInputIntGeR", "knownAndInputIntGeL",
+        "knownMaxInputIntLtR", "knownMaxInputIntLtL", "knownMaxInputIntGeR", "knownMaxInputIntGeL",
+        "knownOrInputIntLtR", "knownOrInputIntLtL", "knownOrInputIntGeR", "knownOrInputIntGeL",
+        "knownMinInputIntLtR", "knownMinInputIntLtL", "knownMinInputIntGeR", "knownMinInputIntGeL",
 
-        "testRandomRangeAndInt1", "testRandomRangeAndInt2", "testRandomRangeAndLong1", "testRandomRangeAndLong2",
-        "testRandomRangeOrInt1", "testRandomRangeOrInt2", "testRandomRangeOrLong1", "testRandomRangeOrLong2",
-        "testRandomRangeXorInt1", "testRandomRangeXorInt2", "testRandomRangeXorLong1", "testRandomRangeXorLong2",
-        "testRandomRangeMaxInt1", "testRandomRangeMaxInt2", "testRandomRangeMaxLong1", "testRandomRangeMaxLong2",
-        "testRandomRangeMinInt1", "testRandomRangeMinInt2", "testRandomRangeMinLong1", "testRandomRangeMinLong2",
+        "knownXorInputIntLtRPos", "knownXorInputIntLtLPos", "knownXorInputIntGeRPos", "knownXorInputIntGeLPos",
+        "knownXorInputIntLtRNeg", "knownXorInputIntLtLNeg", "knownXorInputIntGeRNeg", "knownXorInputIntGeLNeg",
+
+        "knownAndInputLongLtR", "knownAndInputLongLtL", "knownAndInputLongGeR", "knownAndInputLongGeL",
+        "knownMaxInputLongLtR", "knownMaxInputLongLtL", "knownMaxInputLongGeR", "knownMaxInputLongGeL",
+        "knownOrInputLongLtR", "knownOrInputLongLtL", "knownOrInputLongGeR", "knownOrInputLongGeL",
+        "knownMinInputLongLtR", "knownMinInputLongLtL", "knownMinInputLongGeR", "knownMinInputLongGeL",
+
+        "knownXorInputLongLtRPos", "knownXorInputLongLtLPos", "knownXorInputLongGeRPos", "knownXorInputLongGeLPos",
+        "knownXorInputLongLtRNeg", "knownXorInputLongLtLNeg", "knownXorInputLongGeRNeg", "knownXorInputLongGeLNeg",
+
+        "testRandomRangeAndIntLt", "testRandomRangeAndIntGe", "testRandomRangeAndLongLt", "testRandomRangeAndLongGe",
+        "testRandomRangeOrIntLt", "testRandomRangeOrIntGe", "testRandomRangeOrLongLt", "testRandomRangeOrLongGe",
+        "testRandomRangeXorIntLt", "testRandomRangeXorIntGe", "testRandomRangeXorLongLt", "testRandomRangeXorLongGe",
+        "testRandomRangeMaxIntLt", "testRandomRangeMaxIntGe", "testRandomRangeMaxLongLt", "testRandomRangeMaxLongGe",
+        "testRandomRangeMinIntLt", "testRandomRangeMinIntGe", "testRandomRangeMinLongLt", "testRandomRangeMinLongGe",
     })
     public void runMethod() {
         assertResultI();
@@ -115,48 +118,48 @@ public class BoolNodeSimplifySignInvariantTests {
         int aPos = Math.min(HI_POS_I, Math.max(LO_POS_I, a));
         int bPos = Math.min(HI_POS_I, Math.max(LO_POS_I, b));
 
-        Asserts.assertEQ((a & bNeg) < 0, knownAndInputInt1(a, b));
-        Asserts.assertEQ((aNeg & b) < 0, knownAndInputInt2(a, b));
-        Asserts.assertEQ((a & bNeg) >= 0, knownAndInputInt3(a, b));
-        Asserts.assertEQ((aNeg & b) >= 0, knownAndInputInt4(a, b));
+        Asserts.assertEQ((a & bNeg) < 0, knownAndInputIntLtR(a, b));
+        Asserts.assertEQ((aNeg & b) < 0, knownAndInputIntLtL(a, b));
+        Asserts.assertEQ((a & bNeg) >= 0, knownAndInputIntGeR(a, b));
+        Asserts.assertEQ((aNeg & b) >= 0, knownAndInputIntGeL(a, b));
 
-        Asserts.assertEQ(Math.max(a, bNeg) < 0, knownMaxInputInt1(a, b));
-        Asserts.assertEQ(Math.max(aNeg, b) < 0, knownMaxInputInt2(a, b));
-        Asserts.assertEQ(Math.max(a, bNeg) >= 0, knownMaxInputInt3(a, b));
-        Asserts.assertEQ(Math.max(aNeg, b) >= 0, knownMaxInputInt4(a, b));
+        Asserts.assertEQ(Math.max(a, bNeg) < 0, knownMaxInputIntLtR(a, b));
+        Asserts.assertEQ(Math.max(aNeg, b) < 0, knownMaxInputIntLtL(a, b));
+        Asserts.assertEQ(Math.max(a, bNeg) >= 0, knownMaxInputIntGeR(a, b));
+        Asserts.assertEQ(Math.max(aNeg, b) >= 0, knownMaxInputIntGeL(a, b));
 
-        Asserts.assertEQ((a | bPos) < 0, knownOrInputInt1(a, b));
-        Asserts.assertEQ((aPos | b) < 0, knownOrInputInt2(a, b));
-        Asserts.assertEQ((a | bPos) >= 0, knownOrInputInt3(a, b));
-        Asserts.assertEQ((aPos | b) >= 0, knownOrInputInt4(a, b));
+        Asserts.assertEQ((a | bPos) < 0, knownOrInputIntLtR(a, b));
+        Asserts.assertEQ((aPos | b) < 0, knownOrInputIntLtL(a, b));
+        Asserts.assertEQ((a | bPos) >= 0, knownOrInputIntGeR(a, b));
+        Asserts.assertEQ((aPos | b) >= 0, knownOrInputIntGeL(a, b));
 
-        Asserts.assertEQ(Math.min(a, bPos) < 0, knownMinInputInt1(a, b));
-        Asserts.assertEQ(Math.min(aPos, b) < 0, knownMinInputInt2(a, b));
-        Asserts.assertEQ(Math.min(a, bPos) >= 0, knownMinInputInt3(a, b));
-        Asserts.assertEQ(Math.min(aPos, b) >= 0, knownMinInputInt4(a, b));
+        Asserts.assertEQ(Math.min(a, bPos) < 0, knownMinInputIntLtR(a, b));
+        Asserts.assertEQ(Math.min(aPos, b) < 0, knownMinInputIntLtL(a, b));
+        Asserts.assertEQ(Math.min(a, bPos) >= 0, knownMinInputIntGeR(a, b));
+        Asserts.assertEQ(Math.min(aPos, b) >= 0, knownMinInputIntGeL(a, b));
 
-        Asserts.assertEQ((a ^ bNeg) < 0, knownXorInputInt1(a, b));
-        Asserts.assertEQ((aNeg ^ b) < 0, knownXorInputInt2(a, b));
-        Asserts.assertEQ((a ^ bNeg) >= 0, knownXorInputInt3(a, b));
-        Asserts.assertEQ((aNeg ^ b) >= 0, knownXorInputInt4(a, b));
-        Asserts.assertEQ((a ^ bPos) < 0, knownXorInputInt5(a, b));
-        Asserts.assertEQ((aPos ^ b) < 0, knownXorInputInt6(a, b));
-        Asserts.assertEQ((a ^ bPos) >= 0, knownXorInputInt7(a, b));
-        Asserts.assertEQ((aPos ^ b) >= 0, knownXorInputInt8(a, b));
+        Asserts.assertEQ((a ^ bNeg) < 0, knownXorInputIntLtRNeg(a, b));
+        Asserts.assertEQ((aNeg ^ b) < 0, knownXorInputIntLtLNeg(a, b));
+        Asserts.assertEQ((a ^ bNeg) >= 0, knownXorInputIntGeRNeg(a, b));
+        Asserts.assertEQ((aNeg ^ b) >= 0, knownXorInputIntGeLNeg(a, b));
+        Asserts.assertEQ((a ^ bPos) < 0, knownXorInputIntLtRPos(a, b));
+        Asserts.assertEQ((aPos ^ b) < 0, knownXorInputIntLtLPos(a, b));
+        Asserts.assertEQ((a ^ bPos) >= 0, knownXorInputIntGeRPos(a, b));
+        Asserts.assertEQ((aPos ^ b) >= 0, knownXorInputIntGeLPos(a, b));
 
         for (int i = 0; i < 10; i++) {
             int ia = GEN_INT.next();
             int ib = GEN_INT.next();
-            Asserts.assertEQ(testRandomRangeAndInt1Interpreted(ia, ib), testRandomRangeAndInt1(ia, ib));
-            Asserts.assertEQ(testRandomRangeAndInt2Interpreted(ia, ib), testRandomRangeAndInt2(ia, ib));
-            Asserts.assertEQ(testRandomRangeOrInt1Interpreted(ia, ib), testRandomRangeOrInt1(ia, ib));
-            Asserts.assertEQ(testRandomRangeOrInt2Interpreted(ia, ib), testRandomRangeOrInt2(ia, ib));
-            Asserts.assertEQ(testRandomRangeXorInt1Interpreted(ia, ib), testRandomRangeXorInt1(ia, ib));
-            Asserts.assertEQ(testRandomRangeXorInt2Interpreted(ia, ib), testRandomRangeXorInt2(ia, ib));
-            Asserts.assertEQ(testRandomRangeMaxInt1Interpreted(ia, ib), testRandomRangeMaxInt1(ia, ib));
-            Asserts.assertEQ(testRandomRangeMaxInt2Interpreted(ia, ib), testRandomRangeMaxInt2(ia, ib));
-            Asserts.assertEQ(testRandomRangeMinInt1Interpreted(ia, ib), testRandomRangeMinInt1(ia, ib));
-            Asserts.assertEQ(testRandomRangeMinInt2Interpreted(ia, ib), testRandomRangeMinInt2(ia, ib));
+            Asserts.assertEQ(testRandomRangeAndIntLtInterpreted(ia, ib), testRandomRangeAndIntLt(ia, ib));
+            Asserts.assertEQ(testRandomRangeAndIntGeInterpreted(ia, ib), testRandomRangeAndIntGe(ia, ib));
+            Asserts.assertEQ(testRandomRangeOrIntLtInterpreted(ia, ib), testRandomRangeOrIntLt(ia, ib));
+            Asserts.assertEQ(testRandomRangeOrIntGeInterpreted(ia, ib), testRandomRangeOrIntGe(ia, ib));
+            Asserts.assertEQ(testRandomRangeXorIntLtInterpreted(ia, ib), testRandomRangeXorIntLt(ia, ib));
+            Asserts.assertEQ(testRandomRangeXorIntGeInterpreted(ia, ib), testRandomRangeXorIntGe(ia, ib));
+            Asserts.assertEQ(testRandomRangeMaxIntLtInterpreted(ia, ib), testRandomRangeMaxIntLt(ia, ib));
+            Asserts.assertEQ(testRandomRangeMaxIntGeInterpreted(ia, ib), testRandomRangeMaxIntGe(ia, ib));
+            Asserts.assertEQ(testRandomRangeMinIntLtInterpreted(ia, ib), testRandomRangeMinIntLt(ia, ib));
+            Asserts.assertEQ(testRandomRangeMinIntGeInterpreted(ia, ib), testRandomRangeMinIntGe(ia, ib));
         }
     }
 
@@ -169,336 +172,336 @@ public class BoolNodeSimplifySignInvariantTests {
         long aPos = Math.min(HI_POS_L, Math.max(LO_POS_L, a));
         long bPos = Math.min(HI_POS_L, Math.max(LO_POS_L, b));
 
-        Asserts.assertEQ((a & bNeg) < 0, knownAndInputLong1(a, b));
-        Asserts.assertEQ((aNeg & b) < 0, knownAndInputLong2(a, b));
-        Asserts.assertEQ((a & bNeg) >= 0, knownAndInputLong3(a, b));
-        Asserts.assertEQ((aNeg & b) >= 0, knownAndInputLong4(a, b));
+        Asserts.assertEQ((a & bNeg) < 0, knownAndInputLongLtR(a, b));
+        Asserts.assertEQ((aNeg & b) < 0, knownAndInputLongLtL(a, b));
+        Asserts.assertEQ((a & bNeg) >= 0, knownAndInputLongGeR(a, b));
+        Asserts.assertEQ((aNeg & b) >= 0, knownAndInputLongGeL(a, b));
 
-        Asserts.assertEQ(Math.max(a, bNeg) < 0, knownMaxInputLong1(a, b));
-        Asserts.assertEQ(Math.max(aNeg, b) < 0, knownMaxInputLong2(a, b));
-        Asserts.assertEQ(Math.max(a, bNeg) >= 0, knownMaxInputLong3(a, b));
-        Asserts.assertEQ(Math.max(aNeg, b) >= 0, knownMaxInputLong4(a, b));
+        Asserts.assertEQ(Math.max(a, bNeg) < 0, knownMaxInputLongLtR(a, b));
+        Asserts.assertEQ(Math.max(aNeg, b) < 0, knownMaxInputLongLtL(a, b));
+        Asserts.assertEQ(Math.max(a, bNeg) >= 0, knownMaxInputLongGeR(a, b));
+        Asserts.assertEQ(Math.max(aNeg, b) >= 0, knownMaxInputLongGeL(a, b));
 
-        Asserts.assertEQ((a | bPos) < 0, knownOrInputLong1(a, b));
-        Asserts.assertEQ((aPos | b) < 0, knownOrInputLong2(a, b));
-        Asserts.assertEQ((a | bPos) >= 0, knownOrInputLong3(a, b));
-        Asserts.assertEQ((aPos | b) >= 0, knownOrInputLong4(a, b));
+        Asserts.assertEQ((a | bPos) < 0, knownOrInputLongLtR(a, b));
+        Asserts.assertEQ((aPos | b) < 0, knownOrInputLongLtL(a, b));
+        Asserts.assertEQ((a | bPos) >= 0, knownOrInputLongGeR(a, b));
+        Asserts.assertEQ((aPos | b) >= 0, knownOrInputLongGeL(a, b));
 
-        Asserts.assertEQ(Math.min(a, bPos) < 0, knownMinInputLong1(a, b));
-        Asserts.assertEQ(Math.min(aPos, b) < 0, knownMinInputLong2(a, b));
-        Asserts.assertEQ(Math.min(a, bPos) >= 0, knownMinInputLong3(a, b));
-        Asserts.assertEQ(Math.min(aPos, b) >= 0, knownMinInputLong4(a, b));
+        Asserts.assertEQ(Math.min(a, bPos) < 0, knownMinInputLongLtR(a, b));
+        Asserts.assertEQ(Math.min(aPos, b) < 0, knownMinInputLongLtL(a, b));
+        Asserts.assertEQ(Math.min(a, bPos) >= 0, knownMinInputLongGeR(a, b));
+        Asserts.assertEQ(Math.min(aPos, b) >= 0, knownMinInputLongGeL(a, b));
 
-        Asserts.assertEQ((a ^ bNeg) < 0, knownXorInputLong1(a, b));
-        Asserts.assertEQ((aNeg ^ b) < 0, knownXorInputLong2(a, b));
-        Asserts.assertEQ((a ^ bNeg) >= 0, knownXorInputLong3(a, b));
-        Asserts.assertEQ((aNeg ^ b) >= 0, knownXorInputLong4(a, b));
-        Asserts.assertEQ((a ^ bPos) < 0, knownXorInputLong5(a, b));
-        Asserts.assertEQ((aPos ^ b) < 0, knownXorInputLong6(a, b));
-        Asserts.assertEQ((a ^ bPos) >= 0, knownXorInputLong7(a, b));
-        Asserts.assertEQ((aPos ^ b) >= 0, knownXorInputLong8(a, b));
+        Asserts.assertEQ((a ^ bNeg) < 0, knownXorInputLongLtRNeg(a, b));
+        Asserts.assertEQ((aNeg ^ b) < 0, knownXorInputLongLtLNeg(a, b));
+        Asserts.assertEQ((a ^ bNeg) >= 0, knownXorInputLongGeRNeg(a, b));
+        Asserts.assertEQ((aNeg ^ b) >= 0, knownXorInputLongGeLNeg(a, b));
+        Asserts.assertEQ((a ^ bPos) < 0, knownXorInputLongLtRPos(a, b));
+        Asserts.assertEQ((aPos ^ b) < 0, knownXorInputLongLtLPos(a, b));
+        Asserts.assertEQ((a ^ bPos) >= 0, knownXorInputLongGeRPos(a, b));
+        Asserts.assertEQ((aPos ^ b) >= 0, knownXorInputLongGeLPos(a, b));
 
         for (int i = 0; i < 10; i++) {
             long la = GEN_LONG.next();
             long lb = GEN_LONG.next();
-            Asserts.assertEQ(testRandomRangeAndLong1Interpreted(la, lb), testRandomRangeAndLong1(la, lb));
-            Asserts.assertEQ(testRandomRangeAndLong2Interpreted(la, lb), testRandomRangeAndLong2(la, lb));
-            Asserts.assertEQ(testRandomRangeOrLong1Interpreted(la, lb), testRandomRangeOrLong1(la, lb));
-            Asserts.assertEQ(testRandomRangeOrLong2Interpreted(la, lb), testRandomRangeOrLong2(la, lb));
-            Asserts.assertEQ(testRandomRangeXorLong1Interpreted(la, lb), testRandomRangeXorLong1(la, lb));
-            Asserts.assertEQ(testRandomRangeXorLong2Interpreted(la, lb), testRandomRangeXorLong2(la, lb));
-            Asserts.assertEQ(testRandomRangeMaxLong1Interpreted(la, lb), testRandomRangeMaxLong1(la, lb));
-            Asserts.assertEQ(testRandomRangeMaxLong2Interpreted(la, lb), testRandomRangeMaxLong2(la, lb));
-            Asserts.assertEQ(testRandomRangeMinLong1Interpreted(la, lb), testRandomRangeMinLong1(la, lb));
-            Asserts.assertEQ(testRandomRangeMinLong2Interpreted(la, lb), testRandomRangeMinLong2(la, lb));
+            Asserts.assertEQ(testRandomRangeAndLongLtInterpreted(la, lb), testRandomRangeAndLongLt(la, lb));
+            Asserts.assertEQ(testRandomRangeAndLongGeInterpreted(la, lb), testRandomRangeAndLongGe(la, lb));
+            Asserts.assertEQ(testRandomRangeOrLongLtInterpreted(la, lb), testRandomRangeOrLongLt(la, lb));
+            Asserts.assertEQ(testRandomRangeOrLongGeInterpreted(la, lb), testRandomRangeOrLongGe(la, lb));
+            Asserts.assertEQ(testRandomRangeXorLongLtInterpreted(la, lb), testRandomRangeXorLongLt(la, lb));
+            Asserts.assertEQ(testRandomRangeXorLongGeInterpreted(la, lb), testRandomRangeXorLongGe(la, lb));
+            Asserts.assertEQ(testRandomRangeMaxLongLtInterpreted(la, lb), testRandomRangeMaxLongLt(la, lb));
+            Asserts.assertEQ(testRandomRangeMaxLongGeInterpreted(la, lb), testRandomRangeMaxLongGe(la, lb));
+            Asserts.assertEQ(testRandomRangeMinLongLtInterpreted(la, lb), testRandomRangeMinLongLt(la, lb));
+            Asserts.assertEQ(testRandomRangeMinLongGeInterpreted(la, lb), testRandomRangeMinLongGe(la, lb));
         }
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputInt1(int a, int b) {
+    public boolean knownAndInputIntLtR(int a, int b) {
         return (a & Math.min(HI_NEG_I, Math.max(LO_NEG_I, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputInt2(int a, int b) {
+    public boolean knownAndInputIntLtL(int a, int b) {
         return (Math.min(HI_NEG_I, Math.max(LO_NEG_I, a)) & b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputInt3(int a, int b) {
+    public boolean knownAndInputIntGeR(int a, int b) {
         return (a & Math.min(HI_NEG_I, Math.max(LO_NEG_I, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputInt4(int a, int b) {
+    public boolean knownAndInputIntGeL(int a, int b) {
         return (Math.min(HI_NEG_I, Math.max(LO_NEG_I, a)) & b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputInt1(int a, int b) {
+    public boolean knownMaxInputIntLtR(int a, int b) {
         return Math.max(a, Math.min(HI_NEG_I, Math.max(LO_NEG_I, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputInt2(int a, int b) {
+    public boolean knownMaxInputIntLtL(int a, int b) {
         return Math.max(Math.min(HI_NEG_I, Math.max(LO_NEG_I, a)), b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputInt3(int a, int b) {
+    public boolean knownMaxInputIntGeR(int a, int b) {
         return Math.max(a, Math.min(HI_NEG_I, Math.max(LO_NEG_I, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputInt4(int a, int b) {
+    public boolean knownMaxInputIntGeL(int a, int b) {
         return Math.max(Math.min(HI_NEG_I, Math.max(LO_NEG_I, a)), b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputInt1(int a, int b) {
+    public boolean knownOrInputIntLtR(int a, int b) {
         return (a | Math.min(HI_POS_I, Math.max(LO_POS_I, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputInt2(int a, int b) {
+    public boolean knownOrInputIntLtL(int a, int b) {
         return (Math.min(HI_POS_I, Math.max(LO_POS_I, a)) | b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputInt3(int a, int b) {
+    public boolean knownOrInputIntGeR(int a, int b) {
         return (a | Math.min(HI_POS_I, Math.max(LO_POS_I, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputInt4(int a, int b) {
+    public boolean knownOrInputIntGeL(int a, int b) {
         return (Math.min(HI_POS_I, Math.max(LO_POS_I, a)) | b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputInt1(int a, int b) {
+    public boolean knownMinInputIntLtR(int a, int b) {
         return Math.min(a, Math.min(HI_POS_I, Math.max(LO_POS_I, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputInt2(int a, int b) {
+    public boolean knownMinInputIntLtL(int a, int b) {
         return Math.min(Math.min(HI_POS_I, Math.max(LO_POS_I, a)), b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputInt3(int a, int b) {
+    public boolean knownMinInputIntGeR(int a, int b) {
         return Math.min(a, Math.min(HI_POS_I, Math.max(LO_POS_I, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputInt4(int a, int b) {
+    public boolean knownMinInputIntGeL(int a, int b) {
         return Math.min(Math.min(HI_POS_I, Math.max(LO_POS_I, a)), b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt1(int a, int b) {
+    public boolean knownXorInputIntLtRNeg(int a, int b) {
         return (a ^ Math.min(HI_NEG_I, Math.max(LO_NEG_I, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt2(int a, int b) {
+    public boolean knownXorInputIntLtLNeg(int a, int b) {
         return (Math.min(HI_NEG_I, Math.max(LO_NEG_I, a)) ^ b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt3(int a, int b) {
+    public boolean knownXorInputIntGeRNeg(int a, int b) {
         return (a ^ Math.min(HI_NEG_I, Math.max(LO_NEG_I, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt4(int a, int b) {
+    public boolean knownXorInputIntGeLNeg(int a, int b) {
         return (Math.min(HI_NEG_I, Math.max(LO_NEG_I, a)) ^ b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt5(int a, int b) {
+    public boolean knownXorInputIntLtRPos(int a, int b) {
         return (a ^ Math.min(HI_POS_I, Math.max(LO_POS_I, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt6(int a, int b) {
+    public boolean knownXorInputIntLtLPos(int a, int b) {
         return (Math.min(HI_POS_I, Math.max(LO_POS_I, a)) ^ b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt7(int a, int b) {
+    public boolean knownXorInputIntGeRPos(int a, int b) {
         return (a ^ Math.min(HI_POS_I, Math.max(LO_POS_I, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputInt8(int a, int b) {
+    public boolean knownXorInputIntGeLPos(int a, int b) {
         return (Math.min(HI_POS_I, Math.max(LO_POS_I, a)) ^ b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputLong1(long a, long b) {
+    public boolean knownAndInputLongLtR(long a, long b) {
         return (a & Math.min(HI_NEG_I, Math.max(LO_NEG_I, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputLong2(long a, long b) {
+    public boolean knownAndInputLongLtL(long a, long b) {
         return (Math.min(HI_NEG_L, Math.max(LO_NEG_L, a)) & b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputLong3(long a, long b) {
+    public boolean knownAndInputLongGeR(long a, long b) {
         return (a & Math.min(HI_NEG_L, Math.max(LO_NEG_L, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.AND, IRNode.MAX, IRNode.MIN})
-    public boolean knownAndInputLong4(long a, long b) {
+    public boolean knownAndInputLongGeL(long a, long b) {
         return (Math.min(HI_NEG_L, Math.max(LO_NEG_L, a)) & b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputLong1(long a, long b) {
+    public boolean knownMaxInputLongLtR(long a, long b) {
         return Math.max(a, Math.min(HI_NEG_L, Math.max(LO_NEG_L, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputLong2(long a, long b) {
+    public boolean knownMaxInputLongLtL(long a, long b) {
         return Math.max(Math.min(HI_NEG_L, Math.max(LO_NEG_L, a)), b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputLong3(long a, long b) {
+    public boolean knownMaxInputLongGeR(long a, long b) {
         return Math.max(a, Math.min(HI_NEG_L, Math.max(LO_NEG_L, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMaxInputLong4(long a, long b) {
+    public boolean knownMaxInputLongGeL(long a, long b) {
         return Math.max(Math.min(HI_NEG_L, Math.max(LO_NEG_L, a)), b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputLong1(long a, long b) {
+    public boolean knownOrInputLongLtR(long a, long b) {
         return (a | Math.min(HI_POS_L, Math.max(LO_POS_L, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputLong2(long a, long b) {
+    public boolean knownOrInputLongLtL(long a, long b) {
         return (Math.min(HI_POS_L, Math.max(LO_POS_L, a)) | b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputLong3(long a, long b) {
+    public boolean knownOrInputLongGeR(long a, long b) {
         return (a | Math.min(HI_POS_L, Math.max(LO_POS_L, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.OR, IRNode.MAX, IRNode.MIN})
-    public boolean knownOrInputLong4(long a, long b) {
+    public boolean knownOrInputLongGeL(long a, long b) {
         return (Math.min(HI_POS_L, Math.max(LO_POS_L, a)) | b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong1(long a, long b) {
+    public boolean knownXorInputLongLtRNeg(long a, long b) {
         return (a ^ Math.min(HI_NEG_L, Math.max(LO_NEG_L, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputLong1(long a, long b) {
+    public boolean knownMinInputLongLtR(long a, long b) {
         return Math.min(a, Math.min(HI_POS_L, Math.max(LO_POS_L, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputLong2(long a, long b) {
+    public boolean knownMinInputLongLtL(long a, long b) {
         return Math.min(Math.min(HI_POS_L, Math.max(LO_POS_L, a)), b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputLong3(long a, long b) {
+    public boolean knownMinInputLongGeR(long a, long b) {
         return Math.min(a, Math.min(HI_POS_L, Math.max(LO_POS_L, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.MAX, IRNode.MIN})
-    public boolean knownMinInputLong4(long a, long b) {
+    public boolean knownMinInputLongGeL(long a, long b) {
         return Math.min(Math.min(HI_POS_L, Math.max(LO_POS_L, a)), b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong2(long a, long b) {
+    public boolean knownXorInputLongLtLNeg(long a, long b) {
         return (Math.min(HI_NEG_L, Math.max(LO_NEG_L, a)) ^ b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong3(long a, long b) {
+    public boolean knownXorInputLongGeRNeg(long a, long b) {
         return (a ^ Math.min(HI_NEG_L, Math.max(LO_NEG_L, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong4(long a, long b) {
+    public boolean knownXorInputLongGeLNeg(long a, long b) {
         return (Math.min(HI_NEG_L, Math.max(LO_NEG_L, a)) ^ b) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong5(long a, long b) {
+    public boolean knownXorInputLongLtRPos(long a, long b) {
         return (a ^ Math.min(HI_POS_L, Math.max(LO_POS_L, b))) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong6(long a, long b) {
+    public boolean knownXorInputLongLtLPos(long a, long b) {
         return (Math.min(HI_POS_L, Math.max(LO_POS_L, a)) ^ b) < 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong7(long a, long b) {
+    public boolean knownXorInputLongGeRPos(long a, long b) {
         return (a ^ Math.min(HI_POS_L, Math.max(LO_POS_L, b))) >= 0;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.MAX, IRNode.MIN})
-    public boolean knownXorInputLong8(long a, long b) {
+    public boolean knownXorInputLongGeLPos(long a, long b) {
         return (Math.min(HI_POS_L, Math.max(LO_POS_L, a)) ^ b) >= 0;
     }
 
@@ -506,102 +509,102 @@ public class BoolNodeSimplifySignInvariantTests {
     private static final IntRange INT_RANGE_2 = IntRange.generate(GEN_INT);
 
     @Test
-    public boolean testRandomRangeAndInt1(int a, int b) {
+    public boolean testRandomRangeAndIntLt(int a, int b) {
         return (INT_RANGE_1.clamp(a) & INT_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeAndInt1Interpreted(int a, int b) {
+    public boolean testRandomRangeAndIntLtInterpreted(int a, int b) {
         return (INT_RANGE_1.clamp(a) & INT_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeAndInt2(int a, int b) {
+    public boolean testRandomRangeAndIntGe(int a, int b) {
         return (INT_RANGE_1.clamp(a) & INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeAndInt2Interpreted(int a, int b) {
+    public boolean testRandomRangeAndIntGeInterpreted(int a, int b) {
         return (INT_RANGE_1.clamp(a) & INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeOrInt1(int a, int b) {
+    public boolean testRandomRangeOrIntLt(int a, int b) {
         return (INT_RANGE_1.clamp(a) | INT_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeOrInt1Interpreted(int a, int b) {
+    public boolean testRandomRangeOrIntLtInterpreted(int a, int b) {
         return (INT_RANGE_1.clamp(a) | INT_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeOrInt2(int a, int b) {
+    public boolean testRandomRangeOrIntGe(int a, int b) {
         return (INT_RANGE_1.clamp(a) | INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeOrInt2Interpreted(int a, int b) {
+    public boolean testRandomRangeOrIntGeInterpreted(int a, int b) {
         return (INT_RANGE_1.clamp(a) | INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeXorInt1(int a, int b) {
+    public boolean testRandomRangeXorIntLt(int a, int b) {
         return (INT_RANGE_1.clamp(a) ^ INT_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeXorInt1Interpreted(int a, int b) {
+    public boolean testRandomRangeXorIntLtInterpreted(int a, int b) {
         return (INT_RANGE_1.clamp(a) ^ INT_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeXorInt2(int a, int b) {
+    public boolean testRandomRangeXorIntGe(int a, int b) {
         return (INT_RANGE_1.clamp(a) ^ INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeXorInt2Interpreted(int a, int b) {
+    public boolean testRandomRangeXorIntGeInterpreted(int a, int b) {
         return (INT_RANGE_1.clamp(a) ^ INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeMaxInt1(int a, int b) {
+    public boolean testRandomRangeMaxIntLt(int a, int b) {
         return Math.max(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMaxInt1Interpreted(int a, int b) {
+    public boolean testRandomRangeMaxIntLtInterpreted(int a, int b) {
         return Math.max(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeMaxInt2(int a, int b) {
+    public boolean testRandomRangeMaxIntGe(int a, int b) {
         return Math.max(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMaxInt2Interpreted(int a, int b) {
+    public boolean testRandomRangeMaxIntGeInterpreted(int a, int b) {
         return Math.max(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeMinInt1(int a, int b) {
+    public boolean testRandomRangeMinIntLt(int a, int b) {
         return Math.min(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMinInt1Interpreted(int a, int b) {
+    public boolean testRandomRangeMinIntLtInterpreted(int a, int b) {
         return Math.min(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeMinInt2(int a, int b) {
+    public boolean testRandomRangeMinIntGe(int a, int b) {
         return Math.min(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMinInt2Interpreted(int a, int b) {
+    public boolean testRandomRangeMinIntGeInterpreted(int a, int b) {
         return Math.min(INT_RANGE_1.clamp(a), INT_RANGE_2.clamp(b)) >= 0;
     }
 
@@ -609,149 +612,102 @@ public class BoolNodeSimplifySignInvariantTests {
     private static final LongRange LONG_RANGE_2 = LongRange.generate(GEN_LONG);
 
     @Test
-    public boolean testRandomRangeAndLong1(long a, long b) {
+    public boolean testRandomRangeAndLongLt(long a, long b) {
         return (LONG_RANGE_1.clamp(a) & LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeAndLong1Interpreted(long a, long b) {
+    public boolean testRandomRangeAndLongLtInterpreted(long a, long b) {
         return (LONG_RANGE_1.clamp(a) & LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeAndLong2(long a, long b) {
+    public boolean testRandomRangeAndLongGe(long a, long b) {
         return (LONG_RANGE_1.clamp(a) & LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeAndLong2Interpreted(long a, long b) {
+    public boolean testRandomRangeAndLongGeInterpreted(long a, long b) {
         return (LONG_RANGE_1.clamp(a) & LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeOrLong1(long a, long b) {
+    public boolean testRandomRangeOrLongLt(long a, long b) {
         return (LONG_RANGE_1.clamp(a) | LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeOrLong1Interpreted(long a, long b) {
+    public boolean testRandomRangeOrLongLtInterpreted(long a, long b) {
         return (LONG_RANGE_1.clamp(a) | LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeOrLong2(long a, long b) {
+    public boolean testRandomRangeOrLongGe(long a, long b) {
         return (LONG_RANGE_1.clamp(a) | LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeOrLong2Interpreted(long a, long b) {
+    public boolean testRandomRangeOrLongGeInterpreted(long a, long b) {
         return (LONG_RANGE_1.clamp(a) | LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeXorLong1(long a, long b) {
+    public boolean testRandomRangeXorLongLt(long a, long b) {
         return (LONG_RANGE_1.clamp(a) ^ LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeXorLong1Interpreted(long a, long b) {
+    public boolean testRandomRangeXorLongLtInterpreted(long a, long b) {
         return (LONG_RANGE_1.clamp(a) ^ LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeXorLong2(long a, long b) {
+    public boolean testRandomRangeXorLongGe(long a, long b) {
         return (LONG_RANGE_1.clamp(a) ^ LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeXorLong2Interpreted(long a, long b) {
+    public boolean testRandomRangeXorLongGeInterpreted(long a, long b) {
         return (LONG_RANGE_1.clamp(a) ^ LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeMaxLong1(long a, long b) {
+    public boolean testRandomRangeMaxLongLt(long a, long b) {
         return Math.max(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMaxLong1Interpreted(long a, long b) {
+    public boolean testRandomRangeMaxLongLtInterpreted(long a, long b) {
         return Math.max(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeMaxLong2(long a, long b) {
+    public boolean testRandomRangeMaxLongGe(long a, long b) {
         return Math.max(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMaxLong2Interpreted(long a, long b) {
+    public boolean testRandomRangeMaxLongGeInterpreted(long a, long b) {
         return Math.max(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @Test
-    public boolean testRandomRangeMinLong1(long a, long b) {
+    public boolean testRandomRangeMinLongLt(long a, long b) {
         return Math.min(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMinLong1Interpreted(long a, long b) {
+    public boolean testRandomRangeMinLongLtInterpreted(long a, long b) {
         return Math.min(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) < 0;
     }
 
     @Test
-    public boolean testRandomRangeMinLong2(long a, long b) {
+    public boolean testRandomRangeMinLongGe(long a, long b) {
         return Math.min(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) >= 0;
     }
 
     @DontCompile
-    public boolean testRandomRangeMinLong2Interpreted(long a, long b) {
+    public boolean testRandomRangeMinLongGeInterpreted(long a, long b) {
         return Math.min(LONG_RANGE_1.clamp(a), LONG_RANGE_2.clamp(b)) >= 0;
-    }
-
-    record IntRange(int lo, int hi) {
-        IntRange {
-            if (lo > hi) {
-                throw new IllegalArgumentException("lo > hi");
-            }
-        }
-
-        @ForceInline
-        int clamp(int v) {
-            return Math.min(hi, Math.max(v, lo));
-        }
-
-        static IntRange generate(Generator<Integer> g) {
-            var a = g.next();
-            var b = g.next();
-            if (a > b) {
-                var tmp = a;
-                a = b;
-                b = tmp;
-            }
-            return new IntRange(a, b);
-        }
-    }
-    record LongRange(long lo, long hi) {
-        LongRange {
-            if (lo > hi) {
-                throw new IllegalArgumentException("lo > hi");
-            }
-        }
-
-        @ForceInline
-        long clamp(long v) {
-            return Math.min(hi, Math.max(v, lo));
-        }
-
-        static LongRange generate(Generator<Long> g) {
-            var a = g.next();
-            var b = g.next();
-            if (a > b) {
-                var tmp = a;
-                a = b;
-                b = tmp;
-            }
-            return new LongRange(a, b);
-        }
     }
 }

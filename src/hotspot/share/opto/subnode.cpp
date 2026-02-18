@@ -1543,17 +1543,21 @@ static bool is_counted_loop_cmp(Node *cmp) {
 
 // For comparisons of the form op(a, b) < 0 or op(a, b) >= 0,
 // it might be enough to compare a < 0 or a >= 0 (or b < 0 or b >= 0) instead.
+// Consider a & b >= 0 for example: if we know a < 0, then we know the sign bit is 1,
+// so we only need to check whether b >= 0 to know the result.
 // As a special case, xor requires negating the test
 // if one argument is known to be negative: -1 ^ b < 0 <==> b >= 0
 // but not if it is known to be nonnegative: 0 ^ b < 0 <==> b <  0
-static Node* simplify_sign_invariant_comparison_input(PhaseGVN* phase, BoolNode* bool_node) {
-  Node* cmp = bool_node->in(1);
+static Node* simplify_sign_invariant_comparison_input(PhaseGVN* phase, const BoolNode* bool_node) {
+  const Node* cmp = bool_node->in(1);
+  assert(phase->type(cmp->in(2))->is_zero_type(), "must be zero");
+  assert(bool_node->_test._test == BoolTest::lt || bool_node->_test._test == BoolTest::ge, "unexpected test");
   int cop = cmp->Opcode();
   if (cop != Op_CmpI && cop != Op_CmpL) {
     return nullptr;
   }
-  BasicType bt = cop == Op_CmpI ? T_INT : T_LONG;
-  Node* in_op = cmp->in(1);
+  const BasicType bt = cop == Op_CmpI ? T_INT : T_LONG;
+  const Node* in_op = cmp->in(1);
   int in_opc = in_op->Opcode();
   if (in_opc != Op_And(bt) && in_opc != Op_Or(bt) && in_opc != Op_Xor(bt) &&
       in_opc != Op_Max(bt) && in_opc != Op_Min(bt)) {
