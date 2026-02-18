@@ -35,6 +35,7 @@
  */
 
 import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
@@ -152,7 +153,7 @@ public class TypeAnnotationsOnVariables {
                                 }
                                 @Override
                                 public Void visitLambdaExpression(LambdaExpressionTree node, Void p) {
-                                    actual.add(node.toString()+ ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
+                                    actual.add(treeToString(node)+ ": " + typeToString(trees.getTypeMirror(getCurrentPath())));
                                     return super.visitLambdaExpression(node, p);
                                 }
                             }.scan(e.getCompilationUnit(), null);
@@ -179,7 +180,7 @@ public class TypeAnnotationsOnVariables {
             "()->\"t_no_cr\": java.util.function.@Test.TypeAnno Supplier<java.lang.String>",
             "()->\"t_no_cr\": java.lang.Object&java.io.Serializable&java.util.function.@Test.TypeAnno Supplier<java.lang.String>",
             "ac: java.lang.@Test.TypeAnno AutoCloseable",
-            "()->{\n}: java.lang.@Test.TypeAnno AutoCloseable",
+            "()->{ }: java.lang.@Test.TypeAnno AutoCloseable",
             "e1: java.lang.@Test.TypeAnno Exception",
             "e2: java.lang.@Test.TypeAnno Exception",
             "e3: java.lang.@Test.TypeAnno IllegalStateException | java.lang.@Test.TypeAnno NullPointerException | java.lang.IllegalArgumentException",
@@ -199,5 +200,12 @@ public class TypeAnnotationsOnVariables {
         } else {
             return String.valueOf(type);
         }
+    }
+
+    static String treeToString(Tree tree) {
+        if (tree.toString().contains("\n")) {
+            System.err.println("!!!");
+        }
+        return String.valueOf(tree).replaceAll("\\R", " ");
     }
 }
