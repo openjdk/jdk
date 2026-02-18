@@ -26,6 +26,7 @@
  * @bug 8378166
  * @summary Visual example of the Vector API: NBody / Particle Life simulation.
  * @library /test/lib /
+ * @modules jdk.incubator.vector
  * @run driver ${test.main.class} ir
  */
 
@@ -33,6 +34,7 @@
  * @test id=visual
  * @key headful
  * @library /test/lib /
+ * @modules jdk.incubator.vector
  * @run main ${test.main.class} visual
  */
 
@@ -64,11 +66,7 @@ public class TestParticleLife {
 
     private static void runIR() {
         System.out.println("Testing with IR rules...");
-        // TODO: rm src
-        String src = System.getProperty("test.src", null);
-        if (src == null) { throw new RuntimeException("Could not find test.src property."); }
-        TestFramework.runWithFlags("-Dtest.src=" + src,
-                                   "-XX:CompileCommand=inline,compiler.gallery.ParticleLife$State::update*");
+        TestFramework.runWithFlags("-XX:CompileCommand=inline,compiler.gallery.ParticleLife$State::update*");
     }
 
     private static void runVisual() throws InterruptedException {
@@ -99,34 +97,95 @@ public class TestParticleLife {
                   IRNode.MUL_VF,          "> 0",
                   IRNode.ADD_VF,          "> 0",
                   IRNode.SQRT_VF,         "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
+                  IRNode.STORE_VECTOR,    "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     private void testIR_updatePositions() {
         // This call should inline given the CompileCommand above.
+        // We expect auto vectorization of the relatively simple loop.
         state.updatePositions();
     }
 
-    //@Test
-    //@Warmup(100)
-    //@IR(counts = {IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.REPLICATE_F,     IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.LOAD_VECTOR_F,   IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.SUB_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.MUL_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.ADD_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.SQRT_VF,         IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.MAX_VF,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.AND_VI,          IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.LSHIFT_VI,       IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
-    //              IRNode.STORE_VECTOR, "> 0"},
-    //    applyIf = {"AlignVector", "false"},
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
-    //private void testIR() {
-    //    // This call should inline givne the CompileCommand above.
-    //    state.update();
-    //}
+    @Test
+    @Warmup(100)
+    @IR(counts = {IRNode.REPLICATE_F,        "= 0",
+                  IRNode.LOAD_VECTOR_F,      "= 0",
+                  IRNode.REPLICATE_I,        "= 0",
+                  IRNode.LOAD_VECTOR_I,      "= 0",
+                  IRNode.ADD_VI,             "= 0",
+                  IRNode.LOAD_VECTOR_GATHER, "= 0",
+                  IRNode.SUB_VF,             "= 0",
+                  IRNode.MUL_VF,             "= 0",
+                  IRNode.ADD_VF,             "= 0",
+                  IRNode.NEG_VF,             "= 0",
+                  IRNode.SQRT_VF,            "= 0",
+                  IRNode.VECTOR_MASK_CMP,    "= 0",
+                  IRNode.VECTOR_MASK_CAST,   "= 0",
+                  IRNode.AND_V_MASK,         "= 0",
+                  IRNode.VECTOR_BLEND_F,     "= 0",
+                  IRNode.STORE_VECTOR,       "= 0",
+                  IRNode.ADD_REDUCTION_VF,   "= 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    private void testIR_updateForcesScalar() {
+        // This call should inline given the CompileCommand above.
+        // We expect no vectorization, though it may in principle be possible
+        // to auto vectorize one day.
+        state.updateForcesScalar();
+    }
+
+    @Test
+    @Warmup(100)
+    @IR(counts = {IRNode.REPLICATE_F,        "> 0",
+                  IRNode.LOAD_VECTOR_F,      "> 0",
+                  IRNode.REPLICATE_I,        "> 0",
+                  IRNode.LOAD_VECTOR_I,      "> 0",
+                  IRNode.ADD_VI,             "> 0",
+                  IRNode.LOAD_VECTOR_GATHER, "> 0",
+                  IRNode.SUB_VF,             "> 0",
+                  IRNode.MUL_VF,             "> 0",
+                  IRNode.ADD_VF,             "> 0",
+                  IRNode.NEG_VF,             "> 0",
+                  IRNode.SQRT_VF,            "> 0",
+                  IRNode.VECTOR_MASK_CMP,    "> 0",
+                  IRNode.VECTOR_MASK_CAST,   "> 0",
+                  IRNode.VECTOR_BLEND_F,     "> 0",
+                  IRNode.STORE_VECTOR,       "= 0",  // no vector store
+                  IRNode.ADD_REDUCTION_VF,   "> 0"}, // instead we reduce the vector to a scalar
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    private void testIR_updateForcesVectorAPI_Inner() {
+        // This call should inline given the CompileCommand above.
+        // We expect the VectorAPI calls to intrinsify.
+        state.updateForcesVectorAPI_Inner();
+    }
+    @Test
+    @Warmup(100)
+    @IR(counts = {IRNode.REPLICATE_F,        "> 0",
+                  IRNode.LOAD_VECTOR_F,      "> 0",
+                  IRNode.REPLICATE_I,        "> 0",
+                  IRNode.LOAD_VECTOR_I,      "> 0",
+                  IRNode.ADD_VI,             "> 0",
+                  IRNode.LOAD_VECTOR_GATHER, "> 0",
+                  IRNode.SUB_VF,             "> 0",
+                  IRNode.MUL_VF,             "> 0",
+                  IRNode.ADD_VF,             "> 0",
+                  IRNode.NEG_VF,             "> 0",
+                  IRNode.SQRT_VF,            "> 0",
+                  IRNode.VECTOR_MASK_CMP,    "> 0",
+                  IRNode.VECTOR_MASK_CAST,   "> 0",
+                  IRNode.VECTOR_BLEND_F,     "> 0",
+                  IRNode.STORE_VECTOR,       "> 0",  // store back a vector
+                  IRNode.ADD_REDUCTION_VF,   "= 0"}, // and no reduction operation
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    private void testIR_updateForcesVectorAPI_Outer() {
+        // This call should inline given the CompileCommand above.
+        // We expect the VectorAPI calls to intrinsify.
+        state.updateForcesVectorAPI_Outer();
+    }
 }
