@@ -1738,12 +1738,16 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (end.centot < 0 || end.centot > end.cenlen / CENHDR) {
                     zerror("invalid END header (total entries count too large)");
                 }
+                // Validation ensures these are <= Integer.MAX_VALUE
+                int cenlen = Math.toIntExact(end.cenlen);
+                int centot = Math.toIntExact(end.centot);
+
                 // read in the CEN
-                cen = this.cen = new byte[(int)end.cenlen];
-                if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen) {
+                cen = this.cen = new byte[cenlen];
+                if (readFullyAt(cen, 0, cen.length, cenpos) != cenlen) {
                     zerror("read CEN tables failed");
                 }
-                this.total = Math.toIntExact(end.centot);
+                this.total = centot;
             } else {
                 cen = this.cen;
                 this.total = knownTotal;
