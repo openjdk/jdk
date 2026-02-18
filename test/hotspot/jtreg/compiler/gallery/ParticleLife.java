@@ -408,19 +408,22 @@ public class ParticleLife {
     }
 
     /**
-     * TODO: description
+     * State of the simulation.
      */
     public static class State {
         public long lastTime;
         public float fps;
 
+        // "struct of arrays" approach allows adjacent vector loads.
         public float[] x;
         public float[] y;
         public float[] vx;
         public float[] vy;
-        public int[] group;
+        public int[] group; // group index of the particle
 
-        public Color[] colors;
+        public Color[] colors; // color of the group
+
+        // Matrix of the poles: defines attraction/repulsion between groups i and j
         public float[][] poles;
         public float[][] polesT; // transpose of poles
 
@@ -498,14 +501,21 @@ public class ParticleLife {
                     float dy = piy - pjy;
                     float d = (float)Math.sqrt(dx * dx + dy * dy);
 
+                    // Ignoring d=0 avoids division by zero.
+                    // This would happen for i==j which we want to exclude anyway,
+                    // of if two particles have identical position.
                     if (d > 0f) {
                         float pole = poles[group[i]][group[j]];
+                        // If the distance is very large, the force is zero.
                         float f = 0;
                         if (d < SCALE1) {
+                            // Small distance: repell all particles
                             f = (SCALE1 - d) / SCALE1;
                         } else if (d < SCALE1 + SCALE2) {
+                            // Medium distance: attract/repell according to pole
                             f = (d - SCALE1) / SCALE2 * pole * SCALE3;
                         } else if (d < SCALE1 + 2f * SCALE2) {
+                            // Medium distance: attract/repell according to pole
                             f = ((SCALE1 + 2f * SCALE2) - d) / SCALE2 * pole * SCALE3;
                         }
                         f *= FORCE_PARTICLE * DT / d;
