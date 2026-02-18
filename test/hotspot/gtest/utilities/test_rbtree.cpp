@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1251,4 +1251,18 @@ TEST_VM_F(RBTreeTest, AllocatorMayReturnNull) {
   bool success = rbtree.upsert(5, 5);
   EXPECT_EQ(false, success);
   // The test didn't exit the VM, so it was succesful.
+}
+
+TEST_VM_F(RBTreeTest, ArenaAllocator) {
+  Arena arena(mtTest);
+  RBTreeArena<int, int, Cmp> rbtree(&arena);
+  bool success = rbtree.upsert(5, 5);
+  ASSERT_EQ(true, success);
+}
+
+TEST_VM_F(RBTreeTest, ResourceAreaAllocator) {
+  ResourceArea area(mtTest);
+  RBTreeResourceArea<int, int, Cmp> rbtree(&area);
+  bool success = rbtree.upsert(5, 5);
+  ASSERT_EQ(true, success);
 }
