@@ -179,20 +179,4 @@ class JarURLConnectionCertsAndCodeSigners {
         }
         return signedJar;
     }
-
-    private static void checkSignedBy(JarEntry e, String expectedDn) throws Exception {
-        Certificate[] certs = e.getCertificates();
-        if (certs == null || certs.length == 0) {
-            throw new Exception("JarEntry has no certificates: " + e.getName());
-        }
-
-        if (certs[0] instanceof X509Certificate x) {
-            String name = x.getSubjectX500Principal().getName();
-            if (!name.equalsIgnoreCase(expectedDn)) {
-                throw new Exception("Expected entry signed by %s, was %s".formatted(name, expectedDn));
-            }
-        } else {
-            throw new Exception("Expected JarEntry.getCertificate to return X509Certificate");
-        }
-    }
 }
