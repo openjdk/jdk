@@ -200,7 +200,7 @@ class ExchangeImpl {
     // check if Upgrade connection
     private boolean isUpgradeRequest(Headers headers) {
         var values = headers.get("Connection");
-        return !http10 
+        return !http10
             && values != null
             && GET.equals(method)
             && headers.containsKey("Upgrade")
