@@ -322,7 +322,6 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
   assert(!is_interp_only_mode(), "entering interp only when in interp only mode");
-  _seen_interp_only_mode = true;
   _thread->set_interp_only_mode(true);
   invalidate_cur_stack_depth();
 }

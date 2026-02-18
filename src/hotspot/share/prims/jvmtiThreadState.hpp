@@ -212,7 +212,10 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // The pending_interp_only_mode is set when the interp_only_mode is triggered.
   // It is cleared by EnterInterpOnlyModeClosure handshake.
   bool is_pending_interp_only_mode() { return _pending_interp_only_mode; }
-  void set_pending_interp_only_mode(bool val) { _pending_interp_only_mode = val; }
+  void set_pending_interp_only_mode(bool val) {
+    _seen_interp_only_mode = true;
+    _pending_interp_only_mode = val;
+  }
 
   // Used by the interpreter for fullspeed debugging support
   bool is_interp_only_mode()                {
