@@ -635,8 +635,8 @@ static int handle_vdso(struct ps_prochandle* ph, char* lib_name, size_t lib_name
       lib_fd = -1;
     } else {
       lib_fd = fileno(tmpf);
-      off64_t ofs = ph->core->vdso_offset;
-      if (sendfile64(lib_fd, ph->core->core_fd, &ofs, ph->core->vdso_size) == -1) {
+      off_t ofs = ph->core->vdso_offset;
+      if (sendfile(lib_fd, ph->core->core_fd, &ofs, ph->core->vdso_size) == -1) {
         print_debug("can't copy vDSO (%d)\n", errno);
         fclose(tmpf);
         lib_fd = -1;

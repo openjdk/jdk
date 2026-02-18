@@ -1236,7 +1236,7 @@ class ZipFileSystem extends FileSystem {
 
     private volatile boolean isOpen = true;
     private final SeekableByteChannel ch; // channel to the zipfile
-    final byte[]  cen;     // CEN & ENDHDR
+    final byte[]  cen;     // CEN
     private END  end;
     private long locpos;   // position of first LOC header (usually 0)
 
@@ -1586,24 +1586,18 @@ class ZipFileSystem extends FileSystem {
         // Get position of first local file (LOC) header, taking into
         // account that there may be a stub prefixed to the ZIP file.
         locpos = cenpos - end.cenoff;
-        if (locpos < 0) {
-            zerror("invalid END header (bad central directory offset)");
-        }
-        if (end.cenlen > MAX_CEN_SIZE) {
-            zerror("invalid END header (central directory size too large)");
-        }
-        if (end.centot < 0 || end.centot > end.cenlen / CENHDR) {
-            zerror("invalid END header (total entries count too large)");
-        }
-        // read in the CEN and END
-        byte[] cen = new byte[(int)(end.cenlen + ENDHDR)];
-        if (readNBytesAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
-            zerror("read CEN tables failed");
+        if (locpos < 0)
+            throw new ZipException("invalid END header (bad central directory offset)");
+
+        // read in the CEN
+        byte[] cen = new byte[(int)(end.cenlen)];
+        if (readNBytesAt(cen, 0, cen.length, cenpos) != end.cenlen) {
+            throw new ZipException("read CEN tables failed");
         }
         // Iterate through the entries in the central directory
         inodes = LinkedHashMap.newLinkedHashMap(Math.toIntExact(end.centot) + 1);
         int pos = 0;
-        int limit = cen.length - ENDHDR;
+        int limit = cen.length;
         while (pos < limit) {
             if (!cenSigAt(cen, pos))
                 throw new ZipException("invalid CEN header (bad signature)");
@@ -1651,7 +1645,7 @@ class ZipFileSystem extends FileSystem {
             // skip ext and comment
             pos += (CENHDR + nlen + elen + clen);
         }
-        if (pos + ENDHDR != cen.length) {
+        if (pos != cen.length) {
             throw new ZipException("invalid CEN header (bad header size)");
         }
         buildNodeTree();
@@ -1681,7 +1675,7 @@ class ZipFileSystem extends FileSystem {
         }
         // CEN Offset where this Extra field ends
         int extraEndOffset = startingOffset + extraFieldLen;
-        if (extraEndOffset > cen.length - ENDHDR) {
+        if (extraEndOffset > cen.length) {
             zerror("Invalid CEN header (extra data field size too long)");
         }
         int currentOffset = startingOffset;
