@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,12 +177,17 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
 
 // Returns true IFF obj is an instance of java.lang.ref.Reference. If so, perform extra eligibility checks.
 bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
-  // We have a single Java thread. This means java.lang.ref.Reference$ReferenceHandler thread
-  // is not running. Otherwise the checks for next/discovered may not work.
-  precond(CDSConfig::allow_only_single_java_thread());
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
 
   if (obj->klass()->is_subclass_of(vmClasses::Reference_klass())) {
+    // The following check works only if the java.lang.ref.Reference$ReferenceHandler thread
+    // is not running.
+    //
+    // This code is called on every object found by AOTArtifactFinder. When dumping the
+    // preimage archive, AOTArtifactFinder should not find any Reference objects.
+    precond(!CDSConfig::is_dumping_preimage_static_archive());
+    precond(CDSConfig::allow_only_single_java_thread());
+
     precond(AOTReferenceObjSupport::is_enabled());
     precond(JavaClasses::is_supported_for_archiving(obj));
     precond(_keep_alive_objs_table != nullptr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,46 @@ public class TestPrimitiveTypes {
 
         tests.put("test_names", namesTemplate.asToken());
 
+        var abbrevDefTemplate = Template.make("type", (PrimitiveType type) -> scope(
+            let("CON1", type.con()),
+            let("CON2", type.con()),
+            let("abbrev", type.abbrev()),
+            let("fieldDesc", type.fieldDesc()),
+            """
+            static #type varAbbrev#abbrev = #CON1;
+            static #type varFieldDesc#fieldDesc = #CON2;
+            """
+        ));
+        var swapTemplate = Template.make("type", (PrimitiveType type) -> scope(
+            let("abbrev", type.abbrev()),
+            let("fieldDesc", type.fieldDesc()),
+            """
+            #type tmp#abbrev = varAbbrev#abbrev;
+            varAbbrev#abbrev = varFieldDesc#fieldDesc;
+            varFieldDesc#fieldDesc = tmp#abbrev;
+            """
+        ));
+        var abbrevTemplate = Template.make(() -> scope(
+            """
+            public static void test_abbrev() {
+            """,
+            Hooks.CLASS_HOOK.insert(scope(
+                // Create fields that would collide if the abbrev() or fieldDesc() methods produced colliding
+                // strings for different types
+                CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                    abbrevDefTemplate.asToken(type)
+                ).toList()
+            )),
+                CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                    swapTemplate.asToken(type)
+                ).toList(),
+            """
+            }
+            """
+        ));
+
+        tests.put("test_abbrev", abbrevTemplate.asToken());
+
         // Test runtime random value generation with LibraryRNG
         // Runtime random number generation of a given primitive type can be very helpful
         // when writing tests that require random inputs.
@@ -231,6 +271,9 @@ public class TestPrimitiveTypes {
             import compiler.lib.generators.*;
 
             public class InnerTest {
+            """,
+            Hooks.CLASS_HOOK.anchor(scope(
+            """
                 public static void main() {
             """,
             // Call all test methods from main.
@@ -241,7 +284,8 @@ public class TestPrimitiveTypes {
                 }
             """,
             // Now add all the test methods.
-            tests.values().stream().toList(),
+            tests.values().stream().toList()
+            )),
             """
             }
             """

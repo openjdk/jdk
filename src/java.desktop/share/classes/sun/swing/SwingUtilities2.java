@@ -121,9 +121,6 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  */
 public class SwingUtilities2 {
 
-    public static final Object MENU_SELECTION_MANAGER_LISTENER_KEY =
-            new StringBuffer("MenuSelectionManager listener key");
-
     // Maintain a cache of CACHE_SIZE fonts and the left side bearing
      // of the characters falling into the range MIN_CHAR_INDEX to
      // MAX_CHAR_INDEX. The values in fontCache are created as needed.

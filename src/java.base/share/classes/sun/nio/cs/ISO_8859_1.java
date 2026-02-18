@@ -35,7 +35,6 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public class ISO_8859_1
@@ -152,20 +151,34 @@ public class ISO_8859_1
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
 
-        // Method possible replaced with a compiler intrinsic.
+        /**
+         * Encodes as many ISO-8859-1 codepoints as possible from the source
+         * character array into the destination byte array, assuming that
+         * the encoding is ISO-8859-1 compatible.
+         *
+         * @param sa the source character array
+         * @param sp the index of the source array to start reading from
+         * @param da the target byte array
+         * @param dp the index of the target array to start writing to
+         * @param len the maximum number of characters to be encoded
+         * @return the total number of characters successfully encoded
+         * @throws NullPointerException if any of the provided arrays is null
+         */
         private static int encodeISOArray(char[] sa, int sp,
                                           byte[] da, int dp, int len) {
-            if (len <= 0) {
+            // This method should tolerate invalid arguments, matching the lenient behavior of the VM intrinsic.
+            // Hence, using operator expressions instead of `Preconditions`, which throw on failure.
+            if ((sp | dp | len) < 0 ||
+                    sp >= sa.length ||      // Implicit null check on `sa`
+                    dp >= da.length) {      // Implicit null check on `da`
                 return 0;
             }
-            encodeISOArrayCheck(sa, sp, da, dp, len);
-            return implEncodeISOArray(sa, sp, da, dp, len);
+            int minLen = Math.min(len, Math.min(sa.length - sp, da.length - dp));
+            return encodeISOArray0(sa, sp, da, dp, minLen);
         }
 
         @IntrinsicCandidate
-        private static int implEncodeISOArray(char[] sa, int sp,
-                                              byte[] da, int dp, int len)
-        {
+        private static int encodeISOArray0(char[] sa, int sp, byte[] da, int dp, int len) {
             int i = 0;
             for (; i < len; i++) {
                 char c = sa[sp++];
@@ -174,17 +187,6 @@ public class ISO_8859_1
                 da[dp++] = (byte)c;
             }
             return i;
-        }
-
-        private static void encodeISOArrayCheck(char[] sa, int sp,
-                                                byte[] da, int dp, int len) {
-            Objects.requireNonNull(sa);
-            Objects.requireNonNull(da);
-            Preconditions.checkIndex(sp, sa.length, Preconditions.AIOOBE_FORMATTER);
-            Preconditions.checkIndex(dp, da.length, Preconditions.AIOOBE_FORMATTER);
-
-            Preconditions.checkIndex(sp + len - 1, sa.length, Preconditions.AIOOBE_FORMATTER);
-            Preconditions.checkIndex(dp + len - 1, da.length, Preconditions.AIOOBE_FORMATTER);
         }
 
         private CoderResult encodeArrayLoop(CharBuffer src,
