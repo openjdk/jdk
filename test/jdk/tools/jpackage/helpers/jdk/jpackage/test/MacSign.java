@@ -712,7 +712,7 @@ public final class MacSign {
     }
 
     public enum StandardCertificateNamePrefix {
-        CODE_SIGND("Developer ID Application: "),
+        CODE_SIGN("Developer ID Application: "),
         INSTALLER("Developer ID Installer: ");
 
         StandardCertificateNamePrefix(String value) {
@@ -825,7 +825,7 @@ public final class MacSign {
                 return Optional.ofNullable(subjectCommonName).orElseGet(() -> {
                     switch (type) {
                         case CODE_SIGN -> {
-                            return StandardCertificateNamePrefix.CODE_SIGND.value() + validatedUserName();
+                            return StandardCertificateNamePrefix.CODE_SIGN.value() + validatedUserName();
                         }
                         case INSTALLER -> {
                             return StandardCertificateNamePrefix.INSTALLER.value() + validatedUserName();

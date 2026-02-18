@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     private final int fdVal;
 
-    /* IDs of native thread doing accept, for signalling */
-    private volatile long thread;
+    /* thread doing accept, for signalling */
+    private volatile Thread thread;
 
     /* Lock held by thread currently blocked in this channel */
     private final Object lock = new Object();
@@ -200,7 +200,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
     private void acceptCleanup() throws IOException {
         synchronized (stateLock) {
-            thread = 0;
+            thread = null;
             if (state == ChannelState.KILLPENDING)
                 kill();
         }
@@ -222,7 +222,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 begin();
                 if (!isOpen())
                     return null;
-                thread = NativeThread.current();
+                thread = NativeThread.threadToSignal();
                 for (;;) {
                     n = Net.accept(fd, newfd, isaa);
                     if ((n == IOStatus.INTERRUPTED) && isOpen())
@@ -253,7 +253,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
         synchronized (stateLock) {
             if (state != ChannelState.KILLED)
                 SctpNet.preClose(fdVal);
-            if (thread != 0)
+            if (thread != null)
                 NativeThread.signal(thread);
             if (!isRegistered())
                 kill();
@@ -273,7 +273,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
             assert !isOpen() && !isRegistered();
 
             // Postpone the kill if there is a thread in accept
-            if (thread == 0) {
+            if (thread == null) {
                 state = ChannelState.KILLED;
                 SctpNet.close(fdVal);
             } else {
