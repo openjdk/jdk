@@ -176,12 +176,12 @@
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahReferenceProcessor;
+class ShenandoahRefProcIterator;
 class ShenandoahConcurrentMark;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
@@ -1018,7 +1018,7 @@ class ShenandoahScanRememberedTask : public WorkerTask {
  private:
   ShenandoahObjToScanQueueSet*   _queue_set;
   ShenandoahObjToScanQueueSet*   _old_queue_set;
-  ShenandoahRefProcIterator      _old_discovered_lists;
+  ShenandoahRefProcIterator*     _old_discovered_lists;
   ShenandoahReferenceProcessor*  _rp;
   ShenandoahRegionChunkIterator* _work_list;
   bool _is_concurrent;
@@ -1028,9 +1028,10 @@ class ShenandoahScanRememberedTask : public WorkerTask {
                                ShenandoahObjToScanQueueSet* old_queue_set,
                                ShenandoahReferenceProcessor* rp,
                                ShenandoahRegionChunkIterator* work_list,
+                               ShenandoahRefProcIterator* old_discovered_lists,
                                bool is_concurrent);
 
-  void work(uint worker_id);
+  void work(uint worker_id) override;
   void do_work(uint worker_id);
 };
 

@@ -154,6 +154,7 @@ private:
   ReferencePolicy* _soft_reference_policy;
 
   ShenandoahRefProcThreadLocal* _ref_proc_thread_locals;
+  ShenandoahRefProcIterator _discovered_list_iterator;
 
   oop _pending_list;
   void* _pending_list_tail; // T*
