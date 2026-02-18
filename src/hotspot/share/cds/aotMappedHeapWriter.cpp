@@ -65,7 +65,7 @@ address AOTMappedHeapWriter::_requested_bottom;
 address AOTMappedHeapWriter::_requested_top;
 
 static size_t _num_strings = 0;
-static size_t _string_bytes = 0; 
+static size_t _string_bytes = 0;
 static size_t _num_packages = 0;
 static size_t _num_protection_domains = 0;
 
