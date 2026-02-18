@@ -182,7 +182,7 @@ constexpr auto sizeof_auto_impl() {
 //
 // Example of correct usage of sizeof/sizeof_auto:
 // size_t size = std::numeric_limits<uint32_t>::max() * sizeof(uint16_t); // this will wrap using sizeof_auto, use sizeof to ensure computation using size_t
-// uint32_t count = 42 / sizeof_auto(uint16_t);                           // implicit narrowing conversion or compiler warning/error using stricter compiler flags when using sizeof
+// int count = 42 / sizeof_auto(uint16_t);                                // implicit narrowing conversion or compiler warning/error using stricter compiler flags when using sizeof
 
 #define sizeof_auto(...) sizeof_auto_impl<sizeof(__VA_ARGS__)>()
 
