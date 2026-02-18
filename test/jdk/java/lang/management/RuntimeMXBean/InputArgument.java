@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,6 @@
  * @test
  * @bug     8378110
  * @summary RuntimeMXBean.getInputArguments() handling of flags from settings file.
- *
- * @author  Oli Gillespie
  *
  * @run driver InputArgument generateFlagsFile
  * @run main/othervm -XX:+UseFastJNIAccessors -XX:Flags=InputArgument.flags InputArgument
