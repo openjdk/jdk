@@ -199,7 +199,7 @@ public class URLJarFile extends JarFile {
 
         @Override
         public CodeSigner[] getCodeSigners() {
-            // super.getCodeSigners() returns CodeSigner that were
+            // super.getCodeSigners() returns CodeSigners that were
             // captured by reading the "JarEntry.signers" field when
             // the super instance was created. Some JarEntry
             // implementations (like java.util.jar.JarFile$JarFileEntry)
