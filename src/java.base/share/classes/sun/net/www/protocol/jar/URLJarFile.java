@@ -30,12 +30,12 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.security.CodeSigner;
-import java.security.cert.Certificate;
 import sun.net.www.ParseUtil;
 
 /* URL jar file is a common JarFile subtype used for JarURLConnection */
@@ -194,8 +194,7 @@ public class URLJarFile extends JarFile {
             // compute certificates lazily, so we explicitly
             // call getCertificates() on the underlying JarEntry instead of
             // super.getCertificates()
-            Certificate[] certs = je.getCertificates();
-            return certs == null? null: certs.clone();
+            return je.getCertificates();
         }
 
         @Override
@@ -207,8 +206,7 @@ public class URLJarFile extends JarFile {
             // compute codesigners lazily, so we explicitly
             // call getCodeSigners() on the underlying JarEntry instead of
             // super.getCodeSigners()
-            CodeSigner[] csg = je.getCodeSigners();
-            return csg == null? null: csg.clone();
+            return je.getCodeSigners();
         }
     }
 
