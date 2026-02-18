@@ -106,7 +106,7 @@ public:
   static int get_live_thread_count()          { return _atomic_threads_count; }
   static int get_daemon_thread_count()        { return _atomic_daemon_threads_count; }
 
-  static uint64_t exited_allocated_bytes()       { return AtomicAccess::load(&_exited_allocated_bytes); }
+  static uint64_t exited_allocated_bytes()    { return AtomicAccess::load(&_exited_allocated_bytes); }
   static void incr_exited_allocated_bytes(uint64_t size) {
     // No need for an atomic add because called under the Threads_lock,
     // but because _exited_allocated_bytes is read concurrently, need
