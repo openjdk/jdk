@@ -790,7 +790,7 @@ VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kv, bool* found) {
 }
 
 void VMATree::SummaryDiff::grow_and_rehash() {
-  assert(is_power_of_2(_length), "");
+  assert(is_power_of_2(_length), "must be");
   if (_length == std::numeric_limits<std::underlying_type_t<MemTag>>::max()) {
     // If we are at MemTag's maximum size, then just continue with the current size.
     return;
@@ -821,9 +821,9 @@ void VMATree::SummaryDiff::grow_and_rehash() {
 }
 
 VMATree::SingleDiff& VMATree::SummaryDiff::tag(MemTag tag) {
-  KVEntry kvt{Marker::Occupied, tag, {}};
+  KVEntry kv{Marker::Occupied, tag, {}};
   bool _found = false;
-  KVEntry& inserted = hash_insert_or_get(kvt, &_found);
+  KVEntry& inserted = hash_insert_or_get(kv, &_found);
   return inserted.single_diff;
 }
 
@@ -852,6 +852,6 @@ void VMATree::SummaryDiff::clear() {
 
 uint32_t VMATree::SummaryDiff::hash_to_bucket(MemTag mt) {
   uint32_t hash = primitive_hash<uint32_t>((uint32_t)mt);
-  assert(is_power_of_2(_length), "");
+  assert(is_power_of_2(_length), "must be");
   return hash & ((uint32_t)_length - 1);
 }
