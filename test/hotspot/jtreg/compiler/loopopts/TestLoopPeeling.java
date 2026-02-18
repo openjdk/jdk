@@ -34,6 +34,9 @@
  *      -XX:+UnlockDiagnosticVMOptions -XX:-LoopPeeling
  *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
  *      compiler.loopopts.TestLoopPeeling
+ * @run main/othervm -Xcomp
+ *      -XX:+UnlockDiagnosticVMOptions -Xbatch -XX:-LoopPeeling
+ *      compiler.loopopts.TestLoopPeeling
  */
 
 package compiler.loopopts;

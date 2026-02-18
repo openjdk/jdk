@@ -947,7 +947,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   iters_limit = checked_cast<int>(MIN2((julong)iters_limit, orig_iters));
 
   // We need a safepoint to insert Parse Predicates for the inner loop.
-  SafePointNode *safepoint = nullptr;
+  SafePointNode* safepoint;
   if (bt == T_INT && head->as_CountedLoop()->is_strip_mined()) {
     // Check if we need to bail out early if loop peeling is disabled.  Do this
     // before the graph is modified by `transformed_to_counted_loop()`.
@@ -973,7 +973,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // have a call inside it. However, since the IR is modified before we actually
   // perform the peeling, we can't afford to bail out just prior to peeling,
   // since the IR will be left in an inconsistent state, so bail out early.
-  if ((safepoint != nullptr || !loop->_has_call) && !LoopPeeling) {
+  if (!LoopPeeling && (safepoint != nullptr || !loop->_has_call)) {
 #ifndef PRODUCT
     if (TraceLoopOpts) {
       tty->print("LoopNest cancelled since LoopPeeling is disabled");
