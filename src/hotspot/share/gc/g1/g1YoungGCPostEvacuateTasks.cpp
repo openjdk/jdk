@@ -497,10 +497,6 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
-      HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
-      assert(top_at_mark_start == r->bottom(), "TAMS must not have been set for region %u", r->hrm_index());
-      assert(cm->live_bytes(r->hrm_index()) == 0, "Marking live bytes must not be set for region %u", r->hrm_index());
-
       // Concurrent mark does not mark through regions that we retain (they are root
       // regions wrt to marking), so we must clear their mark data (tams, bitmap, ...)
       // set eagerly or during evacuation failure.
@@ -854,7 +850,7 @@ public:
 
       void do_thread(Thread* thread) {
         if (UseTLAB && ResizeTLAB) {
-          static_cast<JavaThread*>(thread)->tlab().resize();
+          thread->tlab().resize();
         }
 
         G1BarrierSet::g1_barrier_set()->update_card_table_base(thread);
