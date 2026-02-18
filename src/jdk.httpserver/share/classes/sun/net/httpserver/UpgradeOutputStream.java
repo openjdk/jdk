@@ -74,8 +74,7 @@ class UpgradeOutputStream extends FilterOutputStream {
         if (!is.isClosed()) {
             is.close();
         }
-        Event e = new Event.WriteFinished(t);
-        t.getHttpContext().getServerImpl().addEvent(e);
+        t.postExchangeFinished(true);
         out.close();
     }
 }
