@@ -266,8 +266,16 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahInPlacePromotion
       } else {
         if (collection_set->is_in(i)) {
           assert(heap->is_tenurable(region), "Preselected region %zu must be tenurable", i);
+        } else if (region->is_young() && heap->is_tenurable(region)) {
+          // Note that for GLOBAL GC, region may be OLD, and OLD regions do not qualify for pre-selection
+
+          // This region is old enough to be promoted, but it was not preselected, either because its garbage is below
+          // old garbage threshold so it will be promoted in place, or because there is insufficient room
+          // in old gen to hold the evacuated copies of this region's live data.  In either case, we choose not to
+          // place this region into the collection set.
         } else {
           // This is our candidate for later consideration.
+          assert(region->get_top_before_promote() == nullptr, "Cannot add region %zu scheduled for in-place-promotion to the collection set", i);
           candidates[cand_idx].set_region_and_garbage(region, garbage);
           cand_idx++;
         }
