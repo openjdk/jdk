@@ -69,6 +69,7 @@ class NativeBuffer implements AutoCloseable {
 
     // not synchronized; only safe for use by thread-local caches
     void setOwner(Object owner) {
+        assert !Thread.currentThread().isVirtual();
         this.owner = owner;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,14 @@ class UnixNativeDispatcher {
             buffer = NativeBuffers.allocNativeBuffer(size);
         } else {
             // buffer already contains the path
-            if (buffer.owner() == path)
+            if (buffer.owner() == path) {
+                assert !Thread.currentThread().isVirtual();
                 return buffer;
+            }
         }
         NativeBuffers.copyCStringToNativeBuffer(cstr, buffer);
-        buffer.setOwner(path);
+        if (!Thread.currentThread().isVirtual())
+            buffer.setOwner(path);
         return buffer;
     }
 
