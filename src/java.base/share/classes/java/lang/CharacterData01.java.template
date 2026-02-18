@@ -571,13 +571,13 @@ final class CharacterData01 extends CharacterData {
     static char[] sharpsMap = new char[] {'S', 'S'};
 
     char[] toUpperCaseCharArray(int ch) {
-        char[] upperMap = {(char)ch};
         if (ch == 0x1DF95) {
             // LATIN SMALL LIGATURE LONG S WITH DESCENDER S
             // same special case map as sharp S
-            upperMap = sharpsMap;
+            return sharpsMap;
+        } else {
+            return Character.toChars(ch);
         }
-        return upperMap;
     }
 
     static final CharacterData instance = new CharacterData01();
