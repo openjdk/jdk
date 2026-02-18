@@ -1108,6 +1108,10 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
     coalesce_and_fill_old_regions(false);
   }
+
+  log_info(gc, cset)("Degenerated cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                     old_generation()->get_promoted_reserve(), old_generation()->get_promoted_expended(),
+                     old_generation()->get_promotion_failed_count(), old_generation()->get_promotion_failed_words() * HeapWordSize);
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
@@ -1121,6 +1125,10 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     // throw off the heuristics.
     entry_global_coalesce_and_fill();
   }
+
+  log_info(gc, cset)("Concurrent cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                     old_generation()->get_promoted_reserve(), old_generation()->get_promoted_expended(),
+                     old_generation()->get_promotion_failed_count(), old_generation()->get_promotion_failed_words() * HeapWordSize);
 }
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
