@@ -256,7 +256,7 @@ public:
     int _occupied;
     KVEntry& hash_insert_or_get(const KVEntry& kvt, bool* found);
     void grow_and_rehash();
-    int hash_to_bucket(MemTag mt);
+    uint32_t hash_to_bucket(MemTag mt);
 
   public:
     SummaryDiff() : _small(), _members(_small), _length(_init_size), _occupied(0) {
@@ -264,7 +264,7 @@ public:
     }
     ~SummaryDiff() {
       if (_members != _small) {
-        FreeHeap(_members);
+        FREE_C_HEAP_ARRAY(KVEntry, _members);
       }
     }
 

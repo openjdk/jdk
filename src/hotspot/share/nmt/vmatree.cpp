@@ -759,8 +759,8 @@ VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool* found) {
   // then we apply a load-factor check and rehash if it exceeds it.
   // When the length is small we're OK with a full linear search for an empty space
   // to avoid a grow and rehash.
-  constexpr const float load_factor = 0.5;
-  constexpr const int load_factor_cutoff_length = 32;
+  constexpr float load_factor = 0.5;
+  constexpr int load_factor_cutoff_length = 32;
   if (_length > load_factor_cutoff_length &&
       (float)_occupied / _length > load_factor) {
     grow_and_rehash();
@@ -848,8 +848,8 @@ void VMATree::SummaryDiff::clear() {
   memset(_small, 0, sizeof(_small));
 }
 
-int VMATree::SummaryDiff::hash_to_bucket(MemTag mt) {
-  int hash =  primitive_hash<int>((int)mt);
+uint32_t VMATree::SummaryDiff::hash_to_bucket(MemTag mt) {
+  uint32_t hash = primitive_hash<uint32_t>((uint32_t)mt);
   assert(is_power_of_2(_length), "");
-  return hash & (_length - 1);
+  return hash & ((uint32_t)_length - 1);
 }
