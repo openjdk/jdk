@@ -40,6 +40,8 @@ class PrintProperties
 {
 private:
   IdealGraphPrinter* _printer;
+  void print_alias_properties(Node* node);
+  void print_escape_properties(Node* node);
 
 public:
   PrintProperties(IdealGraphPrinter* printer) : _printer(printer) {}
@@ -49,6 +51,47 @@ public:
   void print_property(int flag, const char* name, const char* val);
   void print_property(int flag, const char* name, int val);
 };
+
+void PrintProperties::print_alias_properties(Node* node) {
+  const TypePtr* adr_type = node->adr_type();
+  Compile* C = _printer->C;
+  if (adr_type != nullptr && C->have_alias_type(adr_type)) {
+    Compile::AliasType* at = C->alias_type(adr_type);
+    if (at != nullptr) {
+      print_property(true, "alias_index", at->index());
+      // The value of at->field(), if present, is already dumped in the
+      // "source"/"destination" properties.
+      const Type* element = at->element();
+      if (element != nullptr) {
+        stringStream element_stream;
+        element->dump_on(&element_stream);
+        print_property(true, "alias_element", element_stream.freeze());
+      }
+      print_property(at->is_rewritable(), "alias_is_rewritable");
+      print_property(at->is_volatile(), "alias_is_volatile");
+      print_property(at->general_index() != at->index(), "alias_general_index", at->general_index());
+    }
+  }
+}
+
+void PrintProperties::print_escape_properties(Node* node) {
+  // Dump escape analysis state for relevant nodes.
+  if (node->is_Allocate()) {
+    AllocateNode* alloc = node->as_Allocate();
+    print_property(alloc->_is_scalar_replaceable, "is_scalar_replaceable");
+    print_property(alloc->_is_non_escaping, "is_non_escaping");
+    print_property(alloc->does_not_escape_thread(), "does_not_escape_thread");
+  }
+  if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {
+    print_property(true, "has_ea_local_in_scope");
+  }
+  if (node->is_CallJava() && node->as_CallJava()->arg_escape()) {
+    print_property(true, "arg_escape");
+  }
+  if (node->is_Initialize() && node->as_Initialize()->does_not_escape()) {
+    print_property(true, "does_not_escape");
+  }
+}
 
 void PrintProperties::print_node_properties(Node* node) {
   const jushort flags = node->flags();
@@ -74,45 +117,12 @@ void PrintProperties::print_node_properties(Node* node) {
     }
   }
 
-  const TypePtr* adr_type = node->adr_type();
-  Compile* C = _printer->C;
-  if (adr_type != nullptr && C->have_alias_type(adr_type)) {
-    Compile::AliasType* at = C->alias_type(adr_type);
-    if (at != nullptr) {
-      print_property(true, "alias_index", at->index());
-      // The value of at->field(), if present, is already dumped in the
-      // "source"/"destination" properties.
-      const Type* element = at->element();
-      if (element != nullptr) {
-        stringStream element_stream;
-        element->dump_on(&element_stream);
-        print_property(true, "alias_element", element_stream.freeze());
-      }
-      print_property(at->is_rewritable(), "alias_is_rewritable");
-      print_property(at->is_volatile(), "alias_is_volatile");
-      print_property(at->general_index() != at->index(), "alias_general_index", at->general_index());
-    }
-  }
+  print_alias_properties(node);
+
+  print_escape_properties(node);
 
   print_property(node->is_block_proj() != nullptr, "is_block_proj");
   print_property(node->is_block_start(), "is_block_start");
-
-  // Dump escape analysis state for relevant nodes.
-  if (node->is_Allocate()) {
-    AllocateNode* alloc = node->as_Allocate();
-    print_property(alloc->_is_scalar_replaceable, "is_scalar_replaceable");
-    print_property(alloc->_is_non_escaping, "is_non_escaping");
-    print_property(alloc->does_not_escape_thread(), "does_not_escape_thread");
-  }
-  if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {
-    print_property(true, "has_ea_local_in_scope");
-  }
-  if (node->is_CallJava() && node->as_CallJava()->arg_escape()) {
-    print_property(true, "arg_escape");
-  }
-  if (node->is_Initialize() && node->as_Initialize()->does_not_escape()) {
-    print_property(true, "does_not_escape");
-  }
 }
 
 void PrintProperties::print_lrg_properties(const LRG &lrg, const char *buffer) {
