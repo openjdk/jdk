@@ -733,14 +733,10 @@ void VMATree::set_tag(const position start, const size size, const MemTag tag, S
 
 #ifdef ASSERT
 void VMATree::SummaryDiff::print_on(outputStream* out) {
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    SingleDiff& sd = tag((MemTag)i);
-    if (sd.reserve == 0 && sd.commit == 0) {
-      continue;
-    }
-    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), sd.reserve,
-                  sd.commit);
-  }
+  visit([&](MemTag mt, const SingleDiff& sd) {
+    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT,
+                  NMTUtil::tag_to_enum_name(mt), sd.reserve, sd.commit);
+  });
 }
 #endif
 
@@ -753,7 +749,7 @@ bool VMATree::is_empty() {
 }
 
 VMATree::SummaryDiff::KVEntry&
-VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool* found) {
+VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kv, bool* found) {
   DEBUG_ONLY(int counter = 0);
   // If the length is large (picked as 32)
   // then we apply a load-factor check and rehash if it exceeds it.
@@ -768,9 +764,9 @@ VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool* found) {
   while (true) {
     DEBUG_ONLY(counter++);
     assert(counter < 8, "Infinite loop?");
-    int i = hash_to_bucket(kvt.mem_tag);
+    int i = hash_to_bucket(kv.mem_tag);
     while (i < _length && _members[i].marker == Marker::Occupied) {
-      if (_members[i].mem_tag == kvt.mem_tag) {
+      if (_members[i].mem_tag == kv.mem_tag) {
         // Found previous
         *found = true;
         return _members[i];
@@ -781,12 +777,13 @@ VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool* found) {
     // We didn't find it but ran out of space, grow and rehash
     // Then look at again
     if (i >= _length) {
+      assert(_length < std::numeric_limits<std::underlying_type_t<MemTag>>::max(), "");
       grow_and_rehash();
       continue;
     }
     // We didn't find it, but _members[i] is empty, allocate a new one
     assert(_members[i].marker == Marker::Empty, "must be");
-    _members[i] = kvt;
+    _members[i] = kv;
     _occupied++;
     return _members[i];
   }
@@ -794,6 +791,10 @@ VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kvt, bool* found) {
 
 void VMATree::SummaryDiff::grow_and_rehash() {
   assert(is_power_of_2(_length), "");
+  if (_length == std::numeric_limits<std::underlying_type_t<MemTag>>::max()) {
+    // If we are at MemTag's maximum size, then just continue with the current size.
+    return;
+  }
 
   int new_len = _length * 2;
   // Save old entries (can't use ResourceMark, too early)
@@ -811,6 +812,7 @@ void VMATree::SummaryDiff::grow_and_rehash() {
   // Clear new array
   memset(_members, 0, sizeof(KVEntry) * new_len);
   _length = new_len;
+  _occupied = 0;
 
   for (int i = 0; i < tmp.length(); i++) {
     bool _found = false;

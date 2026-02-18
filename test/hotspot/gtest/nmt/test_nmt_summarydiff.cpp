@@ -31,11 +31,11 @@
 // so test that separately.
 TEST(NMTSummaryDiffTest, WorksForLargeTagCount) {
   VMATree::SummaryDiff d;
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < std::numeric_limits<std::underlying_type_t<MemTag>>::max(); i++) {
     VMATree::SingleDiff& sd = d.tag(i);
     sd.reserve = i;
   }
-  for (int i = 0; i< mt_number_of_tags; i++) {
+  for (int i = 0; i < std::numeric_limits<std::underlying_type_t<MemTag>>::max(); i++) {
     VMATree::SingleDiff& sd = d.tag(i);
     EXPECT_EQ(i, sd.reserve);
   }

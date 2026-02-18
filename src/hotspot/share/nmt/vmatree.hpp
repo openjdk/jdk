@@ -254,7 +254,7 @@ public:
     KVEntry* _members;
     int _length;
     int _occupied;
-    KVEntry& hash_insert_or_get(const KVEntry& kvt, bool* found);
+    KVEntry& hash_insert_or_get(const KVEntry& kv, bool* found);
     void grow_and_rehash();
     uint32_t hash_to_bucket(MemTag mt);
 
