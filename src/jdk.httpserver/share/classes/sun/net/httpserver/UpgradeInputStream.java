@@ -70,6 +70,9 @@ class UpgradeInputStream extends LeftOverInputStream {
 
     @Override
     public byte[] readAllBytes() throws IOException {
+        if (closed) {
+          throw new IOException("Stream is closed");
+        }
         if (!t.upgraded) {
           return new byte[0];
         }

@@ -308,13 +308,12 @@ class ExchangeImpl {
 
         /* check for connection upgrade */
         if (upgrade && rCode == 101) {
-
-            if (contentLen != 0) {
+            if (contentLen != RSPBODY_CHUNKED) {
                 logger.log(
                     Level.WARNING,
                     () -> "sendResponseHeaders: rCode = " + rCode + ": forcing contentLen = 0");
             }
-            contentLen = 0;
+            contentLen = RSPBODY_CHUNKED;
         /* check for response type that is not allowed to send a body */
         } else if (rCode >= 100 && rCode < 200 /* informational */
             || rCode == 204           /* no content */
