@@ -58,19 +58,10 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
 
   // The _thread field is a link to the JavaThread associated with JvmtiThreadState.
-  // The _thread_saved field is used for carrier threads only when a virtual thread
-  // is mounted. Otherwise, it must be set to nullptr.
-  // Carrier and virtual threads can temporarily share same JavaThread. In such a case,
-  // only virtual _thread should have a link from JvmtiThreadState to JavaThread.
-  // The carrier thread _thread field is set to nullptr if a virtual thread is monted.
-  // This is important for interp-only mechanism.
-  if (JvmtiEnvBase::is_thread_carrying_vthread(thread, thread_oop)) {
-    _thread = nullptr;
-    _thread_saved = thread;
-  } else { // virtual or non-carrying platform thread
-    _thread = thread;
-    _thread_saved = nullptr;
-  }
+  // A carrier thread shgould always have a stable link to its JavaThread.
+  // The _thread field of a virtual thread should point to the JavaThread when
+  // virtual thread is mounted. It should be set to null when it is unmounted.
+  _thread = thread;
   _exception_state      = ES_CLEARED;
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
@@ -131,11 +122,11 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
 
   if (thread != nullptr) {
     if (thread_oop == nullptr || thread->jvmti_vthread() == nullptr || thread->jvmti_vthread() == thread_oop) {
-      // The JavaThread for carrier or mounted virtual thread case.
+      // The JavaThread for an active carrier or a mounted virtual thread case.
       // Set this only if thread_oop is current thread->jvmti_vthread().
       thread->set_jvmti_thread_state(this);
+      thread->set_interp_only_mode(false);
     }
-    thread->set_interp_only_mode(false);
   }
 }
 
@@ -148,7 +139,11 @@ JvmtiThreadState::~JvmtiThreadState()   {
   }
 
   // clear this as the state for the thread
-  get_thread()->set_jvmti_thread_state(nullptr);
+  assert(get_thread() != nullptr, "sanity check");
+  if (get_thread()->jvmti_thread_state() == this) { // check for safety
+    get_thread()->set_jvmti_thread_state(nullptr);
+    get_thread()->set_interp_only_mode(false);
+  }
 
   // zap our env thread states
   {
@@ -335,6 +330,9 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
   assert(!is_interp_only_mode(), "entering interp only when in interp only mode");
+  assert(_thread->jvmti_vthread() == nullptr || _thread->jvmti_vthread() == get_thread_oop(), "sanity check");
+  assert(_thread->jvmti_thread_state() == this, "sanity check");
+  _saved_interp_only_mode = true;
   _seen_interp_only_mode = true;
   _thread->set_interp_only_mode(true);
   invalidate_cur_stack_depth();
@@ -342,10 +340,9 @@ void JvmtiThreadState::enter_interp_only_mode() {
 
 void JvmtiThreadState::leave_interp_only_mode() {
   assert(is_interp_only_mode(), "leaving interp only when not in interp only mode");
-  if (_thread == nullptr) {
-    // Unmounted virtual thread updates the saved value.
-    _saved_interp_only_mode = false;
-  } else {
+  _saved_interp_only_mode = false;
+  if (_thread != nullptr && _thread->jvmti_thread_state() == this) {
+    assert(_thread->jvmti_vthread() == nullptr || _thread->jvmti_vthread() == get_thread_oop(), "sanity check");
     _thread->set_interp_only_mode(false);
   }
 }
@@ -353,7 +350,7 @@ void JvmtiThreadState::leave_interp_only_mode() {
 
 // Helper routine used in several places
 int JvmtiThreadState::count_frames() {
-  JavaThread* thread = get_thread_or_saved();
+  JavaThread* thread = get_thread();
   javaVFrame *jvf;
   ResourceMark rm;
   if (thread == nullptr) {
@@ -492,8 +489,6 @@ void JvmtiThreadState::update_for_pop_top_frame() {
     }
     // force stack depth to be recalculated
     invalidate_cur_stack_depth();
-  } else {
-    assert(!is_enabled(JVMTI_EVENT_FRAME_POP), "Must have no framepops set");
   }
 }
 
@@ -592,11 +587,8 @@ void JvmtiThreadState::update_thread_oop_during_vm_start() {
   }
 }
 
+// For virtual threads only.
 void JvmtiThreadState::set_thread(JavaThread* thread) {
-  _thread_saved = nullptr;  // Common case.
-  if (!_is_virtual && thread == nullptr) {
-    // Save JavaThread* if carrier thread is being detached.
-    _thread_saved = _thread;
-  }
+  assert(is_virtual(), "sanity check");
   _thread = thread;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiEnv;
   JavaThread        *_thread;
-  JavaThread        *_thread_saved;
   OopHandle         _thread_oop_h;
   // Jvmti Events that cannot be posted in their current context.
   JvmtiDeferredEventQueue* _jvmti_event_queue;
@@ -216,7 +215,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Used by the interpreter for fullspeed debugging support
   bool is_interp_only_mode()                {
-    return _thread == nullptr ? _saved_interp_only_mode : _thread->is_interp_only_mode();
+    return _saved_interp_only_mode;
   }
   void enter_interp_only_mode();
   void leave_interp_only_mode();
@@ -245,8 +244,10 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   int count_frames();
 
-  inline JavaThread *get_thread()      { return _thread;              }
-  inline JavaThread *get_thread_or_saved(); // return _thread_saved if _thread is null
+  inline JavaThread *get_thread()      {
+    assert(is_virtual() || _thread != nullptr, "sanity check");
+    return _thread;
+  }
 
   // Needed for virtual threads as they can migrate to different JavaThread's.
   // Also used for carrier threads to clear/restore _thread.
