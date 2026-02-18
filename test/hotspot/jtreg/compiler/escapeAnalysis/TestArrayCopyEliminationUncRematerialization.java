@@ -98,6 +98,25 @@ public class TestArrayCopyEliminationUncRematerialization {
         }
     }
 
+    // This generates the test method
+    // static int testStore(int[] src, boolean flag) {
+    //     int[] dst = new int[COPY_LEN];
+    //     System.arraycopy(src, 0, dst, 0, COPY_LEN);
+    //     dst[1] = (byte) someValue; // Store of byte value so we can count loads of other primitives.
+    //     if (flag) { // Compiles to unstable if trap when called exclusively with flag = false.
+    //         dst[0] = (byte) 0x7f;
+    //     }
+    //     return dst[1]; // Should return src[1].
+    // }
+    // for all primitive types except byte and for different methods of polluting the source
+    // array and producing an unstable if trap.
+    // There methods generate an IR test that validates that as many rematerialization loads
+    // as possible are placed in the uncommon path and that the returned result is in fact from
+    // the source array.
+    // Between different runs of the test, it will generate different sized arrays and indices
+    // to read from and store to (see TestConfig above). Further, this generates a variant of the
+    // test method, where the offset into src is provided in an argument. C2 cannot put any rematerialization
+    // loads in the uncomon path then, but it is useful for checking the correct result.
     private static String generate(CompileFramework comp) {
         TestConfig config = TestConfig.init();
 
@@ -241,6 +260,8 @@ public class TestArrayCopyEliminationUncRematerialization {
                 """
             ));
 
+            // This generates test with a store to the returned src element and a simple unstable if trap.
+            // Only one rematerialization load is in the common path.
             var testStore = Template.make(() -> {
                 final String testName = "Store" + pty.abbrev();
                 return scope(
@@ -249,8 +270,10 @@ public class TestArrayCopyEliminationUncRematerialization {
                 );
             });
 
-            var testStoreLoop = Template.make(() -> {
-                final String testName = "StoreLoop" + pty.abbrev();
+            // This generates test with a store to the returned src element and the unstable if trap inside a loop.
+            // Only one rematerialization load is in the common path.
+            var testStoreTrapLoop = Template.make(() -> {
+                final String testName = "StoreTrapLoop" + pty.abbrev();
                 var trapTemplate = Template.make(() -> scope(
                     """
                     for (int i = 0; i < 1234; i++) {
@@ -267,6 +290,8 @@ public class TestArrayCopyEliminationUncRematerialization {
                 );
             });
 
+            // This generates tests with atomic operations (LoadStores) as polluting store.
+            // Only one rematerialization load is in the common path.
             var testAtomics = Template.make(() -> {
                 var getAndSetStoreConst = Template.make(() -> scope(
                     let("type", pty),
@@ -310,6 +335,8 @@ public class TestArrayCopyEliminationUncRematerialization {
                 );
             });
 
+            // C2 is not able to put any rematerialization load in the uncommon path for this test.
+            // Thus, we do not check the number of loads.
             var testSwitch = Template.make(() -> {
                 final String testName = "Switch" + pty.abbrev();
                 return scope(
@@ -345,6 +372,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                 );
             });
 
+            // This generates tests where the polluting store to src is an arraycopy.
+            // In this case, the rematerialization loads for all elements that are written to
+            // have to be in the common path.
             var testArraycopy = Template.make(() -> {
                 final String testName = "Arraycopy" + pty.abbrev();
                 final int arraycopyLen = RANDOM.nextInt(1, Math.min(config.copyLen, config.srcSize - config.writeIdx));
@@ -397,7 +427,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                    """
                 )),
                 List.of(testStore,
-                        testStoreLoop,
+                        testStoreTrapLoop,
                         testAtomics,
                         testSwitch,
                         testArraycopy)
