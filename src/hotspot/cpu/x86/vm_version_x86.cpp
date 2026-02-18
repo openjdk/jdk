@@ -48,7 +48,7 @@ int VM_Version::_stepping;
 bool VM_Version::_has_intel_jcc_erratum;
 VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
-#define DECLARE_CPU_FEATURE_NAME(id, name, bit) name,
+#define DECLARE_CPU_FEATURE_NAME(id, name, bit) XSTR(name),
 const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
 #undef DECLARE_CPU_FEATURE_NAME
 
@@ -1659,41 +1659,40 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
-#ifdef COMPILER2
-    if (UseAVX > 2) {
-      if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
-          (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
-           ArrayOperationPartialInlineSize != 0 &&
-           ArrayOperationPartialInlineSize != 16 &&
-           ArrayOperationPartialInlineSize != 32 &&
-           ArrayOperationPartialInlineSize != 64)) {
-        int inline_size = 0;
-        if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
-          inline_size = 64;
-        } else if (MaxVectorSize >= 32) {
-          inline_size = 32;
-        } else if (MaxVectorSize >= 16) {
-          inline_size = 16;
-        }
-        if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
-          warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
-        }
-        ArrayOperationPartialInlineSize = inline_size;
-      }
-
-      if (ArrayOperationPartialInlineSize > MaxVectorSize) {
-        ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
-        if (ArrayOperationPartialInlineSize) {
-          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
-        } else {
-          warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
-        }
-      }
-    }
-#endif
   }
 
 #ifdef COMPILER2
+  if (UseAVX > 2) {
+    if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
+        (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
+         ArrayOperationPartialInlineSize != 0 &&
+         ArrayOperationPartialInlineSize != 16 &&
+         ArrayOperationPartialInlineSize != 32 &&
+         ArrayOperationPartialInlineSize != 64)) {
+      int inline_size = 0;
+      if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+        inline_size = 64;
+      } else if (MaxVectorSize >= 32) {
+        inline_size = 32;
+      } else if (MaxVectorSize >= 16) {
+        inline_size = 16;
+      }
+      if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+        warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
+      }
+      ArrayOperationPartialInlineSize = inline_size;
+    }
+
+    if (ArrayOperationPartialInlineSize > MaxVectorSize) {
+      ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+      if (ArrayOperationPartialInlineSize) {
+        warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
+      } else {
+        warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
+      }
+    }
+  }
+
   if (FLAG_IS_DEFAULT(OptimizeFill)) {
     if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
       OptimizeFill = false;
@@ -3298,12 +3297,50 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
 void VM_Version::insert_features_names(VM_Version::VM_Features features, stringStream& ss) {
   int i = 0;
   ss.join([&]() {
-    while (i < MAX_CPU_FEATURES) {
-      if (_features.supports_feature((VM_Version::Feature_Flag)i)) {
-        return _features_names[i++];
+    const char* str = nullptr;
+    while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
+      if (features.supports_feature((VM_Version::Feature_Flag)i)) {
+        str = _features_names[i];
       }
       i += 1;
     }
-    return (const char*)nullptr;
+    return str;
   }, ", ");
+}
+
+void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  VM_Features* features = (VM_Features*)features_buffer;
+  insert_features_names(*features, ss);
+}
+
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  VM_Features* vm_features_set1 = (VM_Features*)features_set1;
+  VM_Features* vm_features_set2 = (VM_Features*)features_set2;
+  int i = 0;
+  ss.join([&]() {
+    const char* str = nullptr;
+    while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
+      Feature_Flag flag = (Feature_Flag)i;
+      if (vm_features_set1->supports_feature(flag) && !vm_features_set2->supports_feature(flag)) {
+        str = _features_names[i];
+      }
+      i += 1;
+    }
+    return str;
+  }, ", ");
+}
+
+int VM_Version::cpu_features_size() {
+  return sizeof(VM_Features);
+}
+
+void VM_Version::store_cpu_features(void* buf) {
+  VM_Features copy = _features;
+  copy.clear_feature(CPU_HT); // HT does not result in incompatibility of aot code cache
+  memcpy(buf, &copy, sizeof(VM_Features));
+}
+
+bool VM_Version::supports_features(void* features_buffer) {
+  VM_Features* features_to_test = (VM_Features*)features_buffer;
+  return _features.supports_features(features_to_test);
 }
