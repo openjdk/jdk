@@ -31,7 +31,7 @@ extern "C" int get_sve_vector_length();
 
 int VM_Version::get_current_sve_vector_length() {
   assert(VM_Version::supports_sve(), "should not call this");
-  // Use assembly instruction to get the actual SVE vector length  
+  // Use assembly instruction to get the actual SVE vector length
   return  VM_Version::supports_sve() ? get_sve_vector_length() : 0; // This value is in bytes
 }
 
