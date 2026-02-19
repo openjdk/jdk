@@ -127,39 +127,6 @@ static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
     (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
 }
 
-static inline bool is_interpreter(const JfrSampleRequest& request) {
-  return request._sample_bcp != nullptr;
-}
-
-void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request) {
-  assert(_hash == 0, "invariant");
-  assert(_count == 0, "invariant");
-  assert(_frames != nullptr, "invariant");
-  assert(_frames->length() == 0, "invariant");
-  _hash = 1;
-  const Method* method = reinterpret_cast<Method*>(request._sample_pc);
-  assert(method != nullptr, "invariant");
-  const traceid mid = JfrTraceId::load(method);
-  const int bci = method->is_native() ? 0 : method->bci_from(reinterpret_cast<address>(request._sample_bcp));
-  const u1 type = method->is_native() ? JfrStackFrame::FRAME_NATIVE : JfrStackFrame::FRAME_INTERPRETER;
-  _hash = (_hash * 31) + mid;
-  _hash = (_hash * 31) + bci;
-  _hash = (_hash * 31) + type;
-  _frames->append(JfrStackFrame(mid, bci, type, method->method_holder()));
-  _count++;
-}
-
-bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request) {
-  if (is_interpreter(request)) {
-    record_interpreter_top_frame(request);
-    if (frame.pc() == nullptr) {
-      // No sender frame. Done.
-      return true;
-    }
-  }
-  return record(jt, frame, in_continuation, 0);
-}
-
 bool JfrStackTrace::record(JavaThread* jt, int skip, int64_t stack_filter_id) {
   assert(jt != nullptr, "invariant");
   assert(jt == JavaThread::current(), "invariant");
@@ -232,6 +199,25 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
     _count++;
   }
   return _count > 0;
+}
+
+void JfrStackTrace::start_record_frames() {
+  if (_hash == 0) {
+    _hash = 1;
+  }
+}
+
+void JfrStackTrace::end_record_frames(bool truncated) {
+  _reached_root = !truncated;
+}
+
+void JfrStackTrace::record_frame(const Method* method, int bci, int line_no, u1 type) {
+  const traceid mid = JfrTraceId::load(method);
+  _hash = (_hash * 31) + mid;
+  _hash = (_hash * 31) + bci;
+  _hash = (_hash * 31) + type;
+  _frames->append(JfrStackFrame(mid, bci, type, method->method_holder()));
+  _count++;
 }
 
 void JfrStackTrace::resolve_linenos() const {

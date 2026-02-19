@@ -645,7 +645,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   bind(no_unlock);
 
-  JFR_ONLY(enter_jfr_critical_section();)
+  STACKWALKER_ONLY(enter_stackwalker_critical_section();)
 
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
   // that would normally not be safe to use. Such bad returns into unsafe territory of
@@ -689,7 +689,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
     ble(t1, t0, no_reserved_zone_enabling);
 
-    JFR_ONLY(leave_jfr_critical_section();)
+    STACKWALKER_ONLY(leave_stackwalker_critical_section();)
 
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), xthread);
@@ -703,7 +703,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // remove frame anchor
   leave();
 
-  JFR_ONLY(leave_jfr_critical_section();)
+  STACKWALKER_ONLY(leave_stackwalker_critical_section();)
 
   // restore sender esp
   mv(esp, t1);
@@ -715,18 +715,18 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   andi(sp, esp, -16);
 }
 
-#if INCLUDE_JFR
-void InterpreterMacroAssembler::enter_jfr_critical_section() {
-  const Address sampling_critical_section(xthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
+#if INCLUDE_STACKWALKER
+void InterpreterMacroAssembler::enter_stackwalker_critical_section() {
+  const Address stackwalker_critical_section(xthread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
   mv(t0, true);
-  sb(t0, sampling_critical_section);
+  sb(t0, stackwalker_critical_section);
 }
 
-void InterpreterMacroAssembler::leave_jfr_critical_section() {
-  const Address sampling_critical_section(xthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
-  sb(zr, sampling_critical_section);
+void InterpreterMacroAssembler::leave_stackwalker_critical_section() {
+  const Address stackwalker_critical_section(xthread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
+  sb(zr, stackwalker_critical_section);
 }
-#endif // INCLUDE_JFR
+#endif // INCLUDE_STACKWALKER
 
 // Lock object
 //

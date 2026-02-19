@@ -82,6 +82,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWalker.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
@@ -3651,6 +3652,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     }
 
     JFR_ONLY(Jfr::on_thread_start(thread);)
+    STACKWALKER_ONLY(StackWalker::on_javathread_create(thread);)
 
     if (ReplayCompiles) ciReplay::replay(thread);
 
@@ -3886,6 +3888,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   // Want this inside 'attaching via jni'.
   JFR_ONLY(Jfr::on_thread_start(thread);)
+  STACKWALKER_ONLY(StackWalker::on_javathread_create(thread);)
 
   // mark the thread as no longer attaching
   // this uses a fence to push the change through so we don't have

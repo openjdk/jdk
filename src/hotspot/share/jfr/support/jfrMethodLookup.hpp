@@ -33,7 +33,7 @@ class Method;
 
 class JfrMethodLookup : AllStatic {
  public:
-  static const Method* lookup(const InstanceKlass* ik, traceid method_id);
+  static Method* lookup(const InstanceKlass* ik, traceid method_id);
   static traceid method_id(const Method* method);
   static int method_id_num(traceid method_id);
   static traceid klass_id(const Method* method);

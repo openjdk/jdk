@@ -264,8 +264,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
 
-  JFR_ONLY(void enter_jfr_critical_section();)
-  JFR_ONLY(void leave_jfr_critical_section();)
+  STACKWALKER_ONLY(void enter_stackwalker_critical_section();)
+  STACKWALKER_ONLY(void leave_stackwalker_critical_section();)
 
  private:
 

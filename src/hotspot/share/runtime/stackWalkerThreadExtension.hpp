@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,22 @@
  *
  */
 
-#ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
-#define SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+#ifndef SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
+#define SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
 
-#include "memory/allocation.hpp"
+#include "runtime/stackWalker.hpp"
 
-class JavaThread;
-class JfrThreadLocal;
-class Thread;
+#define DECLARE_FIELD_STACKWALKER StackWalkerThreadLocal _stackwalker_thread_local;
 
-class JfrThreadSampling : AllStatic {
-  friend class JfrSamplerThread;
-  friend class JfrCPUSamplerThread;
- private:
-  static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
-  static void process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock);
- public:
-  static void process_sample_request(JavaThread* jt);
-};
+#define THREAD_LOCAL_OFFSET_STACKWALKER Thread::stackwalker_thread_local_offset()
 
-#endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+#define DEFINE_ACCESSOR_STACKWALKER \
+  StackWalkerThreadLocal& stackwalker_thread_local() { return _stackwalker_thread_local; }
+
+#define DEFINE_OFFSET_STACKWALKER \
+  static ByteSize stackwalker_thread_local_offset() { return byte_offset_of(Thread, _stackwalker_thread_local); }
+
+#define CRITICAL_SECTION_OFFSET_STACKWALKER \
+StackWalkerThreadLocal::critical_section_offset() + THREAD_LOCAL_OFFSET_STACKWALKER
+
+#endif // SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP

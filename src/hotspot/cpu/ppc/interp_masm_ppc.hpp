@@ -177,8 +177,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void remove_activation(TosState state,
                          bool throw_monitor_exception = true,
                          bool install_monitor_exception = true);
-  JFR_ONLY(void enter_jfr_critical_section();)
-  JFR_ONLY(void leave_jfr_critical_section();)
+  STACKWALKER_ONLY(void enter_stackwalker_critical_section();)
+  STACKWALKER_ONLY(void leave_stackwalker_critical_section();)
   void load_fp(Register fp);
   void remove_top_frame_given_fp(Register fp, Register sender_sp, Register sender_fp, Register return_pc, Register temp);
   void merge_frames(Register sender_sp, Register return_pc, Register temp1, Register temp2); // merge top frames

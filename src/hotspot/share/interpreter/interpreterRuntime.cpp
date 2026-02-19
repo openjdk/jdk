@@ -75,8 +75,8 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#if INCLUDE_JFR
-#include "jfr/jfr.inline.hpp"
+#if INCLUDE_STACKWALKER
+#include "runtime/stackWalker.inline.hpp"
 #endif
 
 // Helper class to access current interpreter state
@@ -1177,7 +1177,8 @@ JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
-  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
+  STACKWALKER_ONLY(StackWalker::check_and_process_requests(current);)
+
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.
