@@ -111,7 +111,6 @@ protected:
 
 public:
     static void image_decompressor_init();
-    static void image_decompressor_close();
     static ImageDecompressor* get_decompressor(const char * decompressor_name) ;
     static void decompress_resource(u1* compressed, u1* uncompressed,
         u8 uncompressed_size, const ImageStrings* strings, Endian* _endian);

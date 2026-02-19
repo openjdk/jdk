@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,20 +37,17 @@ public class InterpretedVFrame extends JavaVFrame {
   }
 
   public StackValueCollection getLocals() {
-    Method m = getMethod();
-
-    int length = (int) m.getMaxLocals();
-
-    if (m.isNative()) {
-      // If the method is native, getMaxLocals is not telling the truth.
-      // maxlocals then equals the size of parameters
-      length = (int) m.getSizeOfParameters();
-    }
-
-    StackValueCollection result = new StackValueCollection(length);
-
     // Get oopmap describing oops and int for current bci
     OopMapCacheEntry oopMask = getMethod().getMaskFor(getBCI());
+
+    // If the method is native, method()->max_locals() is not telling the truth.
+    // For our purposes, max locals instead equals the size of parameters.
+    Method method = getMethod();
+    int maxLocals = method.isNative() ? (int)method.getSizeOfParameters() : (int)method.getMaxLocals();
+
+    int length = maxLocals;
+
+    StackValueCollection result = new StackValueCollection(length);
 
     // handle locals
     for(int i = 0; i < length; i++) {
@@ -74,18 +71,19 @@ public class InterpretedVFrame extends JavaVFrame {
   }
 
   public StackValueCollection getExpressions() {
-    int length = getFrame().getInterpreterFrameExpressionStackSize();
-
-    if (getMethod().isNative()) {
-      // If the method is native, there is no expression stack
-      length = 0;
-    }
-
-    int nofLocals = (int) getMethod().getMaxLocals();
-    StackValueCollection result = new StackValueCollection(length);
-
     // Get oopmap describing oops and int for current bci
     OopMapCacheEntry oopMask = getMethod().getMaskFor(getBCI());
+
+    int maskLen = oopMask.numberOfEntries();
+
+    // If the method is native, method()->max_locals() is not telling the truth.
+    // For our purposes, max locals instead equals the size of parameters.
+    Method method = getMethod();
+    int maxLocals = method.isNative() ? (int)method.getSizeOfParameters() : (int)method.getMaxLocals();
+
+    int length = maskLen - maxLocals;
+
+    StackValueCollection result = new StackValueCollection(length);
 
     for(int i = 0; i < length; i++) {
       // Find stack location
@@ -93,7 +91,7 @@ public class InterpretedVFrame extends JavaVFrame {
 
       // Depending on oop/int put it in the right package
       StackValue sv;
-      if (oopMask.isOop(i + nofLocals)) {
+      if (oopMask.isOop(i + maxLocals)) {
         // oop value
         sv = new StackValue(addr.getOopHandleAt(0), 0);
       } else {
