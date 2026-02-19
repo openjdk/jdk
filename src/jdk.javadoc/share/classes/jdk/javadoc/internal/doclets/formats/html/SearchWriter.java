@@ -95,9 +95,9 @@ public class SearchWriter extends HtmlDocletWriter {
                 .add(HtmlTree.DIV(HtmlTree.DIV(HtmlId.of("result-container"))
                                 .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))
-                        .put(HtmlAttr.STYLE, "display: none;")
-                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SCRIPT_FILES)
-                                                       .resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
+                        .put(HtmlAttr.STYLE, "display: none;"));
+                        // .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SCRIPT_FILES)
+                        //                                .resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
     }
 
     private Content createModuleSelector() {
