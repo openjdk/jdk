@@ -1083,11 +1083,11 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   int numLocals = _method->max_locals();
   StateInfo state;
 
-  int datacount = (numblocks + 1) * (stkSize + numLocals);
-  int datasize = datacount * sizeof(ArgumentMap);
+  size_t datacount = (size_t)(numblocks + 1) * (stkSize + numLocals);
+  size_t datasize = (size_t)datacount * sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
-  for (int i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
+  for (size_t i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
   ArgumentMap *dp = statedata;
   state._vars = dp;
   dp += numLocals;
@@ -1095,7 +1095,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   dp += stkSize;
   state._initialized = false;
   state._max_stack = stkSize;
-  for (int i = 0; i < numblocks; i++) {
+  for (size_t i = 0; i < numblocks; i++) {
     blockstates[i]._vars = dp;
     dp += numLocals;
     blockstates[i]._stack = dp;
