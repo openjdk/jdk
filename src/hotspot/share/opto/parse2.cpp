@@ -1099,7 +1099,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
   if (TraceOptoParse && Verbose && WizardMode && switch_depth == 0) {
     SwitchRange* r;
     int nsing = 0;
-    for( r = orig_lo; r <= orig_hi; r++ ) {
+    for (r = orig_lo; r <= orig_hi; r++) {
       if( r->is_singleton() )  nsing++;
     }
     tty->print(">>> ");
@@ -1111,7 +1111,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       tty->print_cr("******** BAD SWITCH DEPTH ********");
     }
     tty->print("   ");
-    for( r = orig_lo; r <= orig_hi; r++ ) {
+    for (r = orig_lo; r <= orig_hi; r++) {
       r->print();
     }
     tty->cr();
