@@ -1369,7 +1369,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
               cast_to_ptr_type(ptr)->
               with_offset(offset);
     }
-  } else if (ta) {
+  } else if (ta != nullptr) {
     // Common slices
     if (offset == arrayOopDesc::length_offset_in_bytes()) {
       return TypeAryPtr::RANGE;
