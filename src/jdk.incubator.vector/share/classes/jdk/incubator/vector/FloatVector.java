@@ -190,45 +190,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    interface FSnOp {
-        float apply(int i, float a);
-    }
-
-    /*package-private*/
-    abstract
-    FloatVector sOp(FSnOp f);
-    @ForceInline
-    final
-    FloatVector sOpTemplate(FSnOp f) {
-        float[] vec = vec();
-        float[] res = new float[length()];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = f.apply(i, vec[i]);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    abstract
-    FloatVector sOp(VectorMask<Float> m,
-                             FSnOp f);
-    @ForceInline
-    final
-    FloatVector sOpTemplate(VectorMask<Float> m,
-                                     FSnOp f) {
-        if (m == null) {
-            return sOpTemplate(f);
-        }
-        float[] vec = vec();
-        float[] res = new float[length()];
-        boolean[] mbits = ((AbstractMask<Float>)m).getBits();
-        for (int i = 0; i < res.length; i++) {
-            res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
-        }
-        return vectorFactory(res);
-    }
-
     // Binary operator
 
     /*package-private*/
@@ -2343,7 +2304,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.sOp((i, a) -> {
+            (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -2370,7 +2331,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.sOp((i, a) -> {
+                   (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -2396,7 +2357,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.sOp((i, a) -> {
+                (v0, s_, m_) -> v0.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -2404,7 +2365,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.sOp((i, a) -> {
+                (v1, s_, m_) -> v1.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
@@ -2764,7 +2725,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
             default: return null;
         }
     }
-
 
     private static final float MIN_OR_INF = Float.NEGATIVE_INFINITY;
     private static final float MAX_OR_INF = Float.POSITIVE_INFINITY;

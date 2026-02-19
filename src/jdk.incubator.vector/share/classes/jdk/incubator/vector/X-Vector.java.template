@@ -207,6 +207,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return vectorFactory(res);
     }
 
+#if[FP16]
     /*package-private*/
     interface FSnOp {
         $type$ apply(int i, $type$ a);
@@ -245,7 +246,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         }
         return vectorFactory(res);
     }
-
+#end[FP16]
     // Binary operator
 
     /*package-private*/
@@ -2973,7 +2974,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.sOp((i, a) -> {
+            (v1, s_, m_) -> v1.{#if[FP16]?sOp:uOp}((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -3000,7 +3001,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.sOp((i, a) -> {
+                   (v1, s_, m_) -> v1.{#if[FP16]?sOp:uOp}((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -3026,7 +3027,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.sOp((i, a) -> {
+                (v0, s_, m_) -> v0.{#if[FP16]?sOp:uOp}((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -3034,7 +3035,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.sOp((i, a) -> {
+                (v1, s_, m_) -> v1.{#if[FP16]?sOp:uOp}((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
@@ -3574,7 +3575,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             default: return null;
         }
     }
-
 
 #if[FP]
     private static final $type$ MIN_OR_INF = {#if[FP16]?float16ToRawShortBits($Boxtype$.NEGATIVE_INFINITY):$Boxtype$.NEGATIVE_INFINITY};

@@ -379,17 +379,15 @@ public class ByteVector512Tests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(byte[] r, byte[] a, byte[] order, int vector_len) {
         int i = 0, j = 0;
-        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    idx = (int)order[i+j];
-                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
-                    assertEquals(r[i+j], a[i+wrapped_index]);
+                    assertEquals(r[i+j], a[i+(int)order[i+j]]);
                 }
             }
         } catch (AssertionError e) {
-            assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
+            int idx = i + j;
+            assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
         }
     }
 
@@ -415,23 +413,21 @@ public class ByteVector512Tests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(byte[] r, byte[] a, byte[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
-        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    idx = (int)order[i+j];
-                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         assertEquals(r[i+j], a[i+wrapped_index]);
+                         assertEquals(r[i+j], a[i+(int)order[i+j]]);
                     else
                          assertEquals(r[i+j], (byte)0);
                 }
             }
         } catch (AssertionError e) {
+            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
+                assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                assertEquals(r[i+j], (byte)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
+                assertEquals(r[i+j], (byte)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 

@@ -190,45 +190,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    interface FSnOp {
-        byte apply(int i, byte a);
-    }
-
-    /*package-private*/
-    abstract
-    ByteVector sOp(FSnOp f);
-    @ForceInline
-    final
-    ByteVector sOpTemplate(FSnOp f) {
-        byte[] vec = vec();
-        byte[] res = new byte[length()];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = f.apply(i, vec[i]);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    abstract
-    ByteVector sOp(VectorMask<Byte> m,
-                             FSnOp f);
-    @ForceInline
-    final
-    ByteVector sOpTemplate(VectorMask<Byte> m,
-                                     FSnOp f) {
-        if (m == null) {
-            return sOpTemplate(f);
-        }
-        byte[] vec = vec();
-        byte[] res = new byte[length()];
-        boolean[] mbits = ((AbstractMask<Byte>)m).getBits();
-        for (int i = 0; i < res.length; i++) {
-            res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
-        }
-        return vectorFactory(res);
-    }
-
     // Binary operator
 
     /*package-private*/
@@ -2477,7 +2438,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.sOp((i, a) -> {
+            (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -2504,7 +2465,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.sOp((i, a) -> {
+                   (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -2530,7 +2491,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.sOp((i, a) -> {
+                (v0, s_, m_) -> v0.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -2538,7 +2499,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.sOp((i, a) -> {
+                (v1, s_, m_) -> v1.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
@@ -2930,7 +2891,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             default: return null;
         }
     }
-
 
     private static final byte MIN_OR_INF = Byte.MIN_VALUE;
     private static final byte MAX_OR_INF = Byte.MAX_VALUE;

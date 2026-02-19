@@ -231,7 +231,6 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         }
         return vectorFactory(res);
     }
-
     // Binary operator
 
     /*package-private*/
@@ -2748,7 +2747,6 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
             default: return null;
         }
     }
-
 
     private static final short MIN_OR_INF = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
     private static final short MAX_OR_INF = float16ToRawShortBits(Float16.POSITIVE_INFINITY);

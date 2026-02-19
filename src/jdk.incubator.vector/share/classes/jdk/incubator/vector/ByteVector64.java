@@ -203,19 +203,6 @@ final class ByteVector64 extends ByteVector {
             super.uOpTemplate((ByteMask64)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    ByteVector64 sOp(FSnOp f) {
-        return (ByteVector64) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    ByteVector64 sOp(VectorMask<Byte> m, FSnOp f) {
-        return (ByteVector64)
-            super.sOpTemplate((ByteMask64)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -718,8 +705,7 @@ final class ByteVector64 extends ByteVector {
         public ByteMask64 compress() {
             return (ByteMask64)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 ByteVector64.class, ByteMask64.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

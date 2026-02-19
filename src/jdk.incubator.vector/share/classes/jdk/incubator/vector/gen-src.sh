@@ -55,7 +55,6 @@ globalArgs=""
 
 for type in byte short int long float double float16
 do
-
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
 

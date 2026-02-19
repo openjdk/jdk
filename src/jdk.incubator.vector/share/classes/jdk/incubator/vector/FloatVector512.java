@@ -203,19 +203,6 @@ final class FloatVector512 extends FloatVector {
             super.uOpTemplate((FloatMask512)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    FloatVector512 sOp(FSnOp f) {
-        return (FloatVector512) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    FloatVector512 sOp(VectorMask<Float> m, FSnOp f) {
-        return (FloatVector512)
-            super.sOpTemplate((FloatMask512)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -723,8 +710,7 @@ final class FloatVector512 extends FloatVector {
         public FloatMask512 compress() {
             return (FloatMask512)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 FloatVector512.class, FloatMask512.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

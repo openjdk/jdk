@@ -203,19 +203,6 @@ final class IntVector256 extends IntVector {
             super.uOpTemplate((IntMask256)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    IntVector256 sOp(FSnOp f) {
-        return (IntVector256) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    IntVector256 sOp(VectorMask<Integer> m, FSnOp f) {
-        return (IntVector256)
-            super.sOpTemplate((IntMask256)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -718,8 +705,7 @@ final class IntVector256 extends IntVector {
         public IntMask256 compress() {
             return (IntMask256)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 IntVector256.class, IntMask256.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

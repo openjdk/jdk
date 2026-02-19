@@ -213,6 +213,7 @@ final class $vectortype$ extends $abstractvectortype$ {
             super.uOpTemplate(($masktype$)m, f);  // specialize
     }
 
+#if[FP16]
     @ForceInline
     final @Override
     $vectortype$ sOp(FSnOp f) {
@@ -225,7 +226,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         return ($vectortype$)
             super.sOpTemplate(($masktype$)m, f);  // specialize
     }
-
+#end[FP16]
     // Binary operator
 
     @ForceInline
@@ -1027,8 +1028,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         public $masktype$ compress() {
             return ($masktype$)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 $vectortype$.class, $masktype$.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                {#if[FP16]?Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount())):m1.trueCount()}));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, {#if[FP16]?Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount())):m1.trueCount()}));
         }
 
 

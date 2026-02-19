@@ -198,19 +198,6 @@ final class LongVector128 extends LongVector {
             super.uOpTemplate((LongMask128)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    LongVector128 sOp(FSnOp f) {
-        return (LongVector128) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    LongVector128 sOp(VectorMask<Long> m, FSnOp f) {
-        return (LongVector128)
-            super.sOpTemplate((LongMask128)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -696,8 +683,7 @@ final class LongVector128 extends LongVector {
         public LongMask128 compress() {
             return (LongMask128)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 LongVector128.class, LongMask128.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

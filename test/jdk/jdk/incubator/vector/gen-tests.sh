@@ -51,9 +51,6 @@ compilation=$(${JAVAC} -d . "${JDK_SRC_HOME}/make/jdk/src/classes/build/tools/sp
 Log false "$compilation\n"
 Log true "done\n"
 
-# Nomenclature 
-#  - type : refers to vector primitive lane type or carrier type.
-#  - Type : refers to vector box lane type.
 # For each type
 for type in byte short int long float double float16
 do

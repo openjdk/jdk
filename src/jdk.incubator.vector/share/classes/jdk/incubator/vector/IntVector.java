@@ -190,45 +190,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    interface FSnOp {
-        int apply(int i, int a);
-    }
-
-    /*package-private*/
-    abstract
-    IntVector sOp(FSnOp f);
-    @ForceInline
-    final
-    IntVector sOpTemplate(FSnOp f) {
-        int[] vec = vec();
-        int[] res = new int[length()];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = f.apply(i, vec[i]);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    abstract
-    IntVector sOp(VectorMask<Integer> m,
-                             FSnOp f);
-    @ForceInline
-    final
-    IntVector sOpTemplate(VectorMask<Integer> m,
-                                     FSnOp f) {
-        if (m == null) {
-            return sOpTemplate(f);
-        }
-        int[] vec = vec();
-        int[] res = new int[length()];
-        boolean[] mbits = ((AbstractMask<Integer>)m).getBits();
-        for (int i = 0; i < res.length; i++) {
-            res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
-        }
-        return vectorFactory(res);
-    }
-
     // Binary operator
 
     /*package-private*/
@@ -2462,7 +2423,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.sOp((i, a) -> {
+            (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -2489,7 +2450,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.sOp((i, a) -> {
+                   (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -2515,7 +2476,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.sOp((i, a) -> {
+                (v0, s_, m_) -> v0.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -2523,7 +2484,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.sOp((i, a) -> {
+                (v1, s_, m_) -> v1.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
@@ -2915,7 +2876,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
             default: return null;
         }
     }
-
 
     private static final int MIN_OR_INF = Integer.MIN_VALUE;
     private static final int MAX_OR_INF = Integer.MAX_VALUE;

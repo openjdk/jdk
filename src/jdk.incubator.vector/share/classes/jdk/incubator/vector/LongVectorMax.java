@@ -198,19 +198,6 @@ final class LongVectorMax extends LongVector {
             super.uOpTemplate((LongMaskMax)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    LongVectorMax sOp(FSnOp f) {
-        return (LongVectorMax) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    LongVectorMax sOp(VectorMask<Long> m, FSnOp f) {
-        return (LongVectorMax)
-            super.sOpTemplate((LongMaskMax)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -694,8 +681,7 @@ final class LongVectorMax extends LongVector {
         public LongMaskMax compress() {
             return (LongMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 LongVectorMax.class, LongMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

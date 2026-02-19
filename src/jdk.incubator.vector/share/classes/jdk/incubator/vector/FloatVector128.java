@@ -203,19 +203,6 @@ final class FloatVector128 extends FloatVector {
             super.uOpTemplate((FloatMask128)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    FloatVector128 sOp(FSnOp f) {
-        return (FloatVector128) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    FloatVector128 sOp(VectorMask<Float> m, FSnOp f) {
-        return (FloatVector128)
-            super.sOpTemplate((FloatMask128)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -699,8 +686,7 @@ final class FloatVector128 extends FloatVector {
         public FloatMask128 compress() {
             return (FloatMask128)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 FloatVector128.class, FloatMask128.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

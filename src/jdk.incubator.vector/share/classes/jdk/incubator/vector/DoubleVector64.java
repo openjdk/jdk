@@ -203,19 +203,6 @@ final class DoubleVector64 extends DoubleVector {
             super.uOpTemplate((DoubleMask64)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    DoubleVector64 sOp(FSnOp f) {
-        return (DoubleVector64) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    DoubleVector64 sOp(VectorMask<Double> m, FSnOp f) {
-        return (DoubleVector64)
-            super.sOpTemplate((DoubleMask64)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -693,8 +680,7 @@ final class DoubleVector64 extends DoubleVector {
         public DoubleMask64 compress() {
             return (DoubleMask64)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 DoubleVector64.class, DoubleMask64.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

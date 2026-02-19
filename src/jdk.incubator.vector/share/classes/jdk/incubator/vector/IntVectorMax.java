@@ -203,19 +203,6 @@ final class IntVectorMax extends IntVector {
             super.uOpTemplate((IntMaskMax)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    IntVectorMax sOp(FSnOp f) {
-        return (IntVectorMax) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    IntVectorMax sOp(VectorMask<Integer> m, FSnOp f) {
-        return (IntVectorMax)
-            super.sOpTemplate((IntMaskMax)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -704,8 +691,7 @@ final class IntVectorMax extends IntVector {
         public IntMaskMax compress() {
             return (IntMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 IntVectorMax.class, IntMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

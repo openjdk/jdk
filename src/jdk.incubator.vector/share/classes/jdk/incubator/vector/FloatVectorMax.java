@@ -203,19 +203,6 @@ final class FloatVectorMax extends FloatVector {
             super.uOpTemplate((FloatMaskMax)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    FloatVectorMax sOp(FSnOp f) {
-        return (FloatVectorMax) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    FloatVectorMax sOp(VectorMask<Float> m, FSnOp f) {
-        return (FloatVectorMax)
-            super.sOpTemplate((FloatMaskMax)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -692,8 +679,7 @@ final class FloatVectorMax extends FloatVector {
         public FloatMaskMax compress() {
             return (FloatMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 FloatVectorMax.class, FloatMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

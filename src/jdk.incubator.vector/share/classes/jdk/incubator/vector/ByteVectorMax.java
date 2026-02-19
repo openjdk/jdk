@@ -203,19 +203,6 @@ final class ByteVectorMax extends ByteVector {
             super.uOpTemplate((ByteMaskMax)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    ByteVectorMax sOp(FSnOp f) {
-        return (ByteVectorMax) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    ByteVectorMax sOp(VectorMask<Byte> m, FSnOp f) {
-        return (ByteVectorMax)
-            super.sOpTemplate((ByteMaskMax)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -704,8 +691,7 @@ final class ByteVectorMax extends ByteVector {
         public ByteMaskMax compress() {
             return (ByteMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 ByteVectorMax.class, ByteMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

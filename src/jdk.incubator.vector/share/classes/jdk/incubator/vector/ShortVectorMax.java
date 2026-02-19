@@ -203,19 +203,6 @@ final class ShortVectorMax extends ShortVector {
             super.uOpTemplate((ShortMaskMax)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    ShortVectorMax sOp(FSnOp f) {
-        return (ShortVectorMax) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    ShortVectorMax sOp(VectorMask<Short> m, FSnOp f) {
-        return (ShortVectorMax)
-            super.sOpTemplate((ShortMaskMax)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -704,8 +691,7 @@ final class ShortVectorMax extends ShortVector {
         public ShortMaskMax compress() {
             return (ShortMaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 ShortVectorMax.class, ShortMaskMax.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

@@ -317,22 +317,22 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static VectorShuffle<$Wideboxtype$> shuffleFromArray(int[] a, int i) {
+    static VectorShuffle<$Boxtype$> shuffleFromArray(int[] a, int i) {
         return SPECIES.shuffleFromArray(a, i);
     }
 
     @DontInline
-    static void shuffleIntoArray(VectorShuffle<$Wideboxtype$> s, int[] a, int i) {
+    static void shuffleIntoArray(VectorShuffle<$Boxtype$> s, int[] a, int i) {
         s.intoArray(a, i);
     }
 
     @DontInline
-    static VectorShuffle<$Wideboxtype$> shuffleFromMemorySegment(MemorySegment mem, int i, ByteOrder bo) {
+    static VectorShuffle<$Boxtype$> shuffleFromMemorySegment(MemorySegment mem, int i, ByteOrder bo) {
         return VectorShuffle.fromMemorySegment(SPECIES, mem, i, bo);
     }
 
     @DontInline
-    static void shuffleIntoMemorySegment(VectorShuffle<$Wideboxtype$> s, MemorySegment mem, int i, ByteOrder bo) {
+    static void shuffleIntoMemorySegment(VectorShuffle<$Boxtype$> s, MemorySegment mem, int i, ByteOrder bo) {
         s.intoMemorySegment(mem, i, bo);
     }
 
@@ -343,7 +343,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static $abstractvectortype$ fromArray($type$[] a, int i, VectorMask<$Wideboxtype$> m) {
+    static $abstractvectortype$ fromArray($type$[] a, int i, VectorMask<$Boxtype$> m) {
         return $abstractvectortype$.fromArray(SPECIES, a, i, m);
     }
 
@@ -353,7 +353,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static void intoArray($abstractvectortype$ v, $type$[] a, int i, VectorMask<$Wideboxtype$> m) {
+    static void intoArray($abstractvectortype$ v, $type$[] a, int i, VectorMask<$Boxtype$> m) {
         v.intoArray(a, i, m);
     }
 
@@ -364,7 +364,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static $abstractvectortype$ fromMemorySegment(MemorySegment a, int i, ByteOrder bo, VectorMask<$Wideboxtype$> m) {
+    static $abstractvectortype$ fromMemorySegment(MemorySegment a, int i, ByteOrder bo, VectorMask<$Boxtype$> m) {
         return $abstractvectortype$.fromMemorySegment(SPECIES, a, i, bo, m);
     }
 
@@ -374,7 +374,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static void intoMemorySegment($abstractvectortype$ v, MemorySegment a, int i, ByteOrder bo, VectorMask<$Wideboxtype$> m) {
+    static void intoMemorySegment($abstractvectortype$ v, MemorySegment a, int i, ByteOrder bo, VectorMask<$Boxtype$> m) {
         v.intoMemorySegment(a, i, bo, m);
     }
 
@@ -452,7 +452,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
         $type$[] a = fa.apply(SPECIES.length());
         $type$[] r = new $type$[a.length];
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -479,7 +479,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
         $type$[] a = fa.apply(SPECIES.length());
         $type$[] r = new $type$[a.length];
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -507,7 +507,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
         $type$[] a = fa.apply(SPECIES.length());
         $type$[] r = new $type$[a.length];
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -540,7 +540,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < mask.length; i += SPECIES.length()) {
-                VectorMask<$Wideboxtype$> vmask = VectorMask.fromArray(SPECIES, mask, i);
+                VectorMask<$Boxtype$> vmask = VectorMask.fromArray(SPECIES, mask, i);
                 vmask.intoArray(r, i);
             }
         }
@@ -570,8 +570,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Wideboxtype$.SIZE));
-        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Wideboxtype$.SIZE);
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -599,8 +599,8 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Wideboxtype$.SIZE));
-        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Wideboxtype$.SIZE);
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -636,7 +636,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
         MemorySegment a = toSegment(_a, fb);
         MemorySegment r = fb.apply((int) a.byteSize());
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -663,10 +663,10 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Wideboxtype$.SIZE));
-        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Wideboxtype$.SIZE);
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -694,10 +694,10 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "$type$ByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<$type$[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Wideboxtype$.SIZE));
-        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Wideboxtype$.SIZE);
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, $Boxtype$.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), $Boxtype$.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -745,7 +745,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
                 () -> SPECIES.zero().intoMemorySegment(a, 0, bo, SPECIES.maskAll(false))
         );
 
-        VectorMask<$Wideboxtype$> m = SPECIES.shuffleFromOp(i -> i % 2 == 0 ? 1 : -1)
+        VectorMask<$Boxtype$> m = SPECIES.shuffleFromOp(i -> i % 2 == 0 ? 1 : -1)
                 .laneIsValid();
         Assert.assertThrows(
                 UnsupportedOperationException.class,
@@ -761,7 +761,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
-                VectorMask<$Wideboxtype$> vmask = SPECIES.loadMask(a, i);
+                VectorMask<$Boxtype$> vmask = SPECIES.loadMask(a, i);
                 vmask.intoArray(r, i);
             }
         }
@@ -776,7 +776,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
        for (int ic = 0; ic < INVOC_COUNT; ic++) {
            for (int i = 0; i < a.length; i += SPECIES.length()) {
-               VectorShuffle<$Wideboxtype$> shuffle = VectorShuffle.fromArray(SPECIES, a, i);
+               VectorShuffle<$Boxtype$> shuffle = VectorShuffle.fromArray(SPECIES, a, i);
                shuffle.intoArray(r, i);
            }
        }
@@ -794,7 +794,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
        for (int ic = 0; ic < INVOC_COUNT; ic++) {
            for (int i = 0; i < a.length; i += SPECIES.length()) {
-               VectorShuffle<$Wideboxtype$> shuffle = shuffleFromArray(a, i);
+               VectorShuffle<$Boxtype$> shuffle = shuffleFromArray(a, i);
                shuffleIntoArray(shuffle, r, i);
            }
        }
@@ -802,7 +802,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
        int index = fi.apply(a.length);
        boolean shouldFail = isIndexOutOfBounds(SPECIES.length(), index, a.length);
        try {
-           VectorShuffle<$Wideboxtype$> shuffle = shuffleFromArray(a, index);
+           VectorShuffle<$Boxtype$> shuffle = shuffleFromArray(a, index);
            shuffleIntoArray(shuffle, r, index);
            if (shouldFail) {
                Assert.fail("Failed to throw IndexOutOfBoundsException");
@@ -821,7 +821,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
        for (int ic = 0; ic < INVOC_COUNT; ic++) {
            for (int i = 0; i < a.length; i += SPECIES.length()) {
-               VectorShuffle<$Wideboxtype$> shuffle = shuffleFromArray(a, i);
+               VectorShuffle<$Boxtype$> shuffle = shuffleFromArray(a, i);
                shuffle.intoArray(r, i);
            }
        }
@@ -852,7 +852,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
        for (int ic = 0; ic < INVOC_COUNT; ic++) {
            for (int i = 0; i < l; i += s) {
-               VectorShuffle<$Wideboxtype$> shuffle = VectorShuffle.fromMemorySegment(SPECIES, a, i, bo);
+               VectorShuffle<$Boxtype$> shuffle = VectorShuffle.fromMemorySegment(SPECIES, a, i, bo);
                shuffle.intoMemorySegment(r, i, bo);
            }
        }
@@ -874,7 +874,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
        for (int ic = 0; ic < INVOC_COUNT; ic++) {
            for (int i = 0; i < l; i += s) {
-               VectorShuffle<$Wideboxtype$> shuffle = shuffleFromMemorySegment(a, i, ByteOrder.nativeOrder());
+               VectorShuffle<$Boxtype$> shuffle = shuffleFromMemorySegment(a, i, ByteOrder.nativeOrder());
                shuffle.intoMemorySegment(r, i, ByteOrder.nativeOrder());
            }
        }
@@ -903,7 +903,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 
        for (int ic = 0; ic < INVOC_COUNT; ic++) {
            for (int i = 0; i < l; i += s) {
-               VectorShuffle<$Wideboxtype$> shuffle =
+               VectorShuffle<$Boxtype$> shuffle =
                        VectorShuffle.fromMemorySegment(SPECIES, a, i, ByteOrder.nativeOrder());
                shuffleIntoMemorySegment(shuffle, r, i, ByteOrder.nativeOrder());
            }
@@ -912,7 +912,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
        int index = fi.apply((int) a.byteSize());
        boolean shouldFail = isIndexOutOfBounds(s, index, (int) a.byteSize());
        try {
-           VectorShuffle<$Wideboxtype$> shuffle =
+           VectorShuffle<$Boxtype$> shuffle =
                    VectorShuffle.fromMemorySegment(SPECIES, a, 0, ByteOrder.nativeOrder());
            shuffleIntoMemorySegment(shuffle, r, index, ByteOrder.nativeOrder());
            if (shouldFail) {
@@ -1004,7 +1004,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static $abstractvectortype$ fromCharArray(char[] a, int i, VectorMask<$Wideboxtype$> m) {
+    static $abstractvectortype$ fromCharArray(char[] a, int i, VectorMask<$Boxtype$> m) {
         return $abstractvectortype$.fromCharArray(SPECIES, a, i, m);
     }
 
@@ -1014,7 +1014,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static void intoCharArray($abstractvectortype$ v, char[] a, int i, VectorMask<$Wideboxtype$> m) {
+    static void intoCharArray($abstractvectortype$ v, char[] a, int i, VectorMask<$Boxtype$> m) {
         v.intoCharArray(a, i, m);
     }
 
@@ -1091,7 +1091,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
         char[] a = fa.apply(SPECIES.length());
         char[] r = new char[a.length];
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -1118,7 +1118,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
         char[] a = fa.apply(SPECIES.length());
         char[] r = new char[a.length];
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
@@ -1146,7 +1146,7 @@ public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
         char[] a = fa.apply(SPECIES.length());
         char[] r = new char[a.length];
         boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<$Wideboxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
+        VectorMask<$Boxtype$> vmask = VectorMask.fromValues(SPECIES, mask);
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {

@@ -190,45 +190,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    interface FSnOp {
-        short apply(int i, short a);
-    }
-
-    /*package-private*/
-    abstract
-    ShortVector sOp(FSnOp f);
-    @ForceInline
-    final
-    ShortVector sOpTemplate(FSnOp f) {
-        short[] vec = vec();
-        short[] res = new short[length()];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = f.apply(i, vec[i]);
-        }
-        return vectorFactory(res);
-    }
-
-    /*package-private*/
-    abstract
-    ShortVector sOp(VectorMask<Short> m,
-                             FSnOp f);
-    @ForceInline
-    final
-    ShortVector sOpTemplate(VectorMask<Short> m,
-                                     FSnOp f) {
-        if (m == null) {
-            return sOpTemplate(f);
-        }
-        short[] vec = vec();
-        short[] res = new short[length()];
-        boolean[] mbits = ((AbstractMask<Short>)m).getBits();
-        for (int i = 0; i < res.length; i++) {
-            res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
-        }
-        return vectorFactory(res);
-    }
-
     // Binary operator
 
     /*package-private*/
@@ -2478,7 +2439,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.sOp((i, a) -> {
+            (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
@@ -2505,7 +2466,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.sOp((i, a) -> {
+                   (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
@@ -2531,7 +2492,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
-                (v0, s_, m_) -> v0.sOp((i, a) -> {
+                (v0, s_, m_) -> v0.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
@@ -2539,7 +2500,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
-                (v1, s_, m_) -> v1.sOp((i, a) -> {
+                (v1, s_, m_) -> v1.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
@@ -2931,7 +2892,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
             default: return null;
         }
     }
-
 
     private static final short MIN_OR_INF = Short.MIN_VALUE;
     private static final short MAX_OR_INF = Short.MAX_VALUE;

@@ -203,19 +203,6 @@ final class IntVector512 extends IntVector {
             super.uOpTemplate((IntMask512)m, f);  // specialize
     }
 
-    @ForceInline
-    final @Override
-    IntVector512 sOp(FSnOp f) {
-        return (IntVector512) super.sOpTemplate(f);  // specialize
-    }
-
-    @ForceInline
-    final @Override
-    IntVector512 sOp(VectorMask<Integer> m, FSnOp f) {
-        return (IntVector512)
-            super.sOpTemplate((IntMask512)m, f);  // specialize
-    }
-
     // Binary operator
 
     @ForceInline
@@ -734,8 +721,7 @@ final class IntVector512 extends IntVector {
         public IntMask512 compress() {
             return (IntMask512)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 IntVector512.class, IntMask512.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                m1.trueCount()));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
 

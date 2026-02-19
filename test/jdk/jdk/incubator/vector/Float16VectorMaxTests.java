@@ -404,17 +404,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(short[] r, short[] a, short[] order, int vector_len) {
         int i = 0, j = 0;
-        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    idx = shortBitsToFloat16(order[i+j]).intValue();
-                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
-                    assertEquals(r[i+j], a[i+wrapped_index]);
+                    assertEquals(r[i+j], a[i+shortBitsToFloat16(order[i+j]).intValue()]);
                 }
             }
         } catch (AssertionError e) {
-            assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
+            int idx = i + j;
+            assertEquals(r[i+j], a[i+shortBitsToFloat16(order[i+j]).intValue()], "at index #" + idx + ", input = " + a[i+shortBitsToFloat16(order[i+j]).intValue()]);
         }
     }
 
@@ -440,23 +438,21 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(short[] r, short[] a, short[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
-        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    idx = shortBitsToFloat16(order[i+j]).intValue();
-                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         assertEquals(r[i+j], a[i+wrapped_index]);
+                         assertEquals(r[i+j], a[i+shortBitsToFloat16(order[i+j]).intValue()]);
                     else
                          assertEquals(r[i+j], (short)0);
                 }
             }
         } catch (AssertionError e) {
+            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
+                assertEquals(r[i+j], a[i+shortBitsToFloat16(order[i+j]).intValue()], "at index #" + idx + ", input = " + a[i+shortBitsToFloat16(order[i+j]).intValue()] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                assertEquals(r[i+j], (short)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
+                assertEquals(r[i+j], (short)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -944,7 +940,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
                                     isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue(Float16.compare(shortBitsToFloat16(r[i]), shortBitsToFloat16(mathf.apply(a[i], b[i]))) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
+            Assert.assertTrue(Float16.compare(shortBitsToFloat16(r[i]), shortBitsToFloat16(mathf.apply(a[i], b[i]))) == 0, "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
             Assert.assertTrue(isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected (within 1 ulp) = " + strictmathf.apply(a[i], b[i]));
         }
     }

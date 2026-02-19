@@ -215,7 +215,6 @@ final class Float16Vector64 extends Float16Vector {
         return (Float16Vector64)
             super.sOpTemplate((Float16Mask64)m, f);  // specialize
     }
-
     // Binary operator
 
     @ForceInline
@@ -699,8 +698,7 @@ final class Float16Vector64 extends Float16Vector {
         public Float16Mask64 compress() {
             return (Float16Mask64)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 Float16Vector64.class, Float16Mask64.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount()))));
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount()))));
         }
 
 
