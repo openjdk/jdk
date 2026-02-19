@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,15 @@ public class FpMinMaxIntrinsics {
     private Random r = new Random();
 
     private static int stride = 1;
-    private static float acc;
+    private static float accf;
+    private static double accd;
 
     @Setup
     public void init() {
         c1 = s1 = step();
         c2 = COUNT - (s2 = step());
 
-        for (int i=0; i<COUNT; i++) {
+        for (int i = 0; i < COUNT; i++) {
             floats[i] = r.nextFloat();
             doubles[i] = r.nextDouble();
         }
@@ -64,25 +65,25 @@ public class FpMinMaxIntrinsics {
 
     @Benchmark
     public void dMax(Blackhole bh) {
-        for (int i=0; i<COUNT; i++)
+        for (int i = 0; i < COUNT; i++)
             bh.consume(dMaxBench());
     }
 
     @Benchmark
     public void dMin(Blackhole bh) {
-        for (int i=0; i<COUNT; i++)
+        for (int i = 0; i < COUNT; i++)
             bh.consume(dMinBench());
     }
 
     @Benchmark
     public void fMax(Blackhole bh) {
-        for (int i=0; i<COUNT; i++)
+        for (int i = 0; i < COUNT; i++)
             bh.consume(fMaxBench());
     }
 
     @Benchmark
     public void fMin(Blackhole bh) {
-        for (int i=0; i<COUNT; i++)
+        for (int i = 0; i < COUNT; i++)
             bh.consume(fMinBench());
     }
 
@@ -115,7 +116,7 @@ public class FpMinMaxIntrinsics {
     public float fMinReduce() {
         float result = Float.MAX_VALUE;
 
-        for (int i=0; i<COUNT; i++)
+        for (int i = 0; i < COUNT; i++)
             result = Math.min(result, floats[i]);
 
         return result;
@@ -125,7 +126,7 @@ public class FpMinMaxIntrinsics {
     public double dMinReduce() {
         double result = Double.MAX_VALUE;
 
-        for (int i=0; i<COUNT; i++)
+        for (int i = 0; i < COUNT; i++)
             result = Math.min(result, doubles[i]);
 
         return result;
@@ -142,6 +143,16 @@ public class FpMinMaxIntrinsics {
     }
 
     @Benchmark
+    public double dMinReducePartiallyUnrolled() {
+        double result = Double.MAX_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.min(result, doubles[2*i]);
+            result = Math.min(result, doubles[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
     public float fMinReduceNonCounted() {
         float result = Float.MAX_VALUE;
         for (int i = 0; i < COUNT; i += stride)
@@ -150,11 +161,27 @@ public class FpMinMaxIntrinsics {
     }
 
     @Benchmark
-    public float fMinReduceGlobalAccumulator() {
-        acc = Float.MAX_VALUE;
+    public double dMinReduceNonCounted() {
+        double result = Double.MAX_VALUE;
         for (int i = 0; i < COUNT; i += stride)
-            acc = Math.min(acc, floats[i]);
-        return acc;
+            result = Math.min(result, doubles[i]);
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReduceGlobalAccumulator() {
+        accf = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            accf = Math.min(accf, floats[i]);
+        return accf;
+    }
+
+    @Benchmark
+    public double dMinReduceGlobalAccumulator() {
+        accd = Double.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            accd = Math.min(accd, doubles[i]);
+        return accd;
     }
 
     @Benchmark
@@ -170,4 +197,16 @@ public class FpMinMaxIntrinsics {
         return result + count;
     }
 
+    @Benchmark
+    public double dMinReduceInOuterLoop() {
+        double result = Double.MAX_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.min(result, doubles[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
 }
