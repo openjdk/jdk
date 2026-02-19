@@ -178,7 +178,11 @@ constexpr auto sizeof_auto_impl() {
   return static_cast<unsigned_auto>(N);
 }
 
-// Returns the size (in bytes) of the expression as an unsigned type that is as small as possible.
+// Yields the size (in bytes) of the operand, using the smallest
+// unsigned type that can represent the size value. The operand may be
+// an expression, which is an unevaluated operand, or it may be a
+// type. All of the restrictions for sizeof operands apply to the
+// operand. The result is a constant expression.
 //
 // Example of correct usage of sizeof/sizeof_auto:
 // size_t size = std::numeric_limits<uint32_t>::max() * sizeof(uint16_t); // this will wrap using sizeof_auto, use sizeof to ensure computation using size_t
