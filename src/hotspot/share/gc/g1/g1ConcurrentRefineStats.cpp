@@ -23,7 +23,6 @@
  */
 
 #include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/timer.hpp"
 
 G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
