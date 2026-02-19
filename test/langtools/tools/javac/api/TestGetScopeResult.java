@@ -1049,7 +1049,6 @@ public class TestGetScopeResult {
                             new TreePathScanner<Void, Void>() {
                                 @Override
                                 public Void visitIdentifier(IdentifierTree node, Void p) {
-                                    //                                if (getCurrentPath().getParentPath().getLeaf().getKind() == Kind.NEW_CLASS) {
                                     if (node.getName().contentEquals("Test")) {
                                         Scope scope = trees.getScope(getCurrentPath());
                                         actual.add(dumpScope(scope));
