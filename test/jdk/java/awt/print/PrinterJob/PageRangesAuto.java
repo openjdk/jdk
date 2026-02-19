@@ -96,7 +96,7 @@ public class PageRangesAuto implements Pageable, Printable {
                           ? baseName + "-all.pdf"
                           : String.format("%s-%d-%d.pdf",
                                           baseName,
-                                          pageRange.getMembers()[0][1],
+                                          pageRange.getMembers()[0][0],
                                           pageRange.getMembers()[0][1]);
 
         PrintRequestAttributeSet set = new HashPrintRequestAttributeSet();
