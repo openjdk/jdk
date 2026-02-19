@@ -2877,7 +2877,7 @@ public class FdlibmTranslit {
             hx = __HI(x);       /* high word */
             lx = __LO(x);       /* low word */
             ix = hx&0x7fffffff;
-            if ((ix|((lx|(-lx))>>31))>0x3ff00000) /* |x|>1 */
+            if ((ix|((lx|(-lx))>>>31))>0x3ff00000) /* |x|>1 */
                 return (x-x)/(x-x);
             if(ix==0x3ff00000)
                 return x/zero;

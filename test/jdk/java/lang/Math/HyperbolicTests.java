@@ -2206,6 +2206,8 @@ public class HyperbolicTests {
                 {-0.0,                      -0.0},
                 {1.0,                       Double.POSITIVE_INFINITY},
                 {-1.0,                      Double.NEGATIVE_INFINITY},
+                {2.0,                       NaNd},
+                {-2.0,                      NaNd},
         };
 
         for(int i = 0; i < specialTestCases.length; i++) {

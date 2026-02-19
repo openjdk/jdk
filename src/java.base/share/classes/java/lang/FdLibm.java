@@ -3632,11 +3632,11 @@ final class FdLibm {
         static double compute(double x) {
             double t;
             int hx,ix;
-            int lx;                                              //unsigned
+            int lx;                                              // unsigned
             hx = __HI(x);                                        // high word
             lx = __LO(x);                                        // low word
             ix = hx & 0x7fff_ffff;
-            if ((ix | ((lx | (-lx)) >> 31)) > 0x3ff0_0000) {     // |x| > 1
+            if ((ix | ((lx | (-lx)) >>> 31)) > 0x3ff0_0000) {    // |x| > 1
                 return (x - x) / (x - x);
             }
             if (ix == 0x3ff0_0000) {
@@ -3648,7 +3648,7 @@ final class FdLibm {
             x = __HI(x, ix);                                     // x <- |x|
             if (ix < 0x3fe0_0000) {                              // x < 0.5
                 t = x + x;
-                t = 0.5 * Log1p.compute(t + t*x/(1.0 - x));
+                t = 0.5 * Log1p.compute(t + t * x / (1.0 - x));
             } else {
                 t = 0.5 * Log1p.compute((x + x) / (1.0 - x));
             }
