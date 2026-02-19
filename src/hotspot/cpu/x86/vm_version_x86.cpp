@@ -1127,6 +1127,10 @@ void VM_Version::get_processor_features() {
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
   int features_offset = (int)ss.size();
+  if (supports_fast_bmi2()) {
+    _features.set_feature(CPU_FAST_BMI2);
+  }
+
   insert_features_names(_features, ss);
 
   _cpu_info_string = ss.as_string(true);
