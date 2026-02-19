@@ -261,9 +261,9 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   }
 }
 
-// Scan the memory graph breadth first from a starting node up to an arraycopy. Given an elemnt from the destination array,
+// Scan the memory graph breadth first from a starting the node will up to an arraycopy. Given an element from the destination array,
 // check whether the element from the source array that was copied into the given destination element is modified after the
-// arraycopy. This assumes that the destination array is scalar replacable but makes no assumption for the source.
+// arraycopy. This assumes that the destination array is scalar replaceable but makes no assumption for the source.
 bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, Node* start, const intptr_t src_offset, PhaseGVN* phase) {
   assert(ac != nullptr && start != nullptr, "sanity");
   if (start == ac) {
@@ -289,7 +289,7 @@ bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, Node* start, con
       // Step through projections.
       to_visit.push(mem->in(0));
     } else if (mem->is_MemBar()) {
-      // Step through membars
+      // Step through membars.
       to_visit.push(mem->in(2));
     } else if (const MergeMemNode* mm = mem->isa_MergeMem(); mm != nullptr) {
       // Step through mergemems at the alias index of interest.
@@ -616,12 +616,11 @@ Node *PhaseMacroExpand::value_from_mem(Node *origin, Node* ctl, BasicType ft, co
     } else if (mem->is_ArrayCopy()) {
       // Rematerialize the scalar-replaced array. If possible, pin the loads to the uncommon path of the uncommon trap.
       // Check for each element of the source array, whether it was modified. If not, pin both memory and control to
-      // the uncommon path. Otherwise, use the contol and memory state of the arraycopy. Control and memory state must
+      // the uncommon path. Otherwise, use the control and memory state of the arraycopy. Control and memory state must
       // come from the same source to prevent anti-dependence problems in the backend.
       ArrayCopyNode* ac = mem->as_ArrayCopy();
       Node* ac_ctl = ac->control();
       Node* ac_mem = ac->memory();
-      int ac_src_alias_idx = C->get_alias_index(ac->in(ArrayCopyNode::Src)->get_ptr_type());
       if (ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj()) {
         // pin the loads in the uncommon trap path
         ac_ctl = ctl;
@@ -630,7 +629,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *origin, Node* ctl, BasicType ft, co
       return make_arraycopy_load(ac, origin, offset, ac_ctl, ac_mem, ft, ftype, alloc);
     }
   }
-  // Something go wrong.
+  // Something went wrong.
   return nullptr;
 }
 
