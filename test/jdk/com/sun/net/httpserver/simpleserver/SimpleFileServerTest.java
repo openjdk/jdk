@@ -59,7 +59,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.testng.Assert.assertEquals;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
