@@ -136,12 +136,18 @@ public class VectorAlgorithmsImpl {
 
             // byte: just random data.
             aB = new byte[size];
-            strB = new byte[size];
             rB1 = new byte[size];
             rB2 = new byte[size];
             rB3 = new byte[size];
             random.nextBytes(aB);
-            random.nextBytes(strB); // TODO: special data!
+
+            // byte string: for lowerCase benchmark.
+            strB = new byte[size];
+            for (int i = 0; i < size; i++) {
+                strB[i] = (random.nextFloat() < branchProbability)
+                          ? (byte)(random.nextInt(16) + 'A')
+                          : (byte)(random.nextInt(16) + 'a');
+            }
         }
     }
 
