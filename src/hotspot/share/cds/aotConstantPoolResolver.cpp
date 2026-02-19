@@ -346,7 +346,15 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     break;
 
   case Bytecodes::_invokehandle:
-    InterpreterRuntime::cds_resolve_invokehandle(raw_index, cp, CHECK);
+    {
+      ResolvedMethodEntry* method_entry = cp->resolved_method_entry_at(raw_index);
+      int cp_index = method_entry->constant_pool_index();
+      Symbol* sig = cp->uncached_signature_ref_at(cp_index);
+      Klass* k;
+      if (check_methodtype_signature(cp(), sig, &k, true)) {
+        InterpreterRuntime::cds_resolve_invokehandle(raw_index, cp, CHECK);
+      }
+    }
     break;
 
   default:
@@ -400,7 +408,7 @@ void AOTConstantPoolResolver::preresolve_indy_cp_entries(JavaThread* current, In
 // Check the MethodType signatures used by parameters to the indy BSMs. Make sure we don't
 // use types that have been excluded, or else we might end up creating MethodTypes that cannot be stored
 // in the AOT cache.
-bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret) {
+bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret, bool is_invokehandle) {
   ResourceMark rm;
   for (SignatureStream ss(sig); !ss.is_done(); ss.next()) {
     if (ss.is_reference()) {
@@ -413,7 +421,9 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
       if (SystemDictionaryShared::should_be_excluded(k)) {
         if (log_is_enabled(Warning, aot, resolve)) {
           ResourceMark rm;
-          log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
+          log_warning(aot, resolve)("Cannot aot-resolve %s because %s is excluded",
+                                    is_invokehandle ? "invokehandle" : "Lambda proxy",
+                                    k->external_name());
         }
         return false;
       }

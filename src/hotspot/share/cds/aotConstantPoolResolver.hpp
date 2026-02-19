@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,10 @@ class AOTConstantPoolResolver :  AllStatic {
   static void maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecodes::Code bc, int raw_index,
                                     GrowableArray<bool>* resolve_fmi_list, TRAPS);
 
-  static bool check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret = nullptr);
+public:
+  static bool check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret = nullptr, bool is_invokehandle = false);
+
+private:
   static bool check_lambda_metafactory_signature(ConstantPool* cp, Symbol* sig);
   static bool check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
   static bool check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);

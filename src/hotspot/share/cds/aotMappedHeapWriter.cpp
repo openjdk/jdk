@@ -896,8 +896,14 @@ void AOTMappedHeapWriter::compute_ptrmap(AOTMappedHeapInfo* heap_info) {
       native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
     }
 
-    guarantee(ArchiveBuilder::current()->has_been_archived((address)native_ptr),
-              "Metadata %p should have been archived", native_ptr);
+    if (!ArchiveBuilder::current()->has_been_archived((address)native_ptr)) {
+      ResourceMark rm;
+      LogStreamHandle(Error, aot) log;
+      log.print("Marking native pointer for oop %p (type = %s, offset = %d)",
+                cast_from_oop<void*>(src_obj), src_obj->klass()->external_name(), field_offset);
+      src_obj->print_on(&log);
+      fatal("Metadata %p should have been archived", native_ptr);
+    }
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
