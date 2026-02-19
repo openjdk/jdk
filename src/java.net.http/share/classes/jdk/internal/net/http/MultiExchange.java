@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,6 +384,7 @@ class MultiExchange<T> implements Cancelable {
     private CompletableFuture<HttpResponse<T>> handleNoBody(Response r, Exchange<T> exch) {
         BodySubscriber<T> bs = responseHandler.apply(new ResponseInfoImpl(r.statusCode(),
                 r.headers(), r.version()));
+        Objects.requireNonNull(bs, "BodyHandler returned a null BodySubscriber");
         bs.onSubscribe(new NullSubscription());
         bs.onComplete();
         CompletionStage<T> cs = ResponseSubscribers.getBodyAsync(executor, bs);
