@@ -519,14 +519,14 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
 void ShenandoahReferenceProcessor::work() {
   // Process discovered references
   uint max_workers = ShenandoahHeap::heap()->max_workers();
-  uint worker_id = _iterate_discovered_list_id.add_then_fetch(1U, memory_order_relaxed) - 1;
+  uint worker_id = _iterate_discovered_list_id.fetch_then_add(1U, memory_order_relaxed);
   while (worker_id < max_workers) {
     if (UseCompressedOops) {
       process_references<narrowOop>(_ref_proc_thread_locals[worker_id], worker_id);
     } else {
       process_references<oop>(_ref_proc_thread_locals[worker_id], worker_id);
     }
-    worker_id = _iterate_discovered_list_id.add_then_fetch(1U, memory_order_relaxed) - 1;
+    worker_id = _iterate_discovered_list_id.fetch_then_add(1U, memory_order_relaxed);
   }
 }
 
