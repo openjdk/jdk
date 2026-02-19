@@ -3628,37 +3628,31 @@ final class FdLibm {
      *      atanh(&plusmn;1) is &plusmn;&infin;
      */
     static final class Atanh {
-        private static final double zero = 0.0;
-        private static final double one = 1.0;
-        private static final double huge = 1.0e300;
 
         static double compute(double x) {
             double t;
             int hx,ix;
-            /*unsigned*/ int lx;
-            hx = __HI(x);                                        /* high word */
-            lx = __LO(x);                                        /* low word */
+            int lx;                                              //unsigned
+            hx = __HI(x);                                        // high word
+            lx = __LO(x);                                        // low word
             ix = hx & 0x7fff_ffff;
-            if ((ix | ((lx | (-lx)) >> 31)) > 0x3ff0_0000) {     /* |x| > 1 */
+            if ((ix | ((lx | (-lx)) >> 31)) > 0x3ff0_0000) {     // |x| > 1
                 return (x - x) / (x - x);
             }
             if (ix == 0x3ff0_0000) {
-                return x / zero;
+                return x / 0.0;
             }
-            if (ix < 0x3e30_0000 && (huge + x) > zero) {
-                return x;                                        /* x<2**-28 */
+            if (ix < 0x3e30_0000 && (HUGE + x) > 0.0) {
+                return x;                                        // x<2**-28
             }
-            x = __HI(x, ix);                                     /* x <- |x| */
-            if (ix < 0x3fe0_0000) {                              /* x < 0.5 */
+            x = __HI(x, ix);                                     // x <- |x|
+            if (ix < 0x3fe0_0000) {                              // x < 0.5
                 t = x + x;
-                t = 0.5 * Log1p.compute(t + t*x/(one - x));
-            } else
-                t = 0.5 * Log1p.compute((x + x)/(one - x));
-            if (hx >= 0) {
-                return t;
+                t = 0.5 * Log1p.compute(t + t*x/(1.0 - x));
             } else {
-                return -t;
+                t = 0.5 * Log1p.compute((x + x) / (1.0 - x));
             }
+            return hx >= 0 ? t : -t;
         }
     }
 }
