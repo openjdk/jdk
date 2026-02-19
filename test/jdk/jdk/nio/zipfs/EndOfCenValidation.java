@@ -25,7 +25,7 @@
  * @modules java.base/jdk.internal.util
  * @summary Verify that ZipFileSystem rejects files with CEN sizes exceeding the implementation limit
  * @library /test/lib
- * * @build jdk.test.lib.util.ZipUtils
+ * @build jdk.test.lib.util.ZipUtils
  * @run junit/othervm EndOfCenValidation
  */
 
