@@ -3560,13 +3560,8 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-    if (!is_StoreVector()) {
-      result = mem;
-    } else if (Opcode() == Op_StoreVector && val->Opcode() == Op_LoadVector &&
-               as_StoreVector()->vect_type() == val->as_LoadVector()->vect_type()) {
-      // Ensure vector type is the same. For a masked access or a gather/scatter, we need to check
-      // for the equivalence of the mask or the indices vector, respectively. We give up on those
-      // cases for now.
+    // Ensure vector type is the same
+    if (!is_StoreVector() || (mem->is_LoadVector() && as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type())) {
       result = mem;
     }
   }
