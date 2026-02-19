@@ -45,6 +45,8 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -535,6 +537,35 @@ public class Navigation {
                 .add(inputText)
                 .add(inputReset);
         target.add(searchDiv);
+        if (documentedPage != PageMode.SEARCH) {
+            target.add(HtmlTree.DIV(HtmlId.of("result-section"))
+                    .add(HtmlTree.DIV(Text.of("Search in "))
+                            .add(createModuleSelector())
+                            .add(HtmlTree.SPAN(contents.getContent("doclet.search.loading"))
+                                    .setId(HtmlId.of("page-search-notify"))))
+                    .add(HtmlTree.DIV(HtmlId.of("result-container"))
+                            .addUnchecked(Text.EMPTY)));
+        }
+    }
+
+    private Content createModuleSelector() {
+        if (!configuration.showModules) {
+            return Text.EMPTY;
+        }
+
+        var select = HtmlTree.of(HtmlTag.SELECT)
+                .setId(HtmlId.of("search-modules"))
+                .put(HtmlAttr.ARIA_LABEL, configuration.getDocResources().getText("doclet.selectModule"))
+                .add(HtmlTree.of(HtmlTag.OPTION)
+                        .put(HtmlAttr.VALUE, "")
+                        .add(contents.getContent("doclet.search.all_modules")));
+
+        for (ModuleElement module : configuration.modules) {
+            select.add(HtmlTree.of(HtmlTag.OPTION)
+                    .put(HtmlAttr.VALUE, module.getQualifiedName().toString())
+                    .add(Text.of(module.getQualifiedName().toString())));
+        }
+        return select;
     }
 
     /**

@@ -7,9 +7,9 @@
 "use strict";
 const messages = {
     enterTerm: "##REPLACE:doclet.search.enter_search_term##",
-    noResult: "##REPLACE:doclet.search.no_results##",
-    oneResult: "##REPLACE:doclet.search.one_result##",
-    manyResults: "##REPLACE:doclet.search.many_results##",
+    noResult: "yielded no results.", // "##REPLACE:doclet.search.no_results##",
+    oneResult: "yielded one result:", // "##REPLACE:doclet.search.one_result##",
+    manyResults: "yielded {0} results:", // ""##REPLACE:doclet.search.many_results##",
     loading: "##REPLACE:doclet.search.loading##",
     searching: "##REPLACE:doclet.search.searching##",
     redirecting: "##REPLACE:doclet.search.redirecting##",
@@ -502,54 +502,272 @@ function getEnclosingTypeDesc(item) {
     }
     return item.typeDesc || "";
 }
-$(function() {
-    var search = $("#search-input");
+
+$(window).on("load", function() {
+    var input = $("#search-input, #page-search-input");
     var reset = $("#reset-search");
-    search.catcomplete({
-        minLength: 1,
-        delay: 200,
-        source: function(request, response) {
-            if (request.term.trim() === "") {
-                return this.close();
-            }
-            // Prevent selection of item at current mouse position
-            this.menu.previousFilter = "_";
-            this.menu.filterTimer = this.menu._delay(function() {
-                delete this.previousFilter;
-            }, 500);
-            return doSearch(request, response);
-        },
-        response: function(event, ui) {
-            if (!ui.content.length) {
-                ui.content.push({ l: messages.noResult });
-            }
-        },
-        autoFocus: true,
-        focus: function(event, ui) {
-            return false;
-        },
-        position: {
-            collision: "flip"
-        },
-        select: function(event, ui) {
-            for (var e = event.originalEvent; e != null; e = e.originalEvent) {
-                if (e.type === "click") {
-                    return;
-                }
-            }
-            if (ui.item.indexItem) {
-                var url = getURL(ui.item.indexItem, ui.item.category);
-                window.location.href = pathtoroot + url;
-                search.blur();
+    var modules = $("#search-modules");
+    var notify = $("#page-search-notify");
+    var resultSection = $("div#result-section");
+    var resultContainer = $("div#result-container");
+    var overlay;
+    var selectedLink;
+    var searchTerm = "";
+    var activeTab = "";
+    var fixedTab = false;
+    var visibleTabs = [];
+    var feelingLucky = false;
+    const MIN_TABBED_RESULTS = 10;
+    function renderResults(result) {
+        if (!result.length) {
+            notify.html(messages.noResult);
+        } else if (result.length === 1) {
+            notify.html(messages.oneResult);
+        } else {
+            notify.html(messages.manyResults.replace("{0}", result.length));
+        }
+        resultContainer.empty();
+        var r = {
+            "types": [],
+            "members": [],
+            "packages": [],
+            "modules": [],
+            "searchTags": []
+        };
+        for (var i in result) {
+            var item = result[i];
+            var arr = r[item.category];
+            arr.push(item);
+        }
+        if (!activeTab || r[activeTab].length === 0) {
+            activeTab = Object.keys(r).find(category => r[category].length > 0);
+        }
+        if (feelingLucky && activeTab) {
+            notify.html(messages.redirecting)
+            var firstItem = r[activeTab][0];
+            window.location = pathtoroot + getURL(firstItem.indexItem, firstItem.category);
+            input.val('');
+            return;
+        }
+        if (searchTerm.endsWith(".") && result.length > MIN_TABBED_RESULTS) {
+            if (activeTab === "types" && r["members"].length > r["types"].length) {
+                activeTab = "members";
+            } else if (activeTab === "packages" && r["types"].length > r["packages"].length) {
+                activeTab = "types";
             }
         }
+        var categoryCount = Object.keys(r).reduce(function(prev, curr) {
+            return prev + (r[curr].length > 0 ? 1 : 0);
+        }, 0);
+        visibleTabs = [];
+        var tabContainer = $("<div class='table-tabs'></div>").appendTo(resultContainer);
+        for (var key in r) {
+            var id = "#result-tab-" + key.replace("searchTags", "search_tags");
+            if (r[key].length) {
+                var count = r[key].length >= 1000 ? "1000+" : r[key].length;
+                if (result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
+                    let button = $("<button/>")
+                        .attr("id", "result-tab-" + key)
+                        .attr("tabIndex", "-1")
+                        .addClass("page-search-header")
+                        .append($("<span/>")
+                            .html(categories[key])
+                            .append($("<span/>")
+                                .attr("style", "font-weight:normal;")
+                                .html(" (" + count + ")")))
+                        .on("click", null, key, function(e) {
+                            fixedTab = true;
+                            renderResult(e.data, $(this));
+                        }).appendTo(tabContainer);
+                    visibleTabs.push(key);
+                } else {
+                    $("<span class='page-search-header'>" + categories[key]
+                        + "<span style='font-weight: normal'> (" + count + ")</span></span>").appendTo(tabContainer);
+                    renderTable(key, r[key]).appendTo(resultContainer);
+                    tabContainer = $("<div class='table-tabs'></div>").appendTo(resultContainer);
+                }
+            }
+        }
+        if (activeTab && result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
+            $("button#result-tab-" + activeTab).addClass("active-table-tab").attr("tabIndex", "0");
+            renderTable(activeTab, r[activeTab]).appendTo(resultContainer);
+        }
+        if (!overlay || !overlay.is(":visible")) {
+            overlay = $("<div class='overlay'></div>");
+            $("header").append(overlay);
+            overlay.click(closeResults);
+            overlay.show();
+            document.body.style.setProperty("overflow-y", "hidden");
+        }
+        resultSection.show();
+        function renderResult(category, button) {
+            activeTab = category;
+            resultContainer.find("div.result-table").remove();
+            renderTable(activeTab, r[activeTab]).appendTo(resultContainer);
+            button.siblings().removeClass("active-table-tab").attr("tabIndex", "-1");
+            button.addClass("active-table-tab").attr("tabIndex", "0");
+        }
+    }
+    function selectTab(category) {
+        $("button#result-tab-" + category).focus().trigger("click");
+        setSelected(document.querySelector("div.result-table > a.search-result-link"));
+    }
+    function renderTable(category, items) {
+        var table = $("<div class='result-table'>");
+        $.each(items, function(index, item) {
+            renderItem(item, table);
+        });
+        return table;
+    }
+    function select() {
+        if (!this.classList.contains("selected")) {
+            setSelected(this);
+        }
+    }
+    function unselect() {
+        if (this.classList.contains("selected")) {
+            setSelected(null);
+        }
+    }
+    function renderItem(item, table) {
+        var label = getResultLabel(item);
+        var desc = getResultDescription(item);
+        var link = $("<a/>")
+            .attr("href",  pathtoroot + getURL(item.indexItem, item.category))
+            .attr("tabindex", "0")
+            .addClass("search-result-link");
+        link.on("focus", select.bind(link[0]))
+            .on("blur", unselect.bind(link[0]))
+            .append($("<span/>").addClass("search-result-label").html(label))
+            .append($("<span/>").addClass("search-result-desc").html(desc))
+            .appendTo(table);
+    }
+    var timeout;
+    function schedulePageSearch() {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(function () {
+            doPageSearch()
+        }, 100);
+    }
+    function doPageSearch() {
+        var term = searchTerm = input.val().trim();
+        if (term === "") {
+            closeResults();
+        } else {
+            notify.html(messages.searching);
+            var module = modules.val();
+            doSearch({ term: term, maxResults: 1200, module: module}, renderResults);
+        }
+    }
+    input.on("input", function(e) {
+        feelingLucky = false;
+        reset.css("visibility", input.val() ? "visible" : "hidden");
+        schedulePageSearch();
     });
-    search.val('');
-    search.on("input", () => reset.css("visibility", search.val() ? "visible" : "hidden"))
-    search.prop("disabled", false);
-    search.attr("autocapitalize", "off");
+    function setSelected(link) {
+        if (selectedLink) {
+            selectedLink.classList.remove("selected");
+            selectedLink.blur();
+        }
+        if (link) {
+            link.classList.add("selected");
+            link.focus({focusVisible: true});
+        }
+        selectedLink = link;
+    }
+    function closeResults() {
+        input.val('');
+        notify.html(messages.enterTerm);
+        activeTab = "";
+        fixedTab = false;
+        resultContainer.empty();
+        resultSection.hide();
+        if (overlay) {
+            overlay.remove();
+            overlay = null;
+            document.body.style.removeProperty("overflow-y");
+        }
+    }
+    window.addEventListener("hashchange", closeResults);
+    document.addEventListener("keydown", e => {
+        if (e.ctrlKey || e.altKey || e.metaKey || !resultSection.is(":visible")) {
+            return;
+        }
+        if (e.key === "Escape" && input.val()) {
+            input.val("").focus();
+            doPageSearch();
+            e.preventDefault();
+        }
+        if (e.target === modules[0]) {
+            return;
+        }
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            if (activeTab && visibleTabs.length > 1 && e.target !== input[0]) {
+                var tab = visibleTabs.indexOf(activeTab);
+                var newTab = e.key === "ArrowLeft"
+                    ? Math.max(0, tab - 1)
+                    : Math.min(visibleTabs.length - 1, tab + 1);
+                if (newTab !== tab) {
+                    selectTab(visibleTabs[newTab]);
+                }
+                e.preventDefault();
+            }
+        } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            let links = Array.from(
+                document.querySelectorAll("div.result-table > a.search-result-link"));
+            let current = links.indexOf(selectedLink);
+            if (e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey)) {
+                if (current > 0) {
+                    setSelected(links[current - 1]);
+                } else {
+                    setSelected(null);
+                    input.focus();
+                }
+            } else if (e.key === "ArrowDown") {
+                if (current < links.length - 1) {
+                    setSelected(links[current + 1]);
+                }
+            }
+            e.preventDefault();
+        } else if (e.key.length === 1 || e.key === "Backspace") {
+            setSelected(null);
+            input.focus();
+        }
+    });
+    reset.on("click", function() {
+        closeResults();
+        input.val('').focus();
+    });
+    modules.on("change", function() {
+        if (input.val()) {
+            doPageSearch();
+        }
+        input.focus();
+        try {
+            localStorage.setItem("search-modules", modules.val());
+        } catch (unsupported) {
+            console.log("Error setting module: " + unsupported);
+        }
+    });
+
+    input.prop("disabled", false);
+    input.attr("autocapitalize", "off");
     reset.prop("disabled", false);
-    reset.click(function() {
-        search.val('').focus();
-    });
+
+    try {
+        var searchModules = localStorage.getItem("search-modules");
+        if (searchModules) {
+            modules.val(searchModules);
+        }
+    } catch (unsupported) {
+        console.log("Error getting module: " + unsupported);
+    }
+
+    if (input.val()) {
+        doPageSearch();
+    } else {
+        notify.html(messages.enterTerm);
+    }
 });
