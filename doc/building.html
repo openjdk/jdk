@@ -506,6 +506,9 @@ also be installed:</p>
 </ul>
 <p>You can install these packages using the following command line:</p>
 <pre><code>pacman -S autoconf tar make zip unzip</code></pre>
+<p>Note that if the <code>$MSYSTEM_CHOST</code> environment variable in
+your MSYS2 is set to <code>x86_64-pc-cygwin</code>, pass
+<code>--build=x86_64-pc-msys</code> to <code>configure</code>.</p>
 <h4 id="windows-subsystem-for-linux-wsl">Windows Subsystem for Linux
 (WSL)</h4>
 <p>WSL comes in two flavors, WSL1 and WSL2. These are drastically

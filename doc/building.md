@@ -311,6 +311,9 @@ You can install these packages using the following command line:
 pacman -S autoconf tar make zip unzip
 ```
 
+Note that if the `$MSYSTEM_CHOST` environment variable in your MSYS2
+is set to `x86_64-pc-cygwin`, pass `--build=x86_64-pc-msys` to `configure`.
+
 #### Windows Subsystem for Linux (WSL)
 
 WSL comes in two flavors, WSL1 and WSL2. These are drastically different under
