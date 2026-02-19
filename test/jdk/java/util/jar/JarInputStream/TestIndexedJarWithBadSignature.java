@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,32 +26,32 @@
  * @bug 6544278
  * @summary Confirm the JarInputStream throws the SecurityException when
  *          verifying an indexed jar file with corrupted signature
+ * @run junit TestIndexedJarWithBadSignature
  */
+
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class TestIndexedJarWithBadSignature {
 
-    public static void main(String...args) throws Throwable {
+    @Test
+    void securityExceptionTest() throws IOException {
         try (JarInputStream jis = new JarInputStream(
-                 new FileInputStream(System.getProperty("test.src", ".") +
-                                     System.getProperty("file.separator") +
-                                     "BadSignedJar.jar")))
-        {
-            JarEntry je1 = jis.getNextJarEntry();
-            while(je1!=null){
-                System.out.println("Jar Entry1==>"+je1.getName());
-                je1 = jis.getNextJarEntry(); // This should throw Security Exception
-            }
-            throw new RuntimeException(
-                "Test Failed:Security Exception not being thrown");
-        } catch (IOException ie){
-            ie.printStackTrace();
-        } catch (SecurityException e) {
-            System.out.println("Test passed: Security Exception thrown as expected");
+                new FileInputStream(System.getProperty("test.src", ".") +
+                        System.getProperty("file.separator") +
+                        "BadSignedJar.jar"))) {
+            assertThrows(SecurityException.class, () -> {
+                JarEntry je1;
+                while((je1 = jis.getNextJarEntry()) != null) {
+                    System.out.println("Jar Entry1==>" + je1.getName());
+                }
+            });
         }
     }
 }

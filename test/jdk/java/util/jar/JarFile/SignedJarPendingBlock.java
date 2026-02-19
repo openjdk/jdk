@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,20 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @modules java.base/sun.security.tools.keytool
  * @summary JARs with pending block files (where .RSA comes before .SF) should verify correctly
+ * @run junit SignedJarPendingBlock
  */
 
 import jdk.security.jarsigner.JarSigner;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.FieldSource;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,37 +42,52 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Collections;
+import java.util.List;
 import java.util.jar.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class SignedJarPendingBlock {
 
-    public static void main(String[] args) throws Exception {
+    private static List<Path> VALID_PATHS;
+    private static List<Path> INVALID_PATHS;
+
+    // Construct the test data
+    @BeforeAll
+    static void setup() throws Exception {
         Path jar = createJarFile();
         Path signed = signJarFile(jar);
         Path pendingBlocks = moveBlockFirst(signed);
         Path invalid = invalidate(pendingBlocks);
-
-        // 1: Regular signed JAR with no pending blocks should verify
-        checkSigned(signed);
-
-        // 2: Signed jar with pending blocks should verify
-        checkSigned(pendingBlocks);
-
-        // 3: Invalid signed jar with pending blocks should throw SecurityException
-        try {
-            checkSigned(invalid);
-            throw new Exception("Expected invalid digest to be detected");
-        } catch (SecurityException se) {
-            // Ignore
-        }
+        VALID_PATHS = List.of(
+                signed, // 1: Regular signed JAR with no pending blocks should verify
+                pendingBlocks // 2: Signed jar with pending blocks should verify
+        );
+        INVALID_PATHS = List.of(
+                invalid // 3: Invalid signed jar with pending blocks should throw SecurityException
+        );
     }
 
-    private static void checkSigned(Path b) throws Exception {
-        try (JarFile jf = new JarFile(b.toFile(), true)) {
+    @ParameterizedTest
+    @FieldSource("VALID_PATHS")
+    void checkValidSignedPath(Path b) {
+        assertDoesNotThrow(() -> checkSigned(b),
+                "Valid digest should not fail");
+    }
 
+    @ParameterizedTest
+    @FieldSource("INVALID_PATHS")
+    void checkInvalidSignedPath(Path b) {
+        assertThrows(SecurityException.class, () -> checkSigned(b),
+                "Expected invalid digest to be detected");
+    }
+
+    private static void checkSigned(Path b) throws IOException {
+        try (JarFile jf = new JarFile(b.toFile(), true)) {
             JarEntry je = jf.getJarEntry("a.txt");
             try (InputStream in = jf.getInputStream(je)) {
                 in.transferTo(OutputStream.nullOutputStream());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,10 @@
  * questions.
  */
 
-import java.io.File;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -30,22 +33,28 @@ import java.util.concurrent.Callable;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
-/**
+/*
  * @test
  * @bug 8216362
- * @run main/othervm -Djdk.includeInExceptions=jar IncludeInExceptionsTest yes
- * @run main/othervm IncludeInExceptionsTest
+ * @run junit/othervm -Djdk.includeInExceptions=jar IncludeInExceptionsTest
+ * @run junit/othervm IncludeInExceptionsTest
  * @summary Verify that the property jdk.net.includeInExceptions works as expected
  * when an error occurs while reading an invalid Manifest file.
  */
+
 /*
  * @see Manifest#Manifest(JarVerifier,InputStream,String)
  * @see Manifest#getErrorPosition
  */
 public class IncludeInExceptionsTest {
+
+    private static final boolean includeInExceptions = System.getProperty("jdk.includeInExceptions") != null;
 
     static final String FILENAME = "Unique-Filename-Expected-In_Msg.jar";
 
@@ -66,36 +75,26 @@ public class IncludeInExceptionsTest {
         return jar;
     }
 
-    static void test(Callable<?> attempt, boolean includeInExceptions) throws Exception {
-        try {
-            attempt.call();
-            throw new AssertionError("Excpected Exception not thrown");
-        } catch (IOException e) {
-            boolean foundFileName = e.getMessage().contains(FILENAME);
-            if(includeInExceptions && !foundFileName) {
-                throw new AssertionError("JAR file name expected but not found in error message");
-            } else if (foundFileName && !includeInExceptions) {
-                throw new AssertionError("JAR file name found but should not be in error message");
-            }
+    @ParameterizedTest
+    @MethodSource("manifests")
+    void testInvalidManifest(Callable<?> attempt, boolean includeInExceptions) {
+        var ioException = assertThrows(IOException.class, attempt::call);
+        boolean foundFileName = ioException.getMessage().contains(FILENAME);
+        if (includeInExceptions && !foundFileName) {
+            fail("JAR file name expected but not found in error message");
+        } else if (foundFileName && !includeInExceptions) {
+            fail("JAR file name found but should not be in error message");
         }
     }
 
-    public static void main(String[] args) throws Exception {
-
-        boolean includeInExceptions;
-        if(args.length > 0) {
-            includeInExceptions = true;
-            System.out.println("**** Running test WITH -Djdk.includeInExceptions=jar");
-        } else {
-            includeInExceptions = false;
-            System.out.println("**** Running test WITHOUT -Djdk.includeInExceptions=jar");
-        }
-
-        test(() -> new JarFile(createJarInvalidManifest(FILENAME)).getManifest(),
-                includeInExceptions);
-        test(() -> new JarFile(createJarInvalidManifest("Verifying-" + FILENAME),
-                true).getManifest(), includeInExceptions);
+    static Stream<Arguments> manifests() {
+        Callable<?> jarName = () -> new JarFile(createJarInvalidManifest(FILENAME)).getManifest();
+        Callable<?> jarNameVerify = () -> new JarFile(createJarInvalidManifest("Verifying-" + FILENAME),
+                true).getManifest();
+        return Stream.of(
+                Arguments.of(jarName, includeInExceptions),
+                Arguments.of(jarNameVerify, includeInExceptions)
+        );
     }
-
 }
 

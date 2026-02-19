@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,40 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6480504 6303183
  * @summary Test that client-provided data in the extra field is written and
  * read correctly, taking into account the JAR_MAGIC written into the extra
  * field of the first entry of JAR files.
- * @author Dave Bristor
+ * @run junit TestExtra
  */
+
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import java.util.jar.*;
 import java.util.zip.*;
 
-/**
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
+/*
  * Tests that the get/set operations on extra data in zip and jar files work
  * as advertised.  The base class tests ZIP files, the member class
  * TestJarExtra checks JAR files.
  */
 public class TestExtra {
+
     static final int JAR_MAGIC = 0xcafe; // private IN JarOutputStream.java
     static final int TEST_HEADER = 0xbabe;
 
-    static final Charset ascii = Charset.forName("ASCII");
+    static final Charset ascii = StandardCharsets.US_ASCII;
 
     // ZipEntry extra data
     static final byte[][] extra = new byte[][] {
@@ -54,7 +63,9 @@ public class TestExtra {
     };
 
     // For naming entries in JAR/ZIP streams
-    int count = 1;
+    static int count = 1;
+
+    // Instance variables safely reset per test method under JUnit default lifecycle
 
     // Use byte arrays instead of files
     ByteArrayOutputStream baos;
@@ -62,21 +73,29 @@ public class TestExtra {
     // JAR/ZIP content written here.
     ZipOutputStream zos;
 
-    public static void realMain(String[] args) throws Throwable{
+    @Test
+    void extraHeaderPlusDataTest() throws IOException {
         new TestExtra().testHeaderPlusData();
+    }
 
+    @Test
+    void jarExtraHeaderPlusDataTest() throws IOException {
         new TestJarExtra().testHeaderPlusData();
+    }
+
+    @Test
+    void jarExtraHeaderOnlyTest() throws IOException {
         new TestJarExtra().testHeaderOnly();
+    }
+
+    @Test
+    void jarExtraClientJarMagicTest() throws IOException {
         new TestJarExtra().testClientJarMagic();
     }
 
     TestExtra() {
-        try {
-            baos = new ByteArrayOutputStream();
-            zos = getOutputStream(baos);
-        } catch (Throwable t) {
-            unexpected(t);
-        }
+        baos = new ByteArrayOutputStream();
+        zos = assertDoesNotThrow(() -> getOutputStream(baos));
     }
 
     /** Test that a header + data set by client works. */
@@ -86,9 +105,7 @@ public class TestExtra {
             byte[] data = new byte[b.length + 4];
             set16(data, 0, TEST_HEADER);
             set16(data, 2, b.length);
-            for (int i = 0; i < b.length; i++) {
-                data[i + 4] = b[i];
-            }
+            System.arraycopy(b, 0, data, 4, b.length);
             ze.setExtra(data);
             zos.putNextEntry(ze);
         }
@@ -181,15 +198,13 @@ public class TestExtra {
     void checkEntry(ZipEntry ze, int count, int dataLength) {
         byte[] extraData = ze.getExtra();
         byte[] data = getField(TEST_HEADER, extraData);
-        if (!check(data != null, "unexpected null data for TEST_HEADER")) {
-            return;
-        }
+        assertNotNull(data, "unexpected null data for TEST_HEADER");
 
         if (dataLength == 0) {
-            check(data.length == 0, "unexpected non-zero data length for TEST_HEADER");
+            assertEquals(0, data.length, "unexpected non-zero data length for TEST_HEADER");
         } else {
-            check(Arrays.equals(extra[count], data),
-                  "failed to get entry " + ze.getName()
+            assertArrayEquals(data, extra[count],
+                    "failed to get entry " + ze.getName()
                   + ", expected " + new String(extra[count]) + ", got '" + new String(data) + "'");
         }
     }
@@ -258,29 +273,12 @@ public class TestExtra {
             if (count == 0) {
                 byte[] extraData = ze.getExtra();
                 byte[] data = getField(JAR_MAGIC, extraData);
-                if (!check(data != null, "unexpected null data for JAR_MAGIC")) {
-                    check(data.length != 0, "unexpected non-zero data length for JAR_MAGIC");
-                }
+                assertNotNull(data, "unexpected null data for JAR_MAGIC");
+                assertEquals(0, data.length, "unexpected non-zero data length for JAR_MAGIC");
             }
             // In a jar file, the first ZipEntry should have both JAR_MAGIC
             // and the TEST_HEADER, so check that also.
             super.checkEntry(ze, count, dataLength);
         }
     }
-
-    //--------------------- Infrastructure ---------------------------
-    static volatile int passed = 0, failed = 0;
-    static void pass() {passed++;}
-    static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.out.println(msg); fail();}
-    static void unexpected(Throwable t) {failed++; t.printStackTrace();}
-    static void check(boolean cond) {if (cond) pass(); else fail();}
-    static boolean check(boolean cond, String msg) {if (cond) pass(); else fail(msg); return cond; }
-    static void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
-        else fail(x + " not equal to " + y);}
-    public static void main(String[] args) throws Throwable {
-        try {realMain(args);} catch (Throwable t) {unexpected(t);}
-        System.out.println("\nPassed = " + passed + " failed = " + failed);
-        if (failed > 0) throw new Error("Some tests failed");}
 }

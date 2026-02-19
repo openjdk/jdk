@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,25 @@
 /* @test
    @bug 4771616
    @summary JarFile.maybeInstantiateVerifier must check for absence of manifest
+   @run junit JarNoManifest
  */
+
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.util.jar.*;
 import java.util.zip.*;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 public class JarNoManifest {
-  public static void main(String[] args) throws Exception {
-    File f = new File(System.getProperty("test.src","."), "no-manifest.jar");
-    JarFile jar = new JarFile(f);
-    ZipEntry entry = jar.getEntry("JarNoManifest.java");
-    // The following throws a NullPointerException when the bug is present
-    InputStream in = jar.getInputStream(entry);
-  }
+
+    @Test
+    void absentManifestTest() throws IOException {
+        File f = new File(System.getProperty("test.src","."), "no-manifest.jar");
+        JarFile jar = new JarFile(f);
+        ZipEntry entry = jar.getEntry("JarNoManifest.java");
+        // The following throws a NullPointerException when the bug is present
+        assertDoesNotThrow(() -> jar.getInputStream(entry));
+    }
 }
