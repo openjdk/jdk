@@ -365,9 +365,8 @@ public class TestXDH {
         KeySpec privateSpec = new XECPrivateKeySpec(paramSpec,
             HexFormat.of().parseHex(a_pri));
         PrivateKey privateKey = kf.generatePrivate(privateSpec);
-        boolean clearHighBit = curveName.equals("X25519");
         KeySpec publicSpec = new XECPublicKeySpec(paramSpec,
-            Convert.hexStringToBigInteger(clearHighBit, b_pub));
+            Convert.hexStringToBigInteger(b_pub));
         PublicKey publicKey = kf.generatePublic(publicSpec);
 
         byte[] encodedPrivateKey = privateKey.getEncoded();

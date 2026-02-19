@@ -47,15 +47,12 @@ public class Convert {
      * significant bit of the highest byte should be set to 0 in the result.
      */
     public static
-    BigInteger hexStringToBigInteger(boolean clearHighBit, String str) {
+    BigInteger hexStringToBigInteger(String str) {
         BigInteger result = BigInteger.ZERO;
         for (int i = 0; i < str.length() / 2; i++) {
             int curVal = Character.digit(str.charAt(2 * i), 16);
             curVal <<= 4;
             curVal += Character.digit(str.charAt(2 * i + 1), 16);
-            if (clearHighBit && i == str.length() / 2 - 1) {
-                curVal &= 0x7F;
-            }
             result = result.add(BigInteger.valueOf(curVal).shiftLeft(8 * i));
         }
         return result;
