@@ -39,6 +39,7 @@ public class DisabledKnownType {
         try {
             KeyStore ks = KeyStore.getInstance(new java.io.File(cacertsPath),
                     "changeit".toCharArray());
+            throw new RuntimeException("Expected KeyStoreException not thrown");
         } catch (KeyStoreException kse) {
             if (kse.getMessage().contains("PKCS12")) {
                 System.out.println("Passed: expected ex thrown: " + kse);
