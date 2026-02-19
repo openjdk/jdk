@@ -32,6 +32,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 TestApp
  *                 TestApp$Foo
+ *                 TestApp$Foo$A
  *                 TestApp$Foo$Bar
  *                 TestApp$Foo$ShouldBeExcluded
  *                 TestApp$Foo$ShouldBeExcludedChild
@@ -167,6 +168,7 @@ class TestApp {
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start < 1000) {
                 lambdaHotSpot();
+                lambdaHotSpot2();
                 invokeHandleHotSpot();
                 s.hotSpot2();
                 b.hotSpot3();
@@ -207,6 +209,19 @@ class TestApp {
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start < 20) {
                 doit(() -> counter ++ );
+            }
+        }
+
+        interface A {
+            Object get();
+        }
+
+        // Lambdas that refer to excluded classes should not be AOT-resolved
+        static void lambdaHotSpot2() {
+            long start = System.currentTimeMillis();
+            A a = ShouldBeExcluded::new;
+            while (System.currentTimeMillis() - start < 20) {
+                Object obj = (ShouldBeExcluded)a.get();
             }
         }
 
