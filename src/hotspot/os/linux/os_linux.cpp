@@ -3753,6 +3753,38 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   return anon_mmap(nullptr, bytes);
 }
 
+os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
+  // mmap returns memory that is splittable by default.
+  char* base;
+  if (addr != nullptr) {
+    base = pd_attempt_reserve_memory_at(addr, bytes, exec);
+  } else {
+    base = pd_reserve_memory(bytes, exec);
+  }
+  return PlaceholderRegion(base, base != nullptr ? bytes : 0);
+}
+
+os::PlaceholderRegion os::pd_split_memory(PlaceholderRegion& region, size_t offset) {
+  // On Linux, mmap regions are inherently splittable. Just do bookkeeping.
+  char* base = region.base();
+  size_t region_size = region.size();
+
+  assert(base != nullptr, "Region base cannot be null");
+  assert(offset > 0, "Offset must be positive");
+  assert(offset < region_size, "Offset must be less than region size");
+
+  // Shrink region to the trailing piece.
+  region = PlaceholderRegion(base + offset, region_size - offset);
+
+  // Return the leading piece.
+  return PlaceholderRegion(base, offset);
+}
+
+char* os::pd_convert_to_reserved(PlaceholderRegion region) {
+  assert(!region.is_empty(), "Region cannot be empty");
+  return region.base();
+}
+
 bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
 }

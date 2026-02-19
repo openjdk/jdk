@@ -109,11 +109,28 @@ class os::win32 {
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
 
+  // Resolve a symbol from KernelBase.dll, returns nullptr if not found.
+  static void* lookup_kernelbase_symbol(const char* name);
+
+  // VirtualAlloc2 (since Windows version 1803)
+  // Resolved from KernelBase during os::init_2() or nullptr if unavailable.
+  typedef PVOID (WINAPI *VirtualAlloc2Fn)(HANDLE, PVOID, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMETER*, ULONG);
+  static VirtualAlloc2Fn VirtualAlloc2;
+
+  // MapViewOfFile3 (since Windows version 1803)
+  // Resolved from KernelBase during os::init_2() or nullptr if unavailable.
+  typedef PVOID (WINAPI *MapViewOfFile3Fn)(HANDLE, HANDLE, PVOID, ULONG64, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMETER*, ULONG);
+  static MapViewOfFile3Fn MapViewOfFile3;
+
  private:
 
   static void initialize_performance_counter();
   static void initialize_windows_version();
   static DWORD active_processors_in_job_object(DWORD* active_processor_groups = nullptr);
+  static char* reserve_with_numa_placeholder(char* addr, size_t bytes);
+  // Replaces a placeholder with a reserved region via VirtualAlloc2(MEM_REPLACE_PLACEHOLDER).
+  // If numa_node >= 0, binds the reservation to that NUMA node.
+  static char* convert_placeholder_to_reserved(PlaceholderRegion region, int numa_node = -1);
 
  public:
   // Generic interface:

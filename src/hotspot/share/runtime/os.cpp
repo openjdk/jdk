@@ -1971,6 +1971,63 @@ char* os::reserve_memory(size_t bytes, MemTag mem_tag, bool executable) {
   return result;
 }
 
+os::PlaceholderRegion os::reserve_placeholder_memory(size_t bytes, MemTag mem_tag, bool executable, char* addr) {
+  assert(bytes > 0, "Size must be a value greater than 0");
+  PlaceholderRegion result = pd_reserve_placeholder_memory(bytes, executable, addr);
+  if (!result.is_empty()) {
+    MemTracker::record_virtual_memory_reserve(result.base(), result.size(), CALLER_PC, mem_tag);
+    log_debug(os, map)("Reserved placeholder memory " RANGEFMT, RANGEFMTARGS(result.base(), result.size()));
+  } else {
+    log_info(os, map)("Reserve placeholder memory failed (%zu bytes)", bytes);
+  }
+  return result;
+}
+
+os::PlaceholderRegion os::split_memory(PlaceholderRegion& region, size_t offset) {
+  assert(!region.is_empty(), "Region cannot be empty");
+  assert(offset > 0, "Offset must be a value greater than 0");
+  assert(offset <= region.size(), "Offset must be less than or equal to region size");
+  assert(is_aligned(region.base(), os::vm_page_size()), "Region base should be page-aligned");
+  assert(is_aligned(offset, os::vm_page_size()), "Offset should be page-aligned");
+
+  char* original_base = region.base();
+  size_t original_size = region.size();
+
+  if (offset == original_size) {
+    // No split needed. Return the original region.
+    PlaceholderRegion result = region;
+    // The trailing piece is empty now. Nothing left.
+    region = PlaceholderRegion();
+    log_debug(os, map)("Split memory consumed the whole region: " RANGEFMT, RANGEFMTARGS(original_base, original_size));
+    return result;
+  }
+
+  PlaceholderRegion leading = pd_split_memory(region, offset);
+
+  if (leading.is_empty()) {
+    fatal("Split memory at offset %zu failed. Region: " RANGEFMT, offset, RANGEFMTARGS(original_base, original_size));
+  }
+  log_debug(os, map)("Split memory at offset %zu: " RANGEFMT " -> " RANGEFMT " + " RANGEFMT,
+                      offset,
+                      RANGEFMTARGS(original_base, original_size),
+                      RANGEFMTARGS(leading.base(), leading.size()),
+                      RANGEFMTARGS(region.base(), region.size()));
+  return leading;
+}
+
+char* os::convert_to_reserved(PlaceholderRegion region) {
+  assert(!region.is_empty(), "Region cannot be empty");
+  assert(is_aligned(region.base(), os::vm_page_size()), "Region base should be page-aligned");
+  assert(is_aligned(region.size(), os::vm_page_size()), "Region size should be page-aligned");
+
+  char* result = pd_convert_to_reserved(region);
+  if (result == nullptr) {
+    fatal("Convert placeholder region " RANGEFMT " to reserved region failed", RANGEFMTARGS(region.base(), region.size()));
+  }
+  log_debug(os, map)("Converted placeholder region " RANGEFMT " to reserved region at " PTR_FORMAT, RANGEFMTARGS(region.base(), region.size()), p2i(result));
+  return result;
+}
+
 char* os::attempt_reserve_memory_at(char* addr, size_t bytes, MemTag mem_tag, bool executable) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {

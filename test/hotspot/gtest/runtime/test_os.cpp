@@ -1200,16 +1200,22 @@ TEST_VM(os, map_unmap_memory) {
 
 TEST_VM(os, map_memory_to_file_aligned) {
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const size_t size = strlen(letters) + 1;
+  const size_t content_size = strlen(letters) + 1;
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity, 1 * M };
 
   int fd = os::open("map_memory_to_file.txt", O_RDWR | O_CREAT, 0666);
   EXPECT_TRUE(fd > 0);
-  EXPECT_TRUE(os::write(fd, letters, size));
+  ASSERT_TRUE(os::write(fd, letters, content_size));
 
-  char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
-  ASSERT_NOT_NULL(result);
-  EXPECT_EQ(strcmp(letters, result), 0);
-  os::unmap_memory(result, os::vm_allocation_granularity());
+  const size_t size = granularity;
+  for (size_t alignment : alignments) {
+    char* result = os::map_memory_to_file_aligned(size, alignment, fd, mtTest);
+    ASSERT_NOT_NULL(result) << "Mapping failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Failed to aligned to " << alignment;
+    EXPECT_EQ(strcmp(letters, result), 0) << "Text mismatch at alignment=" << alignment;
+    os::unmap_memory(result, size);
+  }
   ::close(fd);
 }
 
@@ -1219,4 +1225,107 @@ TEST_VM(os, dll_load_null_error_buf) {
   // This should not crash.
   void* lib = os::dll_load("NoSuchLib", nullptr, 0);
   ASSERT_NULL(lib);
+}
+
+// --- Splittable Memory API tests ---
+
+#define SKIP_IF_SPLITTABLE_NOT_SUPPORTED() \
+  WINDOWS_ONLY(if (os::win32::VirtualAlloc2 == nullptr)  GTEST_SKIP() << "VirtualAlloc2 not available";)
+
+TEST_VM(os, splittable_reserve_and_convert) {
+  SKIP_IF_SPLITTABLE_NOT_SUPPORTED();
+
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  char* reserved = os::convert_to_reserved(region);
+  ASSERT_EQ(reserved, region.base());
+
+  ASSERT_TRUE(os::commit_memory(reserved, size, false));
+  // Touch the memory to confirm it's usable.
+  memset(reserved, 0xAB, size);
+  EXPECT_EQ((unsigned char)reserved[0], 0xAB);
+  EXPECT_EQ((unsigned char)reserved[size - 1], 0xAB);
+
+  os::release_memory(reserved, size);
+}
+
+TEST_VM(os, splittable_split_two_way) {
+  SKIP_IF_SPLITTABLE_NOT_SUPPORTED();
+
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t total = 4 * granularity;
+  const size_t split_offset = 3 * granularity;
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(total, mtTest);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::PlaceholderRegion leading = os::split_memory(region, split_offset);
+
+  // Leading piece: [base, base+split_offset)
+  ASSERT_EQ(leading.base(), original_base);
+  ASSERT_EQ(leading.size(), split_offset);
+
+  // Trailing piece (region): [base+split_offset, base+total)
+  ASSERT_EQ(region.base(), original_base + split_offset);
+  ASSERT_EQ(region.size(), total - split_offset);
+
+  // Convert both and commit.
+  char* addr1 = os::convert_to_reserved(leading);
+  char* addr2 = os::convert_to_reserved(region);
+  ASSERT_EQ(addr1, original_base);
+  ASSERT_EQ(addr2, original_base + split_offset);
+
+  ASSERT_TRUE(os::commit_memory(addr1, split_offset, false));
+  ASSERT_TRUE(os::commit_memory(addr2, total - split_offset, false));
+
+  // Touch the memory to confirm it's usable.
+  memset(addr1, 0x11, split_offset);
+  memset(addr2, 0x22, total - split_offset);
+  EXPECT_EQ((unsigned char)addr1[0], 0x11);
+  EXPECT_EQ((unsigned char)addr2[0], 0x22);
+
+  // Verify we can release the parts separately.
+  os::release_memory(addr1, split_offset);
+  os::release_memory(addr2, total - split_offset);
+}
+
+// --- Aligned allocation tests ---
+
+TEST_VM(os, reserve_memory_aligned_basic) {
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity };
+
+  for (size_t alignment : alignments) {
+    const size_t size = alignment;
+    char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+    ASSERT_NE(result, (char*)nullptr) << "reserve_memory_aligned failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Result " << result << " not aligned to " << alignment;
+
+    ASSERT_TRUE(os::commit_memory(result, size, false));
+    memset(result, 0xCD, size);
+    EXPECT_EQ((unsigned char)result[0], 0xCD);
+
+    os::release_memory(result, size);
+  }
+}
+
+TEST_VM(os, reserve_memory_aligned_large) {
+  const size_t alignment = 1 * M;
+  const size_t size = alignment;
+
+  char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+  ASSERT_NE(result, (char*)nullptr);
+  EXPECT_TRUE(is_aligned(result, alignment));
+
+  ASSERT_TRUE(os::commit_memory(result, size, false));
+  memset(result, 0xEF, size);
+  EXPECT_EQ((unsigned char)result[size - 1], 0xEF);
+
+  os::release_memory(result, size);
 }

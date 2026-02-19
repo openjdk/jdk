@@ -28,8 +28,11 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.inline.hpp"
+#include "os_windows.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
+
+#include <psapi.h>
 
 namespace {
   class MemoryReleaser {
@@ -838,6 +841,86 @@ TEST_VM(os_windows, reserve_memory_special_concurrent) {
   ReserveMemorySpecialRunnable runnable;
   ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
+}
+
+// Test that reserve_with_numa_placeholder works correctly when
+// UseNUMAInterleaving is enabled and VirtualAlloc2 is available.
+// On UMA systems with a single NUMA node, the interleaving is trivial
+// (all chunks go to node 0) but the placeholder split/replace path
+// is still exercised.
+TEST_VM(os_windows, numa_placeholder_reserve_commit) {
+  if (!os::win32::VirtualAlloc2) {
+    GTEST_SKIP() << "VirtualAlloc2 not available pre-Windows version 1803";
+  }
+
+  const size_t num_nodes = os::numa_get_groups_num();
+
+  // Enable NUMA interleaving for this test.
+  AutoSaveRestore<bool> FLAG_GUARD(UseNUMAInterleaving);
+  AutoSaveRestore<bool> FLAG_GUARD(UseLargePages);
+  FLAG_SET_CMDLINE(UseNUMAInterleaving, true);
+  FLAG_SET_CMDLINE(UseLargePages, false);
+
+  // Allocate a region large enough to span multiple NUMA interleave chunks.
+  // NUMAInterleaveGranularity defaults to 2MB
+  const size_t chunk_size = NUMAInterleaveGranularity;
+  const size_t num_chunks = 4;
+  const size_t size = num_chunks * chunk_size;
+
+  char* result = os::attempt_reserve_memory_at(nullptr, size, mtTest);
+  ASSERT_TRUE(result != nullptr) << "Failed to reserve memory";
+
+
+  ASSERT_TRUE(is_aligned(result, os::vm_allocation_granularity()));
+  ASSERT_TRUE(os::commit_memory(result, size, false));
+
+  // Walk (and touch) the chunks using the same alignment logic as reserve_with_numa_placeholder:
+  // the first chunk may be shorter (up to the next chunk_size boundary),
+  // then full chunk_size pieces, with a possible shorter trailing chunk.
+  PSAPI_WORKING_SET_EX_INFORMATION wsi[num_chunks + 1];
+  memset(wsi, 0, sizeof(wsi));
+  size_t bytes_remaining = size;
+  char* addr = result;
+  size_t actual_chunks = 0;
+
+  while (bytes_remaining > 0) {
+    size_t this_chunk_size = MIN2(bytes_remaining, chunk_size - ((size_t)addr % chunk_size));
+
+    memset(addr, 0xDA, this_chunk_size);
+
+    wsi[actual_chunks] = {0};
+    wsi[actual_chunks].VirtualAddress = addr;
+    actual_chunks++;
+
+    bytes_remaining -= this_chunk_size;
+    addr += this_chunk_size;
+  }
+
+  BOOL query_ok = QueryWorkingSetEx(GetCurrentProcess(), wsi, sizeof(wsi));
+  ASSERT_TRUE(query_ok) << "QueryWorkingSetEx failed: " << GetLastError();
+
+  // Verify all pages are valid (in the working set).
+  for (size_t i = 0; i < actual_chunks; i++) {
+    EXPECT_TRUE(wsi[i].VirtualAttributes.Valid) << "Chunk " << i << " page not valid in working set";
+  }
+
+  if (num_nodes > 1) {
+    // On a multi-NUMA system, verify that not all chunks landed on the same node.
+    ULONG first_node = (ULONG)wsi[0].VirtualAttributes.Node;
+    bool found_different_node = false;
+    for (size_t i = 1; i < actual_chunks; i++) {
+      if (wsi[i].VirtualAttributes.Valid &&
+          (ULONG)wsi[i].VirtualAttributes.Node != first_node) {
+        found_different_node = true;
+        break;
+      }
+    }
+    EXPECT_TRUE(found_different_node)
+        << "All " << actual_chunks << " chunks landed on NUMA node " << first_node
+        << "; expected interleaving across " << num_nodes << " nodes";
+  }
+
+  os::release_memory(result, size);
 }
 
 #endif
