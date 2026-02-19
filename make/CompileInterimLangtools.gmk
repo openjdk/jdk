@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,17 +68,17 @@ java.compiler.interim_EXTRA_FILES := \
 TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
 
 ################################################################################
-# Use the up-to-date PreviewFeature.java and NoPreview.java from the current
-# sources, instead of the versions from the boot JDK, as javac may be referring
-# to constants from the up-to-date versions.
+# Create a hybrid PreviewFeature.java and NoPreview.java that combines constants
+# from the current sources, as those can be used in javac APIs,  and from the
+# bootstrap JDK, as those can be used from bootstrap JDK classfiles.
 
-$(eval $(call SetupCopyFiles, COPY_PREVIEW_FEATURES, \
-    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java \
-        $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/NoPreview.java, \
-    DEST := $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/, \
-))
+$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java: \
+    $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java
+	$(JAVA) $(TOPDIR)/make/langtools/tools/previewfeature/SetupPreviewFeature.java \
+            $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java \
+            $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java
 
-TARGETS += $(COPY_PREVIEW_FEATURES)
+TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java
 
 ################################################################################
 # Setup the rules to build interim langtools, which is compiled by the boot
