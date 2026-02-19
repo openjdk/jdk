@@ -2135,13 +2135,13 @@ class CountedLoopConverter {
 
   void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol) const;
-  void insert_stride_overflow_limit_check() const;
-  void insert_init_trip_limit_check() const;
+  void insert_stride_overflow_limit_check(Node* init_control, jlong stride_con) const;
+  void insert_init_trip_limit_check(Node* init_control, jlong stride_con) const;
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry) const;
 
   bool is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment, BoolTest::mask mask) const;
-  bool has_truncation_wrap(TruncatedIncrement truncation, Node* phi, jlong stride_con);
+  bool has_truncation_wrap(const TruncatedIncrement& truncation, Node* phi, jlong stride_con);
   SafePointNode* find_safepoint(Node* iftrue);
   bool is_safepoint_invalid(SafePointNode* sfpt) const;
 
