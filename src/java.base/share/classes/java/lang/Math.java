@@ -2834,6 +2834,8 @@ public final class Math {
      * <li>If the argument is {@code -1.0}, then the result is
      * negative infinity.
      *
+     * <li>If the argument is greater than {@code 1.0} in magnitude, then the result is NaN.
+     *
      * </ul>
      * <p> The computed result must be within 2.5 ulps of the exact result.
      * @param   x The number whose inverse hyperbolic tangent is to be returned.
