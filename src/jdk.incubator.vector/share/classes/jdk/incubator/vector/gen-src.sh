@@ -137,7 +137,7 @@ do
   args="$args -DsizeInBytes=$sizeInBytes"
 
   abstractvectortype=${typeprefix}${Type}Vector
-  abstractbitsvectortype=${typeprefix}${Bitstype}Vector
+  abstractbitsvectortype=${typeprefix}Vector${Bitstype}
   abstractfpvectortype=${typeprefix}${Fptype}Vector
   args="$args -Dabstractvectortype=$abstractvectortype -Dabstractbitsvectortype=$abstractbitsvectortype -Dabstractfpvectortype=$abstractfpvectortype"
   case $abstractvectortype in
@@ -158,11 +158,11 @@ do
   old_args="$args"
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    masktype=${typeprefix}${Type}${bits}Mask
-    shuffletype=${typeprefix}${Type}${bits}Shuffle
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${Type}Vector${bits}
+    masktype=${typeprefix}${Type}Mask${bits}
+    shuffletype=${typeprefix}${Type}Shuffle${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     vectorindexbits=$((bits * 4 / sizeInBytes))
 
     numLanes=$((bits / (sizeInBytes * 8)))
@@ -185,7 +185,7 @@ do
     if [[ "${bits}" == "Max" ]]; then
         vectorindextype="vix.getClass()"
     else
-        vectorindextype="Int${vectorindexbits}Vector.class"
+        vectorindextype="IntVector${vectorindexbits}.class"
     fi;
 
     BITS=$bits
@@ -199,7 +199,7 @@ do
     Shape=S_${bits}_BIT
     args="$old_args"
     args="$args -K$lanes -K$bits"
-    if [[ "${vectortype}" == "IntMaxVector" ]]; then
+    if [[ "${vectortype}" == "IntVectorMax" ]]; then
       args="$args -KintAndMax"
     fi
     bitargs="$args -Dbits=$bits -DBITS=$BITS -Dvectortype=$vectortype -Dmasktype=$masktype -Dshuffletype=$shuffletype -Dbitsvectortype=$bitsvectortype -Dfpvectortype=$fpvectortype -Dvectorindextype=$vectorindextype -Dshape=$shape -DShape=$Shape"

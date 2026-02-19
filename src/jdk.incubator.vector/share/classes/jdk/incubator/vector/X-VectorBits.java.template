@@ -183,8 +183,8 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @ForceInline
     final @Override
-    Byte$bits$Vector asByteVectorRaw() {
-        return (Byte$bits$Vector) super.asByteVectorRawTemplate();  // specialize
+    ByteVector$bits$ asByteVectorRaw() {
+        return (ByteVector$bits$) super.asByteVectorRawTemplate();  // specialize
     }
 
     @ForceInline
@@ -1092,7 +1092,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 
 #end[intAndMax]
 #if[intAndMax]
-        static final IntMaxMask LOWER_HALF_TRUE_MASK = new IntMaxMask(maskLowerHalf());
+        static final IntMaskMax LOWER_HALF_TRUE_MASK = new IntMaskMax(maskLowerHalf());
 #end[intAndMax]
     }
 
