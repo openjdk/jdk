@@ -32,7 +32,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -203,8 +203,8 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_l
   // allocation.
   // That is "fine" - at most this will schedule a GC (hopefully only a little) too
   // early or too late.
-  AtomicAccess::store(&_young_list_desired_length, new_young_list_desired_length);
-  AtomicAccess::store(&_young_list_target_length, new_young_list_target_length);
+  _young_list_desired_length.store_relaxed(new_young_list_desired_length);
+  _young_list_target_length.store_relaxed(new_young_list_target_length);
 }
 
 // Calculates desired young gen length. It is calculated from:
@@ -739,7 +739,7 @@ double G1Policy::constant_other_time_ms(double pause_time_ms) const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  return _g1h->concurrent_mark()->cm_thread()->in_progress() || collector_state()->in_young_gc_before_mixed();
+  return _g1h->concurrent_mark()->in_progress() || collector_state()->in_young_gc_before_mixed();
 }
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
@@ -1235,7 +1235,7 @@ bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) 
   // We actually check whether we are marking here and not if we are in a
   // reclamation phase. This means that we will schedule a concurrent mark
   // even while we are still in the process of reclaiming memory.
-  bool during_cycle = _g1h->concurrent_mark()->cm_thread()->in_progress();
+  bool during_cycle = _g1h->concurrent_mark()->in_progress();
   if (!during_cycle) {
     log_debug(gc, ergo)("Request concurrent cycle initiation (requested by GC cause). "
                         "GC cause: %s",

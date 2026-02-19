@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,5 +29,6 @@
 @interface NavigableTextAccessibility : CommonComponentAccessibility <NSAccessibilityNavigableStaticText>
 
 @property(readonly) BOOL accessibleIsPasswordText;
+@property BOOL announceEditUpdates;
 
 @end
