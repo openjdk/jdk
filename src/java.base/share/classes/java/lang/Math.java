@@ -3728,6 +3728,9 @@ public final class Math {
      * <ul><li>If the argument is NaN or an infinity, then th
      * result is NaN.</ul>
      *
+     * <p>The computed result must be within 1 ulp of the exact result.
+     * Results must be semi-monotonic.
+     *
      * @param a an angle, in radians.
      * @return  the [sine,cosine] pair for the argument.
      */
