@@ -246,7 +246,7 @@ public:
 
   void abandon_partial_discovery();
 
-  void mark_discovered_young_reference(oop reference) const;
+  void mark_discovered_reference_with_old_referent(oop reference) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP

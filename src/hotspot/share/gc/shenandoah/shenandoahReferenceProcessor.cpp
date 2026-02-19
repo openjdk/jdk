@@ -400,7 +400,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
     if (_old_generation_ref_processor != nullptr) {
       log_trace(gc,ref)("Discovered reference for old: " PTR_FORMAT, p2i(reference));
       _old_generation_ref_processor->discover_reference(reference, type);
-      mark_discovered_young_reference(reference);
+      mark_discovered_reference_with_old_referent(reference);
       return true;
     }
 
@@ -712,9 +712,8 @@ void ShenandoahReferenceProcessor::abandon_partial_discovery() {
   _pending_list_tail = &_pending_list;
 }
 
-void ShenandoahReferenceProcessor::mark_discovered_young_reference(oop reference) const {
+void ShenandoahReferenceProcessor::mark_discovered_reference_with_old_referent(oop reference) const {
   assert(_generation->is_young(), "Expected young generation, but got: %s", _generation->name());
-  assert(_generation->contains(reference), "Reference must be in young generation");
   const uint worker_id = WorkerThread::worker_id();
   ShenandoahMarkRefsSuperClosure* cl = _ref_proc_thread_locals[worker_id].mark_closure();
   const auto mode = cl->reference_iteration_mode();
