@@ -4178,7 +4178,7 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
       // Terminate this path
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
-        if (_required_safept == nullptr) _required_safept = new Node_List();
+        if (_required_safept == nullptr) _required_safept = new Node_List(_phase->arena());
         // save the first we run into on that path: closest to the tail if the head has a single backedge
         _required_safept->push(n);
       }
@@ -4324,7 +4324,7 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     // inner loop attempts to delete it's safepoints.
     if (_child != nullptr && !has_call && !has_local_ncsfpt) {
       if (nonlocal_ncsfpt != nullptr) {
-        if (_required_safept == nullptr) _required_safept = new Node_List();
+        if (_required_safept == nullptr) _required_safept = new Node_List(_phase->arena());
         _required_safept->push(nonlocal_ncsfpt);
       } else {
         // Failed to find a suitable safept on the dom-path.  Now use
@@ -4675,10 +4675,11 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
 
 void IdealLoopTree::register_reachability_fence(ReachabilityFenceNode* rf) {
   if (_reachability_fences == nullptr) {
-    _reachability_fences = new Node_List();
+    _reachability_fences = new Node_List(_phase->arena());
   }
-  assert(!_reachability_fences->contains(rf), "already registered");
-  _reachability_fences->push(rf);
+  if (!_reachability_fences->contains(rf)) {
+    _reachability_fences->push(rf);
+  }
 }
 
 #ifndef PRODUCT
@@ -5739,7 +5740,6 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
 
 //------------------------------set_idom---------------------------------------
 void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
-  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   uint idx = d->_idx;
   if (idx >= _idom_size) {
     uint newsize = next_power_of_2(idx);
@@ -6132,7 +6132,7 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         innermost->_has_call = 1; // = true
       } else if (n->Opcode() == Op_SafePoint) {
         // Record all safepoints in this loop.
-        if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
+        if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List(&_arena);
         innermost->_safepts->push(n);
       } else if (n->is_ReachabilityFence()) {
         innermost->register_reachability_fence(n->as_ReachabilityFence());
