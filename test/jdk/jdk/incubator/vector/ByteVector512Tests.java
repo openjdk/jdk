@@ -62,7 +62,6 @@ public class ByteVector512Tests extends AbstractVectorTest {
                 ByteVector.SPECIES_512;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
-
     static void assertEquals(byte actual, byte expected) {
         Assert.assertEquals(actual, expected);
     }
@@ -579,10 +578,10 @@ public class ByteVector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                assertEquals(r[i], f.apply(a[i], (byte)(long)b[(i / SPECIES.length()) * SPECIES.length()]));
+                assertEquals(r[i], f.apply(a[i], (byte)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
             }
         } catch (AssertionError e) {
-            assertEquals(r[i], f.apply(a[i], ((byte)(long)b[(i / SPECIES.length()) * SPECIES.length()])),
+            assertEquals(r[i], f.apply(a[i], (byte)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -643,10 +642,10 @@ public class ByteVector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                assertEquals(r[i], f.apply(a[i], (byte)(long)b[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]));
+                assertEquals(r[i], f.apply(a[i], (byte)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            assertEquals(r[i], f.apply(a[i], (byte)(long)b[(i / SPECIES.length()) * SPECIES.length()],
+            assertEquals(r[i], f.apply(a[i], (byte)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -7364,7 +7363,7 @@ public class ByteVector512Tests extends AbstractVectorTest {
     }
 
     @Test
-    static void ByteByteVector512TestsSmokeTest() {
+    static void ElementTypeByteVector512TestsSmokeTest() {
         ByteVector av = ByteVector.zero(SPECIES);
         assert(av.species().elementType() == byte.class);
     }

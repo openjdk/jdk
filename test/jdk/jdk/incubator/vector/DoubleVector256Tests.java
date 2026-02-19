@@ -61,7 +61,6 @@ public class DoubleVector256Tests extends AbstractVectorTest {
                 DoubleVector.SPECIES_256;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
-
     static void assertEquals(double actual, double expected) {
         Assert.assertEquals(actual, expected);
     }
@@ -584,10 +583,10 @@ public class DoubleVector256Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                assertEquals(r[i], f.apply(a[i], (double)(long)b[(i / SPECIES.length()) * SPECIES.length()]));
+                assertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
             }
         } catch (AssertionError e) {
-            assertEquals(r[i], f.apply(a[i], ((double)(long)b[(i / SPECIES.length()) * SPECIES.length()])),
+            assertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -648,10 +647,10 @@ public class DoubleVector256Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                assertEquals(r[i], f.apply(a[i], (double)(long)b[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]));
+                assertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            assertEquals(r[i], f.apply(a[i], (double)(long)b[(i / SPECIES.length()) * SPECIES.length()],
+            assertEquals(r[i], f.apply(a[i], (double)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -5821,7 +5820,7 @@ public class DoubleVector256Tests extends AbstractVectorTest {
     }
 
     @Test
-    static void DoubleDoubleVector256TestsSmokeTest() {
+    static void ElementTypeDoubleVector256TestsSmokeTest() {
         DoubleVector av = DoubleVector.zero(SPECIES);
         assert(av.species().elementType() == double.class);
     }

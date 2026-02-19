@@ -593,7 +593,7 @@
     }
 
     @Test
-    static void $Type$$vectorteststype$SmokeTest() {
+    static void ElementType$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
         assert(av.species().elementType() == {#if[FP16]?Float16.class:$type$.class});
     }

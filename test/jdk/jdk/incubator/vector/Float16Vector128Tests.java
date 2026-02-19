@@ -63,7 +63,6 @@ public class Float16Vector128Tests extends AbstractVectorTest {
                 Float16Vector.SPECIES_128;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
-
     static void assertEquals(short actual, short expected) {
         Assert.assertEquals(Float.float16ToFloat(actual), Float.float16ToFloat(expected));
     }
@@ -601,7 +600,7 @@ public class Float16Vector128Tests extends AbstractVectorTest {
                 assertEquals(r[i], f.apply(a[i], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue()))));
             }
         } catch (AssertionError e) {
-            assertEquals(r[i], f.apply(a[i], (float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())))),
+            assertEquals(r[i], f.apply(a[i], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue()))),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -5817,7 +5816,7 @@ public class Float16Vector128Tests extends AbstractVectorTest {
     }
 
     @Test
-    static void Float16Float16Vector128TestsSmokeTest() {
+    static void ElementTypeFloat16Vector128TestsSmokeTest() {
         Float16Vector av = Float16Vector.zero(SPECIES);
         assert(av.species().elementType() == Float16.class);
     }
