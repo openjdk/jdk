@@ -56,17 +56,13 @@ static jmp_buf  context;
 static volatile int _last_si_code = -1;
 static volatile int _failures = 0;
 static volatile int _rec_count = 0; // Number of allocations to hit stack guard page
-static volatile int _kp_rec_count = 0; // Kept record of rec_count, for retrying
+static volatile int _previous_rec_count = 0; // Kept record of rec_count, for retrying
 static int _peek_value = 0; // Used for accessing memory to cause SIGSEGV
-
-pid_t gettid() {
-  return (pid_t) syscall(SYS_gettid);
-}
 
 static void handler(int sig, siginfo_t *si, void *unused) {
   _last_si_code = si->si_code;
   printf("Got SIGSEGV(%d) at address: 0x%lx\n",si->si_code, (long) si->si_addr);
-  longjmp(context, 1);
+  siglongjmp(context, 1);
 }
 
 static char* altstack = NULL;
@@ -159,8 +155,16 @@ void *run_java_overflow (void *p) {
 
 void do_overflow(){
   volatile int *p = NULL;
-  if (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
+  if (_previous_rec_count == 0) {
+    // We need to find the appropriate depth to probe into
     for(;;) {
+      _rec_count++;
+      p = (int*)alloca(128);
+      _peek_value = p[0]; // Peek
+    }
+  } else {
+    while(_rec_count < _previous_rec_count) {
+      // This is our second round, we can do exactly 1 less allocation
       _rec_count++;
       p = (int*)alloca(128);
       _peek_value = p[0]; // Peek
@@ -168,19 +172,19 @@ void do_overflow(){
   }
 }
 
-void *run_native_overflow(void *p) {
+void *run_native_overflow(void *is_other_thread) {
   // Test that stack guard page is correctly set for initial and non initial thread
   // and correctly removed for the initial thread
   volatile int res;
-  printf("run_native_overflow %ld\n", (long) gettid());
+  printf("run_native_overflow, %s", *(int *)is_other_thread ? "in other thread\n" : "in initial thread\n");
   call_method_on_jvm("printAlive");
 
   // Initialize statics used in do_overflow
-  _kp_rec_count = 0;
+  _previous_rec_count = 0;
   _rec_count = 0;
 
   set_signal_handler();
-  if (! setjmp(context)) {
+  if (! sigsetjmp(context, 1)) {
     do_overflow();
   }
 
@@ -194,7 +198,7 @@ void *run_native_overflow(void *p) {
     exit(7);
   }
 
-  if (getpid() != gettid()) {
+  if (*(int *)is_other_thread) {
     // For non-initial thread we don't unmap the region but call os::uncommit_memory and keep PROT_NONE
     // so if host has enough swap space we will get the same SEGV with code SEGV_ACCERR(2) trying
     // to access it as if the guard page is present.
@@ -204,11 +208,11 @@ void *run_native_overflow(void *p) {
   }
 
   // Limit depth of recursion for second run. It can't exceed one for first run.
-  _kp_rec_count = _rec_count;
+  _previous_rec_count = _rec_count;
   _rec_count = 0;
 
   set_signal_handler();
-  if (! setjmp(context)) {
+  if (! sigsetjmp(context, 1)) {
     do_overflow();
   }
 
@@ -314,8 +318,8 @@ int main (int argc, const char** argv) {
   if (strcmp(argv[1], "test_native_overflow_initial") == 0) {
     printf("\nTesting NATIVE_OVERFLOW\n");
     printf("Testing stack guard page behaviour for initial thread\n");
-
-    run_native_overflow(NULL);
+    int is_other_thread = 0;
+    run_native_overflow(&is_other_thread);
 
     exit((_failures > 0) ? 1 : 0);
   }
@@ -324,11 +328,11 @@ int main (int argc, const char** argv) {
     init_thread_or_die(&thr, &thread_attr);
     printf("\nTesting NATIVE_OVERFLOW\n");
     printf("Testing stack guard page behaviour for other thread\n");
-
-    pthread_create(&thr, &thread_attr, run_native_overflow, NULL);
+    int is_other_thread = 1;
+    pthread_create(&thr, &thread_attr, run_native_overflow, &is_other_thread);
     pthread_join(thr, NULL);
-
-    exit((_failures > 0) ? 1 : 0);
+    // Other-thread test cannot increase _failure count
+    exit(0);
   }
 
   fprintf(stderr, "Test ERROR. Unknown parameter %s\n", ((argc > 1) ? argv[1] : "none"));
