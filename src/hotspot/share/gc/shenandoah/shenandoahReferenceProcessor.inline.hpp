@@ -42,10 +42,15 @@ template <typename ClosureType>
 class ShenandoahOldDiscoveredMarker : public OopIterateClosure {
   ClosureType* _closure;
 public:
-  explicit ShenandoahOldDiscoveredMarker(ClosureType& closure) : _closure(closure) {}
+  explicit ShenandoahOldDiscoveredMarker(ClosureType* closure) : _closure(closure) {}
 
-  void do_oop(oop* o) override        { _closure->do_oop(o); }
-  void do_oop(narrowOop* o) override  { _closure->do_oop(o); }
+  void do_oop(oop* o) override               { _closure->do_oop(o); }
+  void do_oop(narrowOop* o) override         { _closure->do_oop(o); }
+  bool do_metadata() override                { _closure->do_metadata(); }
+  void do_klass(Klass* k) override           { _closure->do_klass(k); }
+  void do_cld(ClassLoaderData* cld) override { _closure->do_cld(cld); }
+  void do_method(Method* m) override         { _closure->do_method(m); }
+  void do_nmethod(nmethod* nm) override      { _closure->do_nmethod(nm); }
 
   ReferenceIterationMode reference_iteration_mode() override {
     return DO_FIELDS_EXCEPT_REFERENT;
