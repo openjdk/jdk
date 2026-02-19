@@ -488,7 +488,7 @@ public abstract class ResourceBundle {
     /**
      * A Set of the keys contained only in this ResourceBundle.
      */
-    private final Supplier<Set<String>> keySet = StableValue.supplier(
+    private final LazyConstant<Set<String>> keySet = LazyConstant.of(
             new Supplier<>() { public Set<String> get() { return keySet0(); }});
 
     private Set<String> keySet0() {

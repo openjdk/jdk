@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6498300
+ * @bug     6498300 8377457
  *
  * @summary regression: parent loggers are not properly registered
  * @author  ss45998
@@ -77,6 +77,8 @@ public class ParentLoggersTest {
                 initialLoggerNames.add(logger);
             }
         }
+        System.out.println("# default loggers are: " + defaultLoggers);
+        System.out.println("# initial loggers are: " + initialLoggerNames);
 
         String tstSrc = System.getProperty(TST_SRC_PROP);
         File   fname  = new File(tstSrc, LM_PROP_FNAME);
@@ -131,7 +133,10 @@ public class ParentLoggersTest {
             }
 
         }
-        System.out.println(returnedLoggerNames);
+        System.out.println("# Created loggers are: " +
+                createdLoggers.stream().map(Logger::getName).toList());
+        System.out.println("# Expected loggers are: " + expectedLoggerNames);
+        System.out.println("# Returned loggers are: " + returnedLoggerNames);
         return checkNames(expectedLoggerNames, returnedLoggerNames, failMsg);
     }
 

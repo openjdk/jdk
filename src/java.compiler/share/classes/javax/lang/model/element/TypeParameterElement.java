@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,11 @@ import javax.lang.model.type.TypeVariable;
  * A type parameter declares a {@link TypeVariable}.
  *
  * @see TypeVariable
+ * @jls 8.1.2 Generic Classes and Type Parameters
+ * @jls 8.4.4 Generic Methods
+ * @jls 8.8.4 Generic Constructors
+ * @jls 9.1.2 Generic Interfaces and Type Parameters
+ *
  * @since 1.6
  */
 public interface TypeParameterElement extends Element {

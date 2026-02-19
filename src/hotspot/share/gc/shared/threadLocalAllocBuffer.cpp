@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,10 +458,22 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
   return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
 }
 
-const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
-  return AtomicAccess::load(&_start);
-}
-
-const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
-  return AtomicAccess::load(&_top);
+size_t ThreadLocalAllocBuffer::estimated_used_bytes() const {
+  // Data races due to unsynchronized access like the following reads to _start
+  // and _top are undefined behavior. Atomic<T> would not provide any additional
+  // guarantees, so use AtomicAccess directly.
+  HeapWord* start = AtomicAccess::load(&_start);
+  HeapWord* top = AtomicAccess::load(&_top);
+  // If there has been a race when retrieving _top and _start, return 0.
+  if (top < start) {
+    return 0;
+  }
+  size_t used_bytes = pointer_delta(top, start, 1);
+  // Comparing diff with the maximum allowed size will ensure that we don't add
+  // the used bytes from a semi-initialized TLAB ending up with implausible values.
+  // In this case also just return 0.
+  if (used_bytes > ThreadLocalAllocBuffer::max_size_in_bytes()) {
+    return 0;
+  }
+  return used_bytes;
 }

@@ -76,6 +76,7 @@ public final class JDKEvents {
         jdk.internal.event.VirtualThreadSubmitFailedEvent.class,
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
+        jdk.internal.event.FinalFieldMutationEvent.class,
         DirectBufferStatisticsEvent.class,
         InitialSecurityPropertyEvent.class,
         MethodTraceEvent.class,

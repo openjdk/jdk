@@ -431,7 +431,7 @@ public abstract sealed class Executable extends AccessibleObject
             // modifiers?  Probably not in the general case, since
             // we'd have no way of knowing about them, but there
             // may be specific cases.
-            out[i] = new Parameter("arg" + i, 0, this, i);
+            out[i] = new Parameter(null, 0, this, i);
         return out;
     }
 

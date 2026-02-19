@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class JavacBenchmark {
             try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(JavacBenchmark.class.getResourceAsStream("/src.zip")))) {
                 for (ZipEntry entry; (entry = zis.getNextEntry()) != null;) {
                     final String ename = entry.getName();
-                    if (!ename.startsWith("java.desktop") && !ename.startsWith("jdk.internal.vm.compiler") && !ename.startsWith("jdk.aot") && !ename.startsWith("jdk.accessibility")) {
+                    if (!ename.startsWith("java.desktop") && !ename.startsWith("jdk.internal.vm.compiler") && !ename.startsWith("jdk.aot") && !ename.startsWith("jdk.accessibility") && !ename.startsWith("jdk.jsobject")) {
                         if (!entry.isDirectory() && ename.endsWith(".java")) {
                             Path dst = root.resolve(ename);
                             Files.createDirectories(dst.getParent());
@@ -188,7 +188,7 @@ public class JavacBenchmark {
                 };
             }
         }) {
-            String[] cmdLine = new String[] {"-XDcompilePolicy=simple", "-implicit:none", "-nowarn", "--module-source-path", root.toString(), "-d", root.toString(), "-XDignore.symbol.file=true", "@" + srcList.toString()};
+            String[] cmdLine = new String[] {"-source", "25", "-XDcompilePolicy=simple", "-implicit:none", "-nowarn", "--module-source-path", root.toString(), "-d", root.toString(), "-XDignore.symbol.file=true", "@" + srcList.toString()};
             if (new Main("javac").compile(cmdLine, ctx).exitCode != 0) {
                 throw new IOException("compilation failed");
             }

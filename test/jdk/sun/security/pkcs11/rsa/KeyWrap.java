@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  * @run main/othervm KeyWrap
  */
 
+import jtreg.SkippedException;
+
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -54,8 +56,7 @@ public class KeyWrap extends PKCS11Test {
         try {
             Cipher.getInstance("RSA/ECB/PKCS1Padding", p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Not supported by provider, skipping");
         }
         KeyPair kp;
         try {
@@ -74,8 +75,7 @@ public class KeyWrap extends PKCS11Test {
                 kp = new KeyPair(pub, priv);
             } catch (NoSuchAlgorithmException | InvalidKeyException ee) {
                 ee.printStackTrace();
-                System.out.println("Provider does not support RSA, skipping");
-                return;
+                throw new SkippedException("Provider does not support RSA, skipping");
             }
         }
         System.out.println(kp);

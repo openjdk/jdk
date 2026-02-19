@@ -23,6 +23,7 @@
  */
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import jdk.test.lib.JDKToolLauncher;
@@ -32,7 +33,7 @@ import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /**
- * @test
+ * @test id=xcomp
  * @bug 8370176
  * @requires vm.hasSA
  * @requires os.family == "linux"
@@ -40,6 +41,28 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp
  */
+
+/**
+ * @test id=xcomp-preserve-frame-pointer
+ * @bug 8370176
+ * @requires vm.hasSA
+ * @requires os.family == "linux"
+ * @requires os.arch == "amd64"
+ * @library /test/lib
+ * @run driver TestJhsdbJstackMixedWithXComp -XX:+PreserveFramePointer
+ */
+
+/**
+ * @test id=xcomp-disable-tiered-compilation
+ * @bug 8370176
+ * @requires vm.hasSA
+ * @requires os.family == "linux"
+ * @requires os.arch == "amd64"
+ * @library /test/lib
+ * @run driver TestJhsdbJstackMixedWithXComp -XX:-TieredCompilation
+ */
+
+
 public class TestJhsdbJstackMixedWithXComp {
 
     private static void runJstack(LingeredApp app) throws Exception {
@@ -89,8 +112,12 @@ public class TestJhsdbJstackMixedWithXComp {
         LingeredApp app = null;
 
         try {
+            List<String> jvmOpts = new ArrayList<>();
+            jvmOpts.add("-Xcomp");
+            jvmOpts.addAll(Arrays.asList(args));
+
             app = new LingeredAppWithVirtualThread();
-            LingeredApp.startApp(app, "-Xcomp");
+            LingeredApp.startApp(app, jvmOpts.toArray(new String[0]));
             System.out.println("Started LingeredApp with pid " + app.getPid());
             runJstack(app);
             System.out.println("Test Completed");

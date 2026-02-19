@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,10 +30,14 @@ import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
+import sun.jvm.hotspot.code.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.aarch64.*;
 
 public final class LinuxAARCH64CFrame extends BasicCFrame {
-   public LinuxAARCH64CFrame(LinuxDebugger dbg, Address fp, Address pc) {
+   public LinuxAARCH64CFrame(LinuxDebugger dbg, Address sp, Address fp, Address pc) {
       super(dbg.getCDebugger());
+      this.sp = sp;
       this.fp = fp;
       this.pc = pc;
       this.dbg = dbg;
@@ -55,11 +59,11 @@ public final class LinuxAARCH64CFrame extends BasicCFrame {
 
    @Override
    public CFrame sender(ThreadProxy thread) {
-      return sender(thread, null, null);
+      return sender(thread, null, null, null);
    }
 
    @Override
-   public CFrame sender(ThreadProxy thread, Address nextFP, Address nextPC) {
+   public CFrame sender(ThreadProxy thread, Address nextSP, Address nextFP, Address nextPC) {
       // Check fp
       // Skip if both nextFP and nextPC are given - do not need to load from fp.
       if (nextFP == null && nextPC == null) {
@@ -86,7 +90,32 @@ public final class LinuxAARCH64CFrame extends BasicCFrame {
       if (nextPC == null) {
         return null;
       }
-      return new LinuxAARCH64CFrame(dbg, nextFP, nextPC);
+
+      if (nextSP == null) {
+        CodeCache cc = VM.getVM().getCodeCache();
+        CodeBlob currentBlob = cc.findBlobUnsafe(pc());
+
+        // This case is different from HotSpot. See JDK-8371194 for details.
+        if (currentBlob != null && (currentBlob.isContinuationStub() || currentBlob.isNativeMethod())) {
+          // Use FP since it should always be valid for these cases.
+          // TODO: These should be walked as Frames not CFrames.
+          nextSP = fp.addOffsetTo(2 * ADDRESS_SIZE);
+        } else {
+          CodeBlob codeBlob = cc.findBlobUnsafe(nextPC);
+          boolean useCodeBlob = codeBlob != null && codeBlob.getFrameSize() > 0;
+          nextSP = useCodeBlob ? nextFP.addOffsetTo((2 * ADDRESS_SIZE) - codeBlob.getFrameSize()) : nextFP;
+        }
+      }
+      if (nextSP == null) {
+        return null;
+      }
+
+      return new LinuxAARCH64CFrame(dbg, nextSP, nextFP, nextPC);
+   }
+
+   @Override
+   public Frame toFrame() {
+     return new AARCH64Frame(sp, fp, pc);
    }
 
    // package/class internals only

@@ -24,19 +24,26 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.ApplicationBuilder.normalizeLauncherProperty;
 import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
 import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
+import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinLauncherMixin;
 
 final class WinPackagingPipeline {
 
@@ -53,8 +60,35 @@ final class WinPackagingPipeline {
                         .applicationAction(WinPackagingPipeline::rebrandLaunchers).add();
     }
 
+    static ApplicationLaunchers normalizeShortcuts(ApplicationLaunchers appLaunchers) {
+
+        appLaunchers = normalizeShortcuts(appLaunchers, WinLauncher::startMenuShortcut, (launcher, shortcut) -> {
+            return new WinLauncherMixin.Stub(launcher.isConsole(), shortcut, launcher.desktopShortcut());
+        });
+
+        appLaunchers = normalizeShortcuts(appLaunchers, WinLauncher::desktopShortcut, (launcher, shortcut) -> {
+            return new WinLauncherMixin.Stub(launcher.isConsole(), launcher.startMenuShortcut(), shortcut);
+        });
+
+        return appLaunchers;
+    }
+
+    private static ApplicationLaunchers normalizeShortcuts(
+            ApplicationLaunchers appLaunchers,
+            Function<WinLauncher, Optional<LauncherShortcut>> shortcutGetter,
+            BiFunction<WinLauncherMixin, Optional<LauncherShortcut>, WinLauncherMixin> shortcutOverrider) {
+        return normalizeLauncherProperty(appLaunchers, launcher -> {
+            // Return "true" if shortcut is not configured for the launcher.
+            return shortcutGetter.apply(launcher).isEmpty();
+        }, (WinLauncher launcher) -> {
+            return shortcutGetter.apply(launcher).flatMap(LauncherShortcut::startupDirectory);
+        }, (launcher, shortcut) -> {
+            return WinLauncher.create(launcher, shortcutOverrider.apply(launcher, Optional.of(new LauncherShortcut(shortcut))));
+        });
+    }
+
     private static void rebrandLaunchers(AppImageBuildEnv<WinApplication, ApplicationLayout> env)
-            throws IOException, PackagerException {
+            throws IOException {
         for (var launcher : env.app().launchers()) {
             final var iconTarget = createLauncherIconResource(launcher, env.env()::createResource).map(iconResource -> {
                 var iconDir = env.env().buildRoot().resolve("icons");
@@ -79,5 +113,10 @@ final class WinPackagingPipeline {
         }
     }
 
-    static final ApplicationLayout APPLICATION_LAYOUT = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
+    static final ApplicationLayout APPLICATION_LAYOUT = ApplicationLayout.build()
+            .setAll("")
+            .appDirectory("app")
+            .runtimeDirectory("runtime")
+            .appModsDirectory(Path.of("app", "mods"))
+            .create();
 }

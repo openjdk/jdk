@@ -362,10 +362,13 @@ public final class TaskHelper {
 
                 if (plugin instanceof DefaultCompressPlugin) {
                     plugOption
-                        = new PluginOption(false,
+                        = new PluginOption(true,
                             (task, opt, arg) -> {
                                 Map<String, String> m = addArgumentMap(plugin);
-                                m.put(plugin.getName(), DefaultCompressPlugin.LEVEL_2);
+                                String level = (arg != null && !arg.isEmpty())
+                                        ? arg
+                                        :"zip-6";
+                                m.put(plugin.getName(), level);
                             }, false, "--compress", "-c");
                     mainOptions.add(plugOption);
                 } else if (plugin instanceof DefaultStripDebugPlugin) {

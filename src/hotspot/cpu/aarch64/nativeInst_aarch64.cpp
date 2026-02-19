@@ -133,7 +133,6 @@ void NativeMovConstReg::verify() {
 
 
 intptr_t NativeMovConstReg::data() const {
-  // das(uint64_t(instruction_address()),2);
   address addr = MacroAssembler::target_addr_for_insn(instruction_address());
   if (maybe_cpool_ref(instruction_address())) {
     return *(intptr_t*)addr;
@@ -144,6 +143,7 @@ intptr_t NativeMovConstReg::data() const {
 
 void NativeMovConstReg::set_data(intptr_t x) {
   if (maybe_cpool_ref(instruction_address())) {
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
     address addr = MacroAssembler::target_addr_for_insn(instruction_address());
     *(intptr_t*)addr = x;
   } else {
@@ -350,8 +350,6 @@ bool NativeInstruction::is_stop() {
 
 //-------------------------------------------------------------------
 
-void NativeGeneralJump::verify() {  }
-
 // MT-safe patching of a long jump instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   ShouldNotCallThis();
@@ -393,12 +391,6 @@ void NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS) {
 void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
-
-#ifdef ASSERT
-static bool is_movk_to_zr(uint32_t insn) {
-  return ((insn & 0xffe0001f) == 0xf280001f);
-}
-#endif
 
 bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {

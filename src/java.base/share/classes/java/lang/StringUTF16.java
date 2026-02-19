@@ -34,6 +34,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
@@ -93,7 +94,7 @@ final class StringUTF16 {
         return value.length >> 1;
     }
 
-    private static int codePointAt(byte[] value, int index, int end, boolean checked) {
+    static int codePointAt(byte[] value, int index, int end, boolean checked) {
         assert index < end;
         if (checked) {
             checkIndex(index, value);
@@ -590,6 +591,77 @@ final class StringUTF16 {
 
     static int compareToCI_Latin1(byte[] value, byte[] other) {
         return -StringLatin1.compareToCI_UTF16(other, value);
+    }
+
+    public static int compareToFC_Latin1(byte[] value, byte[] other) {
+        return -StringLatin1.compareToFC_UTF16(other, value);
+    }
+
+    private static int compareToFC0(byte[] value, int off, int last, byte[] other, int ooff, int olast) {
+        int f1 = 0, f2 = 0;
+        int k1 = off, k2 = ooff;
+        while ((k1 < last || f1 != 0) && (k2 < olast || f2 != 0)) {
+            int c1, c2;
+            if (f1 != 0) {
+                c1 = f1 & 0xffff; f1 >>>= 16;
+            } else {
+                c1 = StringUTF16.codePointAt(value, k1, last, true);
+                k1 += Character.charCount(c1);
+                var f = CaseFolding.fold(c1);
+                if (CaseFolding.isSingleCodePoint(f)) {
+                    c1 = (int)(f & 0xfffff);
+                } else {
+                    c1 = (int)(f & 0xffff);
+                    f1 = (int)(f >> 16);
+                }
+            }
+            if (f2 != 0) {
+                c2 = f2 & 0xffff; f2 >>>= 16;
+            } else {
+                c2 = StringUTF16.codePointAt(other, k2, olast, true);
+                k2 += Character.charCount(c2);
+                var f = CaseFolding.fold(c2);
+                if (CaseFolding.isSingleCodePoint(f)) {
+                    c2 = (int)(f & 0xfffff);
+                } else {
+                    c2 = (int)(f & 0xffff);
+                    f2 = (int)(f >>> 16);
+                }
+            }
+            if (c1 != c2) {
+                return c1 - c2;
+            }
+        }
+        if (k1 < last || f1 != 0) {
+            return 1;
+        }
+        if (k2 < olast || f2 != 0) {
+            return -1;
+        }
+        return 0;
+    }
+
+    public static int compareToFC(byte[] value, byte[] other) {
+        int tlast = length(value);
+        int olast = length(other);
+        int lim = Math.min(tlast, olast);
+        int k = 0;
+        while (k < lim) {
+            int cp1 = codePointAt(value, k, tlast, true);
+            int cp2 = codePointAt(other, k, olast, true);
+            if (cp1 != cp2) {
+                long cf1 = CaseFolding.fold(cp1);
+                long cf2 = CaseFolding.fold(cp2);
+                if (cf1 != cf2) {
+                    if (!CaseFolding.isSingleCodePoint(cf1) || !CaseFolding.isSingleCodePoint(cf2)) {
+                        return compareToFC0(value, k, tlast, other, k, olast);
+                    }
+                    return (int) cf1 - (int) cf2;
+                }
+            }
+            k += Character.charCount(cp1);
+        }
+        return tlast - olast;
     }
 
     static int hashCode(byte[] value) {

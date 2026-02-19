@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@ import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
-import static jdk.jpackage.test.CannedFormattedString.cannedAbsolutePath;
+import static jdk.jpackage.test.JPackageCommand.makeAdvice;
+import static jdk.jpackage.test.JPackageCommand.makeError;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,15 +41,18 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -141,7 +145,7 @@ public final class ErrorTest {
         private final TokenReplace tokenReplace = new TokenReplace(token());
     }
 
-    record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedFormattedString.CannedArgument {
+    record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedArgument {
         PackageTypeSpec {
             Objects.requireNonNull(type);
             if (type.isPresent() && anyNativeType) {
@@ -166,7 +170,7 @@ public final class ErrorTest {
         }
 
         @Override
-        public String value() {
+        public String getValue() {
             return resolvedType().getType();
         }
 
@@ -199,10 +203,34 @@ public final class ErrorTest {
         private static final Optional<PackageType> NATIVE_TYPE = defaultNativeType();
     }
 
-    public record TestSpec(Optional<PackageTypeSpec> type, Optional<String> appDesc, List<String> addArgs,
-            List<String> removeArgs, List<CannedFormattedString> expectedErrors) {
+    public record TestSpec(
+            Optional<PackageTypeSpec> type,
+            Optional<String> appDesc,
+            List<String> addArgs,
+            List<String> removeArgs,
+            List<CannedFormattedString> expectedMessages,
+            boolean match) {
 
         static final class Builder {
+
+            Builder() {
+                type = new PackageTypeSpec(PackageType.IMAGE);
+                appDesc = DEFAULT_APP_DESC;
+                match = true;
+            }
+
+            Builder(Builder other) {
+                type = other.type;
+                appDesc = other.appDesc;
+                match = other.match;
+                addArgs.addAll(other.addArgs);
+                removeArgs.addAll(other.removeArgs);
+                expectedMessages.addAll(other.expectedMessages);
+            }
+
+            Builder copy() {
+                return new Builder(this);
+            }
 
             Builder type(PackageType v) {
                 type = Optional.ofNullable(v).map(PackageTypeSpec::new).orElse(null);
@@ -225,6 +253,19 @@ public final class ErrorTest {
 
             Builder noAppDesc() {
                 return appDesc(null);
+            }
+
+            Builder match(boolean v) {
+                match = v;
+                return this;
+            }
+
+            Builder match() {
+                return match(true);
+            }
+
+            Builder find() {
+                return match(false);
             }
 
             Builder setAddArgs(List<String> v) {
@@ -265,26 +306,31 @@ public final class ErrorTest {
                 return removeArgs(List.of(v));
             }
 
-            Builder setErrors(List<CannedFormattedString> v) {
-                expectedErrors = v;
+            Builder setMessages(List<CannedFormattedString> v) {
+                expectedMessages.clear();
+                expectedMessages.addAll(v);
                 return this;
             }
 
-            Builder setErrors(CannedFormattedString... v) {
-                return setErrors(List.of(v));
+            Builder setMessages(CannedFormattedString... v) {
+                return setMessages(List.of(v));
             }
 
-            Builder errors(List<CannedFormattedString> v) {
-                expectedErrors.addAll(v);
+            Builder messages(List<CannedFormattedString> v) {
+                expectedMessages.addAll(v);
                 return this;
             }
 
-            Builder errors(CannedFormattedString... v) {
-                return errors(List.of(v));
+            Builder messages(CannedFormattedString... v) {
+                return messages(List.of(v));
             }
 
             Builder error(String key, Object ... args) {
-                return errors(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+                return messages(makeError(key, args));
+            }
+
+            Builder advice(String key, Object ... args) {
+                return messages(makeAdvice(key, args));
             }
 
             Builder invalidTypeArg(String arg, String... otherArgs) {
@@ -297,15 +343,21 @@ public final class ErrorTest {
             }
 
             TestSpec create() {
-                return new TestSpec(Optional.ofNullable(type), Optional.ofNullable(appDesc),
-                        List.copyOf(addArgs), List.copyOf(removeArgs), List.copyOf(expectedErrors));
+                return new TestSpec(
+                        Optional.ofNullable(type),
+                        Optional.ofNullable(appDesc),
+                        List.copyOf(addArgs),
+                        List.copyOf(removeArgs),
+                        List.copyOf(expectedMessages),
+                        match);
             }
 
-            private PackageTypeSpec type = new PackageTypeSpec(PackageType.IMAGE);
-            private String appDesc = DEFAULT_APP_DESC;
-            private List<String> addArgs = new ArrayList<>();
-            private List<String> removeArgs = new ArrayList<>();
-            private List<CannedFormattedString> expectedErrors = new ArrayList<>();
+            private PackageTypeSpec type;
+            private String appDesc;
+            private boolean match;
+            private final List<String> addArgs = new ArrayList<>();
+            private final List<String> removeArgs = new ArrayList<>();
+            private final List<CannedFormattedString> expectedMessages = new ArrayList<>();
         }
 
         public TestSpec {
@@ -315,7 +367,7 @@ public final class ErrorTest {
             addArgs.forEach(Objects::requireNonNull);
             Objects.requireNonNull(removeArgs);
             removeArgs.forEach(Objects::requireNonNull);
-            if (expectedErrors.isEmpty()) {
+            if (expectedMessages.isEmpty()) {
                 throw new IllegalArgumentException("The list of expected errors must be non-empty");
             }
         }
@@ -353,8 +405,29 @@ public final class ErrorTest {
                 cmd.clearArguments().addArguments(newArgs);
             }
 
-            defaultInit(cmd, expectedErrors);
-            cmd.execute(1);
+            // Disable default logic adding `--verbose` option
+            // to jpackage command line.
+            // It will affect jpackage error messages if the command line is malformed.
+            cmd.ignoreDefaultVerbose(true);
+
+            // Ignore external runtime as it will interfere
+            // with jpackage arguments in this test.
+            cmd.ignoreDefaultRuntime(true);
+
+            var validator = new JPackageOutputValidator().stderr().expectMatchingStrings(expectedMessages).match(match);
+            if (match) {
+                new JPackageOutputValidator().stdout().validateEndOfStream().applyTo(cmd);
+            }
+
+            cmd.mutate(validator::applyTo).execute(1);
+        }
+
+        TestSpec mapExpectedMessages(UnaryOperator<CannedFormattedString> mapper) {
+            return new TestSpec(type, appDesc, addArgs, removeArgs, expectedMessages.stream().map(mapper).toList(), match);
+        }
+
+        TestSpec copyWithExpectedMessages(List<CannedFormattedString> expectedMessages) {
+            return new TestSpec(type, appDesc, addArgs, removeArgs, expectedMessages, match);
         }
 
         @Override
@@ -372,7 +445,10 @@ public final class ErrorTest {
             if (!removeArgs.isEmpty()) {
                 sb.append("args-del=").append(removeArgs).append("; ");
             }
-            sb.append("errors=").append(expectedErrors);
+            if (!match) {
+                sb.append("find; ");
+            }
+            sb.append("errors=").append(expectedMessages);
             return sb.toString();
         }
 
@@ -395,25 +471,25 @@ public final class ErrorTest {
             // no main-class
             testSpec().removeArgs("--main-class")
                     .error("error.no-main-class-with-main-jar", "hello.jar")
-                    .error("error.no-main-class-with-main-jar.advice", "hello.jar"),
+                    .advice("error.no-main-class-with-main-jar.advice", "hello.jar"),
             // non-existent main jar
-            testSpec().addArgs("--main-jar", "non-existent.jar")
+            testSpec().addArgs("--main-jar", "non-existent.jar").find()
                     .error("error.main-jar-does-not-exist", "non-existent.jar"),
             // non-existent runtime
             testSpec().addArgs("--runtime-image", "non-existent.runtime")
-                    .error("message.runtime-image-dir-does-not-exist", "runtime-image", "non-existent.runtime"),
+                    .error("error.parameter-not-directory", "non-existent.runtime", "--runtime-image"),
             // non-existent app image
             testSpec().noAppDesc().nativeType().addArgs("--name", "foo", "--app-image", "non-existent.appimage")
-                    .error("ERR_AppImageNotExist", "non-existent.appimage"),
+                    .error("error.parameter-not-directory", "non-existent.appimage", "--app-image"),
             // non-existent resource-dir
             testSpec().addArgs("--resource-dir", "non-existent.dir")
-                    .error("message.resource-dir-does-not-exist", "resource-dir", "non-existent.dir"),
+                    .error("error.parameter-not-directory", "non-existent.dir", "--resource-dir"),
             // non-existent icon
             testSpec().addArgs("--icon", "non-existent.icon")
-                    .error("ERR_IconFileNotExit", cannedAbsolutePath("non-existent.icon")),
+                    .error("error.parameter-not-file", "non-existent.icon", "--icon"),
             // non-existent license file
             testSpec().nativeType().addArgs("--license-file", "non-existent.license")
-                    .error("ERR_LicenseFileNotExit"),
+                    .error("error.parameter-not-file", "non-existent.license", "--license-file"),
             // invalid type
             testSpec().addArgs("--type", "invalid-type")
                     .error("ERR_InvalidInstallerType", "invalid-type"),
@@ -421,23 +497,23 @@ public final class ErrorTest {
             testSpec().removeArgs("--input").error("error.no-input-parameter"),
             // no --module-path
             testSpec().appDesc("com.other/com.other.Hello").removeArgs("--module-path")
-                    .error("ERR_MissingArgument", "--runtime-image or --module-path"),
+                    .error("ERR_MissingArgument2", "--runtime-image", "--module-path"),
             // no main class in module path
             testSpec().noAppDesc().addArgs("--module", "java.base", "--runtime-image", Token.JAVA_HOME.token())
                     .error("ERR_NoMainClass"),
             // no module in module path
             testSpec().noAppDesc().addArgs("--module", "com.foo.bar", "--runtime-image", Token.JAVA_HOME.token())
                     .error("error.no-module-in-path", "com.foo.bar"),
-            // --main-jar and --module-name
-            testSpec().noAppDesc().addArgs("--main-jar", "foo.jar", "--module", "foo.bar")
-                    .error("ERR_BothMainJarAndModule"),
             // non-existing argument file
             testSpec().noAppDesc().notype().addArgs("@foo")
-                    .error("ERR_CannotParseOptions", "foo"),
-            // invalid jlink option
-            testSpec().addArgs("--jlink-options", "--foo")
-                    .error("error.jlink.failed", "Error: unknown option: --foo")
+                    .error("ERR_CannotParseOptions", "foo")
         ).map(TestSpec.Builder::create).toList());
+
+        // --main-jar and --module-name
+        createMutuallyExclusive(
+                new ArgumentGroup("--module", "foo.bar"),
+                new ArgumentGroup("--main-jar", "foo.jar")
+        ).map(TestSpec.Builder::noAppDesc).map(TestSpec.Builder::find).map(TestSpec.Builder::create).forEach(testCases::add);
 
         // forbidden jlink options
         testCases.addAll(Stream.of("--output", "--add-modules", "--module-path").map(opt -> {
@@ -488,7 +564,12 @@ public final class ErrorTest {
                 testSpec().addArgs("--app-version", "").error("error.version-string-empty"),
                 testSpec().addArgs("--app-version", "1.").error("error.version-string-zero-length-component", "1."),
                 testSpec().addArgs("--app-version", "1.b.3").error("error.version-string-invalid-component", "1.b.3", "b.3")
-        ));
+        ).map(builder -> {
+            if (TKit.isOSX()) {
+                builder.advice("error.invalid-cfbundle-version.advice");
+            };
+            return builder;
+        }));
     }
 
     @Test
@@ -521,10 +602,13 @@ public final class ErrorTest {
         }
 
         return fromTestSpecBuilders(argsStream.map(args -> {
-            return testSpec().noAppDesc().nativeType()
+            var builder = testSpec().noAppDesc().nativeType()
                     .addArgs("--runtime-image", Token.JAVA_HOME.token())
-                    .addArgs(args)
-                    .error("ERR_NoInstallerEntryPoint", args.getFirst());
+                    .addArgs(args);
+            if (args.contains("--add-modules")) {
+                builder.error("ERR_MutuallyExclusiveOptions", "--runtime-image", "--add-modules");
+            }
+            return builder.error("ERR_NoInstallerEntryPoint", args.getFirst());
         }));
     }
 
@@ -533,31 +617,43 @@ public final class ErrorTest {
     public static void testAdditionLaunchers(TestSpec spec) {
         final Path propsFile = TKit.createTempFile("add-launcher.properties");
         TKit.createPropertiesFile(propsFile, Map.of());
-        spec.test(Map.of(Token.ADD_LAUNCHER_PROPERTY_FILE, cmd -> propsFile));
+        spec.mapExpectedMessages(cannedStr -> {
+            return cannedStr.mapArgs(arg -> {
+                if (arg == Token.ADD_LAUNCHER_PROPERTY_FILE) {
+                    return propsFile;
+                } else {
+                    return arg;
+                }
+            });
+        }).test(Map.of(Token.ADD_LAUNCHER_PROPERTY_FILE, cmd -> propsFile));
     }
 
     public static Collection<Object[]> testAdditionLaunchers() {
         return fromTestSpecBuilders(Stream.of(
             testSpec().addArgs("--add-launcher", Token.ADD_LAUNCHER_PROPERTY_FILE.token())
-                    .error("ERR_NoAddLauncherName"),
+                    .error("error.parameter-add-launcher-malformed", Token.ADD_LAUNCHER_PROPERTY_FILE, "--add-launcher"),
             testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
-                    .error("ERR_NoUniqueName")
+                    .error("error.launcher-duplicate-name", "foo")
         ));
     }
 
     @Test
     @ParameterSupplier("invalidNames")
-    public static void testInvalidAppName(String name) {
-        testSpec().removeArgs("--name").addArgs("--name", name)
-                .error("ERR_InvalidAppName", adjustTextStreamVerifierArg(name)).create().test();
+    public static void testInvalidAppName(InvalidName name) {
+        testSpec().removeArgs("--name").addArgs("--name", name.value())
+                .error("ERR_InvalidAppName", adjustTextStreamVerifierArg(name.value()))
+                .match(!name.isMessingUpConsoleOutput())
+                .create()
+                .test();
     }
 
     @Test
     @ParameterSupplier("invalidNames")
-    public static void testInvalidAddLauncherName(String name) {
+    public static void testInvalidAddLauncherName(InvalidName name) {
         testAdditionLaunchers(testSpec()
                 .addArgs("--add-launcher", name + "=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
-                .error("ERR_InvalidSLName", adjustTextStreamVerifierArg(name))
+                .error("ERR_InvalidSLName", adjustTextStreamVerifierArg(name.value()))
+                .match(!name.isMessingUpConsoleOutput())
                 .create());
     }
 
@@ -567,7 +663,27 @@ public final class ErrorTest {
         if (TKit.isWindows()) {
             data.add("foo\\bar");
         }
-        return toTestArgs(data.stream());
+        return toTestArgs(data.stream().map(InvalidName::new));
+    }
+
+    record InvalidName(String value) {
+        InvalidName {
+            Objects.requireNonNull(value);
+        }
+
+        boolean isMessingUpConsoleOutput() {
+            var controlChars = "\r\n\t".codePoints().toArray();
+            return value.codePoints().anyMatch(cp -> {
+                return IntStream.of(controlChars).anyMatch(v -> {
+                    return v == cp;
+                });
+            });
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
     }
 
     public static Collection<Object[]> testWindows() {
@@ -577,24 +693,24 @@ public final class ErrorTest {
             return Stream.of(
                     testSpec().type(type).addArgs("--launcher-as-service")
                             .error("error.missing-service-installer")
-                            .error("error.missing-service-installer.advice"),
+                            .advice("error.missing-service-installer.advice"),
                     // The below version strings are invalid for msi and exe packaging.
                     // They are valid for app image packaging.
                     testSpec().type(type).addArgs("--app-version", "1234")
                             .error("error.msi-product-version-components", "1234")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.3.4.5")
                             .error("error.msi-product-version-components", "1.2.3.4.5")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "256.1")
                             .error("error.msi-product-version-major-out-of-range", "256.1")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.256")
                             .error("error.msi-product-version-minor-out-of-range", "1.256")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
                             .error("error.msi-product-version-build-out-of-range", "1.2.65536")
-                            .error("error.version-string-wrong-format.advice")
+                            .advice("error.version-string-wrong-format.advice")
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
 
@@ -610,10 +726,10 @@ public final class ErrorTest {
         testCases.addAll(Stream.of(
                 testSpec().addArgs("--app-version", "0.2")
                         .error("message.version-string-first-number-not-zero")
-                        .error("error.invalid-cfbundle-version.advice"),
+                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().addArgs("--app-version", "1.2.3.4")
                         .error("message.version-string-too-many-components")
-                        .error("error.invalid-cfbundle-version.advice"),
+                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().type(PackageType.MAC_DMG).invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().invalidTypeArg("--mac-dmg-content", "foo"),
@@ -621,10 +737,16 @@ public final class ErrorTest {
                 testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token())
                         .error("error.app-image.mac-sign.required"),
                 testSpec().type(PackageType.MAC_PKG).addArgs("--mac-package-identifier", "#1")
-                        .error("message.invalid-identifier", "#1"),
+                        .error("message.invalid-identifier", "#1")
+                        .advice("message.invalid-identifier.advice"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
-                        .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands")
+                        .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
+                // Predefined app image must be a valid macOS bundle.
+                testSpec().noAppDesc().nativeType().addArgs("--app-image", Token.EMPTY_DIR.token())
+                        .error("error.parameter-not-mac-bundle", JPackageCommand.cannedArgument(cmd -> {
+                            return Path.of(cmd.getArgumentValue("--app-image"));
+                        }, Token.EMPTY_DIR.token()), "--app-image")
         ).map(TestSpec.Builder::create).toList());
 
         macInvalidRuntime(testCases::add);
@@ -634,21 +756,62 @@ public final class ErrorTest {
                 new ArgumentGroup("--app-version", "2.0"),
                 new ArgumentGroup("--name", "foo"),
                 new ArgumentGroup("--mac-app-store")
-        ).map(argGroup -> {
-            return testSpec().noAppDesc().addArgs(argGroup.asArray()).addArgs("--app-image", Token.APP_IMAGE.token())
-                    .error("ERR_InvalidOptionWithAppImageSigning", argGroup.arg());
-         // It should bail out with the same error message regardless of `--mac-sign` option.
-        }).mapMulti(ErrorTest::duplicateForMacSign).toList());
+        ).flatMap(argGroup -> {
+            var withoutSign = testSpec()
+                    .noAppDesc()
+                    .addArgs(argGroup.asArray())
+                    .addArgs("--app-image", Token.APP_IMAGE.token());
+
+            var withSign = withoutSign.copy().addArgs("--mac-sign");
+
+            withoutSign.error("error.app-image.mac-sign.required");
+
+            // It should bail out with the same error message regardless of `--mac-sign` option.
+            return Stream.of(withoutSign, withSign).map(builder -> {
+                return builder.error("ERR_InvalidOptionWithAppImageSigning", argGroup.arg());
+            });
+
+        }).map(TestSpec.Builder::create).toList());
 
         testCases.addAll(createMutuallyExclusive(
                 new ArgumentGroup("--mac-signing-key-user-name", "foo"),
                 new ArgumentGroup("--mac-app-image-sign-identity", "bar")
         ).mapMulti(ErrorTest::duplicateForMacSign).toList());
 
-        testCases.addAll(createMutuallyExclusive(
-                new ArgumentGroup("--mac-signing-key-user-name", "foo"),
-                new ArgumentGroup("--mac-installer-sign-identity", "bar")
-        ).map(TestSpec.Builder::nativeType).mapMulti(ErrorTest::duplicateForMacSign).toList());
+        for (var packageType : PackageType.MAC) {
+            testCases.addAll(createMutuallyExclusive(
+                    new ArgumentGroup("--mac-signing-key-user-name", "foo"),
+                    new ArgumentGroup("--mac-installer-sign-identity", "bar")
+            ).map(builder -> {
+                return builder.type(packageType);
+            }).mapMulti(ErrorTest::duplicateForMacSign).map(testCase -> {
+                if (packageType != PackageType.MAC_PKG) {
+                    /*
+                     * This is a bit tricky.
+                     * The error output should also contain
+                     *
+                     *  Error: Option [--mac-installer-sign-identity] is not valid with type [dmg]" error message.
+                     *
+                     * The order of errors is defined by the order of options on the command line causing them.
+                     * If "--mac-installer-sign-identity" goes before "--mac-signing-key-user-name", the error output will be:
+                     *
+                     *  Error: Option [--mac-installer-sign-identity] is not valid with type [dmg]
+                     *  Error: Mutually exclusive options [--mac-signing-key-user-name] and [--mac-installer-sign-identity]
+                     *
+                     * otherwise errors in the output will be in reverse order.
+                     */
+                    var expectedMessages = new ArrayList<>(testCase.expectedMessages());
+                    var invalidTypeOption = makeError("ERR_InvalidTypeOption", "--mac-installer-sign-identity", packageType.getType());
+                    if (testCase.addArgs().indexOf("--mac-installer-sign-identity") < testCase.addArgs().indexOf("--mac-signing-key-user-name")) {
+                        expectedMessages.addFirst(invalidTypeOption);
+                    } else {
+                        expectedMessages.add(invalidTypeOption);
+                    }
+                    testCase = testCase.copyWithExpectedMessages(expectedMessages);
+                }
+                return testCase;
+            }).toList());
+        }
 
         return toTestArgs(testCases.stream());
     }
@@ -659,10 +822,10 @@ public final class ErrorTest {
         testCases.addAll(Stream.of(
                 testSpec().type(PackageType.LINUX_DEB).addArgs("--linux-package-name", "#")
                         .error("error.deb-invalid-value-for-package-name", "#")
-                        .error("error.deb-invalid-value-for-package-name.advice"),
+                        .advice("error.deb-invalid-value-for-package-name.advice"),
                 testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
                         .error("error.rpm-invalid-value-for-package-name", "#")
-                        .error("error.rpm-invalid-value-for-package-name.advice")
+                        .advice("error.rpm-invalid-value-for-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
 
         invalidShortcut(testCases::add, "--linux-shortcut");
@@ -683,12 +846,7 @@ public final class ErrorTest {
         final var signingId = "foo";
 
         final List<CannedFormattedString> errorMessages = new ArrayList<>();
-        errorMessages.add(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.cert.not.found", "Developer ID Application: " + signingId, ""));
-        errorMessages.addAll(Stream.of(
-                "error.explicit-sign-no-cert",
-                "error.explicit-sign-no-cert.advice"
-        ).map(JPackageStringBundle.MAIN::cannedFormattedString).toList());
+        errorMessages.add(makeError("error.cert.not.found", "Developer ID Application: " + signingId, ""));
 
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
@@ -700,9 +858,9 @@ public final class ErrorTest {
             errorMessages.stream()
                     .map(CannedFormattedString::getValue)
                     .map(TKit::assertTextStream)
-                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateOutput);
+                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateErr);
         } else {
-            cmd.validateOutput(errorMessages.toArray(CannedFormattedString[]::new));
+            cmd.validateErr(errorMessages.toArray(CannedFormattedString[]::new));
         }
 
         cmd.execute(1);
@@ -725,21 +883,21 @@ public final class ErrorTest {
     private static void invalidShortcut(Consumer<TestSpec> accumulator, String shortcutOption) {
         Objects.requireNonNull(shortcutOption);
         Stream.of("true", "false", "").map(value -> {
-            return testSpec().nativeType().addArgs(shortcutOption, value).error("error.invalid-option-value", value, shortcutOption).create();
+            return testSpec().nativeType().addArgs(shortcutOption, value).error("error.parameter-not-launcher-shortcut-dir", value, shortcutOption).create();
         }).forEach(accumulator);
     }
 
     private static void macInvalidRuntime(Consumer<TestSpec> accumulator) {
-        var runtimeWithBinDirErr = JPackageStringBundle.MAIN.cannedFormattedString(
+        var runtimeWithBinDirErr = makeError(
                 "error.invalid-runtime-image-bin-dir", JPackageCommand.cannedArgument(cmd -> {
                     return Path.of(cmd.getArgumentValue("--runtime-image"));
                 }, Token.JAVA_HOME.token()));
-        var runtimeWithBinDirErrAdvice = JPackageStringBundle.MAIN.cannedFormattedString(
+        var runtimeWithBinDirErrAdvice = makeAdvice(
                 "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
 
         Stream.of(
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
-                        .errors(runtimeWithBinDirErr, runtimeWithBinDirErrAdvice)
+                        .messages(runtimeWithBinDirErr, runtimeWithBinDirErrAdvice)
         ).map(TestSpec.Builder::create).forEach(accumulator);
 
         Stream.of(
@@ -771,11 +929,11 @@ public final class ErrorTest {
         }
 
         TestSpec.Builder applyTo(TestSpec.Builder builder) {
-            return builder.addArgs("--runtime-image", runtimeDir.token()).errors(expectedErrorMsg());
+            return builder.addArgs("--runtime-image", runtimeDir.token()).messages(expectedErrorMsg());
         }
 
         private CannedFormattedString expectedErrorMsg() {
-            return JPackageStringBundle.MAIN.cannedFormattedString(
+            return makeError(
                     "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
                         return Path.of(cmd.getArgumentValue("--runtime-image"));
                     }, runtimeDir.token()), missingFile);
@@ -847,20 +1005,6 @@ public final class ErrorTest {
                 new UnsupportedPlatformOption("--mac-app-category", "category"),
                 new UnsupportedPlatformOption("--mac-dmg-content", "additional-content")
         );
-    }
-
-    private static void defaultInit(JPackageCommand cmd, List<CannedFormattedString> expectedErrors) {
-
-        // Disable default logic adding `--verbose` option
-        // to jpackage command line.
-        // It will affect jpackage error messages if the command line is malformed.
-        cmd.ignoreDefaultVerbose(true);
-
-        // Ignore external runtime as it will interfere
-        // with jpackage arguments in this test.
-        cmd.ignoreDefaultRuntime(true);
-
-        cmd.validateOutput(expectedErrors.toArray(CannedFormattedString[]::new));
     }
 
     private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {

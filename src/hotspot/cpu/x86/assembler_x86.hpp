@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -449,8 +449,8 @@ const int FPUStateSizeInWords = 2688 / wordSize;
 // imm8[1:0]                =  00 (min) / 01 (max)
 //
 // [1] https://www.intel.com/content/www/us/en/content-details/856721/intel-advanced-vector-extensions-10-2-intel-avx10-2-architecture-specification.html?wapkw=AVX10
-const int AVX10_MINMAX_MAX_COMPARE_SIGN = 0x5;
-const int AVX10_MINMAX_MIN_COMPARE_SIGN = 0x4;
+const int AVX10_2_MINMAX_MAX_COMPARE_SIGN = 0x5;
+const int AVX10_2_MINMAX_MIN_COMPARE_SIGN = 0x4;
 
 // The Intel x86/Amd64 Assembler: Pure assembler doing NO optimizations on the instruction
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write
@@ -1664,6 +1664,11 @@ private:
   void evmovdqaq(XMMRegister dst, Address src, int vector_len);
   void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
 
+  void vmovsldup(XMMRegister dst, XMMRegister src, int vector_len);
+  void vmovshdup(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovsldup(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovshdup(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
 
@@ -2326,10 +2331,14 @@ private:
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
   void ucomisd(XMMRegister dst, XMMRegister src);
+  void vucomxsd(XMMRegister dst, Address src);
+  void vucomxsd(XMMRegister dst, XMMRegister src);
 
   // Unordered Compare Scalar Single-Precision Floating-Point Values and set EFLAGS
   void ucomiss(XMMRegister dst, Address src);
   void ucomiss(XMMRegister dst, XMMRegister src);
+  void vucomxss(XMMRegister dst, Address src);
+  void vucomxss(XMMRegister dst, XMMRegister src);
 
   void xabort(int8_t imm8);
 

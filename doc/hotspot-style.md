@@ -884,8 +884,7 @@ rather than `NULL`.  See the paper for reasons to avoid `NULL`.
 
 Don't use (constant expression or literal) 0 for pointers.  Note that C++14
 removed non-literal 0 constants from _null pointer constants_, though some
-compilers continue to treat them as such.  For historical reasons there may be
-lingering uses of 0 as a pointer.
+compilers continue to treat them as such.
 
 ### &lt;atomic&gt;
 
@@ -954,7 +953,7 @@ destructors at exit can lead to problems.
 Some of the approaches used in HotSpot to avoid dynamic initialization
 include:
 
-* Use the `Deferred<T>` class template. Add a call to its initialization
+* Use the `DeferredStatic<T>` class template. Add a call to its initialization
 function at an appropriate place during VM initialization. The underlying
 object is never destroyed.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,9 +201,7 @@ public final class UBiDiProps {
     // data format constants ----------------------------------------------- ***
     @SuppressWarnings("deprecation")
     private static final String DATA_FILE_NAME =
-            "/jdk/internal/icu/impl/data/icudt" +
-            VersionInfo.ICU_DATA_VERSION_PATH +
-            "/ubidi.icu";
+            "/jdk/internal/icu/impl/data/icudata/ubidi.icu";
 
     /* format "BiDi" */
     private static final int FMT=0x42694469;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests for FileServerHandler
- * @run testng FileServerHandlerTest
+ * @run junit FileServerHandlerTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -44,48 +44,48 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import sun.net.httpserver.simpleserver.FileServerHandler;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class FileServerHandlerTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final Class<RuntimeException> RE = RuntimeException.class;
 
-    @DataProvider
-    public Object[][] notAllowedMethods() {
+    public static Object[][] notAllowedMethods() {
         var l = List.of("POST", "PUT", "DELETE", "TRACE", "OPTIONS");
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "notAllowedMethods")
+    @ParameterizedTest
+    @MethodSource("notAllowedMethods")
     public void testNotAllowedRequestMethod(String requestMethod) throws Exception {
         var handler = SimpleFileServer.createFileHandler(CWD);
         var exchange = new MethodHttpExchange(requestMethod);
         handler.handle(exchange);
-        assertEquals(exchange.rCode, 405);
-        assertEquals(exchange.getResponseHeaders().getFirst("allow"), "HEAD, GET");
+        assertEquals(405, exchange.rCode);
+        assertEquals("HEAD, GET", exchange.getResponseHeaders().getFirst("allow"));
     }
 
-    @DataProvider
-    public Object[][] notImplementedMethods() {
+    public static Object[][] notImplementedMethods() {
         var l = List.of("GARBAGE", "RUBBISH", "TRASH", "FOO", "BAR");
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "notImplementedMethods")
+    @ParameterizedTest
+    @MethodSource("notImplementedMethods")
     public void testNotImplementedRequestMethod(String requestMethod) throws Exception {
         var handler = SimpleFileServer.createFileHandler(CWD);
         var exchange = new MethodHttpExchange(requestMethod);
         handler.handle(exchange);
-        assertEquals(exchange.rCode, 501);
+        assertEquals(501, exchange.rCode);
     }
 
-    @DataProvider
-    public Object[][] validRangeHeaders() {
+    public static Object[][] validRangeHeaders() {
         return new Object[][]{
                 // start-end
                 {1000L, "bytes=0-499", new FileServerHandler.RangeEntry(0, 499)},
@@ -152,7 +152,8 @@ public class FileServerHandlerTest {
         };
     }
 
-    @Test(dataProvider = "validRangeHeaders")
+    @ParameterizedTest
+    @MethodSource("validRangeHeaders")
     public void testValidRangeParse(long fileLength, String rangeHeader, FileServerHandler.RangeEntry... entries) {
         var ranges = FileServerHandler.parseRangeHeader(rangeHeader, fileLength);
         assertNotNull(ranges);
@@ -163,8 +164,7 @@ public class FileServerHandlerTest {
         }
     }
 
-    @DataProvider
-    public Object[][] invalidRangeHeaders() {
+    public static Object[][] invalidRangeHeaders() {
         return new Object[][]{
                 // invalid ranges: start > end, end beyond file, start beyond file
                 {"bytes=500-400"}, {"bytes=1000-1001"}, {"bytes=1000-"},
@@ -183,7 +183,8 @@ public class FileServerHandlerTest {
         };
     }
 
-    @Test(dataProvider = "invalidRangeHeaders")
+    @ParameterizedTest
+    @MethodSource("invalidRangeHeaders")
     public void testInvalidRangeParse(String rangeHeader) {
         var ranges = FileServerHandler.parseRangeHeader(rangeHeader, 1000L);
         assertNull(ranges);
@@ -200,8 +201,8 @@ public class FileServerHandlerTest {
                     throw new RuntimeException("getRequestBody");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "getRequestBody");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("getRequestBody", t.getMessage());
         }
         {
             var exchange = new ThrowingHttpExchange("GET") {
@@ -209,8 +210,8 @@ public class FileServerHandlerTest {
                     throw new RuntimeException("getResponseHeaders");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "getResponseHeaders");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("getResponseHeaders", t.getMessage());
         }
         {
             var exchange = new ThrowingHttpExchange("GET") {
@@ -218,8 +219,8 @@ public class FileServerHandlerTest {
                     throw new RuntimeException("sendResponseHeaders");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "sendResponseHeaders");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("sendResponseHeaders", t.getMessage());
         }
         {
             var exchange = new ThrowingHttpExchange("GET") {
@@ -227,8 +228,8 @@ public class FileServerHandlerTest {
                     throw new RuntimeException("getResponseBody");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "getResponseBody");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("getResponseBody", t.getMessage());
         }
         {
             var exchange = new ThrowingHttpExchange("GET") {
@@ -236,8 +237,8 @@ public class FileServerHandlerTest {
                     throw new RuntimeException("close");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "close");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("close", t.getMessage());
         }
     }
 

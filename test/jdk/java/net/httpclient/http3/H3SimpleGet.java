@@ -148,6 +148,18 @@
  *                      H3SimpleGet
  */
 
+/*
+ * @test id=reno-cc
+ * @bug 8087112
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @run testng/othervm/timeout=480 -Djdk.internal.httpclient.quic.congestionController=reno
+ *                     H3SimpleGet
+ * @summary send multiple GET requests using Reno congestion controller
+ */
+
+
 // Interesting additional settings for debugging and manual testing:
 // -----------------------------------------------------------------
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic:retransmit:control,http3
@@ -196,7 +208,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 public class H3SimpleGet implements HttpServerAdapters {
     static HttpTestServer httpsServer;
     static HttpClient client = null;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static String httpsURIString;
     static ExecutorService serverExec =
             Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -204,8 +216,6 @@ public class H3SimpleGet implements HttpServerAdapters {
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
 
             httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, serverExec);
@@ -222,9 +232,6 @@ public class H3SimpleGet implements HttpServerAdapters {
     }
 
     private static void warmup() throws Exception {
-        SimpleSSLContext sslct = new SimpleSSLContext();
-        var sslContext = sslct.get();
-
         // warmup server
         try (var client2 = createClient(sslContext, Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("client-2-vt-worker", 1).factory()))) {

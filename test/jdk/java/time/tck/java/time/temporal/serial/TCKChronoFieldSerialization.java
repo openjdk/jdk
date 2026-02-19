@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,21 +86,21 @@ import static java.time.temporal.ChronoField.ERA;
 import java.io.IOException;
 import java.time.temporal.ChronoField;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test serialization of ChronoField.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKChronoFieldSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
     // List of Fields
     //-----------------------------------------------------------------------
-    @DataProvider(name="fieldBased")
     Object[][] data_fieldBased() {
         return new Object[][] {
                 {DAY_OF_WEEK},
@@ -135,7 +135,8 @@ public class TCKChronoFieldSerialization extends AbstractTCKTest {
         };
     }
 
-    @Test(dataProvider = "fieldBased")
+    @ParameterizedTest
+    @MethodSource("data_fieldBased")
     public void test_fieldSerializable(ChronoField field) throws IOException, ClassNotFoundException {
         assertSerializableSame(field);
     }

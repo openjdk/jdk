@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ import java.util.HashMap;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.transparentScope;
 import static compiler.lib.template_framework.Template.dataNames;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
@@ -77,7 +78,7 @@ public class TestPrimitiveTypes {
         Map<String, TemplateToken> tests = new HashMap<>();
 
         // The boxing tests check if we can autobox with "boxedTypeName".
-        var boxingTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
+        var boxingTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> scope(
             let("CON1", type.con()),
             let("CON2", type.con()),
             let("Boxed", type.boxedTypeName()),
@@ -99,7 +100,7 @@ public class TestPrimitiveTypes {
         }
 
         // Integral and Float types have a size. Also test if "isFloating" is correct.
-        var integralFloatTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> body(
+        var integralFloatTemplate = Template.make("name", "type", (String name, PrimitiveType type) -> scope(
             let("size", type.byteSize()),
             let("isFloating", type.isFloating()),
             """
@@ -129,27 +130,31 @@ public class TestPrimitiveTypes {
 
         // Finally, test the type by creating some DataNames (variables), and sampling
         // from them. There should be no cross-over between the types.
-        var variableTemplate = Template.make("type", (PrimitiveType type) -> body(
+        // IMPORTANT: since we are adding the DataName via an inserted Template, we
+        //            must chose a "transparentScope", so that the DataName escapes. If we
+        //            instead chose "scope", the test would fail, because it later
+        //            finds no DataNames when we sample.
+        var variableTemplate = Template.make("type", (PrimitiveType type) -> transparentScope(
             let("CON", type.con()),
-            addDataName($("var"), type, MUTABLE),
+            addDataName($("var"), type, MUTABLE), // escapes the Template
             """
             #type $var = #CON;
             """
         ));
 
-        var sampleTemplate = Template.make("type", (PrimitiveType type) -> body(
-            let("var", dataNames(MUTABLE).exactOf(type).sample().name()),
+        var sampleTemplate = Template.make("type", (PrimitiveType type) -> scope(
             let("CON", type.con()),
+            dataNames(MUTABLE).exactOf(type).sampleAndLetAs("var"),
             """
             #var = #CON;
             """
         ));
 
-        var namesTemplate = Template.make(() -> body(
+        var namesTemplate = Template.make(() -> scope(
             """
             public static void test_names() {
             """,
-            Hooks.METHOD_HOOK.anchor(
+            Hooks.METHOD_HOOK.anchor(scope(
                 Collections.nCopies(10,
                     CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
                         Hooks.METHOD_HOOK.insert(variableTemplate.asToken(type))
@@ -161,7 +166,7 @@ public class TestPrimitiveTypes {
                 Collections.nCopies(10,
                     CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(sampleTemplate::asToken).toList()
                 )
-            ),
+            )),
             """
             }
             """
@@ -169,10 +174,50 @@ public class TestPrimitiveTypes {
 
         tests.put("test_names", namesTemplate.asToken());
 
+        var abbrevDefTemplate = Template.make("type", (PrimitiveType type) -> scope(
+            let("CON1", type.con()),
+            let("CON2", type.con()),
+            let("abbrev", type.abbrev()),
+            let("fieldDesc", type.fieldDesc()),
+            """
+            static #type varAbbrev#abbrev = #CON1;
+            static #type varFieldDesc#fieldDesc = #CON2;
+            """
+        ));
+        var swapTemplate = Template.make("type", (PrimitiveType type) -> scope(
+            let("abbrev", type.abbrev()),
+            let("fieldDesc", type.fieldDesc()),
+            """
+            #type tmp#abbrev = varAbbrev#abbrev;
+            varAbbrev#abbrev = varFieldDesc#fieldDesc;
+            varFieldDesc#fieldDesc = tmp#abbrev;
+            """
+        ));
+        var abbrevTemplate = Template.make(() -> scope(
+            """
+            public static void test_abbrev() {
+            """,
+            Hooks.CLASS_HOOK.insert(scope(
+                // Create fields that would collide if the abbrev() or fieldDesc() methods produced colliding
+                // strings for different types
+                CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                    abbrevDefTemplate.asToken(type)
+                ).toList()
+            )),
+                CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                    swapTemplate.asToken(type)
+                ).toList(),
+            """
+            }
+            """
+        ));
+
+        tests.put("test_abbrev", abbrevTemplate.asToken());
+
         // Test runtime random value generation with LibraryRNG
         // Runtime random number generation of a given primitive type can be very helpful
         // when writing tests that require random inputs.
-        var libraryRNGWithTypeTemplate = Template.make("type", (PrimitiveType type) -> body(
+        var libraryRNGWithTypeTemplate = Template.make("type", (PrimitiveType type) -> scope(
             """
             {
                 // Fill an array with 1_000 random values. Every type has at least 2 values,
@@ -196,7 +241,7 @@ public class TestPrimitiveTypes {
             """
         ));
 
-        var libraryRNGTemplate = Template.make(() -> body(
+        var libraryRNGTemplate = Template.make(() -> scope(
             // Make sure we instantiate the LibraryRNG class.
             PrimitiveType.generateLibraryRNG(),
             // Now we can use it inside the test.
@@ -213,7 +258,7 @@ public class TestPrimitiveTypes {
 
         // Finally, put all the tests together in a class, and invoke all
         // tests from the main method.
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             """
             package p.xyz;
 
@@ -226,6 +271,9 @@ public class TestPrimitiveTypes {
             import compiler.lib.generators.*;
 
             public class InnerTest {
+            """,
+            Hooks.CLASS_HOOK.anchor(scope(
+            """
                 public static void main() {
             """,
             // Call all test methods from main.
@@ -236,7 +284,8 @@ public class TestPrimitiveTypes {
                 }
             """,
             // Now add all the test methods.
-            tests.values().stream().toList(),
+            tests.values().stream().toList()
+            )),
             """
             }
             """

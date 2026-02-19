@@ -163,6 +163,16 @@ public class PEMDecoderTest {
         }
         System.out.println("PASS");
 
+        System.out.println("Check if PEM decode decodes content correctly");
+        final String tmpContent = "1234567";
+        final PEM tmpPem = new PEM("ONE", tmpContent);
+        if (!Arrays.equals(
+                Base64.getDecoder().decode(tmpContent),
+                tmpPem.decode())) {
+            throw new AssertionError("PEM decode error");
+        }
+        System.out.println("PASS");
+
         System.out.println("Decode to EncryptedPrivateKeyInfo: ");
         EncryptedPrivateKeyInfo ekpi =
             d.decode(PEMData.ed25519ep8.pem(), EncryptedPrivateKeyInfo.class);

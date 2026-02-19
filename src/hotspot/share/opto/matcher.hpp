@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,8 +327,14 @@ public:
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
   static bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
+  // Returns true if the platform efficiently implements the given masked vector
+  // operation using predicate features, false otherwise.
   static bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
+  // Determines if a vector operation needs to be partially implemented with a mask
+  // controlling only the lanes in range [0, vector_length) are processed. This applies
+  // to operations whose vector length is less than the hardware-supported maximum
+  // vector length. Returns true if the operation requires masking, false otherwise.
   static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
@@ -512,6 +518,8 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
+  static bool is_register_biasing_candidate(const MachNode* mdef, int oper_index);
+
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.
   // In non-product mode, SoftMatchFailure is false to detect non-canonical

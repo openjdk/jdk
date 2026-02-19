@@ -23,7 +23,6 @@
  */
 
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalCounter.inline.hpp"
@@ -34,18 +33,18 @@ StringDedup::StorageUse::StorageUse(OopStorage* storage) :
 {}
 
 bool StringDedup::StorageUse::is_used_acquire() const {
-  return AtomicAccess::load_acquire(&_use_count) > 0;
+  return _use_count.load_acquire() > 0;
 }
 
 StringDedup::StorageUse*
-StringDedup::StorageUse::obtain(StorageUse* volatile* ptr) {
+StringDedup::StorageUse::obtain(Atomic<StorageUse*>* ptr) {
   GlobalCounter::CriticalSection cs(Thread::current());
-  StorageUse* storage = AtomicAccess::load(ptr);
-  AtomicAccess::inc(&storage->_use_count);
+  StorageUse* storage = ptr->load_relaxed();
+  storage->_use_count.add_then_fetch(1u);
   return storage;
 }
 
 void StringDedup::StorageUse::relinquish() {
-  size_t result = AtomicAccess::sub(&_use_count, size_t(1));
-  assert(result != SIZE_MAX, "use count underflow");
+  size_t result = _use_count.fetch_then_sub(1u);
+  assert(result != 0, "use count underflow");
 }

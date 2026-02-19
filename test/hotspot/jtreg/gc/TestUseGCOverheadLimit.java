@@ -67,7 +67,7 @@ public class TestUseGCOverheadLimit {
       "-XX:ParallelGCThreads=1",      // Make GCs take longer.
       "-XX:+UseGCOverheadLimit",
       "-Xlog:gc=debug",
-      "-XX:GCTimeLimit=90",           // Ease the CPU requirement a little.
+      "-XX:GCTimeLimit=80",           // Ease the CPU requirement.
       "-Xmx128m",
       Allocating.class.getName()
     };

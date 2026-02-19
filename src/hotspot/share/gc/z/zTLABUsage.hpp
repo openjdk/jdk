@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZTLABUSAGE_HPP
 #define SHARE_GC_Z_ZTLABUSAGE_HPP
 
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -42,9 +43,9 @@
 class ZTLABUsage {
 private:
   // Accounting TLAB used until the next GC cycle
-  volatile size_t _used;
+  Atomic<size_t> _used;
   // Sequence of historic used values
-  TruncatedSeq    _used_history;
+  TruncatedSeq   _used_history;
 
 public:
   ZTLABUsage();

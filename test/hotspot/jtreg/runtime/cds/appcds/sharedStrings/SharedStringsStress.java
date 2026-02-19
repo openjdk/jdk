@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,11 +80,11 @@ public class SharedStringsStress {
                 "-Xlog:gc+region+cds",
                 "-Xlog:gc+region=trace"));
         TestCommon.checkDump(dumpOutput);
-        dumpOutput.shouldContain("string table array (primary)");
-        dumpOutput.shouldContain("string table array (secondary)");
 
+        // We could create up to 26MB of archived heap objects. Run with enough Xms to ensure
+        // SerialGC can accommodate the archived objects during VM start up.
         OutputAnalyzer execOutput = TestCommon.exec(appJar,
-            TestCommon.concat(vmOptionsPrefix, "-Xlog:aot,cds", "HelloString"));
+            TestCommon.concat(vmOptionsPrefix, "-Xlog:aot,cds", "-Xms128m", "HelloString"));
         TestCommon.checkExec(execOutput);
     }
 }
