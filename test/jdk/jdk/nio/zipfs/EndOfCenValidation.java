@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * fast with much less resources.
  *
  * While the CEN in these files are zero-filled and the produced ZIPs are technically
- * invalid, the CEN is never actually read by ZipFile since it does
+ * invalid, the CEN is never actually read by ZipFileSystem since it does
  * 'End of central directory record' (END header) validation before reading the CEN.
  */
 public class EndOfCenValidation {
