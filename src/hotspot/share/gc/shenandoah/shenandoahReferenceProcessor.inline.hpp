@@ -39,6 +39,20 @@ oop reference_discovered(oop reference) {
 }
 
 template <typename ClosureType>
+class ShenandoahOldDiscoveredMarker : public OopIterateClosure {
+  ClosureType* _closure;
+public:
+  explicit ShenandoahOldDiscoveredMarker(ClosureType& closure) : _closure(closure) {}
+
+  void do_oop(oop* o) override        { _closure->do_oop(o); }
+  void do_oop(narrowOop* o) override  { _closure->do_oop(o); }
+
+  ReferenceIterationMode reference_iteration_mode() override {
+    return DO_FIELDS_EXCEPT_REFERENT;
+  }
+};
+
+template <typename ClosureType>
 void ShenandoahRefProcThreadLocal::mark_discovered_list(ClosureType* cl) {
   // We may have young references with old referents on the discovered lists of the
   // old generation reference processor. Since these references were "discovered",
@@ -59,8 +73,7 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
     return;
   }
 
-  const auto mode = cl->reference_iteration_mode();
-  cl->set_reference_iteration_mode(OopIterateClosure::DO_FIELDS_EXCEPT_REFERENT);
+  ShenandoahOldDiscoveredMarker<ClosureType> marker(cl);
   OopType* list = reinterpret_cast<OopType*>(&_discovered_list);
   while (list != nullptr) {
     const oop discovered_ref = CompressedOops::decode(*list);
@@ -74,7 +87,7 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
     // in the list. Note that we cannot also simply remove young references from the list at the
     // end of young marking even if they are unreachable. If the reference has a queue associated
     // with it, we _must_ wait until old marking is complete before enqueueing the reference.
-    discovered_ref->oop_iterate(cl);
+    discovered_ref->oop_iterate(&marker);
 
     // Discovered list terminates with a self-loop
     const oop discovered = reference_discovered<OopType>(discovered_ref);
@@ -83,7 +96,6 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
     }
     list = reference_discovered_addr<OopType>(discovered_ref);
   }
-  cl->set_reference_iteration_mode(mode);
 }
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_INLINE_HPP
