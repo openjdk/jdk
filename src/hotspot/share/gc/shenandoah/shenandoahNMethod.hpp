@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/growableArray.hpp"
 
 // ShenandoahNMethod tuple records the internal locations of oop slots within reclocation stream in
@@ -115,7 +116,7 @@ private:
   int                         _limit;
 
   shenandoah_padding(0);
-  volatile size_t       _claimed;
+  Atomic<size_t>            _claimed;
   shenandoah_padding(1);
 
 public:
