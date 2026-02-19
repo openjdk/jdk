@@ -382,8 +382,10 @@ private:
   static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                               oop orig_obj, oop referrer);
 
- public:
   static void reset_archived_object_states(TRAPS);
+  static void ensure_determinism(TRAPS);
+ public:
+  static void prepare_for_archiving(TRAPS);
   static void create_archived_object_cache() {
     _archived_object_cache =
       new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
