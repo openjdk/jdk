@@ -1990,13 +1990,8 @@ bool VM_Version::compute_has_intel_jcc_erratum() {
 // Conversely, all other BMI2 instructions (BZHI, MULX, RORX, SARX, SHRX, SHLX)
 // execute efficiently on every BMI2-capable CPU and are unaffected by this check.
 //
-// Based on official optimization guides and community micro-benchmarks, we only enable these intrinsics
-// for CPU generations verified to have native hardware support as is more detrimental to performance
-// to use these potentially microcoded intrinsics than it is to fall back to the standard Java implementation.
-//
-// Benchmarks are available at:
-//   https://uops.info/html-instr/PDEP_R64_R64_R64.html
-//   https://bugs.openjdk.org/browse/JDK-8373613
+// The logic in this method is based on official optimization guides from hardware vendors,
+// to guarantee that microcode implementations of PEXT/PDEP are not used.
 bool VM_Version::compute_fast_bmi2() {
   if (!supports_bmi2()) {
     return false;
@@ -2019,7 +2014,8 @@ bool VM_Version::compute_fast_bmi2() {
   }
 
   // Zhaoxin added BMI2 support in Lujiazui (KX-6000+).
-  // Based on community benchmarks, PEXT/PDEP performance is known to be similarly poor to pre-Zen3 AMD, suggesting a microcode implementation.
+  // Based on community benchmarks(https://uops.info/html-instr/PDEP_R64_R64_R64.html),
+  // PEXT/PDEP performance is known to be similarly poor to pre-Zen3 AMD, suggesting a microcode implementation.
   // This cannot be confirmed as Zhaoxin publishes no public optimization guide.
 
   // On VIA/Centaur CNS, BMI2 is implemented in hardware with PDEP/PEXT executing at two per cycle (better than Haswell).
