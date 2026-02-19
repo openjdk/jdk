@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 /*
  * @test
  * @bug 8371685
+ * @requires vm.debug
  * @summary Verifies that the LoopPeeling flag correctly disables loop peeling
  *          by checking whether the "After Loop Peeling" compile phase is
  *          emitted.  When -XX:-LoopPeeling is set, no peeling should occur and
