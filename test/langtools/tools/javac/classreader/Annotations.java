@@ -46,7 +46,6 @@ import toolbox.Task;
 public class Annotations {
     private ToolBox tb = new ToolBox();
     private Path base;
-    
 
     @Test
     public void testParameterModifiersNotVisible() throws Exception {
