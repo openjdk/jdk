@@ -485,11 +485,40 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
     return false;
   }
 
+  // klass, name, and sigature of the method
   Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
+  Symbol* method_name = cp->method_handle_name_ref_at(mh_index);
+  Symbol* klass_name = cp->klass_name_at(cp->method_handle_klass_index_at(mh_index));
+
   if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
     log_debug(aot, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
+
+  {
+    Klass* k = find_loaded_class(Thread::current(), cp->pool_holder()->class_loader(), klass_name);
+    if (k == nullptr) {
+      // Dumping AOT cache: all classes should have been loaded by FinalImageRecipes::load_all_classes(). k must have
+      // been a class that was excluded when FinalImageRecipes recorded all classes at the end of the training run.
+      //
+      // Dumping static CDS archive: all classes in the classlist have already been loaded, before we resolve
+      // constants. k must have been a class that was excluded when the classlist was written
+      // at the end of the training run.
+      if (log_is_enabled(Warning, aot, resolve)) {
+        ResourceMark rm;
+        log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is not loaded", klass_name->as_C_string());
+      }
+      return false;
+    }
+    if (!is_class_resolution_deterministic(cp->pool_holder(), k)) {
+      if (log_is_enabled(Warning, aot, resolve)) {
+        ResourceMark rm;
+        log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded or not deterministic", k->external_name());
+      }
+      return false;
+    }
+  }
+
   return check_methodtype_signature(cp, sig);
 }
 
