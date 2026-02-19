@@ -35,7 +35,7 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  *          emitted.  When -XX:-LoopPeeling is set, no peeling should occur and
  *          the phase must be absent from the compilation output.
  * @library /test/lib /
- * @run main compiler.loopopts.TestLoopPeelingDisabled
+ * @run driver compiler.loopopts.TestLoopPeelingDisabled
  */
 public class TestLoopPeelingDisabled {
     static int[] array = new int[100];
@@ -53,7 +53,7 @@ public class TestLoopPeelingDisabled {
         // phase was not found).
         try {
             TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
-                                      "-XX:-LoopPeeling");
+                                       "-XX:-LoopPeeling");
             throw new RuntimeException("Expected IRViolationException");
         } catch (IRViolationException e) {
             String info = e.getExceptionInfo();
