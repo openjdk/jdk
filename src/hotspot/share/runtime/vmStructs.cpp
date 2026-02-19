@@ -159,7 +159,7 @@
                 unchecked_nonstatic_field)                                                                                           \
                                                                                                                                      \
   /******************************************************************/                                                               \
-  /* OopDesc and Klass hierarchies (NOTE: MethodData* incomplete)   */                                                               \
+  /* OopDesc and Klass hierarchies                                  */                                                               \
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
@@ -233,27 +233,7 @@
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(vtableEntry,                 _method,                                       Method*)                               \
-  nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
-  nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
-  nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
-  nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_decompiles,            uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_recompiles,   uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_traps,        uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._trap_hist._array[0],       u1)                                    \
-  nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
-  nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
-  nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
-  nonstatic_field(MethodData,                  _arg_returned,                                 intx)                                  \
-  nonstatic_field(MethodData,                  _tenure_traps,                                 uint)                                  \
-  nonstatic_field(MethodData,                  _invoke_mask,                                  int)                                   \
-  nonstatic_field(MethodData,                  _backedge_mask,                                int)                                   \
-  nonstatic_field(DataLayout,                  _header._struct._tag,                          u1)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._flags,                        u1)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
-  nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
@@ -961,8 +941,6 @@
     declare_type(ConstMethod, MetaspaceObj)                               \
     declare_type(Annotations, MetaspaceObj)                               \
                                                                           \
-  declare_toplevel_type(MethodData::CompilerCounters)                     \
-                                                                          \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
   declare_toplevel_type(vtableEntry)                                      \
@@ -971,7 +949,6 @@
            declare_toplevel_type(Symbol*)                                 \
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
-  declare_toplevel_type(DataLayout)                                       \
   declare_toplevel_type(BSMAttributeEntries)                              \
                                                                           \
   /********/                                                              \
