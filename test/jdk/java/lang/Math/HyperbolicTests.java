@@ -2190,8 +2190,7 @@ public class HyperbolicTests {
                 {+9.80000000000000537347943918575765565e-01    , +2.29755992506730853281874022244325249e+00    },
         };
 
-        for(int i = 0; i < testCases.length; i++) {
-            double [] testCase = testCases[i];
+        for(double [] testCase : testCases) {
             failures += testAtanhCaseWithUlpDiff(testCase[0],
                     testCase[1],
                     3.0);
@@ -2210,9 +2209,9 @@ public class HyperbolicTests {
                 {-2.0,                      NaNd},
         };
 
-        for(int i = 0; i < specialTestCases.length; i++) {
-            failures += testAtanhCaseWithUlpDiff(specialTestCases[i][0],
-                    specialTestCases[i][1],
+        for(double [] specialTestCase : specialTestCases) {
+            failures += testAtanhCaseWithUlpDiff(specialTestCase[0],
+                    specialTestCase[1],
                     0.0);
         }
 
