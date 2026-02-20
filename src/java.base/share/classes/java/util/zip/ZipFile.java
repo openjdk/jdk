@@ -750,9 +750,8 @@ public class ZipFile implements ZipConstants, Closeable {
                 synchronized (inflaters) {
                     // no need to double-check as only one thread gets a
                     // chance to execute run() (Cleaner guarantee)...
-                    Inflater inf;
-                    while (!inflaters.isEmpty()) {
-                        inflaters.removeLast().end();
+                    for (Inflater inf : inflaters) {
+                        inf.end();
                     }
                     // close inflaters cache
                     this.inflaterCache = null;
