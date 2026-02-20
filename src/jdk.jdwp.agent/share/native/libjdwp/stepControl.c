@@ -195,7 +195,7 @@ initState(JNIEnv *env, jthread thread, StepRequest *step)
                 (gdata->jvmti, thread, 0);
     if (error == JVMTI_ERROR_OPAQUE_FRAME) {
         // OPAQUE_FRAME doesn't always mean native method. It's rare that it doesn't, and
-        // means that there is something about the frame's statw that prevents setting up
+        // means that there is something about the frame's state that prevents setting up
         // a NotifyFramePop. One example is a frame that is in the process of returning,
         // which can happen if we start single stepping after getting a MethodExit event.
         // In either any case, we need to be aware that there will be no FramePop event
@@ -765,7 +765,7 @@ initEvents(jthread thread, StepRequest *step)
         }
 
     }
-    
+
     /*
      * Enable step events if necessary. Note that right after VM_INIT, a
      * step OVER or OUT is identical to running forever, so we only enable
