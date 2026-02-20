@@ -55,10 +55,6 @@ public class TestMaxRAMPercentage {
 
   private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
-  private static long getHostMaxMemory() {
-      return Long.valueOf(wb.hostPhysicalMemory());
-  }
-
   private static void checkMaxRAMSize(double maxrampercent, boolean forcecoop, long expectheap, boolean expectcoop) throws Exception {
 
     ArrayList<String> args = new ArrayList<String>();
@@ -128,7 +124,7 @@ public class TestMaxRAMPercentage {
     long requiredHostMemory = maxcoopheap + headroom;
 
     // Get host memory
-    long hostMemory = getHostMaxMemory();
+    long hostMemory = wb.hostPhysicalMemory();
 
     System.out.println("hostMemory: " + hostMemory + ", requiredHostMemory: " + requiredHostMemory);
 
