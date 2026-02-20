@@ -74,7 +74,7 @@ PerfVariable* ThreadService::_daemon_threads_count = nullptr;
 volatile int ThreadService::_atomic_threads_count = 0;
 volatile int ThreadService::_atomic_daemon_threads_count = 0;
 
-volatile jlong ThreadService::_exited_allocated_bytes = 0;
+volatile uint64_t ThreadService::_exited_allocated_bytes = 0;
 
 ThreadDumpResult* ThreadService::_threaddump_list = nullptr;
 
