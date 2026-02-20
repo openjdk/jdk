@@ -2430,45 +2430,72 @@ bool MulVLNode::has_uint_inputs() const {
          has_vector_elements_fit_uint(in(2));
 }
 
-static Node* UMinMaxV_Ideal(Node* n, PhaseGVN* phase, bool can_reshape) {
+static Node* MinMaxV_Common_Ideal(Node* n, int min_opcode, int max_opcode, PhaseGVN* phase, bool can_reshape) {
   int vopc = n->Opcode();
-  assert(vopc == Op_UMinV || vopc == Op_UMaxV, "Unexpected opcode");
+  assert(vopc == Op_UMinV || vopc == Op_UMaxV || vopc == Op_MinV || vopc == Op_MaxV, "Unexpected opcode");
 
-  Node* umin = nullptr;
-  Node* umax = nullptr;
+  Node* min_op = nullptr;
+  Node* max_op = nullptr;
   int lopc = n->in(1)->Opcode();
   int ropc = n->in(2)->Opcode();
 
-  if (lopc == Op_UMinV && ropc == Op_UMaxV) {
-    umin = n->in(1);
-    umax = n->in(2);
-  } else if (lopc == Op_UMaxV && ropc == Op_UMinV) {
-    umin = n->in(2);
-    umax = n->in(1);
+  if (lopc == min_opcode && ropc == max_opcode) {
+    min_op = n->in(1);
+    max_op = n->in(2);
+  } else if (lopc == max_opcode && ropc == min_opcode) {
+    min_op = n->in(2);
+    max_op = n->in(1);
   } else {
     return nullptr;
   }
 
-  // UMin (UMin(a, b), UMax(a, b))  => UMin(a, b)
-  // UMin (UMax(a, b), UMin(b, a))  => UMin(a, b)
-  // UMax (UMin(a, b), UMax(a, b))  => UMax(a, b)
-  // UMax (UMax(a, b), UMin(b, a))  => UMax(a, b)
-  if (umin != nullptr && umax != nullptr) {
-    if ((umin->in(1) == umax->in(1) && umin->in(2) == umax->in(2)) ||
-        (umin->in(2) == umax->in(1) && umin->in(1) == umax->in(2))) {
-      if (vopc == Op_UMinV) {
-        return new UMinVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
-      } else {
-        return new UMaxVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
-      }
+  // Min (Min(a, b), Max(a, b))  => Min(a, b)
+  // Min (Max(a, b), Min(b, a))  => Min(a, b)
+  // Max (Min(a, b), Max(a, b))  => Max(a, b)
+  // Max (Max(a, b), Min(b, a))  => Max(a, b)
+
+  if (min_op != nullptr && max_op != nullptr) {
+    if ((min_op->in(1) == max_op->in(1) && min_op->in(2) == max_op->in(2)) ||
+        (min_op->in(2) == max_op->in(1) && min_op->in(1) == max_op->in(2))) {
+      return VectorNode::make(vopc, max_op->in(1), max_op->in(2), n->bottom_type()->is_vect());
     }
   }
 
   return nullptr;
 }
 
+Node* MinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* progress = MinMaxV_Common_Ideal(this, Op_MinV, Op_MaxV, phase, can_reshape);
+  if (progress != nullptr) return progress;
+
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+Node* MinVNode::Identity(PhaseGVN* phase) {
+  // MinV (a, a) => a
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* MaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* progress = MinMaxV_Common_Ideal(this, Op_MinV, Op_MaxV, phase, can_reshape);
+  if (progress != nullptr) return progress;
+
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+Node* MaxVNode::Identity(PhaseGVN* phase) {
+  // MaxV (a, a) => a
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
 Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
+  Node* progress = MinMaxV_Common_Ideal(this, Op_UMinV, Op_UMaxV, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
@@ -2483,7 +2510,7 @@ Node* UMinVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
+  Node* progress = MinMaxV_Common_Ideal(this, Op_UMinV, Op_UMaxV, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
@@ -2500,4 +2527,5 @@ Node* UMaxVNode::Identity(PhaseGVN* phase) {
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);
 }
+
 #endif // !PRODUCT
