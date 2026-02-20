@@ -1513,7 +1513,7 @@ void Arguments::set_heap_size() {
                        !FLAG_IS_DEFAULT(InitialRAMPercentage);
 
   // Limit the available memory if client emulation mode is enabled.
-  const size_t phys_mem = CompilerConfig::should_set_client_emulation_mode_flags()
+  const size_t avail_mem = CompilerConfig::should_set_client_emulation_mode_flags()
       ? 1ULL*G
       : os::physical_memory();
 
@@ -1521,8 +1521,8 @@ void Arguments::set_heap_size() {
   // fraction of the size of physical memory, respecting the maximum and
   // minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    uint64_t min_memory = (uint64_t)(((double)phys_mem * MinRAMPercentage) / 100);
-    uint64_t max_memory = (uint64_t)(((double)phys_mem * MaxRAMPercentage) / 100);
+    uint64_t min_memory = (uint64_t)(((double)avail_mem * MinRAMPercentage) / 100);
+    uint64_t max_memory = (uint64_t)(((double)avail_mem * MaxRAMPercentage) / 100);
 
     const size_t reasonable_min = clamp_by_size_t_max(min_memory);
     size_t reasonable_max = clamp_by_size_t_max(max_memory);
@@ -1609,7 +1609,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      uint64_t initial_memory = (uint64_t)(((double)phys_mem * InitialRAMPercentage) / 100);
+      uint64_t initial_memory = (uint64_t)(((double)avail_mem * InitialRAMPercentage) / 100);
       size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
