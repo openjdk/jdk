@@ -2442,10 +2442,6 @@ bool Matcher::can_be_java_arg(int reg) {
   return false;
 }
 
-bool Matcher::is_spillable_arg(int reg) {
-  return can_be_java_arg(reg);
-}
-
 uint Matcher::int_pressure_limit()
 {
   return (INTPRESSURE == -1) ? 26 : INTPRESSURE;

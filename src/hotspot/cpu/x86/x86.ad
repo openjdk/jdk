@@ -2751,11 +2751,6 @@ bool Matcher::can_be_java_arg(int reg)
     reg == XMM7_num || reg == XMM7b_num;
 }
 
-bool Matcher::is_spillable_arg(int reg)
-{
-  return can_be_java_arg(reg);
-}
-
 uint Matcher::int_pressure_limit()
 {
   return (INTPRESSURE == -1) ? _INT_REG_mask.size() : INTPRESSURE;

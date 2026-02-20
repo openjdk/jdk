@@ -4212,14 +4212,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"int Matcher::inline_cache_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[inline_cache_reg()]; }\n\n");
 
-  // Interpreter's Frame Pointer Register
-  fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_frame_pointer_reg() {");
-  if (_frame->_interpreter_frame_pointer_reg == nullptr)
-    fprintf(fp_cpp," return OptoReg::Bad; }\n\n");
-  else
-    fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
-            _frame->_interpreter_frame_pointer_reg);
-
   // Frame Pointer definition
   /* CNC - I can not contemplate having a different frame pointer between
      Java and native code; makes my head hurt to think about it.

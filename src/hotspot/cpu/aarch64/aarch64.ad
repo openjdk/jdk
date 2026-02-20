@@ -2493,11 +2493,6 @@ bool Matcher::can_be_java_arg(int reg)
     reg ==  V7_num || reg == V7_H_num;
 }
 
-bool Matcher::is_spillable_arg(int reg)
-{
-  return can_be_java_arg(reg);
-}
-
 uint Matcher::int_pressure_limit()
 {
   // JDK-8183543: When taking the number of available registers as int

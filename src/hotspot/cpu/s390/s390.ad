@@ -1918,10 +1918,6 @@ bool Matcher::can_be_java_arg(int reg) {
   return false;
 }
 
-bool Matcher::is_spillable_arg(int reg) {
-  return can_be_java_arg(reg);
-}
-
 uint Matcher::int_pressure_limit()
 {
   // Medium size register set, 6 special purpose regs, 3 SOE regs.
