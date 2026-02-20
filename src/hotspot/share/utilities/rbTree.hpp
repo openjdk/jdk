@@ -429,7 +429,12 @@ public:
   void free(void* ptr);
 };
 
-
+template <typename T>
+RBTreeOrdering rbtree_primitive_cmp(T a, T b) { // handy function
+  if (a < b) return RBTreeOrdering::LT;
+  if (a > b) return RBTreeOrdering::GT;
+  return RBTreeOrdering::EQ;
+}
 
 template <typename K, typename V, typename COMPARATOR, MemTag mem_tag, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
 using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag, strategy>>;
