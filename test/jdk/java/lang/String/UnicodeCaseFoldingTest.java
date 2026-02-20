@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary tests unicode case-folding based String comparison and equality
- * @bug 4397357 8372208
+ * @bug 4397357
  * @library /lib/testlibrary/java/lang
  * @modules java.base/jdk.internal.lang:+open
  * @run junit/othervm
@@ -42,7 +42,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jdk.internal.lang.CaseFolding;
 
@@ -80,40 +79,36 @@ public class UnicodeCaseFoldingTest {
         assertEquals(0, results.length);
     }
 
-//    @Test
-//    void testAllSimpleCodePointsListedInCaseFoldinigTxt() throws Throwable {
-//        // S=simple, for simple case folding. The simple case folding should still matches
-//        var filter = "^.*; [S]; .*$";
-//        var results = Files.lines(UCDFiles.CASEFOLDING)
-//                .filter(line -> !line.startsWith("#") && line.matches(filter))
-//                .map(line -> {
-//                    var fields = line.split("; ");
-//                    var cp = Integer.parseInt(fields[0], 16);
-//                    fields = fields[2].trim().split(" ");
-//                    var folding = new int[fields.length];
-//                    for (int i = 0; i < folding.length; i++) {
-//                        folding[i] = Integer.parseInt(fields[i], 16);
-//                    }
-//                    var source = new String(Character.toChars(cp));
-//                    var expected = new String(folding, 0, folding.length);
-//
-//                    // (1) Verify compareToFoldCase() result
-//                    assertEquals(0, source.compareToFoldCase(expected),
-//                        "source.compareToFoldCase(expected). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
-//                    assertEquals(0, expected.compareToFoldCase(source),
-//                        "expected.compareToFoldCase(source). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
-//
-//                    // (2) Verify equalsFoldCase() result
-//                    assertTrue(source.equalsFoldCase(expected),
-//                        "source.equalsForldCase(expected). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
-//                    assertTrue(expected.equalsFoldCase(source),
-//                        "expected.equalsForldCase(source). Line: %s, source: %s, expected: %s".formatted(line, source, expected));
-//                    return null;
-//                })
-//                .filter(error -> error != null)
-//                .toArray();
-//        assertEquals(0, results.length);
-//    }
+    @Test
+    void testAllSimpleCodePointsListedInCaseFoldinigTxt() throws Throwable {
+        // S=simple, for simple case folding. The simple case folding should still matches
+        var filter = "^.*; [S]; .*$";
+        var results = Files.lines(UCDFiles.CASEFOLDING)
+                .filter(line -> !line.startsWith("#") && line.matches(filter))
+                .map(line -> {
+                    var fields = line.split("; ");
+                    var cp = Integer.parseInt(fields[0], 16);
+                    fields = fields[2].trim().split(" ");
+                    var folding = new int[fields.length];
+                    for (int i = 0; i < folding.length; i++) {
+                        folding[i] = Integer.parseInt(fields[i], 16);
+                    }
+                    var source = new String(Character.toChars(cp));
+                    var expected = new String(folding, 0, folding.length);
+
+                    // (1) Verify compareToFoldCase() result
+                    assertEquals(0, source.compareToFoldCase(expected), "source.compareToFoldCase(expected)");
+                    assertEquals(0, expected.compareToFoldCase(source), "expected.compareToFoldCase(source)");
+
+                    // (2) Verify equalsFoldCase() result
+                    assertEquals(true, source.equalsFoldCase(expected), "source.equalsFoldCase(expected)");
+                    assertEquals(true, expected.equalsFoldCase(source), "expected.equalsFoldCase(source)");
+                    return null;
+                })
+                .filter(error -> error != null)
+                .toArray();
+        assertEquals(0, results.length);
+    }
 
     @Test
     public void testAllCodePointsFoldToThemselvesIfNotListed() throws Exception {
