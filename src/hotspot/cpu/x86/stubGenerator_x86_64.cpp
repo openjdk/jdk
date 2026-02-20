@@ -4201,7 +4201,7 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
 
 #ifdef COMPILER2
-  if ((UseAVX == 2) && EnableX86ECoreOpts) {
+  if ((UseAVX >= 2) && EnableX86ECoreOpts) {
     generate_string_indexof(StubRoutines::_string_indexof_array);
   }
 #endif
