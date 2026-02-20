@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "jfr/periodic/jfrNativeMemoryEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
+#include "jfr/periodic/jfrRedactedEvents.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -100,17 +101,8 @@ TRACE_REQUEST_FUNC(ResidentSetSize) {
 }
 
 TRACE_REQUEST_FUNC(JVMInformation) {
-  ResourceMark rm;
-  EventJVMInformation event;
-  event.set_jvmName(VM_Version::vm_name());
-  event.set_jvmVersion(VM_Version::internal_vm_info_string());
-  event.set_javaArguments(Arguments::java_command());
-  event.set_jvmArguments(Arguments::jvm_args());
-  event.set_jvmFlags(Arguments::jvm_flags());
-  event.set_jvmStartTime(Management::vm_init_done_time());
-  event.set_pid(os::current_process_id());
-  event.commit();
- }
+  JfrRedactedEvents::emit_jvm_information();
+}
 
 TRACE_REQUEST_FUNC(OSInformation) {
   ResourceMark rm;
@@ -169,7 +161,9 @@ TRACE_REQUEST_FUNC(NativeLibrary) {
 }
 
 TRACE_REQUEST_FUNC(InitialEnvironmentVariable) {
-  JfrOSInterface::generate_initial_environment_variable_events();
+  if (!JfrRedactedEvents::emit_initial_environment_variables()) {
+    log_debug(jfr, system)( "Unable to generate periodic event InitialEnvironmentVariable");
+  }
 }
 
 TRACE_REQUEST_FUNC(CPUInformation) {
@@ -256,10 +250,7 @@ TRACE_REQUEST_FUNC(SystemProcess) {
     // feature is implemented, write real event
     while (processes != nullptr) {
       SystemProcess* tmp = processes;
-      const char* info = processes->command_line();
-      if (info == nullptr) {
-         info = processes->path();
-      }
+      const char* info = processes->path();
       if (info == nullptr) {
          info = processes->name();
       }
@@ -392,7 +383,7 @@ TRACE_REQUEST_FUNC(BooleanFlag) {
 }
 
 TRACE_REQUEST_FUNC(StringFlag) {
-  SEND_FLAGS_OF_TYPE(StringFlag, ccstr);
+  JfrRedactedEvents::emit_string_flags();
 }
 
 class VM_GC_SendObjectCountEvent : public VM_GC_HeapInspection {
@@ -475,19 +466,7 @@ TRACE_REQUEST_FUNC(YoungGenerationConfiguration) {
 }
 
 TRACE_REQUEST_FUNC(InitialSystemProperty) {
-  SystemProperty* p = Arguments::system_properties();
-  JfrTicks time_stamp = JfrTicks::now();
-  while (p !=  nullptr) {
-    if (!p->internal()) {
-      EventInitialSystemProperty event(UNTIMED);
-      event.set_key(p->key());
-      event.set_value(p->value());
-      event.set_starttime(time_stamp);
-      event.set_endtime(time_stamp);
-      event.commit();
-    }
-    p = p->next();
-  }
+  JfrRedactedEvents::emit_initial_system_properties();
 }
 
 TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {

@@ -1196,6 +1196,30 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         false, instrumentation is added when event classes are loaded. By
         default, this parameter is enabled.
 
+    `redact-argument=`argument-filter
+    :   Replace command-line arguments that match a semicolon-separated list
+        of glob patterns, for example, *secret*;password*. Matching is
+        case-insensitive, and the supported wildcards are `*` and `?`. To redact
+        multiple arguments, use `<DELIMITER>` as a separator. For example, to
+        match the two arguments --auth username:token, use the filter
+        --auth<DELIMITER>*:*. To load patterns from a file (one per line),
+        use `@<filename>`. To add to the default patterns instead
+        of replacing them, prefix the whole list with `+`, for example,
+        +*foo*;@redact.txt. Use `none` (lowercase) to disable all redaction
+        filters for command-line arguments. Redacted arguments will be
+        replaced with `[REDACTED]`.
+
+    `redact-key=`key-filter
+    :   Replace the value of environment variables and system properties
+        whose key matches a semicolon-separated list of glob patterns,
+        for example, *password*;*token*. Matching is case-insensitive, and
+        the supported wildcards are `*` and `?`. To load patterns from a file
+        (one per line), use `@<filename>`. To add to the default patterns
+        instead of replacing them, prefix the whole list with `+`,
+        for example, +*cred*;@keys.txt. Use `none` (lowercase) to
+        disable all redaction filters for key matching. Redacted values
+        will be replaced with `[REDACTED]`.
+
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method
         calls. The maximum is 2048. Values greater than 64 could create

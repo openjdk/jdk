@@ -1,0 +1,6 @@
+https://*:*@*
+apple
+-conf-key=*
+/foo/*
+--passphrase<DELIMITER>*
+-header<DELIMITER>Authorization:Bearer<DELIMITER>*

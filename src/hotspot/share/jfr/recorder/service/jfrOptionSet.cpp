@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
+#include "jfr/periodic/jfrRedactedEvents.hpp"
 #include "jfr/recorder/service/jfrMemorySizer.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
@@ -262,6 +263,20 @@ static DCmdArgument<bool> _dcmd_preserve_repository(
   false,
   default_preserve_repository);
 
+static DCmdArgument<char*> _dcmd_redact_argument(
+  "redact-argument",
+  "Redact command line arguments",
+  "STRING",
+  false,
+  nullptr);
+
+static DCmdArgument<char*> _dcmd_redact_key(
+  "redact-key",
+  "Redact environment variables and system properties",
+  "STRING",
+  false,
+  nullptr);
+
 static DCmdParser _parser;
 
 static void register_parser_options() {
@@ -277,6 +292,8 @@ static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_retransform);
   _parser.add_dcmd_option(&_dcmd_old_object_queue_size);
   _parser.add_dcmd_option(&_dcmd_preserve_repository);
+  _parser.add_dcmd_option(&_dcmd_redact_argument);
+  _parser.add_dcmd_option(&_dcmd_redact_key);
   DEBUG_ONLY(_parser.add_dcmd_option(&_dcmd_sample_protection);)
 }
 
@@ -332,6 +349,20 @@ bool JfrOptionSet::initialize(JavaThread* thread) {
     set_retransform(_dcmd_retransform.value());
   }
   set_old_object_queue_size(_dcmd_old_object_queue_size.value());
+  if (_dcmd_redact_argument.is_set()) {
+    if (!JfrRedactedEvents::set_argument_filter(_dcmd_redact_argument.value())) {
+        return false;
+    }
+    _dcmd_redact_argument.destroy_value();
+    _dcmd_redact_argument.set_value(JfrRedactedEvents::new_redacted_text());
+  }
+  if (_dcmd_redact_key.is_set()) {
+    if (!JfrRedactedEvents::set_key_filter(_dcmd_redact_key.value())) {
+        return false;
+    }
+    _dcmd_redact_key.destroy_value();
+    _dcmd_redact_key.set_value(JfrRedactedEvents::new_redacted_text());
+  }
   return adjust_memory_options();
 }
 

@@ -168,6 +168,7 @@ class outputStream;
   LOG_TAG(ptrqueue) \
   LOG_TAG(purge) \
   LOG_TAG(record) \
+  LOG_TAG(redact) \
   LOG_TAG(redefine) \
   LOG_TAG(ref) \
   LOG_TAG(refine) \
