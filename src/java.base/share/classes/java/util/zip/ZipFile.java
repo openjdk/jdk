@@ -732,7 +732,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     // double checked!
                     if (inflaters == this.inflaterCache) {
                         inf.reset();
-                        inflaters.addLast(inf);
+                        inflaters.add(inf);
                         return;
                     }
                 }
