@@ -155,6 +155,10 @@ public class TestVectorAlgorithms {
         testGroups.get("lowerCaseB").put("lowerCaseB_loop",         i -> { return lowerCaseB_loop(d.strB, d.rB1); });
         testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v1", i -> { return lowerCaseB_VectorAPI_v1(d.strB, d.rB2); });
         testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v2", i -> { return lowerCaseB_VectorAPI_v2(d.strB, d.rB3); });
+
+        testGroups.put("pieceWise2FunctionF", new HashMap<String,TestFunction>());
+        testGroups.get("pieceWise2FunctionF").put("pieceWise2FunctionF_loop",      _ -> { return pieceWise2FunctionF_loop(d.xF, d.rF1); });
+        testGroups.get("pieceWise2FunctionF").put("pieceWise2FunctionF_VectorAPI", _ -> { return pieceWise2FunctionF_VectorAPI(d.xF, d.rF2); });
     }
 
     @Warmup(100)
@@ -197,7 +201,9 @@ public class TestVectorAlgorithms {
                  "reduceAddIFieldsX4_VectorAPI",
                  "lowerCaseB_loop",
                  "lowerCaseB_VectorAPI_v1",
-                 "lowerCaseB_VectorAPI_v2"})
+                 "lowerCaseB_VectorAPI_v2",
+                 "pieceWise2FunctionF_loop",
+                 "pieceWise2FunctionF_VectorAPI"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
@@ -596,5 +602,21 @@ public class TestVectorAlgorithms {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object lowerCaseB_VectorAPI_v2(byte[] a, byte[] r) {
         return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v2(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "= 0"})
+    // Currently does not vectorize, but might in the future.
+    public Object pieceWise2FunctionF_loop(float[] a, float[] r) {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_loop(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
+                  IRNode.MUL_VF,        "> 0",
+                  IRNode.SQRT_VF,       "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object pieceWise2FunctionF_VectorAPI(float[] a, float[] r) {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI(a, r);
     }
 }
