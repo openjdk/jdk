@@ -23,6 +23,10 @@
  *
  */
 
+#include "utilities/macros.hpp"
+
+#if INCLUDE_STACKWALKER
+
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "code/codeCache.hpp"
@@ -1133,3 +1137,5 @@ void StackWalker::on_javathread_create(JavaThread* thread) {
   }
   thread->stackwalker_thread_local().queue().init();
 }
+
+#endif // INCLUDE_STACKWALKER

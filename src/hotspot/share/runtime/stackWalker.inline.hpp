@@ -26,6 +26,10 @@
 #ifndef SHARE_RUNTIME_STACKWALKER_INLINE_HPP
 #define SHARE_RUNTIME_STACKWALKER_INLINE_HPP
 
+#include "utilities/macros.hpp"
+
+#if INCLUDE_STACKWALKER
+
 #include "runtime/stackWalker.hpp"
 #include "runtime/javaThread.hpp"
 
@@ -44,4 +48,5 @@ void StackWalker::check_and_process_requests(JavaThread* jt) {
   }
 }
 
+#endif // INCLUDE_STACKWALKER
 #endif // SHARE_RUNTIME_STACKWALKER_INLINE_HPP

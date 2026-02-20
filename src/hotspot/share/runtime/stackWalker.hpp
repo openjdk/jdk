@@ -26,6 +26,10 @@
 #ifndef SHARE_RUNTIME_STACKWALKER_HPP
 #define SHARE_RUNTIME_STACKWALKER_HPP
 
+#include "utilities/macros.hpp"
+
+#if INCLUDE_STACKWALKER
+
 #include "memory/allStatic.hpp"
 
 class JavaThread;
@@ -280,4 +284,5 @@ public:
   DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool enabled);)
 };
 
+#endif // INCLUDE_STACKWALKER
 #endif // SHARE_RUNTIME_STACKWALKER_HPP
