@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Oracle and/or its affiliates, Amazon.com Inc. or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  */
 
-@SuppressWarnings("deprecation")
 public class TestStressLongCountedLoopInfiniteLoop {
     static int RANGE;
 
@@ -44,7 +43,8 @@ public class TestStressLongCountedLoopInfiniteLoop {
     }
 
     static void test(int[] a, int invar) {
-        a[new Integer(0)] = 0;
+        // new Integer(0) works too, using MyInteger to avoid deprecation warnings.
+        a[new MyInteger(0).v()] = 0;
 
         Object o;
         for (int i = 0; i < 1; i++) {
@@ -54,6 +54,18 @@ public class TestStressLongCountedLoopInfiniteLoop {
         // Infinite loop: j is always 0, 0 < 1 is always true.
         for (int j = 0; Integer.valueOf(j) < 1;) {
             j = 0;
+        }
+    }
+
+    static class MyInteger {
+        int v;
+
+        MyInteger(int v) {
+            this.v = v;
+        }
+
+        int v() {
+            return Integer.valueOf(v);
         }
     }
 }

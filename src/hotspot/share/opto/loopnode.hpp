@@ -120,7 +120,6 @@ public:
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
   void mark_loop_nest_inner_loop() { _loop_flags |= LoopNestInnerLoop; }
-  void clear_loop_nest_inner_loop() { _loop_flags &= ~LoopNestInnerLoop; }
   void mark_loop_nest_outer_loop() { _loop_flags |= LoopNestLongOuterLoop; }
 
   int unswitch_max() { return _unswitch_max; }

@@ -431,7 +431,7 @@ Node* PhaseIdealLoop::loop_exit_control(Node* x, IdealLoopTree* loop) {
 
   // Get boolean guarding loop-back test
   Node *iff = iftrue->in(0);
-  if (get_loop(iff) != loop || !iff->in(1)->is_Bool() || iff->outcnt() != 2) {
+  if (get_loop(iff) != loop || !iff->in(1)->is_Bool()) {
     return nullptr;
   }
   return iftrue;
@@ -4571,13 +4571,6 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
              phase->is_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
-    // The inner loop of a long loop nest failed to convert to a counted loop.
-    // Clear the flag so downstream code doesn't expect a counted loop that
-    // will never materialize.
-    if (_head->is_Loop() && _head->as_Loop()->is_loop_nest_inner_loop()) {
-      NOT_PRODUCT(if (TraceLoopOpts) { tty->print("LoopNestInnerLoop failed  "); dump_head(); })
-      _head->as_Loop()->clear_loop_nest_inner_loop();
-    }
     if (_parent != nullptr && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;

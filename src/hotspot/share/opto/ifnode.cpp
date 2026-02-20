@@ -1793,16 +1793,16 @@ static int subsuming_bool_test_encode(Node* node) {
 Node* IfProjNode::Identity(PhaseGVN* phase) {
   // Can only optimize if cannot go the other way
   const TypeTuple *t = phase->type(in(0))->is_tuple();
-  if (t == TypeTuple::IFNEITHER || (always_taken(t) &&
-       // During parsing (GVN) we don't remove dead code aggressively.
-       // Cut off dead branch and let PhaseRemoveUseless take care of it.
-      (!phase->is_IterGVN() ||
-       // During IGVN, first wait for the dead branch to be killed.
-       // Otherwise, the IfNode's control will have two control uses (the IfNode
-       // that doesn't go away because it still has uses and this branch of the
-       // If) which breaks other optimizations. Node::has_special_unique_user()
-       // will cause this node to be reprocessed once the dead branch is killed.
-       in(0)->outcnt() == 1))) {
+  if (t == TypeTuple::IFNEITHER ||
+      // During IGVN, fold if the IfNode has a single projection left. This covers both
+      // the case where always_taken(t) is true (the type confirms one branch is dead)
+      // and the case where the sibling died structurally while the type still says both
+      // branches are reachable. Node::has_special_unique_user() will cause this node to
+      // be reprocessed once the sibling is killed.
+      (phase->is_IterGVN() && in(0)->outcnt() == 1) ||
+      // During parsing (GVN) we don't remove dead code aggressively.
+      // Cut off dead branch and let PhaseRemoveUseless take care of it.
+      (always_taken(t) && !phase->is_IterGVN())) {
     // IfNode control
     if (in(0)->is_BaseCountedLoopEnd()) {
       // CountedLoopEndNode may be eliminated by if subsuming, replace CountedLoopNode with LoopNode to
