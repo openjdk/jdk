@@ -491,9 +491,11 @@ static bool in_stack(intptr_t* ptr, const JavaThread* jt) {
   return jt->is_in_full_stack_checked(reinterpret_cast<address>(ptr));
 }
 
+#ifdef ASSERT
 static bool sp_in_stack(const StackWalkRequest& request, const JavaThread* jt) {
   return in_stack(static_cast<intptr_t*>(request.sample_sp()), jt);
 }
+#endif // ASSERT
 
 static bool fp_in_stack(const StackWalkRequest& request, const JavaThread* jt) {
   return in_stack(static_cast<intptr_t*>(request.sample_bcp()), jt);
