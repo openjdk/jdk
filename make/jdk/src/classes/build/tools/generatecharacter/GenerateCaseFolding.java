@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,6 @@ public class GenerateCaseFolding {
     private static long foldingToLong(String[] folding) {
         int cp = Integer.parseInt(folding[0], 16);
         long value = (long)Integer.parseInt(folding[1], 16);
-//        if (!Character.isSupplementaryCodePoint(cp) && folding.length != 2) {
         if (folding.length != 2) {
             var shift = 16;
             for (int j = 2; j < folding.length; j++) {
