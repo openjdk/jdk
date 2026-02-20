@@ -46,7 +46,7 @@ public:
 
   void do_oop(oop* o) override               { _closure->do_oop(o); }
   void do_oop(narrowOop* o) override         { _closure->do_oop(o); }
-  bool do_metadata() override                { _closure->do_metadata(); }
+  bool do_metadata() override                { return _closure->do_metadata(); }
   void do_klass(Klass* k) override           { _closure->do_klass(k); }
   void do_cld(ClassLoaderData* cld) override { _closure->do_cld(cld); }
   void do_method(Method* m) override         { _closure->do_method(m); }
@@ -104,3 +104,4 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
 }
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_INLINE_HPP
+
