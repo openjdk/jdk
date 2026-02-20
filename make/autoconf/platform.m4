@@ -311,6 +311,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   else
     OPENJDK_BUILD_OS_ENV="$VAR_OS"
   fi
+  # Special handling for MSYS2 that reports a Cygwin triplet as the default host triplet.
   case `uname` in
     MSYS*)
       OPENJDK_BUILD_OS_ENV=windows.msys2
