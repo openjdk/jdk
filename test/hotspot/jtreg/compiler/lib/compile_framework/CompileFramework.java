@@ -139,7 +139,7 @@ public class CompileFramework {
         }
     }
 
-    public Optional<RuntimeException> findJtregSkippedExceptionInCauses(
+    private static Optional<RuntimeException> findJtregSkippedExceptionInCauses(
             Throwable ex) {
 
         while (ex != null) {
