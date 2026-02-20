@@ -1560,7 +1560,9 @@ static jchar readChar(ciTypeArray* array, int index) {
   return (b1 << shift_high) | (b2 << shift_low);
 }
 
-// Copy contents of constant src_array to dst_array by emitting individual stores
+// Copy contents of constant src_array to dst_array by emitting individual stores.
+// For strings of specific lengths (2/4/8 chars), use wider memory operations
+// (T_SHORT/T_INT/T_LONG) to reduce the number of store instructions.
 void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTypeArray* src_array, IdealVariable& count,
                                            bool src_is_byte, Node* dst_array, Node* dst_coder, Node* start) {
   bool dcon = dst_coder->is_Con();
@@ -1572,12 +1574,44 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
   }
   if (!dcon || dbyte) {
     // Destination is Latin1. Copy each byte of src_array into dst_array.
+    // For specific lengths (2/4/8 bytes), use wider store operations for better performance.
     Node* index = start;
-    for (int i = 0; i < length; i++) {
+
+    // Check if we can use wider memory operations
+    if (src_is_byte && length == 2) {
+      // 2 bytes -> use T_SHORT (storeS)
       Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
-      Node* val = __ ConI(src_array->byte_at(i));
-      __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
-      index = __ AddI(index, __ ConI(1));
+      jshort val = (jshort)(((jshort)(src_array->byte_at(0) & 0xff)) |
+                           (((jshort)(src_array->byte_at(1) & 0xff)) << 8));
+      __ store(__ ctrl(), adr, __ ConI(val), T_SHORT, byte_adr_idx, MemNode::unordered, false, true /* mismatched */);
+    } else if (src_is_byte && length == 4) {
+      // 4 bytes -> use T_INT (storeI)
+      Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
+      jint val = ((jint)(src_array->byte_at(0) & 0xff)) |
+                (((jint)(src_array->byte_at(1) & 0xff)) << 8) |
+                (((jint)(src_array->byte_at(2) & 0xff)) << 16) |
+                (((jint)(src_array->byte_at(3) & 0xff)) << 24);
+      __ store(__ ctrl(), adr, __ ConI(val), T_INT, byte_adr_idx, MemNode::unordered, false, true /* mismatched */);
+    } else if (src_is_byte && length == 8) {
+      // 8 bytes -> use T_LONG (storeL)
+      Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
+      jlong val = ((jlong)(src_array->byte_at(0) & 0xff)) |
+                 (((jlong)(src_array->byte_at(1) & 0xff)) << 8) |
+                 (((jlong)(src_array->byte_at(2) & 0xff)) << 16) |
+                 (((jlong)(src_array->byte_at(3) & 0xff)) << 24) |
+                 (((jlong)(src_array->byte_at(4) & 0xff)) << 32) |
+                 (((jlong)(src_array->byte_at(5) & 0xff)) << 40) |
+                 (((jlong)(src_array->byte_at(6) & 0xff)) << 48) |
+                 (((jlong)(src_array->byte_at(7) & 0xff)) << 56);
+      __ store(__ ctrl(), adr, __ ConL(val), T_LONG, byte_adr_idx, MemNode::unordered, false, true /* mismatched */);
+    } else {
+      // Fall back to byte-by-byte copy for other lengths
+      for (int i = 0; i < length; i++) {
+        Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
+        Node* val = __ ConI(src_array->byte_at(i));
+        __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
+        index = __ AddI(index, __ ConI(1));
+      }
     }
   }
   if (!dcon) {
@@ -1585,18 +1619,78 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
   }
   if (!dcon || !dbyte) {
     // Destination is UTF16. Copy each char of src_array into dst_array.
+    // For specific lengths, use wider store operations.
+    int char_len = src_is_byte ? length : length / 2;
     Node* index = start;
-    for (int i = 0; i < length; i++) {
+
+    if (char_len == 2) {
+      // 2 chars = 4 bytes -> use T_INT (storeI)
       Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
-      jchar val;
+      jchar c0, c1;
       if (src_is_byte) {
-        val = src_array->byte_at(i) & 0xff;
+        c0 = src_array->byte_at(0) & 0xff;
+        c1 = src_array->byte_at(1) & 0xff;
       } else {
-        val = readChar(src_array, i++);
+        c0 = readChar(src_array, 0);
+        c1 = readChar(src_array, 1);
       }
-      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
-               true /* mismatched */);
-      index = __ AddI(index, __ ConI(2));
+      jint val = ((jint)c0) | (((jint)c1) << 16);
+      __ store(__ ctrl(), adr, __ ConI(val), T_INT, byte_adr_idx, MemNode::unordered, false, true /* mismatched */);
+    } else if (char_len == 4) {
+      // 4 chars = 8 bytes -> use T_LONG (storeL)
+      Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
+      jchar c0, c1, c2, c3;
+      if (src_is_byte) {
+        c0 = src_array->byte_at(0) & 0xff;
+        c1 = src_array->byte_at(1) & 0xff;
+        c2 = src_array->byte_at(2) & 0xff;
+        c3 = src_array->byte_at(3) & 0xff;
+      } else {
+        c0 = readChar(src_array, 0);
+        c1 = readChar(src_array, 1);
+        c2 = readChar(src_array, 2);
+        c3 = readChar(src_array, 3);
+      }
+      jlong val = ((jlong)c0) | (((jlong)c1) << 16) |
+                 (((jlong)c2) << 32) | (((jlong)c3) << 48);
+      __ store(__ ctrl(), adr, __ ConL(val), T_LONG, byte_adr_idx, MemNode::unordered, false, true /* mismatched */);
+    } else if (char_len == 8) {
+      // 8 chars = 16 bytes -> use two T_LONG stores
+      jchar chars[8];
+      if (src_is_byte) {
+        for (int i = 0; i < 8; i++) {
+          chars[i] = src_array->byte_at(i) & 0xff;
+        }
+      } else {
+        for (int i = 0; i < 8; i++) {
+          chars[i] = readChar(src_array, i);
+        }
+      }
+      // First 4 chars = 8 bytes
+      Node* adr1 = kit.array_element_address(dst_array, index, T_BYTE);
+      jlong val1 = ((jlong)chars[0]) | (((jlong)chars[1]) << 16) |
+                  (((jlong)chars[2]) << 32) | (((jlong)chars[3]) << 48);
+      __ store(__ ctrl(), adr1, __ ConL(val1), T_LONG, byte_adr_idx, MemNode::unordered, false, true /* mismatched */);
+      index = __ AddI(index, __ ConI(8));
+      // Second 4 chars = 8 bytes
+      Node* adr2 = kit.array_element_address(dst_array, index, T_BYTE);
+      jlong val2 = ((jlong)chars[4]) | (((jlong)chars[5]) << 16) |
+                  (((jlong)chars[6]) << 32) | (((jlong)chars[7]) << 48);
+      __ store(__ ctrl(), adr2, __ ConL(val2), T_LONG, byte_adr_idx, MemNode::unordered, false, true /* mismatched */);
+    } else {
+      // Fall back to char-by-char copy for other lengths
+      for (int i = 0; i < length; i++) {
+        Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
+        jchar val;
+        if (src_is_byte) {
+          val = src_array->byte_at(i) & 0xff;
+        } else {
+          val = readChar(src_array, i++);
+        }
+        __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                 true /* mismatched */);
+        index = __ AddI(index, __ ConI(2));
+      }
     }
     if (src_is_byte) {
       // Multiply count by two since we now need two bytes per char

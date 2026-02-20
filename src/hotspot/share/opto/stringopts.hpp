@@ -102,7 +102,8 @@ class PhaseStringOpts : public Phase {
 
   enum {
     // max length of constant string copy unrolling in copy_string
-    unroll_string_copy_length = 6
+    // Set to 9 to cover the optimization cases for 2/4/8 char strings
+    unroll_string_copy_length = 9
   };
 
  public:
