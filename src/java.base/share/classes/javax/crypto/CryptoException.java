@@ -23,18 +23,21 @@
  * questions.
  */
 
-package java.security;
+package javax.crypto;
 
 /**
  * Thrown to indicate a failure during cryptographic processing at runtime.
  *
  * <p>This exception represents a general cryptographic error that occurs during
  * processing, typically used for unrecoverable failures related to
- * {@link GeneralSecurityException}, but in contexts where checked exceptions
- * are not desired.
+ * {@link java.security.GeneralSecurityException}, but in contexts where checked
+ * exceptions are not desired.
  *
  * <p>This exception is not intended to represent internal
- * provider errors, which should be reported using {@link ProviderException}.
+ * provider errors, which should be reported using
+ * {@link java.security.ProviderException}.
+ *
+ * @since 27
  */
 public final class CryptoException extends RuntimeException {
 

@@ -32,6 +32,7 @@ import sun.security.util.KeyUtil;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.CryptoException;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
 import java.lang.ref.Reference;

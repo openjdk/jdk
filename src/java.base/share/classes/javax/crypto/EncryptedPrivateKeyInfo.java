@@ -371,9 +371,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
         char[] password, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
 
-        Objects.requireNonNull(de, "a key must be specified.");
-        Objects.requireNonNull(password, "a password must be specified.");
-        Objects.requireNonNull(algorithm, "an algorithm must be specified.");
+        Objects.requireNonNull(de, "a key must be specified");
+        Objects.requireNonNull(password, "a password must be specified");
+        Objects.requireNonNull(algorithm, "an algorithm must be specified");
         char[] passwd = password.clone();
         byte[] encoding = getEncoding(de);
         try {
@@ -449,9 +449,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
         Key encryptKey, String algorithm, AlgorithmParameterSpec params,
         Provider provider, SecureRandom random) {
 
-        Objects.requireNonNull(de, "a key must be specified.");
-        Objects.requireNonNull(encryptKey, "an encryption key must be specified.");
-        Objects.requireNonNull(algorithm, "an algorithm must be specified.");
+        Objects.requireNonNull(de, "a key must be specified");
+        Objects.requireNonNull(encryptKey, "an encryption key must be specified");
+        Objects.requireNonNull(algorithm, "an algorithm must be specified");
         return encryptImpl(getEncoding(de), algorithm, encryptKey,
             params, provider, random);
     }
@@ -516,7 +516,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      */
     public PrivateKey getKey(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {
-        Objects.requireNonNull(password, "a password must be specified.");
+        Objects.requireNonNull(password, "a password must be specified");
         PBEKeySpec keySpec = new PBEKeySpec(password);
         try {
             return PKCS8Key.parseKey(Pem.decryptEncoding(this, keySpec), null);
@@ -540,7 +540,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      */
     public PrivateKey getKey(Key decryptKey)
         throws NoSuchAlgorithmException, InvalidKeyException {
-        Objects.requireNonNull(decryptKey,"a decryptKey must be specified.");
+        Objects.requireNonNull(decryptKey,"a decryptKey must be specified");
         byte[] encoding = null;
         try {
             encoding = decryptData(decryptKey, null);
@@ -567,7 +567,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      */
     public KeyPair getKeyPair(char[] password)
         throws NoSuchAlgorithmException, InvalidKeyException {
-        Objects.requireNonNull(password, "a password must be specified.");
+        Objects.requireNonNull(password, "a password must be specified");
 
         PBEKeySpec keySpec = new PBEKeySpec(password);
         BinaryEncodable d;
@@ -579,7 +579,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
         return switch (d) {
             case KeyPair kp -> kp;
             case PrivateKey ignored -> throw new InvalidKeyException(
-                "This encoding does not contain a public key.");
+                "This encoding does not contain a public key");
             default -> throw new InvalidKeyException(
                 "Invalid class returned " + d.getClass().getName());
         };
@@ -601,14 +601,14 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      */
     public KeyPair getKeyPair(Key decryptKey)
         throws NoSuchAlgorithmException, InvalidKeyException {
-        Objects.requireNonNull(decryptKey,"a decryptKey must be specified.");
+        Objects.requireNonNull(decryptKey,"a decryptKey must be specified");
 
         BinaryEncodable d = Pem.toPKCS8Encodable(
             decryptData(decryptKey, null),true, null);
         return switch (d) {
             case KeyPair kp -> kp;
             case PrivateKey ignored -> throw new InvalidKeyException(
-                "This encoding does not contain a public key.");
+                "This encoding does not contain a public key");
             default -> throw new InvalidKeyException(
                 "Invalid class returned " + d.getClass().getName());
         };
