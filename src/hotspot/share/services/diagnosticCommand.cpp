@@ -341,13 +341,13 @@ static void print_properties(Symbol* method_name, outputStream* out, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
   InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->should_be_initialized()) {
-      ik->initialize(THREAD);
+    ik->initialize(THREAD);
   }
   if (HAS_PENDING_EXCEPTION) {
-      java_lang_Throwable::print(PENDING_EXCEPTION, out);
-      out->cr();
-      CLEAR_PENDING_EXCEPTION;
-      return;
+    java_lang_Throwable::print(PENDING_EXCEPTION, out);
+    out->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
   }
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
@@ -355,10 +355,10 @@ static void print_properties(Symbol* method_name, outputStream* out, TRAPS) {
   JavaCalls::call_static(&result, ik, method_name, signature, &args, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
-      java_lang_Throwable::print(PENDING_EXCEPTION, out);
-      out->cr();
-      CLEAR_PENDING_EXCEPTION;
-      return;
+    java_lang_Throwable::print(PENDING_EXCEPTION, out);
+    out->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
   }
   oop res = result.get_oop();
   assert(res->is_typeArray(), "should be a byte array");

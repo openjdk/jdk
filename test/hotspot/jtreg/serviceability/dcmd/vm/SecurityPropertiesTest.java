@@ -21,33 +21,34 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
-
 import java.security.Security;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
+ * @bug 8376134
  * @summary Test of diagnostic command VM.security_properties
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng SecurityPropertiesTest
+ * @run junit/othervm SecurityPropertiesTest
  */
 public class SecurityPropertiesTest {
-    private final static String PROPERTY_NAME  = "SecurityPropertiesTestPropertyName";
-    private final static String PROPERTY_VALUE = "SecurityPropertiesTestPropertyValue";
+    private static final String PROPERTY_NAME  = "SecurityPropertiesTestPropertyName";
+    private static final String PROPERTY_VALUE = "SecurityPropertiesTestPropertyValue";
 
-    public void run(CommandExecutor executor) {
+    private void run(CommandExecutor executor) {
         Security.setProperty(PROPERTY_NAME, PROPERTY_VALUE);
-
         OutputAnalyzer output = executor.execute("VM.security_properties");
-        output.shouldContain(PROPERTY_NAME + "=" + PROPERTY_VALUE);
+        assertTrue(output.getOutput().contains(PROPERTY_NAME + "=" + PROPERTY_VALUE),
+                "Should contain the test security property");
     }
 
     @Test
