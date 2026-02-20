@@ -77,7 +77,7 @@ public class TestParticleLife {
         // tell it to run for 10 second, interrupt it and let it shut down.
         Thread thread = new Thread() {
             public void run() {
-                ParticleLife.main(null);
+                ParticleLife.main();
             }
         };
         thread.setDaemon(true);

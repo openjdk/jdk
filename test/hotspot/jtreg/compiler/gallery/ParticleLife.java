@@ -105,7 +105,7 @@ public class ParticleLife {
 
     public static State STATE = new State();
 
-    public static void main(String[] args) {
+    static void main() {
         System.out.println("Welcome to the Particle Life Demo!");
 
         // Set up a panel we can draw on, and put it in a window.
