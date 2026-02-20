@@ -56,7 +56,7 @@ public class JarBacktickManifest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void backtickTest() throws Exception {
         try (JarFile jf = new JarFile(VERIFY_MANIFEST_JAR)) {  // do not set runtime versioning
             assertFalse(jf.isMultiRelease(), "Shouldn't be multi-release");
         }

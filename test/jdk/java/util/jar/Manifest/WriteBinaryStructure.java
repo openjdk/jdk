@@ -32,11 +32,11 @@ import org.junit.jupiter.api.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
+/*
  * @test
  * @bug 8066619
- * @run junit WriteBinaryStructure
  * @summary Tests that jar manifests are written in a particular structure
+ * @run junit WriteBinaryStructure
  */
 public class WriteBinaryStructure {
 
@@ -50,7 +50,8 @@ public class WriteBinaryStructure {
         assertArrayEquals((
                 "Manifest-Version: 1.0\r\n" +
                 "Key: Value\r\n" +
-                "\r\n").getBytes(UTF_8), buf.toByteArray());
+                "\r\n").getBytes(UTF_8),
+                buf.toByteArray());
     }
 
     @Test
@@ -67,7 +68,7 @@ public class WriteBinaryStructure {
                 "\r\n" +
                 "Name: Individual-Section-Name\r\n" +
                 "Key: Value\r\n" +
-                "\r\n").getBytes(UTF_8), buf.toByteArray());
+                "\r\n").getBytes(UTF_8),
+                buf.toByteArray());
     }
-
 }

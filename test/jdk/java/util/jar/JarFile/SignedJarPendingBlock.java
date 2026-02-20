@@ -30,6 +30,7 @@
 
 import jdk.security.jarsigner.JarSigner;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.FieldSource;
 
@@ -42,7 +43,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Collections;
-import java.util.List;
 import java.util.jar.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -53,36 +53,37 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SignedJarPendingBlock {
 
-    private static List<Path> VALID_PATHS;
-    private static List<Path> INVALID_PATHS;
+    static Path signed;
+    static Path pendingBlocks;
+    static Path invalid;
 
     // Construct the test data
     @BeforeAll
     static void setup() throws Exception {
         Path jar = createJarFile();
-        Path signed = signJarFile(jar);
-        Path pendingBlocks = moveBlockFirst(signed);
-        Path invalid = invalidate(pendingBlocks);
-        VALID_PATHS = List.of(
-                signed, // 1: Regular signed JAR with no pending blocks should verify
-                pendingBlocks // 2: Signed jar with pending blocks should verify
-        );
-        INVALID_PATHS = List.of(
-                invalid // 3: Invalid signed jar with pending blocks should throw SecurityException
-        );
+        signed = signJarFile(jar);
+        pendingBlocks = moveBlockFirst(signed);
+        invalid = invalidate(pendingBlocks);
     }
 
-    @ParameterizedTest
-    @FieldSource("VALID_PATHS")
-    void checkValidSignedPath(Path b) {
-        assertDoesNotThrow(() -> checkSigned(b),
+    // Regular signed JAR with no pending blocks should verify
+    @Test
+    void checkValidSignedJar() {
+        assertDoesNotThrow(() -> checkSigned(signed),
                 "Valid digest should not fail");
     }
 
-    @ParameterizedTest
-    @FieldSource("INVALID_PATHS")
-    void checkInvalidSignedPath(Path b) {
-        assertThrows(SecurityException.class, () -> checkSigned(b),
+    // Signed jar with pending blocks should verify
+    @Test
+    void checkValidSignedPendingJar() {
+        assertDoesNotThrow(() -> checkSigned(pendingBlocks),
+                "Valid digest should not fail");
+    }
+
+    // Invalid signed jar with pending blocks should throw SecurityException
+    @Test
+    void checkInvalidSignedJar() {
+        assertThrows(SecurityException.class, () -> checkSigned(invalid),
                 "Expected invalid digest to be detected");
     }
 

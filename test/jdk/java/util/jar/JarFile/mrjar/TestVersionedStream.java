@@ -41,7 +41,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +123,7 @@ public class TestVersionedStream {
                 });
     }
 
-    public static Stream<Runtime.Version> data() {
+    public static Stream<Runtime.Version> arguments() {
         return Stream.of(
             Runtime.Version.parse("8"),
             Runtime.Version.parse("9"),
@@ -136,8 +135,8 @@ public class TestVersionedStream {
     }
 
     @ParameterizedTest
-    @MethodSource("data")
-    public void test(Runtime.Version version) throws Exception {
+    @MethodSource("arguments")
+    public void versionTest(Runtime.Version version) throws Exception {
         try (JarFile jf = new JarFile(new File("mmr.jar"), false, ZipFile.OPEN_READ, version);
              Stream<JarEntry> jes = jf.versionedStream())
         {
@@ -149,28 +148,16 @@ public class TestVersionedStream {
             assertTrue(versionedEntries.size() > 0);
 
             // also keep the names
-            List<String> versionedNames = new ArrayList<>(versionedEntries.size());
+            List<String> versionedNames = versionedEntries.stream()
+                    .map(JarEntry::getName)
+                    .collect(Collectors.toList());
 
             // verify the correct order while building enames
-            Iterator<String> allIt = unversionedEntryNames.iterator();
-            Iterator<JarEntry> verIt = versionedEntries.iterator();
-            boolean match = false;
+            List<String> unversionedOrder = new ArrayList<>(unversionedEntryNames);
+            unversionedOrder.retainAll(versionedNames);
 
-            while (verIt.hasNext()) {
-                match = false;
-                if (!allIt.hasNext()) break;
-                String name = verIt.next().getName();
-                versionedNames.add(name);
-                while (allIt.hasNext()) {
-                    if (name.equals(allIt.next())) {
-                        match = true;
-                        break;
-                    }
-                }
-            }
-            if (!match) {
-                fail("versioned entries not in same order as unversioned entries");
-            }
+            assertIterableEquals(unversionedOrder, versionedNames,
+                    "versioned entries not in same order as unversioned entries");
 
             // verify the contents:
             // value.[0] end of the path

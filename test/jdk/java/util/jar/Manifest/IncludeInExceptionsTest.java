@@ -22,7 +22,6 @@
  */
 
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
@@ -44,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8216362
  * @run junit/othervm -Djdk.includeInExceptions=jar IncludeInExceptionsTest
  * @run junit/othervm IncludeInExceptionsTest
- * @summary Verify that the property jdk.net.includeInExceptions works as expected
+ * @summary Verify that the property jdk.includeInExceptions works as expected
  * when an error occurs while reading an invalid Manifest file.
  */
 
@@ -77,7 +76,7 @@ public class IncludeInExceptionsTest {
 
     @ParameterizedTest
     @MethodSource("manifests")
-    void testInvalidManifest(Callable<?> attempt, boolean includeInExceptions) {
+    void testInvalidManifest(Callable<?> attempt) {
         var ioException = assertThrows(IOException.class, attempt::call);
         boolean foundFileName = ioException.getMessage().contains(FILENAME);
         if (includeInExceptions && !foundFileName) {
@@ -87,13 +86,13 @@ public class IncludeInExceptionsTest {
         }
     }
 
-    static Stream<Arguments> manifests() {
+    static Stream<Callable<?>> manifests() {
         Callable<?> jarName = () -> new JarFile(createJarInvalidManifest(FILENAME)).getManifest();
         Callable<?> jarNameVerify = () -> new JarFile(createJarInvalidManifest("Verifying-" + FILENAME),
                 true).getManifest();
         return Stream.of(
-                Arguments.of(jarName, includeInExceptions),
-                Arguments.of(jarNameVerify, includeInExceptions)
+                jarName,
+                jarNameVerify
         );
     }
 }

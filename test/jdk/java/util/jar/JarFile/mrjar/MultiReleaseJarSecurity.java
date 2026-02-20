@@ -38,7 +38,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
-import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
@@ -53,9 +52,9 @@ public class MultiReleaseJarSecurity {
 
     static final int MAJOR_VERSION = Runtime.version().major();
 
-    private static final String userdir = System.getProperty("user.dir", ".");
-    private static final File multirelease = new File(userdir, "multi-release.jar");
-    private static final File signedmultirelease = new File(userdir, "signed-multi-release.jar");
+    static final String userdir = System.getProperty("user.dir", ".");
+    static final File multirelease = new File(userdir, "multi-release.jar");
+    static final File signedmultirelease = new File(userdir, "signed-multi-release.jar");
 
     @BeforeAll
     public static void initialize() throws Exception {
@@ -76,8 +75,8 @@ public class MultiReleaseJarSecurity {
         try (JarFile jf = new JarFile(signedmultirelease, true, ZipFile.OPEN_READ, Runtime.version())) {
             CertsAndSigners vcas = new CertsAndSigners(jf, jf.getJarEntry("version/Version.class"));
             CertsAndSigners rcas = new CertsAndSigners(jf, jf.getJarEntry("META-INF/versions/" + MAJOR_VERSION + "/version/Version.class"));
-            assertTrue(Arrays.equals(rcas.getCertificates(), vcas.getCertificates()));
-            assertTrue(Arrays.equals(rcas.getCodeSigners(), vcas.getCodeSigners()));
+            assertArrayEquals(rcas.getCertificates(), vcas.getCertificates());
+            assertArrayEquals(rcas.getCodeSigners(), vcas.getCodeSigners());
         }
     }
 
