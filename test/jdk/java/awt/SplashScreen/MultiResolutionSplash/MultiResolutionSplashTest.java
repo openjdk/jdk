@@ -41,7 +41,6 @@ import javax.imageio.ImageIO;
  * @key headful
  * @bug 8043869 8075244 8078082 8145173 8151787 8212213
  * @summary Tests the HiDPI splash screen support for windows and MAC
- * @modules java.desktop/sun.java2d
  * @run main MultiResolutionSplashTest GENERATE_IMAGES
  * @run main/othervm -splash:splash1.png MultiResolutionSplashTest TEST_SPLASH 0
  * @run main/othervm -splash:splash2 MultiResolutionSplashTest TEST_SPLASH 1
@@ -57,9 +56,9 @@ public class MultiResolutionSplashTest {
                                                .contains("OS X");
 
     private static final ImageInfo[] tests = {
-        new ImageInfo("splash1", ".png", Color.BLUE, Color.GREEN),
-        new ImageInfo("splash2", "", Color.WHITE, Color.BLACK),
-        new ImageInfo("splash3", ".", Color.YELLOW, Color.RED)
+        new ImageInfo("splash1", ".png", Color.BLUE,   Color.GREEN),
+        new ImageInfo("splash2", "",     Color.WHITE,  Color.BLACK),
+        new ImageInfo("splash3", ".",    Color.YELLOW, Color.RED)
     };
 
     public static void main(String[] args) throws Exception {
