@@ -80,8 +80,6 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "\\[TLSv1.3, TLSv1.2\\]"));
         debugMessages.put("trustmanager",
                 List.of("adding as trusted certificates"));
-        debugMessages.put("verbose",
-                List.of("Ignore unsupported cipher suite:"));
         debugMessages.put("handshake-expand",
                 List.of("\"logger\".*: \"javax.net.ssl\",",
                         "\"specifics\"   : \\[",
