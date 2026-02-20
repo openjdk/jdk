@@ -2142,46 +2142,12 @@ void os::init(void) {
   // 64k          no              --- AIX 5.2 ? ---
   // 64k          yes                                              64k                             new systems and standard java loader (we set datapsize=64k when linking)
 
-  // We explicitly leave no option to change page size, because only upgrading would work,
-  // not downgrading (if stack page size is 64k you cannot pretend its 4k).
-
-  if (g_multipage_support.datapsize == 4*K) {
-    // datapsize = 4K. Data segment, thread stacks are 4K paged.
-    if (g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages) {
-      // .. but we are able to use 64K pages dynamically.
-      // This would be typical for java launchers which are not linked
-      // with datapsize=64K (like, any other launcher but our own).
-      //
-      // In this case it would be smart to allocate the java heap with 64K
-      // to get the performance benefit, and to fake 64k pages for the
-      // data segment (when dealing with thread stacks).
-      //
-      // However, leave a possibility to downgrade to 4K, using
-      // -XX:-Use64KPages.
-      if (Use64KPages) {
-        trcVerbose("64K page mode (faked for data segment)");
-        set_page_size(64*K);
-      } else {
-        trcVerbose("4K page mode (Use64KPages=off)");
-        set_page_size(4*K);
-      }
-    } else {
-      // .. and not able to allocate 64k pages dynamically. Here, just
-      // fall back to 4K paged mode and use mmap for everything.
-      trcVerbose("4K page mode");
-      set_page_size(4*K);
-      FLAG_SET_ERGO(Use64KPages, false);
-    }
-  } else {
-    // datapsize = 64k. Data segment, thread stacks are 64k paged.
-    // This normally means that we can allocate 64k pages dynamically.
-    // (There is one special case where this may be false: EXTSHM=on.
-    // but we decided to not support that mode).
-    assert0(g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages);
-    set_page_size(64*K);
-    trcVerbose("64K page mode");
-    FLAG_SET_ERGO(Use64KPages, true);
-  }
+  // datapsize = 64k. Data segment, thread stacks are 64k paged.
+  // This normally means that we can allocate 64k pages dynamically.
+  // (There is one special case where this may be false: EXTSHM=on.
+  // but we decided to not support that mode).
+  assert0(g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages);
+  set_page_size(64*K);
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
