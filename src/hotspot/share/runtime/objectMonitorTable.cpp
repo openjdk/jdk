@@ -74,12 +74,12 @@
 // complicated.
 //
 // Both the new and (potentially several) old table(s) may exist at the same
-// time. The newest is allays called the "current", and the older ones are
+// time. The newest is always called the "current", and the older ones are
 // singly linked using a "prev" pointer.
 //
 // As soon as we have allocated and linked in the new "current" OMT, all new
-// monitor pointers will be added to the new tale. Effectively making the
-// atomic switch from "old current" to "new current" a linerization point.
+// monitor pointers will be added to the new table. Effectively making the
+// atomic switch from "old current" to "new current" a linearization point.
 //
 // After that we start to go through all the indexes in the old table. If the
 // index is empty (the pointer is null) we put a "tombstone" into that index,
@@ -501,7 +501,7 @@ public:
         if (obj != nullptr) {
           // In the current implementation the deflation thread drives
           // the rebuilding, and it will already have removed any entry
-          // it has deflated. The assert is ony here to make sure.
+          // it has deflated. The assert is only here to make sure.
           assert(!monitor->is_being_async_deflated(), "Should be");
           // Re-insert still live monitor.
           reinsert(obj, entry);
