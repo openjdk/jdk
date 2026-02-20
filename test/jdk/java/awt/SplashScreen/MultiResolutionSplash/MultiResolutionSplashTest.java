@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,21 @@
  */
 
 import java.awt.Color;
-import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
-import java.awt.Panel;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.SplashScreen;
 import java.awt.TextField;
-import java.awt.Window;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+
 import javax.imageio.ImageIO;
-import sun.java2d.SunGraphics2D;
 
-
-/**
+/*
  * @test
  * @key headful
  * @bug 8043869 8075244 8078082 8145173 8151787 8212213
@@ -56,47 +52,48 @@ public class MultiResolutionSplashTest {
 
     private static final int IMAGE_WIDTH = 300;
     private static final int IMAGE_HEIGHT = 200;
-    private static boolean isMac;
 
-    static {
-        isMac = System.getProperty("os.name").contains("OS X");
-    }
+    private static final boolean isMac = System.getProperty("os.name")
+                                               .contains("OS X");
+
     private static final ImageInfo[] tests = {
-        new ImageInfo("splash1.png", "splash1@2x.png", Color.BLUE, Color.GREEN),
-        new ImageInfo("splash2", "splash2@2x", Color.WHITE, Color.BLACK),
-        new ImageInfo("splash3.", "splash3@2x.", Color.YELLOW, Color.RED)
+        new ImageInfo("splash1", ".png", Color.BLUE, Color.GREEN),
+        new ImageInfo("splash2", "", Color.WHITE, Color.BLACK),
+        new ImageInfo("splash3", ".", Color.YELLOW, Color.RED)
     };
 
     public static void main(String[] args) throws Exception {
-
-        String test = args[0];
-        switch (test) {
+        switch (args[0]) {
             case "GENERATE_IMAGES":
                 generateImages();
                 break;
             case "TEST_SPLASH":
-                int index = Integer.parseInt(args[1]);
-                testSplash(tests[index]);
+                testSplash(tests[Integer.parseInt(args[1])]);
                 break;
             case "TEST_FOCUS":
                 testFocus();
                 break;
             default:
-                throw new RuntimeException("Unknown test: " + test);
+                throw new RuntimeException("Unknown test: " + args[0]);
         }
     }
 
     static void testSplash(ImageInfo test) throws Exception {
         SplashScreen splashScreen = SplashScreen.getSplashScreen();
-
         if (splashScreen == null) {
             throw new RuntimeException("Splash screen is not shown!");
         }
 
-        Graphics2D g = splashScreen.createGraphics();
-        Rectangle splashBounds = splashScreen.getBounds();
-        int screenX = (int) splashBounds.getCenterX();
-        int screenY = (int) splashBounds.getCenterY();
+        final Rectangle splashBounds = splashScreen.getBounds();
+        final double scaleFactor = getScreenScaleFactor();
+
+        final Robot robot = new Robot();
+
+        String fileName = "splashscreen-%1.2f-%s.png"
+                          .formatted(scaleFactor, test.name1x);
+        saveImageNoError(robot.createScreenCapture(splashBounds),
+                         new File(fileName));
+
         if (splashBounds.width != IMAGE_WIDTH) {
             throw new RuntimeException(
                     "SplashScreen#getBounds has wrong width");
@@ -106,19 +103,19 @@ public class MultiResolutionSplashTest {
                     "SplashScreen#getBounds has wrong height");
         }
 
-        Robot robot = new Robot();
+        int screenX = (int) splashBounds.getCenterX();
+        int screenY = (int) splashBounds.getCenterY();
         Color splashScreenColor = robot.getPixelColor(screenX, screenY);
-        float scaleFactor = getScaleFactor();
         Color testColor = (1 < scaleFactor) ? test.color2x : test.color1x;
 
         if (!compare(testColor, splashScreenColor)) {
             throw new RuntimeException(
-                    "Image with wrong resolution is used for splash screen!");
+                    "Image with wrong resolution is used for splash screen! "
+                    + "Refer to " + fileName);
         }
     }
 
     static void testFocus() throws Exception {
-
         Robot robot = new Robot();
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(50);
@@ -157,94 +154,82 @@ public class MultiResolutionSplashTest {
         return Math.abs(n - m) <= 50;
     }
 
-    static float getScaleFactor() {
-
-        final Dialog dialog = new Dialog((Window) null);
-        dialog.setSize(100, 100);
-        dialog.setModal(true);
-        final float[] scaleFactors = new float[1];
-        Panel panel = new Panel() {
-
-            @Override
-            public void paint(Graphics g) {
-                float scaleFactor = 1;
-                if (g instanceof SunGraphics2D) {
-                    scaleFactor = getScreenScaleFactor();
-                }
-                scaleFactors[0] = scaleFactor;
-                dialog.setVisible(false);
-            }
-        };
-
-        dialog.add(panel);
-        dialog.setVisible(true);
-        dialog.dispose();
-
-        return scaleFactors[0];
-    }
-
     static void generateImages() throws Exception {
         for (ImageInfo test : tests) {
-            generateImage(test.name1x, test.color1x, 1);
-            generateImage(test.name2x, test.color2x, getScreenScaleFactor());
+            generateImage(test.name1x, test.color1x, 1.0);
+
+            // Ensure the second image uses scale greater than 1.0
+            double scale = getAdjustedScaleFactor();
+            generateImage(test.name2x, test.color2x, scale);
         }
     }
 
-    static void generateImage(String name, Color color, float scale) throws Exception {
+    static void generateImage(final String name,
+                              final Color color,
+                              final double scale) throws Exception {
         File file = new File(name);
         if (file.exists()) {
             return;
         }
+
         BufferedImage image = new BufferedImage((int) (scale * IMAGE_WIDTH),
                 (int) (scale * IMAGE_HEIGHT), BufferedImage.TYPE_INT_RGB);
         Graphics g = image.getGraphics();
         g.setColor(color);
         g.fillRect(0, 0, (int) (scale * IMAGE_WIDTH), (int) (scale * IMAGE_HEIGHT));
+
+        saveImage(image, file);
+    }
+
+    private static void saveImage(BufferedImage image,
+                                  File file) throws IOException {
         ImageIO.write(image, "png", file);
     }
 
-    static float getScreenScaleFactor() {
-        return (float) GraphicsEnvironment.
-                getLocalGraphicsEnvironment().
-                getDefaultScreenDevice().getDefaultConfiguration().
-                getDefaultTransform().getScaleX();
+    private static void saveImageNoError(BufferedImage image,
+                                         File file) {
+        try {
+            saveImage(image, file);
+        } catch (IOException ignored) {
+        }
+    }
+
+    static double getScreenScaleFactor() {
+        return GraphicsEnvironment
+               .getLocalGraphicsEnvironment()
+               .getDefaultScreenDevice()
+               .getDefaultConfiguration()
+               .getDefaultTransform()
+               .getScaleX();
+    }
+
+    // Ensure the second image uses scale greater than 1.0
+    static double getAdjustedScaleFactor() {
+        double scale = getScreenScaleFactor();
+        return scale < 1.25 ? 2.0 : scale;
     }
 
     static class ImageInfo {
-
         final String name1x;
         final String name2x;
         final Color color1x;
         final Color color2x;
 
-        public ImageInfo(String name1x, String name2x, Color color1x, Color color2x) {
-            this.name1x = name1x;
-            if (!isMac) {
-                float scale = getScreenScaleFactor();
-                StringBuffer buff = new StringBuffer();
-                if (scale - (int) scale > 0) {
-                    buff.append("@").append((int) (scale * 100)).append("pct");
-                } else {
-                    buff.append("@").append((int) scale).append("x");
-                }
-                StringBuffer buffer = new StringBuffer();
-                String[] splitStr = name1x.split("\\.");
-                if (splitStr.length == 2) {
-                    this.name2x = buffer.append(splitStr[0]).append(buff)
-                            .append(".").append(splitStr[1]).toString();
-                } else {
-                    if (name1x.indexOf(".") > 0) {
-                        this.name2x = buffer.append(splitStr[0]).append(buff).append(".").toString();
-                    } else {
-                        this.name2x = buffer.append(splitStr[0]).append(buff).toString();
-                    }
-                }
-            } else {
-                this.name2x = name2x;
-            }
+        public ImageInfo(String baseName, String ext,
+                         Color color1x, Color color2x) {
+            this.name1x = baseName + ext;
+            this.name2x = createName2x(baseName, ext);
             this.color1x = color1x;
             this.color2x = color2x;
         }
+
+        private static String createName2x(String baseName, String ext) {
+            double scale = getAdjustedScaleFactor();
+            if (!isMac && (((int) (scale * 100)) % 100 != 0)) {
+                return baseName + "@" + ((int) (scale * 100)) + "pct" + ext;
+            } else {
+                return baseName + "@" + ((int) scale) + "x" + ext;
+            }
+        }
     }
 }
-
