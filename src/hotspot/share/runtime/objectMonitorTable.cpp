@@ -212,6 +212,15 @@ public:
     return should_grow(AtomicAccess::load(&_items_count));
   }
 
+  size_t total_items() {
+    size_t current_items = AtomicAccess::load(&_items_count);
+    Table* prev = AtomicAccess::load(&_prev);
+    if (prev != nullptr) {
+      return prev->total_items() + current_items;
+    }
+    return current_items;
+  }
+
   ObjectMonitor* get(oop obj, intptr_t hash) {
     // Acquire tombstones and relocations in case prev transitioned to null
     Table* prev = AtomicAccess::load_acquire(&_prev);
@@ -570,8 +579,38 @@ void ObjectMonitorTable::remove_monitor_entry(Thread* current, ObjectMonitor* mo
 void ObjectMonitorTable::rebuild(GrowableArray<Table*>* delete_list) {
   Table* new_table;
   {
+    // Concurrent inserts while in the middle of rebuilding can result
+    // in the population count increasing past the load factor limit.
+    // For this to be okay we need to bound how much it may exceed the
+    // limit. A sequence of tables with doubling capacity may
+    // eventually, after rebuilding, reach the maximum population of
+    // max_population(table_1) + max_population(table_1*2) + ... +
+    // max_population(table_1*2^n).
+    // I.e. max_population(2*table_1 *2^n) - max_population(table_1).
+    // With a 12.5% load factor, the implication is that as long as
+    // rebuilding a table will double its capacity, the maximum load
+    // after rebuilding is less than 25%. However, we can't always
+    // double the size each time we rebuild the table. Instead we
+    // recursively estimate the population count of the chain of
+    // tables (the current, and all the previous currents). If the sum
+    // of the population is less than the growing factor, we do not
+    // need to grow the table. If the new concurrently rebuilding
+    // table is immediately filled up by concurrent inserts, then the
+    // worst case load factor after the rebuild may be twice as large,
+    // which is still guaranteed to be less than a 50% load. If this
+    // happens, it will cause subsequent rebuilds to increase the
+    // table capacity, keeping the worst case less than 50%, until the
+    // load factor eventually becomes less than 12.5% again. So in
+    // some sense this allows us to be fooled once, but not twice. So,
+    // given the growing threshold of 12.5%, it is impossible for the
+    // tables to reach a load factor above 50%. Which is more than
+    // enough to guarantee the function of this concurrent hash table.
     Table* curr = AtomicAccess::load_acquire(&_curr);
-    new_table = new Table(curr->capacity(), curr);
+    size_t need_to_accomodate = curr->total_items();
+    size_t new_capacity = curr->should_grow(need_to_accomodate)
+      ? curr->capacity() << 1
+      : curr->capacity();
+    new_table = new Table(new_capacity, curr);
     Table* result = AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_acq_rel);
     if (result != curr) {
       // Somebody else racingly started rehashing. Delete the
