@@ -86,9 +86,7 @@ public class EndOfCenValidation {
     @Test
     public void shouldRejectTooLargeCenSize() throws IOException {
         int size = MAX_CEN_SIZE + 1;
-
         Path zip = zipWithModifiedEndRecord(size, true, 0, CEN_TOO_LARGE_ZIP);
-
         verifyRejection(zip, INVALID_CEN_SIZE_TOO_LARGE);
     }
 
@@ -100,11 +98,8 @@ public class EndOfCenValidation {
      */
     @Test
     public void shouldRejectInvalidCenSize() throws IOException {
-
         int size = MAX_CEN_SIZE;
-
         Path zip = zipWithModifiedEndRecord(size, false, 0, INVALID_CEN_SIZE);
-
         verifyRejection(zip, INVALID_CEN_BAD_SIZE);
     }
 
@@ -116,11 +111,8 @@ public class EndOfCenValidation {
      */
     @Test
     public void shouldRejectInvalidCenOffset() throws IOException {
-
         int size = MAX_CEN_SIZE;
-
         Path zip = zipWithModifiedEndRecord(size, true, 100, BAD_CEN_OFFSET_ZIP);
-
         verifyRejection(zip, INVALID_CEN_BAD_OFFSET);
     }
 
@@ -141,7 +133,6 @@ public class EndOfCenValidation {
     })
     public void shouldRejectBadTotalEntries(long totalEntries) throws IOException {
         Path zip = zip64WithModifiedTotalEntries(BAD_ENTRY_COUNT_ZIP, totalEntries);
-
         verifyRejection(zip, INVALID_BAD_ENTRY_COUNT);
     }
 
@@ -155,7 +146,6 @@ public class EndOfCenValidation {
         ZipException ex = assertThrows(ZipException.class, () -> {
             new ZipFile(zip.toFile());
         });
-
         assertEquals(msg, ex.getMessage());
     }
 }

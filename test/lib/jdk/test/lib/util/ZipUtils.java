@@ -47,7 +47,6 @@ public final class ZipUtils {
     private static final int ENDHDR = ZipFile.ENDHDR; // End of central directory record size
     private static final int ENDSIZ = ZipFile.ENDSIZ; // Offset of CEN size field within ENDHDR
     private static final int ENDOFF = ZipFile.ENDOFF; // Offset of CEN offset field within ENDHDR
-
     // Expected message when CEN size does not match file size
     public static final String INVALID_CEN_BAD_SIZE = "invalid END header (bad central directory size)";
     // Expected message when CEN offset is too large
@@ -56,7 +55,6 @@ public final class ZipUtils {
     public static final String INVALID_CEN_SIZE_TOO_LARGE = "invalid END header (central directory size too large)";
     // Expected message when total entry count is too large
     public static final String INVALID_BAD_ENTRY_COUNT = "invalid END header (total entries count too large)";
-
 
     private ZipUtils() { }
 
@@ -80,7 +78,6 @@ public final class ZipUtils {
                                           boolean inflateCen,
                                           int cenOffAdjust,
                                           Path zip) throws IOException {
-
         // A byte buffer for reading the END
         ByteBuffer buffer = ByteBuffer.wrap(templateZip()).order(ByteOrder.LITTLE_ENDIAN);
 
@@ -98,7 +95,6 @@ public final class ZipUtils {
             int currentCenOff = buffer.getInt(offOffset);
             buffer.putInt(offOffset, currentCenOff + cenOffAdjust);
         }
-
         // When creating a sparse file, the file must not already exit
         Files.deleteIfExists(zip);
 
@@ -108,10 +104,8 @@ public final class ZipUtils {
                 StandardOpenOption.SPARSE);
 
         try (FileChannel channel = FileChannel.open(zip, options)) {
-
             // Write everything up to END
             channel.write(buffer.slice(0, buffer.limit() - ENDHDR));
-
             if (inflateCen) {
                 // Inject "empty bytes" to make the actual CEN size match the END
                 int injectBytes = cenSize - currentCenSize;
