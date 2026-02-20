@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
-class ShenandoahFreeSet;
 class ShenandoahMarkingContext;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
