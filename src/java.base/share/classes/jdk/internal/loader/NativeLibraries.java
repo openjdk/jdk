@@ -476,7 +476,7 @@ public final class NativeLibraries {
     private static final class NativeLibraryContext {
 
         // Maps thread object to the native library context stack, maintained by each thread
-        private static Map<Thread, List<NativeLibraryImpl>> nativeLibraryThreadContext =
+        private final static Map<Thread, List<NativeLibraryImpl>> nativeLibraryThreadContext =
                 new ConcurrentHashMap<>();
 
         // returns a context associated with the current thread
