@@ -41,7 +41,7 @@ class ICache : public AbstractICache {
     __builtin___clear_cache((char *)addr, (char *)(addr + 4));
   }
   static void invalidate_range(address start, int nbytes) {
-    if (NeoverseN1Errata1542419) {
+    if (NeoverseN1ICacheErratumMitigation) {
       assert(VM_Version::is_cache_idc_enabled(),
              "Expect CTR_EL0.IDC to be enabled for Neoverse N1 with erratum "
              "1542419");
@@ -90,7 +90,7 @@ class AArch64ICacheInvalidationContext : StackObj {
 
     asm volatile("dsb ish" : : : "memory");
 
-    if (NeoverseN1Errata1542419) {
+    if (NeoverseN1ICacheErratumMitigation) {
       assert(!VM_Version::is_cache_dic_enabled(),
              "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
              "1542419");

@@ -31,7 +31,7 @@ import jdk.test.whitebox.WhiteBox;
 /*
  * @test
  * @bug 8370947
- * @summary Test command-line options for UseDeferredICacheInvalidation and NeoverseN1Errata1542419
+ * @summary Test command-line options for UseDeferredICacheInvalidation and NeoverseN1ICacheErratumMitigation
  * @library /test/lib
  * @requires os.arch == "aarch64"
  * @build jdk.test.whitebox.WhiteBox
@@ -43,7 +43,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final String USE_DEFERRED_ICACHE_INVALIDATION = "UseDeferredICacheInvalidation";
-    private static final String NEOVERSE_N1_ERRATA_1542419 = "NeoverseN1Errata1542419";
+    private static final String NEOVERSE_N1_ERRATA_1542419 = "NeoverseN1ICacheErratumMitigation";
 
     // CPU identifiers
     private static final int CPU_ARM = 0x41;
@@ -59,7 +59,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
     private static boolean isAffected;
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Testing UseDeferredICacheInvalidation and NeoverseN1Errata1542419 command-line options...");
+        System.out.println("Testing UseDeferredICacheInvalidation and NeoverseN1ICacheErratumMitigation command-line options...");
 
         // Parse CPU features first
         parseCPUFeatures();
@@ -73,27 +73,27 @@ public class TestDeferredICacheInvalidationCmdOptions {
         // Test case 1: Check defaults on Neoverse N1 pre-r4p1 (if applicable)
         testCase1_DefaultsOnNeoverseN1();
 
-        // Test case 2: Check NeoverseN1Errata1542419 is false on unaffected CPUs
+        // Test case 2: Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs
         testCase2_DefaultsOnUnaffectedCPUs();
 
-        // Test case 3: Check if NeoverseN1Errata1542419 is set to false on affected CPUs,
+        // Test case 3: Check if NeoverseN1ICacheErratumMitigation is set to false on affected CPUs,
         //             UseDeferredICacheInvalidation is also set to false
         testCase3_ExplicitlyDisableNeoverseN1ErroraAffectsDeferred();
 
         // Test case 4: Check JVM error if UseDeferredICacheInvalidation=true
-        //             but NeoverseN1Errata1542419=false on affected CPUs
+        //             but NeoverseN1ICacheErratumMitigation=false on affected CPUs
         testCase4_ConflictingFlagsOnAffectedCPUs();
 
-        // Test case 5: Check explicit NeoverseN1Errata1542419=true enables UseDeferredICacheInvalidation
+        // Test case 5: Check explicit NeoverseN1ICacheErratumMitigation=true enables UseDeferredICacheInvalidation
         testCase5_ExplicitlyEnableErrataEnablesDeferred();
 
         // Test case 6: Check both flags can be explicitly set to false
         testCase6_ExplicitlyDisableBothFlags();
 
-        // Test case 7: Check UseDeferredICacheInvalidation=false with NeoverseN1Errata1542419=true
+        // Test case 7: Check UseDeferredICacheInvalidation=false with NeoverseN1ICacheErratumMitigation=true
         testCase7_ConflictingErrataWithoutDeferred();
 
-        // Test case 8: Check setting NeoverseN1Errata1542419=true on unaffected CPU causes an error
+        // Test case 8: Check setting NeoverseN1ICacheErratumMitigation=true on unaffected CPU causes an error
         testCase8_EnablingErrataOnUnaffectedCPU();
 
         System.out.println("All test cases passed!");
@@ -199,7 +199,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
     }
 
     /**
-     * Test case 1: Check the UseDeferredICacheInvalidation and NeoverseN1Errata1542419
+     * Test case 1: Check the UseDeferredICacheInvalidation and NeoverseN1ICacheErratumMitigation
      * are set to true for Neoverse N1 pre-r4p1.
      */
     private static void testCase1_DefaultsOnNeoverseN1() throws Exception {
@@ -220,10 +220,10 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         String output_str = output.getOutput();
         boolean hasDeferredEnabled = output_str.matches("(?s).*bool\\s+UseDeferredICacheInvalidation\\s*=\\s*true.*");
-        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1Errata1542419\\s*=\\s*true.*");
+        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
 
         System.out.println("UseDeferredICacheInvalidation enabled: " + hasDeferredEnabled);
-        System.out.println("NeoverseN1Errata1542419 enabled: " + hasErrataEnabled);
+        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
 
         // If running on affected Neoverse N1, both should be true
         if (!hasDeferredEnabled || !hasErrataEnabled) {
@@ -233,7 +233,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
     }
 
     /**
-     * Test case 2: Check NeoverseN1Errata1542419 is false on unaffected CPUs.
+     * Test case 2: Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs.
      */
     private static void testCase2_DefaultsOnUnaffectedCPUs() throws Exception {
         if (isAffected) {
@@ -241,7 +241,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
             return;
         }
 
-        System.out.println("\nTest case 2: Check NeoverseN1Errata1542419 is false on unaffected CPUs");
+        System.out.println("\nTest case 2: Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
@@ -252,19 +252,19 @@ public class TestDeferredICacheInvalidationCmdOptions {
         output.shouldHaveExitValue(0);
 
         String output_str = output.getOutput();
-        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1Errata1542419\\s*=\\s*true.*");
+        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
 
-        System.out.println("NeoverseN1Errata1542419 enabled: " + hasErrataEnabled);
+        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
 
-        // On non-Neoverse N1 or unaffected Neoverse N1 CPUs, NeoverseN1Errata1542419 should be false
+        // On non-Neoverse N1 or unaffected Neoverse N1 CPUs, NeoverseN1ICacheErratumMitigation should be false
         if (hasErrataEnabled) {
-            throw new RuntimeException("On unaffected CPUs, NeoverseN1Errata1542419 should be disabled");
+            throw new RuntimeException("On unaffected CPUs, NeoverseN1ICacheErratumMitigation should be disabled");
         }
         System.out.println("Correctly disabled on unaffected CPU");
     }
 
     /**
-     * Test case 3: Check if NeoverseN1Errata1542419 is set to false via cmd on affected CPUs,
+     * Test case 3: Check if NeoverseN1ICacheErratumMitigation is set to false via cmd on affected CPUs,
      * UseDeferredICacheInvalidation is set to false.
      */
     private static void testCase3_ExplicitlyDisableNeoverseN1ErroraAffectsDeferred() throws Exception {
@@ -273,11 +273,11 @@ public class TestDeferredICacheInvalidationCmdOptions {
             return;
         }
 
-        System.out.println("\nTest case 3: Explicitly disable NeoverseN1Errata1542419, check UseDeferredICacheInvalidation");
+        System.out.println("\nTest case 3: Explicitly disable NeoverseN1ICacheErratumMitigation, check UseDeferredICacheInvalidation");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:-NeoverseN1Errata1542419",
+            "-XX:-NeoverseN1ICacheErratumMitigation",
             "-XX:+PrintFlagsFinal",
             "-version");
 
@@ -286,29 +286,29 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         String output_str = output.getOutput();
         boolean hasDeferredEnabled = output_str.matches("(?s).*bool\\s+UseDeferredICacheInvalidation\\s*=\\s*true.*");
-        boolean hasErrataDisabled = output_str.matches("(?s).*bool\\s+NeoverseN1Errata1542419\\s*=\\s*false.*");
+        boolean hasErrataDisabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*false.*");
 
-        System.out.println("NeoverseN1Errata1542419 disabled: " + hasErrataDisabled);
+        System.out.println("NeoverseN1ICacheErratumMitigation disabled: " + hasErrataDisabled);
         System.out.println("UseDeferredICacheInvalidation enabled: " + hasDeferredEnabled);
 
         // On affected CPUs, disabling errata should disable deferred invalidation
         if (hasErrataDisabled && hasDeferredEnabled) {
-            throw new RuntimeException("On affected CPU, disabling NeoverseN1Errata1542419 should disable UseDeferredICacheInvalidation");
+            throw new RuntimeException("On affected CPU, disabling NeoverseN1ICacheErratumMitigation should disable UseDeferredICacheInvalidation");
         }
         System.out.println("Correctly synchronized on affected CPU");
     }
 
     /**
      * Test case 4: Check JVM reports an error if UseDeferredICacheInvalidation is set to true
-     * but NeoverseN1Errata1542419 is set to false on affected CPUs.
+     * but NeoverseN1ICacheErratumMitigation is set to false on affected CPUs.
      */
     private static void testCase4_ConflictingFlagsOnAffectedCPUs() throws Exception {
-        System.out.println("\nTest case 4: Try to set UseDeferredICacheInvalidation=true with NeoverseN1Errata1542419=false");
+        System.out.println("\nTest case 4: Try to set UseDeferredICacheInvalidation=true with NeoverseN1ICacheErratumMitigation=false");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UseDeferredICacheInvalidation",
-            "-XX:-NeoverseN1Errata1542419",
+            "-XX:-NeoverseN1ICacheErratumMitigation",
             "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -329,7 +329,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
     }
 
     /**
-     * Test case 5: Check explicit NeoverseN1Errata1542419=true enables UseDeferredICacheInvalidation.
+     * Test case 5: Check explicit NeoverseN1ICacheErratumMitigation=true enables UseDeferredICacheInvalidation.
      */
     private static void testCase5_ExplicitlyEnableErrataEnablesDeferred() throws Exception {
         if (!isAffected) {
@@ -337,11 +337,11 @@ public class TestDeferredICacheInvalidationCmdOptions {
             return;
         }
 
-        System.out.println("\nTest case 5: Explicitly enable NeoverseN1Errata1542419, check UseDeferredICacheInvalidation");
+        System.out.println("\nTest case 5: Explicitly enable NeoverseN1ICacheErratumMitigation, check UseDeferredICacheInvalidation");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+NeoverseN1Errata1542419",
+            "-XX:+NeoverseN1ICacheErratumMitigation",
             "-XX:+PrintFlagsFinal",
             "-version");
 
@@ -350,13 +350,13 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         String output_str = output.getOutput();
         boolean hasDeferredEnabled = output_str.matches("(?s).*bool\\s+UseDeferredICacheInvalidation\\s*=\\s*true.*");
-        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1Errata1542419\\s*=\\s*true.*");
+        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
 
-        System.out.println("NeoverseN1Errata1542419 enabled: " + hasErrataEnabled);
+        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
         System.out.println("UseDeferredICacheInvalidation enabled: " + hasDeferredEnabled);
 
         if (hasErrataEnabled && !hasDeferredEnabled) {
-            throw new RuntimeException("On affected CPU, enabling NeoverseN1Errata1542419 should enable UseDeferredICacheInvalidation");
+            throw new RuntimeException("On affected CPU, enabling NeoverseN1ICacheErratumMitigation should enable UseDeferredICacheInvalidation");
         }
         System.out.println("Correctly synchronized on affected CPU");
     }
@@ -370,7 +370,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:-UseDeferredICacheInvalidation",
-            "-XX:-NeoverseN1Errata1542419",
+            "-XX:-NeoverseN1ICacheErratumMitigation",
             "-XX:+PrintFlagsFinal",
             "-version");
 
@@ -379,10 +379,10 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         String output_str = output.getOutput();
         boolean hasDeferredDisabled = output_str.matches("(?s).*bool\\s+UseDeferredICacheInvalidation\\s*=\\s*false.*");
-        boolean hasErrataDisabled = output_str.matches("(?s).*bool\\s+NeoverseN1Errata1542419\\s*=\\s*false.*");
+        boolean hasErrataDisabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*false.*");
 
         System.out.println("UseDeferredICacheInvalidation disabled: " + hasDeferredDisabled);
-        System.out.println("NeoverseN1Errata1542419 disabled: " + hasErrataDisabled);
+        System.out.println("NeoverseN1ICacheErratumMitigation disabled: " + hasErrataDisabled);
         if (!hasDeferredDisabled || !hasErrataDisabled) {
             throw new RuntimeException("Both flags should be disabled when explicitly set to false");
         }
@@ -390,7 +390,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
     }
 
     /**
-     * Test case 7: Check UseDeferredICacheInvalidation=false with NeoverseN1Errata1542419=true.
+     * Test case 7: Check UseDeferredICacheInvalidation=false with NeoverseN1ICacheErratumMitigation=true.
      * On affected CPUs, this should error (conflicting requirement).
      */
     private static void testCase7_ConflictingErrataWithoutDeferred() throws Exception {
@@ -398,12 +398,12 @@ public class TestDeferredICacheInvalidationCmdOptions {
             System.out.println("\nTest case 7: Skipping since CPU is not affected by errata");
             return;
         }
-        System.out.println("\nTest case 7: Try to set NeoverseN1Errata1542419=true with UseDeferredICacheInvalidation=false");
+        System.out.println("\nTest case 7: Try to set NeoverseN1ICacheErratumMitigation=true with UseDeferredICacheInvalidation=false");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:-UseDeferredICacheInvalidation",
-            "-XX:+NeoverseN1Errata1542419",
+            "-XX:+NeoverseN1ICacheErratumMitigation",
             "-XX:+PrintFlagsFinal",
             "-version");
 
@@ -414,12 +414,12 @@ public class TestDeferredICacheInvalidationCmdOptions {
             System.out.println("JVM correctly rejected conflicting flags on affected CPU");
             output.shouldContain("Error");
         } else {
-            throw new RuntimeException("On affected CPU, setting NeoverseN1Errata1542419=true with UseDeferredICacheInvalidation=false");
+            throw new RuntimeException("On affected CPU, setting NeoverseN1ICacheErratumMitigation=true with UseDeferredICacheInvalidation=false");
         }
     }
 
     /**
-     * Test case 8: Check setting NeoverseN1Errata1542419=true on unaffected CPU causes an error.
+     * Test case 8: Check setting NeoverseN1ICacheErratumMitigation=true on unaffected CPU causes an error.
      */
     private static void testCase8_EnablingErrataOnUnaffectedCPU() throws Exception {
         if (isAffected) {
@@ -427,11 +427,11 @@ public class TestDeferredICacheInvalidationCmdOptions {
             return;
         }
 
-        System.out.println("\nTest case 8: Try to set NeoverseN1Errata1542419=true on unaffected CPU");
+        System.out.println("\nTest case 8: Try to set NeoverseN1ICacheErratumMitigation=true on unaffected CPU");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+NeoverseN1Errata1542419",
+            "-XX:+NeoverseN1ICacheErratumMitigation",
             "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -441,7 +441,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
             System.out.println("JVM correctly rejected enabling errata flag on unaffected CPU");
             output.shouldContain("Error");
         } else {
-            throw new RuntimeException("On unaffected CPU, setting NeoverseN1Errata1542419=true should cause error");
+            throw new RuntimeException("On unaffected CPU, setting NeoverseN1ICacheErratumMitigation=true should cause error");
         }
     }
 }
