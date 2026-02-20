@@ -90,7 +90,7 @@ public class ParticleLife {
     public static float DT = 1f;
 
     enum Implementation {
-        Scalar, VectorAPI_Inner, VectorAPI_Outer
+        Scalar, VectorAPI_Inner_Gather, VectorAPI_Inner_Rearranged, VectorAPI_Outer
     }
 
     public static Implementation IMPLEMENTATION = Implementation.Scalar;
@@ -138,18 +138,19 @@ public class ParticleLife {
             label.setBounds(10, y, 150, 30);
             controlPanel.add(label);
 
-            String[] options = {"Scalar", "VectorAPI Inner", "VectorAPI Outer"};
+            String[] options = {"Scalar", "VectorAPI Inner Gather", "VectorAPI Inner Rearranged", "VectorAPI Outer"};
             JComboBox<String> comboBox = new JComboBox<>(options);
-            comboBox.setBounds(160, y, 200, 30);
+            comboBox.setBounds(160, y, 210, 30);
             comboBox.setToolTipText("Choose the implementation of the force computation. Using the VectorAPI should be faster.");
             controlPanel.add(comboBox);
 
             comboBox.addActionListener(_ -> {
                 String selected = (String) comboBox.getSelectedItem();
                 switch (selected) {
-                    case "Scalar"          -> IMPLEMENTATION = Implementation.Scalar;
-                    case "VectorAPI Inner" -> IMPLEMENTATION = Implementation.VectorAPI_Inner;
-                    case "VectorAPI Outer" -> IMPLEMENTATION = Implementation.VectorAPI_Outer;
+                    case "Scalar"                     -> IMPLEMENTATION = Implementation.Scalar;
+                    case "VectorAPI Inner Gather"     -> IMPLEMENTATION = Implementation.VectorAPI_Inner_Gather;
+                    case "VectorAPI Inner Rearranged" -> IMPLEMENTATION = Implementation.VectorAPI_Inner_Rearranged;
+                    case "VectorAPI Outer"            -> IMPLEMENTATION = Implementation.VectorAPI_Outer;
                 }
             });
         }
@@ -221,7 +222,7 @@ public class ParticleLife {
 
             String[] options = {"Default", "Random", "Rainbow", "Sparse"};
             JComboBox<String> comboBox = new JComboBox<>(options);
-            comboBox.setBounds(160, y, 200, 30);
+            comboBox.setBounds(160, y, 210, 30);
             comboBox.setToolTipText("Poles define attraction/repulsion between groups. Only applied on Reset.");
             controlPanel.add(comboBox);
 
@@ -425,6 +426,7 @@ public class ParticleLife {
         // Matrix of the poles: defines attraction/repulsion between groups i and j
         public float[][] poles;
         public float[][] polesT; // transpose of poles
+        public float[] polesScratch;
 
         public State() {
             int n = NUMBER_OF_PARTICLES;
@@ -449,6 +451,7 @@ public class ParticleLife {
 
             poles = new float[g][g];
             polesT = new float[g][g];
+            polesScratch = new float[n];
             for (int i = 0; i < g; i++) {
                 for (int j = 0; j < g; j++) {
                     poles[i][j] = poleGen(i, j, g);
@@ -477,9 +480,10 @@ public class ParticleLife {
             lastTime = nowTime;
 
             switch (IMPLEMENTATION) {
-                case Implementation.Scalar          -> updateForcesScalar();
-                case Implementation.VectorAPI_Inner -> updateForcesVectorAPI_Inner();
-                case Implementation.VectorAPI_Outer -> updateForcesVectorAPI_Outer();
+                case Implementation.Scalar                     -> updateForcesScalar();
+                case Implementation.VectorAPI_Inner_Gather     -> updateForcesVectorAPI_Inner_Gather();
+                case Implementation.VectorAPI_Inner_Rearranged -> updateForcesVectorAPI_Inner_Rearranged();
+                case Implementation.VectorAPI_Outer            -> updateForcesVectorAPI_Outer();
                 default -> throw new RuntimeException("not implemented");
             }
 
@@ -532,7 +536,7 @@ public class ParticleLife {
         }
 
         // Inner loop vectorization, the inner loop is vectorized.
-        public void updateForcesVectorAPI_Inner() {
+        public void updateForcesVectorAPI_Inner_Gather() {
             // We don't want to deal with tail loops, so we just assert that the number of
             // particles is a multiple of the vector length.
             if (x.length % SPECIES_F.length() != 0) {
@@ -556,7 +560,76 @@ public class ParticleLife {
                     var d2 = ( dx.mul(dx) ).add( dy.mul(dy) );
                     var d = d2.lanewise(VectorOperators.SQRT);
 
+                    // We directly gather the poles from the matrix.
                     var pole = FloatVector.fromArray(SPECIES_F, poles[group[i]], 0, group, j);
+
+                    // We need to compute all 3 piece-wise liner parts.
+                    var poleDivScale2 = pole.mul(SCALE3 / SCALE2);
+                    var f1 = d.sub(SCALE1).neg().mul(1f / SCALE1);
+                    var f2 = d.sub(SCALE1).mul(poleDivScale2);
+                    var f3 = d.sub(SCALE1 + SCALE2 * 2f).neg().mul(poleDivScale2);
+
+                    // And we need to perform all checks, for the boundaries of the piece-wise parts.
+                    var f0Mask = d.compare(VectorOperators.GT, 0);
+                    var f1Mask = d.compare(VectorOperators.LT, SCALE1);
+                    var f2Mask = d.compare(VectorOperators.LT, SCALE1 + SCALE2);
+                    var f3Mask = d.compare(VectorOperators.LT, SCALE1 + SCALE2 * 2f);
+                    var f03Mask = f0Mask.and(f3Mask);
+
+                    // Then, we put together the 3 middle parts.
+                    var f12  = f2.blend(f1, f1Mask);
+                    var f123 = f3.blend(f12, f2Mask);
+
+                    f123 = f123.mul(FORCE_PARTICLE * DT).div(d);
+
+                    // And we only apply the middle (non-zero) parts if the mask is enabled.
+                    fx = fx.add(dx.mul(f123), f03Mask);
+                    fy = fy.add(dy.mul(f123), f03Mask);
+                }
+                // We need to add the force of all the (j) particles onto i's velocity.
+                vx[i] += fx.reduceLanes(VectorOperators.ADD);
+                vy[i] += fy.reduceLanes(VectorOperators.ADD);
+            }
+        }
+
+        // Inner loop vectorization, the inner loop is vectorized. But instead of gathering the poles
+        // in the inner loop, we rearrange it in the outer loop, so the inner loop has a linear access.
+        public void updateForcesVectorAPI_Inner_Rearranged() {
+            // We don't want to deal with tail loops, so we just assert that the number of
+            // particles is a multiple of the vector length.
+            if (x.length % SPECIES_F.length() != 0) {
+                throw new RuntimeException("Number of particles is not a multiple of the vector length.");
+            }
+
+            for (int i = 0; i < x.length; i++) {
+                // Rearrange data to avoid rearrange in the loop.
+                // We could also use the VectorAPI for this loop, but it is not even necessary for speedups.
+                float[] polesgi = poles[group[i]];
+                for (int j = 0; j < x.length; j++) {
+                    polesScratch[j] = polesgi[group[j]];
+                }
+
+                float pix = x[i];
+                float piy = y[i];
+
+                // We consider the force of multiple (j) particles on particle i.
+                var fx = FloatVector.zero(SPECIES_F);
+                var fy = FloatVector.zero(SPECIES_F);
+
+                for (int j = 0; j < x.length; j += SPECIES_F.length()) {
+                    var pjx = FloatVector.fromArray(SPECIES_F, x, j);
+                    var pjy = FloatVector.fromArray(SPECIES_F, y, j);
+
+                    var dx = pjx.sub(pix).neg();
+                    var dy = pjy.sub(piy).neg();
+                    var d2 = ( dx.mul(dx) ).add( dy.mul(dy) );
+                    var d = d2.lanewise(VectorOperators.SQRT);
+
+                    // We can now access the poles from scratch in a linear access, avoiding the
+                    // repeated gather in each inner loop. This helps especially if gather is
+                    // not supported on a platform. But it also improves the access pattern on
+                    // platforms where gather would be supported, but linear access is faster.
+                    var pole = FloatVector.fromArray(SPECIES_F, polesScratch, j);
 
                     // We need to compute all 3 piece-wise liner parts.
                     var poleDivScale2 = pole.mul(SCALE3 / SCALE2);

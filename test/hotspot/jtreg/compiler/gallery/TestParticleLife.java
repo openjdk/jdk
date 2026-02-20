@@ -158,11 +158,40 @@ public class TestParticleLife {
                   IRNode.ADD_REDUCTION_VF,   "> 0"}, // instead we reduce the vector to a scalar
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeature = {"avx2", "true"})
-    private void testIR_updateForcesVectorAPI_Inner() {
+    private void testIR_updateForcesVectorAPI_Inner_Gather() {
         // This call should inline given the CompileCommand above.
         // We expect the VectorAPI calls to intrinsify.
-        state.updateForcesVectorAPI_Inner();
+        state.updateForcesVectorAPI_Inner_Gather();
     }
+
+    @Test
+    @Warmup(10)
+    @IR(counts = {IRNode.REPLICATE_F,        "> 0",
+                  IRNode.LOAD_VECTOR_F,      "> 0",
+                  IRNode.REPLICATE_I,        "= 0", // No gather operation
+                  IRNode.LOAD_VECTOR_I,      "= 0", // No gather operation
+                  IRNode.ADD_VI,             "= 0", // No gather operation
+                  IRNode.LOAD_VECTOR_GATHER, "= 0", // No gather operation
+                  IRNode.SUB_VF,             "> 0",
+                  IRNode.MUL_VF,             "> 0",
+                  IRNode.ADD_VF,             "> 0",
+                  IRNode.NEG_VF,             "> 0",
+                  IRNode.SQRT_VF,            "> 0",
+                  IRNode.DIV_VF,             "> 0",
+                  IRNode.VECTOR_MASK_CMP,    "> 0",
+                  IRNode.VECTOR_MASK_CAST,   "> 0",
+                  IRNode.VECTOR_BLEND_F,     "> 0",
+                  IRNode.STORE_VECTOR,       "= 0",  // no vector store
+                  IRNode.ADD_REDUCTION_VF,   "> 0"}, // instead we reduce the vector to a scalar
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    private void testIR_updateForcesVectorAPI_Inner_Rearranged() {
+        // This call should inline given the CompileCommand above.
+        // We expect the VectorAPI calls to intrinsify.
+        state.updateForcesVectorAPI_Inner_Rearranged();
+    }
+
+
     @Test
     @Warmup(10)
     @IR(counts = {IRNode.REPLICATE_F,        "> 0",
