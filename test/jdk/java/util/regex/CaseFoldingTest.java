@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary tests RegExp unicode case-insensitive match (?ui)
- * @bug 8360459
+ * @bug 8360459 8372208
  * @library /lib/testlibrary/java/lang
  * @run junit CaseFoldingTest
  */
@@ -52,7 +52,8 @@ public class CaseFoldingTest {
             // exclude them for now.
             0x1fd3,  // 1FD3 [lo: 1fd3, up: 1fd3]  0390 [lo: 0390, up: 0390]
             0x1fe3,  // 1FE3 [lo: 1fe3, up: 1fe3]  03B0 [lo: 03b0, up: 03b0]
-            0xfb05   // FB05 [lo: fb05, up: fb05]  FB06 [lo: fb06, up: fb06]
+            0xfb05,  // FB05 [lo: fb05, up: fb05]  FB06 [lo: fb06, up: fb06]
+            0x1df95  // 1DF95 [lo: 1df95, up: 1df95]  00DF [lo: 00df, up: 00df]
         );
 
         var results = Files.lines(UCDFiles.CASEFOLDING)
