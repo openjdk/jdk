@@ -65,10 +65,6 @@ void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::update(ShenandoahH
   garbage += region->garbage();
 }
 
-void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::reset() {
-  count = usage = free = garbage = 0;
-}
-
 ShenandoahInPlacePromotionPlanner::ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap)
   : _old_garbage_threshold(ShenandoahHeapRegion::region_size_bytes() * heap->old_generation()->heuristics()->get_old_garbage_threshold() / 100)
   , _pip_used_threshold(ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage / 100)

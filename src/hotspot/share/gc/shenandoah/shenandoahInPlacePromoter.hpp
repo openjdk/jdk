@@ -55,11 +55,10 @@ class ShenandoahInPlacePromotionPlanner {
     size_t garbage;
 
     RegionPromotionStats() : count(0), usage(0), free(0), garbage(0) {}
-    void reset();
     void update(ShenandoahHeapRegion* region);
   };
 
-  size_t _old_garbage_threshold;
+  const size_t _old_garbage_threshold;
   const size_t _pip_used_threshold;
 
   const ShenandoahGenerationalHeap* _heap;
