@@ -289,4 +289,14 @@ public class VectorAlgorithms {
     public Object lowerCaseB_VectorAPI_v2() {
         return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v2(d.strB, d.rB1);
     }
+
+    @Benchmark
+    public float[] pieceWise2FunctionF_loop() {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_loop(d.xF, d.rF1);
+    }
+
+    @Benchmark
+    public float[] pieceWise2FunctionF_VectorAPI() {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI(d.xF, d.rF1);
+    }
 }
