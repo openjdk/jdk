@@ -48,21 +48,17 @@ public class CoherentBytecodeTraceTest {
         }
         // Create a VM process and trace its bytecodes.
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            // Trace the bytecodes.
             "-XX:+TraceBytecodes",
             // Make sure that work() is not compiled. If there is no compiler,
             // the flag is still accepted.
             "-XX:CompileCommand=exclude,CoherentBytecodeTraceTest.work",
             CoherentBytecodeTraceTest.class.getName(), "worker"
         );
-        // Make sure that it contains the output needed.
         OutputAnalyzer oa = new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
         analyze(oa.stdoutAsLines());
     }
 
-    // Schedules n threads to do the work each.
     private static void schedule() throws InterruptedException {
-        // Start n worker threads that do the work.
         Thread[] threads =
             IntStream.range(0, NUM_THREADS)
                      .mapToObj(i -> {
@@ -73,7 +69,6 @@ public class CoherentBytecodeTraceTest {
                          return thread;
                      })
                      .toArray(Thread[]::new);
-        // Wait for work to be completed.
         for (Thread thread : threads) {
             thread.join();
         }
@@ -83,7 +78,7 @@ public class CoherentBytecodeTraceTest {
     // Strategy.foo The trace should look something like the following:
     // invokeinterface 116 <CoherentBytecodeTraceTest$Strategy.foo(I)V>
     // The stategy is to find CoherentBytecodeTraceTest$Strategy.foo's index
-    // and then ensure the text before and after is correct.
+    // and then ensure the constant pool ref and opcode before are correct.
     // This requires going through the file line-by-line.
     private static void analyze(List<String> lines) {
         if (DEBUG) {
@@ -93,15 +88,18 @@ public class CoherentBytecodeTraceTest {
         // Reverse regex for: 'invokeinterface \d+ '. This is needed to look
         // back from the interface name to ensure that the thing that
         // preceeds it is an invokeinterface with a constant pool reference.
-        Pattern reverseFirstPart = Pattern.compile(" \\d+ ecafretniekovni");
+        // Use 'XXXX' to denote where we want to put \d+ or else it will get
+        // reversed and lose its semantics.
+        String searchRegex = reverseString("invokeinterface XXXX ")
+                                 .replace("XXXX", "\\d+");
+        Pattern reverseFirstPart = Pattern.compile(searchRegex);
         for (String line : lines) {
-            int cbttsFoo = line.indexOf(THE_METHOD);
-            if (cbttsFoo == -1) {
+            int fooCallIndex = line.indexOf(THE_METHOD);
+            if (fooCallIndex == -1) {
                 continue;
             }
-            String beginningReverse = new StringBuilder(line.substring(0, cbttsFoo))
-                                                       .reverse()
-                                                       .toString();
+            String untilFooCall = line.substring(0, fooCallIndex);
+            String beginningReverse = reverseString(untilFooCall);
             // Use a Scanner to do a match for "invokeinterface XXXX "
             // immediately before the constant pool reference.
             Scanner scanner = new Scanner(beginningReverse);
@@ -110,6 +108,7 @@ public class CoherentBytecodeTraceTest {
             // this is null, then there is no match.
             if (scanner.findWithinHorizon(reverseFirstPart, 0) == null) {
                 if (DEBUG) {
+                    IO.println("Using regex: " + reverseFirstPart);
                     IO.println("Regex rejected: " + beginningReverse);
                 }
                 throw new RuntimeException(
@@ -118,7 +117,8 @@ public class CoherentBytecodeTraceTest {
             }
             foundAtLeastOne = true;
         }
-        // Sanity.
+        // If there are no invokeinterface calls then something went wrong
+        // and the test probably needs to be updated.
         if (!foundAtLeastOne) {
             throw new RuntimeException(
                 "sanity failure: no invokeinterface found for " + THE_METHOD
@@ -142,6 +142,10 @@ public class CoherentBytecodeTraceTest {
                 x = y - sum;
             }
         }
+    }
+
+    private static String reverseString(String input) {
+        return new StringBuilder(input).reverse().toString();
     }
 
     private static final record Outer(Object inner) implements Strategy {
