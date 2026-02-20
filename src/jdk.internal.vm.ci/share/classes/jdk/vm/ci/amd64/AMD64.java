@@ -288,7 +288,8 @@ public class AMD64 extends Architecture {
         AVX512_FP16,
         AVX10_1,
         AVX10_2,
-        HYBRID
+        HYBRID,
+        AVX512_BMM
     }
 
     private final EnumSet<CPUFeature> features;

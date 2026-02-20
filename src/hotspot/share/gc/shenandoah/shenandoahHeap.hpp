@@ -88,7 +88,7 @@ private:
   ShenandoahHeap* _heap;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
   // No implicit copying: iterators should be passed by reference to capture the state
@@ -208,9 +208,9 @@ private:
   size_t _initial_size;
   size_t _minimum_size;
 
-  volatile size_t _soft_max_size;
+  Atomic<size_t> _soft_max_size;
   shenandoah_padding(0);
-  volatile size_t _committed;
+  Atomic<size_t> _committed;
   shenandoah_padding(1);
 
 public:
@@ -340,7 +340,7 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  size_t _gc_no_progress_count;
+  Atomic<size_t> _gc_no_progress_count;
 
   // This updates the singular, global gc state. This call must happen on a safepoint.
   void set_gc_state_at_safepoint(uint mask, bool value);
@@ -353,7 +353,7 @@ private:
 
 public:
   // This returns the raw value of the singular, global gc state.
-  char gc_state() const;
+  inline char gc_state() const;
 
   // Compares the given state against either the global gc state, or the thread local state.
   // The global gc state may change on a safepoint and is the correct value to use until
@@ -361,7 +361,7 @@ public:
   // compare against the thread local state). The thread local gc state may also be changed
   // by a handshake operation, in which case, this function continues using the updated thread
   // local value.
-  bool is_gc_state(GCState state) const;
+  inline bool is_gc_state(GCState state) const;
 
   // This copies the global gc state into a thread local variable for all threads.
   // The thread local gc state is primarily intended to support quick access at barriers.
