@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8376134
+ * @bug 8364182
  * @summary Test of diagnostic command VM.security_properties
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
