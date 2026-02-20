@@ -39,7 +39,7 @@ public class JarNoManifest {
 
     @Test
     void absentManifestTest() throws IOException {
-        File f = new File(System.getProperty("test.src","."), "no-manifest.jar");
+        File f = new File(System.getProperty("test.src", "."), "no-manifest.jar");
         JarFile jar = new JarFile(f);
         ZipEntry entry = jar.getEntry("JarNoManifest.java");
         // The following throws a NullPointerException when the bug is present

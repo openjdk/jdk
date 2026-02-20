@@ -47,7 +47,7 @@ public class TurkCert {
 
     @Test
     void turkishLocaleTest() throws IOException {
-        File f = new File(System.getProperty("test.src","."), "test.jar");
+        File f = new File(System.getProperty("test.src", "."), "test.jar");
         try (JarFile jf = new JarFile(f, true)) {
             JarEntry je = (JarEntry)jf.getEntry("test.class");
             try (InputStream is = jf.getInputStream(je)) {

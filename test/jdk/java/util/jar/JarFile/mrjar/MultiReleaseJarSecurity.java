@@ -53,7 +53,7 @@ public class MultiReleaseJarSecurity {
 
     static final int MAJOR_VERSION = Runtime.version().major();
 
-    private static final String userdir = System.getProperty("user.dir",".");
+    private static final String userdir = System.getProperty("user.dir", ".");
     private static final File multirelease = new File(userdir, "multi-release.jar");
     private static final File signedmultirelease = new File(userdir, "signed-multi-release.jar");
 

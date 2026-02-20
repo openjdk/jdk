@@ -48,7 +48,7 @@ public class TestIndexedJarWithBadSignature {
                         "BadSignedJar.jar"))) {
             assertThrows(SecurityException.class, () -> {
                 JarEntry je1;
-                while((je1 = jis.getNextJarEntry()) != null) {
+                while ((je1 = jis.getNextJarEntry()) != null) {
                     System.out.println("Jar Entry1==>" + je1.getName());
                 }
             });

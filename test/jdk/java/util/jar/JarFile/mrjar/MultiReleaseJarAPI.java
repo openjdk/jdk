@@ -63,8 +63,8 @@ public class MultiReleaseJarAPI {
 
     private static final Random RANDOM = RandomFactory.getRandom();
 
-    private static final String userdir = System.getProperty("user.dir",".");
-    private static final CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
+    private static final String userdir = System.getProperty("user.dir", ".");
+    private static final CreateMultiReleaseTestJars creator = new CreateMultiReleaseTestJars();
     private static final File unversioned = new File(userdir, "unversioned.jar");
     private static final File multirelease = new File(userdir, "multi-release.jar");
     private static final File signedmultirelease = new File(userdir, "signed-multi-release.jar");

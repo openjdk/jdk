@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SorryClosed {
 
-    private static final File file = new File(System.getProperty("test.src","."), "test.jar");
+    private static final File file = new File(System.getProperty("test.src", "."), "test.jar");
     private static final String testEntryName = "test.class";
 
     @Test
