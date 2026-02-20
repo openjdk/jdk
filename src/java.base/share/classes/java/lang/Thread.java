@@ -1881,8 +1881,8 @@ public class Thread implements Runnable {
      * been {@link #start() started}.
      *
      * @implNote
-     * For platform threads, the implementation uses a loop of {@code this.wait}
-     * calls conditioned on {@code this.isAlive}. As a thread terminates the
+     * This implementation uses a loop of {@code this.wait} calls
+     * conditioned on {@code this.isAlive}. As a thread terminates the
      * {@code this.notifyAll} method is invoked. It is recommended that
      * applications not use {@code wait}, {@code notify}, or
      * {@code notifyAll} on {@code Thread} instances.
@@ -1901,14 +1901,6 @@ public class Thread implements Runnable {
     public final void join(long millis) throws InterruptedException {
         if (millis < 0)
             throw new IllegalArgumentException("timeout value is negative");
-
-        if (this instanceof VirtualThread vthread) {
-            if (isAlive()) {
-                long nanos = MILLISECONDS.toNanos(millis);
-                vthread.joinNanos(nanos);
-            }
-            return;
-        }
 
         synchronized (this) {
             if (millis > 0) {
@@ -1936,8 +1928,8 @@ public class Thread implements Runnable {
      * been {@link #start() started}.
      *
      * @implNote
-     * For platform threads, the implementation uses a loop of {@code this.wait}
-     * calls conditioned on {@code this.isAlive}. As a thread terminates the
+     * This implementation uses a loop of {@code this.wait} calls
+     * conditioned on {@code this.isAlive}. As a thread terminates the
      * {@code this.notifyAll} method is invoked. It is recommended that
      * applications not use {@code wait}, {@code notify}, or
      * {@code notifyAll} on {@code Thread} instances.
@@ -1964,16 +1956,6 @@ public class Thread implements Runnable {
 
         if (nanos < 0 || nanos > 999999) {
             throw new IllegalArgumentException("nanosecond timeout value out of range");
-        }
-
-        if (this instanceof VirtualThread vthread) {
-            if (isAlive()) {
-                // convert arguments to a total in nanoseconds
-                long totalNanos = MILLISECONDS.toNanos(millis);
-                totalNanos += Math.min(Long.MAX_VALUE - totalNanos, nanos);
-                vthread.joinNanos(totalNanos);
-            }
-            return;
         }
 
         if (nanos > 0 && millis < Long.MAX_VALUE) {
@@ -2034,10 +2016,6 @@ public class Thread implements Runnable {
             return true;
         if (nanos <= 0)
             return false;
-
-        if (this instanceof VirtualThread vthread) {
-            return vthread.joinNanos(nanos);
-        }
 
         // convert to milliseconds
         long millis = MILLISECONDS.convert(nanos, NANOSECONDS);
