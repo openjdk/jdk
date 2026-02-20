@@ -83,6 +83,7 @@ public class VectorAlgorithmsImpl {
         public float[] xF;
         public float[] rF1;
         public float[] rF2;
+        public float[] rF3;
 
         public byte[] aB;
         public byte[] strB;
@@ -143,6 +144,7 @@ public class VectorAlgorithmsImpl {
             xF = new float[size];
             rF1 = new float[size];
             rF2 = new float[size];
+            rF3 = new float[size];
             for (int i = 0; i < size; i++) {
                 xF[i] = (random.nextFloat() < branchProbability)
                         ? 0f + random.nextFloat()
@@ -937,7 +939,7 @@ public class VectorAlgorithmsImpl {
         return r;
     }
 
-    public static float[] pieceWise2FunctionF_VectorAPI(float[] a, float[] r) {
+    public static float[] pieceWise2FunctionF_VectorAPI_v1(float[] a, float[] r) {
         int i;
         for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
             var ai = FloatVector.fromArray(SPECIES_F, a, i);
@@ -949,6 +951,41 @@ public class VectorAlgorithmsImpl {
             var s4 = s2.lanewise(VectorOperators.SQRT);
             var s8 = s4.lanewise(VectorOperators.SQRT);
             var v = s8.blend(a8, mask);
+            v.intoArray(r, i);
+        }
+        for (; i < a.length; i++) {
+            float ai = a[i];
+            if (ai < 1f) {
+                float a2 = ai * ai;
+                float a4 = a2 * a2;
+                float a8 = a4 * a4;
+                r[i] = a8;
+            } else {
+                float s2 = (float)Math.sqrt(ai);
+                float s4 = (float)Math.sqrt(s2);
+                float s8 = (float)Math.sqrt(s4);
+                r[i] = s8;
+            }
+        }
+        return r;
+    }
+
+    public static float[] pieceWise2FunctionF_VectorAPI_v2(float[] a, float[] r) {
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var ai = FloatVector.fromArray(SPECIES_F, a, i);
+            var mask = ai.compare(VectorOperators.LT, 1f);
+            var a2 = ai.lanewise(VectorOperators.MUL, ai);
+            var a4 = a2.lanewise(VectorOperators.MUL, a2);
+            var a8 = a4.lanewise(VectorOperators.MUL, a4);
+            var v = a8;
+            // SQRT is expensive, so only call if it necessary
+            if (!mask.allTrue()) {
+                var s2 = ai.lanewise(VectorOperators.SQRT);
+                var s4 = s2.lanewise(VectorOperators.SQRT);
+                var s8 = s4.lanewise(VectorOperators.SQRT);
+                v = s8.blend(a8, mask);
+            }
             v.intoArray(r, i);
         }
         for (; i < a.length; i++) {

@@ -296,7 +296,12 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
-    public float[] pieceWise2FunctionF_VectorAPI() {
-        return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI(d.xF, d.rF1);
+    public float[] pieceWise2FunctionF_VectorAPI_v1() {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v1(d.xF, d.rF1);
+    }
+
+    @Benchmark
+    public float[] pieceWise2FunctionF_VectorAPI_v2() {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v2(d.xF, d.rF1);
     }
 }
