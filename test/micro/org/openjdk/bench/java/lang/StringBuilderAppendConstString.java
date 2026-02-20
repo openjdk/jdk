@@ -34,6 +34,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -79,12 +80,12 @@ public class StringBuilderAppendConstString {
     private String strLen6;
     private String strLen7;
     private String strLen8;
+    private int initLength;
 
     @Setup
     public void setup() {
-        sbLatin1 = new StringBuilder();
-        sbLatin2 = new StringBuilder();
-        sbUtf16 = new StringBuilder("\uFF11");
+        sbLatin1 = new StringBuilder().repeat("a", 16);
+        sbUtf16 = new StringBuilder().repeat("\uFF11", 16);
 
         strLen1 = new String(new char[]{'a'});
         strLen2 = new String(new char[]{'a', 'b'});
@@ -94,6 +95,8 @@ public class StringBuilderAppendConstString {
         strLen6 = new String(new char[]{'a', 'b', 'c', 'd', 'e', 'f'});
         strLen7 = new String(new char[]{'a', 'b', 'c', 'd', 'e', 'f', 'g'});
         strLen8 = new String(new char[]{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'});
+
+        initLength = new Random().nextInt(10);
     }
 
     // ============= Constant String Append (Latin1) =============
@@ -101,7 +104,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen1() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_1);
         return buf.length();
     }
@@ -109,7 +112,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen2() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_2);
         return buf.length();
     }
@@ -117,7 +120,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen3() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_3);
         return buf.length();
     }
@@ -125,7 +128,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen4() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_4);
         return buf.length();
     }
@@ -133,7 +136,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen5() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_5);
         return buf.length();
     }
@@ -141,7 +144,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen6() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_6);
         return buf.length();
     }
@@ -149,7 +152,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen7() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_7);
         return buf.length();
     }
@@ -157,7 +160,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstLen8() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_8);
         return buf.length();
     }
@@ -167,7 +170,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen1() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen1);
         return buf.length();
     }
@@ -175,7 +178,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen2() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen2);
         return buf.length();
     }
@@ -183,7 +186,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen3() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen3);
         return buf.length();
     }
@@ -191,7 +194,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen4() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen4);
         return buf.length();
     }
@@ -199,7 +202,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen5() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen5);
         return buf.length();
     }
@@ -207,7 +210,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen6() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen6);
         return buf.length();
     }
@@ -215,7 +218,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen7() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen7);
         return buf.length();
     }
@@ -223,7 +226,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendNonConstLen8() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(strLen8);
         return buf.length();
     }
@@ -233,7 +236,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstUtf16Len2() {
         StringBuilder buf = sbUtf16;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_UTF16_LEN_2);
         return buf.length();
     }
@@ -241,7 +244,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstUtf16Len4() {
         StringBuilder buf = sbUtf16;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_UTF16_LEN_4);
         return buf.length();
     }
@@ -249,7 +252,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendConstUtf16Len8() {
         StringBuilder buf = sbUtf16;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_UTF16_LEN_8);
         return buf.length();
     }
@@ -259,7 +262,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendMultiConstLen2() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_2);
         buf.append(STR_LEN_2);
         buf.append(STR_LEN_2);
@@ -270,7 +273,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendMultiConstLen4() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_4);
         buf.append(STR_LEN_4);
         return buf.length();
@@ -279,7 +282,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendMultiConstLen8() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_8);
         buf.append(STR_LEN_8);
         return buf.length();
@@ -290,7 +293,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendMixedConst() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         buf.append(STR_LEN_2);
         buf.append(STR_LEN_4);
         buf.append(STR_LEN_8);
@@ -302,7 +305,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendRepeatConstLen2() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         for (int i = 0; i < 8; i++) {
             buf.append(STR_LEN_2);
         }
@@ -312,7 +315,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendRepeatConstLen4() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         for (int i = 0; i < 4; i++) {
             buf.append(STR_LEN_4);
         }
@@ -322,7 +325,7 @@ public class StringBuilderAppendConstString {
     @Benchmark
     public int appendRepeatConstLen8() {
         StringBuilder buf = sbLatin1;
-        buf.setLength(0);
+        buf.setLength(initLength);
         for (int i = 0; i < 2; i++) {
             buf.append(STR_LEN_8);
         }
