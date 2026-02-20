@@ -134,20 +134,17 @@ public class CompileFramework {
         } catch (IllegalAccessException e) {
             throw new CompileFrameworkException("Illegal access:", e);
         } catch (InvocationTargetException e) {
+            // Rethrow jtreg.SkippedException so skipped tests do not show as errors
+            // as the CompileFramework buries it in the exception causes.
             findJtregSkippedExceptionInCauses(e).ifPresent(ex -> { throw ex; });
             throw new CompileFrameworkException("Invocation target:", e);
         }
     }
 
-    private static Optional<RuntimeException> findJtregSkippedExceptionInCauses(
-            Throwable ex) {
-
+    private static Optional<RuntimeException> findJtregSkippedExceptionInCauses(Throwable ex) {
         while (ex != null) {
-            // jtreg.SkippedException can be from a different classloader,
-            // comparing by name
-            if (ex.getClass().getName().equals(
-                    SkippedException.class.getName())) {
-
+            // jtreg.SkippedException can be from a different classloader, comparing by name
+            if (ex.getClass().getName().equals(SkippedException.class.getName())) {
                 return Optional.of((RuntimeException) ex);
             }
 
