@@ -129,7 +129,7 @@ public class ParticleLife {
         button.setToolTipText("Reset state, with new numbers of particles and groups, and new poles.");
         controlPanel.add(button);
 
-        button.addActionListener(e -> { STATE = new State(); });
+        button.addActionListener(_ -> { STATE = new State(); });
         y += 40;
 
         // ---------------------------- Computation Selector -------------------------
@@ -144,7 +144,7 @@ public class ParticleLife {
             comboBox.setToolTipText("Choose the implementation of the force computation. Using the VectorAPI should be faster.");
             controlPanel.add(comboBox);
 
-            comboBox.addActionListener(e -> {
+            comboBox.addActionListener(_ -> {
                 String selected = (String) comboBox.getSelectedItem();
                 switch (selected) {
                     case "Scalar"          -> IMPLEMENTATION = Implementation.Scalar;
@@ -167,7 +167,7 @@ public class ParticleLife {
         zoomSlider.setPaintLabels(false);
         controlPanel.add(zoomSlider);
 
-        zoomSlider.addChangeListener(e -> {
+        zoomSlider.addChangeListener(_ -> {
             ZOOM = zoomSlider.getValue();
         });
         zoomSlider.setValue((int)ZOOM);
@@ -186,7 +186,7 @@ public class ParticleLife {
         particlesSlider.setToolTipText("More particles make the simulation slower. Only applied on Reset.");
         controlPanel.add(particlesSlider);
 
-        particlesSlider.addChangeListener(e -> {
+        particlesSlider.addChangeListener(_ -> {
             NUMBER_OF_PARTICLES = particlesSlider.getValue() / 64 * 64;
             particlesLabel.setText("Particles = " + NUMBER_OF_PARTICLES);
         });
@@ -206,7 +206,7 @@ public class ParticleLife {
         groupsSlider.setToolTipText("More groups lead to more complex behavior. Only applied on Reset.");
         controlPanel.add(groupsSlider);
 
-        groupsSlider.addChangeListener(e -> {
+        groupsSlider.addChangeListener(_ -> {
             NUMBER_OF_GROUPS = groupsSlider.getValue();
             groupsLabel.setText("Groups = " + NUMBER_OF_GROUPS);
         });
@@ -225,7 +225,7 @@ public class ParticleLife {
             comboBox.setToolTipText("Poles define attraction/repulsion between groups. Only applied on Reset.");
             controlPanel.add(comboBox);
 
-            comboBox.addActionListener(e -> {
+            comboBox.addActionListener(_ -> {
                 String selected = (String) comboBox.getSelectedItem();
                 switch (selected) {
                     case "Default" -> POLE_GEN = PoleGen.Default;
@@ -250,7 +250,7 @@ public class ParticleLife {
         scale1Slider.setToolTipText("Defines (inner) radius: repulsion between all particles.");
         controlPanel.add(scale1Slider);
 
-        scale1Slider.addChangeListener(e -> {
+        scale1Slider.addChangeListener(_ -> {
             SCALE1 = scale1Slider.getValue() * 0.002f + 0.001f;
             scale1Label.setText("scale1 = " + String.format("%.4f", SCALE1));
         });
@@ -270,7 +270,7 @@ public class ParticleLife {
         scale2Slider.setToolTipText("Defines (outer) radius: attraction/repulsion depending on poles/groups.");
         controlPanel.add(scale2Slider);
 
-        scale2Slider.addChangeListener(e -> {
+        scale2Slider.addChangeListener(_ -> {
             SCALE2 = scale2Slider.getValue() * 0.002f + 0.001f;
             scale2Label.setText("scale2 = " + String.format("%.4f", SCALE2));
         });
@@ -290,7 +290,7 @@ public class ParticleLife {
         scale3Slider.setToolTipText("Poles factor: adjust attraction/repulsion strenght.");
         controlPanel.add(scale3Slider);
 
-        scale3Slider.addChangeListener(e -> {
+        scale3Slider.addChangeListener(_ -> {
             SCALE3 = scale3Slider.getValue() * 0.02f;
             scale3Label.setText("scale3 = " + String.format("%.4f", SCALE3));
         });
@@ -310,7 +310,7 @@ public class ParticleLife {
         forceParticlesSlider.setToolTipText("Particles force factor: adjust force strength between particles.");
         controlPanel.add(forceParticlesSlider);
 
-        forceParticlesSlider.addChangeListener(e -> {
+        forceParticlesSlider.addChangeListener(_ -> {
             FORCE_PARTICLE = forceParticlesSlider.getValue() * 0.00001f;
             forceParticlesLabel.setText("fParticles = " + String.format("%.5f", FORCE_PARTICLE));
         });
@@ -330,7 +330,7 @@ public class ParticleLife {
         forceOriginSlider.setToolTipText("Origin force factor: adjust force attracting all particles to the center/origin.");
         controlPanel.add(forceOriginSlider);
 
-        forceOriginSlider.addChangeListener(e -> {
+        forceOriginSlider.addChangeListener(_ -> {
             FORCE_ORIGIN = forceOriginSlider.getValue() * 0.0005f;
             forceOriginLabel.setText("fOrigin = " + String.format("%.5f", FORCE_ORIGIN));
         });
@@ -350,7 +350,7 @@ public class ParticleLife {
         dampeningSlider.setToolTipText("Dampening removes energy from the system over time. 1 = no dampening.");
         controlPanel.add(dampeningSlider);
 
-        dampeningSlider.addChangeListener(e -> {
+        dampeningSlider.addChangeListener(_ -> {
             DAMPENING = dampeningSlider.getValue() * 0.01f;
             dampeningLabel.setText("dampening = " + String.format("%.5f", DAMPENING));
         });
@@ -370,7 +370,7 @@ public class ParticleLife {
         dtSlider.setToolTipText("Time delta between simulation steps. Small values lead to slow simulation, large values can lead to simulation instability.");
         controlPanel.add(dtSlider);
 
-        dtSlider.addChangeListener(e -> {
+        dtSlider.addChangeListener(_ -> {
             DT = dtSlider.getValue() * 0.04f + 0.001f;
             dtLabel.setText("dt = " + String.format("%.3f", DT));
         });
@@ -391,7 +391,6 @@ public class ParticleLife {
         System.out.println("Running Demo...");
         try {
             // Tight loop where we redraw the panel as fast as possible.
-            int count = 0;
             while (true) {
                 Thread.sleep(1);
                 STATE.update();
@@ -543,7 +542,6 @@ public class ParticleLife {
             for (int i = 0; i < x.length; i++) {
                 float pix = x[i];
                 float piy = y[i];
-                float pivy = vy[i];
 
                 // We consider the force of multiple (j) particles on particle i.
                 var fx = FloatVector.zero(SPECIES_F);
