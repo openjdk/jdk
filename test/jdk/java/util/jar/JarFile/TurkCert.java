@@ -25,10 +25,9 @@
  * @test
  * @bug 4624534
  * @summary Make sure jar certificates work for Turkish locale
- * @run junit/othervm TurkCert
+ * @run junit/othervm -Duser.language=tr -Duser.country=TR TurkCert
  */
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -39,11 +38,6 @@ import java.io.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TurkCert {
-
-    @BeforeAll
-    static void setLocale() {
-        Locale.setDefault(Locale.of("tr", "TR"));
-    }
 
     @Test
     void turkishLocaleTest() throws IOException {
