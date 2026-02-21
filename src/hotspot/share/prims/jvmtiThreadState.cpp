@@ -51,7 +51,7 @@ static const int UNKNOWN_STACK_DEPTH = -99;
 //
 
 JvmtiThreadState *JvmtiThreadState::_head = nullptr;
-bool JvmtiThreadState::_seen_interp_only_mode = false;
+volatile bool JvmtiThreadState::_seen_interp_only_mode = false;
 
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
