@@ -321,12 +321,14 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(!is_interp_only_mode(), "entering interp only when in interp only mode");
   _thread->set_interp_only_mode(true);
   invalidate_cur_stack_depth();
 }
 
 void JvmtiThreadState::leave_interp_only_mode() {
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(is_interp_only_mode(), "leaving interp only when not in interp only mode");
   if (_thread == nullptr) {
     // Unmounted virtual thread updates the saved value.

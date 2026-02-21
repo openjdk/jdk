@@ -181,7 +181,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
-  static bool _seen_interp_only_mode; // interp_only_mode was requested at least once
+  static volatile bool _seen_interp_only_mode; // interp_only_mode was requested at least once
 
  public:
   ~JvmtiThreadState();
@@ -211,9 +211,12 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // The pending_interp_only_mode is set when the interp_only_mode is triggered.
   // It is cleared by EnterInterpOnlyModeClosure handshake.
-  bool is_pending_interp_only_mode() { return _pending_interp_only_mode; }
+  bool is_pending_interp_only_mode() {
+    return AtomicAccess::load(&_pending_interp_only_mode);
+  }
+
   void set_pending_interp_only_mode(bool val) {
-    _seen_interp_only_mode = true;
+    AtomicAccess::store(&_seen_interp_only_mode, true);
     _pending_interp_only_mode = val;
   }
 
