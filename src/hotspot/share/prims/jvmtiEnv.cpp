@@ -1080,7 +1080,8 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
     // Restore resumed state for current thread if it is virtual.
     // It must be suspended in the suspend_thread call out of disabler context.
     oop cur_oop = self_tobj();
-    if (cur_oop != nullptr && JvmtiVTSuspender::is_vthread_suspended(cur_oop)) {
+    if (cur_oop != nullptr) {
+      assert(JvmtiVTSuspender::is_vthread_suspended(cur_oop), "sanity check");
       JvmtiVTSuspender::register_vthread_resume(cur_oop);
     }
   }
