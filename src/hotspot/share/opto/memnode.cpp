@@ -44,6 +44,7 @@
 #include "opto/mempointer.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -552,6 +553,18 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
 bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
                                       PhaseTransform* phase) {
+  // Trivial case: Non-overlapping values. Be careful, we can cast a raw pointer to an oop (e.g. in
+  // the allocation pattern) so joining the types only works if both are oops. join may also give
+  // an incorrect result when both pointers are nullable and the result is supposed to be
+  // TypePtr::NULL_PTR, so we exclude that case.
+  const Type* p1_type = p1->bottom_type();
+  const Type* p2_type = p2->bottom_type();
+  if (p1_type->isa_oopptr() && p2_type->isa_oopptr() &&
+      (!p1_type->maybe_null() || !p2_type->maybe_null()) &&
+      p1_type->join(p2_type)->empty()) {
+    return true;
+  }
+
   // Attempt to prove that these two pointers cannot be aliased.
   // They may both manifestly be allocations, and they should differ.
   // Or, if they are not both allocations, they can be distinct constants.
@@ -690,6 +703,20 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
   Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
   AllocateNode* alloc  = AllocateNode::Ideal_allocation(base);
 
+  const TypePtr* adr_type = this->adr_type();
+  if (adr_type == nullptr) {
+    // This means the access is dead
+    return phase->C->top();
+  } else if (adr_type->base() == TypePtr::AnyPtr) {
+    assert(adr_type->ptr() == TypePtr::Null, "MemNode should never access a wide memory");
+    // Give up, this will upset Compile::get_alias_index
+    return nullptr;
+  }
+
+  int alias_idx = phase->C->get_alias_index(adr_type);
+  assert(alias_idx != Compile::AliasIdxTop, "must not be a dead node");
+  assert(alias_idx != Compile::AliasIdxBot || !phase->C->do_aliasing(), "must not be a very wide access");
+
   if (offset == Type::OffsetBot)
     return nullptr;            // cannot unalias unless there are precise offsets
 
@@ -709,15 +736,32 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       Node* st_adr = mem->in(MemNode::Address);
       intptr_t st_offset = 0;
       Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_offset);
-      if (st_base == nullptr)
-        break;              // inscrutable pointer
-
-      // For raw accesses it's not enough to prove that constant offsets don't intersect.
-      // We need the bases to be the equal in order for the offset check to make sense.
-      if ((adr_maybe_raw || check_if_adr_maybe_raw(st_adr)) && st_base != base) {
+      if (st_base == nullptr) {
+        // inscrutable pointer
         break;
       }
 
+      // If the bases are the same and the offsets are the same, it seems that this is the exact
+      // store we are looking for, the caller will check if the type of the store matches using
+      // MemNode::can_see_stored_value
+      if (st_base == base && st_offset == offset) {
+        return mem; // (b) found the store that this access observes
+      }
+
+      // If it is provable that the memory accessed by mem does not overlap the memory accessed by
+      // this, we may walk past mem.
+      // For raw accesses, 2 accesses are independent if they have the same base and the offsets
+      // say that they do not overlap.
+      // For heap accesses, 2 accesses are independent if either the bases are provably different
+      // at runtime or the offsets say that the accesses do not overlap.
+      if ((adr_maybe_raw || check_if_adr_maybe_raw(st_adr)) && st_base != base) {
+        // Raw accesses can only be provably independent if they have the same base
+        break;
+      }
+
+      // If the offsets say that the accesses do not overlap, then it is provable that mem and this
+      // do not overlap. For example, a LoadI from Object+8 is independent from a StoreL into
+      // Object+12, no matter what the bases are.
       if (st_offset != offset && st_offset != Type::OffsetBot) {
         const int MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
         assert(mem->as_Store()->memory_size() <= MAX_STORE, "");
@@ -730,25 +774,25 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
           // in the same sequence of RawMem effects.  We sometimes initialize
           // a whole 'tile' of array elements with a single jint or jlong.)
           mem = mem->in(MemNode::Memory);
-          continue;           // (a) advance through independent store memory
+          continue; // (a) advance through the independent store
         }
       }
-      if (st_base != base &&
-          detect_ptr_independence(base, alloc,
-                                  st_base,
-                                  AllocateNode::Ideal_allocation(st_base),
-                                  phase)) {
-        // Success:  The bases are provably independent.
+
+      // Same base and overlapping offsets, it seems provable that the accesses overlap, give up
+      if (st_base == base) {
+        break;
+      }
+
+      // Try to prove that 2 different base nodes at compile time are different values at runtime
+      bool known_independent = false;
+      if (detect_ptr_independence(base, alloc, st_base, AllocateNode::Ideal_allocation(st_base), phase)) {
+        known_independent = true;
+      }
+
+      if (known_independent) {
         mem = mem->in(MemNode::Memory);
-        continue;           // (a) advance through independent store memory
+        continue; // (a) advance through the independent store
       }
-
-      // (b) At this point, if the bases or offsets do not agree, we lose,
-      // since we have not managed to prove 'this' and 'mem' independent.
-      if (st_base == base && st_offset == offset) {
-        return mem;         // let caller handle steps (c), (d)
-      }
-
     } else if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
       InitializeNode* st_init = mem->in(0)->as_Initialize();
       AllocateNode*  st_alloc = st_init->allocation();
@@ -769,7 +813,6 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
         // The bases are provably independent: Either they are
         // manifestly distinct allocations, or else the control
         // of this load dominates the store's allocation.
-        int alias_idx = phase->C->get_alias_index(adr_type());
         if (alias_idx == Compile::AliasIdxRaw) {
           mem = st_alloc->in(TypeFunc::Memory);
         } else {
@@ -792,6 +835,9 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       }
       // Found an arraycopy that may affect that load
       return mem;
+    } else if (mem->is_MergeMem()) {
+      mem = mem->as_MergeMem()->memory_at(alias_idx);
+      continue;
     } else if (addr_t != nullptr && addr_t->is_known_instance_field()) {
       // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
       if (mem->is_Proj() && mem->in(0)->is_Call()) {
@@ -817,10 +863,6 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
           // we are looking for.
           return mem;
         }
-      } else if (mem->is_MergeMem()) {
-        int alias_idx = phase->C->get_alias_index(adr_type());
-        mem = mem->as_MergeMem()->memory_at(alias_idx);
-        continue;           // (a) advance through independent MergeMem memory
       }
     }
 
@@ -1843,7 +1885,6 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* ctrl    = in(MemNode::Control);
   Node* address = in(MemNode::Address);
-  bool progress = false;
 
   bool addr_mark = ((phase->type(address)->isa_oopptr() || phase->type(address)->isa_narrowoop()) &&
          phase->type(address)->is_ptr()->offset() == oopDesc::mark_offset_in_bytes());
@@ -1856,7 +1897,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       (depends_only_on_test() || has_unknown_control_dependency())) {
     ctrl = ctrl->in(0);
     set_req(MemNode::Control,ctrl);
-    progress = true;
+    return this;
   }
 
   intptr_t ignore = 0;
@@ -1870,7 +1911,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, nullptr);
-      progress = true;
+      return this;
     }
   }
 
@@ -1943,6 +1984,10 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // the alias index stuff.  So instead, peek through Stores and IFF we can
   // fold up, do so.
   Node* prev_mem = find_previous_store(phase);
+  if (prev_mem != nullptr && prev_mem->is_top()) {
+    // find_previous_store returns top when the access is dead
+    return prev_mem;
+  }
   if (prev_mem != nullptr) {
     Node* value = can_see_arraycopy_value(prev_mem, phase);
     if (value != nullptr) {
@@ -1961,7 +2006,11 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return progress ? this : nullptr;
+  if (!can_reshape) {
+    phase->record_for_igvn(this);
+  }
+
+  return nullptr;
 }
 
 // Helper to recognize certain Klass fields which are invariant across
@@ -3565,6 +3614,10 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       Node* prev_mem = find_previous_store(phase);
       // Steps (a), (b):  Walk past independent stores to find an exact match.
       if (prev_mem != nullptr) {
+        if (prev_mem->is_top()) {
+          // find_previous_store returns top when the access is dead
+          return prev_mem;
+        }
         Node* prev_val = can_see_stored_value(prev_mem, phase);
         if (prev_val != nullptr && prev_val == val) {
           // prev_val and val might differ by a cast; it would be good
