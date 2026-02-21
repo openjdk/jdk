@@ -484,6 +484,8 @@ void JvmtiThreadState::update_for_pop_top_frame() {
     }
     // force stack depth to be recalculated
     invalidate_cur_stack_depth();
+  } else {
+    assert(!is_enabled(JVMTI_EVENT_FRAME_POP), "Must have no framepops set");
   }
 }
 
