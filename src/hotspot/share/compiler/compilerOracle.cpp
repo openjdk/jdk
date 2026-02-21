@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -59,6 +60,8 @@ static const char* const default_compile_commands[] = {
     "MemLimit,*.*,1G~crash",
 #endif
     nullptr };
+
+static const intx default_comp_level_argument = CompLevel_none;
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -456,36 +459,49 @@ template bool CompilerOracle::option_matches_type<bool>(CompileCommandEnum optio
 template bool CompilerOracle::option_matches_type<ccstr>(CompileCommandEnum option, ccstr& value);
 template bool CompilerOracle::option_matches_type<double>(CompileCommandEnum option, double& value);
 
+bool CompilerOracle::applies_to_comp_level(const methodHandle& method, CompileCommandEnum command, CompLevel current_level) {
+  intx command_level = 0;
+  if (!has_option_value(method, command, command_level)) {
+    return false;
+  }
+  return static_cast<intx>(current_level) >= command_level;
+}
+
 bool CompilerOracle::has_option(const methodHandle& method, CompileCommandEnum option) {
   bool value = false;
   has_option_value(method, option, value);
   return value;
 }
 
-bool CompilerOracle::should_exclude(const methodHandle& method) {
-  if (check_predicate(CompileCommandEnum::Exclude, method)) {
+bool CompilerOracle::should_exclude(const methodHandle& method, const CompLevel level) {
+  if (has_exclude(method, level)) {
     return true;
   }
   if (has_command(CompileCommandEnum::CompileOnly)) {
-    return !check_predicate(CompileCommandEnum::CompileOnly, method);
+    intx command_level;
+    return !has_option_value(method, CompileCommandEnum::CompileOnly, command_level);
   }
   return false;
+}
+
+bool CompilerOracle::has_exclude(const methodHandle& method, const CompLevel level) {
+  return applies_to_comp_level(method, CompileCommandEnum::Exclude, level);
 }
 
 bool CompilerOracle::should_inline(const methodHandle& method) {
   return (check_predicate(CompileCommandEnum::Inline, method));
 }
 
-bool CompilerOracle::should_not_inline(const methodHandle& method) {
-  return check_predicate(CompileCommandEnum::DontInline, method) || check_predicate(CompileCommandEnum::Exclude, method);
+bool CompilerOracle::should_not_inline(const methodHandle& method, const CompLevel level) {
+  return check_predicate(CompileCommandEnum::DontInline, method) || has_exclude(method, level);
 }
 
 bool CompilerOracle::should_delay_inline(const methodHandle& method) {
   return (check_predicate(CompileCommandEnum::DelayInline, method));
 }
 
-bool CompilerOracle::should_print(const methodHandle& method) {
-  return check_predicate(CompileCommandEnum::Print, method);
+bool CompilerOracle::should_print(const methodHandle& method, const CompLevel level) {
+  return applies_to_comp_level(method, CompileCommandEnum::Print, level);
 }
 
 bool CompilerOracle::should_print_methods() {
@@ -505,8 +521,8 @@ bool CompilerOracle::should_log(const methodHandle& method) {
   return (check_predicate(CompileCommandEnum::Log, method));
 }
 
-bool CompilerOracle::should_break_at(const methodHandle& method) {
-  return check_predicate(CompileCommandEnum::Break, method);
+bool CompilerOracle::should_break_at(const methodHandle& method, const CompLevel level) {
+  return applies_to_comp_level(method, CompileCommandEnum::Break, level);
 }
 
 void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
@@ -756,6 +772,13 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   return false;
 }
 
+static bool parse_optional_int(const char* line, intx& value, int& bytes_read, uintx default_value) {
+  if (sscanf(line, "%zd%n", &value, &bytes_read) < 1) {
+    value = default_value;
+  }
+  return true;
+}
+
 static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
         TypedMethodOptionMatcher* matcher, CompileCommandEnum option, char* errorbuf, const int buf_size) {
   int bytes_read = 0;
@@ -766,12 +789,22 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
   if (type == OptionType::Intx) {
     intx value;
     bool success = false;
-    if (option == CompileCommandEnum::MemLimit) {
-      // Special parsing for MemLimit
-      success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
-    } else {
-      // Is it a raw number?
-      success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
+    switch (option) {
+      case CompileCommandEnum::Break:
+      case CompileCommandEnum::CompileOnly:
+      case CompileCommandEnum::Exclude:
+      case CompileCommandEnum::Print:
+        // In the commands above the int parameter (compilation level) can be optional
+        // for compatibility with previous versions. If user did not specify it, assume maximum value
+        success = parse_optional_int(line, value, bytes_read, default_comp_level_argument);
+        break;
+      case CompileCommandEnum::MemLimit:
+        // Special parsing for MemLimit
+        success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
+        break;
+      default:
+        // Is it a raw number?
+        success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
@@ -1209,7 +1242,7 @@ bool CompilerOracle::parse_compile_only(char* line) {
     if (method_pattern != nullptr) {
       TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(method_pattern, error_buf, sizeof(error_buf));
       if (matcher != nullptr) {
-        if (register_command(matcher, CompileCommandEnum::CompileOnly, error_buf, sizeof(error_buf), true)) {
+        if (register_command(matcher, CompileCommandEnum::CompileOnly, error_buf, sizeof(error_buf), default_comp_level_argument)) {
           continue;
         }
       }

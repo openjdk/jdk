@@ -132,9 +132,12 @@ private:
   CHeapBitMap _ideal_phase_name_set;
   CHeapBitMap _trace_auto_vectorization_tags;
   CHeapBitMap _trace_merge_stores_tags;
+  CompLevel _comp_level;
+
+  CompLevel comp_level() const { return _comp_level; }
 
 public:
-  DirectiveSet(CompilerDirectives* directive);
+  DirectiveSet(CompilerDirectives* directive, CompLevel comp_level);
   ~DirectiveSet();
   void init_control_intrinsic();
   CompilerDirectives* directive();
