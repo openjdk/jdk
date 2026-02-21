@@ -30,6 +30,7 @@
 #include "opto/matcher.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"

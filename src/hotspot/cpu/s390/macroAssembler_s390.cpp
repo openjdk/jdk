@@ -44,6 +44,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"

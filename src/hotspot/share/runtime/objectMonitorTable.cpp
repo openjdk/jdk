@@ -31,7 +31,6 @@
 #include "runtime/thread.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"
-#include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // -----------------------------------------------------------------------------
@@ -115,9 +114,7 @@
 // searching for at the hash index, without needing further linear searching.
 // The grow load factor is set to 12.5%, which satisfies the above
 // requirements. Don't change it for fun, it might backfire.
-
 // -----------------------------------------------------------------------------
-// ConcurrentHashTable storing links from objects to ObjectMonitors
 
 ObjectMonitorTable::Table* volatile ObjectMonitorTable::_curr;
 
