@@ -36,9 +36,9 @@
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
-  _c1_store = new DirectiveSet(this);
+  _c1_store = new DirectiveSet(this, CompLevel_simple);
   _c1_store->init_control_intrinsic();
-  _c2_store = new DirectiveSet(this);
+  _c2_store = new DirectiveSet(this, CompLevel_full_optimization);
   _c2_store->init_control_intrinsic();
 };
 
@@ -298,12 +298,13 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :
+DirectiveSet::DirectiveSet(CompilerDirectives* d, CompLevel comp_level) :
   _inlinematchers(nullptr),
   _directive(d),
   _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
   _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler),
-  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler)
+  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler),
+  _comp_level(comp_level)
 {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
@@ -397,7 +398,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 
     // All CompileCommands are not equal so this gets a bit verbose
     // When CompileCommands have been refactored less clutter will remain.
-    if (CompilerOracle::should_break_at(method)) {
+    if (CompilerOracle::should_break_at(method, comp_level())) {
       // If the directives didn't have 'BreakAtCompile' or 'BreakAtExecute',
       // the sub-command 'Break' of the 'CompileCommand' would become effective.
       if (!_modified[BreakAtCompileIndex]) {
@@ -414,13 +415,13 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       }
     }
 
-    if (CompilerOracle::should_print(method)) {
+    if (CompilerOracle::should_print(method, comp_level())) {
       if (!_modified[PrintAssemblyIndex]) {
         set.cloned()->PrintAssemblyOption = true;
       }
     }
     // Exclude as in should not compile == Enabled
-    if (CompilerOracle::should_exclude(method)) {
+    if (CompilerOracle::should_exclude(method, comp_level())) {
       if (!_modified[ExcludeIndex]) {
         set.cloned()->ExcludeOption = true;
       }
@@ -556,7 +557,7 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
     return matches_inline(mh, InlineMatcher::dont_inline);
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
-    return CompilerOracle::should_not_inline(mh);
+    return CompilerOracle::should_not_inline(mh, comp_level());
   }
   return false;
 }
@@ -627,7 +628,7 @@ bool DirectiveSet::is_intrinsic_disabled(vmIntrinsics::ID id) {
 }
 
 DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
-  DirectiveSet* set = new DirectiveSet(nullptr);
+  DirectiveSet* set = new DirectiveSet(nullptr, src->_comp_level);
   // Ordinary allocations of DirectiveSet would call init_control_intrinsic()
   // immediately to create a new copy for set->Control/DisableIntrinsicOption.
   // However, here it does not need to because the code below creates
@@ -755,7 +756,7 @@ void DirectivesStack::release(DirectiveSet* set) {
   assert(set != nullptr, "Never nullptr");
   MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
   if (set->is_exclusive_copy()) {
-    // Old CompilecCmmands forced us to create an exclusive copy
+    // Old CompileCommands forced us to create an exclusive copy
     delete set;
   } else {
     assert(set->directive() != nullptr, "Never nullptr");

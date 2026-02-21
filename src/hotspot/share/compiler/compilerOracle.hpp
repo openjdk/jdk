@@ -28,6 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/istream.hpp"
+#include "compiler/compilerDirectives.hpp"
 
 class methodHandle;
 
@@ -49,14 +50,14 @@ class methodHandle;
   option(Help,  "help",  Unknown) \
   option(Quiet, "quiet", Unknown) \
   option(Log, "log", Bool) \
-  option(Print, "print", Bool) \
+  option(Print, "print", Intx) \
   option(Inline,  "inline", Bool) \
   option(DelayInline,  "delayinline", Bool) \
   option(DontInline,  "dontinline", Bool) \
   option(Blackhole,  "blackhole", Bool) \
-  option(CompileOnly, "compileonly", Bool)\
-  option(Exclude, "exclude", Bool) \
-  option(Break, "break", Bool) \
+  option(CompileOnly, "compileonly", Intx) \
+  option(Exclude, "exclude", Intx) \
+  option(Break, "break", Intx) \
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
   option(MemLimit, "MemLimit", Intx) \
@@ -134,6 +135,9 @@ class CompilerOracle : AllStatic {
   static bool parse_from_input(inputStream::Input* input,
                                parse_from_line_fn_t* parse_from_line);
 
+  static bool has_exclude(const methodHandle& method, CompLevel level);
+  static bool applies_to_comp_level(const methodHandle& method, CompileCommandEnum command, CompLevel current_level);
+
  public:
   // True if the command file has been specified or is implicit
   static bool has_command_file();
@@ -142,14 +146,15 @@ class CompilerOracle : AllStatic {
   static bool parse_from_file();
 
   // Tells whether we to exclude compilation of method
-  static bool should_exclude(const methodHandle& method);
+  static bool should_exclude(const methodHandle & method, CompLevel level);
+
   static bool be_quiet() { return _quiet; }
 
   // Tells whether we want to inline this method
   static bool should_inline(const methodHandle& method);
 
   // Tells whether we want to disallow inlining of this method
-  static bool should_not_inline(const methodHandle& method);
+  static bool should_not_inline(const methodHandle& method, CompLevel level);
 
   // Tells whether we want to delay inlining of this method
   static bool should_delay_inline(const methodHandle& method);
@@ -158,13 +163,13 @@ class CompilerOracle : AllStatic {
   static bool changes_current_thread(const methodHandle& method);
 
   // Tells whether we should print the assembly for this method
-  static bool should_print(const methodHandle& method);
+  static bool should_print(const methodHandle& method, CompLevel level);
 
   // Tells whether we should log the compilation data for this method
   static bool should_log(const methodHandle& method);
 
   // Tells whether to break when compiling method
-  static bool should_break_at(const methodHandle& method);
+  static bool should_break_at(const methodHandle& method, const CompLevel level);
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
