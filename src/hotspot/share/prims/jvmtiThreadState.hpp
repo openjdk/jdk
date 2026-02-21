@@ -204,17 +204,14 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Return true if any thread has entered interp_only_mode at any point during the JVMs execution.
   static bool seen_interp_only_mode() {
-    return _seen_interp_only_mode;
+    return AtomicAccess::load(&_seen_interp_only_mode);
   }
 
   void add_env(JvmtiEnvBase *env);
 
   // The pending_interp_only_mode is set when the interp_only_mode is triggered.
   // It is cleared by EnterInterpOnlyModeClosure handshake.
-  bool is_pending_interp_only_mode() {
-    return AtomicAccess::load(&_pending_interp_only_mode);
-  }
-
+  bool is_pending_interp_only_mode() {  return _pending_interp_only_mode; }
   void set_pending_interp_only_mode(bool val) {
     AtomicAccess::store(&_seen_interp_only_mode, true);
     _pending_interp_only_mode = val;
