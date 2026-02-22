@@ -32,9 +32,10 @@ import java.net.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
@@ -74,8 +75,9 @@ public class HttpTest {
     // Request log for this test
     static RequestLog log = new RequestLog();
 
-    // Any paths which should give 404 responses
-    static Set<URI> invalidPaths = new CopyOnWriteArraySet<>();
+    // Handlers specific to tests
+    static Map<URI, HttpHandler> handlers = new ConcurrentHashMap<>();
+    static HttpHandler NOT_FOUND = e -> e.sendResponseHeaders(404, 0);
 
     // URLClassLoader with HTTP URL class path
     private static URLClassLoader loader;
@@ -85,22 +87,23 @@ public class HttpTest {
         server = HttpServer.create();
         server.bind(new InetSocketAddress(
                 InetAddress.getLoopbackAddress(), 0), 0);
-        server.createContext("/", ex -> {
+        server.createContext("/", e -> {
             // Capture request in the log
-            log.capture(ex.getRequestMethod(), ex.getRequestURI());
-            // Check for invalid paths
-            if (invalidPaths.contains(ex.getRequestURI())) {
-                ex.sendResponseHeaders(404, 0);
+            log.capture(e.getRequestMethod(), e.getRequestURI());
+            // Check for custom handler
+            HttpHandler custom = handlers.get(e.getRequestURI());
+            if (custom != null) {
+                custom.handle(e);
             } else {
                 // Successful responses echo the request path in the body
-                byte[] response = ex.getRequestURI().getPath()
+                byte[] response = e.getRequestURI().getPath()
                         .getBytes(StandardCharsets.UTF_8);
-                ex.sendResponseHeaders(200, response.length);
-                try (var out = ex.getResponseBody()) {
+                e.sendResponseHeaders(200, response.length);
+                try (var out = e.getResponseBody()) {
                     out.write(response);
                 }
-                ex.close();
             }
+            e.close();
         });
         server.start();
         int port = server.getAddress().getPort();
@@ -132,7 +135,7 @@ public class HttpTest {
         synchronized (log) {
             log.clear();
         }
-        invalidPaths.clear();
+        handlers.clear();
     }
 
     // Check that getResource does single HEAD request
@@ -160,11 +163,33 @@ public class HttpTest {
         );
     }
 
+    // Check that getResourceAsStream follows redirects
+    @Test
+    void getResourceAsStreamFollowRedirect() throws IOException {
+        // Redirect /dir1/foo.gif => /dir1/target.gif
+        handlers.put(URI.create("/dir1/foo.gif"), e -> {
+            e.getResponseHeaders().set("Location", "/dir1/target.gif");
+            e.sendResponseHeaders(301, 0);
+        });
+        // Expect content from the redirected location
+        try (var in = loader.getResourceAsStream("foo.gif")) {
+            assertEquals("/dir1/target.gif",
+                    new String(in.readAllBytes(), StandardCharsets.UTF_8));
+        }
+        // Expect two HEAD, two GET
+        assertRequests( e -> e
+                .request("HEAD", "/dir1/foo.gif")
+                .request("HEAD", "/dir1/target.gif")
+                .request("GET",  "/dir1/foo.gif")
+                .request("GET",  "/dir1/target.gif")
+        );
+    }
+
     // getResourceAsStream on a 404 should try next path
     @Test
     void getResourceTryNextPath() throws IOException {
         // Make the first path return 404
-        invalidPaths.add(URI.create("/dir1/foo.gif"));
+        handlers.put(URI.create("/dir1/foo.gif"), NOT_FOUND);
         // Expect content from the second path
         try (var in = loader.getResourceAsStream("foo.gif")) {
             assertEquals("/dir2/foo.gif",
@@ -193,7 +218,7 @@ public class HttpTest {
     @Test
     void getResourcesShouldSkipFailedHead() throws IOException {
         // Make first path fail with 404
-        invalidPaths.add(URI.create("/dir1/foos.gif"));
+        handlers.put(URI.create("/dir1/foos.gif"), NOT_FOUND);
         List<URL> resources = Collections.list(loader.getResources("foos.gif"));
         // Expect one HEAD for each path
         assertRequests(e ->  e
