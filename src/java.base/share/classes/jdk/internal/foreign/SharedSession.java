@@ -77,10 +77,13 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     @ForceInline
     public void acquire0() {
         acquireCount.increment();
+        // above write to acquireCount's Cell may have been reordered after below read of closingPhase if
+        // it was not for this fullFence that prevents this from happening
+        VarHandle.fullFence();
         int cp;
         while ((cp = closingPhase) != 0) {
             if (cp == 2) {
-                releaseCount.increment();
+                releaseCount.increment(); // not required, but useful for debugging
                 throw sharedSessionAlreadyClosed();
             }
             Thread.onSpinWait();
@@ -101,6 +104,9 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
             }
             Thread.onSpinWait();
         }
+        // above write to closingPhase may have been reordered after below reads of releaseCount's and acquireCount's Cells if
+        // it was not for this fullFence that prevents this from happening
+        VarHandle.fullFence();
         // reading order is important: 1st RELEASE_COUNT, 2nd ACQUIRE_COUNT
         long value = -releaseCount.longValue() + acquireCount.longValue();
         if (value > 0) {
