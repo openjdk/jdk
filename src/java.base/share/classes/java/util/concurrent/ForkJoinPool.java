@@ -1934,78 +1934,104 @@ public class ForkJoinPool extends AbstractExecutorService
         if (w != null) {
             int phase = w.phase, r = w.stackPred;         // seed from registerWorker
             int fifo = (int)config & FIFO;
-            for (int nsteals = 0, src = -1, idle = 0;;) {
+            for (int src = -1, idle = 0, taken = 0;;) {
                 WorkQueue[] qs;
+                boolean rescan = false;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 int i = r, step = (r >>> 16) | 1, n;
                 long e = runState;
                 if ((qs = queues) == null || (e & STOP) != 0L || (n = qs.length) <= 0)
-                    return;
-                scan: for (int j = n << 1;; i += step) {  // 2 sweeps per scan
+                    break;
+                scan: for (int j = n << 1; ; i += step) { // 2 sweeps per scan
                     WorkQueue q; int qid;
                     if ((q = qs[qid = i & (n - 1)]) != null) {
-                        ForkJoinTask<?>[] a; int pb = -1, taken = 0, cap;
-                        while ((a = q.array) != null && (cap = a.length) > 0) {
-                            ForkJoinTask<?> t; int b, nb, prevSrc; long bp;
-                            t = (ForkJoinTask<?>)U.getReferenceAcquire(
-                                a, bp = slotOffset((cap - 1) & (b = q.base)));
-                            if (q.base != b) {            // reduce interference
-                                if (taken != 0)
-                                    w.nsteals = nsteals += taken;
-                                break scan;
-                            }
+                        for (int pb = -1;;) {
+                            ForkJoinTask<?> t; int cap, nb, prevSrc; long bp;
+                            ForkJoinTask<?>[] a = q.array;
+                            int b = q.base;
+                            if (a == null || (cap = a.length) <= 0)
+                                break;                    // currently impossible
                             long np = slotOffset((cap - 1) & (nb = b + 1));
-                            if (t == null ||
-                                (idle == 0 &&
-                                 !U.compareAndSetReference(a, bp, t, null))) {
-                                if (taken != 0) {         // end of run
-                                    w.nsteals = nsteals += taken;
-                                    break scan;
+                            t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                                a, bp = slotOffset((cap - 1) & b));
+                            ForkJoinTask<?>[] ra = q.array; // reread
+                            if (q.base != b || ra != a) { // inconsistent
+                                if (src < 0) {
+                                    rescan = true;
+                                    break scan;           // reduce interference
                                 }
-                                if (q.array == a && U.getReference(a, bp) == null) {
+                            }
+                            else if (t == null ||
+                                     (idle == 0 &&
+                                      !U.compareAndSetReference(a, bp, t, null))) {
+                                if (U.getReference(a, bp) == null) {
+                                    if (rescan)           // ran or stalled
+                                        break scan;
                                     if (U.getReference(a, np) == null)
                                         break;            // probably empty
-                                    if (pb == (pb = b))
-                                        break scan;       // stalled; reorder scan
+                                    if (pb == (pb = b))   // track progress
+                                        rescan = true;    // probably stalled
                                 }
                             }
                             else if (idle != 0) {
+                                rescan = true;
                                 if ((idle = (phase = tryReactivate(w)) & IDLE) != 0)
                                     break scan;           // can't take yet
                             }
                             else {
                                 q.base = nb;
-                                Object nt = U.getReferenceVolatile(a, np);
+                                boolean ppg = (U.getReferenceVolatile(a, np) != null);
+                                rescan = true;
                                 ++taken;
-                                if (qid != (prevSrc = src))
+                                if ((prevSrc = src) != qid)
                                     w.source = src = qid;
-                                if (nt != null &&
-                                    (qid != prevSrc || fifo != 0) &&
-                                    U.getReference(a, np) != null)
+                                if ((prevSrc < 0 || (qid & 1) == 0) && ppg &&
+                                    U.getReferenceAcquire(a, np) != null)
                                     signalWork(a, np);    // propagate
                                 w.topLevelExec(t, fifo);
                             }
                         }
                     }
-                    if (--j == 0) {                       // empty scan
-                        if (idle == 0) {                  // deactivate
-                            src = -1;
-                            long sp = (phase + NEXTIDLE) & LMASK, pc = ctl;
-                            long c = (pc - RC_UNIT) & UMASK | sp;
-                            U.putInt(w, WorkQueue.PHASE, phase | IDLE);
-                            w.stackPred = (int)pc;        // try to enqueue
-                            if (!U.compareAndSetLong(this, CTL, pc, c))
-                                w.phase = phase;          // back out on contention
-                            else
-                                idle = (phase = w.phase) & IDLE;
-                        }
-                        else if ((idle = (phase = awaitWork(w)) & IDLE) != 0)
-                            return;                       // trimmed or terminated
+                    if (--j == 0)
                         break;
+                }
+                if (!rescan) {                            // empty scan
+                    if (idle == 0) {
+                        idle = (phase = deactivate(w, phase, taken)) & IDLE;
+                        src = -1;
+                        taken = 0;
                     }
+                    else if ((idle = (phase = awaitWork(w)) & IDLE) != 0)
+                        break;                            // trimmed or terminated
                 }
             }
         }
+    }
+
+    /**
+     * Possibly deactivates worker
+     *
+     * @param w the worker
+     * @param phase current phase
+     * @param taken tasks taken since last activation
+     * @return current phase
+     */
+    private int deactivate(WorkQueue w, int phase, int taken) {
+        if (w != null) {
+            long sp = (phase + NEXTIDLE) & LMASK, c;
+            w.stackPred = (int)(c = ctl);     // try to enqueue
+            w.phase = phase | IDLE;
+            if (!U.compareAndSetLong(this, CTL, c, (c - RC_UNIT) & UMASK | sp))
+                w.phase = phase;              // back out on contention
+            if (taken != 0) {
+                w.nsteals += taken;
+                if ((w.config & CLEAR_TLS) != 0 &&
+                    (Thread.currentThread() instanceof ForkJoinWorkerThread f))
+                    f.resetThreadLocals();    // (instanceof check always true)
+            }
+            phase = w.phase;
+        }
+        return phase;
     }
 
     /**
@@ -2019,13 +2045,10 @@ public class ForkJoinPool extends AbstractExecutorService
         if (w != null) {                         // always true; hoist checks
             int sp = w.stackPred, activePhase; long c;
             if (((phase = w.phase) & IDLE) != 0 &&
-                (activePhase = phase + IDLE) == (int)(c = ctl)) {
-                if (U.compareAndSetLong(this, CTL, c,
-                                        (sp & LMASK) | ((c + RC_UNIT) & UMASK)))
-                    w.phase = phase = activePhase;
-                else
-                    phase = w.phase;
-            }
+                (activePhase = phase + IDLE) == (int)(c = ctl) &&
+                U.compareAndSetLong(this, CTL, c,
+                                    (sp & LMASK) | ((c + RC_UNIT) & UMASK)))
+                w.phase = phase = activePhase;
         }
         return phase;
     }
@@ -2037,47 +2060,43 @@ public class ForkJoinPool extends AbstractExecutorService
      * @return current phase, with IDLE set if worker should exit
      */
     private int awaitWork(WorkQueue w) {
-        int p = IDLE, trim;
-        if (w != null) {                      // always true; hoist checks
+        int phase = 0;
+        if (w != null && ((phase = w.phase) & IDLE) != 0) {
+            int activePhase = phase + IDLE, trim;
             if ((trim = w.trimStatus) != 0)
                 w.trimStatus = 0;
-            if ((w.config & CLEAR_TLS) != 0 && // clear before reactivate
-                (Thread.currentThread() instanceof ForkJoinWorkerThread f))
-                f.resetThreadLocals();        // (instanceof check always true)
-            if (((p = w.phase) & IDLE) != 0) {
-                int activePhase = p + IDLE;
-                long deadline = 0L;
-                while ((runState & STOP) == 0L) {
-                    boolean trimmable = false;    // true if at ctl head and quiescent
-                    long d = 0L, c;
-                    if ((int)(c = ctl) == activePhase && (c & RC_MASK) == 0L) {
-                        if (quiescent() > 0)      // quiescent termination
-                            break;
-                        long now = System.currentTimeMillis();
-                        if (deadline == 0L)
-                            d = deadline = now + keepAlive;
-                        else if ((d = deadline) - now <= TIMEOUT_SLOP)
-                            trim = 1;
-                        if (trim != 0 && tryTrim(w, c, activePhase))
-                            break;
-                        trim = 0;
-                        trimmable = true;
-                    }
-                    if ((p = w.phase) == activePhase)
+            for (long deadline = 0L;;) {
+                boolean trimmable = false;    // true if at ctl head and quiescent
+                Thread.interrupted();         // clear status
+                long d = 0L, c = ctl, e = runState;
+                if ((e & STOP) != 0L)
+                    break;
+                if ((c & RC_MASK) == 0L && (int)c == activePhase) {
+                    if ((e & SHUTDOWN) != 0L && quiescent() > 0)
+                        break;                // quiescent termination
+                    long now = System.currentTimeMillis();
+                    if (deadline == 0L)
+                        d = deadline = now + keepAlive;
+                    else if ((d = deadline) - now <= TIMEOUT_SLOP)
+                        trim = 1;
+                    if (trim != 0 && tryTrim(w, c, activePhase))
                         break;
-                    LockSupport.setCurrentBlocker(this);
-                    w.parking = 1;                // enable unpark and recheck
-                    if (w.phase != activePhase)
-                        U.park(trimmable, d);
-                    w.parking = 0;                // close unpark window
-                    LockSupport.setCurrentBlocker(null);
-                    if ((p = w.phase) == activePhase)
-                        break;
-                    Thread.interrupted();         // clear status for nexct park
+                    trim = 0;
+                    trimmable = true;
                 }
+                if ((phase = w.phase) == activePhase)
+                    break;
+                LockSupport.setCurrentBlocker(this);
+                w.parking = 1;                // enable unpark and recheck
+                if (w.phase != activePhase)
+                    U.park(trimmable, d);
+                w.parking = 0;                // close unpark window
+                LockSupport.setCurrentBlocker(null);
+                if ((phase = w.phase) == activePhase)
+                    break;
             }
         }
-        return p;
+        return phase;
     }
 
     /**
