@@ -49,7 +49,7 @@ public class HttpTest {
     // HTTP server used to track requests
     static HttpServer server;
 
-    // RequestLog for capturing and asserting requests
+    // RequestLog for capturing requests
     static class RequestLog {
         List<Request> log = new ArrayList<>();
 
@@ -61,6 +61,10 @@ public class HttpTest {
         // Clear requests
         public synchronized void clear() {
             log.clear();
+        }
+
+        public synchronized List<Request> requests() {
+            return List.copyOf(log);
         }
     }
 
@@ -203,25 +207,30 @@ public class HttpTest {
 
     // Utils for asserting requests
     static class Expect {
-        List<Request> log = new ArrayList<>();
+        List<Request> requests = new ArrayList<>();
 
         Expect request(String method, String path) {
-            log.add(new Request(method, URI.create(path)));
+            requests.add(new Request(method, URI.create(path)));
             return this;
         }
     }
 
     static void assertRequests(Consumer<Expect> e) {
-        Expect expected = new Expect();
-        e.accept(expected);
+        // Collect expected requests
+        Expect exp = new Expect();
+        e.accept(exp);
+        List<Request> expected = exp.requests;
+
+        // Actual requests
+        List<Request> requests = log.requests();
 
         // Verify expected number of requests
-        assertEquals(expected.log.size(), log.log.size(), "Unexpected request count");
+        assertEquals(expected.size(), requests.size(), "Unexpected request count");
 
         // Verify expected requests in order
-        for (int i = 0; i < expected.log.size(); i++) {
-            Request ex = expected.log.get(i);
-            Request req = log.log.get(i);
+        for (int i = 0; i < expected.size(); i++) {
+            Request ex = expected.get(i);
+            Request req = requests.get(i);
             // Verify method
             assertEquals(ex.method, req.method,
                     String.format("Request %s has unexpected method %s", i, ex.method)
