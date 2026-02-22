@@ -31,9 +31,6 @@
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
-#if INCLUDE_JFR
-#include "jfr/jfr.inline.hpp"
-#endif
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_page(uintptr_t poll_value) {
@@ -60,7 +57,7 @@ bool SafepointMechanism::global_poll() {
 }
 
 inline bool SafepointMechanism::has_pending_safepoint(JavaThread* thread) {
-  return global_poll() || thread->handshake_state()->has_operation() JFR_ONLY(|| Jfr::has_sample_request(thread));
+  return global_poll() || thread->handshake_state()->has_operation();
 }
 
 bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {

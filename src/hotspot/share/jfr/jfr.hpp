@@ -77,8 +77,6 @@ class Jfr : AllStatic {
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
   static void on_backpatching(const Method* callee_method, JavaThread* jt);
   static void initialize_main_thread(JavaThread* jt);
-  static bool has_sample_request(JavaThread* jt);
-  static void check_and_process_sample_request(JavaThread* jt);
   static void on_report_java_out_of_memory();
   CDS_ONLY(static void on_restoration(const Klass* k, JavaThread* jt);)
 };

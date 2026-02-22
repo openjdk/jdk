@@ -47,7 +47,6 @@
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -90,6 +89,7 @@
 #include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
+#include "runtime/stackWalker.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -2741,8 +2741,8 @@ WB_ENTRY(void, WB_BusyWaitCPUTime(JNIEnv* env, jobject wb, jint time))
 WB_END
 
 WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jboolean enable))
-  #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
-    return JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
+  #if defined(ASSERT) && INCLUDE_STACKWALKER && defined(LINUX)
+    return StackWalker::set_out_of_stack_walking_enabled(enable == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
   #else
     return JNI_FALSE;
   #endif

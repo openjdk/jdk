@@ -265,6 +265,22 @@
 #define NOT_JFR_RETURN_(code) { return code; }
 #endif
 
+#if INCLUDE_JFR || INCLUDE_JVMTI
+#define INCLUDE_STACKWALKER 1
+#else
+#define INCLUDE_STACKWALKER 0
+#endif
+
+#if INCLUDE_STACKWALKER
+#define STACKWALKER_ONLY(code) code
+#define NOT_STACKWALKER_RETURN()      /* next token must be ; */
+#define NOT_STACKWALKER_RETURN_(code) /* next token must be ; */
+#else
+#define STACKWALKER_ONLY(code)
+#define NOT_STACKWALKER_RETURN()      {}
+#define NOT_STACKWALKER_RETURN_(code) { return code; }
+#endif
+
 #ifndef INCLUDE_JVMCI
 #define INCLUDE_JVMCI 1
 #endif

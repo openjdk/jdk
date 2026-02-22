@@ -1740,7 +1740,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
     __ mv(x9, x10);                             // save the nmethod
 
-    JFR_ONLY(__ enter_jfr_critical_section();)
+    STACKWALKER_ONLY(__ enter_stackwalker_critical_section();)
 
     call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
@@ -1754,7 +1754,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // remove frame anchor
     __ leave();
 
-    JFR_ONLY(__ leave_jfr_critical_section();)
+    STACKWALKER_ONLY(__ leave_stackwalker_critical_section();)
 
     // Ensure compiled code always sees stack at proper alignment
     __ andi(sp, esp, -16);

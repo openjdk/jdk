@@ -35,6 +35,7 @@
 #include "oops/trainingData.hpp"
 #include "prims/downcallLinker.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiExtensions.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"

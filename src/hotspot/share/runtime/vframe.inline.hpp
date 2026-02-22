@@ -250,7 +250,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
         // one that would produce a pcDesc since the trans state
         // would be one that might in fact anticipate a safepoint
 
-        if (state == _thread_in_Java ) {
+        if (state == _thread_in_Java) {
           // This will get a method a zero bci and no inlining.
           // Might be nice to have a unique bci to signify this
           // particular case but for now zero will do.

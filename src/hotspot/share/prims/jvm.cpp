@@ -112,6 +112,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_STACKWALKER
+#include "runtime/stackWalker.hpp"
+#endif
 #if INCLUDE_MANAGEMENT
 #include "services/finalizerService.hpp"
 #endif
@@ -2884,6 +2887,7 @@ JVM_ENTRY(void, JVM_SetCurrentThread(JNIEnv* env, jobject thisThread,
   thread->set_monitor_owner_id(java_lang_Thread::thread_id(threadObj));
 
   JFR_ONLY(Jfr::on_set_current_thread(thread, threadObj);)
+  STACKWALKER_ONLY(StackWalkerThreadLocal::on_set_current_thread(thread, threadObj));
 JVM_END
 
 JVM_ENTRY(jlong, JVM_GetNextThreadIdOffset(JNIEnv* env, jclass threadClass))
