@@ -33,9 +33,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
@@ -76,6 +75,7 @@ public class HttpTest {
             log.clear();
         }
     }
+
     // Represents a single request
     record Request(String method, URI path) {}
 
@@ -148,8 +148,9 @@ public class HttpTest {
     void getResourceSingleHead() {
         URL url = loader.getResource("foo.gif");
         // Expect one HEAD
-        log.expectSize(1);
-        log.expect(0, "HEAD", "/dir1/foo.gif");
+        assertRequests(e -> e
+                .request("HEAD", "/dir1/foo.gif")
+        );
     }
 
     // Check that getResourceAsStream does one HEAD and one GET request
@@ -161,9 +162,10 @@ public class HttpTest {
                     new String(in.readAllBytes(), StandardCharsets.UTF_8));
         }
         // Expect one HEAD, one GET
-        log.expectSize(2);
-        log.expect(0, "HEAD", "/dir1/foo2.gif");
-        log.expect(1, "GET", "/dir1/foo2.gif");
+        assertRequests( e -> e
+                .request("HEAD", "/dir1/foo2.gif")
+                .request("GET",  "/dir1/foo2.gif")
+        );
     }
 
     // getResourceAsStream on a 404 should try next path
@@ -177,10 +179,11 @@ public class HttpTest {
                     new String(in.readAllBytes(), StandardCharsets.UTF_8));
         }
         // Expect two HEADs, one GET
-        log.expectSize(3);
-        log.expect(0, "HEAD", "/dir1/foo.gif");
-        log.expect(1, "HEAD", "/dir2/foo.gif");
-        log.expect(2, "GET", "/dir2/foo.gif");
+        assertRequests(e -> e
+                .request("HEAD", "/dir1/foo.gif")
+                .request("HEAD", "/dir2/foo.gif")
+                .request("GET",  "/dir2/foo.gif")
+        );
     }
 
     // Check that getResources only does HEAD requests
@@ -188,9 +191,10 @@ public class HttpTest {
     void getResourcesOnlyHead() throws IOException {
         Collections.list(loader.getResources("foos.gif"));
         // Expect one HEAD for each path
-        log.expectSize(2);
-        log.expect(0, "HEAD", "/dir1/foos.gif");
-        log.expect(1, "HEAD", "/dir2/foos.gif");
+        assertRequests(e ->  e
+                .request("HEAD", "/dir1/foos.gif")
+                .request("HEAD", "/dir2/foos.gif")
+        );
     }
 
     // Check that getResources skips 404 URL
@@ -200,12 +204,44 @@ public class HttpTest {
         invalidPaths.add(URI.create("/dir1/foos.gif"));
         List<URL> resources = Collections.list(loader.getResources("foos.gif"));
         // Expect one HEAD for each path
-        log.expectSize(2);
-        log.expect(0, "HEAD", "/dir1/foos.gif");
-        log.expect(1, "HEAD", "/dir2/foos.gif");
+        assertRequests(e ->  e
+                .request("HEAD", "/dir1/foos.gif")
+                .request("HEAD", "/dir2/foos.gif")
+        );
 
         // Expect a single URL to be returned
         assertEquals(1, resources.size());
     }
 
+    // Utils for asserting requests
+    static class Expect {
+        List<Request> log = new ArrayList<>();
+
+        Expect request(String method, String path) {
+            log.add(new Request(method, URI.create(path)));
+            return this;
+        }
+    }
+
+    static void assertRequests(Consumer<Expect> e) {
+        Expect expected = new Expect();
+        e.accept(expected);
+
+        // Verify expected number of requests
+        assertEquals(expected.log.size(), log.log.size(), "Unexpected request count");
+
+        // Verify expected requests in order
+        for (int i = 0; i < expected.log.size(); i++) {
+            Request ex = expected.log.get(i);
+            Request req = log.log.get(i);
+            // Verify method
+            assertEquals(ex.method, req.method,
+                    String.format("Request #%s has unexpected method %s", i, ex.method)
+            );
+            // Verify path
+            assertEquals(ex.path, req.path,
+                    String.format("Request %s has unexpected request URI %s", i, ex.path)
+            );
+        }
+    }
 }
