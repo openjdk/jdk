@@ -93,20 +93,20 @@ error.
 
 ## Options for jmod
 
-`--class-path` *path*
+[`--class-path`]{#option--class-path} *path*
 :   Specifies the location of application JAR files or a directory containing
     classes to copy into the resulting JMOD file.
 
-`--cmds` *path*
+[`--cmds`]{#option--cmds} *path*
 :   Specifies the location of native commands to copy into the resulting JMOD
     file.
 
-`--compress` *compress*
+[`--compress`]{#option--compress} *compress*
 :   Specifies the compression to use in creating the JMOD file.
     The accepted values are `zip-[0-9]`, where `zip-0` provides no
     compression, and `zip-9` provides the best compression. Default is `zip-6`.
 
-`--config` *path*
+[`--config`]{#option--config} *path*
 :   Specifies the location of user-editable configuration files to copy into
     the resulting JMOD file.
 
@@ -115,15 +115,15 @@ error.
 format, to use for the timestamp of the entries,
 e.g. "2022-02-12T12:30:00-05:00".
 
-`--dir` *path*
+[`--dir`]{#option--dir} *path*
 :   Specifies the location where `jmod` puts extracted files from the specified
     JMOD archive.
 
-`--dry-run`
+[`--dry-run`]{#option--dry-run}
 :   Performs a dry run of hash mode. It identifies leaf modules and their
     required modules without recording any hash values.
 
-`--exclude` *pattern-list*
+[`--exclude`]{#option--exclude} *pattern-list*
 :   Excludes files matching the supplied comma-separated pattern list, each
     element using one the following forms:
 
@@ -140,14 +140,14 @@ e.g. "2022-02-12T12:30:00-05:00".
     class for the syntax of *regex-pattern*, which represents a regular
     expression.
 
-`--hash-modules` *regex-pattern*
+[`--hash-modules`]{#option--hash-modules} *regex-pattern*
 :   Determines the leaf modules and records the hashes of the dependencies
     directly and indirectly requiring them, based on the module graph of the
     modules matching the given *regex-pattern*. The hashes are recorded in the
     JMOD archive file being created, or a JMOD archive or modular JAR on the
     module path specified by the `jmod hash` command.
 
-`--header-files` *path*
+[`--header-files`]{#option--header-files} *path*
 :   Specifies the location of header files to copy into the resulting JMOD
     file.
 
@@ -157,28 +157,28 @@ e.g. "2022-02-12T12:30:00-05:00".
 `--help-extra`
 :   Prints help for extra options.
 
-`--legal-notices` *path*
+[`--legal-notices`]{#option--legal-notices} *path*
 :   Specifies the location of legal notices to copy into the resulting JMOD
     file.
 
-`--libs` *path*
+[`--libs`]{#option--libs} *path*
 :   Specifies location of native libraries to copy into the resulting JMOD
     file.
 
-`--main-class` *class-name*
+[`--main-class`]{#option--main-class} *class-name*
 :   Specifies main class to record in the module-info.class file.
 
-`--man-pages` *path*
+[`--man-pages`]{#option--man-pages} *path*
 :   Specifies the location of man pages to copy into the resulting JMOD file.
 
-`--module-version` *module-version*
+[`--module-version`]{#option--module-version} *module-version*
 :   Specifies the module version to record in the module-info.class file.
 
-`--module-path` *path* or `-p` *path*
+[`--module-path`]{#option--module-path} *path* or `-p` *path*
 :   Specifies the module path. This option is required if you also specify
     `--hash-modules`.
 
-`--target-platform` *platform*
+[`--target-platform`]{#option--target-platform} *platform*
 :   Specifies the target platform of a JMOD file intended for a specific
     operating system and architecture. The value should follow
     the format `<os>-<arch>`, where `<os>` is the operating system
@@ -213,10 +213,10 @@ e.g. "2022-02-12T12:30:00-05:00".
 In addition to the options described in [Options for jmod], the following are
 extra options that can be used with the command.
 
-`--do-not-resolve-by-default`
+[`--do-not-resolve-by-default`]{#option--do-not-resolve-by-default}
 :   Exclude from the default root set of modules
 
-`--warn-if-resolved`
+[`--warn-if-resolved`]{#option--warn-if-resolved}
 :   Hint for a tool to issue a warning if the module is resolved. One of
     deprecated, deprecated-for-removal, or incubating.
 

@@ -54,7 +54,7 @@ of module names when the `--print-native-access` flag is specified.
 
 The following options are available:
 
-`--class-path` *path*
+[`--class-path`]{#option--class-path} *path*
 :   Used to specify a list of paths pointing to jar files to be scanned.
 
 All jar files specified through this list will be scanned. If a jar file
@@ -63,7 +63,7 @@ will be scanned as well. Jar files listed in the `Class-Path` manifest
 attribute that can not be found are ignored. All the jar files found are
 treated as if they belonged to the unnamed module.
 
-`--module-path` *path*
+[`--module-path`]{#option--module-path} *path*
 :   Used to specify a list of paths pointing to jar files or directories
 containing jar files, that the tool can use to find modules that need
 to be scanned. The list of jar files that will be scanned depends on the
@@ -86,7 +86,7 @@ to be scanned. The list of jar files that will be scanned depends on the
 
         >   `--class-path C:\some\foo.jar;C:\another\different\bar.jar`
 
-`--add-modules` *module[,module...]*
+[`--add-modules`]{#option--add-modules} *module[,module...]*
 :   Used to specify a comma-separated list of module names that indicate
 the root modules to scan. All the root modules will be scanned,
 as well as any modules that they depend on. This includes dependencies on
@@ -94,7 +94,7 @@ service implementations specified through the `uses` directive in a module's
 `module-info` file. All modules found on the module path that provide an
 implementation of such a service will be scanned as well.
 
-`--release` *version*
+[`--release`]{#option--release} *version*
 :   Used to specify the Java SE release that specifies the set of restricted
 methods to scan for. For multi-release jar files, this option also indicates
 the version of class file that should be loaded from the jar. This option
@@ -103,7 +103,7 @@ eventually intended to be run. If this flag is omitted, the version of
 `jnativescan` is used as release version, which is the same as the version of
 the JDK that the tool belongs to.
 
-`--print-native-access`
+[`--print-native-access`]{#option--print-native-access}
 :   Print a comma-separated list of module names that use native functionalities,
 instead of the default tree structure.
 

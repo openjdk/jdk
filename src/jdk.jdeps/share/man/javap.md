@@ -80,56 +80,56 @@ from its value.
 `-verbose` or `-v`
 :   Prints additional information about the selected class.
 
-`-l`
+[`-l`]{#option-l}
 :   Prints line and local variable tables.
 
-`-public`
+[`-public`]{#option-public}
 :   Shows only public classes and members.
 
-`-protected`
+[`-protected`]{#option-protected}
 :   Shows only protected and public classes and members.
 
-`-package`
+[`-package`]{#option-package}
 :   Shows package/protected/public classes and members (default).
 
-`-private` or `-p`
+[`-private`]{#option-private} or `-p`
 :   Shows all classes and members.
 
-`-c`
+[`-c`]{#option-c}
 :   Prints disassembled code, for example, the instructions that comprise the
     Java bytecodes, for each of the methods in the class.
 
-`-s`
+[`-s`]{#option-s}
 :   Prints internal type signatures.
 
-`-sysinfo`
+[`-sysinfo`]{#option-sysinfo}
 :   Shows system information (path, size, date, SHA-256 hash) of the class being
     processed.
 
-`-verify`
+[`-verify`]{#option-verify}
 :   Prints additional class verification info.
 
-`-constants`
+[`-constants`]{#option-constants}
 :   Shows `static final` constants.
 
-`--module` *module* or `-m` *module*
+[`--module`]{#option--module} *module* or `-m` *module*
 :   Specifies the module containing classes to be disassembled.
 
-`--module-path` *path*
+[`--module-path`]{#option--module-path} *path*
 :   Specifies where to find application modules.
 
-`--system` *jdk*
+[`--system`]{#option--system} *jdk*
 :   Specifies where to find system modules.
 
-`--class-path` *path*, `-classpath` *path*, or `-cp` *path*
+[`--class-path`]{#option--class-path} *path*, `-classpath` *path*, or `-cp` *path*
 :   Specifies the path that the `javap` command uses to find user class files.
     It overrides the default or the `CLASSPATH` environment variable when it's
     set.
 
-`-bootclasspath` *path*
+[`-bootclasspath`]{#option-bootclasspath} *path*
 :   Overrides the location of bootstrap class files.
 
-`--multi-release` *version*
+[`--multi-release`]{#option--multi-release} *version*
 :   Specifies the version to select in multi-release JAR files.
 
 `-J`*option*

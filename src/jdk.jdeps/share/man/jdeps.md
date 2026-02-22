@@ -63,14 +63,14 @@ dependencies in DOT language (see the `-dotoutput` option).
 `-?` or `-h` or `--help`
 :   Prints the help message.
 
-`-dotoutput` *dir* or `--dot-output` *dir*
+[`-dotoutput`]{#option-dotoutput} *dir* or `--dot-output` *dir*
 :   Specifies the destination directory for DOT file output. If this option is
     specified, then the `jdeps`command generates one `.dot` file for each
     analyzed archive named `archive-file-name.dot` that lists the dependencies,
     and also a summary file named `summary.dot` that lists the dependencies
     among the archive files.
 
-`-s` or `-summary`
+[`-s`]{#option-summary} or `-summary`
 :   Prints a dependency summary only.
 
 `-v` or `-verbose`
@@ -78,20 +78,20 @@ dependencies in DOT language (see the `-dotoutput` option).
 
     >   `-verbose:class -filter:none`
 
-`-verbose:package`
+[`-verbose:-verbose_package`]{#option-verbose_package}
 :   Prints package-level dependencies excluding, by default, dependences within
     the same package.
 
-`-verbose:class`
+[`-verbose:-verbose_class`]{#option-verbose_class}
 :   Prints class-level dependencies excluding, by default, dependencies within
     the same archive.
 
-`-apionly` or `--api-only`
+[`-apionly`]{#option-apionly} or `--api-only`
 :   Restricts the analysis to APIs, for example, dependences from the signature
     of `public` and `protected` members of public classes including field type,
     method parameter types, returned type, and checked exception types.
 
-`-jdkinternals` or `--jdk-internals`
+[`-jdkinternals`]{#option-jdkinternals} or `--jdk-internals`
 :   Finds class-level dependences in the JDK internal APIs. By default, this
     option analyzes all classes specified in the `--classpath` option and input
     files unless you specified the `-include` option. You can't use this option
@@ -99,22 +99,22 @@ dependencies in DOT language (see the `-dotoutput` option).
 
     **Warning**: The JDK internal APIs are inaccessible.
 
-`-cp` *path*, `-classpath` *path*, or `--class-path` *path*
+[`-cp`]{#option-classpath} *path*, `-classpath` *path*, or `--class-path` *path*
 :   Specifies where to find class files.
 
-`--module-path` *module-path*
+[`--module-path`]{#option--module-path} *module-path*
 :   Specifies the module path.
 
-`--upgrade-module-path` *module-path*
+[`--upgrade-module-path`]{#option--upgrade-module-path} *module-path*
 :   Specifies the upgrade module path.
 
-`--system` *java-home*
+[`--system`]{#option--system} *java-home*
 :   Specifies an alternate system module path.
 
-`--add-modules` *module-name*\[`,` *module-name*...\]
+[`--add-modules`]{#option--add-modules} *module-name*\[`,` *module-name*...\]
 :   Adds modules to the root set for analysis.
 
-`--multi-release` *version*
+[`--multi-release`]{#option--multi-release} *version*
 :   Specifies the version when processing multi-release JAR files. *version*
     should be an integer \>=9 or base.
 
@@ -126,106 +126,106 @@ dependencies in DOT language (see the `-dotoutput` option).
 
 ## Module Dependence Analysis Options
 
-`-m` *module-name* or `--module` *module-name*
+[`-m`]{#option--module} *module-name* or `--module` *module-name*
 :   Specifies the root module for analysis.
 
-`--generate-module-info` *dir*
+[`--generate-module-info`]{#option--generate-module-info} *dir*
 :   Generates `module-info.java` under the specified directory. The specified
     JAR files will be analyzed. This option cannot be used with `--dot-output`
     or `--class-path` options. Use the `--generate-open-module` option for open
     modules.
 
-`--generate-open-module` *dir*
+[`--generate-open-module`]{#option--generate-open-module} *dir*
 :   Generates `module-info.java` for the specified JAR files under the
     specified directory as open modules. This option cannot be used with the
     `--dot-output` or `--class-path` options.
 
-`--check` *module-name* \[`,` *module-name*...\]
+[`--check`]{#option--check} *module-name* \[`,` *module-name*...\]
 :   Analyzes the dependence of the specified modules. It prints the module
     descriptor, the resulting module dependences after analysis and the graph
     after transition reduction. It also identifies any unused qualified
     exports.
 
-`--list-deps`
+[`--list-deps`]{#option--list-deps}
 :   Lists the module dependences and also the package names of JDK internal
     APIs (if referenced).  This option transitively analyzes libraries on
     class path and module path if referenced.  Use `--no-recursive` option for
     non-transitive dependency analysis.
 
-`--list-reduced-deps`
+[`--list-reduced-deps`]{#option--list-reduced-deps}
 :   Same as `--list-deps` without listing the implied reads edges from the
     module graph. If module M1 reads M2, and M2 requires transitive on M3, then
     M1 reading M3 is implied and is not shown in the graph.
 
-`--print-module-deps`
+[`--print-module-deps`]{#option--print-module-deps}
 :   Same as `--list-reduced-deps` with printing a comma-separated list of
     module dependences. The output can be used by `jlink --add-modules` to
     create a custom image that contains those modules and their transitive
     dependences.
 
-`--ignore-missing-deps`
+[`--ignore-missing-deps`]{#option--ignore-missing-deps}
 :   Ignore missing dependences.
 
 ## Options to Filter Dependences
 
-`-p` *pkg\_name*, `-package` *pkg\_name*, or `--package` *pkg\_name*
+[`-p`]{#option--package} *pkg\_name*, `-package` *pkg\_name*, or `--package` *pkg\_name*
 :   Finds dependences matching the specified package name. You can specify this
     option multiple times for different packages. The `-p` and `-e` options are
     mutually exclusive.
 
-`-e` *regex*, `-regex` *regex*, or `--regex` *regex*
+[`-e`]{#option--regex} *regex*, `-regex` *regex*, or `--regex` *regex*
 :   Finds dependences matching the specified pattern. The `-p` and `-e` options
     are mutually exclusive.
 
-`--require` *module-name*
+[`--require`]{#option--require} *module-name*
 :   Finds dependences matching the given module name (may be given multiple
     times). The `--package`, `--regex`, and `--require` options are mutually
     exclusive.
 
-`-f` *regex* or `-filter` *regex*
+[`-f`]{#option-filter} *regex* or `-filter` *regex*
 :   Filters dependences matching the given pattern. If give multiple times, the
     last one will be selected.
 
-`-filter:package`
+[`-filter:package`]{#option-filter_package}
 :   Filters dependences within the same package. This is the default.
 
-`-filter:archive`
+[`-filter:archive`]{#option-filter_archive}
 :   Filters dependences within the same archive.
 
-`-filter:module`
+[`-filter:module`]{#option-filter_module}
 :   Filters dependences within the same module.
 
-`-filter:none`
+[`-filter:none`]{#option-filter_none}
 :   No `-filter:package` and `-filter:archive` filtering. Filtering specified
     via the `-filter` option still applies.
 
-`--missing-deps`
+[`--missing-deps`]{#option--missing-deps}
 :   Finds missing dependences.  This option cannot be used with `-p`, `-e` and
     `-s` options.
 
 ## Options to Filter Classes to be Analyzed
 
-`-include` *regex*
+[`-include`]{#option-include} *regex*
 :   Restricts analysis to the classes matching pattern. This option filters the
     list of classes to be analyzed. It can be used together with `-p` and `-e`,
     which apply the pattern to the dependencies.
 
-`-R` or `--recursive`
+[`-R`]{#option--recursive} or `--recursive`
 :   Recursively traverses all run-time dependences. The `-R` option implies
     `-filter:none`. If `-p`, `-e`, or `-f` options are specified, only the
     matching dependences are analyzed.
 
-`--no-recursive`
+[`--no-recursive`]{#option--no-recursive}
 :   Do not recursively traverse dependences.
 
-`-I` or `--inverse`
+[`-I`]{#option--inverse} or `--inverse`
 :   Analyzes the dependences per other given options and then finds all
     artifacts that directly and indirectly depend on the matching nodes. This
     is equivalent to the inverse of the compile-time view analysis and the
     print dependency summary. This option must be used with the `--require`,
     `--package`, or `--regex` options.
 
-`--compile-time`
+[`--compile-time`]{#option--compile-time}
 :   Analyzes the compile-time view of transitive dependencies, such as the
     compile-time view of the `-R` option. Analyzes the dependences per other
     specified options. If a dependency is found from a directory, a JAR file or
