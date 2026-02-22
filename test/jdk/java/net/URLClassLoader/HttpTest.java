@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,232 +25,187 @@
  * @test
  * @bug 4636331
  * @library /test/lib
- * @summary Check that URLClassLoader doesn't create excessive http
- *          connections
+ * @summary Check that URLClassLoader with HTTP paths lookups produce the expected http requests
+ * @run junit HttpTest
  */
 import java.net.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HttpTest {
 
-    /*
-     * Simple http server to service http requests. Auto shutdown
-     * if "idle" (no requests) for 10 seconds. Forks worker thread
-     * to service persistent connections. Work threads shutdown if
-     * "idle" for 5 seconds.
-     */
-    static class HttpServer implements Runnable {
+    // HTTP server used to track requests
+    static HttpServer server;
 
-        private static HttpServer svr = null;
-        private static Counters cnts = null;
-        private static ServerSocket ss;
+    // RequestLog for capturing and asserting requests
+    static class RequestLog {
+        List<Request> log = new ArrayList<>();
 
-        private static Object counterLock = new Object();
-        private static int getCount = 0;
-        private static int headCount = 0;
+        // Expect a given number of requests
+        synchronized void expectSize(int expected) {
+            assertEquals(expected, log.size());
+        }
 
-        class Worker extends Thread {
-            Socket s;
-            Worker(Socket s) {
-                this.s = s;
-            }
+        // Expect nth request to have a given method and path
+        synchronized void expect(int nth, String method, String path) {
+            Request request = log.get(nth);
+            assertEquals(method, request.method);
+            assertEquals(path, request.path.getPath());
+        }
 
-            public void run() {
-                InputStream in = null;
-                try {
-                    in = s.getInputStream();
-                    for (;;) {
+        // Add a request to the log
+        public synchronized void capture(String method, URI uri) {
+            log.add(new Request(method, uri));
+        }
 
-                        // read entire request from client
-                        byte b[] = new byte[1024];
-                        int n, total=0;
+        // Clear requests
+        public synchronized void clear() {
+            log.clear();
+        }
+    }
+    // Represents a single request
+    record Request(String method, URI path) {}
 
-                        // max 5 seconds to wait for new request
-                        s.setSoTimeout(5000);
-                        try {
-                            do {
-                                n = in.read(b, total, b.length-total);
-                                // max 0.5 seconds between each segment
-                                // of request.
-                                s.setSoTimeout(500);
-                                if (n > 0) total += n;
-                            } while (n > 0);
-                        } catch (SocketTimeoutException e) { }
+    // Request log for this test
+    static RequestLog log = new RequestLog();
 
-                        if (total == 0) {
-                            s.close();
-                            return;
-                        }
+    // Any paths which should give 404 responses
+    static Set<URI> invalidPaths = new CopyOnWriteArraySet<>();
 
-                        boolean getRequest = false;
-                        if (b[0] == 'G' && b[1] == 'E' && b[2] == 'T')
-                            getRequest = true;
+    // URLClassLoader with HTTP URL class path
+    private static URLClassLoader loader;
 
-                        synchronized (counterLock) {
-                            if (getRequest)
-                                getCount++;
-                            else
-                                headCount++;
-                        }
-
-                        // response to client
-                        PrintStream out = new PrintStream(
-                                new BufferedOutputStream(
-                                        s.getOutputStream() ));
-                        out.print("HTTP/1.1 200 OK\r\n");
-
-                        out.print("Content-Length: 75000\r\n");
-                        out.print("\r\n");
-                        if (getRequest) {
-                            for (int i=0; i<75*1000; i++) {
-                                out.write( (byte)'.' );
-                            }
-                        }
-                        out.flush();
-
-                    } // for
-
-                } catch (Exception e) {
-                    unexpected(e);
-                } finally {
-                    if (in != null) { try {in.close(); } catch(IOException e) {unexpected(e);} }
+    @BeforeAll
+    static void setup() throws Exception {
+        server = HttpServer.create();
+        server.bind(new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/", ex -> {
+            // Capture request in the log
+            log.capture(ex.getRequestMethod(), ex.getRequestURI());
+            // Check for invalid paths
+            if (invalidPaths.contains(ex.getRequestURI())) {
+                ex.sendResponseHeaders(404, 0);
+            } else {
+                // Successful responses echo the request path in the body
+                byte[] response = ex.getRequestURI().getPath()
+                        .getBytes(StandardCharsets.UTF_8);
+                ex.sendResponseHeaders(200, response.length);
+                try (var out = ex.getResponseBody()) {
+                    out.write(response);
                 }
+                ex.close();
             }
-        }
+        });
+        server.start();
+        int port = server.getAddress().getPort();
 
-        HttpServer() throws Exception {
-            ss = new ServerSocket();
-            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        }
-
-        public void run() {
-            try {
-                // shutdown if no request in 10 seconds.
-                ss.setSoTimeout(10000);
-                for (;;) {
-                    Socket s = ss.accept();
-                    (new Worker(s)).start();
-                }
-            } catch (Exception e) {
-            }
-        }
-
-        void unexpected(Exception e) {
-            System.out.println(e);
-            e.printStackTrace();
-        }
-
-        public static HttpServer create() throws Exception {
-            if (svr != null)
-                return svr;
-            cnts = new Counters();
-            svr = new HttpServer();
-            (new Thread(svr)).start();
-            return svr;
-        }
-
-        public static void shutdown() throws Exception {
-            if (svr != null) {
-                ss.close();
-                svr = null;
-            }
-        }
-
-        public int port() {
-            return ss.getLocalPort();
-        }
-
-        public static class Counters {
-            public void reset() {
-                synchronized (counterLock) {
-                    getCount = 0;
-                    headCount = 0;
-                }
-            }
-
-            public int getCount() {
-                synchronized (counterLock) {
-                    return getCount;
-                }
-            }
-
-            public int headCount() {
-                synchronized (counterLock) {
-                    return headCount;
-                }
-            }
-
-            public String toString() {
-                synchronized (counterLock) {
-                    return "GET count: " + getCount + "; " +
-                       "HEAD count: " + headCount;
-                }
-            }
-        }
-
-        public Counters counters() {
-            return cnts;
-        }
-
+        // Create class loader with two HTTP URLs
+        URL[] searchPath = new URL[] {
+                getHttpUri("/dir1/", port),
+                getHttpUri("/dir2/", port)
+        };
+        loader = new URLClassLoader(searchPath);
     }
 
-    public static void main(String args[]) throws Exception {
-        boolean failed = false;
+    // Create an HTTP URL for the given path and port using the loopback address
+    private static URL getHttpUri(String path, int port) throws Exception {
+        return URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path(path).toURL();
+    }
 
-        // create http server
-        HttpServer svr = HttpServer.create();
+    @AfterAll
+    static void shutdown() {
+        server.stop(2000);
+    }
 
-        // create class loader
-        URL urls[] = {
-                URIBuilder.newBuilder().scheme("http").loopback().port(svr.port())
-                        .path("/dir1/").toURL(),
-                URIBuilder.newBuilder().scheme("http").loopback().port(svr.port())
-                        .path("/dir2/").toURL(),
-        };
-        URLClassLoader cl = new URLClassLoader(urls);
-
-        // Test 1 - check that getResource does single HEAD request
-        svr.counters().reset();
-        URL url = cl.getResource("foo.gif");
-        System.out.println(svr.counters());
-
-        if (svr.counters().getCount() > 0 ||
-            svr.counters().headCount() > 1) {
-            failed = true;
+    @BeforeEach
+    void reset() {
+        synchronized (log) {
+            log.clear();
         }
+        invalidPaths.clear();
+    }
 
-        // Test 2 - check that getResourceAsStream does at most
-        //          one GET request
-        svr.counters().reset();
-        InputStream in = cl.getResourceAsStream("foo2.gif");
-        in.close();
-        System.out.println(svr.counters());
-        if (svr.counters().getCount() > 1) {
-            failed = true;
+    // Check that getResource does single HEAD request
+    @Test
+    void getResourceSingleHead() {
+        URL url = loader.getResource("foo.gif");
+        // Expect one HEAD
+        log.expectSize(1);
+        log.expect(0, "HEAD", "/dir1/foo.gif");
+    }
+
+    // Check that getResourceAsStream does one HEAD and one GET request
+    @Test
+    void getResourceAsStreamSingleGet() throws IOException {
+        // Expect content from the first path
+        try (var in = loader.getResourceAsStream("foo2.gif")) {
+            assertEquals("/dir1/foo2.gif",
+                    new String(in.readAllBytes(), StandardCharsets.UTF_8));
         }
+        // Expect one HEAD, one GET
+        log.expectSize(2);
+        log.expect(0, "HEAD", "/dir1/foo2.gif");
+        log.expect(1, "GET", "/dir1/foo2.gif");
+    }
 
-        // Test 3 - check that getResources only does HEAD requests
-        svr.counters().reset();
-        Enumeration e = cl.getResources("foos.gif");
-        try {
-            for (;;) {
-                e.nextElement();
-            }
-        } catch (NoSuchElementException exc) { }
-        System.out.println(svr.counters());
-        if (svr.counters().getCount() > 1) {
-            failed = true;
+    // getResourceAsStream on a 404 should try next path
+    @Test
+    void getResourceTryNextPath() throws IOException {
+        // Make the first path return 404
+        invalidPaths.add(URI.create("/dir1/foo.gif"));
+        // Expect content from the second path
+        try (var in = loader.getResourceAsStream("foo.gif")) {
+            assertEquals("/dir2/foo.gif",
+                    new String(in.readAllBytes(), StandardCharsets.UTF_8));
         }
+        // Expect two HEADs, one GET
+        log.expectSize(3);
+        log.expect(0, "HEAD", "/dir1/foo.gif");
+        log.expect(1, "HEAD", "/dir2/foo.gif");
+        log.expect(2, "GET", "/dir2/foo.gif");
+    }
 
-        // shutdown http server
-        svr.shutdown();
+    // Check that getResources only does HEAD requests
+    @Test
+    void getResourcesOnlyHead() throws IOException {
+        Collections.list(loader.getResources("foos.gif"));
+        // Expect one HEAD for each path
+        log.expectSize(2);
+        log.expect(0, "HEAD", "/dir1/foos.gif");
+        log.expect(1, "HEAD", "/dir2/foos.gif");
+    }
 
-        if (failed) {
-            throw new Exception("Excessive http connections established - Test failed");
-        }
+    // Check that getResources skips 404 URL
+    @Test
+    void getResourcesShouldSkipFailedHead() throws IOException {
+        // Make first path fail with 404
+        invalidPaths.add(URI.create("/dir1/foos.gif"));
+        List<URL> resources = Collections.list(loader.getResources("foos.gif"));
+        // Expect one HEAD for each path
+        log.expectSize(2);
+        log.expect(0, "HEAD", "/dir1/foos.gif");
+        log.expect(1, "HEAD", "/dir2/foos.gif");
+
+        // Expect a single URL to be returned
+        assertEquals(1, resources.size());
     }
 
 }
