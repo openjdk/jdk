@@ -64,10 +64,4 @@
 #define THREAD_LOCAL_WRITER_OFFSET_JFR \
   JfrThreadLocal::java_event_writer_offset() + THREAD_LOCAL_OFFSET_JFR
 
-#define SAMPLE_STATE_OFFSET_JFR \
-  JfrThreadLocal::sample_state_offset() + THREAD_LOCAL_OFFSET_JFR
-
-#define SAMPLING_CRITICAL_SECTION_OFFSET_JFR \
-  JfrThreadLocal::sampling_critical_section_offset() + THREAD_LOCAL_OFFSET_JFR
-
 #endif // SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP

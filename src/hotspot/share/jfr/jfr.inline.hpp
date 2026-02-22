@@ -27,19 +27,4 @@
 
 #include "jfr/jfr.hpp"
 
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
-#include "runtime/javaThread.hpp"
-
-inline bool Jfr::has_sample_request(JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  JfrThreadLocal* tl = jt->jfr_thread_local();
-  return tl->has_sample_request() || tl->has_cpu_time_jfr_requests();
-}
-
-inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
-  if (has_sample_request(jt)) {
-    JfrThreadSampling::process_sample_request(jt);
-  }
-}
-
 #endif // SHARE_JFR_JFR_INLINE_HPP

@@ -1,4 +1,5 @@
 /*
+* Copyright (c) 2026, Datadog, Inc. All rights reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,23 +23,25 @@
  *
  */
 
-#ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
-#define SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+#ifndef SHARE_RUNTIME_STACKWALKER_INLINE_HPP
+#define SHARE_RUNTIME_STACKWALKER_INLINE_HPP
 
-#include "memory/allocation.hpp"
+#include "runtime/stackWalker.hpp"
+#include "runtime/javaThread.hpp"
 
-class JavaThread;
-class JfrThreadLocal;
-class Thread;
+void StackWalker::check_and_process_requests(JavaThread* jt) {
+  StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
+  // Protect agains re-entrant calls. This can happen when we are
+  // currently processing sampling requests and one is calling into
+  // a JVMTI callback. Calling into a callback requires that we
+  // transition the thread state from VM to native, which also
+  // involves a safepoint check. That safepoint would then go ahead
+  // and call into JFR again.
+  if (tl.has_requests() && !tl.is_processing_requests()) {
+    tl.set_processing_requests(true);
+    process_requests(jt, jt, true);
+    tl.set_processing_requests(false);
+  }
+}
 
-class JfrThreadSampling : AllStatic {
-  friend class JfrSamplerThread;
-  friend class JfrCPUSamplerThread;
- private:
-  static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
-  static void process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock);
- public:
-  static void process_sample_request(JavaThread* jt);
-};
-
-#endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+#endif // SHARE_RUNTIME_STACKWALKER_INLINE_HPP

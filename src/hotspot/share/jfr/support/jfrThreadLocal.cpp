@@ -48,9 +48,6 @@
 #include "utilities/spinYield.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :
-  _sample_request(),
-  _sample_request_queue(8),
-  _sample_monitor(Monitor::nosafepoint, "jfr thread sample monitor"),
   _java_event_writer(nullptr),
   _java_buffer(nullptr),
   _native_buffer(nullptr),
@@ -59,7 +56,6 @@ JfrThreadLocal::JfrThreadLocal() :
   _load_barrier_buffer_epoch_1(nullptr),
   _checkpoint_buffer_epoch_0(nullptr),
   _checkpoint_buffer_epoch_1(nullptr),
-  _sample_state(0),
   _dcmd_arena(nullptr),
   _thread(),
   _vthread_id(0),
@@ -78,17 +74,11 @@ JfrThreadLocal::JfrThreadLocal() :
   _generation(0),
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
-  _enqueued_requests(false),
   _vthread(false),
   _notified(false),
-  _dead(false),
-  _sampling_critical_section(false)
+  _dead(false)
 #ifdef LINUX
-  ,_cpu_timer(nullptr),
-  _cpu_time_jfr_locked(UNLOCKED),
-  _has_cpu_time_jfr_requests(false),
-  _cpu_time_jfr_queue(0),
-  _do_async_processing_of_cpu_time_jfr_requests(false)
+  ,_cpu_timer(nullptr)
 #endif
   {
   Thread* thread = Thread::current_or_null();
@@ -305,14 +295,6 @@ ByteSize JfrThreadLocal::vthread_excluded_offset() {
 
 ByteSize JfrThreadLocal::notified_offset() {
   return byte_offset_of(JfrThreadLocal, _notified);
-}
-
-ByteSize JfrThreadLocal::sample_state_offset() {
-  return byte_offset_of(JfrThreadLocal, _sample_state);
-}
-
-ByteSize JfrThreadLocal::sampling_critical_section_offset() {
-  return byte_offset_of(JfrThreadLocal, _sampling_critical_section);
 }
 
 void JfrThreadLocal::set(bool* exclusion_field, bool state) {
@@ -602,67 +584,6 @@ void JfrThreadLocal::unset_cpu_timer() {
 
 timer_t* JfrThreadLocal::cpu_timer() const {
   return _cpu_timer;
-}
-
-bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
-  return AtomicAccess::load_acquire(&_cpu_time_jfr_locked) == ENQUEUE;
-}
-
-bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
-  return AtomicAccess::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
-}
-
-bool JfrThreadLocal::try_acquire_cpu_time_jfr_enqueue_lock() {
-  return AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
-}
-
-bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
-  CPUTimeLockState got;
-  while (true)  {
-    CPUTimeLockState got = AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
-    if (got == UNLOCKED) {
-      return true; // successfully locked for dequeue
-    }
-    if (got == DEQUEUE) {
-      return false; // already locked for dequeue
-    }
-    // else wait for the lock to be released from a signal handler
-  }
-}
-
-void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
-  SpinYield s;
-  while (AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED) {
-    s.wait();
-  }
-}
-
-void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
-  AtomicAccess::release_store(&_cpu_time_jfr_locked, UNLOCKED);
-}
-
-void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
-  AtomicAccess::release_store(&_has_cpu_time_jfr_requests, has_requests);
-}
-
-bool JfrThreadLocal::has_cpu_time_jfr_requests() {
-  return AtomicAccess::load_acquire(&_has_cpu_time_jfr_requests);
-}
-
-JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
-  return _cpu_time_jfr_queue;
-}
-
-void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
-  cpu_time_jfr_queue().set_capacity(0);
-}
-
-void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {
-  AtomicAccess::release_store(&_do_async_processing_of_cpu_time_jfr_requests, wants);
-}
-
-bool JfrThreadLocal::wants_async_processing_of_cpu_time_jfr_requests() {
-  return AtomicAccess::load_acquire(&_do_async_processing_of_cpu_time_jfr_requests);
 }
 
 #endif

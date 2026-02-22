@@ -25,13 +25,11 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 #define SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 
-#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/atomicAccess.hpp"
-#include "runtime/mutexLocker.hpp"
 
 #ifdef LINUX
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
@@ -48,9 +46,6 @@ class JfrThreadLocal {
   friend class JfrJavaSupport;
   friend class JVMCIVMStructs;
  private:
-  mutable JfrSampleRequest _sample_request;
-  JfrSampleRequestQueue _sample_request_queue;
-  Monitor _sample_monitor;
   jobject _java_event_writer;
   mutable JfrBuffer* _java_buffer;
   mutable JfrBuffer* _native_buffer;
@@ -59,7 +54,6 @@ class JfrThreadLocal {
   JfrBuffer* _load_barrier_buffer_epoch_1;
   JfrBuffer* _checkpoint_buffer_epoch_0;
   JfrBuffer* _checkpoint_buffer_epoch_1;
-  volatile int _sample_state;
   Arena* _dcmd_arena;
   JfrBlobHandle _thread;
   mutable traceid _vthread_id;
@@ -78,26 +72,12 @@ class JfrThreadLocal {
   mutable u2 _generation;
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
-  volatile bool _enqueued_requests;
   bool _vthread;
   bool _notified;
   bool _dead;
-  bool _sampling_critical_section;
 
 #ifdef LINUX
   timer_t* _cpu_timer;
-
-  enum CPUTimeLockState {
-    UNLOCKED,
-    // locked for enqueuing
-    ENQUEUE,
-    // locked for dequeuing
-    DEQUEUE
-  };
-  volatile CPUTimeLockState _cpu_time_jfr_locked;
-  volatile bool _has_cpu_time_jfr_requests;
-  JfrCPUTimeTraceQueue _cpu_time_jfr_queue;
-  volatile bool _do_async_processing_of_cpu_time_jfr_requests;
 #endif
 
   JfrBuffer* install_native_buffer() const;
@@ -165,80 +145,6 @@ class JfrThreadLocal {
 
   void set_java_event_writer(jobject java_event_writer) {
     _java_event_writer = java_event_writer;
-  }
-
-
-  int sample_state() const {
-    return AtomicAccess::load_acquire(&_sample_state);
-  }
-
-  void set_sample_state(int state) {
-    AtomicAccess::release_store(&_sample_state, state);
-  }
-
-  Monitor* sample_monitor() {
-    return &_sample_monitor;
-  }
-
-  JfrSampleRequestQueue* sample_requests() {
-    return &_sample_request_queue;
-  }
-
-  JfrSampleRequest sample_request() const {
-    return _sample_request;
-  }
-
-  void set_sample_request(JfrSampleRequest request) {
-    _sample_request = request;
-  }
-
-  void set_sample_ticks() {
-    _sample_request._sample_ticks = JfrTicks::now();
-  }
-
-  void set_sample_ticks(const JfrTicks& ticks) {
-    _sample_request._sample_ticks = ticks;
-  }
-
-  bool has_sample_ticks() const {
-    return _sample_request._sample_ticks.value() != 0;
-  }
-
-  const JfrTicks& sample_ticks() const {
-    return _sample_request._sample_ticks;
-  }
-
-  bool has_enqueued_requests() const {
-    return AtomicAccess::load_acquire(&_enqueued_requests);
-  }
-
-  void enqueue_request() {
-    assert_lock_strong(sample_monitor());
-    assert(sample_state() == JAVA_SAMPLE, "invariant");
-    if (_sample_request_queue.append(_sample_request) == 0) {
-      AtomicAccess::release_store(&_enqueued_requests, true);
-    }
-    set_sample_state(NO_SAMPLE);
-  }
-
-  void clear_enqueued_requests() {
-    assert_lock_strong(sample_monitor());
-    assert(has_enqueued_requests(), "invariant");
-    assert(_sample_request_queue.is_nonempty(), "invariant");
-    _sample_request_queue.clear();
-    AtomicAccess::release_store(&_enqueued_requests, false);
-  }
-
-  bool has_native_sample_request() const {
-    return sample_state() == NATIVE_SAMPLE;
-  }
-
-  bool has_java_sample_request() const {
-    return sample_state() == JAVA_SAMPLE || has_enqueued_requests();
-  }
-
-  bool has_sample_request() const {
-    return sample_state() != NO_SAMPLE || has_enqueued_requests();
   }
 
   int64_t last_allocated_bytes() const {
@@ -345,10 +251,6 @@ class JfrThreadLocal {
     return _dead;
   }
 
-  bool in_sampling_critical_section() const {
-    return _sampling_critical_section;
-  }
-
   // Serialization state.
   bool should_write() const;
 
@@ -372,31 +274,6 @@ class JfrThreadLocal {
   void unset_cpu_timer();
   timer_t* cpu_timer() const;
 
-  // The CPU time JFR lock has three different states:
-  // - ENQUEUE: lock for enqueuing CPU time requests
-  // - DEQUEUE: lock for dequeuing CPU time requests
-  // - UNLOCKED: no lock held
-  // This ensures that we can safely enqueue and dequeue CPU time requests,
-  // without interleaving
-
-  bool is_cpu_time_jfr_enqueue_locked();
-  bool is_cpu_time_jfr_dequeue_locked();
-
-  bool try_acquire_cpu_time_jfr_enqueue_lock();
-  bool try_acquire_cpu_time_jfr_dequeue_lock();
-  void acquire_cpu_time_jfr_dequeue_lock();
-  void release_cpu_time_jfr_queue_lock();
-
-  void set_has_cpu_time_jfr_requests(bool has_events);
-  bool has_cpu_time_jfr_requests();
-
-  JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
-  void deallocate_cpu_time_jfr_queue();
-
-  void set_do_async_processing_of_cpu_time_jfr_requests(bool wants);
-  bool wants_async_processing_of_cpu_time_jfr_requests();
-#else
-  bool has_cpu_time_jfr_requests() { return false; }
 #endif
 
   // Hooks
@@ -413,8 +290,6 @@ class JfrThreadLocal {
   static ByteSize vthread_epoch_offset();
   static ByteSize vthread_excluded_offset();
   static ByteSize notified_offset();
-  static ByteSize sample_state_offset();
-  static ByteSize sampling_critical_section_offset();
 
   friend class JfrJavaThread;
   friend class JfrCheckpointManager;
