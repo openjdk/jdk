@@ -832,7 +832,7 @@ import java.util.Arrays;
  * the physical output vector must contain a mix of logical result and
  * padding.
  * It might seem preferable if the Vector API would work at a higher
- * level, picking new shapes on the fly as it keep {@code VLENGTH}
+ * level, picking new shapes on the fly as it keeps {@code VLENGTH}
  * constant, but this would be a less portable design.
  *
  * <p>(Some platforms do support a rich variety of vector shapes, and
@@ -841,7 +841,7 @@ import java.util.Arrays;
  * But not all platforms have enough shapes to pull this off well.
  * And in extreme cases a shape change is physically impossible,
  * because the logical result would be just too large or too small to
- * be matched by any available vector shape.  So the the Vector API
+ * be matched by any available vector shape.  So the Vector API
  * only changes shapes in a method documented as shape-changing, and
  * the user must supply the new shape explicitly.)
  *
@@ -858,10 +858,18 @@ import java.util.Arrays;
  * is the shape of the output container, the vector produced by the
  * method call.  It is usually the same as the input shape, but may
  * differ in the case of a shape-changing method.
+ * (Note:  We are talking about the "physics" of an object-oriented
+ * API here, a computational structure which is easily compiled to
+ * various kinds of hardware, but not itself a hardware specification.
+ * The Vector API does not guarantee that a 128-bit vector shape
+ * will always be represented by a 128-bit hardware register,
+ * although it is a good guess that the compiler will do this.
+ * The truly physical hardware registers are invisible here.)
  *
  * </li><li>The <em>logical result</em> {@code f(X)} of a vector
  * operation is the mathematical result of applying the operation
- * without regard to input or output shape.  For a lane-wise
+ * {@code f) to the input vector {@code X} without regard to output shape.
+ * For a lane-wise
  * operation, the logical output is simply the logical concatenation
  * of the lane-wise results, using the result type.  In general this
  * logical result may overflow or underflow the capacity of any given
@@ -874,7 +882,8 @@ import java.util.Arrays;
  * reciprocal of an integer, depending on whether the logical
  * operation is expanding or contracting.
  *
- * </li><li>The <em>physical expansion ratio</em> {@code MP} of a
+ * </li><li>Given an output container {@code Y} of a specific shape,
+ * the <em>physical expansion ratio</em> {@code MP} of a
  * vector operation is the bit-size ratio {@code |Y|/|X|} of physical
  * output shape to the original input shape.  It measures the net
  * shape change without regard to the logical operation.  In the case
@@ -1030,7 +1039,7 @@ import java.util.Arrays;
  * because some methods can perform both expansions and contractions,
  * in a data-dependent manner, and the extra sign on the part number
  * serves as an error check.  If a vector method takes a part number and
- * a invocation of it requires neither padding nor selection,
+ * a invocation of it requires neither insertion (with padding) nor selection,
  * the {@code part} parameter must be exactly zero.
  * <p>
  * Part numbers outside the allowed ranges will elicit an indexing
@@ -1044,7 +1053,7 @@ import java.util.Arrays;
  *
  * <p> Non-zero part numbers arise only on a machine with few shapes,
  * and in order to keep those shapes full of data even when lane sizes
- * change, padding or selection operations are necessary.
+ * change, insertion (with padding) or selection operations are necessary.
  *
  * <p> The various resizing operations of this API contract or expand
  * their data as follows:
@@ -1054,7 +1063,7 @@ import java.util.Arrays;
  * {@link Vector#convert(VectorOperators.Conversion,int) Vector.convert()}
  * has a logical result containing all the input elements, possibly
  * expanded or contracted to the conversion output type.
- * Thus, a non-unit {@code ML} for a conversion arises when the
+ * Thus, a conversion will have an {@code ML} value other than 1 when the
  * {@linkplain #elementSize() element size} of its output is
  * different from the element size of the input.
  * Since there is no shape change, {@code MO=1/ML}, {@code MS=ML}, and {@code MP=1}.
@@ -1067,13 +1076,13 @@ import java.util.Arrays;
  * with a logical result size change measured by {@code ML}.
  * The shape can change as well, so the ratio {@code MP} need not be unity.
  * In any case, the net output expansion ratio {@code MO=MP/ML}
- * determines whether padding or selection is required.
- * It is an in-place operation if {@code ML=MP}.
+ * determines whether insertion (with padding) or selection is required.
+ * It is an in-place operation if {@code MO=1}, that is {@code ML=MP}.
  *
  * <li>
  * Since {@link Vector#castShape(VectorSpecies,int) Vector.castShape()}
  * is a convenience method for {@code convertShape()}, its requirement
- * for truncation or padding is similar to {@code convertShape()}.
+ * for truncation or insertion (with padding) is similar to {@code convertShape()}.
  *
  * <li>
  * {@link Vector#reinterpretShape(VectorSpecies,int) Vector.reinterpretShape()}
@@ -1083,7 +1092,7 @@ import java.util.Arrays;
  * If the shape changes, the ratio {@code MP} may vary from unity.
  *
  * The net output expansion ratio {@code MO=MP} determines whether
- * the operation is in-place {@code MO=MP=1} or whether padding
+ * the operation is in-place {@code MO=MP=1} or whether insertion (with padding)
  * or selection are required.
  *
  * <li>
