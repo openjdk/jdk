@@ -53,18 +53,6 @@ public class HttpTest {
     static class RequestLog {
         List<Request> log = new ArrayList<>();
 
-        // Expect a given number of requests
-        synchronized void expectSize(int expected) {
-            assertEquals(expected, log.size());
-        }
-
-        // Expect nth request to have a given method and path
-        synchronized void expect(int nth, String method, String path) {
-            Request request = log.get(nth);
-            assertEquals(method, request.method);
-            assertEquals(path, request.path.getPath());
-        }
-
         // Add a request to the log
         public synchronized void capture(String method, URI uri) {
             log.add(new Request(method, uri));
@@ -236,7 +224,7 @@ public class HttpTest {
             Request req = log.log.get(i);
             // Verify method
             assertEquals(ex.method, req.method,
-                    String.format("Request #%s has unexpected method %s", i, ex.method)
+                    String.format("Request %s has unexpected method %s", i, ex.method)
             );
             // Verify path
             assertEquals(ex.path, req.path,
