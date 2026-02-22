@@ -183,6 +183,9 @@ final class VirtualThread extends BaseVirtualThread {
     // carrier thread when mounted, accessed by VM
     private volatile Thread carrierThread;
 
+    // true to notifyAll after this virtual thread terminates
+    private volatile boolean notifyAllAfterTerminate;
+
     /**
      * Returns the default scheduler.
      */
@@ -673,9 +676,11 @@ final class VirtualThread extends BaseVirtualThread {
         assert carrierThread == null;
         setState(TERMINATED);
 
-        // notify anyone waiting for this virtual thread to terminate
-        synchronized (this) {
-            notifyAll();
+        // notifyAll to wakeup any threads waiting for this thread to terminate
+        if (notifyAllAfterTerminate) {
+            synchronized (this) {
+                notifyAll();
+            }
         }
 
         // notify container
@@ -732,6 +737,13 @@ final class VirtualThread extends BaseVirtualThread {
     @Override
     public void run() {
         // do nothing
+    }
+
+    /**
+     * Invoked by Thread.join before a thread waits for this virtual thread to terminate.
+     */
+    void beforeJoin() {
+        notifyAllAfterTerminate = true;
     }
 
     /**

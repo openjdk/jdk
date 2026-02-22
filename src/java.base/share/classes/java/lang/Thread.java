@@ -1901,6 +1901,13 @@ public class Thread implements Runnable {
     public final void join(long millis) throws InterruptedException {
         if (millis < 0)
             throw new IllegalArgumentException("timeout value is negative");
+        if (!isAlive())
+            return;
+
+        // ensure there is a notifyAll to wake up waiters when this thread terminates
+        if (this instanceof VirtualThread vthread) {
+            vthread.beforeJoin();
+        }
 
         synchronized (this) {
             if (millis > 0) {
