@@ -31,21 +31,43 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * A shared session, which can be shared across multiple threads. Closing a shared session has to ensure that
  * (i) only one thread can successfully close a session (e.g. in a close vs. close race) and that
  * (ii) no other thread is accessing the memory associated with this session while the segment is being
- * closed. To ensure the former condition, a CAS is performed on the liveness bit. Ensuring the latter
- * is trickier, and require a complex synchronization protocol (see {@link jdk.internal.misc.ScopedMemoryAccess}).
+ * closed.
+ * To ensure the former condition, a CAS is performed on the closingPhase from 0 to 1 to exclusively spin-lock
+ * access to the decision logic which decides whether there are live threads that have the session acquired or not, and
+ * either unlocks closingPhase back to 0 or promotes it to 2.
+ * The decision logic uses two instances of {@link LongAdder}, {@code acquireCount} and {@code releaseCount} which act as atomic
+ * counters. If the only mutating method used on {@code LongAdder} is {@link LongAdder#increment()}, then it is indistinguishable
+ * from {@link java.util.concurrent.atomic.AtomicLong} except it has practically zero contention when incrementing the value,
+ * but some overhead when reading the value depending on previously executed concurrency when incrementing.
+ * Ensuring the latter is trickier, and requires a complex synchronization protocol (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
- * checking the liveness bit upon access can be performed in plain mode, as in the confined case.
+ * clever ordering of accesses to all of {@code acquireCount}, {@code releaseCount} and {@code closingPhase} makes this possible
+ * in the following way:
+ * <ul>
+ *     <li>acquire-ing thread 1st increments {@code acquireCount} then checks the {@code closingPhase}.
+ *     If closingPhase is open (0), acquire0 returns immediately (this is the fast-path). If closingPhase is undecided
+ *     (1 - maybe closing) then it spin-waits for decision. If it reverts to open (0), acquire0 returns, else it promotes to
+ *     closed (2) in which case it throws exception</li>
+ *     <li>close-ing thread 1st CAS-es {@code closingPhase} from 0 to 1 and when successful, then reads {@code releaseCount}
+ *     and then reads {@code acquireCount}. This order ensures that the difference between acquireCount and releaseCount is never
+ *     less than the number of threads that are active somewhere between the acquire0 and release0 calls. It may temporarily be more,
+ *     but that only means {@code justClose} will throw "already acquired" exception due to race with releasing thread.
+ * </ul>
  */
 sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+    private static final VarHandle CLOSING_PHASE = MhUtil.findVarHandle(MethodHandles.lookup(), "closingPhase", int.class);
 
-    private static final int CLOSED_ACQUIRE_COUNT = -1;
+    private final LongAdder acquireCount = new LongAdder();
+    private final LongAdder releaseCount = new LongAdder();
+    private volatile int closingPhase; // 0=open, 1=maybe closing, 2=closed
 
     SharedSession() {
         super(null, new SharedResourceList());
@@ -54,39 +76,38 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     @Override
     @ForceInline
     public void acquire0() {
-        int value;
-        do {
-            value = (int) ACQUIRE_COUNT.getVolatile(this);
-            if (value < 0) {
-                //segment is not open!
+        acquireCount.increment();
+        int cp;
+        while ((cp = closingPhase) != 0) {
+            if (cp == 2) {
+                releaseCount.increment();
                 throw sharedSessionAlreadyClosed();
-            } else if (value == MAX_FORKS) {
-                //overflow
-                throw tooManyAcquires();
             }
-        } while (!ACQUIRE_COUNT.compareAndSet(this, value, value + 1));
+            Thread.onSpinWait();
+        }
     }
 
     @Override
     @ForceInline
     public void release0() {
-        int value;
-        do {
-            value = (int) ACQUIRE_COUNT.getVolatile(this);
-            if (value <= 0) {
-                //cannot get here - we can't close segment twice
-                throw sharedSessionAlreadyClosed();
-            }
-        } while (!ACQUIRE_COUNT.compareAndSet(this, value, value - 1));
+        releaseCount.increment();
     }
 
     void justClose() {
-        int acquireCount = (int) ACQUIRE_COUNT.compareAndExchange(this, 0, CLOSED_ACQUIRE_COUNT);
-        if (acquireCount < 0) {
-            throw sharedSessionAlreadyClosed();
-        } else if (acquireCount > 0) {
-            throw alreadyAcquired(acquireCount);
+        int cp;
+        while ((cp = (int) CLOSING_PHASE.compareAndExchange(0, 1)) != 0) {
+            if (cp == 2) {
+                throw sharedSessionAlreadyClosed();
+            }
+            Thread.onSpinWait();
         }
+        // reading order is important: 1st RELEASE_COUNT, 2nd ACQUIRE_COUNT
+        long value = -releaseCount.longValue() + acquireCount.longValue();
+        if (value > 0) {
+            closingPhase = 0;
+            throw alreadyAcquired((int) value);
+        }
+        closingPhase = 2;
 
         STATE.setVolatile(this, CLOSED);
         SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);

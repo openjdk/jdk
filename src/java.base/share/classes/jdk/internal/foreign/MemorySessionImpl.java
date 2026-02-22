@@ -68,7 +68,6 @@ public abstract sealed class MemorySessionImpl
     static final int NONCLOSEABLE = 1;
 
     static final VarHandle STATE = MhUtil.findVarHandle(MethodHandles.lookup(), "state", int.class);
-    static final VarHandle ACQUIRE_COUNT = MhUtil.findVarHandle(MethodHandles.lookup(), "acquireCount", int.class);
 
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
@@ -82,8 +81,6 @@ public abstract sealed class MemorySessionImpl
 
     @Stable
     int state;
-
-    int acquireCount;
 
     public ArenaImpl asArena() {
         return new ArenaImpl(this);
