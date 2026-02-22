@@ -57,14 +57,14 @@ Developers are responsible for updating their custom runtime images.
 
 ## jlink Options
 
-`--add-modules` *mod*\[`,`*mod*...\]
+[`--add-modules`]{#option--add-modules} *mod*\[`,`*mod*...\]
 :   Adds the named modules, *mod*, to the default set of root modules. The
     default set of root modules is empty.
 
-`--bind-services`
+[`--bind-services`]{#option--bind-services}
 :   Link service provider modules and their dependencies.
 
-`-c zip-{0-9}` or `--compress=zip-{0-9}`
+[`-c zip-{0-9}`]{#compress} or `--compress=zip-{0-9}`
 :   Enable compression of resources. The accepted values are:
     zip-{0-9}, where zip-0 provides no compression,
     and zip-9 provides the best compression. Default is zip-6.
@@ -75,37 +75,37 @@ Developers are responsible for updating their custom runtime images.
     -   `1`: Constant string sharing
     -   `2`: ZIP. Use zip-6 instead.
 
-`--disable-plugin` *pluginname*
+[`--disable-plugin`]{#option--disable-plugin} *pluginname*
 :   Disables the specified plug-in. See [jlink Plug-ins] for the list of
     supported plug-ins.
 
-`--endian` {`little`\|`big`}
+[`--endian`]{#option--endian} {`little`\|`big`}
 :   Specifies the byte order of the generated image. The default value is the
     format of your system's architecture.
 
 `-h` or `--help`
 :   Prints the help message.
 
-`--ignore-signing-information`
+[`--ignore-signing-information`]{#option--ignore-signing-information}
 :   Suppresses a fatal error when signed modular JARs are linked in the runtime
     image. The signature-related files of the signed modular JARs aren't copied
     to the runtime image.
 
-`--launcher` *command*`=`*module* or `--launcher` *command*`=`*module*`/`*main*
+[`--launcher`]{#option--launcher} *command*`=`*module* or `--launcher` *command*`=`*module*`/`*main*
 :   Specifies the launcher command name for the module or the command name for
     the module and main class (the module and the main class names are
     separated by a slash (`/`)).
 
-`--limit-modules` *mod*\[`,`*mod*...\]
+[`--limit-modules`]{#option--limit-modules} *mod*\[`,`*mod*...\]
 :   Limits the universe of observable modules to those in the transitive
     closure of the named modules, `mod`, plus the main module, if any, plus any
     further modules specified in the `--add-modules` option.
 
-`--list-plugins`
+[`--list-plugins`]{#option--list-plugins}
 :   Lists available plug-ins, which you can access through command-line
     options; see [jlink Plug-ins].
 
-`-p` or `--module-path` *modulepath*
+[`-p`]{#option-module-path} or `--module-path` *modulepath*
 :   Specifies the module path.
 
     If this option is not specified, then the default module path is
@@ -114,23 +114,23 @@ Developers are responsible for updating their custom runtime images.
     `java.base` module cannot be resolved from it, then the `jlink` command
     appends `$JAVA_HOME/jmods` to the module path.
 
-`--no-header-files`
+[`--no-header-files`]{#option--no-header-files}
 :   Excludes header files.
 
-`--no-man-pages`
+[`--no-man-pages`]{#option--no-man-pages}
 :   Excludes man pages.
 
-`--output` *path*
+[`--output`]{#option--output} *path*
 :   Specifies the location of the generated runtime image.
 
-`--save-opts` *filename*
+[`--save-opts`]{#option--save-opts} *filename*
 :   Saves `jlink` options in the specified file.
 
-`--suggest-providers` \[*name*`,` ...\]
+[`--suggest-providers`]{#option--suggest-providers} \[*name*`,` ...\]
 :   Suggest providers that implement the given service types from the module
     path.
 
-`--version`
+[`--version`]{#option--version}
 :   Prints version information.
 
 `@`*filename*
