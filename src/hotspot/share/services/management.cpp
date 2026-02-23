@@ -2124,12 +2124,12 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
 
     // We keep a high water mark to ensure monotonicity in case threads counted
     // on a previous call end up in state (2).
-    static jlong high_water_result = 0;
+    static uint64_t high_water_result = 0;
 
     JavaThreadIteratorWithHandle jtiwh;
-    jlong result = ThreadService::exited_allocated_bytes();
+    uint64_t result = ThreadService::exited_allocated_bytes();
     for (; JavaThread* thread = jtiwh.next();) {
-      jlong size = thread->cooked_allocated_bytes();
+      uint64_t size = thread->cooked_allocated_bytes();
       result += size;
     }
 
@@ -2144,7 +2144,7 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
         high_water_result = result;
       }
     }
-    return result;
+    return checked_cast<jlong>(result);
 JVM_END
 
 // Gets the amount of memory allocated on the Java heap for a single thread.
@@ -2156,13 +2156,13 @@ JVM_ENTRY(jlong, jmm_GetOneThreadAllocatedMemory(JNIEnv *env, jlong thread_id))
   }
 
   if (thread_id == 0) { // current thread
-    return thread->cooked_allocated_bytes();
+    return checked_cast<jlong>(thread->cooked_allocated_bytes());
   }
 
   ThreadsListHandle tlh;
   JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
   if (is_platform_thread(java_thread)) {
-    return java_thread->cooked_allocated_bytes();
+    return checked_cast<jlong>(java_thread->cooked_allocated_bytes());
   }
   return -1;
 JVM_END
