@@ -921,6 +921,50 @@ public class VectorAlgorithmsImpl {
         return r;
     }
 
+    public static int conditionalSumB_loop(byte[] a) {
+        int sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            byte c = a[i];
+            if (c >= 'A' && c <= 'Z') {
+                sum += c;
+            }
+        }
+        return sum;
+    }
+
+    public static int conditionalSumB_VectorAPI_v1(byte[] a) {
+        return ConditionalSumB_VectorAPI_V1.compute(a);
+    }
+
+    private static class ConditionalSumB_VectorAPI_V1 {
+        private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_PREFERRED;
+        private static final VectorShape SHAPE = VectorShape.forBitSize(8 * SPECIES_I.length());
+        private static final VectorSpecies<Byte>    SPECIES_B = SHAPE.withLanes(byte.class);
+
+        public static int compute(byte[] a) {
+            var zeroB = ByteVector.zero(SPECIES_B);
+            var accI = IntVector.zero(SPECIES_I);
+            int i;
+            for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+                var vB = ByteVector.fromArray(SPECIES_B, a, i);
+                var maskA = vB.compare(VectorOperators.GE, (byte)'A');
+                var maskZ = vB.compare(VectorOperators.LE, (byte)'Z');
+                var mask = maskA.and(maskZ);
+                vB = zeroB.blend(vB, mask);
+                var vI = vB.castShape(SPECIES_I, 0);
+                accI = accI.add(vI);
+            }
+            int sum = accI.reduceLanes(VectorOperators.ADD);
+            for (; i < a.length; i++) {
+                byte c = a[i];
+                if (c >= 'A' && c <= 'Z') {
+                    sum += c;
+                }
+            }
+            return sum;
+        }
+    }
+
     public static float[] pieceWise2FunctionF_loop(float[] a, float[] r) {
         for (int i = 0; i < a.length; i++) {
             float ai = a[i];

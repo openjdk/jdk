@@ -156,6 +156,11 @@ public class TestVectorAlgorithms {
         testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v1", i -> { return lowerCaseB_VectorAPI_v1(d.strB, d.rB2); });
         testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v2", i -> { return lowerCaseB_VectorAPI_v2(d.strB, d.rB3); });
 
+        testGroups.put("conditionalSumB", new HashMap<String,TestFunction>());
+        testGroups.get("conditionalSumB").put("conditionalSumB_loop",         i -> { return conditionalSumB_loop(d.strB); });
+        testGroups.get("conditionalSumB").put("conditionalSumB_VectorAPI_v1", i -> { return conditionalSumB_VectorAPI_v1(d.strB); });
+
+
         testGroups.put("pieceWise2FunctionF", new HashMap<String,TestFunction>());
         testGroups.get("pieceWise2FunctionF").put("pieceWise2FunctionF_loop",         _ -> { return pieceWise2FunctionF_loop(d.xF, d.rF1); });
         testGroups.get("pieceWise2FunctionF").put("pieceWise2FunctionF_VectorAPI_v1", _ -> { return pieceWise2FunctionF_VectorAPI_v1(d.xF, d.rF2); });
@@ -203,6 +208,8 @@ public class TestVectorAlgorithms {
                  "lowerCaseB_loop",
                  "lowerCaseB_VectorAPI_v1",
                  "lowerCaseB_VectorAPI_v2",
+                 "conditionalSumB_loop",
+                 "conditionalSumB_VectorAPI_v1",
                  "pieceWise2FunctionF_loop",
                  "pieceWise2FunctionF_VectorAPI_v1",
                  "pieceWise2FunctionF_VectorAPI_v2"})
@@ -604,6 +611,21 @@ public class TestVectorAlgorithms {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object lowerCaseB_VectorAPI_v2(byte[] a, byte[] r) {
         return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v2(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0"})
+    // Currently does not vectorize, but might in the future.
+    public Object conditionalSumB_loop(byte[] a) {
+        return VectorAlgorithmsImpl.conditionalSumB_loop(a);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object conditionalSumB_VectorAPI_v1(byte[] a) {
+        return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v1(a);
     }
 
     @Test
