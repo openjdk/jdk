@@ -446,20 +446,21 @@ final class Renderer {
             int next = findNextReplacement(s, start);
             // To see if we need to escape a doubled up "#" or "$" we look ahead of next.
             int potentialStart = next + 1;
+            // Search for a non-paired replacement character and remember what
+            // we need to escape later.
             while (potentialStart < s.length() && s.charAt(potentialStart) == s.charAt(next)) {
-                // We have a matching pair of escape characters, so we escape them.
+                // We have a matching pair of escape characters, so we escape them later
+                // and continue searching.
                 switch (s.charAt(next)) {
                     case '#' -> escapeHash = true;
                     case '$' -> escapeDollar = true;
                     default -> throw new RuntimeException("Unexpected replacement character. Expected '#' or '$'.");
                 }
 
-                // Find the next replacement after the doubled up "$" or "#"
-                // and make sure we do not need to escape it.
                 next = findNextReplacement(s, potentialStart + 1);
                 potentialStart = next + 1;
             }
-            // We found a replacement that does not need to be replaced.
+
             String part = s.substring(start, next);
             if (escapeHash) {
                 part = part.replace("##", "#");
