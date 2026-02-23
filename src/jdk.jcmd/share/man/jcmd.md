@@ -800,12 +800,12 @@ The following commands are available:
         - `R` = has been redefined,
         - `S` = is shared class (if `-location` is specified then either 's' (for static) or 'd' (for dynamic) AOT cache origin is appended)
 
-    Impact: Medium: Depends on number of loaded classes. 
-        
-    The following *options* must be specified using either *key* or *key*`=`*value* syntax. 
-          
+    Impact: Medium: Depends on number of loaded classes.
+
+    The following *options* must be specified using either *key* or *key*`=`*value* syntax.
+
     *options*:
-        
+
     -   `-verbose`: (Optional) Dump the detailed content of a Java class. (BOOLEAN, false)
 
     -   `-location`: (Optional) Print the location of the class file from which the class is loaded (if available)
