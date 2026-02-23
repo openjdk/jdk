@@ -74,9 +74,9 @@ public class CoherentBytecodeTraceTest {
     }
 
     // The analysis works by finding the invokeinterface bytecode when calling
-    // Strategy.foo The trace should look something like the following:
+    // Strategy.foo. The trace should look something like the following:
     // invokeinterface 116 <CoherentBytecodeTraceTest$Strategy.foo(I)V>
-    // The stategy is to find CoherentBytecodeTraceTest$Strategy.foo's index
+    // The strategy is to find CoherentBytecodeTraceTest$Strategy.foo's index
     // and then ensure the constant pool ref and opcode before are correct.
     // This requires going through the file line-by-line.
     private static void analyze(List<String> lines) {

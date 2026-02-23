@@ -938,7 +938,7 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     stringStream ss;
     ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print_on(&ss);
-    // Buffering to a stringStream, disable internal buffering so it's not done twice
+    // Buffering to a stringStream, disable internal buffering so it's not done twice.
     method()->print_codes_on(&ss, 0, false);
     print_code_on(&ss);
     print_pcs_on(&ss);
