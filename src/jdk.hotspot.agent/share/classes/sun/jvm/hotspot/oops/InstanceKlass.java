@@ -62,6 +62,16 @@ public class InstanceKlass extends Klass {
   private static int CLASS_STATE_FULLY_INITIALIZED;
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
+  public long     getAccessFlags()          { return            accessFlags.getValue(this); }
+  // Convenience routine
+  public AccessFlags getAccessFlagsObj()    { return new AccessFlags(getAccessFlags()); }
+
+  public boolean isPublic()                 { return getAccessFlagsObj().isPublic(); }
+  public boolean isFinal()                  { return getAccessFlagsObj().isFinal(); }
+  public boolean isInterface()              { return getAccessFlagsObj().isInterface(); }
+  public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
+  public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
+  public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
@@ -88,6 +98,7 @@ public class InstanceKlass extends Klass {
       breakpoints        = type.getAddressField("_breakpoints");
     }
     headerSize           = type.getSize();
+    accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
 
     // read internal field flags constants
     FIELD_FLAG_IS_INITIALIZED      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_initialized");
@@ -150,6 +161,7 @@ public class InstanceKlass extends Klass {
   private static CIntField initState;
   private static CIntField itableLen;
   private static CIntField nestHostIndex;
+  private static CIntField accessFlags;
   private static AddressField breakpoints;
 
   // type safe enum for ClassState from instanceKlass.hpp
@@ -499,7 +511,7 @@ public class InstanceKlass extends Klass {
     }
   }
 
-  public boolean implementsInterface(Klass k) {
+  public boolean implementsInterface(InstanceKlass k) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(k.isInterface(), "should not reach here");
     }
@@ -511,7 +523,7 @@ public class InstanceKlass extends Klass {
     return false;
   }
 
-  boolean computeSubtypeOf(Klass k) {
+  boolean computeSubtypeOf(InstanceKlass k) {
     if (k.isInterface()) {
       return implementsInterface(k);
     } else {
@@ -535,6 +547,7 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(nonstaticOopMapSize, true);
       visitor.doCInt(initState, true);
       visitor.doCInt(itableLen, true);
+      visitor.doCInt(accessFlags, true);
     }
 
   /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @requires container.support
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @library /test/lib
@@ -62,7 +63,7 @@ public class TestJcmd {
 
 
     public static void main(String[] args) throws Exception {
-        DockerTestUtils.canTestDocker();
+        DockerTestUtils.checkCanTestDocker();
 
         // podman versions below 3.3.1 hava a bug where cross-container testing with correct
         // permissions fails. See JDK-8273216
@@ -142,6 +143,7 @@ public class TestJcmd {
         sb.append(String.format("FROM %s:%s\n", DockerfileConfig.getBaseImageName(),
                                 DockerfileConfig.getBaseImageVersion()));
         sb.append("COPY /jdk /jdk\n");
+        sb.append("ENV LANG=C.UTF-8\n");
         sb.append("ENV JAVA_HOME=/jdk\n");
 
         if (!IS_PODMAN) { // only needed for docker

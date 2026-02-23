@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -79,6 +80,7 @@
 #include "oops/typeArrayOop.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -157,7 +159,7 @@
                 unchecked_nonstatic_field)                                                                                           \
                                                                                                                                      \
   /******************************************************************/                                                               \
-  /* OopDesc and Klass hierarchies (NOTE: MethodData* incomplete)   */                                                               \
+  /* OopDesc and Klass hierarchies                                  */                                                               \
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
@@ -216,6 +218,7 @@
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
+  nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -225,33 +228,12 @@
   volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
-  nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _next_link,                                    Klass*)                                \
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(vtableEntry,                 _method,                                       Method*)                               \
-  nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
-  nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
-  nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
-  nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_decompiles,            uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_recompiles,   uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_traps,        uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._trap_hist._array[0],       u1)                                    \
-  nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
-  nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
-  nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
-  nonstatic_field(MethodData,                  _arg_returned,                                 intx)                                  \
-  nonstatic_field(MethodData,                  _tenure_traps,                                 uint)                                  \
-  nonstatic_field(MethodData,                  _invoke_mask,                                  int)                                   \
-  nonstatic_field(MethodData,                  _backedge_mask,                                int)                                   \
-  nonstatic_field(DataLayout,                  _header._struct._tag,                          u1)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._flags,                        u1)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
-  nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
@@ -353,6 +335,7 @@
   nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
+     static_field(ThreadLocalAllocBuffer,      _reserve_for_allocation_prefetch,              int)                                   \
      static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
@@ -593,7 +576,7 @@
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
-  nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
+  nonstatic_field(Thread,                      _allocated_bytes,                              uint64_t)                              \
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
   nonstatic_field(LockStack,                   _base[0],                                      oop)                                   \
@@ -760,7 +743,7 @@
   CDS_ONLY(nonstatic_field(FileMapInfo,        _header,                   FileMapHeader*))                                           \
   CDS_ONLY(   static_field(FileMapInfo,        _current_info,             FileMapInfo*))                                             \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _regions[0],               CDSFileMapRegion))                                         \
-  CDS_ONLY(nonstatic_field(FileMapHeader,      _cloned_vtables_offset,    size_t))                                                   \
+  CDS_ONLY(nonstatic_field(FileMapHeader,      _cloned_vtables,           AOTCompressedPointers::narrowPtr))                         \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _mapped_base_address,      char*))                                                    \
   CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _mapped_base,              char*))                                                    \
   CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _used,                     size_t))                                                   \
@@ -887,6 +870,7 @@
   declare_unsigned_integer_type(unsigned short)                           \
   declare_unsigned_integer_type(jushort)                                  \
   declare_unsigned_integer_type(unsigned long)                            \
+  declare_unsigned_integer_type(Atomic<size_t>)                           \
   /* The compiler thinks this is a different type than */                 \
   /* unsigned short on Win32 */                                           \
   declare_unsigned_integer_type(u1)                                       \
@@ -957,8 +941,6 @@
     declare_type(ConstMethod, MetaspaceObj)                               \
     declare_type(Annotations, MetaspaceObj)                               \
                                                                           \
-  declare_toplevel_type(MethodData::CompilerCounters)                     \
-                                                                          \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
   declare_toplevel_type(vtableEntry)                                      \
@@ -967,7 +949,6 @@
            declare_toplevel_type(Symbol*)                                 \
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
-  declare_toplevel_type(DataLayout)                                       \
   declare_toplevel_type(BSMAttributeEntries)                              \
                                                                           \
   /********/                                                              \
@@ -1199,6 +1180,7 @@
                                                                           \
   /* all enum types */                                                    \
                                                                           \
+   declare_integer_type(AOTCompressedPointers::narrowPtr)                 \
    declare_integer_type(Bytecodes::Code)                                  \
    declare_integer_type(InstanceKlass::ClassState)                        \
    declare_integer_type(JavaThreadState)                                  \

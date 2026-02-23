@@ -128,8 +128,6 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // the space. This would be the last action if there is nothing to evacuate.
   entry_cleanup_early();
 
-  heap->free_set()->log_status_under_lock();
-
   assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
   // We must execute this vm operation if we completed final mark. We cannot
@@ -138,7 +136,10 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // collection.
   heap->concurrent_final_roots();
 
-  size_t allocation_runway = heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
-  heap->compute_old_generation_balance(allocation_runway, 0);
+  // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
+  // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to
+  // follow the end of OLD marking.
+  heap->rebuild_free_set_within_phase();
+  heap->free_set()->log_status_under_lock();
   return true;
 }

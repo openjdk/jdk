@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "services/memoryUsage.hpp"
 
 class G1HeapRegion;
@@ -294,7 +295,7 @@ public:
 class G1HeapRegionClaimer : public StackObj {
   uint           _n_workers;
   uint           _n_regions;
-  volatile uint* _claims;
+  Atomic<uint>*  _claims;
 
   static const uint Unclaimed = 0;
   static const uint Claimed   = 1;

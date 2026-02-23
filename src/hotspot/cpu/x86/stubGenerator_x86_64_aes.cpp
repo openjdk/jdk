@@ -480,7 +480,7 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKe (key) in little endian int array
 //   c_rarg3   - counter vector byte array address
 //   Linux
 //     c_rarg4   -          input length
@@ -1063,7 +1063,7 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKe (key) in little endian int array
 //
 address StubGenerator::generate_aescrypt_encryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
@@ -1158,7 +1158,7 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKd (key) in little endian int array
 //
 address StubGenerator::generate_aescrypt_decryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
@@ -1255,7 +1255,7 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKe (key) in little endian int array
 //   c_rarg3   - r vector byte array address
 //   c_rarg4   - input length
 //
@@ -1407,7 +1407,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - K (key) in little endian int array
+//   c_rarg2   - sessionKd (key) in little endian int array
 //   c_rarg3   - r vector byte array address
 //   c_rarg4   - input length
 //

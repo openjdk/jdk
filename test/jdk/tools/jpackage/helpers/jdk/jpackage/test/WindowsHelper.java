@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
@@ -42,8 +42,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
@@ -81,16 +79,16 @@ public class WindowsHelper {
             msiLog.ifPresent(v -> misexec.clearArguments().addArguments(origArgs).addArgument("/L*v").addArgument(v));
             result = misexec.executeWithoutExitCodeCheck();
 
-            if (result.exitCode() == 1605) {
+            if (result.getExitCode() == 1605) {
                 // ERROR_UNKNOWN_PRODUCT, attempt to uninstall not installed
                 // package
-                return result.exitCode();
+                return result.getExitCode();
             }
 
             // The given Executor may either be of an msiexec command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
-            if ((result.exitCode() == 1618) || (result.exitCode() == 1603 && isUnpack)) {
+            if ((result.getExitCode() == 1618) || (result.getExitCode() == 1603 && isUnpack)) {
                 // Another installation is already in progress.
                 // Wait a little and try again.
                 Long timeout = 1000L * (attempt + 3); // from 3 to 10 seconds
@@ -100,7 +98,7 @@ public class WindowsHelper {
             break;
         }
 
-        return result.exitCode();
+        return result.getExitCode();
     }
 
     static PackageHandlers createMsiPackageHandlers(boolean createMsiLog) {
@@ -306,91 +304,6 @@ public class WindowsHelper {
                 "Failed to get file description of [%s]", pathToExeFile));
     }
 
-    public static void killProcess(long pid) {
-        Executor.of("taskkill", "/F", "/PID", Long.toString(pid)).dumpOutput(true).execute();
-    }
-
-    public static void killAppLauncherProcess(JPackageCommand cmd,
-            String launcherName, int expectedCount) {
-        var pids = findAppLauncherPIDs(cmd, launcherName);
-        try {
-            TKit.assertEquals(expectedCount, pids.length, String.format(
-                    "Check [%d] %s app launcher processes found running",
-                    expectedCount, Optional.ofNullable(launcherName).map(
-                            str -> "[" + str + "]").orElse("<main>")));
-        } finally {
-            if (pids.length != 0) {
-                killProcess(pids[0]);
-            }
-        }
-    }
-
-    private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
-        // Get the list of PIDs and PPIDs of app launcher processes. Run setWinRunWithEnglishOutput(true) for JDK-8344275.
-        // powershell -NoLogo -NoProfile -NonInteractive -Command
-        //   "Get-CimInstance Win32_Process -Filter \"Name = 'foo.exe'\" | select ProcessID,ParentProcessID"
-        String command = "Get-CimInstance Win32_Process -Filter \\\"Name = '"
-                + cmd.appLauncherPath(launcherName).getFileName().toString()
-                + "'\\\" | select ProcessID,ParentProcessID";
-        List<String> output = Executor.of("powershell", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command)
-                .dumpOutput(true).saveOutput().setWinRunWithEnglishOutput(true).executeAndGetOutput();
-
-        if (output.size() < 1) {
-            return new long[0];
-        }
-
-        String[] headers = Stream.of(output.get(1).split("\\s+", 2)).map(
-                String::trim).map(String::toLowerCase).toArray(String[]::new);
-        Pattern pattern;
-        if (headers[0].equals("parentprocessid") && headers[1].equals(
-                "processid")) {
-            pattern = Pattern.compile("^\\s+(?<ppid>\\d+)\\s+(?<pid>\\d+)$");
-        } else if (headers[1].equals("parentprocessid") && headers[0].equals(
-                "processid")) {
-            pattern = Pattern.compile("^\\s+(?<pid>\\d+)\\s+(?<ppid>\\d+)$");
-        } else {
-            throw new RuntimeException(
-                    "Unrecognizable output of \'Get-CimInstance Win32_Process\' command");
-        }
-
-        List<long[]> processes = output.stream().skip(3).map(line -> {
-            Matcher m = pattern.matcher(line);
-            long[] pids = null;
-            if (m.matches()) {
-                pids = new long[]{Long.parseLong(m.group("pid")), Long.
-                    parseLong(m.group("ppid"))};
-            }
-            return pids;
-        }).filter(Objects::nonNull).toList();
-
-        switch (processes.size()) {
-            case 2 -> {
-                final long parentPID;
-                final long childPID;
-                if (processes.get(0)[0] == processes.get(1)[1]) {
-                    parentPID = processes.get(0)[0];
-                    childPID = processes.get(1)[0];
-                } else if (processes.get(1)[0] == processes.get(0)[1]) {
-                    parentPID = processes.get(1)[0];
-                    childPID = processes.get(0)[0];
-                } else {
-                    TKit.assertUnexpected("App launcher processes unrelated");
-                    return null; // Unreachable
-                }
-                return new long[]{parentPID, childPID};
-            }
-            case 1 -> {
-                return new long[]{processes.get(0)[0]};
-            }
-            default -> {
-                TKit.assertUnexpected(String.format(
-                        "Unexpected number of running processes [%d]",
-                        processes.size()));
-                return null; // Unreachable
-            }
-        }
-    }
-
     static boolean isUserLocalInstall(JPackageCommand cmd) {
         return cmd.hasArgument("--win-per-user-install");
     }
@@ -462,7 +375,7 @@ public class WindowsHelper {
         var status = Executor.of("reg", "query", keyPath, "/v", valueName)
                 .saveOutput()
                 .executeWithoutExitCodeCheck();
-        if (status.exitCode() == 1) {
+        if (status.getExitCode() == 1) {
             // Should be the case of no such registry value or key
             String lookupString = "ERROR: The system was unable to find the specified registry key or value.";
             TKit.assertTextStream(lookupString)
@@ -634,7 +547,7 @@ public class WindowsHelper {
                 getShortPathWrapper.setAccessible(true);
             } catch (ClassNotFoundException | NoSuchMethodException
                     | SecurityException ex) {
-                throw rethrowUnchecked(ex);
+                throw toUnchecked(ex);
             }
         }
 

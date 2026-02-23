@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,10 +221,7 @@ public class TestRedirectLinks extends JavadocTester {
             out.println("Starting old server (" + oldServer.getClass().getSimpleName() + ") on " + oldURL);
             oldServer.start();
 
-            SSLContext sslContext = new SimpleSSLContext().get();
-            if (sslContext == null) {
-                throw new AssertionError("Could not create a SSLContext");
-            }
+            SSLContext sslContext = SimpleSSLContext.findSSLContext();
             newServer = HttpsServer.create(new InetSocketAddress(loopback, 0), 0);
             String newURL = URIBuilder.newBuilder()
                     .scheme("https")

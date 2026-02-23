@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,6 @@
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
 #include "os_linux.hpp"
-#include "osContainer_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -197,6 +196,10 @@ WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
   VMThread::execute(&force_safepoint_stuck_op);
   ShouldNotReachHere();
   return 0;
+WB_END
+
+WB_ENTRY(jlong, WB_GetMinimumJavaStackSize(JNIEnv* env, jobject o))
+  return os::get_minimum_java_stack_size();
 WB_END
 
 class WBIsKlassAliveClosure : public LockedClassesDo {
@@ -508,8 +511,16 @@ WB_ENTRY(jboolean, WB_ConcurrentGCRunTo(JNIEnv* env, jobject o, jobject at))
   return ConcurrentGCBreakpoints::run_to(c_name);
 WB_END
 
-WB_ENTRY(jboolean, WB_HasExternalSymbolsStripped(JNIEnv* env, jobject o))
-#if defined(HAS_STRIPPED_DEBUGINFO)
+WB_ENTRY(jboolean, WB_ShipDebugInfoFull(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_FULL)
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
+WB_ENTRY(jboolean, WB_ShipDebugInfoPublic(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_PUBLIC)
   return true;
 #else
   return false;
@@ -567,7 +578,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->cm_thread()->in_progress();
+    return g1h->concurrent_mark()->in_progress();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -1678,7 +1689,7 @@ WB_ENTRY(void, WB_RelocateNMethodFromAddr(JNIEnv* env, jobject o, jlong addr, ji
   CodeBlob* blob = CodeCache::find_blob(address);
   if (blob != nullptr && blob->is_nmethod()) {
     nmethod* code = blob->as_nmethod();
-    if (code->is_in_use()) {
+    if (code->is_in_use() && !code->is_unloading()) {
       CompiledICLocker ic_locker(code);
       code->relocate(static_cast<CodeBlobType>(blob_type));
     }
@@ -2204,23 +2215,8 @@ WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
   return FileMapInfo::memory_mapping_failed();
 WB_END
 
-WB_ENTRY(jboolean, WB_IsSharedInternedString(JNIEnv* env, jobject wb, jobject str))
-  if (!HeapShared::is_loading_mapping_mode()) {
-    return false;
-  }
-  ResourceMark rm(THREAD);
-  oop str_oop = JNIHandles::resolve(str);
-  int length;
-  jchar* chars = java_lang_String::as_unicode_string(str_oop, length, CHECK_(false));
-  return StringTable::lookup_shared(chars, length) == str_oop;
-WB_END
-
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
   return (jboolean)AOTMetaspace::in_aot_cache(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
-WB_END
-
-WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
-  return AOTMappedHeapLoader::is_mapped();
 WB_END
 
 WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
@@ -2570,14 +2566,12 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
 WB_END
 
 WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
-  LINUX_ONLY(return OSContainer::is_containerized();)
-  return false;
+  return os::is_containerized();
 WB_END
 
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
-  LINUX_ONLY(return static_cast<jlong>(os::Linux::physical_memory());)
-  return static_cast<jlong>(os::physical_memory());
+  return static_cast<jlong>(os::Machine::physical_memory());
 WB_END
 
 // Available memory of the host machine (container-aware)
@@ -2840,7 +2834,8 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
-  {CC"hasExternalSymbolsStripped",       CC"()Z",                   (void*)&WB_HasExternalSymbolsStripped},
+  {CC"shipsFullDebugInfo",               CC"()Z",                   (void*)&WB_ShipDebugInfoFull},
+  {CC"shipsPublicDebugInfo",             CC"()Z",                   (void*)&WB_ShipDebugInfoPublic},
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
@@ -3048,9 +3043,7 @@ static JNINativeMethod methods[] = {
   {CC"getCDSGenericHeaderMinVersion",     CC"()I",    (void*)&WB_GetCDSGenericHeaderMinVersion},
   {CC"getCurrentCDSVersion",              CC"()I",    (void*)&WB_GetCDSCurrentVersion},
   {CC"isSharingEnabled",   CC"()Z",                   (void*)&WB_IsSharingEnabled},
-  {CC"isSharedInternedString", CC"(Ljava/lang/String;)Z", (void*)&WB_IsSharedInternedString },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
-  {CC"areSharedStringsMapped",            CC"()Z",    (void*)&WB_AreSharedStringsMapped },
   {CC"linkClass",          CC"(Ljava/lang/Class;)V",  (void*)&WB_LinkClass},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
@@ -3124,7 +3117,8 @@ static JNINativeMethod methods[] = {
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
-  {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
   {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
   {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked},

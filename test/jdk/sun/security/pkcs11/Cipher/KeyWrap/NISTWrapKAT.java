@@ -83,7 +83,7 @@ public class NISTWrapKAT extends PKCS11Test {
     private static String KEK2 =
             "5840DF6E29B02AF1AB493B705BF16EA1AE8338F4DCC176A8";
 
-    private static final List<String> skippedList = new ArrayList <>();
+    private static final List<String> skippedAlgoList = new ArrayList <>();
 
     private static byte[] toBytes(String hex, int hexLen) {
         if (hexLen < hex.length()) {
@@ -274,8 +274,8 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte key with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            System.out.println("=> skip, exceeds max allowed size " + allowed);
-            skippedList.add(algo + " Cipher with wrapping " +
+            System.err.println("Skip, exceeds max allowed size " + allowed);
+            skippedAlgoList.add(algo + " Cipher with wrapping " +
                             dataLen + "-byte key with " + 8 * keyLen +
                             "-bit KEK exceeds max allowed size " + allowed);
             return;
@@ -344,8 +344,8 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte data with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            System.out.println("=> skip, exceeds max allowed size " + allowed);
-            skippedList.add(algo + " Cipher with enc " +
+            System.err.println("Skip, exceeds max allowed size " + allowed);
+            skippedAlgoList.add(algo + " Cipher with enc " +
                             dataLen + "-byte data with " + 8 * keyLen +
                             "-bit KEK exceeds max allowed size " + allowed);
             return;
@@ -416,7 +416,9 @@ public class NISTWrapKAT extends PKCS11Test {
         for (Object[] td : testDatum) {
             String algo = (String) td[0];
             if (p.getService("Cipher", algo) == null) {
-                skippedList.add("No support for " + algo);
+                System.err.println("Skip, due to no support:  " + algo);
+                skippedAlgoList.add("No support for " + algo);
+                continue;
             }
             testKeyWrap(algo, (String) td[1], (int) td[2], (String) td[3],
                     (int) td[4], (String) td[5], p);
@@ -424,9 +426,9 @@ public class NISTWrapKAT extends PKCS11Test {
                     (int) td[4], (String) td[5], p);
         }
 
-        if (!skippedList.isEmpty()) {
+        if (!skippedAlgoList.isEmpty()) {
             throw new SkippedException("One or more tests skipped "
-                                       + skippedList);
+                    + skippedAlgoList);
         } else {
             System.out.println("All Tests Passed");
         }

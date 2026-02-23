@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,7 +588,7 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         // CmpP/N used by the If controlling the cast.
         if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
           Node* iff = use->in(0)->in(0);
-          // We may have an OpaqueNotNull node between If and Bool nodes. But we could also have a sub class of IfNode,
+          // We may have an OpaqueConstantBool node between If and Bool nodes. But we could also have a sub class of IfNode,
           // for example, an OuterStripMinedLoopEnd or a Parse Predicate. Bail out in all these cases.
           bool can_reduce = (iff->Opcode() == Op_If) && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp();
           if (can_reduce) {
@@ -748,7 +748,7 @@ Node* ConnectionGraph::specialize_castpp(Node* castpp, Node* base, Node* current
   _igvn->_worklist.push(current_control);
   _igvn->_worklist.push(control_successor);
 
-  return _igvn->transform(ConstraintCastNode::make_cast_for_type(not_eq_control, base, _igvn->type(castpp), ConstraintCastNode::UnconditionalDependency, nullptr));
+  return _igvn->transform(ConstraintCastNode::make_cast_for_type(not_eq_control, base, _igvn->type(castpp), ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, nullptr));
 }
 
 Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist) {
@@ -1058,6 +1058,39 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
     // "new_load" might actually be a constant, parameter, etc.
     if (new_load->is_Load()) {
       Node* new_addp = new_load->in(MemNode::Address);
+
+      // If new_load is a Load but not from an AddP, it means that the load is folded into another
+      // load. And since this load is not from a field, we cannot create a unique type for it.
+      // For example:
+      //
+      //   if (b) {
+      //       Holder h1 = new Holder();
+      //       Object o = ...;
+      //       h.o = o.getClass();
+      //   } else {
+      //       Holder h2 = ...;
+      //   }
+      //   Holder h = Phi(h1, h2);
+      //   Object r = h.o;
+      //
+      // Then, splitting r through the merge point results in:
+      //
+      //   if (b) {
+      //       Holder h1 = new Holder();
+      //       Object o = ...;
+      //       h.o = o.getClass();
+      //       Object o1 = h.o;
+      //   } else {
+      //       Holder h2 = ...;
+      //       Object o2 = h2.o;
+      //   }
+      //   Object r = Phi(o1, o2);
+      //
+      // In this case, o1 is folded to o.getClass() which is a Load but not from an AddP, but from
+      // an OopHandle that is loaded from the Klass of o.
+      if (!new_addp->is_AddP()) {
+        continue;
+      }
       Node* base = get_addp_base(new_addp);
 
       // The base might not be something that we can create an unique
@@ -1235,7 +1268,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
   Node* nsr_merge_pointer = ophi;
   if (cast != nullptr) {
     const Type* new_t = merge_t->meet(TypePtr::NULL_PTR);
-    nsr_merge_pointer = _igvn->transform(ConstraintCastNode::make_cast_for_type(cast->in(0), cast->in(1), new_t, ConstraintCastNode::RegularDependency, nullptr));
+    nsr_merge_pointer = _igvn->transform(ConstraintCastNode::make_cast_for_type(cast->in(0), cast->in(1), new_t, ConstraintCastNode::DependencyType::FloatingNarrowing, nullptr));
   }
 
   for (uint spi = 0; spi < safepoints.size(); spi++) {
@@ -1376,7 +1409,7 @@ void ConnectionGraph::reset_scalar_replaceable_entries(PhiNode* ophi) {
       }
 
       if (change) {
-        Node* new_cast = ConstraintCastNode::make_cast_for_type(out->in(0), out->in(1), out_new_t, ConstraintCastNode::StrongDependency, nullptr);
+        Node* new_cast = ConstraintCastNode::make_cast_for_type(out->in(0), out->in(1), out_new_t, ConstraintCastNode::DependencyType::NonFloatingNarrowing, nullptr);
         _igvn->replace_node(out, new_cast);
         _igvn->register_new_node_with_optimizer(new_cast);
       }
@@ -2066,8 +2099,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
     // Use bytecode estimator to record whether the call's return value escapes.
     ciMethod* meth = call->as_CallJava()->method();
     if (meth == nullptr) {
-      const char* name = call->as_CallStaticJava()->_name;
-      assert(strncmp(name, "C2 Runtime multianewarray", 25) == 0, "TODO: add failed case check");
+      assert(call->as_CallStaticJava()->is_call_to_multianewarray_stub(), "TODO: add failed case check");
       // Returns a newly allocated non-escaped object.
       add_java_object(call, PointsToNode::NoEscape);
       set_not_scalar_replaceable(ptnode_adr(call_idx) NOT_PRODUCT(COMMA "is result of multinewarray"));
@@ -2775,8 +2807,7 @@ int ConnectionGraph::find_init_values_phantom(JavaObjectNode* pta) {
   assert(pta->arraycopy_dst() || alloc->as_CallStaticJava(), "sanity");
 #ifdef ASSERT
   if (!pta->arraycopy_dst() && alloc->as_CallStaticJava()->method() == nullptr) {
-    const char* name = alloc->as_CallStaticJava()->_name;
-    assert(strncmp(name, "C2 Runtime multianewarray", 25) == 0, "sanity");
+    assert(alloc->as_CallStaticJava()->is_call_to_multianewarray_stub(), "sanity");
   }
 #endif
   // Non-escaped allocation returned from Java or runtime call have unknown values in fields.
@@ -3480,10 +3511,7 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
         bt = field->layout_type();
       } else {
         // Check for unsafe oop field access
-        if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
-            n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
-            n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN) ||
-            BarrierSet::barrier_set()->barrier_set_c2()->escape_has_out_with_unsafe_object(n)) {
+        if (has_oop_node_outs(n)) {
           bt = T_OBJECT;
           (*unsafe) = true;
         }
@@ -3499,16 +3527,22 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
       }
     } else if (adr_type->isa_rawptr() || adr_type->isa_klassptr()) {
       // Allocation initialization, ThreadLocal field access, unsafe access
-      if (n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
-          n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
-          n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN) ||
-          BarrierSet::barrier_set()->barrier_set_c2()->escape_has_out_with_unsafe_object(n)) {
+      if (has_oop_node_outs(n)) {
         bt = T_OBJECT;
       }
     }
   }
   // Note: T_NARROWOOP is not classed as a real reference type
-  return (is_reference_type(bt) || bt == T_NARROWOOP);
+  bool res = (is_reference_type(bt) || bt == T_NARROWOOP);
+  assert(!has_oop_node_outs(n) || res, "sanity: AddP has oop outs, needs to be treated as oop field");
+  return res;
+}
+
+bool ConnectionGraph::has_oop_node_outs(Node* n) {
+  return n->has_out_with(Op_StoreP, Op_LoadP, Op_StoreN, Op_LoadN) ||
+         n->has_out_with(Op_GetAndSetP, Op_GetAndSetN, Op_CompareAndExchangeP, Op_CompareAndExchangeN) ||
+         n->has_out_with(Op_CompareAndSwapP, Op_CompareAndSwapN, Op_WeakCompareAndSwapP, Op_WeakCompareAndSwapN) ||
+         BarrierSet::barrier_set()->barrier_set_c2()->escape_has_out_with_unsafe_object(n);
 }
 
 // Returns unique pointed java object or null.
@@ -3741,9 +3775,9 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
-  // case #6. Constant Pool, ThreadLocal, CastX2P or
+  // case #6. Constant Pool, ThreadLocal, CastX2P, Klass, OSR buffer buf or
   //          Raw object's field reference:
-  //      {ConP, ThreadLocal, CastX2P, raw Load}
+  //      {ConP, ThreadLocal, CastX2P, raw Load, Parm0}
   //  top   |
   //     \  |
   //     AddP  ( base == top )
@@ -3785,7 +3819,9 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
       int opcode = uncast_base->Opcode();
       assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
+             (_igvn->C->is_osr_compilation() && uncast_base->is_Parm() && uncast_base->as_Parm()->_con == TypeFunc::Parms)||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != nullptr)) ||
+             (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_klassptr() != nullptr)) ||
              is_captured_store_address(addp), "sanity");
     }
   }
@@ -4380,7 +4416,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   uint new_index_start = (uint) _compile->num_alias_types();
   VectorSet visited;
   ideal_nodes.clear(); // Reset for use with set_map/get_map.
-  uint unique_old = _compile->unique();
 
   //  Phase 1:  Process possible allocations from alloc_worklist.
   //  Create instance types for the CheckCastPP for allocations where possible.

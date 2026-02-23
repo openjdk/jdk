@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,31 +64,31 @@ ZRelocateQueue::ZRelocateQueue()
     _needs_attention(0) {}
 
 bool ZRelocateQueue::needs_attention() const {
-  return AtomicAccess::load(&_needs_attention) != 0;
+  return _needs_attention.load_relaxed() != 0;
 }
 
 void ZRelocateQueue::inc_needs_attention() {
-  const int needs_attention = AtomicAccess::add(&_needs_attention, 1);
+  const int needs_attention = _needs_attention.add_then_fetch(1);
   assert(needs_attention == 1 || needs_attention == 2, "Invalid state");
 }
 
 void ZRelocateQueue::dec_needs_attention() {
-  const int needs_attention = AtomicAccess::sub(&_needs_attention, 1);
+  const int needs_attention = _needs_attention.sub_then_fetch(1);
   assert(needs_attention == 0 || needs_attention == 1, "Invalid state");
 }
 
 void ZRelocateQueue::activate(uint nworkers) {
-  _is_active = true;
+  _is_active.store_relaxed(true);
   join(nworkers);
 }
 
 void ZRelocateQueue::deactivate() {
-  AtomicAccess::store(&_is_active, false);
+  _is_active.store_relaxed(false);
   clear();
 }
 
 bool ZRelocateQueue::is_active() const {
-  return AtomicAccess::load(&_is_active);
+  return _is_active.load_relaxed();
 }
 
 void ZRelocateQueue::join(uint nworkers) {
@@ -453,7 +453,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
 class ZRelocateSmallAllocator {
 private:
   ZGeneration* const _generation;
-  volatile size_t    _in_place_count;
+  Atomic<size_t>     _in_place_count;
 
 public:
   ZRelocateSmallAllocator(ZGeneration* generation)
@@ -463,7 +463,7 @@ public:
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
     ZPage* const page = alloc_page(forwarding);
     if (page == nullptr) {
-      AtomicAccess::inc(&_in_place_count);
+      _in_place_count.add_then_fetch(1u);
     }
 
     if (target != nullptr) {
@@ -493,7 +493,7 @@ public:
   }
 
   size_t in_place_count() const {
-    return _in_place_count;
+    return _in_place_count.load_relaxed();
   }
 };
 
@@ -503,7 +503,7 @@ private:
   ZConditionLock      _lock;
   ZRelocationTargets* _shared_targets;
   bool                _in_place;
-  volatile size_t     _in_place_count;
+  Atomic<size_t>      _in_place_count;
 
 public:
   ZRelocateMediumAllocator(ZGeneration* generation, ZRelocationTargets* shared_targets)
@@ -539,7 +539,7 @@ public:
       ZPage* const to_page = alloc_page(forwarding);
       _shared_targets->set(partition_id, to_age, to_page);
       if (to_page == nullptr) {
-        AtomicAccess::inc(&_in_place_count);
+        _in_place_count.add_then_fetch(1u);
         _in_place = true;
       }
 
@@ -579,7 +579,7 @@ public:
   }
 
   size_t in_place_count() const {
-    return _in_place_count;
+    return _in_place_count.load_relaxed();
   }
 };
 
@@ -1366,27 +1366,35 @@ public:
 
 class ZPromoteBarrierTask : public ZTask {
 private:
-  ZArrayParallelIterator<ZPage*> _iter;
+  ZArrayParallelIterator<ZPage*> _flip_promoted_iter;
+  ZArrayParallelIterator<ZPage*> _relocate_promoted_iter;
 
 public:
-  ZPromoteBarrierTask(const ZArray<ZPage*>* pages)
+  ZPromoteBarrierTask(const ZArray<ZPage*>* flip_promoted_pages,
+                      const ZArray<ZPage*>* relocate_promoted_pages)
     : ZTask("ZPromoteBarrierTask"),
-      _iter(pages) {}
+      _flip_promoted_iter(flip_promoted_pages),
+      _relocate_promoted_iter(relocate_promoted_pages) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
 
-    for (ZPage* page; _iter.next(&page);) {
-      // When promoting an object (and before relocate start), we must ensure that all
-      // contained zpointers are store good. The marking code ensures that for non-null
-      // pointers, but null pointers are ignored. This code ensures that even null pointers
-      // are made store good, for the promoted objects.
-      page->object_iterate([&](oop obj) {
-        ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
-      });
+    auto promote_barriers = [&](ZArrayParallelIterator<ZPage*>* iter) {
+      for (ZPage* page; iter->next(&page);) {
+        // When promoting an object (and before relocate start), we must ensure that all
+        // contained zpointers are store good. The marking code ensures that for non-null
+        // pointers, but null pointers are ignored. This code ensures that even null pointers
+        // are made store good, for the promoted objects.
+        page->object_iterate([&](oop obj) {
+          ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
+        });
 
-      SuspendibleThreadSet::yield();
-    }
+        SuspendibleThreadSet::yield();
+      }
+    };
+
+    promote_barriers(&_flip_promoted_iter);
+    promote_barriers(&_relocate_promoted_iter);
   }
 };
 
@@ -1395,8 +1403,9 @@ void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages) {
   workers()->run(&flip_age_task);
 }
 
-void ZRelocate::barrier_flip_promoted_pages(const ZArray<ZPage*>* pages) {
-  ZPromoteBarrierTask promote_barrier_task(pages);
+void ZRelocate::barrier_promoted_pages(const ZArray<ZPage*>* flip_promoted_pages,
+                                       const ZArray<ZPage*>* relocate_promoted_pages) {
+  ZPromoteBarrierTask promote_barrier_task(flip_promoted_pages, relocate_promoted_pages);
   workers()->run(&promote_barrier_task);
 }
 

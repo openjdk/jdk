@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,11 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -737,34 +739,6 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
   throw_and_post_jvmti_exception(current, h_exception);
 }
 
-#if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_FALSE, "must be VTMS transition finish");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_TRUE, "must be VTMS transition start");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-#endif // INCLUDE_JVMTI
-
 // The interpreter code to call this tracing function is only
 // called/generated when UL is on for redefine, class and has the right level
 // and tags. Since obsolete methods are never compiled, we don't have
@@ -809,6 +783,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   // determine handler bci, if any
   EXCEPTION_MARK;
 
+  Handle orig_exception(THREAD, exception());
+
   int handler_bci = -1;
   int scope_depth = 0;
   if (!force_unwind) {
@@ -830,7 +806,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
         // thrown (bugs 4307310 and 4546590). Set "exception" reference
         // argument to ensure that the correct exception is thrown (4870175).
         recursive_exception_occurred = true;
-        exception = Handle(THREAD, PENDING_EXCEPTION);
+        exception.replace(PENDING_EXCEPTION);
         CLEAR_PENDING_EXCEPTION;
         if (handler_bci >= 0) {
           bci = handler_bci;
@@ -859,8 +835,10 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 
   // If the compiler did not anticipate a recursive exception, resulting in an exception
   // thrown from the catch bci, then the compiled exception handler might be missing.
-  // This is rare.  Just deoptimize and let the interpreter handle it.
+  // This is rare.  Just deoptimize and let the interpreter rethrow the original
+  // exception at the original bci.
   if (t == nullptr && recursive_exception_occurred) {
+    exception.replace(orig_exception()); // restore original exception
     bool make_not_entrant = false;
     return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
   }
@@ -2957,8 +2935,7 @@ public:
       assert(buffered_entry != nullptr,"sanity check");
 
       uint hash = fp->compute_hash();
-      u4 delta = _builder->buffer_to_offset_u4((address)buffered_entry);
-      _writer->add(hash, delta);
+      _writer->add(hash, AOTCompressedPointers::encode_not_null(buffered_entry));
       if (lsh.is_enabled()) {
         address fp_runtime_addr = (address)buffered_fp + ArchiveBuilder::current()->buffer_to_requested_delta();
         address entry_runtime_addr = (address)buffered_entry + ArchiveBuilder::current()->buffer_to_requested_delta();
@@ -3386,7 +3363,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
                   RegisterMap::WalkContinuation::skip);
   frame sender = fr.sender(&map);
   if (sender.is_interpreted_frame()) {
-    current->push_cont_fastpath(sender.sp());
+    current->push_cont_fastpath(sender.unextended_sp());
   }
 
   return buf;

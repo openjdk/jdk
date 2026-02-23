@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,15 +89,19 @@ final class VirtualThread extends BaseVirtualThread {
      *
      *  RUNNING -> PARKING         // Thread parking with LockSupport.park
      *  PARKING -> PARKED          // cont.yield successful, parked indefinitely
-     *  PARKING -> PINNED          // cont.yield failed, parked indefinitely on carrier
      *   PARKED -> UNPARKED        // unparked, may be scheduled to continue
-     *   PINNED -> RUNNING         // unparked, continue execution on same carrier
      * UNPARKED -> RUNNING         // continue execution after park
+     *
+     *  PARKING -> RUNNING         // cont.yield failed, need to park on carrier
+     *  RUNNING -> PINNED          // park on carrier
+     *   PINNED -> RUNNING         // unparked, continue execution on same carrier
      *
      *       RUNNING -> TIMED_PARKING   // Thread parking with LockSupport.parkNanos
      * TIMED_PARKING -> TIMED_PARKED    // cont.yield successful, timed-parked
-     * TIMED_PARKING -> TIMED_PINNED    // cont.yield failed, timed-parked on carrier
      *  TIMED_PARKED -> UNPARKED        // unparked, may be scheduled to continue
+     *
+     * TIMED_PARKING -> RUNNING         // cont.yield failed, need to park on carrier
+     *       RUNNING -> TIMED_PINNED    // park on carrier
      *  TIMED_PINNED -> RUNNING         // unparked, continue execution on same carrier
      *
      *   RUNNING -> BLOCKING       // blocking on monitor enter
@@ -108,7 +112,7 @@ final class VirtualThread extends BaseVirtualThread {
      *   RUNNING -> WAITING        // transitional state during wait on monitor
      *   WAITING -> WAIT           // waiting on monitor
      *      WAIT -> BLOCKED        // notified, waiting to be unblocked by monitor owner
-     *      WAIT -> UNBLOCKED      // timed-out/interrupted
+     *      WAIT -> UNBLOCKED      // interrupted
      *
      *       RUNNING -> TIMED_WAITING   // transition state during timed-waiting on monitor
      * TIMED_WAITING -> TIMED_WAIT      // timed-waiting on monitor
@@ -149,9 +153,6 @@ final class VirtualThread extends BaseVirtualThread {
     private static final int TIMED_WAIT    = 18;    // waiting in timed-Object.wait
 
     private static final int TERMINATED = 99;  // final state
-
-    // can be suspended from scheduling when unmounted
-    private static final int SUSPENDED = 1 << 8;
 
     // parking permit made available by LockSupport.unpark
     private volatile boolean parkPermit;
@@ -246,11 +247,11 @@ final class VirtualThread extends BaseVirtualThread {
                 @Hidden
                 @JvmtiHideEvents
                 public void run() {
-                    vthread.notifyJvmtiStart(); // notify JVMTI
+                    vthread.endFirstTransition();
                     try {
                         vthread.run(task);
                     } finally {
-                        vthread.notifyJvmtiEnd(); // notify JVMTI
+                        vthread.startFinalTransition();
                     }
                 }
             };
@@ -491,8 +492,9 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     @ReservedStackAccess
     private void mount() {
-        // notify JVMTI before mount
-        notifyJvmtiMount(/*hide*/true);
+        startTransition(/*mount*/true);
+        // We assume following volatile accesses provide equivalent
+        // of acquire ordering, otherwise we need U.loadFence() here.
 
         // sets the carrier thread
         Thread carrier = Thread.currentCarrierThread();
@@ -533,8 +535,9 @@ final class VirtualThread extends BaseVirtualThread {
         }
         carrier.clearInterrupt();
 
-        // notify JVMTI after unmount
-        notifyJvmtiUnmount(/*hide*/false);
+        // We assume previous volatile accesses provide equivalent
+        // of release ordering, otherwise we need U.storeFence() here.
+        endTransition(/*mount*/false);
     }
 
     /**
@@ -543,11 +546,11 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @Hidden
     private boolean yieldContinuation() {
-        notifyJvmtiUnmount(/*hide*/true);
+        startTransition(/*mount*/false);
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
-            notifyJvmtiMount(/*hide*/false);
+            endTransition(/*mount*/true);
         }
     }
 
@@ -614,9 +617,12 @@ final class VirtualThread extends BaseVirtualThread {
         // Object.wait
         if (s == WAITING || s == TIMED_WAITING) {
             int newState;
+            boolean blocked;
             boolean interruptible = interruptibleWait;
             if (s == WAITING) {
                 setState(newState = WAIT);
+                // may have been notified while in transition
+                blocked = notified && compareAndSetState(WAIT, BLOCKED);
             } else {
                 // For timed-wait, a timeout task is scheduled to execute. The timeout
                 // task will change the thread state to UNBLOCKED and submit the thread
@@ -631,22 +637,22 @@ final class VirtualThread extends BaseVirtualThread {
                     byte seqNo = ++timedWaitSeqNo;
                     timeoutTask = schedule(() -> waitTimeoutExpired(seqNo), timeout, MILLISECONDS);
                     setState(newState = TIMED_WAIT);
+                    // May have been notified while in transition. This must be done while
+                    // holding the monitor to avoid changing the state of a new timed wait call.
+                    blocked = notified && compareAndSetState(TIMED_WAIT, BLOCKED);
                 }
             }
 
-            // may have been notified while in transition to wait state
-            if (notified && compareAndSetState(newState, BLOCKED)) {
-                // may have even been unblocked already
+            if (blocked) {
+                // may have been unblocked already
                 if (blockPermit && compareAndSetState(BLOCKED, UNBLOCKED)) {
-                    submitRunContinuation();
+                    lazySubmitRunContinuation();
                 }
-                return;
-            }
-
-            // may have been interrupted while in transition to wait state
-            if (interruptible && interrupted && compareAndSetState(newState, UNBLOCKED)) {
-                submitRunContinuation();
-                return;
+            } else {
+                // may have been interrupted while in transition to wait state
+                if (interruptible && interrupted && compareAndSetState(newState, UNBLOCKED)) {
+                    lazySubmitRunContinuation();
+                }
             }
             return;
         }
@@ -854,16 +860,20 @@ final class VirtualThread extends BaseVirtualThread {
      * Re-enables this virtual thread for scheduling. If this virtual thread is parked
      * then its task is scheduled to continue, otherwise its next call to {@code park} or
      * {@linkplain #parkNanos(long) parkNanos} is guaranteed not to block.
+     * @param lazySubmit to use lazySubmit if possible
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
-    @Override
-    void unpark() {
+    private void unpark(boolean lazySubmit) {
         if (!getAndSetParkPermit(true) && currentThread() != this) {
             int s = state();
 
             // unparked while parked
             if ((s == PARKED || s == TIMED_PARKED) && compareAndSetState(s, UNPARKED)) {
-                submitRunContinuation();
+                if (lazySubmit) {
+                    lazySubmitRunContinuation();
+                } else {
+                    submitRunContinuation();
+                }
                 return;
             }
 
@@ -886,6 +896,11 @@ final class VirtualThread extends BaseVirtualThread {
         }
     }
 
+    @Override
+    void unpark() {
+        unpark(false);
+    }
+
     /**
      * Invoked by unblocker thread to unblock this virtual thread.
      */
@@ -902,11 +917,7 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private void parkTimeoutExpired() {
         assert !VirtualThread.currentThread().isVirtual();
-        if (!getAndSetParkPermit(true)
-                && (state() == TIMED_PARKED)
-                && compareAndSetState(TIMED_PARKED, UNPARKED)) {
-            lazySubmitRunContinuation();
-        }
+        unpark(true);
     }
 
     /**
@@ -917,28 +928,19 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private void waitTimeoutExpired(byte seqNo) {
         assert !Thread.currentThread().isVirtual();
-        for (;;) {
-            boolean unblocked = false;
-            synchronized (timedWaitLock()) {
-                if (seqNo != timedWaitSeqNo) {
-                    // this timeout task is for a past timed-wait
-                    return;
-                }
-                int s = state();
-                if (s == TIMED_WAIT) {
-                    unblocked = compareAndSetState(TIMED_WAIT, UNBLOCKED);
-                } else if (s != (TIMED_WAIT | SUSPENDED)) {
-                    // notified or interrupted, no longer waiting
-                    return;
-                }
-            }
-            if (unblocked) {
-                lazySubmitRunContinuation();
+
+        synchronized (timedWaitLock()) {
+            if (seqNo != timedWaitSeqNo) {
+                // this timeout task is for a past timed-wait
                 return;
             }
-            // need to retry when thread is suspended in time-wait
-            Thread.yield();
+            if (!compareAndSetState(TIMED_WAIT, UNBLOCKED)) {
+                // already notified (or interrupted)
+                return;
+            }
         }
+
+        lazySubmitRunContinuation();
     }
 
     /**
@@ -1106,8 +1108,7 @@ final class VirtualThread extends BaseVirtualThread {
 
     @Override
     Thread.State threadState() {
-        int s = state();
-        switch (s & ~SUSPENDED) {
+        switch (state()) {
             case NEW:
                 return Thread.State.NEW;
             case STARTED:
@@ -1173,85 +1174,6 @@ final class VirtualThread extends BaseVirtualThread {
     @Override
     boolean isTerminated() {
         return (state == TERMINATED);
-    }
-
-    @Override
-    StackTraceElement[] asyncGetStackTrace() {
-        StackTraceElement[] stackTrace;
-        do {
-            stackTrace = (carrierThread != null)
-                    ? super.asyncGetStackTrace()  // mounted
-                    : tryGetStackTrace();         // unmounted
-            if (stackTrace == null) {
-                Thread.yield();
-            }
-        } while (stackTrace == null);
-        return stackTrace;
-    }
-
-    /**
-     * Returns the stack trace for this virtual thread if it is unmounted.
-     * Returns null if the thread is mounted or in transition.
-     */
-    private StackTraceElement[] tryGetStackTrace() {
-        int initialState = state() & ~SUSPENDED;
-        switch (initialState) {
-            case NEW, STARTED, TERMINATED -> {
-                return new StackTraceElement[0];  // unmounted, empty stack
-            }
-            case RUNNING, PINNED, TIMED_PINNED -> {
-                return null;   // mounted
-            }
-            case PARKED, TIMED_PARKED, BLOCKED, WAIT, TIMED_WAIT -> {
-                // unmounted, not runnable
-            }
-            case UNPARKED, UNBLOCKED, YIELDED -> {
-                // unmounted, runnable
-            }
-            case PARKING, TIMED_PARKING, BLOCKING, YIELDING, WAITING, TIMED_WAITING -> {
-                return null;  // in transition
-            }
-            default -> throw new InternalError("" + initialState);
-        }
-
-        // thread is unmounted, prevent it from continuing
-        int suspendedState = initialState | SUSPENDED;
-        if (!compareAndSetState(initialState, suspendedState)) {
-            return null;
-        }
-
-        // get stack trace and restore state
-        StackTraceElement[] stack;
-        try {
-            stack = cont.getStackTrace();
-        } finally {
-            assert state == suspendedState;
-            setState(initialState);
-        }
-        boolean resubmit = switch (initialState) {
-            case UNPARKED, UNBLOCKED, YIELDED -> {
-                // resubmit as task may have run while suspended
-                yield true;
-            }
-            case PARKED, TIMED_PARKED -> {
-                // resubmit if unparked while suspended
-                yield parkPermit && compareAndSetState(initialState, UNPARKED);
-            }
-            case BLOCKED -> {
-                // resubmit if unblocked while suspended
-                yield blockPermit && compareAndSetState(BLOCKED, UNBLOCKED);
-            }
-            case WAIT, TIMED_WAIT -> {
-                // resubmit if notified or interrupted while waiting (Object.wait)
-                // waitTimeoutExpired will retry if the timed expired when suspended
-                yield (notified || interrupted) && compareAndSetState(initialState, UNBLOCKED);
-            }
-            default -> throw new InternalError();
-        };
-        if (resubmit) {
-            submitRunContinuation();
-        }
-        return stack;
     }
 
     @Override
@@ -1401,23 +1323,34 @@ final class VirtualThread extends BaseVirtualThread {
         this.carrierThread = carrier;
     }
 
-    // -- JVM TI support --
+    // The following four methods notify the VM when a "transition" starts and ends.
+    // A "mount transition" embodies the steps to transfer control from a platform
+    // thread to a virtual thread, changing the thread identity, and starting or
+    // resuming the virtual thread's continuation on the carrier.
+    // An "unmount transition" embodies the steps to transfer control from a virtual
+    // thread to its carrier, suspending the virtual thread's continuation, and
+    // restoring the thread identity to the platform thread.
+    // The notifications to the VM are necessary in order to coordinate with functions
+    // (JVMTI mostly) that disable transitions for one or all virtual threads. Starting
+    // a transition may block if transitions are disabled. Ending a transition may
+    // notify a thread that is waiting to disable transitions. The notifications are
+    // also used to post JVMTI events for virtual thread start and end.
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiStart();
+    private native void endFirstTransition();
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiEnd();
+    private native void startFinalTransition();
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiMount(boolean hide);
+    private native void startTransition(boolean mount);
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiUnmount(boolean hide);
+    private native void endTransition(boolean mount);
 
     @IntrinsicCandidate
     private static native void notifyJvmtiDisableSuspend(boolean enter);

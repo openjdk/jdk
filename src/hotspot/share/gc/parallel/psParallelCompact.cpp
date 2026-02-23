@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/oopMap.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -44,6 +45,7 @@
 #include "gc/parallel/psStringDedup.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -134,8 +136,8 @@ bool ParallelCompactData::RegionData::is_clear() {
          (_source_region == 0) &&
          (_partial_obj_addr == nullptr) &&
          (_partial_obj_size == 0) &&
-         (_dc_and_los == 0) &&
-         (_shadow_state == 0);
+         (dc_and_los() == 0) &&
+         (shadow_state() == 0);
 }
 
 #ifdef ASSERT
@@ -144,8 +146,8 @@ void ParallelCompactData::RegionData::verify_clear() {
   assert(_source_region == 0, "inv");
   assert(_partial_obj_addr == nullptr, "inv");
   assert(_partial_obj_size == 0, "inv");
-  assert(_dc_and_los == 0, "inv");
-  assert(_shadow_state == 0, "inv");
+  assert(dc_and_los() == 0, "inv");
+  assert(shadow_state() == 0, "inv");
 }
 #endif
 
@@ -295,7 +297,9 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(end_region <= _region_count, "end_region out of range");
 
   const size_t region_cnt = end_region - beg_region;
-  memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
+  for (size_t i = beg_region; i < end_region; i++) {
+    ::new (&_region_data[i]) RegionData{};
+  }
 }
 
 // The total live words on src_region would overflow the target space, so find
@@ -932,6 +936,17 @@ void PSParallelCompact::summary_phase(bool should_do_max_compaction)
   }
 }
 
+void PSParallelCompact::report_object_count_after_gc() {
+  GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+  // The heap is compacted, all objects are iterable. However there may be
+  // filler objects in the heap which we should ignore.
+  class SkipFillerObjectClosure : public BoolObjectClosure {
+  public:
+    bool do_object_b(oop obj) override { return !CollectedHeap::is_filler_object(obj); }
+  } cl;
+  _gc_tracer.report_object_count_after_gc(&cl, &ParallelScavengeHeap::heap()->workers());
+}
+
 bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
@@ -1026,6 +1041,8 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
     }
 
     heap->print_heap_change(pre_gc_values);
+
+    report_object_count_after_gc();
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
@@ -1274,17 +1291,13 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     }
   }
 
-  {
-    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
-    _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
-  }
 #if TASKQUEUE_STATS
   ParCompactionManager::print_and_reset_taskqueue_stats();
 #endif
 }
 
 template<typename Func>
-void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_counter, Func&& on_stripe) {
+void PSParallelCompact::adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_counter, Func&& on_stripe) {
   MutableSpace* sp = PSParallelCompact::space(id);
   HeapWord* const bottom = sp->bottom();
   HeapWord* const top = sp->top();
@@ -1297,7 +1310,7 @@ void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_
   const size_t stripe_size = num_regions_per_stripe * region_size;
 
   while (true) {
-    uint counter = AtomicAccess::fetch_then_add(claim_counter, num_regions_per_stripe);
+    uint counter = claim_counter->fetch_then_add(num_regions_per_stripe);
     HeapWord* cur_stripe = bottom + counter * region_size;
     if (cur_stripe >= top) {
       break;
@@ -1307,7 +1320,7 @@ void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_
   }
 }
 
-void PSParallelCompact::adjust_in_old_space(volatile uint* claim_counter) {
+void PSParallelCompact::adjust_in_old_space(Atomic<uint>* claim_counter) {
   // Regions in old-space shouldn't be split.
   assert(!_space_info[old_space_id].split_info().is_valid(), "inv");
 
@@ -1338,7 +1351,7 @@ void PSParallelCompact::adjust_in_old_space(volatile uint* claim_counter) {
   });
 }
 
-void PSParallelCompact::adjust_in_young_space(SpaceId id, volatile uint* claim_counter) {
+void PSParallelCompact::adjust_in_young_space(SpaceId id, Atomic<uint>* claim_counter) {
   adjust_in_space_helper(id, claim_counter, [](HeapWord* stripe_start, HeapWord* stripe_end) {
     HeapWord* obj_start = stripe_start;
     while (obj_start < stripe_end) {
@@ -1352,7 +1365,7 @@ void PSParallelCompact::adjust_in_young_space(SpaceId id, volatile uint* claim_c
   });
 }
 
-void PSParallelCompact::adjust_pointers_in_spaces(uint worker_id, volatile uint* claim_counters) {
+void PSParallelCompact::adjust_pointers_in_spaces(uint worker_id, Atomic<uint>* claim_counters) {
   auto start_time = Ticks::now();
   adjust_in_old_space(&claim_counters[0]);
   for (uint id = eden_space_id; id < last_space_id; ++id) {
@@ -1366,12 +1379,12 @@ class PSAdjustTask final : public WorkerTask {
   WeakProcessor::Task                        _weak_proc_task;
   OopStorageSetStrongParState<false, false>  _oop_storage_iter;
   uint                                       _nworkers;
-  volatile bool                              _code_cache_claimed;
-  volatile uint _claim_counters[PSParallelCompact::last_space_id] = {};
+  Atomic<bool>                               _code_cache_claimed;
+  Atomic<uint> _claim_counters[PSParallelCompact::last_space_id];
 
   bool try_claim_code_cache_task() {
-    return AtomicAccess::load(&_code_cache_claimed) == false
-        && AtomicAccess::cmpxchg(&_code_cache_claimed, false, true) == false;
+    return _code_cache_claimed.load_relaxed() == false
+        && _code_cache_claimed.compare_set(false, true);
   }
 
 public:
@@ -1383,6 +1396,9 @@ public:
     _nworkers(nworkers),
     _code_cache_claimed(false) {
 
+    for (unsigned int i = PSParallelCompact::old_space_id; i < PSParallelCompact::last_space_id; ++i) {
+      ::new (&_claim_counters[i]) Atomic<uint>{};
+    }
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
   }
 
@@ -1835,8 +1851,7 @@ void PSParallelCompact::verify_filler_in_dense_prefix() {
       oop obj = cast_to_oop(cur_addr);
       oopDesc::verify(obj);
       if (!mark_bitmap()->is_marked(cur_addr)) {
-        Klass* k = cast_to_oop(cur_addr)->klass();
-        assert(k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass(), "inv");
+        assert(CollectedHeap::is_filler_object(cast_to_oop(cur_addr)), "inv");
       }
       cur_addr += obj->size();
     }

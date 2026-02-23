@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,8 @@ package test.java.time.format;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -77,20 +78,20 @@ import java.time.format.TextStyle;
 import java.time.temporal.TemporalField;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test SimpleDateTimeTextProviderWithLocale.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDateTimeTextProviderWithLocale extends AbstractTestPrinterParser {
 
     Locale enUS = Locale.US;
     Locale ptBR = Locale.of("pt", "BR");
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "Text")
     Object[][] data_text() {
         return new Object[][] {
             {DAY_OF_WEEK, 1, TextStyle.SHORT, ptBR, "seg."},
@@ -138,10 +139,11 @@ public class TestDateTimeTextProviderWithLocale extends AbstractTestPrinterParse
         };
     }
 
-    @Test(dataProvider = "Text")
+    @ParameterizedTest
+    @MethodSource("data_text")
     public void test_getText(TemporalField field, Number value, TextStyle style, Locale locale, String expected) {
           DateTimeFormatter fmt = getFormatter(field, style).withLocale(locale);
-          assertEquals(fmt.format(ZonedDateTime.now().with(field, value.longValue())), expected);
+          assertEquals(expected, fmt.format(ZonedDateTime.now().with(field, value.longValue())));
     }
 
 }

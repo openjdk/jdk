@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -38,15 +40,14 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-typedef OverflowTaskQueue<oop, mtGC>                 OopQueue;
-typedef OverflowTaskQueue<ObjArrayTask, mtGC>        ObjArrayTaskQueue;
 
-typedef GenericTaskQueueSet<OopQueue, mtGC>          OopQueueSet;
-typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC> ObjArrayTaskQueueSet;
 
 class G1CMBitMap;
 class G1FullCollector;
 class TaskTerminator;
+
+typedef OverflowTaskQueue<ScannerTask, mtGC>        G1MarkTasksQueue;
+typedef GenericTaskQueueSet<G1MarkTasksQueue, mtGC> G1MarkTasksQueueSet;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
   G1FullCollector*   _collector;
@@ -56,56 +57,50 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   G1CMBitMap*        _bitmap;
 
   // Mark stack
-  OopQueue           _oop_stack;
-  ObjArrayTaskQueue  _objarray_stack;
+  G1MarkTasksQueue     _task_queue;
+  PartialArraySplitter _partial_array_splitter;
 
   // Marking closures
   G1MarkAndPushClosure  _mark_closure;
-  G1FollowStackClosure  _stack_closure;
+  G1MarkStackClosure    _stack_closure;
   CLDToOopClosure       _cld_closure;
   StringDedup::Requests _string_dedup_requests;
 
 
   G1RegionMarkStatsCache _mark_stats_cache;
 
-  inline bool is_empty();
-  inline void push_objarray(oop obj, size_t index);
+  inline bool is_task_queue_empty();
   inline bool mark_object(oop obj);
 
   // Marking helpers
-  inline void follow_object(oop obj);
-  inline void follow_array(objArrayOop array);
-  inline void follow_array_chunk(objArrayOop array, int index);
+  inline void process_array_chunk(objArrayOop obj, size_t start, size_t end);
+  inline void dispatch_task(const ScannerTask& task, bool stolen);
+  // Start processing the given objArrayOop by first pushing its continuations and
+  // then scanning the first chunk.
+  void start_partial_array_processing(objArrayOop obj);
+  // Process the given continuation.
+  void process_partial_array(PartialArrayState* state, bool stolen);
 
   inline void publish_and_drain_oop_tasks();
-  // Try to publish all contents from the objArray task queue overflow stack to
-  // the shared objArray stack.
-  // Returns true and a valid task if there has not been enough space in the shared
-  // objArray stack, otherwise returns false and the task is invalid.
-  inline bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
-
 public:
   G1FullGCMarker(G1FullCollector* collector,
                  uint worker_id,
                  G1RegionMarkStats* mark_stats);
   ~G1FullGCMarker();
 
-  // Stack getters
-  OopQueue*          oop_stack()       { return &_oop_stack; }
-  ObjArrayTaskQueue* objarray_stack()  { return &_objarray_stack; }
+  G1MarkTasksQueue* task_queue() { return &_task_queue; }
 
   // Marking entry points
   template <class T> inline void mark_and_push(T* p);
 
-  inline void follow_marking_stacks();
-  void complete_marking(OopQueueSet* oop_stacks,
-                        ObjArrayTaskQueueSet* array_stacks,
+  inline void process_marking_stacks();
+  void complete_marking(G1MarkTasksQueueSet* task_queues,
                         TaskTerminator* terminator);
 
   // Closure getters
   CLDToOopClosure*      cld_closure()   { return &_cld_closure; }
   G1MarkAndPushClosure* mark_closure()  { return &_mark_closure; }
-  G1FollowStackClosure* stack_closure() { return &_stack_closure; }
+  G1MarkStackClosure*   stack_closure() { return &_stack_closure; }
 
   // Flush live bytes to regions
   void flush_mark_stats_cache();

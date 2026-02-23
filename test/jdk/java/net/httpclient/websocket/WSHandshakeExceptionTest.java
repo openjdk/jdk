@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import static java.lang.System.out;
 
 public class WSHandshakeExceptionTest {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpServer httpTestServer;         // HTTP/1.1    [ 2 servers ]
     HttpsServer httpsTestServer;       // HTTPS/1.1
     String httpURI;
@@ -161,10 +161,6 @@ public class WSHandshakeExceptionTest {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         // HTTP/1.1
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);

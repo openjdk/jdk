@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_APP_STORE;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_MAIN_CLASS;
-import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_SIGNED;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -96,9 +95,6 @@ public interface MacApplication extends Application, MacApplicationMixin {
     }
 
     public enum ExtraAppImageFileField {
-        SIGNED(MAC_SIGNED, app -> {
-            return Optional.of(Boolean.toString(app.sign()));
-        }),
         APP_STORE(MAC_APP_STORE, app -> {
             return Optional.of(Boolean.toString(app.appStore()));
         }),
