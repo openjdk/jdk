@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"

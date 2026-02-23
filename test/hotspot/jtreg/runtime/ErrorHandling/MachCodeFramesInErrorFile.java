@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @requires vm.flagless
  * @requires vm.compiler2.enabled
  * @requires test.thread.factory == null
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @summary Test that abstract machine code is dumped for the top frames in a hs-err log
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -167,6 +169,10 @@ public class MachCodeFramesInErrorFile {
         Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
         List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
         int minExpectedMachCodeSections = Math.max(1, compiledJavaFrames);
+        if ((hsErr.contains("stop reattempt (retry printing native stack (no source info))") || hsErr.contains("reason: Step time limit reached"))) {
+            // In this case, the vm only prints the crashing frame.
+            minExpectedMachCodeSections = 1;
+        }
         if (machCodeHeaders.size() < minExpectedMachCodeSections) {
             Asserts.fail(machCodeHeaders.size() + " < " + minExpectedMachCodeSections);
         }

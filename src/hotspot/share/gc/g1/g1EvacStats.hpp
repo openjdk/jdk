@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "gc/shared/plab.hpp"
+#include "runtime/atomic.hpp"
 
 // Records various memory allocation statistics gathered during evacuation. All sizes
 // are in HeapWords.
@@ -36,30 +37,21 @@ class G1EvacStats : public PLABStats {
   AdaptiveWeightedAverage
          _net_plab_size_filter;  // Integrator with decay
 
-  size_t _region_end_waste; // Number of words wasted due to skipping to the next region.
-  uint   _regions_filled;   // Number of regions filled completely.
-  size_t _num_plab_filled; // Number of PLABs filled and retired.
-  size_t _direct_allocated; // Number of words allocated directly into the regions.
-  size_t _num_direct_allocated; // Number of direct allocation attempts.
+  Atomic<size_t> _region_end_waste; // Number of words wasted due to skipping to the next region.
+  Atomic<uint>   _regions_filled;   // Number of regions filled completely.
+  Atomic<size_t> _num_plab_filled; // Number of PLABs filled and retired.
+  Atomic<size_t> _direct_allocated; // Number of words allocated directly into the regions.
+  Atomic<size_t> _num_direct_allocated; // Number of direct allocation attempts.
 
   // Number of words in live objects remaining in regions that ultimately suffered an
   // evacuation failure. This is used in the regions when the regions are made old regions.
-  size_t _failure_used;
+  Atomic<size_t> _failure_used;
   // Number of words wasted in regions which failed evacuation. This is the sum of space
   // for objects successfully copied out of the regions (now dead space) plus waste at the
   // end of regions.
-  size_t _failure_waste;
+  Atomic<size_t> _failure_waste;
 
-  virtual void reset() {
-    PLABStats::reset();
-    _region_end_waste = 0;
-    _regions_filled = 0;
-    _num_plab_filled = 0;
-    _direct_allocated = 0;
-    _num_direct_allocated = 0;
-    _failure_used = 0;
-    _failure_waste = 0;
-  }
+  virtual void reset();
 
   void log_plab_allocation();
   void log_sizing(size_t calculated_words, size_t net_desired_words);
@@ -77,16 +69,16 @@ public:
   // Should be called at the end of a GC pause.
   void adjust_desired_plab_size();
 
-  uint regions_filled() const { return _regions_filled; }
-  size_t num_plab_filled() const { return _num_plab_filled; }
-  size_t region_end_waste() const { return _region_end_waste; }
-  size_t direct_allocated() const { return _direct_allocated; }
-  size_t num_direct_allocated() const { return _num_direct_allocated; }
+  uint regions_filled() const;
+  size_t num_plab_filled() const;
+  size_t region_end_waste() const;
+  size_t direct_allocated() const;
+  size_t num_direct_allocated() const;
 
   // Amount of space in heapwords used in the failing regions when an evacuation failure happens.
-  size_t failure_used() const { return _failure_used; }
+  size_t failure_used() const;
   // Amount of space in heapwords wasted (unused) in the failing regions when an evacuation failure happens.
-  size_t failure_waste() const { return _failure_waste; }
+  size_t failure_waste() const;
 
   inline void add_num_plab_filled(size_t value);
   inline void add_direct_allocated(size_t value);
