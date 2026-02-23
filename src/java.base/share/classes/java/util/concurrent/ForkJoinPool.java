@@ -1938,11 +1938,11 @@ public class ForkJoinPool extends AbstractExecutorService
                 WorkQueue[] qs;
                 boolean rescan = false;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-                int i = r, step = (r >>> 16) | 1, n;
+                int i = r, step = ((r >>> 16) & 0x7) | 1, n;
                 long e = runState;
                 if ((qs = queues) == null || (e & STOP) != 0L || (n = qs.length) <= 0)
                     break;
-                scan: for (int j = n << 1; ; i += step) { // 2 sweeps per scan
+                scan: for (int j = n; ; i += step) {
                     WorkQueue q; int qid;
                     if ((q = qs[qid = i & (n - 1)]) != null) {
                         for (int pb = -1;;) {
@@ -1985,7 +1985,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 ++taken;
                                 if ((prevSrc = src) != qid)
                                     w.source = src = qid;
-                                if ((prevSrc < 0 || (qid & 1) == 0) && ppg &&
+                                if ((prevSrc != qid || (qid & 1) == 0) && ppg &&
                                     U.getReferenceAcquire(a, np) != null)
                                     signalWork(a, np);    // propagate
                                 w.topLevelExec(t, fifo);
@@ -2018,18 +2018,33 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     private int deactivate(WorkQueue w, int phase, int taken) {
         if (w != null) {
-            long sp = (phase + NEXTIDLE) & LMASK, c;
-            w.stackPred = (int)(c = ctl);     // try to enqueue
-            w.phase = phase | IDLE;
-            if (!U.compareAndSetLong(this, CTL, c, (c - RC_UNIT) & UMASK | sp))
-                w.phase = phase;              // back out on contention
+            long c, pc;
+            int p = phase | IDLE;
+            w.stackPred = (int)(pc = ctl);    // try to enqueue
+            w.phase = p;
+            if (!U.compareAndSetLong(
+                    this, CTL, pc, c = (((pc - RC_UNIT) & UMASK) |
+                                        (phase + NEXTIDLE) & LMASK)))
+                p = w.phase = phase;          // back out on contention
             if (taken != 0) {
                 w.nsteals += taken;
                 if ((w.config & CLEAR_TLS) != 0 &&
                     (Thread.currentThread() instanceof ForkJoinWorkerThread f))
                     f.resetThreadLocals();    // (instanceof check always true)
             }
-            phase = w.phase;
+            if (phase != p) {
+                if ((c & RC_MASK) == 0L) {
+                    if ((runState & (SHUTDOWN|STOP)) == SHUTDOWN)
+                        quiescent();          // check quiescent termination
+                    phase = w.phase;
+                }
+                else {
+                    int tc = ((short)(c >>> TC_SHIFT) | 1) & SMASK;
+                    int spins = tc + Math.max(tc << 1, SPIN_WAITS);
+                    while (((phase = w.phase) & IDLE) != 0 && --spins != 0)
+                        Thread.onSpinWait();  // spin for approx 1 scan cost
+                }
+            }
         }
         return phase;
     }
@@ -2068,12 +2083,10 @@ public class ForkJoinPool extends AbstractExecutorService
             for (long deadline = 0L;;) {
                 boolean trimmable = false;    // true if at ctl head and quiescent
                 Thread.interrupted();         // clear status
-                long d = 0L, c = ctl, e = runState;
-                if ((e & STOP) != 0L)
+                long d = 0L, c;
+                if ((runState & STOP) != 0L)
                     break;
-                if ((c & RC_MASK) == 0L && (int)c == activePhase) {
-                    if ((e & SHUTDOWN) != 0L && quiescent() > 0)
-                        break;                // quiescent termination
+                if (((c = ctl) & RC_MASK) == 0L && (int)c == activePhase) {
                     long now = System.currentTimeMillis();
                     if (deadline == 0L)
                         d = deadline = now + keepAlive;
