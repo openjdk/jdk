@@ -803,15 +803,15 @@ public:
 
   // Relocation support
 private:
+  bool fix_oop_relocations(bool initialize_immediates);
   inline void initialize_immediate_oop(oop* dest, jobject handle);
 
 protected:
   address oops_reloc_begin() const;
 
 public:
-  void fix_non_immediate_oop_relocations();
-  void fix_non_immediate_oop_relocations(ICacheInvalidationContext* icic);
-  void fix_all_oop_relocations();
+  void fix_oop_relocations(ICacheInvalidationContext* icic);
+  void fix_oop_relocations();
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);

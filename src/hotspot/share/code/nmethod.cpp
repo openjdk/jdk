@@ -2042,7 +2042,7 @@ void nmethod::copy_values(GrowableArray<jobject>* array) {
   // The code and relocations have already been initialized by the
   // CodeBlob constructor, so it is valid even at this early point to
   // iterate over relocations and patch the code.
-  fix_all_oop_relocations();
+  fix_oop_relocations(/*initialize_immediates=*/ true);
 }
 
 void nmethod::copy_values(GrowableArray<Metadata*>* array) {
@@ -2054,54 +2054,38 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::fix_all_oop_relocations() {
-  // re-patch all oop-bearing instructions, just in case some oops moved
-  RelocIterator iter(this);
-  while (iter.next()) {
-    bool modified_code = false;
-    if (iter.type() == relocInfo::oop_type) {
-      oop_Relocation* reloc = iter.oop_reloc();
-      if (reloc->oop_is_immediate()) {
-        oop* dest = reloc->oop_addr();
-        jobject obj = *reinterpret_cast<jobject*>(dest);
-        initialize_immediate_oop(dest, obj);
-      } else {
-        // get the oop from the pool, and re-insert it into the instruction
-        reloc->set_value(reloc->value());
-      }
-    } else if (iter.type() == relocInfo::metadata_type) {
-      metadata_Relocation* reloc = iter.metadata_reloc();
-      reloc->fix_metadata_relocation();
-    }
-  }
-}
-
-void nmethod::fix_non_immediate_oop_relocations() {
-  ICacheInvalidationContext icic;
-  fix_non_immediate_oop_relocations(&icic);
-}
-
-void nmethod::fix_non_immediate_oop_relocations(ICacheInvalidationContext* icic) {
+bool nmethod::fix_oop_relocations(bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this);
   bool modified_code = false;
   while (iter.next()) {
-    bool modified_inst = false;
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
       if (!reloc->oop_is_immediate()) {
-        // get the oop from the pool, and re-insert it into the instruction
+        // Refresh the oop-related bits of this instruction.
         reloc->set_value(reloc->value());
-        modified_inst = true;
+        modified_code = true;
+      } else if (initialize_immediates) {
+        oop* dest = reloc->oop_addr();
+        jobject obj = *reinterpret_cast<jobject*>(dest);
+        initialize_immediate_oop(dest, obj);
       }
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
-      modified_inst = reloc->fix_metadata_relocation();
-    }
-    if (modified_inst) {
-      modified_code = true;
+      modified_code |= reloc->fix_metadata_relocation();
     }
   }
+  return modified_code;
+}
+
+void nmethod::fix_oop_relocations() {
+  ICacheInvalidationContext icic;
+  fix_oop_relocations(&icic);
+}
+
+void nmethod::fix_oop_relocations(ICacheInvalidationContext* icic) {
+  assert(icic != nullptr, "must provide context to track if code was modified");
+  bool modified_code = fix_oop_relocations(/*initialize_immediates=*/ false);
   if (modified_code) {
     icic->set_has_modified_code();
   }
