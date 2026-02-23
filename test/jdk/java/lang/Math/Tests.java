@@ -421,7 +421,7 @@ public class Tests {
     public static int test(String testName,
                            float input1, int input2,
                            float result, float expected) {
-        if (Float.equivalent(expected, result)) {
+        if (!Float.equivalent(expected, result)) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\n"  +
