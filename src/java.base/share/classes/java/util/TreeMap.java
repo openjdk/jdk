@@ -30,6 +30,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A Red-Black tree based {@link NavigableMap} implementation.
@@ -2027,6 +2029,10 @@ public class TreeMap<K,V>
 
             public Spliterator<Map.Entry<K,V>> spliterator() {
                 return Spliterators.spliteratorUnknownSize(iterator(), Spliterator.DISTINCT);
+            }
+
+            public Stream<Map.Entry<K,V>> stream() {
+                return StreamSupport.stream(() -> spliterator(), Spliterator.DISTINCT, false);
             }
         }
 
