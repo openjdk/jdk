@@ -2103,6 +2103,7 @@ void AOTCodeCache::load_strings() {
     uint len = string_lengths[i];
     _C_strings_s[i] = i;
     _C_strings_id[i] = i;
+    log_trace(aot, codecache, stringtable)("load_strings: _C_strings[%d] " INTPTR_FORMAT " '%s'", i, p2i(p), p);
     p += len;
   }
   assert((uint)(p - _C_strings_buf) <= strings_size, "(" INTPTR_FORMAT " - " INTPTR_FORMAT ") = %d > %d ", p2i(p), p2i(_C_strings_buf), (uint)(p - _C_strings_buf), strings_size);
@@ -2122,6 +2123,7 @@ int AOTCodeCache::store_strings() {
     }
     for (int i = 0; i < _C_strings_used; i++) {
       const char* str = _C_strings[_C_strings_s[i]];
+      log_trace(aot, codecache, stringtable)("store_strings: _C_strings[%d] " INTPTR_FORMAT " '%s'", i, p2i(str), str);
       uint len = (uint)strlen(str) + 1;
       length += len;
       assert(len < 1000, "big string: %s", str);
@@ -2187,6 +2189,7 @@ int AOTCodeAddressTable::id_for_C_string(address str) {
         assert(id < _C_strings_used, "%d >= %d", id , _C_strings_used);
         return id; // Found recorded
       }
+      log_trace(aot, codecache, stringtable)("id_for_C_string: _C_strings[%d ==> %d] " INTPTR_FORMAT " '%s'", i, _C_strings_used, p2i(str), str);
       // Not found in recorded, add new
       id = _C_strings_used++;
       _C_strings_s[id] = i;
@@ -2245,11 +2248,7 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
   }
-  // Seach for C string
-  id = id_for_C_string(addr);
-  if (id >= 0) {
-    return id + _c_str_base;
-  }
+  // fast path for stubs and external addresses
   if (_hash_table != nullptr) {
     int *result = _hash_table->get(addr);
     if (result != nullptr) {
@@ -2258,6 +2257,11 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
                                 p2i(addr), id);
       return id;
     }
+  }
+  // Seach for C string
+  id = id_for_C_string(addr);
+  if (id >= 0) {
+    return id + _c_str_base;
   }
   if (StubRoutines::contains(addr) || CodeCache::find_blob(addr) != nullptr) {
     // Search for a matching stub entry
