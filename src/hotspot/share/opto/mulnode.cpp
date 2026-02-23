@@ -921,7 +921,7 @@ static Node* mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, ui
     }
   } else {
     // Not a shift by a constant.
-    masked_shift = 0; // TODO is this right though?
+    masked_shift = 0;
   }
   return nullptr;
 }
