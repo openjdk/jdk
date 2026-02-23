@@ -36,7 +36,6 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.*;
 
 public class CoherentBytecodeTraceTest {
-    private static final boolean DEBUG = false;
     private static final int NUM_THREADS = 3;
     private static final String THE_METHOD = "<CoherentBytecodeTraceTest$Strategy.foo(I)V>";
 
@@ -81,9 +80,7 @@ public class CoherentBytecodeTraceTest {
     // and then ensure the constant pool ref and opcode before are correct.
     // This requires going through the file line-by-line.
     private static void analyze(List<String> lines) {
-        if (DEBUG) {
-            IO.println("Analyzing " + lines.size() + " lines");
-        }
+        IO.println("Analyzing " + lines.size() + " lines");
         boolean foundAtLeastOne = false;
         // Reverse regex for: 'invokeinterface \d+ '. This is needed to look
         // back from the interface name to ensure that the thing that
@@ -107,10 +104,8 @@ public class CoherentBytecodeTraceTest {
             // but whitespace is part of the pattern. Use horizon instead, if
             // this is null, then there is no match.
             if (scanner.findWithinHorizon(reverseFirstPart, 0) == null) {
-                if (DEBUG) {
-                    IO.println("Using regex: " + reverseFirstPart);
-                    IO.println("Regex rejected: " + beginningReverse);
-                }
+                IO.println("Using regex: " + reverseFirstPart);
+                IO.println("Regex rejected: " + beginningReverse);
                 throw new RuntimeException(
                     "torn bytecode trace: " + line
                 );
@@ -148,7 +143,7 @@ public class CoherentBytecodeTraceTest {
         return new StringBuilder(input).reverse().toString();
     }
 
-    private static final record Outer(Object inner) implements Strategy {
+    private record Outer(Object inner) implements Strategy {
         @Override
         public void foo(int i) {
             if (i % 1000 == 0) {
@@ -157,7 +152,7 @@ public class CoherentBytecodeTraceTest {
         }
     }
 
-    public static interface Strategy {
+    public interface Strategy {
         void foo(int i);
     }
 }
