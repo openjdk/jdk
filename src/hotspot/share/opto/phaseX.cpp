@@ -31,6 +31,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -1722,11 +1723,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     case Op_MergeMem:
       return;
 
-    // URShiftINode::Ideal
-    // Found in tier1-3. Did not investigate further yet.
-    case Op_URShiftI:
-      return;
-
     // CMoveINode::Ideal
     // Found in tier1-3. Did not investigate further yet.
     case Op_CMoveI:
@@ -2606,12 +2602,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     auto is_boundary = [](Node* n){ return !n->is_ConstraintCast(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary);
   }
-  // If changed LShift inputs, check RShift users for useless sign-ext
+  // If changed LShift inputs, check RShift/URShift users for
+  // "(X << C) >> C" sign-ext and "(X << C) >>> C" zero-ext optimizations.
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL)
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+          u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL) {
         worklist.push(u);
+      }
     }
   }
   // If changed LShift inputs, check And users for shift and mask (And) operation
@@ -2659,6 +2658,26 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
           (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
           (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
           (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F)) {
+        worklist.push(u);
+      }
+    }
+  }
+  // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
+  // Notify ConvD2F users of SqrtD when any input of the SqrtD changes.
+  if (use_op == Op_SqrtD) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvD2F) {
+        worklist.push(u);
+      }
+    }
+  }
+  // ConvF2HF::Ideal matches ConvF2HF(binopF(ConvHF2F(...))) => FP16BinOp(...).
+  // Notify ConvF2HF users of float binary ops when any input changes.
+  if (Float16NodeFactory::is_float32_binary_oper(use_op)) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvF2HF) {
         worklist.push(u);
       }
     }
@@ -2806,37 +2825,6 @@ void PhaseIterGVN::remove_speculative_types()  {
     }
   }
   _table.check_no_speculative_types();
-}
-
-// Check if the type of a divisor of a Div or Mod node includes zero.
-bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
-  switch (n->Opcode()) {
-    case Op_DivI:
-    case Op_ModI:
-    case Op_UDivI:
-    case Op_UModI: {
-      // Type of divisor includes 0?
-      if (type(n->in(2)) == Type::TOP) {
-        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
-        return false;
-      }
-      const TypeInt* type_divisor = type(n->in(2))->is_int();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-    case Op_DivL:
-    case Op_ModL:
-    case Op_UDivL:
-    case Op_UModL: {
-      // Type of divisor includes 0?
-      if (type(n->in(2)) == Type::TOP) {
-        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
-        return false;
-      }
-      const TypeLong* type_divisor = type(n->in(2))->is_long();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-  }
-  return true;
 }
 
 //=============================================================================
