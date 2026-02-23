@@ -246,7 +246,7 @@ inline bool frame::equal(frame other) const {
 // Return unique id for this frame. The id must have a value where we can distinguish
 // identity and younger/older relationship. null represents an invalid (incomparable)
 // frame.
-inline intptr_t* frame::id(void) const { return unextended_sp(); }
+inline intptr_t* frame::id(void) const { return real_fp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
@@ -411,6 +411,8 @@ inline frame frame::sender(RegisterMap* map) const {
   if (map->process_frames() && !map->in_cont()) {
     StackWatermarkSet::on_iteration(map->thread(), result);
   }
+
+  assert(!result._on_heap && !this->_on_heap ? result.is_older(this->id()) : true, "Must be");
 
   return result;
 }
