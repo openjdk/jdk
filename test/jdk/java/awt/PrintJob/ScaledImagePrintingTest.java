@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.awt.event.ActionListener;
 
 /*
  * @test
- * @bug 4257962
+ * @bug 4257962 8378417
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary tests that scaled images are printed at resolution greater than 72dpi
