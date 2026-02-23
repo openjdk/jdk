@@ -22,11 +22,13 @@
  */
 import java.util.Arrays;
 import java.util.HexFormat;
-import com.sun.crypto.provider.Argon2Impl;
 import javax.crypto.SecretKey;
 import javax.crypto.KDF;
 import javax.crypto.spec.Argon2ParameterSpec;
 import static javax.crypto.spec.Argon2ParameterSpec.Type;
+import com.sun.crypto.provider.Argon2Impl;
+import com.sun.crypto.provider.Argon2DerivedKey;
+
 
 /**
  * @test
@@ -69,16 +71,18 @@ public class TestArgon2EncodedHash {
         for (Argon2ParameterSpec p : params) {
             System.out.println("params = " + p);
             Argon2Impl res = new Argon2Impl(p.type());
-            String encoded = res.deriveKey("Argon2", p).toString();
+            byte[] bytes = res.derive(p);
+            String encoded =
+                new Argon2DerivedKey(p, bytes,"Generic").toString();
             if (!tv.encodedStr().equals(encoded)) {
                 System.out.println("Actual: " + encoded);
                 System.out.println("Expected: " + tv.encodedStr());
                 throw new RuntimeException("Failed Key/Hash check");
             }
             if (data == null) {
-                data = res.deriveData(p);
+                data = res.derive(p);
             } else {
-                if (!Arrays.equals(data, res.deriveData(p))) {
+                if (!Arrays.equals(data, res.derive(p))) {
                     throw new RuntimeException("Failed Data check");
                 }
                 data = null;

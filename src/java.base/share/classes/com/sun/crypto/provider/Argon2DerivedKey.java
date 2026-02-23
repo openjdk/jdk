@@ -46,7 +46,7 @@ import sun.security.util.Argon2Util;
  *
  * @since 27
  */
-final class Argon2DerivedKey implements SecretKey {
+public final class Argon2DerivedKey implements SecretKey {
 
     @java.io.Serial
     private static final long serialVersionUID = 724953279128L;
@@ -65,7 +65,7 @@ final class Argon2DerivedKey implements SecretKey {
      * @exception InvalidKeyException if less than 8 bytes are available for
      * the key.
      */
-    Argon2DerivedKey(Argon2ParameterSpec spec, byte[] key, String algo) {
+    public Argon2DerivedKey(Argon2ParameterSpec spec, byte[] key, String algo) {
         this.key = key; // known internal bytes; no need to clone
         this.algo = algo;
         this.encodedHash = Argon2Util.encodeHash(spec, key);
