@@ -21,6 +21,8 @@
  * questions.
  */
 
+// Skip Windows to prevent GTestWrapper.java from failing because
+// SpinPause is not implemented on Windows (and therefore returns 0)
 #if defined(AARCH64) && !defined(ZERO) && !defined(_WINDOWS)
 
 #include "utilities/spinYield.hpp"
