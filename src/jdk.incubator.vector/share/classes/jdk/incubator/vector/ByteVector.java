@@ -84,8 +84,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
     // into a sharply-typed and size-specific
@@ -4474,13 +4474,13 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         @Override
         @ForceInline
         public final ByteVector zero() {
-            if ((Class<?>) vectorType() == ByteMaxVector.class)
-                return ByteMaxVector.ZERO;
+            if ((Class<?>) vectorType() == ByteVectorMax.class)
+                return ByteVectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return Byte64Vector.ZERO;
-                case 128: return Byte128Vector.ZERO;
-                case 256: return Byte256Vector.ZERO;
-                case 512: return Byte512Vector.ZERO;
+                case 64: return ByteVector64.ZERO;
+                case 128: return ByteVector128.ZERO;
+                case 256: return ByteVector256.ZERO;
+                case 512: return ByteVector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -4488,13 +4488,13 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         @Override
         @ForceInline
         public final ByteVector iota() {
-            if ((Class<?>) vectorType() == ByteMaxVector.class)
-                return ByteMaxVector.IOTA;
+            if ((Class<?>) vectorType() == ByteVectorMax.class)
+                return ByteVectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return Byte64Vector.IOTA;
-                case 128: return Byte128Vector.IOTA;
-                case 256: return Byte256Vector.IOTA;
-                case 512: return Byte512Vector.IOTA;
+                case 64: return ByteVector64.IOTA;
+                case 128: return ByteVector128.IOTA;
+                case 256: return ByteVector256.IOTA;
+                case 512: return ByteVector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -4503,13 +4503,13 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         @Override
         @ForceInline
         public final VectorMask<Byte> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == ByteMaxVector.class)
-                return ByteMaxVector.ByteMaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == ByteVectorMax.class)
+                return ByteVectorMax.ByteMaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return Byte64Vector.Byte64Mask.maskAll(bit);
-                case 128: return Byte128Vector.Byte128Mask.maskAll(bit);
-                case 256: return Byte256Vector.Byte256Mask.maskAll(bit);
-                case 512: return Byte512Vector.Byte512Mask.maskAll(bit);
+                case 64: return ByteVector64.ByteMask64.maskAll(bit);
+                case 128: return ByteVector128.ByteMask128.maskAll(bit);
+                case 256: return ByteVector256.ByteMask256.maskAll(bit);
+                case 512: return ByteVector512.ByteMask512.maskAll(bit);
             }
             throw new AssertionError();
         }
@@ -4537,42 +4537,42 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_64
         = new ByteSpecies(VectorShape.S_64_BIT,
-                            Byte64Vector.class,
-                            Byte64Vector.Byte64Mask.class,
-                            Byte64Vector.Byte64Shuffle.class,
-                            Byte64Vector::new);
+                            ByteVector64.class,
+                            ByteVector64.ByteMask64.class,
+                            ByteVector64.ByteShuffle64.class,
+                            ByteVector64::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_128
         = new ByteSpecies(VectorShape.S_128_BIT,
-                            Byte128Vector.class,
-                            Byte128Vector.Byte128Mask.class,
-                            Byte128Vector.Byte128Shuffle.class,
-                            Byte128Vector::new);
+                            ByteVector128.class,
+                            ByteVector128.ByteMask128.class,
+                            ByteVector128.ByteShuffle128.class,
+                            ByteVector128::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_256
         = new ByteSpecies(VectorShape.S_256_BIT,
-                            Byte256Vector.class,
-                            Byte256Vector.Byte256Mask.class,
-                            Byte256Vector.Byte256Shuffle.class,
-                            Byte256Vector::new);
+                            ByteVector256.class,
+                            ByteVector256.ByteMask256.class,
+                            ByteVector256.ByteShuffle256.class,
+                            ByteVector256::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_512
         = new ByteSpecies(VectorShape.S_512_BIT,
-                            Byte512Vector.class,
-                            Byte512Vector.Byte512Mask.class,
-                            Byte512Vector.Byte512Shuffle.class,
-                            Byte512Vector::new);
+                            ByteVector512.class,
+                            ByteVector512.ByteMask512.class,
+                            ByteVector512.ByteShuffle512.class,
+                            ByteVector512::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Byte> SPECIES_MAX
         = new ByteSpecies(VectorShape.S_Max_BIT,
-                            ByteMaxVector.class,
-                            ByteMaxVector.ByteMaxMask.class,
-                            ByteMaxVector.ByteMaxShuffle.class,
-                            ByteMaxVector::new);
+                            ByteVectorMax.class,
+                            ByteVectorMax.ByteMaskMax.class,
+                            ByteVectorMax.ByteShuffleMax.class,
+                            ByteVectorMax::new);
 
     /**
      * Preferred species for {@link ByteVector}s.

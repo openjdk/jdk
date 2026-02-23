@@ -105,8 +105,6 @@ private:
   class Table {
   private:
     template <typename KlassType, typename T>
-    NOINLINE
-    ATTRIBUTE_FLATTEN
     static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* k) {
       ((KlassType*)k)->KlassType::template oop_oop_iterate<T>(obj, cl);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -89,10 +90,7 @@ public:
   void set_max_workers(uint max_workers) override {
     _num_workers = max_workers;
     _local_tlab_stats = NEW_C_HEAP_ARRAY(ThreadLocalAllocStats, _num_workers, mtGC);
-
-    for (uint i = 0; i < _num_workers; i++) {
-      ::new (&_local_tlab_stats[i]) ThreadLocalAllocStats();
-    }
+    ::new (_local_tlab_stats) ThreadLocalAllocStats[_num_workers]{};
   }
 
   ThreadLocalAllocStats tlab_stats() const {
