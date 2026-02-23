@@ -791,7 +791,9 @@ VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kv, bool* found) {
 
 void VMATree::SummaryDiff::grow_and_rehash() {
   assert(is_power_of_2(_length), "must be");
-  if (_length == std::numeric_limits<std::underlying_type_t<MemTag>>::max()) {
+  constexpr int length_limit = std::numeric_limits<std::underlying_type_t<MemTag>>::max() + 1;
+  assert(is_power_of_2(length_limit), "must be");
+  if (_length == length_limit) {
     // If we are at MemTag's maximum size, then just continue with the current size.
     return;
   }
