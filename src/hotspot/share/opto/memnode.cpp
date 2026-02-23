@@ -1073,14 +1073,6 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   return false;
 }
 
-LoadNode* LoadNode::pin_array_access_node() const {
-  const TypePtr* adr_type = this->adr_type();
-  if (adr_type != nullptr && adr_type->isa_aryptr()) {
-    return clone_pinned();
-  }
-  return nullptr;
-}
-
 LoadNode* LoadNode::with_rc_constant_folded() const {
 #ifdef ASSERT
   if (!_rc_constant_folded) {

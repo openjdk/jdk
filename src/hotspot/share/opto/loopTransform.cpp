@@ -2905,7 +2905,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
         if (cd->is_Load() && cd->depends_only_on_test()) {   // Loads can now float around in the loop
           // Allow the load to float around in the loop, or before it
           // but NOT before the pre-loop.
-          Node* clone = cd->pin_array_access_node();
+          Node* clone = cd->pin_node_under_control();
           if (clone != nullptr) {
             clone->set_req(0, ctrl);
             register_new_node(clone, get_ctrl(cd));

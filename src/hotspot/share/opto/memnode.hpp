@@ -306,7 +306,6 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
-  LoadNode* pin_array_access_node() const;
   LoadNode* with_rc_constant_folded() const;
   bool rc_constant_folded() const { return DEBUG_ONLY(_rc_constant_folded) NOT_DEBUG(false); }
 

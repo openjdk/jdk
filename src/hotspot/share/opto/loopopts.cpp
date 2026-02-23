@@ -2273,7 +2273,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
           // That node is outside the inner loop, leave it outside the
           // outer loop as well to not confuse verification code.
           assert(!loop->_parent->is_member(use_loop), "should be out of the outer loop");
-          Node* clone = use->pin_array_access_node();
+          Node* clone = use->pin_node_under_control();
           if (clone != nullptr) {
             clone->set_req(0, ctrl);
             register_new_node(clone, ctrl);
@@ -2733,7 +2733,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           if (useuse->in(0) == use) {
             useuse->set_req(0, r);
             if (useuse->depends_only_on_test()) {
-              Node* clone = useuse->pin_array_access_node();
+              Node* clone = useuse->pin_node_under_control();
               if (clone != nullptr) {
                 register_new_node(clone, get_ctrl(useuse));
                 _igvn.replace_node(useuse, clone);
