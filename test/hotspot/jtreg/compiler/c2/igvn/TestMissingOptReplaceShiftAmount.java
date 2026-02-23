@@ -43,7 +43,6 @@ package compiler.c2.igvn;
  *      -XX:VerifyIterativeGVN=1110
  *      ${test.main.class}
  * @run main ${test.main.class}
- *
  */
 
 public class TestMissingOptReplaceShiftAmount {
