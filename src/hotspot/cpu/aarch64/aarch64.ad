@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
 // Copyright 2025 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2664,11 +2664,32 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 }
 
 // (XorV src (Replicate m1))
-// (XorVMask src (MaskAll m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   if (n != nullptr && m != nullptr) {
-    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+    return n->Opcode() == Op_XorV &&
            VectorNode::is_all_ones_vector(m);
+  }
+  return false;
+}
+
+// Returns true if (n, m) is the (XorVMask, MaskAll) part of an "andNot"
+// pattern: n is XorVMask, m is all-ones, and n is used only by an AndVMask.
+// That gives (AndVMask vm1 (XorVMask vm2 (MaskAll m1))). Cloning m allows
+// the matcher to share the MaskAll and match the andNot rule.
+static bool is_vector_mask_bitwise_andnot_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+
+  if (n->Opcode() == Op_XorVMask &&
+      VectorNode::is_all_ones_vector(m)) {
+    // Check whether n is only used by an AndVMask node.
+    if (n->outcnt() == 1) {
+      Node* u = n->unique_out();
+      if (u->Opcode() == Op_AndVMask) {
+        return true;
+      }
+    }
   }
   return false;
 }
@@ -2677,6 +2698,7 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   if (is_vshift_con_pattern(n, m) ||
       is_vector_bitwise_not_pattern(n, m) ||
+      is_vector_mask_bitwise_andnot_pattern(n, m) ||
       is_valid_sve_arith_imm_pattern(n, m) ||
       is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);

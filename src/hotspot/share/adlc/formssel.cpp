@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3967,7 +3967,7 @@ void MatchNode::count_commutative_op(int& count) {
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
-    "AndV", "OrV", "XorV",
+    "AndV", "OrV", "XorV", "AndVMask", "OrVMask", "XorVMask",
     "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
   };
 
