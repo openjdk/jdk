@@ -916,7 +916,7 @@ static Node* mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, ui
       shift_node->set_req(2, phase->intcon(masked_shift)); // Replace shift count with masked value.
 
       // We need to notify the caller that the graph was reshaped, as Ideal needs
-      // to return the root of the reshaped graph if any changed was made.
+      // to return the root of the reshaped graph if any change was made.
       return shift_node;
     }
   } else {
