@@ -59,7 +59,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 List.of("Produced ClientHello handshake message",
                         "supported_versions"));
         debugMessages.put("handshake-expand",
-            List.of("\"logger\".*: \"javax.net.ssl\",",
+                List.of("\"logger\".*: \"javax.net.ssl\",",
                     "\"specifics\"   : \\[",
                     "\"message\".*: \"Produced ClientHello handshake message"));
         debugMessages.put("keymanager", List.of("Choosing key:"));
@@ -80,14 +80,6 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "\\[TLSv1.3, TLSv1.2\\]"));
         debugMessages.put("trustmanager",
                 List.of("adding as trusted certificates"));
-        debugMessages.put("handshake-expand",
-                List.of("\"logger\".*: \"javax.net.ssl\",",
-                        "\"specifics\"   : \\[",
-                        "\"message\".*: \"Produced ClientHello handshake message"));
-        debugMessages.put("record-expand",
-                List.of("\"logger\".*: \"javax.net.ssl\",",
-                        "\"specifics\"   : \\[",
-                        "\"message\".*: \"READ: TLSv1.2 application_data"));
         debugMessages.put("help",
                 List.of("print this help message and exit",
                         "verbose handshake message printing"));
