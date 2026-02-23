@@ -428,7 +428,7 @@
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _has_class_mirror_holder,                      bool)                                  \
                                                                                                                                      \
-  static_field(ClassLoaderData,                 _the_null_class_loader_data,                  ClassLoaderData*)                      \
+  static_field(ClassLoaderData,                _the_null_class_loader_data,                   ClassLoaderData*)                      \
                                                                                                                                      \
   volatile_static_field(ClassLoaderDataGraph, _head,                                          ClassLoaderData*)                      \
                                                                                                                                      \
