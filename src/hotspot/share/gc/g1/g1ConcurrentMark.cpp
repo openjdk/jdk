@@ -565,11 +565,10 @@ void G1ConcurrentMark::fully_initialize() {
     _tasks[i] = new G1CMTask(i, this, task_queue, _region_mark_stats);
   }
 
-  for (uint i = 0; i < _g1h->max_num_regions(); i++) {
-    ::new (&_region_mark_stats[i]) G1RegionMarkStats{};
-    ::new (&_top_at_mark_starts[i]) Atomic<HeapWord*>{};
-    ::new (&_top_at_rebuild_starts[i]) Atomic<HeapWord*>{};
-  }
+  uint max_num_regions = _g1h->max_num_regions();
+  ::new (_region_mark_stats) G1RegionMarkStats[max_num_regions]{};
+  ::new (_top_at_mark_starts) Atomic<HeapWord*>[max_num_regions]{};
+  ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
 
   reset_at_marking_complete();
 }
@@ -594,8 +593,8 @@ void G1ConcurrentMark::reset() {
   }
 
   uint max_num_regions = _g1h->max_num_regions();
+  ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
   for (uint i = 0; i < max_num_regions; i++) {
-    _top_at_rebuild_starts[i].store_relaxed(nullptr);
     _region_mark_stats[i].clear();
   }
 
