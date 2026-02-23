@@ -1610,10 +1610,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 cancelDoc();
             }
 
+        } catch (PrinterException pe) {
+            throw pe;
         } catch (Throwable printError) {
-            if (printError instanceof PrinterException) {
-                throw (PrinterException) printError;
-            }
             throw (PrinterException)
                     new PrinterException().initCause(printError.getCause());
         } finally {
