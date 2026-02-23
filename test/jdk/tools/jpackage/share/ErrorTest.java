@@ -32,7 +32,6 @@ import static jdk.jpackage.test.JPackageCommand.makeError;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +45,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
@@ -71,8 +71,10 @@ import jdk.jpackage.test.stdmock.MacSignMockUtils;
  * @test
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build jdk.jpackage.test.stdmock.*
+ * @build jdk.test.lib.security.CertificateBuilder
  * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
@@ -83,8 +85,10 @@ import jdk.jpackage.test.stdmock.MacSignMockUtils;
  * @test
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build jdk.jpackage.test.stdmock.*
+ * @build jdk.test.lib.security.CertificateBuilder
  * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
@@ -721,30 +725,24 @@ public final class ErrorTest {
                     }
                 }
 
-                // Pick the first suitable signing identity.
-                var certRequest = SignEnvMock.VALUE.keySet().stream().filter(v -> {
-                    return v.trusted() && !v.expired() && v.type() == existingCertType;
-                }).findFirst().orElseThrow();
-
-                // Create a keychain mock containing the picked signing identity.
-                var signEnv = new MacSignMockUtils.SignEnv("foo.keychain", SignEnvMock.VALUE, certRequest);
+                keychain = Stream.of(SignEnvMock.SingleCertificateKeychain.values()).filter(k -> {
+                    return k.certificateType() == existingCertType;
+                }).findFirst().orElseThrow().keychain();
 
                 var script = Script.build()
                         // Disable the mutation making mocks "run once".
                         .commandMockBuilderMutator(null)
                         // Replace "/usr/bin/security" with the mock bound to the keychain mock.
-                        .map(MacSignMockUtils.securityMock(signEnv))
+                        .map(MacSignMockUtils.securityMock(SignEnvMock.VALUE))
                         // Don't mock other external commands.
                         .use(VerbatimCommandMock.INSTANCE)
                         .createLoop();
 
                 // Create jpackage tool provider using the /usr/bin/security mock.
-                var jpackage = JPackageMockUtils.createJPackageToolProvider(script);
+                var jpackage = JPackageMockUtils.createJPackageToolProvider(OperatingSystem.MACOS, script);
 
                 // Override the default jpackage tool provider with the one using the /usr/bin/security mock.
                 JPackageCommand.useToolProviderByDefault(jpackage);
-
-                keychain = signEnv.keychains().getFirst();
             }
             default -> {
                 throw new AssertionError();
@@ -1255,7 +1253,38 @@ public final class ErrorTest {
     private static final Pattern LINE_SEP_REGEXP = Pattern.compile("\\R");
 
     private final class SignEnvMock {
-        static final Map<CertificateRequest, X509Certificate> VALUE =
-                MacSignMockUtils.load(TKit.TEST_SRC_ROOT.resolve("macosx/sign-env.xml"));
+
+        enum SingleCertificateKeychain {
+            FOO(CertificateType.CODE_SIGN),
+            BAR(CertificateType.INSTALLER),
+            ;
+
+            SingleCertificateKeychain(CertificateType certificateType) {
+                this.keychain = KeychainWithCertsSpec.build()
+                        .name(name().toLowerCase() + ".keychain")
+                        .addCert(CertificateRequest.build()
+                                .userName(name().toLowerCase())
+                                .type(Objects.requireNonNull(certificateType)))
+                        .create();
+            }
+
+            static List<KeychainWithCertsSpec> signingEnv() {
+                return Stream.of(values()).map(v -> {
+                    return v.keychain;
+                }).toList();
+            }
+
+            CertificateType certificateType() {
+                return keychain.certificateRequests().getFirst().type();
+            }
+
+            ResolvedKeychain keychain() {
+                return new ResolvedKeychain(keychain).toMock(VALUE.env());
+            }
+
+            private final KeychainWithCertsSpec keychain;
+        }
+
+        static final MacSignMockUtils.SignEnv VALUE = new MacSignMockUtils.SignEnv(SingleCertificateKeychain.signingEnv());
     }
 }

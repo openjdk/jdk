@@ -804,6 +804,10 @@ public final class MacSign {
             return COMPARATOR.compare(this, o);
         }
 
+        public static Builder build() {
+            return new Builder();
+        }
+
         public static final class Builder {
 
             private Builder() {

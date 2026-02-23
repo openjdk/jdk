@@ -23,46 +23,40 @@
 
 package jdk.jpackage.test.stdmock;
 
-import static jdk.jpackage.internal.util.PListWriter.writeArray;
-import static jdk.jpackage.internal.util.PListWriter.writeBoolean;
-import static jdk.jpackage.internal.util.PListWriter.writeDict;
-import static jdk.jpackage.internal.util.PListWriter.writeKey;
-import static jdk.jpackage.internal.util.PListWriter.writePList;
-import static jdk.jpackage.internal.util.PListWriter.writeString;
-import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.SequencedMap;
-import java.util.TreeMap;
-import java.util.function.Predicate;
-import java.util.stream.Collector;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.util.PListReader;
-import jdk.jpackage.internal.util.XmlUtils;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import jdk.jpackage.internal.util.function.ExceptionBox;
-import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSign.CertificateRequest;
-import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
 import jdk.jpackage.test.MacSign.ResolvedKeychain;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.mock.CommandMockSpec;
 import jdk.jpackage.test.mock.CommandActionSpec;
 import jdk.jpackage.test.mock.CommandActionSpecs;
+import jdk.jpackage.test.mock.CommandMockSpec;
 
 
 /**
@@ -73,40 +67,62 @@ public final class MacSignMockUtils {
     private MacSignMockUtils() {
     }
 
-    public record SignEnv(List<KeychainWithCertsSpec> spec, Map<CertificateRequest, X509Certificate> env) {
+    public static Map<CertificateRequest, X509Certificate> resolveCertificateRequests(
+            Collection<CertificateRequest> certificateRequests) {
+        Objects.requireNonNull(certificateRequests);
 
-        public SignEnv {
-            Objects.requireNonNull(spec);
-            Objects.requireNonNull(env);
+        var caKeys = createKeyPair();
 
-            var unresolvedCertificateRequests = spec.stream()
-                    .map(KeychainWithCertsSpec::certificateRequests)
-                    .flatMap(Collection::stream)
-                    .filter(Predicate.not(env::containsKey))
-                    .sorted()
-                    .toList();
+        Function<CertificateRequest, X509Certificate> resolver = toFunction(certRequest -> {
+            var builder = new CertificateBuilder()
+                    .setSubjectName("CN=" + certRequest.name())
+                    .setPublicKey(caKeys.getPublic())
+                    .setSerialNumber(BigInteger.ONE)
+                    .addSubjectKeyIdExt(caKeys.getPublic())
+                    .addAuthorityKeyIdExt(caKeys.getPublic());
 
-            if (!unresolvedCertificateRequests.isEmpty()) {
-                throw new IllegalArgumentException(
-                        String.format("Unresolved certificate requests: %s", unresolvedCertificateRequests));
+            Instant from;
+            Instant to;
+            if (certRequest.expired()) {
+                from = LocalDate.now().minusDays(10).atStartOfDay(ZoneId.systemDefault()).toInstant();
+                to = from.plus(Duration.ofDays(1));
+            } else {
+                from = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+                to = from.plus(Duration.ofDays(certRequest.days()));
             }
+            builder.setValidity(Date.from(from), Date.from(to));
+
+            return builder.build(null, caKeys.getPrivate());
+        });
+
+        return certificateRequests.stream()
+            .distinct()
+            .collect(Collectors.toUnmodifiableMap(x -> x, resolver));
+    }
+
+    public static Map<CertificateRequest, X509Certificate> resolveCertificateRequests(
+            CertificateRequest... certificateRequests) {
+        return resolveCertificateRequests(List.of(certificateRequests));
+    }
+
+    public static final class SignEnv {
+
+        public SignEnv(List<KeychainWithCertsSpec> spec) {
+            Objects.requireNonNull(spec);
 
             spec.stream().map(keychain -> {
                 return keychain.keychain().name();
-            }).reduce((a, b) -> {
+            }).collect(Collectors.toMap(x -> x, x -> x, (a, b) -> {
                 throw new IllegalArgumentException(String.format("Multiple keychains with the same name: %s", a));
-            });
+            }));
+
+            this.spec = List.copyOf(spec);
+            this.env = resolveCertificateRequests(
+                    spec.stream().map(KeychainWithCertsSpec::certificateRequests).flatMap(Collection::stream).toList());
         }
 
-        public SignEnv(String keychainName, Map<CertificateRequest, X509Certificate> env, Collection<CertificateRequest> keychainContent) {
-            this(List.of(KeychainWithCertsSpec.build()
-                    .name(Objects.requireNonNull(keychainName))
-                    .addCerts(keychainContent)
-                    .create()), env);
-        }
-
-        public SignEnv(String keychainName, Map<CertificateRequest, X509Certificate> env, CertificateRequest... keychainContent) {
-            this(keychainName, env, List.of(keychainContent));
+        public SignEnv(KeychainWithCertsSpec... spec) {
+            this(List.of(spec));
         }
 
         public List<ResolvedKeychain> keychains() {
@@ -114,6 +130,13 @@ public final class MacSignMockUtils {
                 return keychain.toMock(env);
             }).toList();
         }
+
+        public Map<CertificateRequest, X509Certificate> env() {
+            return env;
+        }
+
+        private final Map<CertificateRequest, X509Certificate> env;
+        private final List<KeychainWithCertsSpec> spec;
     }
 
     public static CommandMockSpec securityMock(SignEnv signEnv) {
@@ -121,138 +144,141 @@ public final class MacSignMockUtils {
         return new CommandMockSpec(action.description(), CommandActionSpecs.build().action(action).create());
     }
 
-    public static void save(Map<CertificateRequest, X509Certificate> certs, Path path) {
-        Objects.requireNonNull(certs);
-        Objects.requireNonNull(path);
-
-        if (!(certs instanceof SequencedMap)) {
-            save(new TreeMap<>(certs), path);
-            return;
-        }
-
-        TKit.trace(String.format("Saving signing env in [%s] ...", path.normalize().toAbsolutePath()));
+    private static KeyPair createKeyPair() {
         try {
-            XmlUtils.createXml(path, xml -> {
-                writePList(xml, toXmlConsumer(() -> {
-                xml.writeComment("""
-
-This is an automatically generated file.
-
-It contains self-signed certificates for testing signing in jpackage collected from a local test environment.
-It doesn't contan sensitive or private information.
-                        """);
-
-                    writeDict(xml, toXmlConsumer(() -> {
-                        writeKey(xml, "certificates");
-                        writeArray(xml, toXmlConsumer(() -> {
-                            for (var e : certs.entrySet()) {
-                                writeResolvedCertificateRequest(e, xml);
-                            }
-                        }));
-                    }));
-                }));
-            });
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static SequencedMap<CertificateRequest, X509Certificate> load(Path path) {
-        TKit.trace(String.format("Loading signing env from [%s] ...", path.normalize().toAbsolutePath()));
-
-        var plistReader = MacHelper.readPList(path);
-
-        return plistReader.queryArrayValue("certificates", true).map(obj -> {
-            return (Map<String, PListReader.Raw>)obj;
-        }).map(props -> {
-            return Map.entry(createCertificateRequest(props), createResolvedCertificateRequest(props));
-        }).collect(Collector.of(() -> {
-            return new LinkedHashMap<CertificateRequest, X509Certificate>();
-        }, (map, e) -> {
-            var k = e.getKey();
-            map.merge(k, Objects.requireNonNull(e.getValue()), (_, _) -> {
-                throw duplicatedCertificateRequest(k);
-            });
-        }, (map1, map2) -> {
-            map2.forEach((k, v) -> {
-                map1.merge(k, v, (_, _) -> {
-                    throw duplicatedCertificateRequest(k);
-                });
-            });
-            return map1;
-        }));
-    }
-
-    private static void writeCertificateRequest(CertificateRequest certRequest, XMLStreamWriter xml) throws XMLStreamException, IOException {
-        writeString(xml, CertificateRequestField.NAME.keyName(), certRequest.name());
-        writeString(xml, CertificateRequestField.TYPE.keyName(), certRequest.type());
-        writeKey(xml, CertificateRequestField.DAYS.keyName());
-        xml.writeStartElement("integer");
-        xml.writeCharacters(Integer.toString(certRequest.days()));
-        xml.writeEndElement();
-        writeBoolean(xml, CertificateRequestField.EXPIRED.keyName(), certRequest.expired());
-        writeBoolean(xml, CertificateRequestField.TRUSTED.keyName(), certRequest.trusted());
-    }
-
-    private static void writeX509Certificate(X509Certificate cert, XMLStreamWriter xml) throws XMLStreamException, IOException {
-        var formattedCert = MacSign.formatX509Certificate(cert);
-        writeString(xml, X509CertificateField.DATA.keyName(), formattedCert);
-    }
-
-    private static void writeResolvedCertificateRequest(
-            Map.Entry<CertificateRequest, X509Certificate> resolvedCert, XMLStreamWriter xml) throws XMLStreamException, IOException {
-        writeDict(xml, toXmlConsumer(() -> {
-            writeCertificateRequest(resolvedCert.getKey(), xml);
-            writeX509Certificate(resolvedCert.getValue(), xml);
-        }));
-    }
-
-    private static CertificateRequest createCertificateRequest(Map<String, PListReader.Raw> props) {
-        var name = props.get(CertificateRequestField.NAME.keyName()).value();
-        var type = CertificateType.valueOf(props.get(CertificateRequestField.TYPE.keyName()).value());
-        var days = Integer.parseInt(props.get(CertificateRequestField.DAYS.keyName()).value());
-        var expired = Boolean.parseBoolean(props.get(CertificateRequestField.EXPIRED.keyName()).value());
-        var trusted = Boolean.parseBoolean(props.get(CertificateRequestField.TRUSTED.keyName()).value());
-        return new CertificateRequest(name, type, days, expired, trusted);
-    }
-
-    private static X509Certificate createResolvedCertificateRequest(Map<String, PListReader.Raw> props) {
-        var base64WithBounds = props.get(X509CertificateField.DATA.keyName()).value();
-        try {
-            final var cf = CertificateFactory.getInstance("X.509");
-            return (X509Certificate)cf.generateCertificate(
-                    new ByteArrayInputStream(base64WithBounds.getBytes(StandardCharsets.ISO_8859_1)));
-        } catch (CertificateException ex) {
+            var kpg = KeyPairGenerator.getInstance("RSA");
+            return kpg.generateKeyPair();
+        } catch (NoSuchAlgorithmException ex) {
             throw ExceptionBox.toUnchecked(ex);
         }
     }
 
-    private static RuntimeException duplicatedCertificateRequest(CertificateRequest certRequest) {
-        Objects.requireNonNull(certRequest);
-        return new RuntimeException(String.format("Duplicated certificate request: %s", certRequest));
-    }
+    //
+    // Reflection proxy for jdk.test.lib.security.CertificateBuilder class.
+    //
+    // Can't use it directly because it is impossible to cherry-pick this class from the JDK test lib in JUnit tests due to limitations of jtreg.
+    //
+    // Shared jpackage JUnit tests don't require "jdk.jpackage.test.stdmock", but they depend on "jdk.jpackage.test" package.
+    // Source code for these two packages resides in the same directory tree, so jtreg will pull in classes from both packages for the jpackage JUnit tests.
+    // Static dependency on jdk.test.lib.security.CertificateBuilder class will force pulling in the entire JDK test lib, because of jtreg limitations.
+    //
+    // Use dynamic dependency as a workaround. Tests that require jdk.test.lib.security.CertificateBuilder class, should have
+    //
+    // /*
+    //  * ...
+    //  * @library /test/lib
+    //  * @build jdk.test.lib.security.CertificateBuilder
+    //  */
+    //
+    // in their declarations. They also should have
+    //
+    //  --add-exports java.base/sun.security.x509=ALL-UNNAMED
+    //  --add-exports java.base/sun.security.util=ALL-UNNAMED
+    //
+    // on javac and java command lines.
+    //
+    private static final class CertificateBuilder {
 
-    private interface Field {
-
-        public String name();
-
-        default String keyName() {
-            return name().toLowerCase();
+        CertificateBuilder() {
+            instance = toSupplier(ctor::newInstance).get();
         }
-    }
 
-    private enum CertificateRequestField implements Field {
-        NAME,
-        TYPE,
-        DAYS,
-        EXPIRED,
-        TRUSTED,
-        ;
-    }
+        CertificateBuilder setSubjectName(String v) {
+            toRunnable(() -> {
+                setSubjectName.invoke(instance, v);
+            }).run();
+            return this;
+        }
 
-    private enum X509CertificateField implements Field {
-        DATA,
-        ;
+        CertificateBuilder setPublicKey(PublicKey v) {
+            toRunnable(() -> {
+                setPublicKey.invoke(instance, v);
+            }).run();
+            return this;
+        }
+
+        CertificateBuilder setSerialNumber(BigInteger v) {
+            toRunnable(() -> {
+                setSerialNumber.invoke(instance, v);
+            }).run();
+            return this;
+        }
+
+        CertificateBuilder addSubjectKeyIdExt(PublicKey v) {
+            toRunnable(() -> {
+                addSubjectKeyIdExt.invoke(instance, v);
+            }).run();
+            return this;
+        }
+
+        CertificateBuilder addAuthorityKeyIdExt(PublicKey v) {
+            toRunnable(() -> {
+                addAuthorityKeyIdExt.invoke(instance, v);
+            }).run();
+            return this;
+        }
+
+        CertificateBuilder setValidity(Date from, Date to) {
+            toRunnable(() -> {
+                setValidity.invoke(instance, from, to);
+            }).run();
+            return this;
+        }
+
+        X509Certificate build(X509Certificate issuerCert, PrivateKey issuerKey) throws IOException, CertificateException {
+            try {
+                return (X509Certificate)toSupplier(() -> {
+                    return build.invoke(instance, issuerCert, issuerKey);
+                }).get();
+            } catch (ExceptionBox box) {
+                switch (ExceptionBox.unbox(box)) {
+                    case IOException ex -> {
+                        throw ex;
+                    }
+                    case CertificateException ex -> {
+                        throw ex;
+                    }
+                    default -> {
+                        throw box;
+                    }
+                }
+            }
+        }
+
+        private final Object instance;
+
+        private static final Constructor<?> ctor;
+        private static final Method setSubjectName;
+        private static final Method setPublicKey;
+        private static final Method setSerialNumber;
+        private static final Method addSubjectKeyIdExt;
+        private static final Method addAuthorityKeyIdExt;
+        private static final Method setValidity;
+        private static final Method build;
+
+        static {
+            try {
+                var certificateBuilderClass = Class.forName("jdk.test.lib.security.CertificateBuilder");
+
+                ctor = certificateBuilderClass.getConstructor();
+
+                setSubjectName = certificateBuilderClass.getMethod("setSubjectName", String.class);
+
+                setPublicKey = certificateBuilderClass.getMethod("setPublicKey", PublicKey.class);
+
+                setSerialNumber = certificateBuilderClass.getMethod("setSerialNumber", BigInteger.class);
+
+                addSubjectKeyIdExt = certificateBuilderClass.getMethod("addSubjectKeyIdExt", PublicKey.class);
+
+                addAuthorityKeyIdExt = certificateBuilderClass.getMethod("addAuthorityKeyIdExt", PublicKey.class);
+
+                setValidity = certificateBuilderClass.getMethod("setValidity", Date.class, Date.class);
+
+                build = certificateBuilderClass.getMethod("build", X509Certificate.class, PrivateKey.class);
+
+            } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+                throw toUnchecked(ex);
+            }
+        }
     }
 }
