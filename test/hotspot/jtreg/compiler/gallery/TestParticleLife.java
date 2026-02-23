@@ -154,7 +154,6 @@ public class TestParticleLife {
                   IRNode.VECTOR_MASK_CMP,    "> 0",
                   IRNode.VECTOR_MASK_CAST,   "> 0",
                   IRNode.VECTOR_BLEND_F,     "> 0",
-                  IRNode.STORE_VECTOR,       "= 0",  // no vector store
                   IRNode.ADD_REDUCTION_VF,   "> 0"}, // instead we reduce the vector to a scalar
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeature = {"avx2", "true"})
@@ -181,7 +180,6 @@ public class TestParticleLife {
                   IRNode.VECTOR_MASK_CMP,    "> 0",
                   IRNode.VECTOR_MASK_CAST,   "> 0",
                   IRNode.VECTOR_BLEND_F,     "> 0",
-                  IRNode.STORE_VECTOR,       "= 0",  // no vector store
                   IRNode.ADD_REDUCTION_VF,   "> 0"}, // instead we reduce the vector to a scalar
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
