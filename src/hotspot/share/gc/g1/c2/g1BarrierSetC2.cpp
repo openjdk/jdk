@@ -575,7 +575,7 @@ void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     }
     stubs->at(i)->emit_code(masm);
   }
-  masm.flush();
+  masm.publish_instructions(false);
 }
 
 #ifndef PRODUCT

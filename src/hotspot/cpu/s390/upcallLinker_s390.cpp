@@ -271,7 +271,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  _masm->flush();
+  _masm->publish_instructions(false);
 
 #ifndef PRODUCT
   stringStream ss;

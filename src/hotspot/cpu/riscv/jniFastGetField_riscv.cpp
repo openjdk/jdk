@@ -166,7 +166,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     __ leave();
     __ ret();
   }
-  __ flush();
+  __ publish_instructions();
 
   return fast_entry;
 }

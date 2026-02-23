@@ -320,7 +320,7 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     stubs->at(i)->emit_code(masm);
   }
 
-  masm.flush();
+  masm.publish_instructions(false);
 }
 
 int ZBarrierSetC2::estimate_stub_size() const {
