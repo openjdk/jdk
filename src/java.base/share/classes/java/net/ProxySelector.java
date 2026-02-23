@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,9 @@ public abstract class ProxySelector {
      * The format of the URI is defined as follows:
      * <UL>
      * <LI>http URI for http connections</LI>
-     * <LI>https URI for https connections
+     * <LI>https URI for https connections</LI>
+     * <LI>ws URI for WebSocket connections (treated as http)</LI>
+     * <LI>wss URI for secure WebSocket connections (treated as https)</LI>
      * <LI>{@code socket://host:port}<br>
      *     for tcp client sockets connections</LI>
      * </UL>
@@ -158,8 +160,9 @@ public abstract class ProxySelector {
 
     /**
      * Returns a ProxySelector which uses the given proxy address for all HTTP
-     * and HTTPS requests. If {@code proxyAddress} is {@code null}
-     * then proxying is disabled.
+     * and HTTPS requests. WebSocket ({@code ws} and {@code wss}) URIs are
+     * also proxied, as they tunnel over HTTP and HTTPS respectively.
+     * If {@code proxyAddress} is {@code null} then proxying is disabled.
      *
      * @param proxyAddress
      *        The address of the proxy
@@ -203,7 +206,8 @@ public abstract class ProxySelector {
             if (scheme == null) {
                 throw new IllegalArgumentException("protocol can't be null");
             }
-            if (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")) {
+            if (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")
+                    || scheme.equalsIgnoreCase("ws") || scheme.equalsIgnoreCase("wss")) {
                 return list;
             } else {
                 return NO_PROXY_LIST;

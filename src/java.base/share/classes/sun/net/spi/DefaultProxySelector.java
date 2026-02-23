@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,11 @@ public class DefaultProxySelector extends ProxySelector {
             throw new IllegalArgumentException("URI can't be null.");
         }
         String protocol = uri.getScheme();
+        // WebSocket schemes tunnel over HTTP/HTTPS (RFC 6455 section 4)
+        if ("ws".equalsIgnoreCase(protocol))
+            protocol = "http";
+        else if ("wss".equalsIgnoreCase(protocol))
+            protocol = "https";
         String host = uri.getHost();
 
         if (host == null) {
