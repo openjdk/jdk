@@ -15,20 +15,20 @@
         $type$[] a = fa.apply(SPECIES.length());
         $type$ id = [[TEST_INIT]];
 
-        Assert.assertEquals(($type$) (id [[TEST_OP]] id), id,
+        assertEquals(($type$) (id [[TEST_OP]] id), id,
                             "[[TEST]]([[TEST_INIT]], [[TEST_INIT]]) != [[TEST_INIT]]");
 
         $type$ x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                Assert.assertEquals(($type$) (id [[TEST_OP]] x), x);
-                Assert.assertEquals(($type$) (x [[TEST_OP]] id), x);
+                assertEquals(($type$) (id [[TEST_OP]] x), x);
+                assertEquals(($type$) (x [[TEST_OP]] id), x);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(($type$) (id [[TEST_OP]] x), x,
+            assertEquals(($type$) (id [[TEST_OP]] x), x,
                                 "[[TEST]]([[TEST_INIT]], " + x + ") != " + x);
-            Assert.assertEquals(($type$) (x [[TEST_OP]] id), x,
+            assertEquals(($type$) (x [[TEST_OP]] id), x,
                                 "[[TEST]](" + x + ", [[TEST_INIT]]) != " + x);
         }
     }
