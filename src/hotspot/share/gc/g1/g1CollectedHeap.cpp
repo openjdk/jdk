@@ -1723,8 +1723,7 @@ void G1CollectedHeap::ref_processing_init() {
   //   * Reference discovery is MT (see below).
   //   * Reference discovery requires a barrier (see below).
   //   * Reference processing may or may not be MT
-  //     (depending on the value of ParallelRefProcEnabled
-  //     and ParallelGCThreads).
+  //     (depending on the value of ParallelGCThreads).
   //   * A full GC disables reference discovery by the CM
   //     ref processor and abandons any entries on it's
   //     discovered lists.

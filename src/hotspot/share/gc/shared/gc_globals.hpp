@@ -198,10 +198,6 @@
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (INT_MAX - 1))                                           \
                                                                             \
-  product(bool, ParallelRefProcEnabled, false,                              \
-          "(Deprecated) Enable parallel reference processing "              \
-          "whenever possible")                                              \
-                                                                            \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
                "Ergonomically start one thread for this amount of "         \
                "references for reference processing if "                    \
