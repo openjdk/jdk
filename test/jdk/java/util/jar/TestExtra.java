@@ -26,7 +26,7 @@
  * @bug 6480504 6303183
  * @summary Test that client-provided data in the extra field is written and
  * read correctly, taking into account the JAR_MAGIC written into the extra
- * field of the first entry of JAR files. Zip file specific.
+ * field of the first entry of JAR files. ZIP file specific.
  * @run junit TestExtra
  */
 
@@ -42,14 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
 
-// Tests that the get/set operations on extra data in zip files work as advertised.
+// Tests that the get/set operations on extra data in ZIP files work as advertised.
 public class TestExtra {
 
-    static final int JAR_MAGIC = 0xcafe; // private IN JarOutputStream.java
     static final int TEST_HEADER = 0xbabe;
-
     static final Charset ascii = StandardCharsets.US_ASCII;
 
     // ZipEntry extra data
@@ -58,13 +55,13 @@ public class TestExtra {
             ascii.encode("foo bar").array()
     };
 
-    // For naming entries in JAR/ZIP streams
+    // For naming entries in ZIP streams
     static int count = 1;
 
     // Use byte arrays instead of files
     ByteArrayOutputStream baos  = new ByteArrayOutputStream();
 
-    // JAR/ZIP content written here.
+    // ZIP content written here.
     ZipOutputStream zos = assertDoesNotThrow(() -> getOutputStream(baos));
 
     @Test
@@ -92,40 +89,6 @@ public class TestExtra {
 
         ze = zis.getNextEntry();
         checkEntry(ze, 1, extra[1].length);
-    }
-
-    // check if all "expected" extra fields equal to their
-    // corresponding fields in "extra". The "extra" might have
-    // timestamp fields added by ZOS.
-    static void checkExtra(byte[] expected, byte[] extra) {
-        if (expected == null)
-            return;
-        int off = 0;
-        int len = expected.length;
-        while (off + 4 < len) {
-            int tag = get16(expected, off);
-            int sz = get16(expected, off + 2);
-            int off0 = 0;
-            int len0 = extra.length;
-            boolean matched = false;
-            while (off0 + 4 < len0) {
-                int tag0 = get16(extra, off0);
-                int sz0 = get16(extra, off0 + 2);
-                if (tag == tag0 && sz == sz0) {
-                    matched = true;
-                    for (int i = 0; i < sz; i++) {
-                        if (expected[off + i] != extra[off0 + i])
-                            matched = false;
-                    }
-                    break;
-                }
-                off0 += (4 + sz0);
-            }
-            if (!matched) {
-                fail("Expected extra data [tag=" + tag + "sz=" + sz + "] check failed");
-            }
-            off += (4 + sz);
-        }
     }
 
     // Check that the entry's extra data is correct.
@@ -170,18 +133,13 @@ public class TestExtra {
                 new ByteArrayInputStream(baos.toByteArray()));
     }
 
-    ZipOutputStream getOutputStream(ByteArrayOutputStream baos) throws IOException {
+    ZipOutputStream getOutputStream(ByteArrayOutputStream baos) {
         return new ZipOutputStream(baos);
-    }
-
-    ZipInputStream getInputStream(ByteArrayInputStream bais) throws IOException {
-        return new ZipInputStream(bais);
     }
 
     ZipEntry getEntry() {
         return new ZipEntry("zip" + count++ + ".txt");
     }
-
 
     static int get16(byte[] b, int off) {
         return (b[off] & 0xff) | ((b[off + 1] & 0xff) << 8);

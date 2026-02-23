@@ -35,17 +35,37 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.jar.JarInputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-// Tests that the get/set operations on extra data in jar files work as advertised.
-public class TestJarExtra extends TestExtra {
+// Tests that the get/set operations on extra data in JAR files work as advertised.
+public class TestJarExtra {
+
+    static final int JAR_MAGIC = 0xcafe; // private IN JarOutputStream.java
+    static final int TEST_HEADER = 0xbabe;
+    // For naming entries in JAR streams
+    static int count = 1;
+    static final Charset ascii = StandardCharsets.US_ASCII;
+    // ZipEntry extra data
+    static final byte[][] extra = new byte[][] {
+            ascii.encode("hello, world").array(),
+            ascii.encode("foo bar").array()
+    };
+
+    // Use byte arrays instead of files
+    ByteArrayOutputStream baos  = new ByteArrayOutputStream();
+
+    // JAR content written here.
+    JarOutputStream jos = assertDoesNotThrow(() -> getOutputStream(baos));
 
     @Test
     void jarExtraHeaderPlusDataTest() throws IOException {
@@ -62,6 +82,28 @@ public class TestJarExtra extends TestExtra {
         testClientJarMagic();
     }
 
+    // Test that a header + data set by client works.
+    void testHeaderPlusData() throws IOException {
+        for (byte[] b : extra) {
+            ZipEntry ze = getEntry();
+            byte[] data = new byte[b.length + 4];
+            set16(data, 0, TEST_HEADER);
+            set16(data, 2, b.length);
+            System.arraycopy(b, 0, data, 4, b.length);
+            ze.setExtra(data);
+            jos.putNextEntry(ze);
+        }
+        jos.close();
+
+        ZipInputStream zis = getInputStream();
+
+        ZipEntry ze = zis.getNextEntry();
+        checkEntry(ze, 0, extra[0].length);
+
+        ze = zis.getNextEntry();
+        checkEntry(ze, 1, extra[1].length);
+    }
+
     // Test that a header only (i.e., no extra "data") set by client works.
     void testHeaderOnly() throws IOException {
         ZipEntry ze = getEntry();
@@ -69,9 +111,9 @@ public class TestJarExtra extends TestExtra {
         set16(data, 0, TEST_HEADER);
         set16(data, 2, 0); // Length of data is 0.
         ze.setExtra(data);
-        zos.putNextEntry(ze);
+        jos.putNextEntry(ze);
 
-        zos.close();
+        jos.close();
 
         ZipInputStream zis = getInputStream();
 
@@ -91,9 +133,9 @@ public class TestJarExtra extends TestExtra {
         set16(data, 6, 0); // Length of data is 0.
 
         ze.setExtra(data);
-        zos.putNextEntry(ze);
+        jos.putNextEntry(ze);
 
-        zos.close();
+        jos.close();
 
         ZipInputStream zis = getInputStream();
         ze = zis.getNextEntry();
@@ -102,19 +144,51 @@ public class TestJarExtra extends TestExtra {
         checkEntry(ze, 0, 0);
     }
 
-    @Override
-    ZipOutputStream getOutputStream(ByteArrayOutputStream baos) throws IOException {
+    JarOutputStream getOutputStream(ByteArrayOutputStream baos) throws IOException {
         return new JarOutputStream(baos);
     }
 
-    @Override
-    ZipInputStream getInputStream(ByteArrayInputStream bais) throws IOException {
-        return new JarInputStream(bais);
+    ZipInputStream getInputStream() {
+        return new ZipInputStream(
+                new ByteArrayInputStream(baos.toByteArray()));
     }
 
-    @Override
     ZipEntry getEntry() {
         return new ZipEntry("jar" + count++ + ".txt");
+    }
+
+    // check if all "expected" extra fields equal to their
+    // corresponding fields in "extra". The "extra" might have
+    // timestamp fields added by ZOS.
+    static void checkExtra(byte[] expected, byte[] extra) {
+        if (expected == null)
+            return;
+        int off = 0;
+        int len = expected.length;
+        while (off + 4 < len) {
+            int tag = get16(expected, off);
+            int sz = get16(expected, off + 2);
+            int off0 = 0;
+            int len0 = extra.length;
+            boolean matched = false;
+            while (off0 + 4 < len0) {
+                int tag0 = get16(extra, off0);
+                int sz0 = get16(extra, off0 + 2);
+                if (tag == tag0 && sz == sz0) {
+                    matched = true;
+                    for (int i = 0; i < sz; i++) {
+                        if (expected[off + i] != extra[off0 + i])
+                            matched = false;
+                    }
+                    break;
+                }
+                off0 += (4 + sz0);
+            }
+            if (!matched) {
+                fail("Expected extra data [tag=" + tag + "sz=" + sz + "] check failed");
+            }
+            off += (4 + sz);
+        }
     }
 
     void checkEntry(ZipEntry ze, int count, int dataLength) {
@@ -125,8 +199,49 @@ public class TestJarExtra extends TestExtra {
             assertNotNull(data, "unexpected null data for JAR_MAGIC");
             assertEquals(0, data.length, "unexpected non-zero data length for JAR_MAGIC");
         }
-        // In a jar file, the first ZipEntry should have both JAR_MAGIC
+        // In a JAR file, the first ZipEntry should have both JAR_MAGIC
         // and the TEST_HEADER, so check that also.
-        super.checkEntry(ze, count, dataLength);
+        byte[] extraData = ze.getExtra();
+        byte[] data = getField(TEST_HEADER, extraData);
+        assertNotNull(data, "unexpected null data for TEST_HEADER");
+
+        if (dataLength == 0) {
+            assertEquals(0, data.length, "unexpected non-zero data length for TEST_HEADER");
+        } else {
+            assertArrayEquals(data, extra[count],
+                    "failed to get entry " + ze.getName()
+                            + ", expected " + new String(extra[count]) + ", got '" + new String(data) + "'");
+        }
+    }
+
+    // Look up descriptor in data, returning corresponding byte[].
+    static byte[] getField(int descriptor, byte[] data) {
+        byte[] rc = null;
+        try {
+            int i = 0;
+            while (i < data.length) {
+                if (get16(data, i) == descriptor) {
+                    int length = get16(data, i + 2);
+                    rc = new byte[length];
+                    for (int j = 0; j < length; j++) {
+                        rc[j] = data[i + 4 + j];
+                    }
+                    return rc;
+                }
+                i += get16(data, i + 2) + 4;
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            // descriptor not found
+        }
+        return rc;
+    }
+
+    static int get16(byte[] b, int off) {
+        return (b[off] & 0xff) | ((b[off + 1] & 0xff) << 8);
+    }
+
+    static void set16(byte[] b, int off, int value) {
+        b[off + 0] = (byte) value;
+        b[off + 1] = (byte) (value >> 8);
     }
 }
