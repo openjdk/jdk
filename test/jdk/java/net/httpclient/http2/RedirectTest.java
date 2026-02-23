@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestExchange
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- *        jdk.httpclient.test.lib.http2.Http2EchoHandler
  *        jdk.httpclient.test.lib.http2.Http2RedirectHandler
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.net.SimpleSSLContext
@@ -48,16 +47,17 @@ import java.util.concurrent.*;
 import java.util.function.*;
 import java.util.Arrays;
 import java.util.Iterator;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.httpclient.test.lib.http2.Http2RedirectHandler;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
-public class RedirectTest {
+public class RedirectTest implements HttpServerAdapters {
     static int httpPort;
-    static Http2TestServer httpServer;
+    static HttpTestServer httpServer;
     static HttpClient client;
 
     static String httpURIString, altURIString1, altURIString2;
@@ -105,23 +105,26 @@ public class RedirectTest {
     static void initialize() throws Exception {
         try {
             client = getClient();
-            httpServer = new Http2TestServer(false, 0, null, null);
+            Http2TestServer http2ServerImpl =
+                    new Http2TestServer(false, 0, null, null);
+            httpServer = HttpTestServer.of(http2ServerImpl);
             httpPort = httpServer.getAddress().getPort();
 
             // urls are accessed in sequence below. The first two are on
             // different servers. Third on same server as second. So, the
             // client should use the same http connection.
-            httpURIString = "http://localhost:" + httpPort + "/foo/";
+            httpURIString = "http://" + httpServer.serverAuthority() + "/foo/";
             httpURI = URI.create(httpURIString);
-            altURIString1 = "http://localhost:" + httpPort + "/redir";
+            altURIString1 = "http://" + httpServer.serverAuthority() + "/redir";
             altURI1 = URI.create(altURIString1);
-            altURIString2 = "http://localhost:" + httpPort + "/redir_again";
+            altURIString2 = "http://" + httpServer.serverAuthority() + "/redir_again";
             altURI2 = URI.create(altURIString2);
 
+            // TODO: remove dependency on Http2RedirectHandler
             Redirector r = new Redirector(sup(altURIString1, altURIString2));
-            httpServer.addHandler(r, "/foo");
-            httpServer.addHandler(r, "/redir");
-            httpServer.addHandler(new Http2EchoHandler(), "/redir_again");
+            http2ServerImpl.addHandler(r, "/foo");
+            http2ServerImpl.addHandler(r, "/redir");
+            httpServer.addHandler(new HttpTestFileEchoHandler(), "/redir_again");
 
             httpServer.start();
         } catch (Throwable e) {

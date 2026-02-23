@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,13 +140,6 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
     }
 
     /*
-     * Default message text if not provided
-     */
-    if (!msg) {
-        msg = "no further information";
-    }
-
-    /*
      * Check table for known winsock errors
      */
     i=0;
@@ -163,13 +156,22 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
      */
     if (i < table_size) {
         excP = (char *)winsock_errors[i].exc;
-        jio_snprintf(fullMsg, sizeof(fullMsg), "%s: %s",
-                     (char *)winsock_errors[i].errString, msg);
+        if (msg == NULL) {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "%s",
+                         (char *)winsock_errors[i].errString);
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "%s: %s",
+                         (char *)winsock_errors[i].errString, msg);
+        }
     } else {
-        jio_snprintf(fullMsg, sizeof(fullMsg),
-                     "Unrecognized Windows Sockets error: %d: %s",
-                     errorNum, msg);
-
+        if (msg == NULL) {
+            jio_snprintf(fullMsg, sizeof(fullMsg),
+                         "Unrecognized Windows Sockets error: %d", errorNum);
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg),
+                         "Unrecognized Windows Sockets error: %d: %s",
+                         errorNum, msg);
+        }
     }
 
     /*
