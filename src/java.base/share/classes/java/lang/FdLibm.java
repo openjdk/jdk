@@ -3607,4 +3607,52 @@ final class FdLibm {
             }
         }
     }
+
+    /**
+     * Return the Inverse Hyperbolic Tangent of x
+     * Method :
+     *
+     *
+     *      atanh(x) is defined so that atanh(tanh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
+     *      and tanh(atanh(x)) = x, -1 &lt x &lt 1;
+     *      It can be written as atanh(x) = 0.5 * log1p(2 * x/(1-x)), -1 &lt; x &lt; 1;
+     *      1.
+     *          atanh(x) := 0.5 * log1p(2 * x/(1 - x)), if |x| >= 0.5,
+     *                   := 0.5 * log1p(2x + 2x * x/(1 - x)), if |x| < 0.5.
+     *
+     *
+     *
+     * Special cases:
+     *      only atanh(&plusmn;0)=&plusmn;0 is exact for finite x.
+     *      atanh(NaN) is NaN
+     *      atanh(&plusmn;1) is &plusmn;&infin;
+     */
+    static final class Atanh {
+
+        static double compute(double x) {
+            double t;
+            int hx,ix;
+            int lx;                                              // unsigned
+            hx = __HI(x);                                        // high word
+            lx = __LO(x);                                        // low word
+            ix = hx & 0x7fff_ffff;
+            if ((ix | ((lx | (-lx)) >>> 31)) > 0x3ff0_0000) {    // |x| > 1
+                return (x - x) / (x - x);
+            }
+            if (ix == 0x3ff0_0000) {
+                return x / 0.0;
+            }
+            if (ix < 0x3e30_0000 && (HUGE + x) > 0.0) {
+                return x;                                        // x<2**-28
+            }
+            x = __HI(x, ix);                                     // x <- |x|
+            if (ix < 0x3fe0_0000) {                              // x < 0.5
+                t = x + x;
+                t = 0.5 * Log1p.compute(t + t * x / (1.0 - x));
+            } else {
+                t = 0.5 * Log1p.compute((x + x) / (1.0 - x));
+            }
+            return hx >= 0 ? t : -t;
+        }
+    }
 }

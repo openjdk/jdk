@@ -27,10 +27,7 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 
-#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/memset_with_concurrent_readers.hpp"
-#include "oops/oop.inline.hpp"
 
 inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
   assert(_reserved.contains(addr), "invalid address");
@@ -68,6 +65,19 @@ inline HeapWord* G1BlockOffsetTable::addr_for_entry(const Atomic<uint8_t>* const
   assert(_reserved.contains(result),
          "out of bounds accessor from block offset table");
   return result;
+}
+
+inline bool G1BlockOffsetTable::is_crossing_card_boundary(HeapWord* const obj_start,
+                                                          HeapWord* const obj_end) {
+  HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
+  // strictly greater-than
+  return obj_end > cur_card_boundary;
+}
+
+inline void G1BlockOffsetTable::update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
+  if (is_crossing_card_boundary(blk_start, blk_end)) {
+    update_for_block_work(blk_start, blk_end);
+  }
 }
 
 #endif // SHARE_GC_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
