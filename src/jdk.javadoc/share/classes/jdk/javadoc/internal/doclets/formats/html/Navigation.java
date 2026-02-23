@@ -537,15 +537,13 @@ public class Navigation {
                 .add(inputText)
                 .add(inputReset);
         target.add(searchDiv);
-        if (documentedPage != PageMode.SEARCH) {
-            target.add(HtmlTree.DIV(HtmlId.of("result-section"))
-                    .add(HtmlTree.DIV(Text.of("Search in "))
-                            .add(createModuleSelector())
-                            .add(HtmlTree.SPAN(contents.getContent("doclet.search.loading"))
-                                    .setId(HtmlId.of("page-search-notify"))))
-                    .add(HtmlTree.DIV(HtmlId.of("result-container"))
-                            .addUnchecked(Text.EMPTY)));
-        }
+        target.add(HtmlTree.DIV(HtmlId.of("result-section"))
+                .add(HtmlTree.DIV(Text.of("Search in "))
+                        .add(createModuleSelector())
+                        .add(HtmlTree.SPAN(contents.getContent("doclet.search.loading"))
+                                .setId(HtmlId.of("page-search-notify"))))
+                .add(HtmlTree.DIV(HtmlId.of("result-container"))
+                        .addUnchecked(Text.EMPTY)));
     }
 
     private Content createModuleSelector() {

@@ -139,12 +139,6 @@ public class DocPaths {
     /** The name of the default jQuery javascript file. */
     public static final DocPath JQUERY_JS = DocPath.create("jquery-3.7.1.min.js");
 
-    /** The name of the default jQuery UI stylesheet file. */
-    public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");
-
-    /** The name of the default jQuery UI javascript file. */
-    public static final DocPath JQUERY_UI_JS = DocPath.create("jquery-ui.min.js");
-
     /** The name of the default jQuery file for legal notices. */
     public static final DocPath JQUERY_MD = DocPath.create("jquery.md");
 
