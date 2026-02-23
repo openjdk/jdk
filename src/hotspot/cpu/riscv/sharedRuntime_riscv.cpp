@@ -1264,7 +1264,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
-    __ flush();
+    __ publish_instructions();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
@@ -1302,7 +1302,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ flush();
+    __ publish_instructions();
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
     return nmethod::new_native_nmethod(method,
                                        compile_id,
@@ -1961,7 +1961,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
   }
 
-  __ flush();
+  __ publish_instructions();
 
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
@@ -2349,7 +2349,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ ret();
 
   // Make sure all code is generated
-  masm->flush();
+  masm->publish_instructions();
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   assert(_deopt_blob != nullptr, "create deoptimization blob fail!");
@@ -2494,7 +2494,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
 #endif
 
   // Make sure all code is generated
-  masm->flush();
+  masm->publish_instructions();
 
   // Fill-out other meta info
   return SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
@@ -2583,7 +2583,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
 
   // -------------
   // make sure all code is generated
-  masm->flush();
+  masm->publish_instructions();
 
   // return the  blob
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);

@@ -316,5 +316,5 @@ void DowncallLinker::StubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ flush();
+  __ publish_instructions(false);
 }

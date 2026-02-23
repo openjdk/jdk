@@ -35,6 +35,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/nativeCallStack.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -730,7 +731,14 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   auto blob = CodeCache::find_blob(insts_begin());
   if (blob != nullptr && blob->was_flushed()) {
+    tty->print_cr("---------------------------------------------------------------->");
     tty->print_cr("Unnecessary ICache flush detected before copy_code_to for blob %s", dest_blob->name());
+    tty->print_cr("  CodeBuffer insts: " PTR_FORMAT " .. " PTR_FORMAT, p2i(insts_begin()), p2i(insts_end()));
+    tty->print_cr("  Native call stack (most recent call first):");
+    NativeCallStack ncs(/*toSkip*/1);
+    ncs.print_on(tty);
+    tty->print_cr("\n\n");
+    fatal("KILL VM");
   }
 #endif //PRODUCT
 

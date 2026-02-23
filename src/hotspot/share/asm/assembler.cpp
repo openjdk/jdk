@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/codeCache.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -104,14 +105,16 @@ void AbstractAssembler::end_a_const(CodeSection* cs) {
   set_code_section(cs);
 }
 
-void AbstractAssembler::flush() {
-  ICache::invalidate_range(addr_at(0), offset());
+void AbstractAssembler::publish_instructions(bool invalidate) {
+  if (invalidate) {
+    ICache::invalidate_range(addr_at(0), offset());
 #ifndef PRODUCT
-  auto blob = CodeCache::find_blob(addr_at(0));
-  if (blob != nullptr) {
-    blob->set_flushed();
-  }
+    auto blob = CodeCache::find_blob(addr_at(0));
+    if (blob != nullptr) {
+      blob->set_flushed();
+    }
 #endif
+  }
 }
 
 void AbstractAssembler::bind(Label& L) {
