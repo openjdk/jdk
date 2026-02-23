@@ -341,10 +341,7 @@ public class HtmlDoclet extends AbstractDoclet {
             // No newline replacement for JQuery files
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_JS),
                     DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_JS), false);
-            copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_UI_JS),
-                    DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_UI_JS), false);
-            copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_UI_CSS),
-                    DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
+        }
 
         copyLegalFiles(options.createIndex(), options.syntaxHighlight());
         // Print a notice if the documentation contains diagnostic markers
