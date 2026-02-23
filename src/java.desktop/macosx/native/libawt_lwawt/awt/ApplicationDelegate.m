@@ -43,6 +43,11 @@
 // The following is a AWT convention?
 #define PREFERENCES_TAG  42
 
+// Custom event that is emitted by AWT to let libraries like JavaFX awtEmbeddedEvent
+// know that it is ready to receive embedded events. Until this event is 
+// emitted libraries should buffer the already received events.
+static NSString* awtEmbeddedEventReady = @"AWTEmbeddedEventReady";
+
 // Custom event that is provided by AWT to allow libraries like
 // JavaFX to forward native events to AWT even if AWT runs in
 // embedded mode.
@@ -135,7 +140,9 @@ AWT_ASSERT_APPKIT_THREAD;
         // Register embedded event listener
         NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
         Class clz = [ApplicationDelegate class];
+
         [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:awtEmbeddedEvent object:nil];
+        [ctr postNotificationName:awtEmbeddedEventReady object:nil userInfo:nil];
     }
 
     checked = YES;
