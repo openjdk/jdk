@@ -2406,10 +2406,8 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   return false;
 }
 
-// Return whether or not this register is ever used as an argument. This
-// function is used on startup to build the trampoline stubs in generateOptoStub.
-// Registers not mentioned will be killed by the VM call in the trampoline, and
-// arguments in those registers not be available to the callee.
+#ifdef ASSERT
+// Return whether or not this register is ever used as an argument.
 bool Matcher::can_be_java_arg(int reg) {
   // We must include the virtual halves in order to get STDs and LDs
   // instead of STWs and LWs in the trampoline stubs.
@@ -2441,6 +2439,7 @@ bool Matcher::can_be_java_arg(int reg) {
 
   return false;
 }
+#endif
 
 uint Matcher::int_pressure_limit()
 {

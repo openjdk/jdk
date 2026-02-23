@@ -221,9 +221,11 @@ public:
   // Convert a machine register to a machine register type, so-as to
   // properly match spill code.
   const int *_register_save_type;
+  #ifdef ASSERT
   // Maps from machine register to boolean; true if machine register can
   // be holding a call argument in some signature.
   static bool can_be_java_arg( int reg );
+  #endif
 
   // Number of integer live ranges that constitute high register pressure
   static uint int_pressure_limit();

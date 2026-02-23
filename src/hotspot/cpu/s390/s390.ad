@@ -1890,10 +1890,8 @@ const int z_num_iarg_registers = sizeof(z_iarg_reg) / sizeof(z_iarg_reg[0]);
 
 const int z_num_farg_registers = sizeof(z_farg_reg) / sizeof(z_farg_reg[0]);
 
-// Return whether or not this register is ever used as an argument. This
-// function is used on startup to build the trampoline stubs in generateOptoStub.
-// Registers not mentioned will be killed by the VM call in the trampoline, and
-// arguments in those registers not be available to the callee.
+#ifdef ASSERT
+// Return whether or not this register is ever used as an argument.
 bool Matcher::can_be_java_arg(int reg) {
   // We return true for all registers contained in z_iarg_reg[] and
   // z_farg_reg[] and their virtual halves.
@@ -1917,6 +1915,7 @@ bool Matcher::can_be_java_arg(int reg) {
 
   return false;
 }
+#endif
 
 uint Matcher::int_pressure_limit()
 {
