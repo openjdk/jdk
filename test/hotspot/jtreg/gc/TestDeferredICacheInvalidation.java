@@ -218,7 +218,7 @@ public class TestDeferredICacheInvalidation {
             WB.markMethodProfiled(m);
             WB.enqueueMethodForCompilation(m, compLevel);
             while (WB.isMethodQueuedForCompilation(m)) {
-                Thread.onSpinWait();
+                Thread.sleep(100);
             }
             if (WB.getMethodCompilationLevel(m) != compLevel) {
                 throw new IllegalStateException("Method " + m + " is not compiled at the compilation level: " + compLevel + ". Got: " + WB.getMethodCompilationLevel(m));
