@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +58,22 @@ public class StringFormat {
 
     @Benchmark
     public String stringFormat() {
-        return "%s".formatted(s);
+        return "value : %s".formatted(s);
+    }
+
+    @Benchmark
+    public String stringFormat2() {
+        return "value : %s %s".formatted(s, s);
+    }
+
+    @Benchmark
+    public String stringFormat4() {
+        return "value : %s %s %s %s".formatted(s, s, s, s);
+    }
+
+    @Benchmark
+    public String stringFormat8() {
+        return "value : %s %s %s %s %s %s %s %s".formatted(s, s, s, s, s, s, s, s);
     }
 
     @Benchmark
