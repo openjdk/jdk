@@ -2111,31 +2111,6 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   return n;
 }
 
-void PhaseIterGVN::on_input_edge_rewire(Node* n, uint idx) {
-  const uint op = n->Opcode();
-  // The reason we call it here is the ordering: the Mul identity optimization enqueues
-  // the Sub via add_users_to_worklist0(), but at that point we cannot reliably perform
-  // an exact (x - y) + y / x + (y - x) match in add_users_of_use_to_worklist(). Because
-  // it runs before subsume_node() rewires the edges, so the Sub inputs have not been
-  // updated yet and sub->in(2) may still point to the old Mul node. As a result,
-  // equality checks involving sub->in(2) can fail.
-  if ((op == Op_SubI || op == Op_SubL) && idx == 2) {
-    Node* y = n->in(idx);
-    const int add_op = (op == Op_SubI) ? Op_AddI : Op_AddL;
-    for (DUIterator_Fast i2max, i2 = n->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = n->fast_out(i2);
-      if (u->Opcode() == add_op) {
-        Node* a1 = u->in(1);
-        Node* a2 = u->in(2);
-        // match (x - y) + y or x + (y - x)
-        if ((a1 == n && a2 == y) || (a2 == n && a1 == y)) {
-          _worklist.push(u);
-        }
-      }
-    }
-  }
-}
-
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
@@ -2399,7 +2374,6 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
       if (use->in(j) == old) {
         use->set_req(j, nn);
         ++num_edges;
-        on_input_edge_rewire(use, j);
       }
     }
     i -= num_edges;    // we deleted 1 or more copies of this edge
@@ -2810,6 +2784,18 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     };
     use->visit_uses(push_and_to_worklist, is_boundary);
+  }
+
+  // If changed Sub inputs, check Add for identity.
+  // e.g., (x - y) + y -> x; x + (y - x) -> y.
+  if (use_op == Op_SubI || use_op == Op_SubL) {
+    const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == add_op) {
+        worklist.push(u);
+      }
+    }
   }
 }
 
