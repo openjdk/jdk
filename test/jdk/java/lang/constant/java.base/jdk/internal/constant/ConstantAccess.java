@@ -22,7 +22,7 @@
  */
 package jdk.internal.constant;
 
-// Exposes packaage-private methods for testing.
+// Exposes package-private methods for testing.
 public final class ConstantAccess {
     public static int skipOverFieldSignature(String descriptor, int start, int end) {
         return ConstantUtils.skipOverFieldSignature(descriptor, start, end);

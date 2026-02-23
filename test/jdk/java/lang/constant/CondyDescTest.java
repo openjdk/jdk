@@ -207,13 +207,13 @@ public class CondyDescTest extends SymbolicDescTest {
         assertNotSame(canonical, nonCanonical);
         assertTrue(clazz.isAssignableFrom(canonical.getClass()));
         assertFalse(clazz.isAssignableFrom(nonCanonical.getClass()));
-        assertEquals(canonical, prototype);
         assertEquals(prototype, canonical);
+        assertEquals(canonical, prototype);
         if (prototype instanceof DynamicConstantDesc) {
-            assertEquals(nonCanonical, canonical);
             assertEquals(canonical, nonCanonical);
-            assertEquals(nonCanonical, prototype);
+            assertEquals(nonCanonical, canonical);
             assertEquals(prototype, nonCanonical);
+            assertEquals(nonCanonical, prototype);
         }
     }
 

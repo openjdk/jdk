@@ -53,7 +53,6 @@ import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.invoke.MethodHandleInfo.*;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,13 +70,13 @@ public class MethodHandleDescTest extends SymbolicDescTest {
     private static ClassDesc testSuperclass = helperHolderClass.nested("TestSuperclass");
 
 
-    private static void assertMHEquals(MethodHandle a, MethodHandle b) {
-        MethodHandleInfo ia = LOOKUP.revealDirect(a);
-        MethodHandleInfo ib = LOOKUP.revealDirect(b);
-        assertEquals(ia.getDeclaringClass(), ib.getDeclaringClass());
-        assertEquals(ia.getName(), ib.getName());
-        assertEquals(ia.getMethodType(), ib.getMethodType());
-        assertEquals(ia.getReferenceKind(), ib.getReferenceKind());
+    private static void assertMHEquals(MethodHandle expected, MethodHandle actual) {
+        MethodHandleInfo expectedInfo = LOOKUP.revealDirect(expected);
+        MethodHandleInfo actualInfo = LOOKUP.revealDirect(actual);
+        assertEquals(expectedInfo.getDeclaringClass(), actualInfo.getDeclaringClass());
+        assertEquals(expectedInfo.getName(), actualInfo.getName());
+        assertEquals(expectedInfo.getMethodType(), actualInfo.getMethodType());
+        assertEquals(expectedInfo.getReferenceKind(), actualInfo.getReferenceKind());
     }
 
     private void testMethodHandleDesc(MethodHandleDesc r) throws ReflectiveOperationException {
