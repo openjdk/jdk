@@ -98,16 +98,15 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
 
     void justClose() {
         int cp;
-        while ((cp = (int) CLOSING_PHASE.compareAndExchange(0, 1)) != 0) {
+        while ((cp = (int) CLOSING_PHASE.compareAndExchange(this, 0, 1)) != 0) {
             if (cp == 2) {
                 throw sharedSessionAlreadyClosed();
             }
             Thread.onSpinWait();
         }
-        // above write to closingPhase may have been reordered after below reads of releaseCount's and acquireCount's Cells if
-        // it was not for this fullFence that prevents this from happening
-        VarHandle.fullFence();
-        // reading order is important: 1st RELEASE_COUNT, 2nd ACQUIRE_COUNT
+        // Above compareAndExchange to closingPhase has the semantics of volatile read and write in one atomic instruction so
+        // it may not be reordered with the below reads of releaseCount's and acquireCount's Cells.
+        // Reading order is important: 1st releaseCount, 2nd acquireCount. This way we never underestimate the number of active acquires.
         long value = -releaseCount.longValue() + acquireCount.longValue();
         if (value > 0) {
             closingPhase = 0;
