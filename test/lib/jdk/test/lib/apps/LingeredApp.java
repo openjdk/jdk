@@ -46,6 +46,7 @@ import java.util.UUID;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputBuffer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.StreamPumper;
 import jdk.test.lib.util.CoreUtils;
 
@@ -451,6 +452,7 @@ public class LingeredApp {
         long t1 = System.currentTimeMillis();
         theApp.createLock();
         try {
+            ProcessTools.checkDuplicateAgentOpts(jvmOpts);
             theApp.runAppExactJvmOpts(jvmOpts);
             theApp.waitAppReadyOrCrashed();
         } catch (Exception ex) {

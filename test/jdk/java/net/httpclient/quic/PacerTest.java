@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,21 @@ import jdk.internal.net.http.quic.QuicCongestionController;
 import jdk.internal.net.http.quic.QuicPacer;
 import jdk.internal.net.http.quic.QuicRttEstimator;
 import jdk.internal.net.http.quic.packets.QuicPacket;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
- * @run testng/othervm -Djdk.httpclient.quic.timerFrequency=1000 PacerTest
+ * @run junit/othervm -Djdk.httpclient.quic.timerFrequency=1000 PacerTest
  */
 public class PacerTest {
 
@@ -136,8 +137,7 @@ public class PacerTest {
                            int initialPermit, int periodicPermit, boolean slowStart) {
     }
 
-    @DataProvider
-    public Object[][] pacerFirstFlight() {
+    public static Object[][] pacerFirstFlight() {
         return List.of(
                         // Should permit initial window before blocking
                         new TestCase(1200, 10, 32, 16, 10, 4, true),
@@ -150,7 +150,8 @@ public class PacerTest {
                 .toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "pacerFirstFlight")
+    @ParameterizedTest
+    @MethodSource("pacerFirstFlight")
     public void testBasicPacing(TestCase test) {
         int maxDatagramSize = test.maxDatagramSize;
         int packetsInIW = test.packetsInIW;

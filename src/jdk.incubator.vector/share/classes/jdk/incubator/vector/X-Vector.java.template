@@ -88,8 +88,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
     // into a sharply-typed and size-specific
@@ -3829,7 +3829,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = k -> offset + indexMap[mapOffset + k]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length is non-power-of-two or
+            // For $Type$VectorMax,  if vector length is non-power-of-two or
             // 2048 bits, indexShape of $Type$ species is S_MAX_BIT.
             // Assume that vector length is 2048, then the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
@@ -3837,7 +3837,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -4455,14 +4455,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = i -> offset + indexMap[mo + i]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length  is 2048 bits, indexShape
+            // For $Type$VectorMax,  if vector length  is 2048 bits, indexShape
             // of $Type$ species is S_MAX_BIT. and the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
             // indexShape is still S_MAX_BIT, but the lane count of int vector
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -5061,7 +5061,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = k -> offset + indexMap[mapOffset + k]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length is non-power-of-two or
+            // For $Type$VectorMax,  if vector length is non-power-of-two or
             // 2048 bits, indexShape of $Type$ species is S_MAX_BIT.
             // Assume that vector length is 2048, then the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
@@ -5069,7 +5069,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -5252,14 +5252,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = i -> offset + indexMap[mo + i]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length  is 2048 bits, indexShape
+            // For $Type$VectorMax,  if vector length  is 2048 bits, indexShape
             // of $Type$ species is S_MAX_BIT. and the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
             // indexShape is still S_MAX_BIT, but the lane count of int vector
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -5813,13 +5813,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @Override
         @ForceInline
         public final $abstractvectortype$ zero() {
-            if ((Class<?>) vectorType() == $Type$MaxVector.class)
-                return $Type$MaxVector.ZERO;
+            if ((Class<?>) vectorType() == $Type$VectorMax.class)
+                return $Type$VectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return $Type$64Vector.ZERO;
-                case 128: return $Type$128Vector.ZERO;
-                case 256: return $Type$256Vector.ZERO;
-                case 512: return $Type$512Vector.ZERO;
+                case 64: return $Type$Vector64.ZERO;
+                case 128: return $Type$Vector128.ZERO;
+                case 256: return $Type$Vector256.ZERO;
+                case 512: return $Type$Vector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -5827,13 +5827,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @Override
         @ForceInline
         public final $abstractvectortype$ iota() {
-            if ((Class<?>) vectorType() == $Type$MaxVector.class)
-                return $Type$MaxVector.IOTA;
+            if ((Class<?>) vectorType() == $Type$VectorMax.class)
+                return $Type$VectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return $Type$64Vector.IOTA;
-                case 128: return $Type$128Vector.IOTA;
-                case 256: return $Type$256Vector.IOTA;
-                case 512: return $Type$512Vector.IOTA;
+                case 64: return $Type$Vector64.IOTA;
+                case 128: return $Type$Vector128.IOTA;
+                case 256: return $Type$Vector256.IOTA;
+                case 512: return $Type$Vector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -5842,13 +5842,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @Override
         @ForceInline
         public final VectorMask<$Boxtype$> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == $Type$MaxVector.class)
-                return $Type$MaxVector.$Type$MaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == $Type$VectorMax.class)
+                return $Type$VectorMax.$Type$MaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return $Type$64Vector.$Type$64Mask.maskAll(bit);
-                case 128: return $Type$128Vector.$Type$128Mask.maskAll(bit);
-                case 256: return $Type$256Vector.$Type$256Mask.maskAll(bit);
-                case 512: return $Type$512Vector.$Type$512Mask.maskAll(bit);
+                case 64: return $Type$Vector64.$Type$Mask64.maskAll(bit);
+                case 128: return $Type$Vector128.$Type$Mask128.maskAll(bit);
+                case 256: return $Type$Vector256.$Type$Mask256.maskAll(bit);
+                case 512: return $Type$Vector512.$Type$Mask512.maskAll(bit);
             }
             throw new AssertionError();
         }
@@ -5876,42 +5876,42 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_64
         = new $Type$Species(VectorShape.S_64_BIT,
-                            $Type$64Vector.class,
-                            $Type$64Vector.$Type$64Mask.class,
-                            $Type$64Vector.$Type$64Shuffle.class,
-                            $Type$64Vector::new);
+                            $Type$Vector64.class,
+                            $Type$Vector64.$Type$Mask64.class,
+                            $Type$Vector64.$Type$Shuffle64.class,
+                            $Type$Vector64::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_128
         = new $Type$Species(VectorShape.S_128_BIT,
-                            $Type$128Vector.class,
-                            $Type$128Vector.$Type$128Mask.class,
-                            $Type$128Vector.$Type$128Shuffle.class,
-                            $Type$128Vector::new);
+                            $Type$Vector128.class,
+                            $Type$Vector128.$Type$Mask128.class,
+                            $Type$Vector128.$Type$Shuffle128.class,
+                            $Type$Vector128::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_256
         = new $Type$Species(VectorShape.S_256_BIT,
-                            $Type$256Vector.class,
-                            $Type$256Vector.$Type$256Mask.class,
-                            $Type$256Vector.$Type$256Shuffle.class,
-                            $Type$256Vector::new);
+                            $Type$Vector256.class,
+                            $Type$Vector256.$Type$Mask256.class,
+                            $Type$Vector256.$Type$Shuffle256.class,
+                            $Type$Vector256::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_512
         = new $Type$Species(VectorShape.S_512_BIT,
-                            $Type$512Vector.class,
-                            $Type$512Vector.$Type$512Mask.class,
-                            $Type$512Vector.$Type$512Shuffle.class,
-                            $Type$512Vector::new);
+                            $Type$Vector512.class,
+                            $Type$Vector512.$Type$Mask512.class,
+                            $Type$Vector512.$Type$Shuffle512.class,
+                            $Type$Vector512::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_MAX
         = new $Type$Species(VectorShape.S_Max_BIT,
-                            $Type$MaxVector.class,
-                            $Type$MaxVector.$Type$MaxMask.class,
-                            $Type$MaxVector.$Type$MaxShuffle.class,
-                            $Type$MaxVector::new);
+                            $Type$VectorMax.class,
+                            $Type$VectorMax.$Type$MaskMax.class,
+                            $Type$VectorMax.$Type$ShuffleMax.class,
+                            $Type$VectorMax::new);
 
     /**
      * Preferred species for {@link $Type$Vector}s.
