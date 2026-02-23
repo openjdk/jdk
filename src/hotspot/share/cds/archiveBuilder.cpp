@@ -147,18 +147,6 @@ public:
       nulled = false;
     }
 
-    // We don't want any pointer that points to very bottom of the AOT metaspace, otherwise
-    // when AOTMetaspace::default_base_address()==0, we can't distinguish between a pointer
-    // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
-    // of the AOT metaspace.
-    //
-    // This should never happen because the protection zone prevents any valid objects from
-    // being allocated at the bottom of the AOT metaspace.
-    assert(AOTMetaspace::protection_zone_size() > 0, "must be");
-    if (new_p != nullptr) {
-      assert(_builder->any_to_offset(new_p) > 0, "cannot point to bottom of AOT metaspace");
-    }
-
     log_trace(aot)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT " %zu",
                    p2i(ptr_loc), p2i(old_p) + tags, p2i(new_p), tags);
 

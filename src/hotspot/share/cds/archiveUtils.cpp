@@ -119,6 +119,16 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
   if (ptr_base() <= ptr_loc && ptr_loc < ptr_end()) {
     address value = *ptr_loc;
     if (value != nullptr) {
+      // We don't want any pointer that points to very bottom of the AOT metaspace, otherwise
+      // when AOTMetaspace::default_base_address()==0, we can't distinguish between a pointer
+      // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
+      // of the AOT metaspace.
+      //
+      // This should never happen because the protection zone prevents any valid objects from
+      // being allocated at the bottom of the AOT metaspace.
+      assert(AOTMetaspace::protection_zone_size() > 0, "must be");
+      assert(ArchiveBuilder::current()->any_to_offset(value) > 0, "cannot point to bottom of AOT metaspace");
+
       assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
       size_t idx = ptr_loc - ptr_base();
       if (_ptrmap->size() <= idx) {
