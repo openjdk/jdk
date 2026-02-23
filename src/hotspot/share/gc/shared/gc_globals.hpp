@@ -202,9 +202,6 @@
           "(Deprecated) Enable parallel reference processing "              \
           "whenever possible")                                              \
                                                                             \
-  product(bool, ParallelRefProcBalancingEnabled, true,                      \
-          "(Deprecated) Enable balancing of reference processing queues")   \
-                                                                            \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
                "Ergonomically start one thread for this amount of "         \
                "references for reference processing if "                    \
@@ -261,6 +258,7 @@
   develop(uintx, ObjArrayMarkingStride, 2048,                               \
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
+          range(1, INT_MAX/2)                                               \
                                                                             \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "(Deprecated) Never act like a server-class machine")             \
