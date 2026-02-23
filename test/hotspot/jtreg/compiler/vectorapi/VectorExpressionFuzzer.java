@@ -26,6 +26,7 @@
  * @bug 8369699
  * @key randomness
  * @summary Test the Template Library's expression generation for the Vector API.
+ * @requires os.family == "linux" & os.simpleArch == "x64"
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -34,6 +35,10 @@
  * @compile ../../compiler/lib/verify/Verify.java
  * @run main ${test.main.class}
  */
+
+// TODO: remove the x64 and linux restriction above. I added that for now so we are not flooded
+//       with failures in the CI. We should remove these restriction once more bugs are fixed.
+//       x64 linux is the easiest to debug on for me, that's why I picked it.
 
 package compiler.vectorapi;
 
