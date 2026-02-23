@@ -494,6 +494,7 @@ static char* get_user_name(uid_t uid) {
   return user_name;
 }
 
+#ifndef __APPLE__
 // return the name of the user that owns the process identified by vmid.
 //
 // This method uses a slow directory search algorithm to find the backing
@@ -657,6 +658,7 @@ static char* get_user_name(int vmid, int *nspid, TRAPS) {
 #endif
   return result;
 }
+#endif
 
 // return the file name of the backing store file for the named
 // shared memory region for the given user name and vmid.
