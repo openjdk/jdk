@@ -668,7 +668,12 @@ public:
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
+  static void addptr_32(MacroAssembler *masm, Address dst, int32_t src) {
+    masm->addptr(dst, src);
+  }
+  typedef void (*addptr_32_insn_t)(MacroAssembler *masm, Address dst, int32_t src);
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset,
+                             addptr_32_insn_t xx = &addptr_32);
 
   // Debugging
 
@@ -750,7 +755,6 @@ public:
   // here in MacroAssembler. The major exception to this rule is call
 
   // Arithmetics
-
 
   void addptr(Address dst, int32_t src) { addq(dst, src); }
   void addptr(Address dst, Register src);
