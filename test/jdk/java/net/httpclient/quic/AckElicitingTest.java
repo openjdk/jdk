@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,6 @@ import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.quic.QuicTransportParametersConsumer;
 import jdk.test.lib.RandomFactory;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.crypto.AEADBadTagException;
 import javax.net.ssl.SSLParameters;
@@ -80,16 +78,19 @@ import javax.net.ssl.SSLSession;
 
 import static jdk.internal.net.http.quic.frames.QuicFrame.*;
 import static jdk.internal.net.http.quic.frames.ConnectionCloseFrame.CONNECTION_CLOSE_VARIANT;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
 
-/**
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+/*
  * @test
  * @summary tests the logic to decide whether a packet or
  *          a frame is ACK-eliciting.
  * @library /test/lib
- * @run testng AckElicitingTest
- * @run testng/othervm -Dseed=-7997973196290088038 AckElicitingTest
+ * @run junit AckElicitingTest
+ * @run junit/othervm -Dseed=-7997973196290088038 AckElicitingTest
  */
 public class AckElicitingTest {
 
@@ -307,7 +308,7 @@ public class AckElicitingTest {
      *                 {@code obj.ackEliciting()}
      * @param <T> A concrete subclass of {@link QuicFrame} or {@link QuicPacket}
      */
-    static record TestCase<T>(Class<? extends T> type,
+    record TestCase<T>(Class<? extends T> type,
                        Function<T, String> describer,
                        Predicate<? super T> ackEliciting,
                        T obj,
@@ -336,7 +337,7 @@ public class AckElicitingTest {
          */
         public static <T extends QuicFrame> TestCase<T>
                     of(Class<? extends T> type, T frame, boolean expected) {
-            return new TestCase<T>(type, TestCase::describeFrame,
+            return new TestCase<>(type, TestCase::describeFrame,
                     QuicFrame::isAckEliciting, frame, expected);
         }
 
@@ -349,7 +350,7 @@ public class AckElicitingTest {
          * @return a new instance of {@code TestCase}
          */
         public static <T extends QuicFrame> TestCase<T> of(T frame, boolean expected) {
-            return new TestCase<T>((Class<T>)frame.getClass(),
+            return new TestCase<>((Class<T>)frame.getClass(),
                     TestCase::describeFrame,
                     QuicFrame::isAckEliciting,
                     frame, expected);
@@ -391,7 +392,7 @@ public class AckElicitingTest {
      * @param <T> a concrete subclass of {@code QuicFrame}
      * @return a new instance of the given concrete class.
      */
-    <T extends QuicFrame> T newFrame(Class<T> frameClass) {
+    static <T extends QuicFrame> T newFrame(Class<T> frameClass) {
         var frameType = QuicFrame.frameTypeOf(frameClass);
         if (frameType == CONNECTION_CLOSE) {
             if (RANDOM.nextBoolean()) {
@@ -454,7 +455,7 @@ public class AckElicitingTest {
      * @return a list of {@code TestCase} to test all possible concrete
      *         subclasses of {@code QuicFrame}
      */
-    public List<TestCase<? extends QuicFrame>> createFramesTests() {
+    static List<TestCase<? extends QuicFrame>> createFramesTests() {
         List<TestCase<? extends QuicFrame>> frames = new ArrayList<>();
         frames.add(of(newFrame(AckFrame.class), false));
         frames.add(of(newFrame(ConnectionCloseFrame.class), false));
@@ -476,7 +477,7 @@ public class AckElicitingTest {
      * @param frames a list of frames
      * @return a new instance of {@code QuicPacket}
      */
-    QuicPacket createPacket(List<QuicFrame> frames) {
+    static QuicPacket createPacket(List<QuicFrame> frames) {
         PacketType[] values = PacketType.values();
         int index = PacketType.NONE.ordinal();
         while (index == PacketType.NONE.ordinal()) {
@@ -506,9 +507,9 @@ public class AckElicitingTest {
      * pseudo random list of concrete {@link QuicFrame} instances.
      * @param ackEliciting whether the returned packet should be
      *                     ack eliciting.
-     * @return
+     * @return a new QuicPacket
      */
-    QuicPacket createPacket(boolean ackEliciting) {
+    static QuicPacket createPacket(boolean ackEliciting) {
         List<QuicFrame> frames = new ArrayList<>();
         int mincount = ackEliciting ? 1 : 0;
         int ackCount = RANDOM.nextInt(mincount, 5);
@@ -542,7 +543,7 @@ public class AckElicitingTest {
         return createPacket(mergeConsecutivePaddingFrames(frames));
     }
 
-    private List<QuicFrame> mergeConsecutivePaddingFrames(List<QuicFrame> frames) {
+    private static List<QuicFrame> mergeConsecutivePaddingFrames(List<QuicFrame> frames) {
         var iterator = frames.listIterator();
         QuicFrame previous = null;
 
@@ -567,7 +568,7 @@ public class AckElicitingTest {
      * @return a list of {@code TestCase} to test random instances of
      *         {@code QuicPacket} containing random instances of {@link QuicFrame}
      */
-    public List<TestCase<? extends QuicPacket>> createPacketsTests() {
+    static List<TestCase<? extends QuicPacket>> createPacketsTests() {
         List<TestCase<? extends QuicPacket>> packets = new ArrayList<>();
         packets.add(of(createPacket(List.of(newFrame(AckFrame.class))), false));
         packets.add(of(createPacket(List.of(newFrame(ConnectionCloseFrame.class))), false));
@@ -593,8 +594,7 @@ public class AckElicitingTest {
      * @return test case to test
      *        {@link QuicFrame#isAckEliciting()}
      */
-    @DataProvider(name = "frames")
-    public Object[][] framesDataProvider() {
+    public static Object[][] framesDataProvider() {
         return createFramesTests().stream()
                 .map(List::of)
                 .map(List::toArray)
@@ -607,8 +607,7 @@ public class AckElicitingTest {
      * @return test case to test
      *        {@link QuicPacket#isAckEliciting()}
      */
-    @DataProvider(name = "packets")
-    public Object[][] packetsDataProvider() {
+    public static Object[][] packetsDataProvider() {
         return createPacketsTests().stream()
                 .map(List::of)
                 .map(List::toArray)
@@ -621,8 +620,9 @@ public class AckElicitingTest {
      * @param test the test inputs
      * @param <T> a concrete subclass of QuicFrame
      */
-    @Test(dataProvider = "frames")
-    public <T extends QuicFrame> void testFrames(TestCase<T> test) {
+    @ParameterizedTest
+    @MethodSource("framesDataProvider")
+    <T extends QuicFrame> void testFrames(TestCase<T> test) {
         testAckEliciting(test.type(),
                 test.describer(),
                 test.ackEliciting(),
@@ -636,8 +636,9 @@ public class AckElicitingTest {
      * @param test the test inputs
      * @param <T> a concrete subclass of QuickPacket
      */
-    @Test(dataProvider = "packets")
-    public <T extends QuicPacket> void testPackets(TestCase<T> test) {
+    @ParameterizedTest
+    @MethodSource("packetsDataProvider")
+    <T extends QuicPacket> void testPackets(TestCase<T> test) {
         testAckEliciting(test.type(),
                 test.describer(),
                 test.ackEliciting(),
@@ -664,7 +665,7 @@ public class AckElicitingTest {
                 type.getSimpleName(),
                 describer.apply(obj),
                 expected);
-        assertEquals(ackEliciting.test(obj), expected, describer.apply(obj));
+        assertEquals(expected, ackEliciting.test(obj), describer.apply(obj));
         if (obj instanceof QuicFrame frame) {
             checkFrame(frame);
         } else if (obj instanceof QuicPacket packet) {
@@ -695,10 +696,10 @@ public class AckElicitingTest {
         System.out.printf("Comparing frames: %s with %s%n",
                 decoded.getClass().getSimpleName(),
                 expected.getClass().getSimpleName());
-        assertEquals(decoded.getClass(), expected.getClass());
-        assertEquals(decoded.size(), expected.size());
-        assertEquals(decoded.getTypeField(), expected.getTypeField());
-        assertEquals(decoded.isAckEliciting(), expected.isAckEliciting());
+        assertEquals(expected.getClass(), decoded.getClass());
+        assertEquals(expected.size(), decoded.size());
+        assertEquals(expected.getTypeField(), decoded.getTypeField());
+        assertEquals(expected.isAckEliciting(), decoded.isAckEliciting());
     }
 
     // This is not a full-fledged test for packet encoding/decoding.
@@ -714,13 +715,13 @@ public class AckElicitingTest {
             encoder.encode(packet, buffer, CONTEXT);
             buffer.flip();
             var decoded = decoder.decode(buffer, CONTEXT);
-            assertEquals(decoded.size(), packet.size());
-            assertEquals(decoded.packetType(), packet.packetType());
-            assertEquals(decoded.payloadSize(), packet.payloadSize());
-            assertEquals(decoded.isAckEliciting(), packet.isAckEliciting());
+            assertEquals(packet.size(), decoded.size());
+            assertEquals(packet.packetType(), decoded.packetType());
+            assertEquals(packet.payloadSize(), decoded.payloadSize());
+            assertEquals(packet.isAckEliciting(), decoded.isAckEliciting());
             var frames = packet.frames();
             var decodedFrames = decoded.frames();
-            assertEquals(decodedFrames.size(), frames.size());
+            assertEquals(frames.size(), decodedFrames.size());
         } catch (Exception x) {
             throw new AssertionError(packet.getClass().getName(), x);
         }

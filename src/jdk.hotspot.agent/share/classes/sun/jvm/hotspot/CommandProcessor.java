@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.oops.Klass;
 import sun.jvm.hotspot.oops.Metadata;
 import sun.jvm.hotspot.oops.Method;
-import sun.jvm.hotspot.oops.MethodData;
 import sun.jvm.hotspot.oops.Oop;
 import sun.jvm.hotspot.oops.RawHeapVisitor;
 import sun.jvm.hotspot.oops.Symbol;
@@ -860,44 +859,8 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("printmdo", "printmdo [ -a | expression ]", false) {
-            // Print every MDO in the heap or the one referenced by expression.
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                } else {
-                    String s = t.nextToken();
-                    if (s.equals("-a")) {
-                        ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
-                        cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
-                                public void visit(Klass k) {
-                                    if (k instanceof InstanceKlass) {
-                                        MethodArray methods = ((InstanceKlass)k).getMethods();
-                                        for (int i = 0; i < methods.length(); i++) {
-                                            Method m = methods.at(i);
-                                            MethodData mdo = m.getMethodData();
-                                            if (mdo != null) {
-                                                out.println("MethodData " + mdo.getAddress() + " for " +
-                                                    "method " + m.getMethodHolder().getName().asString() + "." +
-                                                    m.getName().asString() +
-                                                            m.getSignature().asString() + "@" + m.getAddress());
-                                                mdo.printDataOn(out);
-                                    }
-                                }
-                                    }
-                                }
-                            }
-                            );
-                    } else {
-                        Address a = VM.getVM().getDebugger().parseAddress(s);
-                        MethodData mdo = (MethodData) Metadata.instantiateWrapperFor(a);
-                        mdo.printDataOn(out);
-                    }
-                }
-            }
-        },
         new Command("printall", "printall", false) {
-            // Print every MDO in the heap or the one referenced by expression.
+            // Print every Method for every class loaded.
             public void doit(Tokens t) {
                 if (t.countTokens() != 0) {
                     usage();
