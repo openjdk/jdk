@@ -1903,7 +1903,7 @@ public class KeyStore {
         } else {
             throw new KeyStoreException("Keystore format " +
                     matched +
-                    " disabled by jdk.crypto.disabledAlgrithms property");
+                    " disabled by jdk.crypto.disabledAlgorithms property");
         }
     }
 
