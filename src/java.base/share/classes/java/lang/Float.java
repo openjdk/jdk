@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1312,6 +1312,28 @@ public final class Float extends Number
         return (thisBits == anotherBits ?  0 : // Values are equal
                 (thisBits < anotherBits ? -1 : // (-0.0, 0.0) or (!NaN, NaN)
                  1));                          // (0.0, -0.0) or (NaN, !NaN)
+    }
+
+    /**
+     * {@return {@code true} if the arguments have {@linkplain
+     * ##repEquivalence representation equivalence} and {@code false}
+     * otherwise}
+     *
+     * Special cases:
+     * <ul>
+     * <li>{@code -0.0f} and {@code +0.0f} are <em>not</em> equivalent
+     * (unlike how {@code -0.0f} and {@code +0.0f} compare under the
+     * {@code ==} operator)
+     * <li>two NaN values are equivalent to each other, but not
+     * equivalent to any non-NaN value
+     * </ul>
+     *
+     * @param   f1 the first {@code float} to compare
+     * @param   f2 the second {@code float} to compare
+     * @since 27
+     */
+    public static boolean equivalent(float f1, float f2) {
+        return Float.floatToIntBits(f1) == Float.floatToIntBits(f2);
     }
 
     /**

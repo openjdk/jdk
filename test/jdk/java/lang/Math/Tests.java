@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,7 @@ public class Tests {
 
     public static int test(String testName, float input,
                            float result, float expected) {
-        if (Float.compare(expected, result) != 0 ) {
+        if (!Float.equivalent(expected, result)) {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
                                "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
@@ -370,7 +370,7 @@ public class Tests {
 
     public static int test(String testName, double input,
                            double result, double expected) {
-        if (Double.compare(expected, result ) != 0) {
+        if (!Double.equivalent(expected, result)) {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
                                "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
@@ -384,7 +384,7 @@ public class Tests {
     public static int test(String testName,
                            float input1, double input2,
                            float result, float expected) {
-        if (Float.compare(expected, result ) != 0) {
+        if (!Float.equivalent(expected, result)) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\t(" + toHexString(input2) + ")\n" +
@@ -406,7 +406,7 @@ public class Tests {
     public static int test(String testName,
                            double input1, double input2,
                            double result, double expected) {
-        if (Double.compare(expected, result ) != 0) {
+        if (!Double.equivalent(expected, result)) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\t(" + toHexString(input2) + ")\n" +
@@ -421,7 +421,7 @@ public class Tests {
     public static int test(String testName,
                            float input1, int input2,
                            float result, float expected) {
-        if (Float.compare(expected, result ) != 0) {
+        if (Float.equivalent(expected, result)) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\n"  +
@@ -436,7 +436,7 @@ public class Tests {
     public static int test(String testName,
                            double input1, int input2,
                            double result, double expected) {
-        if (Double.compare(expected, result ) != 0) {
+        if (!Double.equivalent(expected, result)) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\n"  +
@@ -451,7 +451,7 @@ public class Tests {
     public static int test(String testName,
                            float input1, float input2, float input3,
                            float result, float expected) {
-        if (Float.compare(expected, result ) != 0) {
+        if (!Float.equivalent(expected, result)) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\t(" + toHexString(input2) + ") and"
@@ -479,7 +479,7 @@ public class Tests {
     public static int test(String testName,
                            double input1, double input2, double input3,
                            double result, double expected) {
-        if (Double.compare(expected, result ) != 0) {
+        if (!Double.equivalent(expected, result)) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\t(" + toHexString(input2) + ") and"
@@ -498,7 +498,7 @@ public class Tests {
         // answer.  This would cause the ulp size to be half as large
         // as it should be, doubling the measured error).
 
-        if (Double.compare(expected, result) == 0) {
+        if (Double.equivalent(expected, result)) {
             return 0;   // result and expected are equivalent
         } else {
             if( ulps == 0.0) {
@@ -631,7 +631,7 @@ public class Tests {
     }
     public static int testTolerance(String testName, double input,
                                     double result, double expected, double tolerance) {
-        if (Double.compare(expected, result ) != 0) {
+        if (!Double.equivalent(expected, result)) {
             double difference = expected - result;
             if (isUnordered(expected, result) ||
                 Double.isNaN(difference) ||
