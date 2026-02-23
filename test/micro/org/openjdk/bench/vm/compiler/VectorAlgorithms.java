@@ -291,6 +291,21 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
+    public Object conditionalSumB_loop() {
+        return VectorAlgorithmsImpl.conditionalSumB_loop(d.strB);
+    }
+
+    @Benchmark
+    public Object conditionalSumB_VectorAPI_v1() {
+        return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v1(d.strB);
+    }
+
+    @Benchmark
+    public Object conditionalSumB_VectorAPI_v2() {
+        return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v2(d.strB);
+    }
+
+    @Benchmark
     public float[] pieceWise2FunctionF_loop() {
         return VectorAlgorithmsImpl.pieceWise2FunctionF_loop(d.xF, d.rF1);
     }

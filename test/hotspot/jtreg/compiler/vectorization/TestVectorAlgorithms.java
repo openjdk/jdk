@@ -159,6 +159,7 @@ public class TestVectorAlgorithms {
         testGroups.put("conditionalSumB", new HashMap<String,TestFunction>());
         testGroups.get("conditionalSumB").put("conditionalSumB_loop",         i -> { return conditionalSumB_loop(d.strB); });
         testGroups.get("conditionalSumB").put("conditionalSumB_VectorAPI_v1", i -> { return conditionalSumB_VectorAPI_v1(d.strB); });
+        testGroups.get("conditionalSumB").put("conditionalSumB_VectorAPI_v2", i -> { return conditionalSumB_VectorAPI_v2(d.strB); });
 
 
         testGroups.put("pieceWise2FunctionF", new HashMap<String,TestFunction>());
@@ -210,6 +211,7 @@ public class TestVectorAlgorithms {
                  "lowerCaseB_VectorAPI_v2",
                  "conditionalSumB_loop",
                  "conditionalSumB_VectorAPI_v1",
+                 "conditionalSumB_VectorAPI_v2",
                  "pieceWise2FunctionF_loop",
                  "pieceWise2FunctionF_VectorAPI_v1",
                  "pieceWise2FunctionF_VectorAPI_v2"})
@@ -626,6 +628,14 @@ public class TestVectorAlgorithms {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public Object conditionalSumB_VectorAPI_v1(byte[] a) {
         return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v1(a);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VI,        "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object conditionalSumB_VectorAPI_v2(byte[] a) {
+        return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v2(a);
     }
 
     @Test

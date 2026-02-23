@@ -937,6 +937,7 @@ public class VectorAlgorithmsImpl {
     }
 
     private static class ConditionalSumB_VectorAPI_V1 {
+        // Pick I species to be a full vector, and the B vector a quarter its bit length.
         private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_PREFERRED;
         private static final VectorShape SHAPE = VectorShape.forBitSize(8 * SPECIES_I.length());
         private static final VectorSpecies<Byte>    SPECIES_B = SHAPE.withLanes(byte.class);
@@ -953,6 +954,43 @@ public class VectorAlgorithmsImpl {
                 vB = zeroB.blend(vB, mask);
                 var vI = vB.castShape(SPECIES_I, 0);
                 accI = accI.add(vI);
+            }
+            int sum = accI.reduceLanes(VectorOperators.ADD);
+            for (; i < a.length; i++) {
+                byte c = a[i];
+                if (c >= 'A' && c <= 'Z') {
+                    sum += c;
+                }
+            }
+            return sum;
+        }
+    }
+
+    public static int conditionalSumB_VectorAPI_v2(byte[] a) {
+        return ConditionalSumB_VectorAPI_V2.compute(a);
+    }
+
+    private static class ConditionalSumB_VectorAPI_V2 {
+        // Pick B species to be a full vector, and use 4 I vectors of the same bit size.
+        private static final VectorSpecies<Byte>    SPECIES_B = ByteVector.SPECIES_PREFERRED;
+        private static final VectorSpecies<Integer> SPECIES_I = SPECIES_B.vectorShape().withLanes(int.class);
+
+        public static int compute(byte[] a) {
+            var zeroB = ByteVector.zero(SPECIES_B);
+            var accI = IntVector.zero(SPECIES_I);
+            int i;
+            for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+                var vB = ByteVector.fromArray(SPECIES_B, a, i);
+                var maskA = vB.compare(VectorOperators.GE, (byte)'A');
+                var maskZ = vB.compare(VectorOperators.LE, (byte)'Z');
+                var mask = maskA.and(maskZ);
+                vB = zeroB.blend(vB, mask);
+                // When casting byte->int, we get 4x the bits, and split them into 4 parts.
+                var vI0 = vB.castShape(SPECIES_I, 0);
+                var vI1 = vB.castShape(SPECIES_I, 1);
+                var vI2 = vB.castShape(SPECIES_I, 2);
+                var vI3 = vB.castShape(SPECIES_I, 3);
+                accI = accI.add(vI0.add(vI1).add(vI2).add(vI3));
             }
             int sum = accI.reduceLanes(VectorOperators.ADD);
             for (; i < a.length; i++) {
