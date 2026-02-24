@@ -140,7 +140,7 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     // load the card table address from the AOT Runtime Constants area
-    LIR_Opr byte_map_base_adr = LIR_OprFact::intptrConst(AOTRuntimeConstants::card_table_address());
+    LIR_Opr byte_map_base_adr = LIR_OprFact::intptrConst(AOTRuntimeConstants::card_table_base_address());
     LIR_Opr byte_map_base_reg = gen->new_pointer_register();
     __ move(byte_map_base_adr, byte_map_base_reg);
     LIR_Address* byte_map_base_indirect = new LIR_Address(byte_map_base_reg, 0, T_LONG);

@@ -120,7 +120,7 @@ Node* CardTableBarrierSetC2::byte_map_base_node(IdealKit* kit) const {
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     // load the card table address from the AOT Runtime Constants area
-    Node* byte_map_base_adr = kit->makecon(TypeRawPtr::make(AOTRuntimeConstants::card_table_address()));
+    Node* byte_map_base_adr = kit->makecon(TypeRawPtr::make(AOTRuntimeConstants::card_table_base_address()));
     return kit->load_aot_const(byte_map_base_adr, TypeRawPtr::NOTNULL);
   }
 #endif

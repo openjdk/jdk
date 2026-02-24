@@ -1838,19 +1838,19 @@ void AOTRuntimeConstants::initialize_from_runtime() {
     CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
     grain_shift = ctbs->grain_shift();
   }
-  _aot_runtime_constants._card_table_address = card_table_base;
+  _aot_runtime_constants._card_table_base = card_table_base;
   _aot_runtime_constants._grain_shift = grain_shift;
 }
 
 address AOTRuntimeConstants::_field_addresses_list[] = {
-  ((address)&_aot_runtime_constants._card_table_address),
+  ((address)&_aot_runtime_constants._card_table_base),
   ((address)&_aot_runtime_constants._grain_shift),
   nullptr
 };
 
-address AOTRuntimeConstants::card_table_address() {
+address AOTRuntimeConstants::card_table_base_address() {
   assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
-  return (address)&_aot_runtime_constants._card_table_address;
+  return (address)&_aot_runtime_constants._card_table_base;
 }
 
 // This is called after initialize() but before init2()

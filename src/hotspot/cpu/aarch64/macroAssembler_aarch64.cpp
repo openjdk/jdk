@@ -5768,7 +5768,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 void MacroAssembler::load_byte_map_base(Register reg) {
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
-    address byte_map_base_adr = AOTRuntimeConstants::card_table_address();
+    address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
     lea(reg, ExternalAddress(byte_map_base_adr));
     ldr(reg, Address(reg));
     return;
