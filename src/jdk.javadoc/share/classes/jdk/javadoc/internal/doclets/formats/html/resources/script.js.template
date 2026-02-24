@@ -450,10 +450,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
             if (expanded) {
                 collapse();
                 e.preventDefault();
-            } else if (e.target.id === "page-search-input") {
-                resetInput(e.target, e, false);
-            } else if (isInput(e.target)) {
-                resetInput(e.target, e, true);
             } else {
                 var filter = getVisibleFilterInput(false);
                 if (filter && filter.value) {

@@ -538,12 +538,15 @@ public class Navigation {
                 .add(inputReset);
         target.add(searchDiv);
         target.add(HtmlTree.DIV(HtmlId.of("result-section"))
-                .add(HtmlTree.DIV(Text.of("Search in "))
-                        .add(createModuleSelector())
-                        .add(HtmlTree.SPAN(contents.getContent("doclet.search.loading"))
-                                .setId(HtmlId.of("page-search-notify"))))
-                .add(HtmlTree.DIV(HtmlId.of("result-container"))
-                        .addUnchecked(Text.EMPTY)));
+                .add(HtmlTree.DIV(HtmlTree.DIV(Text.of("Search for ")))
+                        .add(HtmlTree.DIV(Text.of(" ")))
+                        .add(HtmlTree.DIV(Text.of("in ")))
+                        .add(HtmlTree.DIV(createModuleSelector())))
+                .add(HtmlTree.DIV(HtmlId.of("result-container")).addUnchecked(Text.EMPTY))
+                .add(HtmlTree.DIV(HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.SEARCH_PAGE),
+                                contents.getContent("doclet.search.linkSearchPageLabel"))))
+                        .add(HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.HELP_DOC).fragment("search"),
+                                Text.of("Search help"))))));
     }
 
     private Content createModuleSelector() {

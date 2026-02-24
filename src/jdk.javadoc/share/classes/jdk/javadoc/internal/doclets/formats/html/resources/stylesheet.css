@@ -83,10 +83,11 @@
     --search-input-background-color: #ffffff;
     --search-input-text-color: #000000;
     --search-input-placeholder-color: #757575;
-    --overlay-background: rgba(153, 169, 183, 0.2);
+    --overlay-background: rgba(153, 169, 183, 0.3);
     /* Highlight color for active search tag target */
     --search-tag-background-color: #ffff66;
     --search-tag-text-color: var(--block-text-color);
+    --search-hover-background: #d8d8e0;
     /* Copy button colors and filters */
     --button-border-color: #b0b8c8;
     --button-active-filter: brightness(96%);
@@ -140,9 +141,10 @@
     --search-input-background-color: #303030;
     --search-input-text-color: #d0d0d0;
     --search-input-placeholder-color: #979797;
-    --overlay-background: rgba(99, 110, 119, 0.5);
+    --overlay-background: rgba(0, 0, 0, 0.45);
     --search-tag-background-color: #c6c61e;
     --search-tag-text-color: #282828;
+    --search-hover-background: #484850;
     --button-border-color: #909090;
     --button-active-filter: brightness(96%);
     --button-focus-filter: brightness(104%);
@@ -298,6 +300,7 @@ hr {
     height: 100%;
     max-width: var(--max-content-width);
     margin: var(--content-margin);
+    position: relative;
 }
 .top-nav {
     background-color:var(--navbar-background-color);
@@ -383,7 +386,7 @@ div.sub-nav {
     min-height: var(--sub-nav-height);
 }
 ol.sub-nav-list {
-    flex: 1 1 90%;
+    flex: 1 1 auto;
     line-height: 1.7;
     overflow: auto;
     padding-left:6px;
@@ -413,7 +416,7 @@ ol.sub-nav-list a.current-selection {
     border-radius: 3px;
 }
 .sub-nav .nav-list-search {
-    flex: 1 1 10%;
+    flex: 0 0 auto;
     margin: 4.5px 15px auto 5px;
     padding: 1px 0;
     position:relative;
@@ -668,7 +671,8 @@ nav.toc ol.toc-list ol.toc-list ol.toc-list a {
     padding-left: 40px;
 }
 nav.toc a:hover {
-    background-color: var(--toc-hover-color);
+    /* background-color: var(--toc-hover-color); */
+    background-color: var(--search-hover-background);
 }
 nav.toc a.current-selection {
     background-color: var(--toc-highlight-color);
@@ -1080,8 +1084,8 @@ div.overlay {
 div.sub-nav div#result-section {
     display: none;
     position: absolute;
-    right: 18px;
-    top: 104px;
+    right: 5px;
+    top: -5px;
     max-width: min(75vw, calc(var(--max-content-width) * 0.75));
     z-index: 7;
     background-color: var(--toc-background-color);
@@ -1106,13 +1110,49 @@ div.sub-nav div#result-section div.table-tabs {
     padding-left: 3px;
 }
 div.sub-nav div#result-section > div:first-child {
-    padding: 10px 10px 0 10px;
+    display: grid;
+    grid-template-columns: auto 365px;
+    place-items: start end;
+    padding-top: 5px;
+}
+div.sub-nav div#result-section > div:first-child > div {
+    padding: 10px 4px 8px 10px;
+}
+div.sub-nav div#result-section > div:last-child {
+    display: grid;
+    grid-template-columns: auto auto;
+    background-color: var(--subnav-background-color);
+    color: var(--subnav-link-color);
+    margin-top: 6px;
+}
+div.sub-nav div#result-section > div:last-child > div {
+    padding: 10px;
+    font-size: var(--nav-font-size);
+}
+div.sub-nav div#result-section > div:last-child > div:first-child {
+    justify-self: start;
+}
+div.sub-nav div#result-section > div:last-child > div:last-child {
+    justify-self: end;
+}
+div.sub-nav div#result-section > div:first-child > div:has(select) {
+    place-self: start;
+    padding: 5px 2px 0 2px;
+}
+div.sub-nav select#search-modules {
+    margin: 2px;
 }
 div.sub-nav div#result-container .result-table {
-    max-height: calc(87vh - var(--nav-height));
+    max-height: calc(96vh - var(--nav-height) - 110px);
     overflow-y: scroll;
     overscroll-behavior: contain;
     margin-top: 3px;
+}
+div.sub-nav div#result-container .result-table:has(div.table-tabs) {
+    max-height: calc(96vh - var(--nav-height) - 74px);
+}
+div.sub-nav div#result-container > p {
+    text-align: center;
 }
 .ui-menu .ui-state-active {
     /* Overrides the color of selection used in jQuery UI */
@@ -1233,10 +1273,10 @@ input#page-search-input {
     margin: 10px 0;
 }
 input#search-input {
-    width: 270px;
+    width: 310px;
     margin: 0;
     position: relative;
-    z-index: 4;
+    z-index: 8;
 }
 input.filter-input {
     min-width: 40px;
@@ -1261,7 +1301,7 @@ input#reset-search {
     position:absolute;
     right:5px;
     top:7px;
-    z-index: 5;
+    z-index: 8;
 }
 input.reset-filter {
     position: relative;
@@ -1348,6 +1388,9 @@ div#result-container {
 #result-container div.result-table > a.search-result-link {
     color: var(--block-text-color);
     white-space: nowrap;
+}
+#result-container div.result-table > a.search-result-link:hover {
+    background-color: var(--search-hover-background);
 }
 #result-container div.result-table > a.search-result-link:focus-visible,
 #result-container div.result-table > a.search-result-link.selected {
@@ -1699,7 +1742,13 @@ table.striped > tbody > tr > th {
 }
 @media screen and (max-width: 1200px) {
     input#search-input {
-        width: 22.5vw;
+        width: 25.5vw;
+    }
+    div.sub-nav div#result-section > div:first-child {
+        grid-template-columns: auto calc(25vw + 60px);
+    }
+    div.sub-nav select#search-modules {
+        max-width: calc(25vw + 50px);
     }
 }
 @media screen and (max-width: 1000px) {
@@ -1845,7 +1894,18 @@ table.striped > tbody > tr > th {
         white-space: pre-wrap;
     }
     input#search-input {
-        width: 18vw;
+        width: calc(18vw + 30px);
+    }
+    div.sub-nav div#result-section,
+    div.sub-nav div#result-section:has(button.active-table-tab) {
+        max-width: unset;
+        width: 96vw;
+    }
+    div.sub-nav div#result-section > div:first-child {
+        grid-template-columns: auto calc(18vw + 84px);
+    }
+    div.sub-nav select#search-modules {
+        max-width: calc(18vw + 68px);
     }
     .inherited-list h3 {
         overflow: auto clip;
