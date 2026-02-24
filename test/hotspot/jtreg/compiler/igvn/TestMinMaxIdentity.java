@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 IBM Corporation. All rights reserved.
+ * Copyright (c) 2025, 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,10 @@ public class TestMinMaxIdentity {
             .flatMap(MinMaxOp::generate)
             .forEach(testTemplateTokens::add);
 
+        // Note that for floating point Min/Max these cases below don't hold
+        generate(MinMaxOp.MIN_I, MinMaxOp.MAX_I).forEach(testTemplateTokens::add);
+        generate(MinMaxOp.MIN_L, MinMaxOp.MAX_L).forEach(testTemplateTokens::add);
+
         Stream.of(Fp16MinMaxOp.values())
             .flatMap(Fp16MinMaxOp::generate)
             .forEach(testTemplateTokens::add);
@@ -87,6 +91,38 @@ public class TestMinMaxIdentity {
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
             testTemplateTokens);
+    }
+
+    static Stream<TemplateToken> generate(MinMaxOp op1, MinMaxOp op2) {
+        return Stream.of(template("a", "b", op1, op2), template("b", "a", op1, op2),
+                template("a", "b", op2, op1), template("b", "a", op2, op1)).
+            map(Template.ZeroArgs::asToken);
+    }
+
+    static Template.ZeroArgs template(String arg1, String arg2, MinMaxOp op1, MinMaxOp op2) {
+        return Template.make(() -> scope(
+            let("boxedTypeName", op1.type.boxedTypeName()),
+            let("op1", op1.name()),
+            let("op2", op2.name()),
+            let("type", op1.type.name()),
+            let("fn1", op1.functionName),
+            let("fn2", op2.functionName),
+            let("arg1", arg1),
+            let("arg2", arg2),
+            """
+            @Test
+            @IR(counts = {IRNode.#op1, "= 0", IRNode.#op2, "= 0"},
+                phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+            @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
+            public #type $test(#type #arg1, #type #arg2) {
+                int i;
+                for (i = -10; i < 1; i++) {
+                }
+                #type c = a * i;
+                return #boxedTypeName.#fn1(a, #boxedTypeName.#fn2(b, c));
+            }
+            """
+        ));
     }
 
     enum MinMaxOp {
@@ -122,8 +158,21 @@ public class TestMinMaxIdentity {
                 let("arg2", arg2),
                 """
                 @Test
-                @IR(counts = {IRNode.#op, "= 1"},
-                    phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+                """,
+                type.isFloating() ?
+                    """
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
+                        applyIfPlatform = {"riscv64", "true"})
+                    """ :
+                    """
+                    @IR(counts = {IRNode.#op, "= 1"},
+                        phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+                    """,
+                """
                 @Arguments(values = {Argument.NUMBER_42, Argument.NUMBER_42})
                 public #type $test(#type #arg1, #type #arg2) {
                     int i;

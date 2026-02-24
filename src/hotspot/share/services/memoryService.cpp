@@ -66,7 +66,13 @@ void GcThreadCountClosure::do_thread(Thread* thread) {
   _count++;
 }
 
-void MemoryService::set_universe_heap(CollectedHeap* heap) {
+void MemoryService::initialize(CollectedHeap* heap) {
+  // Prepare metaspace pools
+  add_metaspace_memory_pools();
+
+  // Ask heap to initialize its memory pools/managers
+  heap->initialize_serviceability();
+
   ResourceMark rm; // For internal allocations in GrowableArray.
 
   GrowableArray<MemoryPool*> gc_mem_pools = heap->memory_pools();

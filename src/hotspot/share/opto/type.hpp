@@ -812,6 +812,11 @@ public:
   bool contains(jint i) const;
   bool contains(const TypeInt* t) const;
 
+#ifdef ASSERT
+  // Check whether t is a proper subset (i.e. a subset that is not equal to the superset) of this
+  bool strictly_contains(const TypeInt* t) const;
+#endif // ASSERT
+
   virtual bool is_finite() const;  // Has a finite value
 
   virtual const Type* xmeet(const Type* t) const;
@@ -896,6 +901,11 @@ public:
   // argument are also elements of this type)
   bool contains(jlong i) const;
   bool contains(const TypeLong* t) const;
+
+#ifdef ASSERT
+  // Check whether t is a proper subset (i.e. a subset that is not equal to the superset) of this
+  bool strictly_contains(const TypeLong* t) const;
+#endif // ASSERT
 
   // Check for positive 32-bit value.
   int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }

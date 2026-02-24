@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -299,8 +299,6 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
-  LoadNode* pin_array_access_node() const;
-
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -314,6 +312,7 @@ protected:
 
   Node* can_see_arraycopy_value(Node* st, PhaseGVN* phase) const;
 
+private:
   // depends_only_on_test is almost always true, and needs to be almost always
   // true to enable key hoisting & commoning optimizations.  However, for the
   // special case of RawPtr loads from TLS top & end, and other loads performed by
@@ -323,11 +322,12 @@ protected:
   // which produce results (new raw memory state) inside of loops preventing all
   // manner of other optimizations).  Basically, it's ugly but so is the alternative.
   // See comment in macro.cpp, around line 125 expand_allocate_common().
-  virtual bool depends_only_on_test() const {
+  virtual bool depends_only_on_test_impl() const {
     return adr_type() != TypeRawPtr::BOTTOM && _control_dependency == DependsOnlyOnTest;
   }
 
   LoadNode* clone_pinned() const;
+  virtual LoadNode* pin_node_under_control_impl() const;
 };
 
 //------------------------------LoadBNode--------------------------------------
@@ -534,7 +534,6 @@ public:
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual bool depends_only_on_test() const { return true; }
 
   // Polymorphic factory method:
   static Node* make(PhaseGVN& gvn, Node* mem, Node* adr, const TypePtr* at,
@@ -563,7 +562,6 @@ public:
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual bool depends_only_on_test() const { return true; }
 };
 
 
@@ -580,7 +578,6 @@ private:
   virtual uint size_of() const { return sizeof(*this); }
 protected:
   virtual bool cmp( const Node &n ) const;
-  virtual bool depends_only_on_test() const { return false; }
 
   Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
   Node* Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits);
@@ -660,6 +657,9 @@ public:
   Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
 
   MemBarNode* trailing_membar() const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------StoreBNode-------------------------------------
@@ -816,7 +816,6 @@ private:
 #endif // ASSERT
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
-  virtual bool depends_only_on_test() const { return false; }
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
 
   virtual const Type *bottom_type() const { return _type; }
@@ -829,6 +828,9 @@ public:
 
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {
@@ -1072,6 +1074,7 @@ public:
 class ClearArrayNode: public Node {
 private:
   bool _is_large;
+  static Node* make_address(Node* dest, Node* offset, bool raw_base, PhaseGVN* phase);
 public:
   ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, bool is_large)
     : Node(ctrl,arymem,word_cnt,base), _is_large(is_large) {
@@ -1099,18 +1102,24 @@ public:
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             intptr_t start_offset,
                             intptr_t end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             intptr_t start_offset,
                             Node* end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             Node* start_offset,
                             Node* end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   // Return allocation input memory edge if it is different instance
   // or itself if it is the one we are looking for.
   static bool step_through(Node** np, uint instance_id, PhaseValues* phase);
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------MemBar-----------------------------------------
@@ -1673,6 +1682,9 @@ public:
   virtual uint match_edge(uint idx) const { return (idx == 2); }
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 // cachewb pre sync node for ensuring that writebacks are serialised
@@ -1685,6 +1697,9 @@ public:
   virtual uint match_edge(uint idx) const { return false; }
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 // cachewb pre sync node for ensuring that writebacks are serialised
@@ -1697,6 +1712,9 @@ public:
   virtual uint match_edge(uint idx) const { return false; }
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------Prefetch---------------------------------------
@@ -1709,6 +1727,9 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }
   virtual const Type *bottom_type() const { return ( AllocatePrefetchStyle == 3 ) ? Type::MEMORY : Type::ABIO; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 #endif // SHARE_OPTO_MEMNODE_HPP
