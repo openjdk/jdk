@@ -717,8 +717,8 @@ bool FileMapInfo::init_from_file(int fd) {
 }
 
 void FileMapInfo::seek_to_position(size_t pos) {
-  if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
-    aot_log_error(aot)("Unable to seek to position %zu", pos);
+  if (os::lseek(_fd, (jlong)pos, SEEK_SET) < 0) {
+    aot_log_error(aot)("Unable to seek to position %zu (errno=%d: %s)", pos, errno, os::strerror(errno));
     AOTMetaspace::unrecoverable_loading_error();
   }
 }

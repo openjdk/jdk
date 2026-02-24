@@ -41,6 +41,7 @@ public class FileMapInfo {
   private static Address rwRegionEndAddress;
   private static Address vtablesIndex;
   private static Address mapped_base_address;
+  private static long metadataOffsetShift;
 
   // HashMap created by mapping the vTable addresses in the rw region with
   // the corresponding metadata type.
@@ -97,12 +98,15 @@ public class FileMapInfo {
     headerObj = VMObjectFactory.newObject(FileMapHeader.class, header);
 
     // char* mapped_base_address = header->_mapped_base_address
-    // narrowPtr cloned_vtable_narrowPtr = header->_cloned_vtable_offset
+    // narrowPtr cloned_vtable_narrowPtr = header->_cloned_vtables
     // size_t cloned_vtable_offset = AOTCompressedPointers::get_byte_offset(cloned_vtable_narrowPtr);
     // CppVtableInfo** vtablesIndex = mapped_base_address + cloned_vtable_offset;
     mapped_base_address = get_AddressField(FileMapHeader_type, header, "_mapped_base_address");
     long cloned_vtable_narrowPtr = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables");
-    long cloned_vtable_offset = cloned_vtable_narrowPtr; // Currently narrowPtr is the same as offset
+    // narrowPtr stores scaled offset units (byte_offset >> MetadataOffsetShift).
+    // Apply the left shift to convert back to byte offset.
+    metadataOffsetShift = db.lookupIntConstant("AOTCompressedPointers::MetadataOffsetShift").longValue();
+    long cloned_vtable_offset = cloned_vtable_narrowPtr << metadataOffsetShift;
     vtablesIndex = mapped_base_address.addOffsetTo(cloned_vtable_offset);
 
     // CDSFileMapRegion* rw_region = &header->_region[rw];
@@ -176,9 +180,9 @@ public class FileMapInfo {
 
       // vtablesIndex points to to an array like this:
       // long info[] = {
-      //   offset of the CppVtableInfo for ConstantPool,
-      //   offset of the CppVtableInfo for InstanceKlass,
-      //   offset of the CppVtableInfo for InstanceClassLoaderKlass,
+      //   narrowPtr of the CppVtableInfo for ConstantPool,
+      //   narrowPtr of the CppVtableInfo for InstanceKlass,
+      //   narrowPtr of the CppVtableInfo for InstanceClassLoaderKlass,
       //   ...
       // };
       //
@@ -189,8 +193,8 @@ public class FileMapInfo {
       // };
       //
       // The loop below computes the following
-      //     CppVtableInfo* t_ConstantPool  = mapped_base_address + info[0];
-      //     CppVtableInfo* t_InstanceKlass = mapped_base_address + info[1];
+      //     CppVtableInfo* t_ConstantPool  = mapped_base_address + (info[0] << metadataOffsetShift);
+      //     CppVtableInfo* t_InstanceKlass = mapped_base_address + (info[1] << metadataOffsetShift);
       //     ...
       //
       // If we have the following objects
@@ -203,21 +207,21 @@ public class FileMapInfo {
       //
       // To get an idea what these address look like, do this:
       //
-      // $ java -Xlog:cds+vtables=debug -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0 --version
-      // [0.002s][debug][cds,vtables] Copying  14 vtable entries for ConstantPool to 0x800000018
-      // [0.002s][debug][cds,vtables] Copying  41 vtable entries for InstanceKlass to 0x800000090
-      // [0.002s][debug][cds,vtables] Copying  41 vtable entries for InstanceClassLoaderKlass to 0x8000001e0
-      // [0.002s][debug][cds,vtables] Copying  41 vtable entries for InstanceMirrorKlass to 0x800000330
-      // [0.002s][debug][cds,vtables] Copying  41 vtable entries for InstanceRefKlass to 0x800000480
-      // [0.002s][debug][cds,vtables] Copying  41 vtable entries for InstanceStackChunkKlass to 0x8000005d0
-      // [0.002s][debug][cds,vtables] Copying  14 vtable entries for Method to 0x800000720
-      // [0.002s][debug][cds,vtables] Copying  42 vtable entries for ObjArrayKlass to 0x800000798
-      // [0.002s][debug][cds,vtables] Copying  42 vtable entries for TypeArrayKlass to 0x8000008f0
-      // java 23-internal 2024-09-17
+      // $ java -Xlog:aot+vtables=debug -XX:+UnlockDiagnosticVMOptions -XX:ArchiveRelocationMode=0 --version
+      // [0.002s][debug][aot,vtables] Copying  14 vtable entries for ConstantPool to 0x800000018
+      // [0.002s][debug][aot,vtables] Copying  41 vtable entries for InstanceKlass to 0x800000090
+      // [0.002s][debug][aot,vtables] Copying  41 vtable entries for InstanceClassLoaderKlass to 0x8000001e0
+      // [0.002s][debug][aot,vtables] Copying  41 vtable entries for InstanceMirrorKlass to 0x800000330
+      // [0.002s][debug][aot,vtables] Copying  41 vtable entries for InstanceRefKlass to 0x800000480
+      // [0.002s][debug][aot,vtables] Copying  41 vtable entries for InstanceStackChunkKlass to 0x8000005d0
+      // [0.002s][debug][aot,vtables] Copying  14 vtable entries for Method to 0x800000720
+      // [0.002s][debug][aot,vtables] Copying  42 vtable entries for ObjArrayKlass to 0x800000798
+      // [0.002s][debug][aot,vtables] Copying  42 vtable entries for TypeArrayKlass to 0x8000008f0
       // ...
 
       for (int i=0; i < metadataTypeArray.length; i++) {
-        long vtable_offset = vtablesIndex.getJLongAt(i * addressSize); // long offset = _index[i]
+        long narrowPtr = vtablesIndex.getJLongAt(i * addressSize);
+        long vtable_offset = narrowPtr << metadataOffsetShift;
 
         // CppVtableInfo* t = the address of the CppVtableInfo for the i-th table
         Address vtableInfoAddress = mapped_base_address.addOffsetTo(vtable_offset);
