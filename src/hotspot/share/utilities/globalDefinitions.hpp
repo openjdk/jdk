@@ -171,11 +171,10 @@ class oopDesc;
 
 template<size_t N>
 constexpr auto sizeof_auto_impl() {
-  using unsigned_auto =
-    std::conditional_t<N <= std::numeric_limits<uint8_t>::max(), uint8_t,
-      std::conditional_t<N <= std::numeric_limits<uint16_t>::max(), uint16_t,
-        std::conditional_t<N <= std::numeric_limits<uint32_t>::max(), uint32_t, uint64_t>>>;
-  return static_cast<unsigned_auto>(N);
+  if constexpr (N <= std::numeric_limits<uint8_t>::max()) return uint8_t(N);
+  else if constexpr (N <= std::numeric_limits<uint16_t>::max()) return uint16_t(N);
+  else if constexpr (N <= std::numeric_limits<uint32_t>::max()) return uint32_t(N);
+  else return uint64_t(N);
 }
 
 // Yields the size (in bytes) of the operand, using the smallest
