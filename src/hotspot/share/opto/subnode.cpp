@@ -1917,11 +1917,19 @@ static const IntegerType* integral_abs_value(const IntegerType* t) {
   typedef typename IntegerType::NativeUType NativeUType;
 
   // Find the absolute value of a type, resulting in a range that fits inside the unsigned range [0, signed_max+1].
+  // The possible values of a TypeInteger is described with the following range in the signed domain:
+  // smin----------lo=======uhi--------0--------ulo===========hi----------smax
 
-  // An integer type consists of two simple ranges [lo, signed(uhi)] and [signed(ulo), hi] where signed(uhi) <= 0 and
-  // signed(ulo) >= 0. Finding the minimum value of the result type involves finding which of ulo and uhi are closer to 0,
-  // and finding the maximum value involves finding which of hi and lo are furthest from 0. The calculations are done in the
-  // unsigned domain to gracefully handle jint_min and jlong_min, as the absolute value of those values are themselves.
+  // To find the absolute value of the range, we find the closer (min) value of uhi and ulo to 0, and the further (max)
+  // value of lo and hi from 0. In the unsigned domain, the resulting range looks like this:
+  // 0-----------min(|ulo|,|uhi|)================max(|lo|,|hi|)-----------umax
+
+  // When the input range's hi and lo are both positive or negative, lo == ulo and hi == uhi:
+  // smin------------------------------0-------lo===========hi------------smax (Positive)
+  // smin--------lo===========hi-------0----------------------------------smax (Negative)
+
+  // For these ranges, the result in the unsigned domain is simply [min(|lo|, |hi|), max(|lo|, |hi|)]:
+  // 0-----------min(|lo|,|hi|)==================max(|lo|,|hi|)-----------umax
 
   NativeUType umin = MIN2<NativeUType>(g_uabs(t->_ulo), g_uabs(t->_uhi));
   NativeUType umax = MAX2<NativeUType>(g_uabs(t->_lo), g_uabs(t->_hi));
