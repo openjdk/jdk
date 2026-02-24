@@ -27,6 +27,7 @@
 
 #include "oops/cpCache.hpp"
 
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
@@ -49,7 +50,7 @@ inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_refere
 inline refArrayOop ConstantPoolCache::resolved_references() {
   oop obj = _resolved_references.resolve();
   assert(obj == nullptr || obj->is_refArray(), "should be refArray");
-  return obj == nullptr ? nullptr : refArrayOopDesc::cast(obj);
+  return obj == nullptr ? nullptr : oop_cast<refArrayOop>(obj);
 }
 
 inline ResolvedFieldEntry* ConstantPoolCache::resolved_field_entry_at(int field_index) const {

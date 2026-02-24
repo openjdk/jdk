@@ -39,6 +39,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
@@ -485,7 +486,7 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
       InstanceKlass::cast(k)->do_nonstatic_fields(&clo);
     } else {
       assert(orig_obj->is_refArray(), "must be");
-      refArrayOop array = refArrayOopDesc::cast(orig_obj);
+      refArrayOop array = oop_cast<refArrayOop>(orig_obj);
       for (int i = 0; i < array->length(); i++) {
         if (array->obj_at(i) == orig_field) {
           st->print(" @[%d]", i);

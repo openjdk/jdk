@@ -48,6 +48,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -434,7 +435,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::get_finalizer_histogram_name(),
                          vmSymbols::void_finalizer_histogram_entry_array_signature(), CHECK);
 
-  refArrayOop result_oop = refArrayOopDesc::cast(result.get_oop());
+  refArrayOop result_oop = oop_cast<refArrayOop>(result.get_oop());
   if (result_oop->length() == 0) {
     output()->print_cr("No instances waiting for finalization found");
     return;

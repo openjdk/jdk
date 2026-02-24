@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
  * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
-=======
- * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
->>>>>>> 93ae6bad1eb (Runtime changes for refArrayKlass part 1.)
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +42,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/refArrayOop.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
@@ -88,9 +85,9 @@ inline bool G1FullGCMarker::is_task_queue_empty() {
 }
 
 inline void G1FullGCMarker::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
-  refArrayOopDesc::cast(obj)->oop_iterate_elements_range(mark_closure(),
-                                                     checked_cast<int>(start),
-                                                     checked_cast<int>(end));
+  oop_cast<refArrayOop>(obj)->oop_iterate_elements_range(mark_closure(),
+                                                         checked_cast<int>(start),
+                                                         checked_cast<int>(end));
 }
 
 inline void G1FullGCMarker::dispatch_task(const ScannerTask& task, bool stolen) {

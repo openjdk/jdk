@@ -63,6 +63,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -598,7 +599,7 @@ void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop 
 
 refArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
   oop rr = _scratch_objects_table->get_oop(src);
-  return rr == nullptr ? nullptr : refArrayOopDesc::cast(rr);
+  return rr == nullptr ? nullptr : oop_cast<refArrayOop>(rr);
 }
 
  void HeapShared::init_dumping() {

@@ -42,6 +42,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -542,7 +543,7 @@ Symbol** JfrJavaSupport::symbol_array(jobjectArray string_array, JavaThread* thr
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   assert(string_array != nullptr, "invariant");
   assert(result_array_size != nullptr, "invariant");
-  refArrayOop arrayOop = refArrayOopDesc::cast(resolve_non_null(string_array));
+  refArrayOop arrayOop = oop_cast<refArrayOop>(resolve_non_null(string_array));
   const int length = arrayOop->length();
   *result_array_size = length;
   Symbol** result_array = allocate_symbol_array(c_heap, length, thread);

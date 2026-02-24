@@ -29,6 +29,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -59,7 +60,7 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
   case T_ARRAY:
   case T_OBJECT:
     {
-      refArrayOop refary = refArrayOopDesc::cast(ary);
+      refArrayOop refary = oop_cast<refArrayOop>(ary);
       oop elem = refary->obj_at(index);
       return ciConstant(elembt, CURRENT_ENV->get_object(elem));
     }

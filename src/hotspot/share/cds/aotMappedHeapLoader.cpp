@@ -41,6 +41,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -367,7 +368,7 @@ refArrayOop AOTMappedHeapLoader::root_segment(int segment_idx) {
 
   oop segment = _root_segments->at(segment_idx).resolve();
   assert(segment != nullptr, "should have been initialized");
-  return refArrayOopDesc::cast(segment);
+  return oop_cast<refArrayOop>(segment);
 }
 
 void AOTMappedHeapLoader::get_segment_indexes(int idx, int& seg_idx, int& int_idx) {
@@ -461,7 +462,7 @@ void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
     intptr_t first_segment_addr = bottom + segments.base_offset();
     for (size_t c = 0; c < segments.count(); c++) {
       oop segment_oop = cast_to_oop(first_segment_addr + (c * segments.max_size_in_bytes()));
-      add_root_segment(refArrayOopDesc::cast(segment_oop));
+      add_root_segment(oop_cast<refArrayOop>(segment_oop));
     }
 
     if (CDSConfig::is_dumping_final_static_archive()) {

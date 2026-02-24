@@ -38,6 +38,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -1570,7 +1571,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
 
   if (names != nullptr) {
     // return the requested globals
-    refArrayOop ta = refArrayOopDesc::cast(JNIHandles::resolve_non_null(names));
+    refArrayOop ta = oop_cast<refArrayOop>(JNIHandles::resolve_non_null(names));
     refArrayHandle names_ah(THREAD, ta);
     // Make sure we have a String array
     Klass* element_klass = RefArrayKlass::cast(names_ah->klass())->element_klass();
@@ -1997,7 +1998,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
 
   ResourceMark rm(THREAD);
 
-  refArrayOop ca = refArrayOopDesc::cast(JNIHandles::resolve_non_null(cmds));
+  refArrayOop ca = oop_cast<refArrayOop>(JNIHandles::resolve_non_null(cmds));
   refArrayHandle cmds_ah(THREAD, ca);
 
   // Make sure we have a String array

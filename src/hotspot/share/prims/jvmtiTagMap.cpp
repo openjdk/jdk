@@ -42,6 +42,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -2555,7 +2556,7 @@ VM_HeapWalkOperation::~VM_HeapWalkOperation() {
 // an array references its class and has a reference to
 // each element in the array
 inline bool VM_HeapWalkOperation::iterate_over_array(oop o) {
-  refArrayOop array = refArrayOopDesc::cast(o);
+  refArrayOop array = oop_cast<refArrayOop>(o);
 
   // array reference to its class
   oop mirror = RefArrayKlass::cast(array->klass())->java_mirror();

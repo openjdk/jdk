@@ -71,6 +71,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/refArrayOop.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -2315,7 +2316,7 @@ void G1CMTask::drain_local_queue(bool partially) {
 size_t G1CMTask::start_partial_array_processing(oop obj) {
   assert(should_be_sliced(obj), "Must be an array object %d and large %zu", obj->is_objArray(), obj->size());
 
-  refArrayOop obj_array = refArrayOopDesc::cast(obj);
+  refArrayOop obj_array = oop_cast<refArrayOop>(obj);
   size_t array_length = obj_array->length();
 
   size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj_array, nullptr, array_length);

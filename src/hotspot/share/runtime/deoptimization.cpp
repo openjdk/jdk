@@ -297,6 +297,7 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
   return fetch_unroll_info_helper(current, exec_mode);
 JRT_END
 
+#if COMPILER2_OR_JVMCI
 static Klass* get_refined_array_klass(Klass* k) {
   // If it's an array, get the properties
   if (k->is_array_klass() && !k->is_typeArray_klass()) {
@@ -306,7 +307,6 @@ static Klass* get_refined_array_klass(Klass* k) {
   return k;
 }
 
-#if COMPILER2_OR_JVMCI
 // print information about reallocated objects
 static void print_objects(JavaThread* deoptee_thread,
                           GrowableArray<ScopeValue*>* objects, bool realloc_failures) {

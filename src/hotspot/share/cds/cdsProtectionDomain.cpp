@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/refArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/javaCalls.hpp"
@@ -295,11 +296,11 @@ void CDSProtectionDomain::atomic_set_array_index(OopHandle array, int index, oop
   // The important thing here is that all threads pick up the same result.
   // It doesn't matter which racing thread wins, as long as only one
   // result is used by all threads, and all future queries.
-  refArrayOopDesc::cast(array.resolve())->replace_if_null(index, o);
+  oop_cast<refArrayOop>(array.resolve())->replace_if_null(index, o);
 }
 
 oop CDSProtectionDomain::shared_protection_domain(int index) {
-  return refArrayOopDesc::cast(_shared_protection_domains.resolve())->obj_at(index);
+  return oop_cast<refArrayOop>(_shared_protection_domains.resolve())->obj_at(index);
 }
 
 void CDSProtectionDomain::allocate_shared_protection_domain_array(int size, TRAPS) {
@@ -310,7 +311,7 @@ void CDSProtectionDomain::allocate_shared_protection_domain_array(int size, TRAP
 }
 
 oop CDSProtectionDomain::shared_jar_url(int index) {
-  return refArrayOopDesc::cast(_shared_jar_urls.resolve())->obj_at(index);
+  return oop_cast<refArrayOop>(_shared_jar_urls.resolve())->obj_at(index);
 }
 
 void CDSProtectionDomain::allocate_shared_jar_url_array(int size, TRAPS) {
@@ -321,7 +322,7 @@ void CDSProtectionDomain::allocate_shared_jar_url_array(int size, TRAPS) {
 }
 
 oop CDSProtectionDomain::shared_jar_manifest(int index) {
-  return refArrayOopDesc::cast(_shared_jar_manifests.resolve())->obj_at(index);
+  return oop_cast<refArrayOop>(_shared_jar_manifests.resolve())->obj_at(index);
 }
 
 void CDSProtectionDomain::allocate_shared_jar_manifest_array(int size, TRAPS) {

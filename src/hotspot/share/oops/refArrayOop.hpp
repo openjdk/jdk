@@ -58,8 +58,6 @@ class refArrayOopDesc : public objArrayOopDesc {
     return arrayOopDesc::base_offset_in_bytes(T_OBJECT);
   }
 
-  inline static refArrayOop cast(oop o);
-
   // base is the address following the header.
   inline HeapWord* base() const;
 

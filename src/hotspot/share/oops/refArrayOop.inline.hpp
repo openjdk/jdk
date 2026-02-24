@@ -36,11 +36,6 @@ inline HeapWord *refArrayOopDesc::base() const {
   return (HeapWord *)arrayOopDesc::base(T_OBJECT);
 }
 
-inline refArrayOop refArrayOopDesc::cast(oop o) {
-  assert(o->is_refArray(), "Must be a refArray");
-  return (refArrayOop)o;
-}
-
 template <class T> T *refArrayOopDesc::obj_at_addr(int index) const {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   return &((T *)base())[index];

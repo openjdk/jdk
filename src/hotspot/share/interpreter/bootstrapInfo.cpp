@@ -36,6 +36,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -275,7 +276,7 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
       assert(_argc == 1, "Invalid BSM _arg_values for non-array");
       st->print("  resolved arg[0]: "); static_args->print_on(st);
     } else if (static_args->is_refArray()) {
-      refArrayOop static_args_array = refArrayOopDesc::cast(static_args);
+      refArrayOop static_args_array = oop_cast<refArrayOop>(static_args);
       int lines = 0;
       for (int i = 0; i < _argc; i++) {
         oop x = static_args_array->obj_at(i);

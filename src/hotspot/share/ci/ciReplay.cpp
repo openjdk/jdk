@@ -44,6 +44,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -513,7 +514,7 @@ class CompileReplay : public StackObj {
       obj = ciReplay::obj_field(obj, field);
       // array
       if (obj != nullptr && obj->is_refArray()) {
-        refArrayOop arr = refArrayOopDesc::cast(obj);
+        refArrayOop arr = oop_cast<refArrayOop>(obj);
         int index = parse_int("index");
         if (index >= arr->length()) {
           report_error("bad array index");

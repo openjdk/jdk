@@ -33,7 +33,7 @@
 
 template<typename T>
 void ForeignGlobals::parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int)) {
-  refArrayOop refarray = refArrayOopDesc::cast(jarray);
+  refArrayOop refarray = oop_cast<refArrayOop>(jarray);
   refArrayOop subarray = oop_cast<refArrayOop>(refarray->obj_at((int) type_index));
   int subarray_length = subarray->length();
   for (int i = 0; i < subarray_length; i++) {

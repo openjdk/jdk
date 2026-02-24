@@ -251,6 +251,7 @@ void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
+#if INCLUDE_CDS
 void ObjArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   ArrayKlass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   if (_next_refined_array_klass != nullptr) {
@@ -273,6 +274,7 @@ void ObjArrayKlass::remove_java_mirror() {
     _next_refined_array_klass->remove_java_mirror();
   }
 }
+#endif // INCLUDE_CDS
 
 u2 ObjArrayKlass::compute_modifier_flags() const {
   // The modifier for an objectArray is the same as its element

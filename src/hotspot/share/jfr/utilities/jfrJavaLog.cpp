@@ -30,6 +30,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/javaThread.hpp"
 
 #define JFR_LOG_TAGS_CONCATED(T0, T1, T2, T3, T4, T5, ...)  \
@@ -130,7 +131,7 @@ void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool sys
     return;
   }
 
-  refArrayOop the_lines = refArrayOopDesc::cast(JfrJavaSupport::resolve_non_null(lines));
+  refArrayOop the_lines = oop_cast<refArrayOop>(JfrJavaSupport::resolve_non_null(lines));
   const int length = the_lines->length();
 
   ResourceMark rm(THREAD);
