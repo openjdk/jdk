@@ -38,11 +38,10 @@ RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   assert(n->is_CFG(), "");
   RegionNode* r = new RegionNode(region->req());
   IdealLoopTree* loop = get_loop(n);
+  if (TraceSplitIf) {
+    tty->print_cr("  Splitting %d %s through %d %s", n->_idx, n->Name(), region->_idx, region->Name());
+  }
   for (uint i = 1; i < region->req(); i++) {
-    if (TraceSplitIf) {
-      tty->print("  Splitting through region (path %d): ", i);
-      n->dump_comp();
-    }
     Node* x = n->clone();
     Node* in0 = n->in(0);
     if (in0->in(0) == region) x->set_req(0, in0->in(i));
@@ -150,8 +149,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 
   // Now actually split-up this guy.  One copy per control path merging.
   if (TraceSplitIf) {
-    tty->print("  Splitting up: ");
-    n->dump_comp();
+    tty->print_cr("  Splitting up: %d %s", n->_idx, n->Name());
   }
   Node *phi = PhiNode::make_blank(blk1, n);
   for( uint j = 1; j < blk1->req(); j++ ) {
@@ -194,8 +192,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2) {
   if (n->Opcode() == Op_AddP && at_relevant_ctrl(n, blk1, blk2)) {
     if (TraceSplitIf) {
-      tty->print("  Cloning down: ");
-      n->dump_comp();
+      tty->print_cr("  Cloning down: %d %s", n->_idx, n->Name());
     }
     Node_List cmp_nodes;
     uint old = C->unique();
@@ -314,8 +311,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
 
       // Must clone down
       if (TraceSplitIf) {
-        tty->print("  Cloning down: ");
-        n->dump_comp();
+        tty->print_cr("  Cloning down: %d %s", n->_idx, n->Name());
       }
       if (!n->is_FastLock()) {
         // Clone down any block-local BoolNode uses of this CmpNode
@@ -418,8 +414,7 @@ void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
   }
 
   if (TraceSplitIf) {
-    tty->print("  Cloning down: ");
-    node->dump_comp();
+    tty->print_cr("  Cloning down: %d %s", node->_idx, node->Name());
   }
 
   TemplateAssertionExpressionNode template_assertion_expression_node(node);
@@ -479,11 +474,10 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
 
   Node *phi_post;
   if( prior_n == new_false || prior_n == new_true ) {
-    if (TraceSplitIf) {
-      tty->print("  Spinup: cloning def to sink: ");
-      def->dump_comp();
-    }
     phi_post = def->clone();
+    if (TraceSplitIf) {
+      tty->print_cr("  Spinup: cloning def to sink: %d %s -> %d %s", def->_idx, def->Name(), phi_post->_idx, phi_post->Name());
+    }
     phi_post->set_req(0, prior_n );
     register_new_node(phi_post, prior_n);
   } else {
@@ -499,8 +493,7 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
       assert( prior_n->is_Region(), "must be a post-dominating merge point" );
 
       if (TraceSplitIf) {
-        tty->print("  Spinup: creating new Phi for merge: ");
-        def->dump_comp();
+        tty->print_cr("  Spinup: creating new Phi for merge: %d %s", def->_idx, def->Name());
       }
 
       // Need a Phi here
@@ -609,12 +602,6 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
-
-  if (TraceSplitIf) {
-    tty->print_cr("Split-If processing Node:");
-    iff->dump_comp();
-  }
-
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
   Node *region_dom = idom(region);
