@@ -1190,6 +1190,7 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   return false;
 }
 
+// Helper function to select a vector operation with all broadcasted inputs
 bool VectorNode::can_push_broadcasts_across_vector_operation(BasicType bt) {
   if (!scalar_opcode(Opcode(), bt, false)) {
     return false;
@@ -1310,25 +1311,22 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
-  if (in(1)->Opcode() == Op_Replicate && in(2)->Opcode() == Opcode()) {
-    Node* in2_1 = in(2)->in(1);
-    Node* in2_2 = in(2)->in(2);
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  if (in2->Opcode() == Op_Replicate && in1->Opcode() == Opcode()) {
+     swap(in1, in2);
+  }
+
+  if (in1->Opcode() == Op_Replicate && in2->Opcode() == Opcode()) {
+    Node* in2_1 = in2->in(1);
+    Node* in2_2 = in2->in(2);
     if (in2_1->Opcode() == Op_Replicate) {
-      return create_reassociated_node(this, in(2), in(1), in2_1, in2_2, phase);
+      return create_reassociated_node(this, in2, in1, in2_1, in2_2, phase);
     } else if (in2_2->Opcode() == Op_Replicate) {
-      return create_reassociated_node(this, in(2), in(1), in2_2, in2_1, phase);
+      return create_reassociated_node(this, in2, in1, in2_2, in2_1, phase);
     }
   }
 
-  if (in(2)->Opcode() == Op_Replicate && in(1)->Opcode() == Opcode()) {
-    Node* in1_1 = in(1)->in(1);
-    Node* in1_2 = in(1)->in(2);
-    if (in1_1->Opcode() == Op_Replicate) {
-      return create_reassociated_node(this, in(1), in(2), in1_1, in1_2, phase);
-    } else if (in1_2->Opcode() == Op_Replicate) {
-      return create_reassociated_node(this, in(1), in(2), in1_2, in1_1, phase);
-    }
-  }
   return nullptr;
 }
 
