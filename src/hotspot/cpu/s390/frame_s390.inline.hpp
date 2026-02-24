@@ -376,7 +376,7 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   Unimplemented();
 }
 
-#if INCLUDE_JFR
+#if INCLUDE_STACKWALKER
 
 // Static helper routines
 inline intptr_t* frame::sender_sp(intptr_t* fp) { return fp; }
@@ -412,6 +412,6 @@ inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void*
   return sp <= fp - ((frame::z_ijava_state_size + frame::z_top_ijava_frame_abi_size) >> LogBytesPerWord);
 }
 
-#endif // INCLUDE_JFR
+#endif // INCLUDE_STACKWALKER
 
 #endif // CPU_S390_FRAME_S390_INLINE_HPP

@@ -31,7 +31,7 @@
 
 // Inline functions for ARM frames:
 
-#if INCLUDE_JFR
+#if INCLUDE_STACKWALKER
 
 // Static helper routines
 
@@ -76,7 +76,7 @@ inline intptr_t* frame::fp(const intptr_t* sp) {
   return reinterpret_cast<intptr_t*>(sp[-2]);
 }
 
-#endif // INCLUDE_JFR
+#endif // INCLUDE_STACKWALKER
 
 
 // Constructors:

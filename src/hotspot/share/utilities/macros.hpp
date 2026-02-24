@@ -265,7 +265,7 @@
 #define NOT_JFR_RETURN_(code) { return code; }
 #endif
 
-#if INCLUDE_JFR || INCLUDE_JVMTI
+#if (INCLUDE_JFR || INCLUDE_JVMTI) && !defined(ZERO)
 #define INCLUDE_STACKWALKER 1
 #else
 #define INCLUDE_STACKWALKER 0

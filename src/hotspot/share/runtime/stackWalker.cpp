@@ -27,13 +27,14 @@
 
 #if INCLUDE_STACKWALKER
 
-#include "gc/shared/gc_globals.hpp"
-#include "memory/allocation.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "interpreter/interpreter.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/frame.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
