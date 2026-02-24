@@ -3571,7 +3571,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       result = mem;
     } else if (Opcode() == Op_StoreVector && val->Opcode() == Op_LoadVector &&
                as_StoreVector()->vect_type() == val->as_LoadVector()->vect_type()) {
-      // Ensure vector types are the same
+      // Ensure both are not masked accesses or gathers/scatters and vector types are the same
       result = mem;
     }
   }
