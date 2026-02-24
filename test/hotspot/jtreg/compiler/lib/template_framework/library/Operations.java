@@ -643,8 +643,8 @@ public final class Operations {
                     case VOPType.ASSOCIATIVE:
                     case VOPType.INTEGRAL_ASSOCIATIVE:
                         if (vop.type() == VOPType.ASSOCIATIVE || !type.elementType.isFloating()) {
-                            // TODO: remove condition after JDK-8378250, we need to exclude byte add reduction.
-                            if (!vop.name().equals("ADD") || type.elementType != BYTES) {
+                            // TODO: remove condition after JDK-8378250, we need to exclude byte mul reduction.
+                            if (!vop.name().equals("MUL") || type.elementType != BYTES) {
                                 ops.add(Expression.make(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ")", vopInfo));
                                 ops.add(Expression.make(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ", ", type.maskType, ")", vopInfo));
                             }
