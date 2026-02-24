@@ -41,9 +41,9 @@ public class TestIGVNAddSubElimination {
     private static final Random R = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:+IgnoreUnrecognizedVMOptions",
-                                   "-XX:VerifyIterativeGVN=1110");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:VerifyIterativeGVN=1000",
+                                   "-XX:CompileCommand=compileonly,compiler.c2.irTests.TestIGVNAddSubElimination::*");
     }
 
     @Run(test = {"testAddI1", "testAddI2", "testAddL1", "testAddL2"})

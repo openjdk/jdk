@@ -329,13 +329,18 @@ void ObjectMonitor::set_object_strong() {
 
 void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
   if (current->is_suspended()) {
+    // There could be an ongoing safepoint/handshake operation.
+    // Process them, except suspend requests, before exiting the
+    // monitor, as this may involve touching oops if the successor
+    // is a virtual thread. Before processing pending operations,
+    // set the monitor as pending again.
+    current->set_current_pending_monitor(_om);
+    SafepointMechanism::process_if_requested(current, false /*allow_suspend*/, false /*check_async_exception*/);
     _om->_recursions = 0;
     _om->clear_successor();
     // Don't need a full fence after clearing successor here because of the call to exit().
     _om->exit(current, false /* not_suspended */);
     _om_exited = true;
-
-    current->set_current_pending_monitor(_om);
   }
 }
 
@@ -1644,6 +1649,7 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
     Trigger = t->_ParkEvent;
     set_successor(t);
   } else {
+    assert_not_at_safepoint();
     vthread = Wakee->vthread();
     assert(vthread != nullptr, "");
     Trigger = ObjectMonitor::vthread_unparker_ParkEvent();

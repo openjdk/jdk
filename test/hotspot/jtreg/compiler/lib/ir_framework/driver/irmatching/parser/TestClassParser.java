@@ -57,7 +57,7 @@ public class TestClassParser {
     public Matchable parse(TestVMData testVmData) {
         ApplicableIRRulesParser applicableIRRulesParser = new ApplicableIRRulesParser(testClass);
         TestMethods testMethods = applicableIRRulesParser.parse(testVmData.applicableIRRules());
-        VMInfo vmInfo = VMInfoParser.parseVMInfo(testVmData.applicableIRRules());
+        VMInfo vmInfo = VMInfoParser.parseVMInfo(testVmData.vmInfo());
         if (testMethods.hasTestMethods()) {
             HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
             LoggedMethods loggedMethods = hotSpotPidFileParser.parse(testVmData.hotspotPidFileName());
