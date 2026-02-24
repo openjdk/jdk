@@ -476,17 +476,12 @@ void VM_Version::print_features() {
 void VM_Version::determine_features() {
 #if defined(ABI_ELFv2)
   // 1 InstWord per call for the blr instruction.
-  const int code_size = (num_features+1+2*1)*BytesPerInstWord;
+  const int code_size = (num_features+1+1)*BytesPerInstWord;
 #else
   // 7 InstWords for each call (function descriptor + blr instruction).
-  const int code_size = (num_features+1+2*7)*BytesPerInstWord;
+  const int code_size = (num_features+1+7)*BytesPerInstWord;
 #endif
   int features = 0;
-
-  // create test area
-  enum { BUFFER_SIZE = 2*4*K }; // Needs to be >=2* max cache line size (cache line size can't exceed min page size).
-  char test_area[BUFFER_SIZE];
-  char *mid_of_test_area = &test_area[BUFFER_SIZE>>1];
 
   // Allocate space for the code.
   ResourceMark rm;
@@ -497,18 +492,11 @@ void VM_Version::determine_features() {
   _features = VM_Version::all_features_m;
 
   // Emit code.
-  void (*test)(address addr, uint64_t offset)=(void(*)(address addr, uint64_t offset))(void *)a->function_entry();
+  void (*test)() = (void(*)())(void *)a->function_entry();
   uint32_t *code = (uint32_t *)a->pc();
-  // Keep R3_ARG1 unmodified, it contains &field (see below).
-  // Keep R4_ARG2 unmodified, it contains offset = 0 (see below).
   a->mfdscr(R0);
   a->darn(R7);
   a->brw(R5, R6);
-  a->blr();
-
-  // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
-  void (*zero_cacheline_func_ptr)(char*) = (void(*)(char*))(void *)a->function_entry();
-  a->dcbz(R3_ARG1); // R3_ARG1 = addr
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
@@ -522,18 +510,9 @@ void VM_Version::determine_features() {
     Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
   }
 
-  // Measure cache line size.
-  memset(test_area, 0xFF, BUFFER_SIZE); // Fill test area with 0xFF.
-  (*zero_cacheline_func_ptr)(mid_of_test_area); // Call function which executes dcbz to the middle.
-  int count = 0; // count zeroed bytes
-  for (int i = 0; i < BUFFER_SIZE; i++) if (test_area[i] == 0) count++;
-  guarantee(is_power_of_2(count), "cache line size needs to be a power of 2");
-  _L1_data_cache_line_size = count;
-
   // Execute code. Illegal instructions will be replaced by 0 in the signal handler.
   VM_Version::_is_determine_features_test_running = true;
-  // We must align the first argument to 16 bytes because of the lqarx check.
-  (*test)(align_up((address)mid_of_test_area, 16), 0);
+  (*test)();
   VM_Version::_is_determine_features_test_running = false;
 
   // determine which instructions are legal.
@@ -550,6 +529,10 @@ void VM_Version::determine_features() {
   }
 
   _features = features;
+
+  _L1_data_cache_line_size = os::get_dcache_line_size();
+  assert(_L1_data_cache_line_size >= DEFAULT_CACHE_LINE_SIZE,
+         "processors with smaller cache line size are no longer supported");
 }
 
 // Power 8: Configure Data Stream Control Register.

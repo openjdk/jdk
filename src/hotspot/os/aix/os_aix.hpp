@@ -144,6 +144,9 @@ class os::Aix {
   static bool platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc);
   static void* resolve_function_descriptor(void* p);
 
+  static int get_dcache_line_size();
+  static int get_icache_line_size();
+
 };
 
 #endif // OS_AIX_OS_AIX_HPP

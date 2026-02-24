@@ -67,6 +67,9 @@ int ICache::ppc64_flush_icache(address start, int lines, int magic) {
 
 void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
 
+  guarantee(os::get_icache_line_size() >= ICache::line_size,
+            "processors with smaller cache line size are no longer supported");
+
   *flush_icache_stub = (ICache::flush_icache_stub_t)ICache::ppc64_flush_icache;
 
   // First call to flush itself.

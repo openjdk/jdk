@@ -5381,6 +5381,16 @@ int os::Linux::malloc_info(FILE* stream) {
   }
   return g_malloc_info(0, stream);
 }
+
+int os::get_dcache_line_size() {
+  int size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+  return (size == 0) ? DEFAULT_CACHE_LINE_SIZE : size;
+}
+
+int os::get_icache_line_size() {
+  int size = sysconf(_SC_LEVEL1_ICACHE_LINESIZE);
+  return (size == 0) ? DEFAULT_CACHE_LINE_SIZE : size;
+}
 #endif // __GLIBC__
 
 bool os::trim_native_heap(os::size_change_t* rss_change) {

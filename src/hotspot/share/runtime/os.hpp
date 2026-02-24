@@ -1076,6 +1076,9 @@ class os: AllStatic {
   static void setup_fpu();
   static juint cpu_microcode_revision();
 
+  static int get_dcache_line_size();
+  static int get_icache_line_size();
+
   static inline jlong rdtsc();
 
   // Used to register dynamic code cache area with the OS

@@ -35,9 +35,8 @@ class ICache : public AbstractICache {
 
  public:
   enum {
-    // Actually, cache line size is 64, but keeping it as it is to be
-    // on the safe side on ALL PPC64 implementations.
-    log2_line_size = 5,
+    // Cache line size is 128 on all supported PPC64 implementations.
+    log2_line_size = 7,
     line_size      = 1 << log2_line_size
   };
 
