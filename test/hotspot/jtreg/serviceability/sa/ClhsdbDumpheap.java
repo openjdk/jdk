@@ -81,10 +81,23 @@ public class ClhsdbDumpheap {
         fail("HPROF_GC_ROOT_JAVA_FRAME not found");
     }
 
+    private static void verifyStickyClasses(String file) throws IOException {
+        try (var snapshot = HprofReader.readFile(file, false, 0)) {
+            for (var root = snapshot.getRoots(); root.hasMoreElements();) {
+                if (root.nextElement().getType() == Root.SYSTEM_CLASS) {
+                    // expected
+                    return;
+                }
+            }
+        }
+        fail("HPROF_GC_ROOT_STICKY_CLASS not found");
+    }
+
     private static void verifyDumpFile(File dump) throws Exception {
         assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
         printStackTraces(dump.getAbsolutePath());
         verifyLocalRefs(dump.getAbsolutePath());
+        verifyStickyClasses(dump.getAbsolutePath());
     }
 
     private static class SubTest {
