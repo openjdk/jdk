@@ -1740,6 +1740,11 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
   }
+  // Check card_table_base address first since it can point to any address
+  BarrierSet* bs = BarrierSet::barrier_set();
+  bool is_const_card_table_base = !UseG1GC && !UseShenandoahGC && bs->is_a(BarrierSet::CardTableBarrierSet);
+  guarantee(!is_const_card_table_base || addr != ci_card_table_address_const(), "sanity");
+
   // Seach for C string
   id = id_for_C_string(addr);
   if (id >= 0) {
