@@ -29,12 +29,19 @@ import static jdk.jpackage.test.TKit.assertTrue;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
@@ -116,102 +123,161 @@ public class RuntimePackageTest {
     }
 
     @Test
-    @Parameter(value = {"17.21.3-ea", "LINUX_DEB"}, ifOS = LINUX)
-    public static void testValidReleaseFileVersion(String version, PackageType... packageTypes) {
-        testReleaseFileVersion(version, true, Optional.empty(), packageTypes);
+    @ParameterSupplier
+    public void testReleaseFileVersion(TestSpec spec) {
+        spec.run();
     }
 
-    @Test
-    @Parameter(value = {"17.21.3-ea", "17.21.3", "LINUX_RPM"}, ifOS = LINUX)
-    public static void testValidReleaseFileVersion(String version, String normalizedVersion, PackageType... packageTypes) {
-        testReleaseFileVersion(version, true, Optional.of(normalizedVersion), packageTypes);
-    }
+    public static Collection<Object[]> testReleaseFileVersion() {
+        var testCases = new ArrayList<TestSpec>();
 
-    @Test
-    // Invalid versions
-    @Parameter(value = {"foo", "1.0"})
-    @Parameter(value = {"", "1.0"})
-    @Parameter(value = {"17.21.3+foo", "1.0"})
-    // 27
-    @Parameter(value = {"27"})
-    // 27.1
-    @Parameter(value = {"27.1"})
-    // 27.1.2
-    @Parameter(value = {"27.1.2"})
-    // 27.1.2.3
-    @Parameter(value = {"27.1.2.3"}, ifOS = {LINUX, WINDOWS})
-    @Parameter(value = {"27.1.2.3", "27.1.2"}, ifOS = MACOS)
-    // 27.1.2.3.4
-    @Parameter(value = {"27.1.2.3.4"}, ifOS = LINUX)
-    @Parameter(value = {"27.1.2.3.4", "27.1.2"}, ifOS = MACOS)
-    @Parameter(value = {"27.1.2.3.4", "27.1.2.3"}, ifOS = WINDOWS)
-    // 17.21.3-ea
-    @Parameter(value = {"17.21.3-ea", "17.21.3"}, ifOS = {MACOS, WINDOWS})
-    public static void testValidReleaseFileVersion(String version, String... appVersion) {
-        if (version.equals("1.0")) {
-            // This is a special case of the default app version. Don't use it as a test input.
-            throw new IllegalArgumentException();
-        }
-        if (appVersion.length == 0) {
-            testReleaseFileVersion(version, false, Optional.of(version));
-        } else {
-            boolean isValid = !appVersion[0].equals("1.0");
-            testReleaseFileVersion(version, isValid, Optional.of(appVersion[0]));
-        }
-    }
+        // Invalid version
+        testCases.add(TestSpec.build().invalidVersion("foo").create());
+        testCases.add(TestSpec.build().invalidVersion("").create());
+        testCases.add(TestSpec.build().invalidVersion("17.21.3+foo").create());
 
-    private static void testReleaseFileVersion(String version,
-            boolean validReleaseFileVersion, Optional<String> normalizedVersion,
-            PackageType... packageTypes) {
-        var test = new PackageTest();
-        if (packageTypes.length != 0) {
-            test.forTypes(packageTypes);
-        }
-        test.addInitializer(cmd -> {
-            // Remove --input parameter from jpackage command line as we don't
-            // create input directory in the test and jpackage fails
-            // if --input references non existant directory.
-            cmd.removeArgumentWithValue("--input");
-
-            cmd.setFakeRuntime();
-
-            // Execute prerequisite actions, so fake runtime gets created
-            cmd.executePrerequisiteActions();
-
-            // Create release file with version in fake runtime
-            Path runtimeImage = Path.of(cmd.getArgumentValue("--runtime-image"));
-            Path releaseFile = runtimeImage.resolve("release");
-            Properties props = new Properties();
-            props.setProperty("JAVA_VERSION", "\"" + version + "\"");
-            try (Writer writer = Files.newBufferedWriter(releaseFile)) {
-                props.store(writer, null);
+        // Valid version
+        // For Windows and macOS version handling is same, but Linux RPM is different from Linux DEB
+        PackageType.NATIVE.stream().forEach(type -> {
+            for (var suffix : List.of("", "-foo", "-ea")) {
+                for (var ver : List.of("17", "17.1", "17.1.2", "17.1.2.3", "17.1.2.3.5")) {
+                    var builder = TestSpec.build().forPackageTypes(type);
+                    switch (type) {
+                        case PackageType.LINUX_RPM -> {
+                            builder.validVersion(ver + suffix).expectedVersion(ver);
+                        }
+                        case PackageType.LINUX_DEB -> {
+                            builder.validVersion(ver + suffix);
+                        }
+                        case PackageType.WIN_MSI, PackageType.WIN_EXE -> {
+                            builder.validVersion(ver + suffix);
+                            // Requires between 2 and 4
+                            // One component will be normalized to 2 and
+                            // more then 4 will be trim to 4.
+                            var components = ver.split("\\.");
+                            if (components.length == 1) {
+                                builder.expectedVersion(ver + ".0");
+                            } else {
+                                builder.expectedVersion(String.join(".",
+                                        Arrays.copyOf(components,
+                                        Math.min(components.length, 4))));
+                            }
+                        }
+                        case PackageType.MAC_DMG, PackageType.MAC_PKG  -> {
+                            // Requires between 1 and 3
+                            builder.validVersion(ver + suffix);
+                            var components = ver.split("\\.");
+                            builder.expectedVersion(String.join(".",
+                                        Arrays.copyOf(components,
+                                        Math.min(components.length, 3))));
+                        }
+                        default -> {
+                            throw ExceptionBox.reachedUnreachable();
+                        }
+                    }
+                    testCases.add(builder.create());
+                }
             }
+        });
 
-            // Validate output only if release version is valid for release file
-            if (validReleaseFileVersion) {
-                var releaseVersionStr = JPackageStringBundle.MAIN
-                        .cannedFormattedString("message.release-version",
-                        version, runtimeImage.toString());
-                new JPackageOutputValidator()
-                        .expectMatchingStrings(releaseVersionStr)
-                        .matchTimestamps()
-                        .stripTimestamps()
-                        .applyTo(cmd);
-                // Normalization message is only printed if we did normalization.
-                normalizedVersion.ifPresent(nv -> {
-                    var versionNormalizedStr = JPackageStringBundle.MAIN
-                            .cannedFormattedString("message.version-normalized",
-                            nv, version);
+        return testCases.stream().map(v -> {
+            return new Object[]{v};
+        }).toList();
+    }
+
+    record TestSpec(String version, Set<PackageType> packageTypes, String expectedAppVersion) {
+
+        public void run() {
+            new PackageTest()
+            .forTypes(packageTypes)
+            .addInitializer(cmd -> {
+                // Remove --input parameter from jpackage command line as we don't
+                // create input directory in the test and jpackage fails
+                // if --input references non existant directory.
+                cmd.removeArgumentWithValue("--input");
+
+                cmd.setFakeRuntime();
+
+                // Execute prerequisite actions, so fake runtime gets created
+                cmd.executePrerequisiteActions();
+
+                // Create release file with version in fake runtime
+                Path runtimeImage = Path.of(cmd.getArgumentValue("--runtime-image"));
+                Path releaseFile = runtimeImage.resolve("release");
+                Properties props = new Properties();
+                props.setProperty("JAVA_VERSION", "\"" + version + "\"");
+                try (Writer writer = Files.newBufferedWriter(releaseFile)) {
+                    props.store(writer, null);
+                }
+
+                // Validate output only if release version is valid for release file
+                if (isVersionValid()) {
+                    var releaseVersionStr = JPackageStringBundle.MAIN
+                            .cannedFormattedString("message.release-version",
+                            version, runtimeImage.toString());
                     new JPackageOutputValidator()
-                            .expectMatchingStrings(versionNormalizedStr)
+                            .expectMatchingStrings(releaseVersionStr)
                             .matchTimestamps()
                             .stripTimestamps()
                             .applyTo(cmd);
-                });
+                    // Normalization message is only printed if we did normalization.
+                    if (!version.equals(expectedAppVersion)) {
+                        var versionNormalizedStr = JPackageStringBundle.MAIN
+                                .cannedFormattedString("message.version-normalized",
+                                expectedAppVersion, version);
+                        new JPackageOutputValidator()
+                                .expectMatchingStrings(versionNormalizedStr)
+                                .matchTimestamps()
+                                .stripTimestamps()
+                                .applyTo(cmd);
+                    }
+                }
+            })
+            // Just create package. It is enough to verify version in bundle name.
+            .run(Action.CREATE);
+        }
+
+        private boolean isVersionValid()  {
+            return !expectedAppVersion.equals("1.0");
+        }
+
+        static Builder build() {
+            return new Builder();
+        }
+
+        static final class Builder {
+
+            Builder validVersion(String v) {
+                version = v;
+                expectedAppVersion = v;
+                return this;
             }
-        })
-        // Just create package. It is enough to verify version in bundle name.
-        .run(Action.CREATE);
+
+            Builder expectedVersion(String v) {
+                expectedAppVersion = v;
+                return this;
+            }
+
+            Builder invalidVersion(String v) {
+                version = v;
+                expectedAppVersion = "1.0";
+                return this;
+            }
+
+            Builder forPackageTypes(PackageType... v) {
+                packageTypes = new LinkedHashSet<>(List.of(v));
+                return this;
+            }
+
+            TestSpec create() {
+                return new TestSpec(version, packageTypes, expectedAppVersion);
+            }
+
+            private String version;
+            // Default to NATIVE
+            private Set<PackageType> packageTypes = PackageType.NATIVE;
+            private String expectedAppVersion;
+        }
     }
 
     private static PackageTest init() {

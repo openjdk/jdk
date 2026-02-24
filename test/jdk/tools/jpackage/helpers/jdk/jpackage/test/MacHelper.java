@@ -1128,8 +1128,7 @@ public final class MacHelper {
     static String getNormalizedVersion(String version) {
         // macOS requires 1, 2 or 3 components version string.
         // We will always normalize to 3 components if needed.
-        DottedVersion ver = DottedVersion.lazy(version);
-        return ver.trim(3).toComponentsString();
+        return DottedVersion.lazy(version).trim(3).toComponentsString();
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {

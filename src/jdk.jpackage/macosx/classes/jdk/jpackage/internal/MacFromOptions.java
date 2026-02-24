@@ -344,7 +344,6 @@ final class MacFromOptions {
         // macOS requires 1, 2 or 3 components version string.
         // When reading from release file it can be 1 or 3 or maybe more.
         // We will always normalize to 3 components if needed.
-        DottedVersion ver = DottedVersion.lazy(version);
-        return ver.trim(3).toComponentsString();
+        return DottedVersion.lazy(version).trim(3).toComponentsString();
     }
 }

@@ -126,7 +126,7 @@ final class WinFromOptions {
     static String normalizeVersion(String version) {
         // Windows requires between 2 and 4 components version string.
         // When reading from release file it can be 1 or 3 or maybe more.
-        // We will always normalize to 4 components if needed.
+        // One component will be normalized to 2 and more then 4 will be trim to 4.
         return DottedVersion.lazy(version).trim(4).pad(2).toComponentsString();
     }
 }
