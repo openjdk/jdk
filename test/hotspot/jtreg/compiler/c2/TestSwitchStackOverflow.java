@@ -27,18 +27,22 @@
  * @summary C2: jump_switch_ranges could cause stack overflow when compiling
  *          huge switch statement with zero-count profiling data.
  * @library /test/lib /
- * @run main/othervm -Xbatch
- *                   -XX:-DontCompileHugeMethods
- *                   -XX:-TieredCompilation
- *                   -XX:CompilerThreadStackSize=512
- *                   ${test.main.class}
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileOnly=Test::test -XX:-DontCompileHugeMethods -XX:CompilerThreadStackSize=512 ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileOnly=Test::test -XX:+DontCompileHugeMethods -XX:CompilerThreadStackSize=512 ${test.main.class}
  */
 
 package compiler.c2;
 
-import compiler.lib.compile_framework.CompileFramework;
+import java.util.stream.Stream;
 
-public class TestJumpSwitchRangesStackOverflow {
+import compiler.lib.compile_framework.CompileFramework;
+import compiler.lib.template_framework.Template;
+import static compiler.lib.template_framework.Template.scope;
+
+public class TestSwitchStackOverflow {
+    // Template method exceeds HugeMethodLimit, hence -XX:-DontCompileHugeMethods.
+    // 5000 cases + CompilerThreadStackSize=512 reliably overflows without the fix.
     static final int NUM_CASES = 5000;
 
     // Generate a class with a large tableswitch method and a main that
@@ -47,24 +51,42 @@ public class TestJumpSwitchRangesStackOverflow {
     //   Phase 2: hit a case -> triggers unstable_if deopt
     //   Phase 3: recompile with all counts zero (except the default case)
     static String generate() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("public class Test {\n");
-        sb.append("    static int test(int x) {\n");
-        sb.append("        switch (x) {\n");
-        for (int i = 0; i < NUM_CASES; i++) {
-            sb.append("            case ").append(i).append(": return ").append(i).append(";\n");
-        }
-        sb.append("            default: return -1;\n");
-        sb.append("        }\n");
-        sb.append("    }\n");
-        sb.append("    public static void main(String[] args) {\n");
-        sb.append("        for (int i = 0; i < 50000; i++) { test(-1); }\n");
-        sb.append("        test(42);\n");
-        sb.append("        for (int i = 0; i < 50000; i++) { test(-1); }\n");
-        sb.append("        System.out.println(\"Done\");\n");
-        sb.append("    }\n");
-        sb.append("}\n");
-        return sb.toString();
+        var caseTemplate = Template.make("i", (Integer i) -> scope(
+            """
+            case #i:
+                return #i;
+            """
+        ));
+        var test = Template.make(() -> scope(
+            """
+            public class Test {
+                static int test(int x) {
+                    switch (x) {
+                    """,
+                    Stream.iterate(0, i -> i + 1)
+                          .limit(NUM_CASES)
+                          .map(i -> caseTemplate.asToken(i))
+                          .toList(),
+                    """
+                        default: return -1;
+                    }
+                }
+
+                public static void main(String[] args) {
+                    for (int i = 0; i < 10_000; i++) {
+                        test(-1);
+                    }
+                    test(42);
+                    for (int i = 0; i < 10_000; i++) {
+                        test(-1);
+                    }
+                    System.out.println("Done");
+                }
+            }
+            """
+        ));
+
+        return test.render();
     }
 
     public static void main(String[] args) {
