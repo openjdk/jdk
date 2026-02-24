@@ -324,7 +324,9 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     }
 
     private void copyElements(Collection<? extends E> c) {
-        c.forEach(this::addLast);
+        for (E e : c) {
+            addLast(e);
+        }
     }
 
     /**
