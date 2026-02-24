@@ -439,15 +439,24 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
 
 class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
  protected:
+ bool _use_fallback_generator;
  CallGenerator* _inline_cg;
 
  public:
   LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) :
-    LateInlineCallGenerator(method, intrinsic_cg) , _inline_cg(inline_cg) {}
+    LateInlineCallGenerator(method, intrinsic_cg) , _inline_cg(inline_cg) {
+    _use_fallback_generator = false;
+  }
 
   CallGenerator* inline_cg2() const { return _inline_cg; }
   bool inline_fallback();
+  bool is_fallback_generation() {
+    return _use_fallback_generator;
+  }
   virtual bool is_vector_late_inline() const { return true; }
+  virtual void enable_fallback_generation() {
+     _use_fallback_generator = true;
+  }
 };
 
 bool LateInlineVectorCallGenerator::inline_fallback() {
@@ -696,16 +705,28 @@ void CallGenerator::do_late_inline_helper() {
       C->set_default_node_notes(entry_nn);
     }
 
+    CallGenerator* cg = inline_cg();
+    LateInlineVectorCallGenerator* late_inline_vec_cg = nullptr;
+    if (is_vector_late_inline()) {
+       late_inline_vec_cg =  static_cast<LateInlineVectorCallGenerator*>(this);
+       if (late_inline_vec_cg->is_fallback_generation() && late_inline_vec_cg->inline_fallback()) {
+         cg = late_inline_vec_cg->inline_cg2();
+       }
+    }
+
     // Now perform the inlining using the synthesized JVMState
-    JVMState* new_jvms = inline_cg()->generate(jvms);
-    // Attempt inlining fallback implementation in case of
+    JVMState* new_jvms = cg->generate(jvms);
+
+    // Bookkeep call generator for lazy inlining fallback implementation in case of
     // intrinsification failure.
-    if (new_jvms == nullptr && is_vector_late_inline()) {
-      LateInlineVectorCallGenerator* late_inline_vec_cg =  static_cast<LateInlineVectorCallGenerator*>(this);
-      if (late_inline_vec_cg->inline_fallback()) {
-        new_jvms = late_inline_vec_cg->inline_cg2()->generate(jvms);
+    if (late_inline_vec_cg != nullptr && !late_inline_vec_cg->is_fallback_generation()) {
+      if (new_jvms == nullptr) {
+        C->vector_late_inlines()->append_if_missing(this);
+      } else {
+        C->vector_late_inlines()->remove_if_existing(this);
       }
     }
+
     if (new_jvms == nullptr)  return;  // no change
     if (C->failing())      return;
 

@@ -477,6 +477,7 @@ private:
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+  GrowableArray<CallGenerator*> _vector_late_inlines; // inline fallback implimentation for failed intrinsics
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   bool                          _has_mh_late_inlines; // Can there still be a method handle late inlining pending?
@@ -505,6 +506,11 @@ private:
   InlinePrinter _inline_printer;
 
 public:
+
+  GrowableArray<CallGenerator*>* vector_late_inlines() {
+    return &_vector_late_inlines;
+  }
+
   void* barrier_set_state() const { return _barrier_set_state; }
 
   InlinePrinter* inline_printer() { return &_inline_printer; }
@@ -1117,6 +1123,7 @@ public:
   bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
   bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
+  void inline_vector_fallback(PhaseIterGVN& igvn);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);

@@ -76,6 +76,7 @@ class CallGenerator : public ArenaObj {
   virtual bool      is_mh_late_inline() const      { return false; }
   virtual bool      is_string_late_inline() const  { return false; }
   virtual bool      is_vector_late_inline() const  { return false; }
+  virtual void      enable_fallback_generation()   { return; }
   virtual bool      is_boxing_late_inline() const  { return false; }
   virtual bool      is_vector_reboxing_late_inline() const  { return false; }
   virtual bool      is_virtual_late_inline() const { return false; }
