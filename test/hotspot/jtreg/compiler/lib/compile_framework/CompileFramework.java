@@ -134,8 +134,9 @@ public class CompileFramework {
         } catch (IllegalAccessException e) {
             throw new CompileFrameworkException("Illegal access:", e);
         } catch (InvocationTargetException e) {
-            // Rethrow jtreg.SkippedException so skipped tests do not show as errors
-            // as the CompileFramework buries it in the exception causes.
+            // Rethrow jtreg.SkippedException so the tests are properly skipped.
+            // If we wrapped the SkippedException instead, it would get buried
+            // in the exception causes and cause a failed test instead.
             findJtregSkippedExceptionInCauses(e).ifPresent(ex -> { throw ex; });
             throw new CompileFrameworkException("Invocation target:", e);
         }
