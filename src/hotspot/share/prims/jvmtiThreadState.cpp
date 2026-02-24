@@ -120,7 +120,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
       // The JavaThread for an active carrier or a mounted virtual thread case.
       // Set this only if thread_oop is current thread->jvmti_vthread().
       thread->set_jvmti_thread_state(this);
-      thread->set_interp_only_mode(false);
+      assert(!thread->is_interp_only_mode(), "sanity check");
     }
   }
 }
@@ -135,10 +135,9 @@ JvmtiThreadState::~JvmtiThreadState()   {
 
   // clear this as the state for the thread
   assert(get_thread() != nullptr, "sanity check");
-  if (get_thread()->jvmti_thread_state() == this) { // check for safety
-    get_thread()->set_jvmti_thread_state(nullptr);
-    get_thread()->set_interp_only_mode(false);
-  }
+  assert(get_thread()->jvmti_thread_state() == this, "sanity check");
+  get_thread()->set_jvmti_thread_state(nullptr);
+  get_thread()->set_interp_only_mode(false);
 
   // zap our env thread states
   {
