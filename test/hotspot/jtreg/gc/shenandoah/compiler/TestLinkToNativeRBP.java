@@ -30,7 +30,7 @@
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64" | os.arch == "ppc64le"
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm --enable-native-access=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions
+ * @run main/native/othervm --enable-native-access=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestLinkToNativeRBP
  *
  */
