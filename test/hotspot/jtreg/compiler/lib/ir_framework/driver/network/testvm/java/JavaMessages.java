@@ -23,28 +23,44 @@
 
 package compiler.lib.ir_framework.driver.network.testvm.java;
 
-import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.TestFramework;
 
 /**
  * Class to collect all Java messages sent from the Test VM to the Driver VM.
  */
 public class JavaMessages {
-    private final String output;
-    private final boolean receivedStdOut;
+    private static final boolean PRINT_APPLICABLE_IR_RULES = Boolean.parseBoolean(System.getProperty("PrintApplicableIRRules", "false"));
 
-    public JavaMessages(String output, boolean receivedStdOut) {
-        this.output = output;
-        this.receivedStdOut = receivedStdOut;
+    private final StdoutMessages stdoutMessages;
+    private final ExecutedTests executedTests;
+    private final MethodTimes methodTimes;
+    private final String applicableIrRules;
+    private final String vmInfo;
+
+    JavaMessages(StdoutMessages stdoutMessages, ExecutedTests executedTests, MethodTimes methodTimes,
+                 String applicableIrRules, String vmInfo) {
+        this.stdoutMessages = stdoutMessages;
+        this.executedTests = executedTests;
+        this.methodTimes = methodTimes;
+        this.applicableIrRules = applicableIrRules;
+        this.vmInfo = vmInfo;
     }
 
-    public String output() {
-        return output;
+    public String applicableIRRules() {
+        return applicableIrRules;
     }
 
-    /**
-     * Return whether Test VM sent messages to be put on stdout (starting with {@link MessageTag#STDOUT}).
-     */
-    public boolean hasStdOut() {
-        return receivedStdOut;
+    public String vmInfo() {
+        return vmInfo;
+    }
+
+    public void print() {
+        stdoutMessages.print();
+        methodTimes.print();
+        executedTests.print();
+        if (TestFramework.VERBOSE || PRINT_APPLICABLE_IR_RULES) {
+            System.out.println("Read Applicable IR Rules from Test VM:");
+            System.out.println(applicableIrRules);
+        }
     }
 }

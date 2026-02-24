@@ -1925,16 +1925,13 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   public:
     const Handle _thread_h;
     int _depth;
-    GrowableArray<Method*>* _methods;
-    GrowableArray<int>*     _bcis;
+    enum InitLength { len = 64 }; // Minimum length that covers most cases
+    GrowableArrayCHeap<Method*, mtInternal> _methods;
+    GrowableArrayCHeap<int, mtInternal>     _bcis;
 
     GetStackTraceHandshakeClosure(Handle thread_h) :
         HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0),
-        _methods(nullptr), _bcis(nullptr) {
-    }
-    ~GetStackTraceHandshakeClosure() {
-      delete _methods;
-      delete _bcis;
+        _methods(InitLength::len), _bcis(InitLength::len) {
     }
 
     void do_thread(Thread* th) {
@@ -1950,11 +1947,6 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
 
-      // Pick minimum length that will cover most cases
-      int init_length = 64;
-      _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
-      _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
-
       int total_count = 0;
       vframeStream vfst(java_thread != nullptr
         ? vframeStream(java_thread, false, false, vthread_carrier)  // we don't process frames as we don't care about oops
@@ -1968,8 +1960,8 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
           continue;
         }
 
-        _methods->push(vfst.method());
-        _bcis->push(vfst.bci());
+        _methods.push(vfst.method());
+        _bcis.push(vfst.bci());
         total_count++;
       }
 
@@ -2001,9 +1993,9 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   objArrayHandle trace = oopFactory::new_objArray_handle(k, gsthc._depth, CHECK_NULL);
 
   for (int i = 0; i < gsthc._depth; i++) {
-    methodHandle method(THREAD, gsthc._methods->at(i));
+    methodHandle method(THREAD, gsthc._methods.at(i));
     oop element = java_lang_StackTraceElement::create(method,
-                                                      gsthc._bcis->at(i),
+                                                      gsthc._bcis.at(i),
                                                       CHECK_NULL);
     trace->obj_at_put(i, element);
   }
