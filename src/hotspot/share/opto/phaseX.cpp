@@ -2311,12 +2311,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
               // A Load that directly follows an InitializeNode is
               // going away. The Stores that follow are candidates
               // again to be captured by the InitializeNode.
-              for (DUIterator_Fast jmax, j = in->fast_outs(jmax); j < jmax; j++) {
-                Node *n = in->fast_out(j);
-                if (n->is_Store()) {
-                  _worklist.push(n);
-                }
-              }
+              add_users_to_worklist_if(_worklist, in, [](Node* n) { return n->is_Store(); });
             }
           } // if (in != nullptr && in != C->top())
         } // for (uint i = 0; i < dead->req(); i++)
@@ -2572,41 +2567,29 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // If changed LShift inputs, check RShift/URShift users for
   // "(X << C) >> C" sign-ext and "(X << C) >>> C" zero-ext optimizations.
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
-          u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+    });
   }
   // If changed LShift inputs, check And users for shift and mask (And) operation
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
+    });
   }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.
   if (use_op == Op_AddI || use_op == Op_SubI) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->is_Cmp() && (u->Opcode() == Op_CmpU)) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_CmpU;
+    });
   }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   if (use_op == Op_AndI || use_op == Op_AndL) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
-          u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+    });
   }
   // Check for redundant conversion patterns:
   // ConvD2L->ConvL2D->ConvD2L
@@ -2619,15 +2602,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       use_op == Op_ConvI2F ||
       use_op == Op_ConvL2F ||
       use_op == Op_ConvF2I) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if ((use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
-          (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
-          (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
-          (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F)) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [=](Node* u) {
+      return (use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
+             (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
+             (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
+             (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F);
+    });
   }
   // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
   // Notify ConvD2F users of SqrtD when any input of the SqrtD changes.
@@ -2655,33 +2635,21 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   //   address expression flattening.
   if (use_op == Op_AddP) {
     bool offset_changed = n == use->in(AddPNode::Offset);
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->is_Mem()) {
-        worklist.push(u);
-      } else if (offset_changed && u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [=](Node* u) {
+      return u->is_Mem() ||
+             (offset_changed && u->is_AddP() && u->in(AddPNode::Offset)->is_Con());
+    });
   }
   // Check for "abs(0-x)" into "abs(x)" conversion
   if (use->is_Sub()) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
-          u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
+             u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI;
+    });
   }
   // Check for Max/Min(A, Max/Min(B, C)) where A == B or A == C
   if (use->is_MinMax()) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->is_MinMax()) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->is_MinMax(); });
   }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
@@ -2720,12 +2688,9 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       if (u->Opcode() == Op_LoadP && ut->isa_instptr()) {
         if (has_load_barrier_nodes) {
           // Search for load barriers behind the load
-          for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
-            Node* b = u->fast_out(i3);
-            if (bs->is_gc_barrier_node(b)) {
-              worklist.push(b);
-            }
-          }
+          add_users_to_worklist_if(worklist, u, [&](Node* b) {
+            return bs->is_gc_barrier_node(b);
+          });
         }
         worklist.push(u);
       }
@@ -2743,12 +2708,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // CastX2P(AddX(x, y))
   // CastX2P(SubX(x, y))
   if (use->Opcode() == Op_AddX || use->Opcode() == Op_SubX) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_CastX2P) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_CastX2P; });
   }
 
   /* AndNode has a special handling when one of the operands is a LShiftNode:
@@ -2996,9 +2956,9 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
 // We must recheck Phis too if use is a Region.
 void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
   if (use->is_Region()) {
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      push_if_not_bottom_type(worklist, use->fast_out(i));
-    }
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->bottom_type() != type(u);
+    });
   }
 }
 
@@ -3025,14 +2985,11 @@ void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
 void PhaseCCP::push_cmpu(Unique_Node_List& worklist, const Node* use) const {
   uint use_op = use->Opcode();
   if (use_op == Op_AddI || use_op == Op_SubI) {
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      Node* cmpu = use->fast_out(i);
-      const uint cmpu_opcode = cmpu->Opcode();
-      if (cmpu_opcode == Op_CmpU || cmpu_opcode == Op_CmpU3) {
-        // Got a CmpU or CmpU3 which might need the new type information from node n.
-        push_if_not_bottom_type(worklist, cmpu);
-      }
-    }
+    // Got a CmpU or CmpU3 which might need the new type information from node n.
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      uint op = u->Opcode();
+      return (op == Op_CmpU || op == Op_CmpU3) && u->bottom_type() != type(u);
+    });
   }
 }
 
@@ -3121,12 +3078,9 @@ void PhaseCCP::push_loadp(Unique_Node_List& worklist, const Node* use) const {
 }
 
 void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use) {
-  for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-    Node* barrier_node = use->fast_out(i);
-    if (barrier_set->is_gc_barrier_node(barrier_node)) {
-      worklist.push(barrier_node);
-    }
-  }
+  add_users_to_worklist_if(worklist, use, [&](Node* u) {
+    return barrier_set->is_gc_barrier_node(u);
+  });
 }
 
 // AndI/L::Value() optimizes patterns similar to (v << 2) & 3, or CON & 3 to zero if they are bitwise disjoint.
@@ -3162,12 +3116,9 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const No
 void PhaseCCP::push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
   if (use->Opcode() == Op_CmpI && use->in(2) == parent) {
     Node* other_cmp_input = use->in(1);
-    for (DUIterator_Fast imax, i = other_cmp_input->fast_outs(imax); i < imax; i++) {
-      Node* cast_ii = other_cmp_input->fast_out(i);
-      if (cast_ii->is_CastII()) {
-        push_if_not_bottom_type(worklist, cast_ii);
-      }
-    }
+    add_users_to_worklist_if(worklist, other_cmp_input, [&](Node* u) {
+      return u->is_CastII() && u->bottom_type() != type(u);
+    });
   }
 }
 

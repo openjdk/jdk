@@ -536,6 +536,17 @@ public:
   // Add users of 'n' to worklist
   static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
 
+  // Add users of 'n' that match 'predicate' to worklist
+  template <class Predicate>
+  static void add_users_to_worklist_if(Unique_Node_List& worklist, const Node* n, Predicate predicate) {
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* u = n->fast_out(i);
+      if (predicate(u)) {
+        worklist.push(u);
+      }
+    }
+  }
+
   // Add one or more users of 'use' to the worklist if it appears that a
   // known optimization could be applied to those users.
   // Node 'n' is a node that was modified or is about to get replaced,
