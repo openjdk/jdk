@@ -25,6 +25,7 @@
 package jdk.jshell;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -88,6 +89,7 @@ import static jdk.jshell.Snippet.SubKind.SINGLE_TYPE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_STATIC_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.STATIC_IMPORT_ON_DEMAND_SUBKIND;
+import static jdk.jshell.ExpressionToTypeInfo.BindingInfo;
 
 /**
  * The Evaluation Engine. Source internal analysis, wrapping control,
@@ -229,6 +231,8 @@ class Eval {
                     -> processImport(userSource, compileSourceInt);
                 case VARIABLE
                     -> processVariables(userSource, units, compileSourceInt, pt);
+                case ENHANCED_VARIABLE_DECL
+                    -> processEnhancedVarDecl(userSource, unitTree, compileSourceInt, pt);
                 case EXPRESSION_STATEMENT
                     -> processExpression(userSource, unitTree, compileSourceInt, pt);
                 case CLASS
@@ -248,6 +252,73 @@ class Eval {
             };
         });
     }
+
+    private List<Snippet> processEnhancedVarDecl(String userSource, Tree unitTree, String compileSource, ParseTask pt) {
+        JCTree.JCEnhancedVariableDecl tree = (JCTree.JCEnhancedVariableDecl) unitTree;
+
+        List<JCTree.JCBindingPattern> patternBindings = new ArrayList<>();
+        gatherBindings((JCTree) tree.getPattern(), patternBindings::add);
+
+        if (patternBindings.isEmpty()) {
+            return processStatement(userSource, compileSource);
+        }
+
+        // short circuit since inference is expensive
+        boolean hasAnyVars = false;
+        for (JCTree.JCBindingPattern bp : patternBindings) {
+            String bindingName = bp.getVariable().getName().toString();
+            Tree bindingTypeTree = bp.getVariable().getType();
+            if (bindingTypeTree.getKind() == Tree.Kind.VAR_TYPE) {
+                hasAnyVars = true;
+            }
+        }
+
+        List<BindingInfo> bindings = null;
+        if (!hasAnyVars) {
+            bindings = new ArrayList<>();
+            for (JCTree.JCBindingPattern bp : patternBindings) {
+                String bindingName = bp.getVariable().getName().toString();
+                Tree bindingTypeTree = bp.getVariable().getType();
+                bindings.add(new BindingInfo(bindingName, EvalPretty.prettyExpr((JCTree) bindingTypeTree, false)));
+            }
+        } else {
+            bindings = ExpressionToTypeInfo.enhancedLocalVariableDeclInferBindings(userSource, state, false);
+        }
+
+        Wrap guts = Wrap.enhancedLocalVariableDeclWrap(compileSource, bindings);
+        DiagList dl = trialCompile(guts);
+        if (dl.hasErrors()){
+            return compileFailResult(dl, userSource, kindOfTree(unitTree));
+        }
+        TreeDependencyScanner tds = new TreeDependencyScanner();
+        tds.scan(unitTree);
+
+        BindingInfo primary = bindings.getFirst();
+        Set<String> additionalStaticImportNames =
+                bindings.stream().skip(1).map(BindingInfo::bindingName).collect(Collectors.toSet());
+
+        Snippet snip = new VarSnippet(
+                state.keyMap.keyForVariable((primary.bindingName())),
+                userSource,
+                guts,
+                primary.bindingName(),
+                primary.bindingName(),
+                SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND,
+                primary.displayTypeName(),
+                primary.hasEnhancedType() ? primary.fullTypeName() : null,
+                additionalStaticImportNames,
+                tds.declareReferences(), null);
+
+        return singletonList(snip);
+    }
+    // where
+        static void gatherBindings(JCTree pattern, Consumer<JCTree.JCBindingPattern> sink) {
+            if (pattern instanceof JCTree.JCBindingPattern bp) {
+                sink.accept(bp);
+            } else if (pattern instanceof JCTree.JCRecordPattern rp) {
+                rp.nested.forEach(n -> gatherBindings(n, sink));
+            }
+        }
 
     private List<Snippet> processImport(String userSource, String compileSource) {
         Wrap guts = Wrap.simpleWrap(compileSource);
@@ -334,7 +405,7 @@ class Eval {
             Wrap anonDeclareWrap = null;
             Wrap winit = null;
             boolean enhancedDesugaring = false;
-            Set<String> anonymousClasses = Collections.emptySet();
+            Set<String> additionalStaticImportNames = Collections.emptySet();
             StringBuilder sbBrackets = new StringBuilder();
             Tree baseType = vt.getType();
             if (vt.getType() != null && vt.getType().getKind() != Tree.Kind.VAR_TYPE) {
@@ -371,7 +442,8 @@ class Eval {
                                 anonymous2Member(ei, compileSource, rinit, dis, init);
                         anonDeclareWrap = anonymous2Member.first;
                         winit = anonymous2Member.second;
-                        anonymousClasses = ei.anonymousClasses.stream().map(ad -> ad.declareTypeName).collect(Collectors.toSet());
+                        additionalStaticImportNames =
+                                ei.anonymousClasses.stream().map(ad -> ad.declareTypeName).collect(Collectors.toSet());
                     } else {
                         displayType = fullTypeName = typeName = "java.lang.Object";
                     }
@@ -428,7 +500,7 @@ class Eval {
                                      winit, enhancedDesugaring, anonDeclareWrap);
             DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                    name, fieldName, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
+                    name, fieldName, subkind, displayType, hasEnhancedType ? fullTypeName : null, additionalStaticImportNames,
                     tds.declareReferences(), modDiag);
             snippets.add(snip);
         }
@@ -669,7 +741,7 @@ class Eval {
                 String declareTypeName;
                 String fullTypeName;
                 String displayTypeName;
-                Set<String> anonymousClasses;
+                Set<String> additionalStaticImportNames;
                 if (varEI != null) {
                     declareTypeName = varEI.declareTypeName;
                     fullTypeName = varEI.fullTypeName;
@@ -679,16 +751,18 @@ class Eval {
                     Pair<Wrap, Wrap> anonymous2Member =
                             anonymous2Member(varEI, compileSource, new Range(0, compileSource.length()), dis, expr.getExpression());
                     guts = Wrap.tempVarWrap(anonymous2Member.second.wrapped(), declareTypeName, name, anonymous2Member.first);
-                    anonymousClasses = varEI.anonymousClasses.stream().map(ad -> ad.declareTypeName).collect(Collectors.toSet());
+                    additionalStaticImportNames =
+                            varEI.anonymousClasses.stream().map(ad -> ad.declareTypeName).collect(Collectors.toSet());
                 } else {
                     declareTypeName = ei.accessibleTypeName;
                     displayTypeName = fullTypeName = typeName;
                     guts = Wrap.tempVarWrap(compileSource, declareTypeName, name, null);
-                    anonymousClasses = Collections.emptySet();
+                    additionalStaticImportNames = Collections.emptySet();
                 }
                 Collection<String> declareReferences = null; //TODO
                 snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                        name, name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
+                        name, name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName,
+                        additionalStaticImportNames, declareReferences, null);
             } else {
                 guts = Wrap.methodReturnWrap(compileSource);
                 snip = new ExpressionSnippet(state.keyMap.keyForExpression(name, typeName), userSource, guts,

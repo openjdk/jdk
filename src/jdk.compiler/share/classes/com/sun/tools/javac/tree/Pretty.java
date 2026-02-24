@@ -26,7 +26,6 @@
 package com.sun.tools.javac.tree;
 
 import java.io.*;
-import java.util.stream.Collectors;
 
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
@@ -832,11 +831,24 @@ public class Pretty extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         try {
             print("for (");
-            printExpr(tree.var);
+            printExpr(tree.varOrRecordPattern);
             print(" : ");
             printExpr(tree.expr);
             print(") ");
             printStat(tree.body);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitEnhancedVariableDecl(JCEnhancedVariableDecl tree) {
+        try {
+            printExpr(tree.pattern);
+            if (tree.expr != null) {
+                print(" = ");
+                printExpr(tree.expr );
+            }
+            print(";");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

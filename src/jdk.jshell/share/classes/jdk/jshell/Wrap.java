@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import static java.util.stream.Collectors.joining;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
-
+import static jdk.jshell.ExpressionToTypeInfo.BindingInfo;
 /**
  * Wrapping of source into Java methods, fields, etc.  All but outer layer
  * wrapping with imports and class.
@@ -182,6 +182,50 @@ abstract class Wrap implements GeneralWrap {
             ++idx;
         }
         return cnt;
+    }
+
+    public static Wrap enhancedLocalVariableDeclWrap(String compileSource, List<BindingInfo> bindings) {
+        List<Wrap> members = new ArrayList<>();
+        List<String> methodsForAssigningBindings = new ArrayList<>(bindings.size());
+
+        // public static Type bindingName;
+        for (var b : bindings) {
+            members.add(new CompoundWrap(
+                    "     public static\n    ", b.declareTypeName(), " ", b.bindingName(), ";\n"
+            ));
+        }
+
+        // public static Type $setBindingMethodName(Type $v) { return bindingName = $v; }
+        String setBindingMethodName = "$setBindingMethodName";
+        for (int i = 0; i < bindings.size(); i++) {
+            BindingInfo bi = bindings.get(i);
+            String methodName = setBindingMethodName + "$" + i;
+            methodsForAssigningBindings.add(methodName);
+            members.add(new CompoundWrap(
+                    "   private static ", bi.declareTypeName(), " ", methodName, "(", bi.declareTypeName(), " $v", ") { \n",
+                         "        return ", bi.bindingName(), " = $v", ";\n",
+                         "}\n"));
+        }
+
+        // public static Object do_it$() throws Throwable {
+        //   Point(int x, int y) = getPoint();            // what user wrote
+        //   $setBindingMethodName$1(y);                  // the second binding is update for the latter 2 .. n
+        //   return $setBindingMethodName$0(x);           // the first binding is updated and returned
+        // }
+        Wrap statement = new NoWrap(compileSource);
+        List<Object> setBindingMethodInvocations = new ArrayList<>();
+        setBindingMethodInvocations.add(statement);
+        setBindingMethodInvocations.add(semi(statement));
+        for (int i = 1; i < bindings.size(); i++) {
+            setBindingMethodInvocations.add(new CompoundWrap(
+                    "    ", methodsForAssigningBindings.get(i), "(", bindings.get(i).bindingName(), ");\n"));
+        }
+        setBindingMethodInvocations.add(new CompoundWrap(
+                "  return  ", methodsForAssigningBindings.getFirst(), "(", bindings.getFirst().bindingName(), ");\n"));
+
+        members.add(new DoitMethodWrap(new CompoundWrap(setBindingMethodInvocations.toArray())));
+
+        return new CompoundWrap(members.toArray());
     }
 
     public static final class Range {

@@ -72,6 +72,8 @@ public @interface PreviewFeature {
             status="Second Preview")
         PEM_API,
         LANGUAGE_MODEL,
+        @JEP(number=999, title="Enhanced Local Variable Declarations", status="First Preview")
+        ENHANCED_LOCAL_VARIABLE_DECLARATIONS(),
         /**
          * A key for testing.
          */

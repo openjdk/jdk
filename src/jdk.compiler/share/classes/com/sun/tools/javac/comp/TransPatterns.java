@@ -1159,6 +1159,127 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
+    public void visitEnhancedVariableDecl(JCTree.JCEnhancedVariableDecl tree) {
+        /**
+         * A statement of the form
+         *
+         * <pre>
+         *     <pattern> = <expression> ;
+         * </pre>
+         *
+         * (where <pattern> is a record pattern) is translated to:
+         *
+         * <pre>{@code
+         *     if (<expression> == null) throw new NullPointerException();
+         *     if (!(<expression> instanceof(<pattern>)) {
+         *         throw new MatchException(null, null);
+         *     }
+         * }</pre>
+         *
+         */
+        bindingContext = new BasicBindingContext();
+        try {
+            JCExpression expr = translate(tree.expr);
+            Type tempType = expr.type.hasTag(BOT) ? syms.objectType : expr.type;
+
+            // synthetic temp to hold RHS
+            VarSymbol letBoundCandidate = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                    names.fromString("match" + tree.pos + target.syntheticNameChar() + "temp"),
+                    tempType,
+                    currentMethodSym);
+            JCStatement letBoundCandidateRef =
+                    make.at(tree.pos).VarDef(letBoundCandidate, expr).setType(tempType);
+            JCExpression letBoundCandidateIdent = make.Ident(letBoundCandidate).setType(tempType);
+
+            // npe logic
+            JCIf ifNPEstatement = make.If(makeBinary(Tag.EQ, letBoundCandidateIdent, makeNull()).setType(syms.booleanType),
+                    make.Throw(makeNewClass(syms.nullPointerExceptionType, List.of(makeNull()))),
+                    null);
+
+            // enhanced local variable declaration logic (mapping to a switch with one case)
+            List<JCExpression> matchExParams = List.of(makeNull(), makeNull());
+            JCTree.JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, matchExParams));
+
+            JCInstanceOf instanceOfTree = make.TypeTest(letBoundCandidateIdent, tree.pattern);
+            tree.type = syms.booleanType;
+
+            JCIf ifNode = make.If(makeUnary(Tag.NOT,
+                    translate(instanceOfTree)).setType(syms.booleanType), thr, null);
+
+            // concatenate all
+            result = make.Block(0,
+                    List.of(letBoundCandidateRef,
+                            ifNPEstatement,
+                            bindingContext.decorateStatement(ifNode)));
+        } finally {
+            bindingContext.pop();
+        }
+    }
+
+    @Override
+    public void visitForeachLoop(JCTree.JCEnhancedForLoop tree) {
+        bindingContext = new BasicBindingContext();
+        VarSymbol prevCurrentValue = currentValue;
+        try {
+            if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                /**
+                 * A statement of the form
+                 *
+                 * <pre>
+                 *     for (<pattern> : coll ) stmt ;
+                 * </pre>
+                 *
+                 * (where coll implements {@code Iterable<R>}) gets translated to
+                 *
+                 * <pre>{@code
+                 *     for (<type-of-coll-item> N$temp : coll) {
+                 *     switch (N$temp) {
+                 *         case <pattern>: stmt;
+                 *     }
+                 * }</pre>
+                 *
+                 */
+                Type selectorType = types.classBound(tree.elementType);
+
+                currentValue = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                        names.fromString("patt" + tree.pos + target.syntheticNameChar() + "temp"),
+                        selectorType,
+                        currentMethodSym);
+
+                JCStatement newForVariableDeclaration =
+                        make.at(tree.pos).VarDef(currentValue, null).setType(selectorType);
+
+                JCCase casePattern = make.Case(CaseTree.CaseKind.STATEMENT,
+                        List.of(make.PatternCaseLabel(jcRecordPattern)),
+                        null,
+                        List.of(translate(tree.body)),
+                        null);
+
+                JCSwitch switchBody =
+                        make.Switch(make.Ident(currentValue).setType(selectorType),
+                                List.of(casePattern));
+
+                switchBody.patternSwitch = true;
+
+                // re-using the same node to eliminate the need to re-patch targets (break/continue)
+                tree.varOrRecordPattern = newForVariableDeclaration.setType(selectorType);
+                tree.expr = translate(tree.expr);
+                tree.body = translate(switchBody);
+
+                JCTree.JCEnhancedForLoop newForEach = tree;
+
+                result = bindingContext.decorateStatement(newForEach);
+            } else {
+                super.visitForeachLoop(tree);
+                result = bindingContext.decorateStatement(tree);
+            }
+        } finally {
+            currentValue = prevCurrentValue;
+            bindingContext.pop();
+        }
+    }
+
+    @Override
     public void visitWhileLoop(JCWhileLoop tree) {
         bindingContext = new BasicBindingContext();
         try {

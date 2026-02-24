@@ -30,6 +30,7 @@ package com.sun.tools.javac.comp;
 import java.util.HashMap;
 import java.util.function.Consumer;
 
+import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -660,8 +661,33 @@ public class Flow {
                 tree.cond != null && !tree.cond.type.isTrue());
         }
 
+        public void visitEnhancedVariableDecl(JCEnhancedVariableDecl tree) {
+            ListBuffer<PendingExit> prevPendingExits = pendingExits;
+            pendingExits = new ListBuffer<>();
+
+            if (tree.pattern instanceof JCRecordPattern rp) {
+                visitRecordPattern(rp);
+            }
+
+            if (!checkExhaustiveSwitchProperty(tree.expr.pos(), tree.pattern, tree.expr.type).exhaustive()) {
+                log.error(tree, Errors.NotExhaustiveStatement);
+            }
+
+            scan(tree.expr);
+
+            alive = alive.or(resolveBreaks(tree, prevPendingExits));
+        }
+
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            visitVarDef(tree.var);
+            if(tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                visitVarDef(jcVariableDecl);
+            } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                visitRecordPattern(jcRecordPattern);
+
+                if (!checkExhaustiveSwitchProperty(tree.pos(), jcRecordPattern, tree.elementType).exhaustive()) {
+                    log.error(tree, Errors.ForeachNotExhaustiveOnType(jcRecordPattern.type, tree.elementType));
+                }
+            }
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             scan(tree.expr);
             pendingExits = new ListBuffer<>();
@@ -703,7 +729,7 @@ public class Flow {
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
                 if (!tree.isExhaustive) {
-                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.pos(), tree.selector.type, tree.cases);
 
                     tree.isExhaustive = exhaustivenessResult.exhaustive();
 
@@ -750,7 +776,7 @@ public class Flow {
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector.pos(), tree.selector.type, tree.cases);
 
                 tree.isExhaustive = exhaustivenessResult.exhaustive();
 
@@ -941,6 +967,18 @@ public class Flow {
                 Flow.this.make = null;
             }
         }
+    }
+
+    private ExhaustivenessResult checkExhaustiveSwitchProperty(DiagnosticPosition selectorPos, JCPattern patternTree, Type selectorType) {
+        List<JCCase> singletonCaseList = List.of(make.Case(
+                CaseTree.CaseKind.STATEMENT,
+                List.of(make.PatternCaseLabel(patternTree)),
+                null,
+                List.nil(),
+                null)
+        );
+
+        return exhaustiveness.exhausts(selectorPos, selectorType, singletonCaseList);
     }
 
     /**
@@ -1175,7 +1213,11 @@ public class Flow {
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            visitVarDef(tree.var);
+            if(tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                visitVarDef(jcVariableDecl);
+            } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                visitRecordPattern(jcRecordPattern);
+            }
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             scan(tree.expr);
             pendingExits = new ListBuffer<>();
@@ -2275,7 +2317,6 @@ public class Flow {
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            visitVarDef(tree.var);
 
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
@@ -2285,7 +2326,13 @@ public class Flow {
             final Bits initsStart = new Bits(inits);
             final Bits uninitsStart = new Bits(uninits);
 
-            letInit(tree.pos(), tree.var.sym);
+            if(tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                visitVarDef(jcVariableDecl);
+                letInit(tree.pos(), jcVariableDecl.sym);
+            } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                visitRecordPattern(jcRecordPattern);
+            }
+
             pendingExits = new ListBuffer<>();
             int prevErrors = log.nerrors;
             do {

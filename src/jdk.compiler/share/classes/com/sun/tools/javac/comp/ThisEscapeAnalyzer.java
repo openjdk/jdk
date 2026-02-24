@@ -776,42 +776,45 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
         // Iterate loop
         visitLooped(tree, foreach -> {
-
             // Scan iteration target
             scan(foreach.expr);
-            if (elemType != null) {                     // array iteration
-                if (isParamOrVar(foreach.var.sym)) {
-                    refs.removeExprs(depth)
-                      .map(ref -> ref.toIndirect(elemType.tsym))
-                      .flatMap(Optional::stream)
-                      .map(ref -> new VarRef(foreach.var.sym, ref))
-                      .forEach(refs::add);
-                } else
-                    refs.discardExprs(depth);           // we don't track fields yet
-            } else if (foreachMethods != null) {        // Iterable iteration
+            if (foreach.getVariable() instanceof JCVariableDecl jcvd &&
+                    jcvd.sym instanceof VarSymbol forEachVar) {
+                if (elemType != null) {                     // array iteration
+                    if (isParamOrVar(forEachVar)) {
+                        refs.removeExprs(depth)
+                                .map(ref -> ref.toIndirect(elemType.tsym))
+                                .flatMap(Optional::stream)
+                                .map(ref -> new VarRef(forEachVar, ref))
+                                .forEach(refs::add);
+                    } else
+                        refs.discardExprs(depth);           // we don't track fields yet
+                } else if (foreachMethods != null) {        // Iterable iteration
 
-                // "Invoke" the iterator() method
-                RefSet<ThisRef> receiverRefs = refs.removeExprs(depth)
-                  .map(ThisRef::new)
-                  .collect(RefSet.collector());
-                invoke(foreach.expr, foreachMethods.iterator, List.nil(), receiverRefs);
+                    // "Invoke" the iterator() method
+                    RefSet<ThisRef> receiverRefs = refs.removeExprs(depth)
+                            .map(ThisRef::new)
+                            .collect(RefSet.collector());
+                    invoke(foreach.expr, foreachMethods.iterator, List.nil(), receiverRefs);
 
-                // "Invoke" the hasNext() method
-                receiverRefs = refs.removeExprs(depth)
-                  .map(ThisRef::new)
-                  .collect(RefSet.collector());
-                invoke(foreach.expr, foreachMethods.hasNext, List.nil(), receiverRefs);
-                refs.discardExprs(depth);
+                    // "Invoke" the hasNext() method
+                    receiverRefs = refs.removeExprs(depth)
+                            .map(ThisRef::new)
+                            .collect(RefSet.collector());
+                    invoke(foreach.expr, foreachMethods.hasNext, List.nil(), receiverRefs);
+                    refs.discardExprs(depth);
 
-                // "Invoke" the next() method
-                invoke(foreach.expr, foreachMethods.next, List.nil(), receiverRefs);
-                if (isParamOrVar(foreach.var.sym))
-                    refs.replaceExprs(depth, ref -> new VarRef(foreach.var.sym, ref));
-                else
-                    refs.discardExprs(depth);           // we don't track fields yet
-            } else                                      // what is it???
-                refs.discardExprs(depth);
-
+                    // "Invoke" the next() method
+                    invoke(foreach.expr, foreachMethods.next, List.nil(), receiverRefs);
+                    if (isParamOrVar(forEachVar))
+                        refs.replaceExprs(depth, ref -> new VarRef(forEachVar, ref));
+                    else
+                        refs.discardExprs(depth);           // we don't track fields yet
+                } else                                      // what is it???
+                    refs.discardExprs(depth);
+            } else {
+                // TODO: what does this mean for record pattern variables????
+            }
             // Scan loop body
             scan(foreach.body);
         });

@@ -29,6 +29,7 @@ package com.sun.tools.javac.comp;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.jvm.Target;
@@ -78,6 +79,7 @@ public class TransTypes extends TreeTranslator {
     private final Resolve resolve;
     private final CompileStates compileStates;
     private final Target target;
+    private final boolean allowEnhancedVariableDecls;
 
     @SuppressWarnings("this-escape")
     protected TransTypes(Context context) {
@@ -93,6 +95,10 @@ public class TransTypes extends TreeTranslator {
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
         target = Target.instance(context);
+        Source source = Source.instance(context);
+        Preview preview = Preview.instance(context);
+        allowEnhancedVariableDecls = Feature.ENHANCED_VARIABLE_DECLS.allowedInSource(source) &&
+                                     (preview.isEnabled() || !preview.isPreview(Feature.ENHANCED_VARIABLE_DECLS));
     }
 
     /** Construct an attributed tree for a cast of expression to target type,
@@ -133,7 +139,11 @@ public class TransTypes extends TreeTranslator {
     JCExpression coerce(JCExpression tree, Type target) {
         Type btarget = target.baseType();
         if (tree.type.isPrimitive() == target.isPrimitive()) {
-            return types.isAssignable(tree.type, btarget, types.noWarnings)
+            boolean assignable = types.isAssignable(tree.type, btarget, types.noWarnings);
+            if (allowEnhancedVariableDecls && types.isSafeDirectSubType(tree.type, btarget)) {
+                assignable = false;
+            }
+            return assignable
                 ? tree
                 : cast(tree, btarget);
         }
@@ -530,8 +540,14 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
+    public void visitEnhancedVariableDecl(JCEnhancedVariableDecl tree) {
+        tree.pattern = translate(tree.pattern);
+        tree.expr = translate(tree.expr, erasure(tree.expr.type));
+        result = tree;
+    }
+
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        tree.var = translate(tree.var, null);
+        tree.varOrRecordPattern = translate(tree.varOrRecordPattern, null);
         Type iterableType = tree.expr.type;
         tree.expr = translate(tree.expr, erasure(tree.expr.type));
         if (types.elemtype(tree.expr.type) == null)

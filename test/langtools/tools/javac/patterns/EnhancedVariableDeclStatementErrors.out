@@ -1,0 +1,25 @@
+EnhancedVariableDeclStatementErrors.java:21:29: compiler.err.expected3: ',', ')', '['
+EnhancedVariableDeclStatementErrors.java:21:30: compiler.err.illegal.start.of.expr
+EnhancedVariableDeclStatementErrors.java:21:37: compiler.err.expected: ';'
+EnhancedVariableDeclStatementErrors.java:22:31: compiler.err.dot.class.expected
+EnhancedVariableDeclStatementErrors.java:22:32: compiler.err.expected: ';'
+EnhancedVariableDeclStatementErrors.java:22:39: compiler.err.expected: ';'
+EnhancedVariableDeclStatementErrors.java:22:43: compiler.err.not.stmt
+EnhancedVariableDeclStatementErrors.java:22:48: compiler.err.expected: ';'
+EnhancedVariableDeclStatementErrors.java:39:13: compiler.err.enhanced.variable.not.allowed
+EnhancedVariableDeclStatementErrors.java:41:13: compiler.err.enhanced.variable.not.allowed
+EnhancedVariableDeclStatementErrors.java:46:13: compiler.err.enhanced.variable.not.allowed
+EnhancedVariableDeclStatementErrors.java:51:13: compiler.err.enhanced.variable.not.allowed
+EnhancedVariableDeclStatementErrors.java:56:13: compiler.err.enhanced.variable.not.allowed
+EnhancedVariableDeclStatementErrors.java:61:13: compiler.err.enhanced.variable.not.allowed
+EnhancedVariableDeclStatementErrors.java:67:13: compiler.err.enhanced.variable.not.allowed
+EnhancedVariableDeclStatementErrors.java:15:31: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclStatementErrors.OPoint, EnhancedVariableDeclStatementErrors.Point)
+EnhancedVariableDeclStatementErrors.java:21:20: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf: EnhancedVariableDeclStatementErrors.Point)
+EnhancedVariableDeclStatementErrors.java:22:27: compiler.err.unexpected.type: kindname.value, kindname.class
+EnhancedVariableDeclStatementErrors.java:29:16: compiler.err.cant.resolve.location: kindname.variable, sx, , , (compiler.misc.location: kindname.class, EnhancedVariableDeclStatementErrors, null)
+EnhancedVariableDeclStatementErrors.java:34:19: compiler.err.already.defined: kindname.variable, sx, kindname.method, shadowing_error(EnhancedVariableDeclStatementErrors.Point)
+EnhancedVariableDeclStatementErrors.java:11:9: compiler.err.not.exhaustive.statement
+EnhancedVariableDeclStatementErrors.java:15:9: compiler.err.not.exhaustive.statement
+- compiler.note.preview.filename: EnhancedVariableDeclStatementErrors.java, DEFAULT
+- compiler.note.preview.recompile
+22 errors

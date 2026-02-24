@@ -1,0 +1,12 @@
+EnhancedVariableDeclAssignmentNR1S.java:27:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.SA1, EnhancedVariableDeclAssignmentNR1S.SB1)
+EnhancedVariableDeclAssignmentNR1S.java:32:17: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.SA1, EnhancedVariableDeclAssignmentNR1S.SB1)
+EnhancedVariableDeclAssignmentNR1S.java:36:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.SA1, EnhancedVariableDeclAssignmentNR1S.SB1)
+EnhancedVariableDeclAssignmentNR1S.java:43:21: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.SA2<T>, EnhancedVariableDeclAssignmentNR1S.SB2<T>)
+EnhancedVariableDeclAssignmentNR1S.java:50:17: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.IR, EnhancedVariableDeclAssignmentNR1S.R1)
+EnhancedVariableDeclAssignmentNR1S.java:58:14: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.IFoo, EnhancedVariableDeclAssignmentNR1S.FooImpl)
+EnhancedVariableDeclAssignmentNR1S.java:64:27: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.IFoo, EnhancedVariableDeclAssignmentNR1S.FooImpl)
+EnhancedVariableDeclAssignmentNR1S.java:71:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.SA1, EnhancedVariableDeclAssignmentNR1S.SB1)
+EnhancedVariableDeclAssignmentNR1S.java:78:17: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.I, EnhancedVariableDeclAssignmentNR1S.Mid)
+EnhancedVariableDeclAssignmentNR1S.java:90:15: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.II, EnhancedVariableDeclAssignmentNR1S.L)
+EnhancedVariableDeclAssignmentNR1S.java:93:15: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: EnhancedVariableDeclAssignmentNR1S.JJ, EnhancedVariableDeclAssignmentNR1S.L)
+11 errors

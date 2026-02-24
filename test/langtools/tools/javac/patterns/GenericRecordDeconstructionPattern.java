@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8298184
+ * @enablePreview
  * @compile GenericRecordDeconstructionPattern.java
  * @run main GenericRecordDeconstructionPattern
  */
@@ -48,6 +49,8 @@ public class GenericRecordDeconstructionPattern {
         testInference3();
         assertEquals(1, runIfSuperBound(new Box<>(new StringBuilder())));
         assertEquals(1, runIfSuperBound(new Box<>(0)));
+        assertEquals(0, forEachInference(List.of(new Box(""))));
+        assertEquals(1, forEachInference(List.of(new Box(null))));
     }
 
     void runTest(Function<Box<String>, Integer> test) {
@@ -101,6 +104,13 @@ public class GenericRecordDeconstructionPattern {
     <B extends CharSequence & Runnable, Z extends I<B>> int runSwitchInference5(Z b) {
         return b instanceof Box(var s) ? s == null ? 1 : s.length()
                                        : -1;
+    }
+
+    int forEachInference(Iterable<I<String>> b) {
+        for (Box(var s) : b) {
+            return s == null ? 1 : s.length();
+        }
+        return -1;
     }
 
     void testInference3() {

@@ -108,7 +108,7 @@ public class ExhaustivenessComputer {
         maxBaseChecks = computedMaxBaseChecks;
     }
 
-    public ExhaustivenessResult exhausts(JCExpression selector, List<JCCase> cases) {
+    public ExhaustivenessResult exhausts(JCDiagnostic.DiagnosticPosition selectorPosition, Type selectorType, List<JCCase> cases) {
         Set<PatternDescription> patternSet = new HashSet<>();
         Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
         Set<Object> booleanLiterals = new HashSet<>(Set.of(0, 1));
@@ -118,11 +118,11 @@ public class ExhaustivenessComputer {
 
             for (var l : c.labels) {
                 if (l instanceof JCPatternCaseLabel patternLabel) {
-                    for (Type component : components(selector.type)) {
+                    for (Type component : components(selectorType)) {
                         patternSet.add(makePatternDescription(component, patternLabel.pat));
                     }
                 } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                    if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
+                    if (types.unboxedTypeOrType(selectorType).hasTag(TypeTag.BOOLEAN)) {
                         Object value = ((JCLiteral) constantLabel.expr).value;
                         booleanLiterals.remove(value);
                     } else {
@@ -141,7 +141,7 @@ public class ExhaustivenessComputer {
             }
         }
 
-        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
+        if (types.unboxedTypeOrType(selectorType).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
             return ExhaustivenessResult.ofExhaustive();
         }
 
@@ -151,13 +151,13 @@ public class ExhaustivenessComputer {
             }
         }
         try {
-            CoverageResult coveredResult = computeCoverage(selector.type, patternSet, PatternEquivalence.STRICT);
+            CoverageResult coveredResult = computeCoverage(selectorType, patternSet, PatternEquivalence.STRICT);
             if (coveredResult.covered()) {
                 return ExhaustivenessResult.ofExhaustive();
             }
 
             Set<PatternDescription> details =
-                    this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
+                    this.computeMissingPatternDescriptions(selectorType, coveredResult.incompletePatterns())
                         .stream()
                         .flatMap(pd -> {
                             if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
@@ -171,7 +171,7 @@ public class ExhaustivenessComputer {
 
             return ExhaustivenessResult.ofDetails(details);
         } catch (CompletionFailure cf) {
-            chk.completionError(selector.pos(), cf);
+            chk.completionError(selectorPosition, cf);
             return ExhaustivenessResult.ofExhaustive(); //error recovery
         }
     }

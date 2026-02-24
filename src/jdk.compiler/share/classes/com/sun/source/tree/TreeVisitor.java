@@ -90,6 +90,16 @@ public interface TreeVisitor<R,P> {
     R visitAssert(AssertTree node, P p);
 
     /**
+     * Visits an {@code EnhancedVariableDeclTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     *
+     * @since 27
+     */
+    R visitEnhancedVariableDecl(EnhancedVariableDeclTree node, P p);
+
+    /**
      * Visits an {@code AssignmentTree} node.
      * @param node the node being visited
      * @param p a parameter value

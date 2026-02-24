@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jshell;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.stream.Collectors;
 import jdk.jshell.Key.VarKey;
 
 /**
@@ -53,22 +52,24 @@ public class VarSnippet extends DeclarationSnippet {
      */
     final String fullTypeName;
 
-    /**The anonymous class declared in the initializer of the "var" variable.
-     * These are automatically statically imported when the field is imported.
+    /**Additional member names in the generated snippet class which should be
+     * statically imported together with the variable itself. This is used for
+     * the anonymous class declared in the initializer of the "var" variable and
+     * for enhanced local variable declaration bindings.
      */
-    final Set<String> anonymousClasses;
+    final Set<String> additionalStaticImportNames;
 
     final String fieldName;
 
      VarSnippet(VarKey key, String userSource, Wrap guts,
             String name, String fieldName, SubKind subkind, String typeName, String fullTypeName,
-            Set<String> anonymousClasses, Collection<String> declareReferences,
+            Set<String> additionalStaticImportNames, Collection<String> declareReferences,
             DiagList syntheticDiags) {
         super(key, userSource, guts, name, subkind, null, declareReferences,
                 null, syntheticDiags);
         this.typeName = typeName;
         this.fullTypeName = fullTypeName;
-        this.anonymousClasses = anonymousClasses;
+        this.additionalStaticImportNames = additionalStaticImportNames;
         this.fieldName = fieldName;
     }
 
@@ -86,10 +87,9 @@ public class VarSnippet extends DeclarationSnippet {
 
     @Override
     String importLine(JShell state) {
-        return "import static " + classFullName() + "." + name() + ";   " +
-               anonymousClasses.stream()
-                               .map(c -> "import static " + classFullName() + "." + c + ";   ")
-                               .collect(Collectors.joining());
+        StringBuilder imports = new StringBuilder(super.importLine(state));
+        additionalStaticImportNames.forEach(name -> imports.append(staticImportLine(name)));
+        return imports.toString();
     }
 
 }

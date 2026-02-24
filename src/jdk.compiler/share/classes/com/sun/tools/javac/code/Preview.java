@@ -31,15 +31,12 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
-import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
-import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
-import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
@@ -51,7 +48,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.sun.tools.javac.main.Option.PREVIEW;
-import com.sun.tools.javac.util.JCDiagnostic;
 
 /**
  * Helper class to handle preview language features. This class maps certain language features
@@ -215,6 +211,7 @@ public class Preview {
     public boolean isPreview(Feature feature) {
         return switch (feature) {
             case PRIMITIVE_PATTERNS -> true;
+            case ENHANCED_VARIABLE_DECLS -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.

@@ -35,9 +35,11 @@ import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.IdentifierTree;
-import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
+import com.sun.source.tree.EnhancedForLoopTree;
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.TreeVisitor;
+import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
@@ -1562,6 +1564,19 @@ public class Attr extends JCTree.Visitor {
         bindings.forEach(BindingSymbol::preserveBinding);
     }
 
+    public void visitEnhancedVariableDecl(JCEnhancedVariableDecl tree) {
+        attribExpr(tree.expr, env);
+        attribExpr(tree.pattern, env, tree.expr.type);
+
+        matchBindings.bindingsWhenTrue.forEach(env.info.scope::enter);
+        matchBindings.bindingsWhenTrue.forEach(BindingSymbol::preserveBinding);
+
+        Type clazztype = tree.pattern.type;
+        checkCastablePattern(tree.expr.pos(), tree.expr.type, clazztype);
+
+        result = null;
+    }
+
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         Env<AttrContext> loopEnv =
             env.dup(env.tree, env.info.dup(env.info.scope.dup()));
@@ -1571,18 +1586,18 @@ public class Attr extends JCTree.Visitor {
             //the for-each expression first (against original scope).
             Type exprType = types.cvarUpperBound(attribExpr(tree.expr, loopEnv));
             chk.checkNonVoid(tree.pos(), exprType);
-            Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
-            if (elemtype == null) {
+            tree.elementType = types.elemtype(exprType); // perhaps expr is an array?
+            if (tree.elementType == null) {
                 // or perhaps expr implements Iterable<T>?
                 Type base = types.asSuper(exprType, syms.iterableType.tsym);
                 if (base == null) {
                     log.error(tree.expr.pos(),
                               Errors.ForeachNotApplicableToType(exprType,
                                                                 Fragments.TypeReqArrayOrIterable));
-                    elemtype = types.createErrorType(exprType);
+                    tree.elementType = types.createErrorType(exprType);
                 } else {
                     List<Type> iterableParams = base.allparams();
-                    elemtype = iterableParams.isEmpty()
+                    tree.elementType = iterableParams.isEmpty()
                         ? syms.objectType
                         : types.wildUpperBound(iterableParams.head);
 
@@ -1596,15 +1611,41 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             }
-            if (tree.var.isImplicitlyTyped()) {
-                Type inferredType = chk.checkLocalVarType(tree.var, elemtype, tree.var.name);
-                tree.var.type = inferredType;
-                setupImplicitlyTypedVariable(tree.var, inferredType);
+            if (tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                if (jcVariableDecl.isImplicitlyTyped()) {
+                    Type inferredType = chk.checkLocalVarType(jcVariableDecl, tree.elementType, jcVariableDecl.name);
+                    jcVariableDecl.type = inferredType;
+                    setupImplicitlyTypedVariable(jcVariableDecl, inferredType);
+                }
+                attribStat(jcVariableDecl, loopEnv);
+                chk.checkType(tree.expr.pos(), tree.elementType, jcVariableDecl.sym.type);
+                loopEnv.tree = tree; // before, we were not in loop!
+                attribStat(tree.body, loopEnv);
+            } else {
+                Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN);
+                JCRecordPattern jcRecordPattern = (JCRecordPattern) tree.varOrRecordPattern;
+
+                attribExpr(jcRecordPattern, loopEnv, tree.elementType);
+
+                // for(<pattern> x : xs) { y }
+                // we include x's bindings when true in y
+                // we don't do anything with x's bindings when false
+
+                MatchBindings forWithRecordPatternBindings = matchBindings;
+                Env<AttrContext> recordPatternEnv = bindingEnv(loopEnv, forWithRecordPatternBindings.bindingsWhenTrue);
+
+                Type clazztype = jcRecordPattern.type;
+
+                checkCastablePattern(tree.expr.pos(), tree.elementType, clazztype);
+
+                recordPatternEnv.tree = tree; // before, we were not in loop!
+                try {
+                    attribStat(tree.body, recordPatternEnv);
+                } finally {
+                    recordPatternEnv.info.scope.leave();
+                }
             }
-            attribStat(tree.var, loopEnv);
-            chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);
-            loopEnv.tree = tree; // before, we were not in loop!
-            attribStat(tree.body, loopEnv);
+
             result = null;
         }
         finally {
