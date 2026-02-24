@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,7 +44,7 @@ define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         4);
-define_pd_global(intx, FreqInlineSize,               175);
+define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, InteriorEntryAlignment,       4);
 define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        12000);

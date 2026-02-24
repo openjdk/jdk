@@ -404,14 +404,12 @@ void CompilerConfig::set_compilation_policy_flags() {
 #endif
 
   if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
-#ifdef COMPILER2
-    // Some inlining tuning
-#if defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)
+#if defined(COMPILER2) && defined(_LP64)
+    // LP64 specific inlining tuning for C2
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
 #endif
-#endif // COMPILER2
   }
 
 }
