@@ -167,14 +167,14 @@ final class AppImageSigner {
     private static IOException handleCodesignException(MacApplication app, CodesignException ex) {
         if (!app.contentDirSources().isEmpty()) {
             // Additional content may cause signing error.
-            Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
+            Log.fatalError(I18N.getString("message.codesign.failed.reason.app.content"));
         }
 
         // Signing might not work without Xcode with command line
         // developer tools. Show user if Xcode is missing as possible
         // reason.
         if (!isXcodeDevToolsInstalled()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
+            Log.fatalError(I18N.getString("message.codesign.failed.reason.xcode.tools"));
         }
 
         return ex.getCause();

@@ -66,10 +66,6 @@ static inline void send_safepoint_latency_event(const JfrSampleRequest& request,
   }
 }
 
-static inline bool is_interpreter(address pc) {
-  return Interpreter::contains(pc);
-}
-
 static inline bool is_interpreter(const JfrSampleRequest& request) {
   return request._sample_bcp != nullptr;
 }

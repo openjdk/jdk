@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,14 +56,9 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @bug 8087112
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/EchoHandler.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @build LightWeightHttpServer
  * @build jdk.test.lib.Platform
  * @build jdk.test.lib.util.FileUtils
