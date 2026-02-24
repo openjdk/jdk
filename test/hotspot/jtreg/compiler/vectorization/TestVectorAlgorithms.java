@@ -542,7 +542,6 @@ public class TestVectorAlgorithms {
                   IRNode.STORE_VECTOR,                        "> 0"},
         applyIfCPUFeature = {"sse4.1", "true"})
     // x86 seems to have a limitation with 2-element VectorStoreMask, this blocks intrinsification
-    // TODO: file RFE
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.VECTOR_MASK_CMP,                     "> 0",
                   IRNode.VECTOR_TEST,                         "> 0",
