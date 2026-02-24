@@ -524,19 +524,36 @@ ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
 
 // Returns a new table to try inserting into.
 ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
+  Table* result;
   Table* new_table = AtomicAccess::load_acquire(&_curr);
   if (new_table != curr) {
     // Table changed; no need to try further
     return new_table;
   }
 
-  new_table = new Table(curr->capacity() << 1, curr);
-  Table* result = AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_acq_rel);
-  if (result == curr) {
-    // Successfully started rehashing.
-    log_info(monitorinflation)("Growing object monitor table");
-    ObjectSynchronizer::request_deflate_idle_monitors();
-    return new_table;
+  {
+    // Use MonitorDeflation_lock to only allow one inflating thread to
+    // attempt to allocate the new table.
+    MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
+
+    new_table = AtomicAccess::load_acquire(&_curr);
+    if (new_table != curr) {
+      // Table changed; no need to try further
+      return new_table;
+    }
+
+    new_table = new Table(curr->capacity() << 1, curr);
+    result = AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_acq_rel);
+    if (result == curr) {
+      log_info(monitorinflation)("Growing object monitor table (capacity: %zu)",
+                                 new_table->capacity());
+      // Since we grew the table (we have a new current) we need to
+      // notify the deflation thread to rebuild the table (to get rid of
+      // old currents).
+      ObjectSynchronizer::set_is_async_deflation_requested(true);
+      ml.notify_all();
+      return new_table;
+    }
   }
 
   // Somebody else started rehashing; restart in new table.
@@ -615,6 +632,8 @@ void ObjectMonitorTable::rebuild(GrowableArray<Table*>* delete_list) {
       delete new_table;
       new_table = result;
     }
+    log_info(monitorinflation)("Rebuilding object monitor table (capacity: %zu)",
+                               new_table->capacity());
   }
 
   for (Table* curr = new_table->prev(); curr != nullptr; curr = curr->prev()) {
